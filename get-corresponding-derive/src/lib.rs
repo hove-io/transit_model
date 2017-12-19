@@ -4,7 +4,7 @@ extern crate quote;
 extern crate syn;
 
 use proc_macro::TokenStream;
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 
 #[proc_macro_derive(GetCorresponding)]
 pub fn get_corresponding(input: TokenStream) -> TokenStream {
@@ -20,22 +20,22 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
         let edges: Vec<_> = fields.iter().filter_map(to_edge).collect();
         let next = floyd_warshall(&edges);
         let edge_to_impl = make_edge_to_get_corresponding(name, &edges);
-        let edges_impls = next.iter().filter_map(|(&(from, to), node)| {
+        let edges_impls = next.iter().filter_map(|(&(from, to), &node)| {
             if from == to {
                 return None;
             }
-            if let Some(token) = edge_to_impl.get(&(from, to)) {
-                Some(token.clone())
+            if to == node {
+                edge_to_impl[&(from, to)].clone()
             } else {
-                Some(quote! {
+                quote! {
                     impl GetCorresponding<#to> for IdxSet<#from> {
                         fn get_corresponding(&self, pt_objects: &PtObjects) -> IdxSet<#to> {
                             let tmp: IdxSet<#node> = self.get_corresponding(pt_objects);
                             tmp.get_corresponding(pt_objects)
                         }
                     }
-                })
-            }
+                }
+            }.into()
         });
         quote!(#(#edges_impls)*)
     } else {
