@@ -4,7 +4,7 @@ extern crate quote;
 extern crate syn;
 
 use proc_macro::TokenStream;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{HashSet, HashMap};
 
 #[proc_macro_derive(GetCorresponding)]
 pub fn get_corresponding(input: TokenStream) -> TokenStream {
@@ -19,7 +19,6 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
         let name = &ast.ident;
         let edges: Vec<_> = fields.iter().filter_map(to_edge).collect();
         let next = floyd_warshall(&edges);
-        println!("{:?}", next);
         let edge_to_impl = make_edge_to_get_corresponding(name, &edges);
         let edges_impls = next.iter().filter_map(|(&(from, to), node)| {
             if from == to {
@@ -28,13 +27,10 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
             if let Some(token) = edge_to_impl.get(&(from, to)) {
                 Some(token.clone())
             } else {
-                let from_ty: quote::Ident = from.into();
-                let to_ty: quote::Ident = to.into();
-                let node_ty: quote::Ident = (*node).into();
                 Some(quote! {
-                    impl GetCorresponding<#to_ty> for IdxSet<#from_ty> {
-                        fn get_corresponding(&self, pt_objects: &PtObjects) -> IdxSet<#to_ty> {
-                            let tmp: IdxSet<#node_ty> = self.get_corresponding(pt_objects);
+                    impl GetCorresponding<#to> for IdxSet<#from> {
+                        fn get_corresponding(&self, pt_objects: &PtObjects) -> IdxSet<#to> {
+                            let tmp: IdxSet<#node> = self.get_corresponding(pt_objects);
                             tmp.get_corresponding(pt_objects)
                         }
                     }
@@ -70,38 +66,27 @@ fn to_edge(field: &syn::Field) -> Option<Edge> {
     } else {
         None
     }?;
-    let from_ty = get_ident_from_ty(from_ty)?;
-    let to_ty = get_ident_from_ty(to_ty)?;
     Edge {
         ident: ident.into(),
-        from: from_ty.into(),
-        to: to_ty.into(),
+        from: from_ty.clone(),
+        to: to_ty.clone(),
     }.into()
-}
-
-fn get_ident_from_ty(ty: &syn::Ty) -> Option<&str> {
-    match *ty {
-        syn::Ty::Path(_, ref path) => path.segments.last().map(|segment| segment.ident.as_ref()),
-        _ => None,
-    }
 }
 
 fn make_edge_to_get_corresponding<'a>(
     name: &syn::Ident,
     edges: &'a [Edge],
-) -> BTreeMap<(&'a str, &'a str), quote::Tokens> {
-    let mut res = BTreeMap::default();
+) -> HashMap<(&'a syn::Ty, &'a syn::Ty), quote::Tokens> {
+    let mut res = HashMap::default();
     for e in edges {
         let ident: quote::Ident = e.ident.as_str().into();
-        let from = e.from.as_str();
-        let from_ty: quote::Ident = from.into();
-        let to = e.to.as_str();
-        let to_ty: quote::Ident = to.into();
+        let from = &e.from;
+        let to = &e.to;
         res.insert(
             (from, to),
             quote! {
-                impl GetCorresponding<#to_ty> for IdxSet<#from_ty> {
-                    fn get_corresponding(&self, pt_objects: &#name) -> IdxSet<#to_ty> {
+                impl GetCorresponding<#to> for IdxSet<#from> {
+                    fn get_corresponding(&self, pt_objects: &#name) -> IdxSet<#to> {
                         pt_objects.#ident.get_corresponding_forward(self)
                     }
                 }
@@ -110,8 +95,8 @@ fn make_edge_to_get_corresponding<'a>(
         res.insert(
             (to, from),
             quote! {
-                impl GetCorresponding<#from_ty> for IdxSet<#to_ty> {
-                    fn get_corresponding(&self, pt_objects: &#name) -> IdxSet<#from_ty> {
+                impl GetCorresponding<#from> for IdxSet<#to> {
+                    fn get_corresponding(&self, pt_objects: &#name) -> IdxSet<#from> {
                         pt_objects.#ident.get_corresponding_backward(self)
                     }
                 }
@@ -121,14 +106,14 @@ fn make_edge_to_get_corresponding<'a>(
     res
 }
 
-fn floyd_warshall<'a>(edges: &'a [Edge]) -> BTreeMap<(&'a str, &'a str), &'a str> {
+fn floyd_warshall<'a>(edges: &'a [Edge]) -> HashMap<(&'a Node, &'a Node), &'a Node> {
     use std::f64::INFINITY;
-    let mut v = BTreeSet::<&str>::default();
-    let mut dist = BTreeMap::<(&str, &str), f64>::default();
-    let mut next = BTreeMap::default();
+    let mut v = HashSet::<&Node>::default();
+    let mut dist = HashMap::<(&Node, &Node), f64>::default();
+    let mut next = HashMap::default();
     for e in edges {
-        let from = e.from.as_str();
-        let to = e.to.as_str();
+        let from = &e.from;
+        let to = &e.to;
         v.insert(from);
         v.insert(to);
         dist.insert((from, to), 1.);
@@ -165,4 +150,4 @@ struct Edge {
     to: Node,
 }
 
-type Node = String;
+type Node = syn::Ty;
