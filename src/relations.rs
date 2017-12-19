@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use collection::{Idx, Id, Collection};
+use collection::{Collection, Id, Idx};
 
 pub type IdxSet<T> = HashSet<Idx<T>>;
 
@@ -23,7 +23,10 @@ where
         for (many_idx, obj) in many.iter() {
             let one_idx = one.get_idx(<U as Id<T>>::id(obj)).unwrap();
             many_to_one.insert(many_idx, one_idx);
-            one_to_many.entry(one_idx).or_insert_with(HashSet::default).insert(many_idx);
+            one_to_many
+                .entry(one_idx)
+                .or_insert_with(HashSet::default)
+                .insert(many_idx);
         }
         OneToMany {
             one_to_many: one_to_many,
@@ -33,7 +36,9 @@ where
 
     pub fn get_corresponding_forward(&self, from: &IdxSet<T>) -> IdxSet<U> {
         let mut res = IdxSet::default();
-        for to_idx in from.iter().filter_map(|from_idx| self.one_to_many.get(from_idx)) {
+        for to_idx in from.iter()
+            .filter_map(|from_idx| self.one_to_many.get(from_idx))
+        {
             res.extend(to_idx);
         }
         res
@@ -41,7 +46,9 @@ where
 
     pub fn get_corresponding_backward(&self, from: &IdxSet<U>) -> IdxSet<T> {
         let mut res = IdxSet::default();
-        for to_idx in from.iter().filter_map(|from_idx| self.many_to_one.get(from_idx)) {
+        for to_idx in from.iter()
+            .filter_map(|from_idx| self.many_to_one.get(from_idx))
+        {
             res.insert(*to_idx);
         }
         res

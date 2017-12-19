@@ -10,7 +10,8 @@ pub trait Id<T> {
 
 // TODO: no serde on Idx
 #[derive(Derivative, Serialize, Deserialize, Debug)]
-#[derivative(Copy(bound=""), Clone(bound=""), PartialEq(bound=""), Eq(bound=""), Hash(bound=""))]
+#[derivative(Copy(bound = ""), Clone(bound = ""), PartialEq(bound = ""), Eq(bound = ""),
+             Hash(bound = ""))]
 pub struct Idx<T>(u32, PhantomData<T>);
 
 impl<T> Idx<T> {
@@ -29,25 +30,39 @@ pub struct Collection<T> {
     id_to_idx: HashMap<String, Idx<T>>,
 }
 
-pub type Iter<'a, T> = iter::Map<iter::Enumerate<slice::Iter<'a, T>>, fn((usize, &T)) -> (Idx<T>, &T)>;
+pub type Iter<'a, T> = iter::Map<
+    iter::Enumerate<slice::Iter<'a, T>>,
+    fn((usize, &T)) -> (Idx<T>, &T),
+>;
 
 impl<T: Id<T>> Collection<T> {
     pub fn from_vec(v: Vec<T>) -> Self {
-        let mut res = Collection { objects: v, id_to_idx: HashMap::default() };
-        res.id_to_idx = res.iter().map(|(idx, obj)| (obj.id().to_string(), idx)).collect();
+        let mut res = Collection {
+            objects: v,
+            id_to_idx: HashMap::default(),
+        };
+        res.id_to_idx = res.iter()
+            .map(|(idx, obj)| (obj.id().to_string(), idx))
+            .collect();
         res
     }
 }
 
 impl<T> Default for Collection<T> {
     fn default() -> Self {
-        Collection { objects: Vec::default(), id_to_idx: HashMap::default() }
+        Collection {
+            objects: Vec::default(),
+            id_to_idx: HashMap::default(),
+        }
     }
 }
 
 impl<T> Collection<T> {
     pub fn iter<'a>(&'a self) -> Iter<'a, T> {
-        self.objects.iter().enumerate().map(|(idx, obj)| (Idx::new(idx), obj))
+        self.objects
+            .iter()
+            .enumerate()
+            .map(|(idx, obj)| (Idx::new(idx), obj))
     }
 
     pub fn get_idx(&self, id: &str) -> Option<Idx<T>> {

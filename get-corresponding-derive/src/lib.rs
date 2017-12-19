@@ -1,6 +1,7 @@
 extern crate proc_macro;
+#[macro_use]
+extern crate quote;
 extern crate syn;
-#[macro_use] extern crate quote;
 
 use proc_macro::TokenStream;
 use std::collections::{BTreeMap, BTreeSet};
@@ -21,7 +22,9 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
         println!("{:?}", next);
         let edge_to_impl = make_edge_to_get_corresponding(name, &edges);
         let edges_impls = next.iter().filter_map(|(&(from, to), node)| {
-            if from == to { return None; }
+            if from == to {
+                return None;
+            }
             if let Some(token) = edge_to_impl.get(&(from, to)) {
                 Some(token.clone())
             } else {
@@ -50,13 +53,16 @@ fn to_edge(field: &syn::Field) -> Option<Edge> {
     let mut split = ident.split("_to_");
     let _from_collection = split.next()?;
     let _to_collection = split.next()?;
-    if ! split.next().is_none() { return None; }
+    if !split.next().is_none() {
+        return None;
+    }
     let segment = if let syn::Ty::Path(_, ref path) = field.ty {
         path.segments.last()
     } else {
         None
     }?;
-    let (from_ty, to_ty) = if let syn::PathParameters::AngleBracketed(ref data) = segment.parameters {
+    let (from_ty, to_ty) = if let syn::PathParameters::AngleBracketed(ref data) = segment.parameters
+    {
         match (data.types.get(0), data.types.get(1), data.types.get(2)) {
             (Some(from_ty), Some(to_ty), None) => Some((from_ty, to_ty)),
             _ => None,
@@ -80,9 +86,10 @@ fn get_ident_from_ty(ty: &syn::Ty) -> Option<&str> {
     }
 }
 
-fn make_edge_to_get_corresponding<'a>(name: &syn::Ident, edges: &'a [Edge])
-                                      -> BTreeMap<(&'a str, &'a str), quote::Tokens>
-{
+fn make_edge_to_get_corresponding<'a>(
+    name: &syn::Ident,
+    edges: &'a [Edge],
+) -> BTreeMap<(&'a str, &'a str), quote::Tokens> {
     let mut res = BTreeMap::default();
     for e in edges {
         let ident: quote::Ident = e.ident.as_str().into();
@@ -90,20 +97,26 @@ fn make_edge_to_get_corresponding<'a>(name: &syn::Ident, edges: &'a [Edge])
         let from_ty: quote::Ident = from.into();
         let to = e.to.as_str();
         let to_ty: quote::Ident = to.into();
-        res.insert((from, to), quote! {
-            impl GetCorresponding<#to_ty> for IdxSet<#from_ty> {
-                fn get_corresponding(&self, pt_objects: &#name) -> IdxSet<#to_ty> {
-                    pt_objects.#ident.get_corresponding_forward(self)
+        res.insert(
+            (from, to),
+            quote! {
+                impl GetCorresponding<#to_ty> for IdxSet<#from_ty> {
+                    fn get_corresponding(&self, pt_objects: &#name) -> IdxSet<#to_ty> {
+                        pt_objects.#ident.get_corresponding_forward(self)
+                    }
                 }
-            }
-        });
-        res.insert((to, from), quote! {
-            impl GetCorresponding<#from_ty> for IdxSet<#to_ty> {
-                fn get_corresponding(&self, pt_objects: &#name) -> IdxSet<#from_ty> {
-                    pt_objects.#ident.get_corresponding_backward(self)
+            },
+        );
+        res.insert(
+            (to, from),
+            quote! {
+                impl GetCorresponding<#from_ty> for IdxSet<#to_ty> {
+                    fn get_corresponding(&self, pt_objects: &#name) -> IdxSet<#from_ty> {
+                        pt_objects.#ident.get_corresponding_backward(self)
+                    }
                 }
-            }
-        });
+            },
+        );
     }
     res
 }

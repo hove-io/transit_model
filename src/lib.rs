@@ -1,8 +1,11 @@
 extern crate csv;
-#[macro_use] extern crate derivative;
+#[macro_use]
+extern crate derivative;
+#[macro_use]
+extern crate get_corresponding_derive;
 extern crate serde;
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate get_corresponding_derive;
+#[macro_use]
+extern crate serde_derive;
 
 pub mod collection;
 pub mod objects;
@@ -13,7 +16,7 @@ use std::ops;
 
 use collection::Collection;
 use objects::*;
-use relations::{OneToMany, GetCorresponding, IdxSet};
+use relations::{GetCorresponding, IdxSet, OneToMany};
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
@@ -32,7 +35,10 @@ pub struct PtObjects {
 impl PtObjects {
     pub fn new(collections: Collections) -> Self {
         PtObjects {
-            commercial_modes_to_lines: OneToMany::new(&collections.commercial_modes, &collections.lines),
+            commercial_modes_to_lines: OneToMany::new(
+                &collections.commercial_modes,
+                &collections.lines,
+            ),
             lines_to_routes: OneToMany::new(&collections.lines, &collections.routes),
             collections: collections,
         }

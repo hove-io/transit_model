@@ -2,8 +2,8 @@ use std::path;
 use csv;
 use serde;
 
-use collection::{Id, Collection};
-use ::{PtObjects, Collections};
+use collection::{Collection, Id};
+use {Collections, PtObjects};
 
 fn make_collection<T>(path: &path::Path, file: &str) -> Collection<T>
 where
