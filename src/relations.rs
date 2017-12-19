@@ -35,22 +35,16 @@ where
     }
 
     pub fn get_corresponding_forward(&self, from: &IdxSet<T>) -> IdxSet<U> {
-        let mut res = IdxSet::default();
-        for to_idx in from.iter()
+        from.iter()
             .filter_map(|from_idx| self.one_to_many.get(from_idx))
-        {
-            res.extend(to_idx);
-        }
-        res
+            .flat_map(|indices| indices.iter().cloned())
+            .collect()
     }
 
     pub fn get_corresponding_backward(&self, from: &IdxSet<U>) -> IdxSet<T> {
-        let mut res = IdxSet::default();
-        for to_idx in from.iter()
+        from.iter()
             .filter_map(|from_idx| self.many_to_one.get(from_idx))
-        {
-            res.insert(*to_idx);
-        }
-        res
+            .cloned()
+            .collect()
     }
 }

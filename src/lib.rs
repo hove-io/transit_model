@@ -50,17 +50,3 @@ impl ops::Deref for PtObjects {
         &self.collections
     }
 }
-/*
-impl GetCorresponding<CommercialMode> for IdxSet<Route> {
-    fn get_corresponding(&self, pt_objects: &PtObjects) -> IdxSet<CommercialMode> {
-        let tmp: IdxSet<Line> = self.get_corresponding(pt_objects);
-        tmp.get_corresponding(pt_objects)
-    }
-}
-impl GetCorresponding<Route> for IdxSet<CommercialMode> {
-    fn get_corresponding(&self, pt_objects: &PtObjects) -> IdxSet<Route> {
-        let tmp: IdxSet<Line> = self.get_corresponding(pt_objects);
-        tmp.get_corresponding(pt_objects)
-    }
-}
-*/

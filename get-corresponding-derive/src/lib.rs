@@ -147,7 +147,7 @@ fn floyd_warshall<'a>(edges: &'a [Edge]) -> BTreeMap<(&'a str, &'a str), &'a str
                     Some(d) => *d,
                     None => continue,
                 };
-                let mut dist_ij = dist.entry((i, j)).or_insert(INFINITY);
+                let dist_ij = dist.entry((i, j)).or_insert(INFINITY);
                 if *dist_ij > dist_ik + dist_kj {
                     *dist_ij = dist_ik + dist_kj;
                     let next_ik = next[&(i, k)];
