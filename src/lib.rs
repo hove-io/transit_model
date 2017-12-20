@@ -7,6 +7,50 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
+macro_rules! impl_forward_serde {
+    ($obj:ident, $ty:ident < $($ty_param:ident),* > where $($where:tt)*) => {
+        impl<$($ty_param),*> ::serde::Serialize for $ty<$($ty_param),*>
+        where
+            $($ty_param: ::serde::Serialize,)*
+            $($where)*
+        {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: ::serde::Serializer,
+            {
+                self.$obj.serialize(serializer)
+            }
+        }
+        impl<'de $(, $ty_param)*> ::serde::Deserialize<'de> for $ty<$($ty_param),*>
+        where
+            $($ty_param: ::serde::Deserialize<'de>,)*
+            $($where)*
+        {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                where D: ::serde::Deserializer<'de>
+            {
+                ::serde::Deserialize::deserialize(deserializer).map($ty::new)
+            }
+        }
+    };
+    ($obj:ident, $ty:ident) => {
+        impl ::serde::Serialize for $ty {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+                where S: ::serde::Serializer
+            {
+                self.$obj.serialize(serializer)
+            }
+        }
+        impl<'de> ::serde::Deserialize<'de> for $ty {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+                where D: ::serde::Deserializer<'de>
+            {
+                ::serde::Deserialize::deserialize(deserializer).map($ty::new)
+            }
+        }
+    };
+}
+
 pub mod collection;
 pub mod objects;
 pub mod relations;
@@ -53,6 +97,7 @@ impl PtObjects {
         }
     }
 }
+impl_forward_serde!(collections, PtObjects);
 impl ops::Deref for PtObjects {
     type Target = Collections;
     fn deref(&self) -> &Self::Target {

@@ -21,6 +21,6 @@ fn main() {
     let from = objects.lines.get_idx(&args[1]).unwrap();
     println!("commercial_modes: {:?}", get(from, &objects.commercial_modes, &objects));
     println!("physical_modes: {:?}", get(from, &objects.physical_modes, &objects));
-    //let json = serde_json::to_string(&*pt_objects).unwrap();
+    //let json = serde_json::to_string(&objects).unwrap();
     //println!("{}", json);
 }

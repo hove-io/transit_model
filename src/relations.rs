@@ -17,7 +17,8 @@ where
         let mut one_to_many = HashMap::default();
         let mut many_to_one = HashMap::default();
         for (many_idx, obj) in many.iter() {
-            let one_idx = one.get_idx(<U as Id<T>>::id(obj)).unwrap();
+            let one_id = <U as Id<T>>::id(obj);
+            let one_idx = one.get_idx(one_id).expect(one_id);
             many_to_one.insert(many_idx, one_idx);
             one_to_many
                 .entry(one_idx)

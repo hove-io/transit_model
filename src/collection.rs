@@ -8,8 +8,7 @@ pub trait Id<T> {
     fn id(&self) -> &str;
 }
 
-// TODO: no serde on Idx
-#[derive(Derivative, Serialize, Deserialize, Debug)]
+#[derive(Derivative, Debug)]
 #[derivative(Copy(bound = ""), Clone(bound = ""), PartialEq(bound = ""), Eq(bound = ""),
              Hash(bound = ""))]
 pub struct Idx<T>(u32, PhantomData<T>);
@@ -23,12 +22,12 @@ impl<T> Idx<T> {
     }
 }
 
-// TODO: serde only on objects
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct Collection<T> {
     objects: Vec<T>,
     id_to_idx: HashMap<String, Idx<T>>,
 }
+impl_forward_serde!(objects, Collection<T> where T: Id<T>);
 
 pub type Iter<'a, T> = iter::Map<
     iter::Enumerate<slice::Iter<'a, T>>,
@@ -36,7 +35,7 @@ pub type Iter<'a, T> = iter::Map<
 >;
 
 impl<T: Id<T>> Collection<T> {
-    pub fn from_vec(v: Vec<T>) -> Self {
+    pub fn new(v: Vec<T>) -> Self {
         let mut res = Collection {
             objects: v,
             id_to_idx: HashMap::default(),

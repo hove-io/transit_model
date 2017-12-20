@@ -12,13 +12,14 @@ where
 {
     let mut lines_rdr = csv::Reader::from_path(path.join(file)).unwrap();
     let lines = lines_rdr.deserialize().map(Result::unwrap).collect();
-    Collection::from_vec(lines)
+    Collection::new(lines)
 }
 
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     let mut collections = Collections::default();
     collections.commercial_modes = make_collection(path, "commercial_modes.txt");
+    collections.networks = make_collection(path, "networks.txt");
     collections.lines = make_collection(path, "lines.txt");
     collections.routes = make_collection(path, "routes.txt");
     collections.vehicle_journeys = make_collection(path, "trips.txt");
