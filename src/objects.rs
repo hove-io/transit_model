@@ -1,6 +1,6 @@
 use collection::Id;
 
-#[derive(Derivative, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CommercialMode {
     #[serde(rename = "commercial_mode_id")] pub id: String,
     #[serde(rename = "commercial_mode_name")] pub name: String,
@@ -11,7 +11,7 @@ impl Id<CommercialMode> for CommercialMode {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PhysicalMode {
     #[serde(rename = "physical_mode_id")] pub id: String,
     #[serde(rename = "physical_mode_name")] pub name: String,
@@ -22,15 +22,33 @@ impl Id<PhysicalMode> for PhysicalMode {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Network {
+    #[serde(rename = "network_id")] pub id: String,
+    #[serde(rename = "network_name")] pub name: String,
+    #[serde(rename = "network_timezone")] pub timezone: String,
+}
+impl Id<Network> for Network {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Line {
     #[serde(rename = "line_id")] pub id: String,
     #[serde(rename = "line_name")] pub name: String,
+    pub network_id: String,
     pub commercial_mode_id: String,
 }
 impl Id<Line> for Line {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+impl Id<Network> for Line {
+    fn id(&self) -> &str {
+        &self.network_id
     }
 }
 impl Id<CommercialMode> for Line {
@@ -39,7 +57,7 @@ impl Id<CommercialMode> for Line {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Route {
     #[serde(rename = "route_id")] pub id: String,
     #[serde(rename = "route_name")] pub name: String,
@@ -56,7 +74,7 @@ impl Id<Line> for Route {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct VehicleJourney {
     #[serde(rename = "trip_id")] pub id: String,
     pub route_id: String,

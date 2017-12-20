@@ -21,6 +21,7 @@ use relations::{GetCorresponding, IdxSet, OneToMany};
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
 pub struct Collections {
+    pub networks: Collection<Network>,
     pub commercial_modes: Collection<CommercialMode>,
     pub lines: Collection<Line>,
     pub routes: Collection<Route>,
@@ -31,6 +32,7 @@ pub struct Collections {
 #[derive(GetCorresponding)]
 pub struct PtObjects {
     collections: Collections,
+    network_to_lines: OneToMany<Network, Line>,
     commercial_modes_to_lines: OneToMany<CommercialMode, Line>,
     lines_to_routes: OneToMany<Line, Route>,
     routes_to_vehicle_journeys: OneToMany<Route, VehicleJourney>,
@@ -39,6 +41,7 @@ pub struct PtObjects {
 impl PtObjects {
     pub fn new(c: Collections) -> Self {
         PtObjects {
+            network_to_lines: OneToMany::new(&c.networks, &c.lines),
             commercial_modes_to_lines: OneToMany::new(&c.commercial_modes, &c.lines),
             lines_to_routes: OneToMany::new(&c.lines, &c.routes),
             routes_to_vehicle_journeys: OneToMany::new(&c.routes, &c.vehicle_journeys),
