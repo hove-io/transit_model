@@ -24,6 +24,8 @@ pub struct Collections {
     pub commercial_modes: Collection<CommercialMode>,
     pub lines: Collection<Line>,
     pub routes: Collection<Route>,
+    pub vehicle_journeys: Collection<VehicleJourney>,
+    pub physical_modes: Collection<PhysicalMode>,
 }
 
 #[derive(GetCorresponding)]
@@ -31,16 +33,20 @@ pub struct PtObjects {
     collections: Collections,
     commercial_modes_to_lines: OneToMany<CommercialMode, Line>,
     lines_to_routes: OneToMany<Line, Route>,
+    routes_to_vehicle_journeys: OneToMany<Route, VehicleJourney>,
+    physical_modes_to_vehicle_journeys: OneToMany<PhysicalMode, VehicleJourney>,
 }
 impl PtObjects {
-    pub fn new(collections: Collections) -> Self {
+    pub fn new(c: Collections) -> Self {
         PtObjects {
-            commercial_modes_to_lines: OneToMany::new(
-                &collections.commercial_modes,
-                &collections.lines,
+            commercial_modes_to_lines: OneToMany::new(&c.commercial_modes, &c.lines),
+            lines_to_routes: OneToMany::new(&c.lines, &c.routes),
+            routes_to_vehicle_journeys: OneToMany::new(&c.routes, &c.vehicle_journeys),
+            physical_modes_to_vehicle_journeys: OneToMany::new(
+                &c.physical_modes,
+                &c.vehicle_journeys,
             ),
-            lines_to_routes: OneToMany::new(&collections.lines, &collections.routes),
-            collections: collections,
+            collections: c,
         }
     }
 }

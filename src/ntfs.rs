@@ -21,5 +21,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     collections.commercial_modes = make_collection(path, "commercial_modes.txt");
     collections.lines = make_collection(path, "lines.txt");
     collections.routes = make_collection(path, "routes.txt");
+    collections.vehicle_journeys = make_collection(path, "trips.txt");
+    collections.physical_modes = make_collection(path, "physical_modes.txt");
     PtObjects::new(collections)
 }
