@@ -71,6 +71,8 @@ pub struct Collections {
     pub routes: Collection<Route>,
     pub vehicle_journeys: Collection<VehicleJourney>,
     pub physical_modes: Collection<PhysicalMode>,
+    pub stop_areas: Collection<StopArea>,
+    pub stop_points: Collection<StopPoint>,
 }
 
 #[derive(GetCorresponding)]
@@ -81,6 +83,7 @@ pub struct PtObjects {
     lines_to_routes: OneToMany<Line, Route>,
     routes_to_vehicle_journeys: OneToMany<Route, VehicleJourney>,
     physical_modes_to_vehicle_journeys: OneToMany<PhysicalMode, VehicleJourney>,
+    stop_areas_to_stop_points: OneToMany<StopArea, StopPoint>,
 }
 impl PtObjects {
     pub fn new(c: Collections) -> Self {
@@ -93,6 +96,7 @@ impl PtObjects {
                 &c.physical_modes,
                 &c.vehicle_journeys,
             ),
+            stop_areas_to_stop_points: OneToMany::new(&c.stop_areas, &c.stop_points),
             collections: c,
         }
     }

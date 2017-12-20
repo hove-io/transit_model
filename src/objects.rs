@@ -95,3 +95,41 @@ impl Id<PhysicalMode> for VehicleJourney {
         &self.physical_mode_id
     }
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Coord {
+    pub lon: f64,
+    pub lat: f64,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct StopArea {
+    pub id: String,
+    pub name: String,
+    pub visible: bool,
+    pub coord: Coord,
+}
+impl Id<StopArea> for StopArea {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct StopPoint {
+    pub id: String,
+    pub name: String,
+    pub visible: bool,
+    pub coord: Coord,
+    pub stop_area_id: String,
+}
+impl Id<StopPoint> for StopPoint {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+impl Id<StopArea> for StopPoint {
+    fn id(&self) -> &str {
+        &self.stop_area_id
+    }
+}
