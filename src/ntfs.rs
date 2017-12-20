@@ -50,6 +50,7 @@ impl From<Stop> for StopArea {
                 lon: stop.lon,
                 lat: stop.lat,
             },
+            timezone: stop.timezone,
         }
     }
 }

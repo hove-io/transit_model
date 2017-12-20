@@ -108,6 +108,7 @@ pub struct StopArea {
     pub name: String,
     pub visible: bool,
     pub coord: Coord,
+    pub timezone: Option<String>,
 }
 impl Id<StopArea> for StopArea {
     fn id(&self) -> &str {
