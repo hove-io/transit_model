@@ -1,4 +1,4 @@
-use collection::Id;
+use collection::{Id, Idx};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CommercialMode {
@@ -79,6 +79,7 @@ pub struct VehicleJourney {
     #[serde(rename = "trip_id")] pub id: String,
     pub route_id: String,
     pub physical_mode_id: String,
+    #[serde(skip)] pub stop_times: Vec<StopTime>,
 }
 impl Id<VehicleJourney> for VehicleJourney {
     fn id(&self) -> &str {
@@ -94,6 +95,12 @@ impl Id<PhysicalMode> for VehicleJourney {
     fn id(&self) -> &str {
         &self.physical_mode_id
     }
+}
+
+#[derive(Debug)]
+pub struct StopTime {
+    pub stop_point_idx: Idx<StopPoint>,
+    pub sequence: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

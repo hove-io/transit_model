@@ -45,6 +45,11 @@ impl<T: Id<T>> Collection<T> {
             .collect();
         res
     }
+    // TODO: be safe on id modification
+    pub fn mut_elt<F: FnOnce(&mut T)>(&mut self, idx: Idx<T>, f: F) {
+        let elt = &mut self.objects[idx.get()];
+        f(elt);
+    }
 }
 
 impl<T> Default for Collection<T> {

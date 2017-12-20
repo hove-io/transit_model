@@ -92,6 +92,29 @@ fn manage_stops(collections: &mut Collections, path: &path::Path) {
     collections.stop_points = Collection::new(stop_points);
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct StopTime {
+    stop_id: String,
+    trip_id: String,
+    stop_sequence: u32,
+}
+
+fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
+    let mut rdr = csv::Reader::from_path(path.join("stop_times.txt")).unwrap();
+    for stop_time in rdr.deserialize().map(Result::unwrap) {
+        let stop_time: StopTime = stop_time;
+        let stop_point_idx = collections.stop_points.get_idx(&stop_time.stop_id).unwrap();
+        let vj_idx = collections.vehicle_journeys.get_idx(&stop_time.trip_id).unwrap();
+        collections.vehicle_journeys.mut_elt(vj_idx, |obj| {
+            obj.stop_times.push(::objects::StopTime {
+                stop_point_idx: stop_point_idx,
+                sequence: stop_time.stop_sequence,
+            });
+        });
+    }
+    // TODO: sort vj.stop_times
+}
+
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     let mut collections = Collections::default();
@@ -102,5 +125,6 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     collections.vehicle_journeys = make_collection(path, "trips.txt");
     collections.physical_modes = make_collection(path, "physical_modes.txt");
     manage_stops(&mut collections, path);
+    manage_stop_times(&mut collections, path);
     PtObjects::new(collections)
 }
