@@ -29,7 +29,7 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
             } else {
                 quote! {
                     impl GetCorresponding<#to> for IdxSet<#from> {
-                        fn get_corresponding(&self, pt_objects: &PtObjects) -> IdxSet<#to> {
+                        fn get_corresponding(&self, pt_objects: &#name) -> IdxSet<#to> {
                             let tmp: IdxSet<#node> = self.get_corresponding(pt_objects);
                             tmp.get_corresponding(pt_objects)
                         }
@@ -37,7 +37,20 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
                 }
             }.into()
         });
-        quote!(#(#edges_impls)*)
+        quote! {
+            pub trait GetCorresponding<T: Sized> {
+                fn get_corresponding(&self, &#name) -> IdxSet<T>;
+            }
+            impl #name {
+                pub fn get_corresponding<T, U>(&self, from: &IdxSet<T>) -> IdxSet<U>
+                where
+                    IdxSet<T>: GetCorresponding<U>
+                {
+                    from.get_corresponding(self)
+                }
+            }
+            #(#edges_impls)*
+        }
     } else {
         quote!()
     }

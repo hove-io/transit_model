@@ -3,10 +3,6 @@ use collection::{Collection, Id, Idx};
 
 pub type IdxSet<T> = HashSet<Idx<T>>;
 
-pub trait GetCorresponding<T: Sized> {
-    fn get_corresponding(&self, &::PtObjects) -> IdxSet<T>;
-}
-
 pub struct OneToMany<T, U> {
     one_to_many: HashMap<Idx<T>, IdxSet<U>>,
     many_to_one: HashMap<Idx<U>, Idx<T>>,

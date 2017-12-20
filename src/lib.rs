@@ -16,7 +16,7 @@ use std::ops;
 
 use collection::Collection;
 use objects::*;
-use relations::{GetCorresponding, IdxSet, OneToMany};
+use relations::{IdxSet, OneToMany};
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
