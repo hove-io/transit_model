@@ -112,7 +112,11 @@ fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
             });
         });
     }
-    // TODO: sort vj.stop_times
+    let mut vehicle_journeys = collections.vehicle_journeys.take();
+    for vj in &mut vehicle_journeys {
+        vj.stop_times.sort_unstable_by_key(|st| st.sequence);
+    }
+    collections.vehicle_journeys = Collection::new(vehicle_journeys);
 }
 
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {

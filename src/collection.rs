@@ -57,19 +57,24 @@ pub type Iter<'a, T> = iter::Map<
 
 impl<T: Id<T>> Collection<T> {
     pub fn new(v: Vec<T>) -> Self {
-        let mut res = Collection {
+        let mut id_to_idx = HashMap::default();
+        for (i, obj) in v.iter().enumerate() {
+            assert!(id_to_idx.insert(obj.id().to_string(), Idx::new(i)).is_none(), "{} already found", obj.id());
+        }
+        Collection {
             objects: v,
-            id_to_idx: HashMap::default(),
-        };
-        res.id_to_idx = res.iter()
-            .map(|(idx, obj)| (obj.id().to_string(), idx))
-            .collect();
-        res
+            id_to_idx: id_to_idx,
+        }
     }
-    // TODO: be safe on id modification
     pub fn mut_elt<F: FnOnce(&mut T)>(&mut self, idx: Idx<T>, f: F) {
         let elt = &mut self.objects[idx.get()];
+        let old_id = elt.id().to_string();
         f(elt);
+        if elt.id() != old_id {
+            self.id_to_idx.remove(&old_id);
+            assert!(self.id_to_idx.insert(elt.id().to_string(), idx).is_none(),
+                    "changing id {} to {} already used", old_id, elt.id());
+        }
     }
 }
 
@@ -96,6 +101,15 @@ impl<T> Collection<T> {
 
     pub fn get(&self, id: &str) -> Option<&T> {
         self.get_idx(id).map(|idx| &self[idx])
+    }
+
+    pub fn into_vec(self) -> Vec<T> {
+        self.objects
+    }
+
+    pub fn take(&mut self) -> Vec<T> {
+        self.id_to_idx.clear();
+        ::std::mem::replace(&mut self.objects, Vec::new())
     }
 }
 
