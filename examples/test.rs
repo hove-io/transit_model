@@ -21,7 +21,8 @@ fn main() {
     for (from, stop_area) in objects.stop_areas.iter() {
         let cms = get(from, &objects.commercial_modes, &objects);
         let pms = get(from, &objects.physical_modes, &objects);
-        let networks = get(from, &objects.networks, &objects);
-        println!("{}: cms: {:?}, pms: {:?}, networks: {:?}", stop_area.id, cms, pms, networks);
+        let ns = get(from, &objects.networks, &objects);
+        let cs = get(from, &objects.contributors, &objects);
+        println!("{}: cms: {:?}, pms: {:?}, ns: {:?}, cs: {:?}", stop_area.id, cms, pms, ns, cs);
     }
 }

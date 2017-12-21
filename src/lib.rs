@@ -21,6 +21,7 @@ use relations::{IdxSet, OneToMany, ManyToMany};
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
 pub struct Collections {
+    pub contributors: Collection<Contributor>,
     pub networks: Collection<Network>,
     pub commercial_modes: Collection<CommercialMode>,
     pub lines: Collection<Line>,
@@ -40,6 +41,7 @@ pub struct PtObjects {
     routes_to_vehicle_journeys: OneToMany<Route, VehicleJourney>,
     physical_modes_to_vehicle_journeys: OneToMany<PhysicalMode, VehicleJourney>,
     stop_areas_to_stop_points: OneToMany<StopArea, StopPoint>,
+    contributors_to_stop_points: OneToMany<Contributor, StopPoint>,
     vehicle_journeys_to_stop_points: ManyToMany<VehicleJourney, StopPoint>,
 }
 impl PtObjects {
@@ -57,6 +59,7 @@ impl PtObjects {
                 &c.vehicle_journeys,
             ),
             stop_areas_to_stop_points: OneToMany::new(&c.stop_areas, &c.stop_points),
+            contributors_to_stop_points: OneToMany::new(&c.contributors, &c.stop_points),
             vehicle_journeys_to_stop_points: ManyToMany::from_forward(forward_vj_to_sp),
             collections: c,
         }
