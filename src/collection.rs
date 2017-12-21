@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use std::iter;
 use std::slice;
 use std::ops;
+use std::cmp::Ordering;
 
 pub trait Id<T> {
     fn id(&self) -> &str;
@@ -19,6 +20,16 @@ impl<T> Idx<T> {
     }
     fn get(&self) -> usize {
         self.0 as usize
+    }
+}
+impl<T> Ord for Idx<T> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+impl<T> PartialOrd for Idx<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(&other))
     }
 }
 
