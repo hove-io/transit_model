@@ -16,7 +16,7 @@ use std::ops;
 
 use collection::Collection;
 use objects::*;
-use relations::{IdxSet, OneToMany, ManyToMany};
+use relations::{IdxSet, ManyToMany, OneToMany};
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
@@ -46,8 +46,14 @@ pub struct PtObjects {
 }
 impl PtObjects {
     pub fn new(c: Collections) -> Self {
-        let forward_vj_to_sp = c.vehicle_journeys.iter()
-            .map(|(idx, vj)| (idx, vj.stop_times.iter().map(|st| st.stop_point_idx).collect()))
+        let forward_vj_to_sp = c.vehicle_journeys
+            .iter()
+            .map(|(idx, vj)| {
+                (
+                    idx,
+                    vj.stop_times.iter().map(|st| st.stop_point_idx).collect(),
+                )
+            })
             .collect();
         PtObjects {
             network_to_lines: OneToMany::new(&c.networks, &c.lines),
@@ -67,14 +73,16 @@ impl PtObjects {
 }
 impl ::serde::Serialize for PtObjects {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ::serde::Serializer
+    where
+        S: ::serde::Serializer,
     {
         self.collections.serialize(serializer)
     }
 }
 impl<'de> ::serde::Deserialize<'de> for PtObjects {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: ::serde::Deserializer<'de>
+    where
+        D: ::serde::Deserializer<'de>,
     {
         ::serde::Deserialize::deserialize(deserializer).map(PtObjects::new)
     }

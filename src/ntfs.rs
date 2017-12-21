@@ -106,7 +106,10 @@ fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
     for stop_time in rdr.deserialize().map(Result::unwrap) {
         let stop_time: StopTime = stop_time;
         let stop_point_idx = collections.stop_points.get_idx(&stop_time.stop_id).unwrap();
-        let vj_idx = collections.vehicle_journeys.get_idx(&stop_time.trip_id).unwrap();
+        let vj_idx = collections
+            .vehicle_journeys
+            .get_idx(&stop_time.trip_id)
+            .unwrap();
         collections.vehicle_journeys.mut_elt(vj_idx, |obj| {
             obj.stop_times.push(::objects::StopTime {
                 stop_point_idx: stop_point_idx,

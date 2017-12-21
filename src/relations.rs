@@ -51,10 +51,12 @@ pub struct ManyToMany<T, U> {
 impl<T, U> ManyToMany<T, U> {
     pub fn from_forward(forward: HashMap<Idx<T>, IdxSet<U>>) -> Self {
         let mut backward = HashMap::default();
-        forward.iter()
+        forward
+            .iter()
             .flat_map(|(&from_idx, obj)| obj.iter().map(move |&to_idx| (from_idx, to_idx)))
             .for_each(|(from_idx, to_idx)| {
-                backward.entry(to_idx)
+                backward
+                    .entry(to_idx)
                     .or_insert_with(HashSet::default)
                     .insert(from_idx);
             });
