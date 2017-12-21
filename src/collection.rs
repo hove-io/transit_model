@@ -27,7 +27,28 @@ pub struct Collection<T> {
     objects: Vec<T>,
     id_to_idx: HashMap<String, Idx<T>>,
 }
-impl_forward_serde!(objects, Collection<T> where T: Id<T>);
+impl<T> ::serde::Serialize for Collection<T>
+where
+    T: ::serde::Serialize + Id<T>,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+        S: ::serde::Serializer,
+    {
+        self.objects.serialize(serializer)
+    }
+}
+impl<'de, T> ::serde::Deserialize<'de> for Collection<T>
+where
+    T: ::serde::Deserialize<'de> + Id<T>
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>
+    {
+        ::serde::Deserialize::deserialize(deserializer).map(Collection::new)
+    }
+}
 
 pub type Iter<'a, T> = iter::Map<
     iter::Enumerate<slice::Iter<'a, T>>,
