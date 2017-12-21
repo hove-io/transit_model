@@ -3,7 +3,7 @@ use csv;
 use serde;
 
 use objects::*;
-use collection::{Collection, Id};
+use collection::{Collection, Id, Idx};
 use {Collections, PtObjects};
 
 fn make_collection<T>(path: &path::Path, file: &str) -> Collection<T>
@@ -46,6 +46,7 @@ impl From<Stop> for StopArea {
         StopArea {
             id: stop.id,
             name: stop.name,
+            codes: CodesT::default(),
             visible: stop.visible,
             coord: Coord {
                 lon: stop.lon,
@@ -61,13 +62,14 @@ impl From<Stop> for StopPoint {
         let stop_area_id = stop.parent_station.unwrap_or_else(|| id.clone());
         StopPoint {
             id: id,
-            stop_area_id: stop_area_id,
             name: stop.name,
+            codes: CodesT::default(),
             visible: stop.visible,
             coord: Coord {
                 lon: stop.lon,
                 lat: stop.lat,
             },
+            stop_area_id: stop_area_id,
             contributor_id: stop.contributor_id.unwrap(),
         }
     }
@@ -124,6 +126,64 @@ fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
     collections.vehicle_journeys = Collection::new(vehicle_journeys);
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct Code {
+    object_type: String,
+    object_id: String,
+    object_system: String,
+    object_code: String,
+}
+
+fn insert_code_with_idx<T>(collection: &mut Collection<T>, idx: Idx<T>, code: Code)
+where
+    T: Codes + Id<T>,
+{
+    collection.mut_elt(idx, move |obj| {
+        obj.codes_mut().push((code.object_system, code.object_code));
+    });
+}
+fn insert_code<T>(collection: &mut Collection<T>, code: Code)
+where
+    T: Codes + Id<T>,
+{
+    let idx = match collection.get_idx(&code.object_id) {
+        Some(idx) => idx,
+        None => {
+            eprintln!(
+                "object_codes.txt: object {} {} not found",
+                code.object_type, code.object_id
+            );
+            return;
+        }
+    };
+    insert_code_with_idx(collection, idx, code);
+}
+
+fn manage_codes(collections: &mut Collections, path: &path::Path) {
+    let mut rdr = csv::Reader::from_path(path.join("object_codes.txt")).unwrap();
+    for code in rdr.deserialize().map(Result::unwrap) {
+        let code: Code = code;
+        match code.object_type.as_str() {
+            "stop" => {
+                let code_clone = code.clone();
+                collections.stop_areas.get_idx(&code.object_id).map(|idx| {
+                    insert_code_with_idx(&mut collections.stop_areas, idx, code_clone);
+                });
+                collections.stop_points.get_idx(&code.object_id).map(|idx| {
+                    insert_code_with_idx(&mut collections.stop_points, idx, code);
+                });
+            }
+            "stop_area" => insert_code(&mut collections.stop_areas, code),
+            "stop_point" => insert_code(&mut collections.stop_points, code),
+            "network" => insert_code(&mut collections.networks, code),
+            "line" => insert_code(&mut collections.lines, code),
+            "route" => insert_code(&mut collections.routes, code),
+            "trip" => insert_code(&mut collections.vehicle_journeys, code),
+            _ => panic!("{} is not a valid object_type", code.object_type),
+        }
+    }
+}
+
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     let mut collections = Collections::default();
@@ -136,5 +196,6 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     collections.physical_modes = make_collection(path, "physical_modes.txt");
     manage_stops(&mut collections, path);
     manage_stop_times(&mut collections, path);
+    manage_codes(&mut collections, path);
     PtObjects::new(collections)
 }

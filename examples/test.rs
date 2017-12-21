@@ -23,6 +23,6 @@ fn main() {
         let pms = get(from, &objects.physical_modes, &objects);
         let ns = get(from, &objects.networks, &objects);
         let cs = get(from, &objects.contributors, &objects);
-        println!("{}: cms: {:?}, pms: {:?}, ns: {:?}, cs: {:?}", stop_area.id, cms, pms, ns, cs);
+        println!("{}: cms: {:?}, pms: {:?}, ns: {:?}, cs: {:?}, codes: {:?}", stop_area.id, cms, pms, ns, cs, stop_area.codes);
     }
 }
