@@ -16,11 +16,12 @@ where
 }
 
 fn main() {
-    let args: Vec<_> = std::env::args().collect();
     let objects = navitia_model::ntfs::read(".");
-    let from = objects.lines.get_idx(&args[1]).unwrap();
-    println!("commercial_modes: {:?}", get(from, &objects.commercial_modes, &objects));
-    println!("physical_modes: {:?}", get(from, &objects.physical_modes, &objects));
-    //let json = serde_json::to_string(&objects).unwrap();
-    //println!("{}", json);
+
+    for (from, stop_area) in objects.stop_areas.iter() {
+        let cms = get(from, &objects.commercial_modes, &objects);
+        let pms = get(from, &objects.physical_modes, &objects);
+        let networks = get(from, &objects.networks, &objects);
+        println!("{}: cms: {:?}, pms: {:?}, networks: {:?}", stop_area.id, cms, pms, networks);
+    }
 }

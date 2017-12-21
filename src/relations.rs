@@ -32,10 +32,7 @@ where
     }
 
     pub fn get_corresponding_forward(&self, from: &IdxSet<T>) -> IdxSet<U> {
-        from.iter()
-            .filter_map(|from_idx| self.one_to_many.get(from_idx))
-            .flat_map(|indices| indices.iter().cloned())
-            .collect()
+        get_corresponding(&self.one_to_many, from)
     }
 
     pub fn get_corresponding_backward(&self, from: &IdxSet<U>) -> IdxSet<T> {
@@ -44,4 +41,41 @@ where
             .cloned()
             .collect()
     }
+}
+
+pub struct ManyToMany<T, U> {
+    forward: HashMap<Idx<T>, IdxSet<U>>,
+    backward: HashMap<Idx<U>, IdxSet<T>>,
+}
+
+impl<T, U> ManyToMany<T, U> {
+    pub fn from_forward(forward: HashMap<Idx<T>, IdxSet<U>>) -> Self {
+        let mut backward = HashMap::default();
+        forward.iter()
+            .flat_map(|(&from_idx, obj)| obj.iter().map(move |&to_idx| (from_idx, to_idx)))
+            .for_each(|(from_idx, to_idx)| {
+                backward.entry(to_idx)
+                    .or_insert_with(HashSet::default)
+                    .insert(from_idx);
+            });
+        ManyToMany {
+            forward: forward,
+            backward: backward,
+        }
+    }
+
+    pub fn get_corresponding_forward(&self, from: &IdxSet<T>) -> IdxSet<U> {
+        get_corresponding(&self.forward, from)
+    }
+
+    pub fn get_corresponding_backward(&self, from: &IdxSet<U>) -> IdxSet<T> {
+        get_corresponding(&self.backward, from)
+    }
+}
+
+fn get_corresponding<T, U>(map: &HashMap<Idx<T>, IdxSet<U>>, from: &IdxSet<T>) -> IdxSet<U> {
+    from.iter()
+        .filter_map(|from_idx| map.get(from_idx))
+        .flat_map(|indices| indices.iter().cloned())
+        .collect()
 }

@@ -16,7 +16,7 @@ use std::ops;
 
 use collection::Collection;
 use objects::*;
-use relations::{IdxSet, OneToMany};
+use relations::{IdxSet, OneToMany, ManyToMany};
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
@@ -40,9 +40,13 @@ pub struct PtObjects {
     routes_to_vehicle_journeys: OneToMany<Route, VehicleJourney>,
     physical_modes_to_vehicle_journeys: OneToMany<PhysicalMode, VehicleJourney>,
     stop_areas_to_stop_points: OneToMany<StopArea, StopPoint>,
+    vehicle_journeys_to_stop_points: ManyToMany<VehicleJourney, StopPoint>,
 }
 impl PtObjects {
     pub fn new(c: Collections) -> Self {
+        let forward_vj_to_sp = c.vehicle_journeys.iter()
+            .map(|(idx, vj)| (idx, vj.stop_times.iter().map(|st| st.stop_point_idx).collect()))
+            .collect();
         PtObjects {
             network_to_lines: OneToMany::new(&c.networks, &c.lines),
             commercial_modes_to_lines: OneToMany::new(&c.commercial_modes, &c.lines),
@@ -53,6 +57,7 @@ impl PtObjects {
                 &c.vehicle_journeys,
             ),
             stop_areas_to_stop_points: OneToMany::new(&c.stop_areas, &c.stop_points),
+            vehicle_journeys_to_stop_points: ManyToMany::from_forward(forward_vj_to_sp),
             collections: c,
         }
     }
