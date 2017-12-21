@@ -20,11 +20,16 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
         let edges: Vec<_> = fields.iter().filter_map(to_edge).collect();
         let next = floyd_warshall(&edges);
         let edge_to_impl = make_edge_to_get_corresponding(name, &edges);
-        let edges_impls = next.iter().filter_map(|(&(from, to), &node)| {
+        let edges_impls = next.iter().map(|(&(from, to), &node)| {
             if from == to {
-                return None;
-            }
-            if to == node {
+                quote! {
+                    impl GetCorresponding<#to> for IdxSet<#from> {
+                        fn get_corresponding(&self, _: &#name) -> IdxSet<#to> {
+                            self.clone()
+                        }
+                    }
+                }
+            } else if to == node {
                 edge_to_impl[&(from, to)].clone()
             } else {
                 quote! {
@@ -35,7 +40,7 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
                         }
                     }
                 }
-            }.into()
+            }
         });
         quote! {
             pub trait GetCorresponding<T: Sized> {
