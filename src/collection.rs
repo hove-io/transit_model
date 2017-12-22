@@ -61,10 +61,8 @@ where
     }
 }
 
-pub type Iter<'a, T> = iter::Map<
-    iter::Enumerate<slice::Iter<'a, T>>,
-    fn((usize, &T)) -> (Idx<T>, &T),
->;
+pub type Iter<'a, T> =
+    iter::Map<iter::Enumerate<slice::Iter<'a, T>>, fn((usize, &T)) -> (Idx<T>, &T)>;
 
 impl<T: Id<T>> Collection<T> {
     pub fn new(v: Vec<T>) -> Self {
