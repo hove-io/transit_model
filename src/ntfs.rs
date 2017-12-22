@@ -164,15 +164,6 @@ fn manage_codes(collections: &mut Collections, path: &path::Path) {
     for code in rdr.deserialize().map(Result::unwrap) {
         let code: Code = code;
         match code.object_type.as_str() {
-            "stop" => {
-                let code_clone = code.clone();
-                collections.stop_areas.get_idx(&code.object_id).map(|idx| {
-                    insert_code_with_idx(&mut collections.stop_areas, idx, code_clone);
-                });
-                collections.stop_points.get_idx(&code.object_id).map(|idx| {
-                    insert_code_with_idx(&mut collections.stop_points, idx, code);
-                });
-            }
             "stop_area" => insert_code(&mut collections.stop_areas, code),
             "stop_point" => insert_code(&mut collections.stop_points, code),
             "network" => insert_code(&mut collections.networks, code),
