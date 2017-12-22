@@ -8,4 +8,4 @@ matrix:
   include:
   - rust: nightly
     before_script: cargo install rustfmt-nightly --force
-    script: cargo fmt -- --write-mode diff
+    script: cargo fmt --all -- --write-mode diff
