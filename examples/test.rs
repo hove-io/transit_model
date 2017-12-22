@@ -1,7 +1,7 @@
 extern crate navitia_model;
 extern crate serde_json;
 
-use navitia_model::collection::{Collection, Idx, Id};
+use navitia_model::collection::{Collection, Id, Idx};
 use navitia_model::relations::IdxSet;
 use navitia_model::{GetCorresponding, PtObjects};
 
@@ -12,7 +12,9 @@ where
 {
     let from = [idx].iter().cloned().collect();
     let to = objects.get_corresponding(&from);
-    to.iter().map(|idx| collection[*idx].id().to_string()).collect()
+    to.iter()
+        .map(|idx| collection[*idx].id().to_string())
+        .collect()
 }
 
 fn main() {
@@ -23,6 +25,9 @@ fn main() {
         let pms = get(from, &objects.physical_modes, &objects);
         let ns = get(from, &objects.networks, &objects);
         let cs = get(from, &objects.contributors, &objects);
-        println!("{}: cms: {:?}, pms: {:?}, ns: {:?}, cs: {:?}, codes: {:?}", stop_area.id, cms, pms, ns, cs, stop_area.codes);
+        println!(
+            "{}: cms: {:?}, pms: {:?}, ns: {:?}, cs: {:?}, codes: {:?}",
+            stop_area.id, cms, pms, ns, cs, stop_area.codes
+        );
     }
 }
