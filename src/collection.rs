@@ -32,7 +32,7 @@ where
     T: ::serde::Serialize + Id<T>,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
+    where
         S: ::serde::Serializer,
     {
         self.objects.serialize(serializer)
@@ -40,11 +40,11 @@ where
 }
 impl<'de, T> ::serde::Deserialize<'de> for Collection<T>
 where
-    T: ::serde::Deserialize<'de> + Id<T>
+    T: ::serde::Deserialize<'de> + Id<T>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: ::serde::Deserializer<'de>
+        D: ::serde::Deserializer<'de>,
     {
         ::serde::Deserialize::deserialize(deserializer).map(Collection::new)
     }
@@ -59,7 +59,13 @@ impl<T: Id<T>> Collection<T> {
     pub fn new(v: Vec<T>) -> Self {
         let mut id_to_idx = HashMap::default();
         for (i, obj) in v.iter().enumerate() {
-            assert!(id_to_idx.insert(obj.id().to_string(), Idx::new(i)).is_none(), "{} already found", obj.id());
+            assert!(
+                id_to_idx
+                    .insert(obj.id().to_string(), Idx::new(i))
+                    .is_none(),
+                "{} already found",
+                obj.id()
+            );
         }
         Collection {
             objects: v,
@@ -72,8 +78,12 @@ impl<T: Id<T>> Collection<T> {
         f(elt);
         if elt.id() != old_id {
             self.id_to_idx.remove(&old_id);
-            assert!(self.id_to_idx.insert(elt.id().to_string(), idx).is_none(),
-                    "changing id {} to {} already used", old_id, elt.id());
+            assert!(
+                self.id_to_idx.insert(elt.id().to_string(), idx).is_none(),
+                "changing id {} to {} already used",
+                old_id,
+                elt.id()
+            );
         }
     }
 }

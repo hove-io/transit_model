@@ -16,11 +16,12 @@ use std::ops;
 
 use collection::Collection;
 use objects::*;
-use relations::{IdxSet, OneToMany, ManyToMany};
+use relations::{IdxSet, ManyToMany, OneToMany};
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
 pub struct Collections {
+    pub contributors: Collection<Contributor>,
     pub networks: Collection<Network>,
     pub commercial_modes: Collection<CommercialMode>,
     pub lines: Collection<Line>,
@@ -40,12 +41,19 @@ pub struct PtObjects {
     routes_to_vehicle_journeys: OneToMany<Route, VehicleJourney>,
     physical_modes_to_vehicle_journeys: OneToMany<PhysicalMode, VehicleJourney>,
     stop_areas_to_stop_points: OneToMany<StopArea, StopPoint>,
+    contributors_to_stop_points: OneToMany<Contributor, StopPoint>,
     vehicle_journeys_to_stop_points: ManyToMany<VehicleJourney, StopPoint>,
 }
 impl PtObjects {
     pub fn new(c: Collections) -> Self {
-        let forward_vj_to_sp = c.vehicle_journeys.iter()
-            .map(|(idx, vj)| (idx, vj.stop_times.iter().map(|st| st.stop_point_idx).collect()))
+        let forward_vj_to_sp = c.vehicle_journeys
+            .iter()
+            .map(|(idx, vj)| {
+                (
+                    idx,
+                    vj.stop_times.iter().map(|st| st.stop_point_idx).collect(),
+                )
+            })
             .collect();
         PtObjects {
             network_to_lines: OneToMany::new(&c.networks, &c.lines),
@@ -57,6 +65,7 @@ impl PtObjects {
                 &c.vehicle_journeys,
             ),
             stop_areas_to_stop_points: OneToMany::new(&c.stop_areas, &c.stop_points),
+            contributors_to_stop_points: OneToMany::new(&c.contributors, &c.stop_points),
             vehicle_journeys_to_stop_points: ManyToMany::from_forward(forward_vj_to_sp),
             collections: c,
         }
@@ -64,14 +73,16 @@ impl PtObjects {
 }
 impl ::serde::Serialize for PtObjects {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: ::serde::Serializer
+    where
+        S: ::serde::Serializer,
     {
         self.collections.serialize(serializer)
     }
 }
 impl<'de> ::serde::Deserialize<'de> for PtObjects {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: ::serde::Deserializer<'de>
+    where
+        D: ::serde::Deserializer<'de>,
     {
         ::serde::Deserialize::deserialize(deserializer).map(PtObjects::new)
     }

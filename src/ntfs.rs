@@ -39,6 +39,7 @@ struct Stop {
     #[serde(default)] location_type: i32,
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")] timezone: Option<String>,
+    contributor_id: Option<String>,
 }
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {
@@ -67,6 +68,7 @@ impl From<Stop> for StopPoint {
                 lon: stop.lon,
                 lat: stop.lat,
             },
+            contributor_id: stop.contributor_id.unwrap(),
         }
     }
 }
@@ -104,7 +106,10 @@ fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
     for stop_time in rdr.deserialize().map(Result::unwrap) {
         let stop_time: StopTime = stop_time;
         let stop_point_idx = collections.stop_points.get_idx(&stop_time.stop_id).unwrap();
-        let vj_idx = collections.vehicle_journeys.get_idx(&stop_time.trip_id).unwrap();
+        let vj_idx = collections
+            .vehicle_journeys
+            .get_idx(&stop_time.trip_id)
+            .unwrap();
         collections.vehicle_journeys.mut_elt(vj_idx, |obj| {
             obj.stop_times.push(::objects::StopTime {
                 stop_point_idx: stop_point_idx,
@@ -122,6 +127,7 @@ fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     let mut collections = Collections::default();
+    collections.contributors = make_collection(path, "contributors.txt");
     collections.commercial_modes = make_collection(path, "commercial_modes.txt");
     collections.networks = make_collection(path, "networks.txt");
     collections.lines = make_collection(path, "lines.txt");

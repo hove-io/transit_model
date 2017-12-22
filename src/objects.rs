@@ -1,6 +1,19 @@
 use collection::{Id, Idx};
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct Contributor {
+    #[serde(rename = "contributor_id")] pub id: String,
+    #[serde(rename = "contributor_name")] pub name: String,
+    #[serde(rename = "contributor_license")] pub license: Option<String>,
+    #[serde(rename = "contributor_website")] pub website: Option<String>,
+}
+impl Id<Contributor> for Contributor {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CommercialMode {
     #[serde(rename = "commercial_mode_id")] pub id: String,
     #[serde(rename = "commercial_mode_name")] pub name: String,
@@ -130,6 +143,7 @@ pub struct StopPoint {
     pub visible: bool,
     pub coord: Coord,
     pub stop_area_id: String,
+    pub contributor_id: String,
 }
 impl Id<StopPoint> for StopPoint {
     fn id(&self) -> &str {
@@ -139,5 +153,10 @@ impl Id<StopPoint> for StopPoint {
 impl Id<StopArea> for StopPoint {
     fn id(&self) -> &str {
         &self.stop_area_id
+    }
+}
+impl Id<Contributor> for StopPoint {
+    fn id(&self) -> &str {
+        &self.contributor_id
     }
 }
