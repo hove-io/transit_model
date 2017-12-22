@@ -1,5 +1,27 @@
 use collection::{Id, Idx};
 
+// We use a Vec here for memory efficiency.  Other possible types can
+// be something like BTreeSet<(String,String)> or
+// BTreeMap<String,Vec<String>>.  Hash{Map,Set} are memory costy.
+pub type CodesT = Vec<(String, String)>;
+
+pub trait Codes {
+    fn codes(&self) -> &CodesT;
+    fn codes_mut(&mut self) -> &mut CodesT;
+}
+macro_rules! impl_codes {
+    ($ty:ty) => {
+        impl Codes for $ty {
+            fn codes(&self) -> &CodesT {
+                &self.codes
+            }
+            fn codes_mut(&mut self) -> &mut CodesT {
+                &mut self.codes
+            }
+        }
+    };
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Contributor {
     #[serde(rename = "contributor_id")] pub id: String,
@@ -39,6 +61,7 @@ impl Id<PhysicalMode> for PhysicalMode {
 pub struct Network {
     #[serde(rename = "network_id")] pub id: String,
     #[serde(rename = "network_name")] pub name: String,
+    #[serde(skip)] pub codes: CodesT,
     #[serde(rename = "network_timezone")] pub timezone: String,
 }
 impl Id<Network> for Network {
@@ -46,11 +69,13 @@ impl Id<Network> for Network {
         &self.id
     }
 }
+impl_codes!(Network);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Line {
     #[serde(rename = "line_id")] pub id: String,
     #[serde(rename = "line_name")] pub name: String,
+    #[serde(skip)] pub codes: CodesT,
     pub network_id: String,
     pub commercial_mode_id: String,
 }
@@ -69,11 +94,13 @@ impl Id<CommercialMode> for Line {
         &self.commercial_mode_id
     }
 }
+impl_codes!(Line);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Route {
     #[serde(rename = "route_id")] pub id: String,
     #[serde(rename = "route_name")] pub name: String,
+    #[serde(skip)] pub codes: CodesT,
     pub line_id: String,
 }
 impl Id<Route> for Route {
@@ -86,10 +113,12 @@ impl Id<Line> for Route {
         &self.line_id
     }
 }
+impl_codes!(Route);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VehicleJourney {
     #[serde(rename = "trip_id")] pub id: String,
+    #[serde(skip)] pub codes: CodesT,
     pub route_id: String,
     pub physical_mode_id: String,
     #[serde(skip)] pub stop_times: Vec<StopTime>,
@@ -109,6 +138,7 @@ impl Id<PhysicalMode> for VehicleJourney {
         &self.physical_mode_id
     }
 }
+impl_codes!(VehicleJourney);
 
 #[derive(Debug)]
 pub struct StopTime {
@@ -126,6 +156,7 @@ pub struct Coord {
 pub struct StopArea {
     pub id: String,
     pub name: String,
+    #[serde(skip)] pub codes: CodesT,
     pub visible: bool,
     pub coord: Coord,
     pub timezone: Option<String>,
@@ -135,11 +166,13 @@ impl Id<StopArea> for StopArea {
         &self.id
     }
 }
+impl_codes!(StopArea);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StopPoint {
     pub id: String,
     pub name: String,
+    #[serde(skip)] pub codes: CodesT,
     pub visible: bool,
     pub coord: Coord,
     pub stop_area_id: String,
@@ -160,3 +193,4 @@ impl Id<Contributor> for StopPoint {
         &self.contributor_id
     }
 }
+impl_codes!(StopPoint);
