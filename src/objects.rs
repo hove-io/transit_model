@@ -1,5 +1,8 @@
 use collection::{Id, Idx};
 
+// We use a Vec here for memory efficiency.  Other possible types can
+// be something like BTreeSet<(String,String)> or
+// BTreeMap<String,Vec<String>>.  Hash{Map,Set} are memory costy.
 pub type CodesT = Vec<(String, String)>;
 
 pub trait Codes {

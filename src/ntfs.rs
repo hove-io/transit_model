@@ -150,7 +150,7 @@ where
         Some(idx) => idx,
         None => {
             eprintln!(
-                "object_codes.txt: object {} {} not found",
+                "object_codes.txt: object_type={} object_id={} not found",
                 code.object_type, code.object_id
             );
             return;
