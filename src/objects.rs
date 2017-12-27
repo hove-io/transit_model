@@ -36,6 +36,22 @@ impl Id<Contributor> for Contributor {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct Dataset {
+    #[serde(rename = "dataset_id")] pub id: String,
+    pub contributor_id: String,
+}
+impl Id<Dataset> for Dataset {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+impl Id<Contributor> for Dataset {
+    fn id(&self) -> &str {
+        &self.contributor_id
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CommercialMode {
     #[serde(rename = "commercial_mode_id")] pub id: String,
     #[serde(rename = "commercial_mode_name")] pub name: String,
@@ -179,6 +195,7 @@ pub struct VehicleJourney {
     #[serde(skip)] pub codes: CodesT,
     pub route_id: String,
     pub physical_mode_id: String,
+    pub dataset_id: String,
     #[serde(skip)] pub stop_times: Vec<StopTime>,
 }
 impl Id<VehicleJourney> for VehicleJourney {
@@ -194,6 +211,11 @@ impl Id<Route> for VehicleJourney {
 impl Id<PhysicalMode> for VehicleJourney {
     fn id(&self) -> &str {
         &self.physical_mode_id
+    }
+}
+impl Id<Dataset> for VehicleJourney {
+    fn id(&self) -> &str {
+        &self.dataset_id
     }
 }
 impl_codes!(VehicleJourney);
@@ -234,7 +256,6 @@ pub struct StopPoint {
     pub visible: bool,
     pub coord: Coord,
     pub stop_area_id: String,
-    pub contributor_id: String,
 }
 impl Id<StopPoint> for StopPoint {
     fn id(&self) -> &str {
@@ -244,12 +265,6 @@ impl Id<StopPoint> for StopPoint {
 impl Id<StopArea> for StopPoint {
     fn id(&self) -> &str {
         &self.stop_area_id
-    }
-}
-
-impl Id<Contributor> for StopPoint {
-    fn id(&self) -> &str {
-        &self.contributor_id
     }
 }
 impl_codes!(StopPoint);
