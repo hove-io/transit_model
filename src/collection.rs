@@ -81,17 +81,40 @@ impl<T: Id<T>> Collection<T> {
             id_to_idx: id_to_idx,
         }
     }
-    pub fn mut_elt<F: FnOnce(&mut T)>(&mut self, idx: Idx<T>, f: F) {
-        let elt = &mut self.objects[idx.get()];
-        let old_id = elt.id().to_string();
-        f(elt);
-        if elt.id() != old_id {
-            self.id_to_idx.remove(&old_id);
+    pub fn index_mut<'a>(&'a mut self, idx: Idx<T>) -> RefMut<'a, T> {
+        RefMut {
+            idx: idx,
+            old_id: self.objects[idx.get()].id().to_string(),
+            collection: self,
+        }
+    }
+}
+pub struct RefMut<'a, T: 'a + Id<T>> {
+    idx: Idx<T>,
+    collection: &'a mut Collection<T>,
+    old_id: String,
+}
+impl<'a, T: Id<T>> ops::DerefMut for RefMut<'a, T> {
+    fn deref_mut(&mut self) -> &mut T {
+        &mut self.collection.objects[self.idx.get()]
+    }
+}
+impl<'a, T: Id<T>> ops::Deref for RefMut<'a, T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        &self.collection.objects[self.idx.get()]
+    }
+}
+impl<'a, T: Id<T>> Drop for RefMut<'a, T> {
+    fn drop(&mut self) {
+        if self.id() != self.old_id {
+            self.collection.id_to_idx.remove(&self.old_id);
+            let new_id = self.id().to_string();
             assert!(
-                self.id_to_idx.insert(elt.id().to_string(), idx).is_none(),
+                self.collection.id_to_idx.insert(new_id, self.idx).is_none(),
                 "changing id {} to {} already used",
-                old_id,
-                elt.id()
+                self.old_id,
+                self.id()
             );
         }
     }

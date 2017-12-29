@@ -112,12 +112,14 @@ fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
             .vehicle_journeys
             .get_idx(&stop_time.trip_id)
             .unwrap();
-        collections.vehicle_journeys.mut_elt(vj_idx, |obj| {
-            obj.stop_times.push(::objects::StopTime {
+        collections
+            .vehicle_journeys
+            .index_mut(vj_idx)
+            .stop_times
+            .push(::objects::StopTime {
                 stop_point_idx: stop_point_idx,
                 sequence: stop_time.stop_sequence,
             });
-        });
     }
     let mut vehicle_journeys = collections.vehicle_journeys.take();
     for vj in &mut vehicle_journeys {
@@ -138,9 +140,10 @@ fn insert_code_with_idx<T>(collection: &mut Collection<T>, idx: Idx<T>, code: Co
 where
     T: Codes + Id<T>,
 {
-    collection.mut_elt(idx, move |obj| {
-        obj.codes_mut().push((code.object_system, code.object_code));
-    });
+    collection
+        .index_mut(idx)
+        .codes_mut()
+        .push((code.object_system, code.object_code));
 }
 fn insert_code<T>(collection: &mut Collection<T>, code: Code)
 where
