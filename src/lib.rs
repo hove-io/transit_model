@@ -3,6 +3,8 @@ extern crate csv;
 extern crate derivative;
 #[macro_use]
 extern crate get_corresponding_derive;
+#[macro_use]
+extern crate log;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
