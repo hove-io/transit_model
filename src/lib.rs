@@ -13,9 +13,11 @@ pub mod collection;
 pub mod objects;
 pub mod relations;
 pub mod ntfs;
+pub(crate) mod utils;
 
 use std::ops;
 
+use std::collections::HashMap;
 use collection::{Collection, Idx};
 use objects::*;
 use relations::{IdxSet, ManyToMany, OneToMany, Relation};
@@ -33,6 +35,8 @@ pub struct Collections {
     pub physical_modes: Collection<PhysicalMode>,
     pub stop_areas: Collection<StopArea>,
     pub stop_points: Collection<StopPoint>,
+    pub feed_infos: HashMap<String, String>,
+    pub calendars: Collection<Calendar>,
 }
 
 #[derive(GetCorresponding)]

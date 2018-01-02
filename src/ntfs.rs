@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path;
 use csv;
 use serde;
@@ -5,6 +6,7 @@ use serde;
 use objects::*;
 use collection::{Collection, Id, Idx};
 use {Collections, PtObjects};
+use utils::*;
 
 fn make_collection<T>(path: &path::Path, file: &str) -> Collection<T>
 where
@@ -21,20 +23,13 @@ fn default_visible() -> bool {
     true
 }
 
-fn de_from_i32<'de, D>(deserializer: D) -> Result<bool, D::Error>
-where
-    D: ::serde::Deserializer<'de>,
-{
-    use serde::Deserialize;
-    let i = i32::deserialize(deserializer)?;
-    Ok(i == 0)
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Stop {
     #[serde(rename = "stop_id")] id: String,
     #[serde(rename = "stop_name")] name: String,
-    #[serde(default = "default_visible", deserialize_with = "de_from_i32")] visible: bool,
+    #[serde(default = "default_visible", deserialize_with = "de_from_u8",
+            serialize_with = "ser_from_bool")]
+    visible: bool,
     #[serde(rename = "stop_lon")] lon: f64,
     #[serde(rename = "stop_lat")] lat: f64,
     #[serde(default)] location_type: i32,
@@ -107,7 +102,8 @@ struct StopTime {
     #[serde(default)] alighting_duration: u16,
     #[serde(default)] pickup_type: u8,
     #[serde(default)] dropoff_type: u8,
-    #[serde(default, deserialize_with = "de_from_i32")] datetime_estimated: bool,
+    #[serde(default, deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    datetime_estimated: bool,
     local_zone_id: Option<u16>,
 }
 
@@ -193,6 +189,30 @@ fn manage_codes(collections: &mut Collections, path: &path::Path) {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct FeedInfo {
+    #[serde(rename = "feed_info_param")] info_param: String,
+    #[serde(rename = "feed_info_value")] info_value: String,
+}
+
+fn manage_feed_infos(collections: &mut Collections, path: &path::Path) {
+    info!("Reading feed_infos.txt");
+    let feed_infos_path = path.join("feed_infos.txt");
+    let mut rdr = csv::Reader::from_path(feed_infos_path).unwrap();
+    collections.feed_infos = rdr.deserialize::<FeedInfo>().map(Result::unwrap).fold(
+        HashMap::default(),
+        |mut acc, r| {
+            assert!(
+                acc.insert(r.info_param.to_string(), r.info_value.to_string())
+                    .is_none(),
+                "{} already found in file feed_infos.txt",
+                r.info_param,
+            );
+            acc
+        },
+    )
+}
+
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     info!("Loading NTFS from {:?}", path);
@@ -205,6 +225,8 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     collections.routes = make_collection(path, "routes.txt");
     collections.vehicle_journeys = make_collection(path, "trips.txt");
     collections.physical_modes = make_collection(path, "physical_modes.txt");
+    collections.calendars = make_collection(path, "calendar.txt");
+    manage_feed_infos(&mut collections, path);
     manage_stops(&mut collections, path);
     manage_stop_times(&mut collections, path);
     manage_codes(&mut collections, path);
