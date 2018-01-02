@@ -16,7 +16,7 @@ use std::ops;
 
 use collection::Collection;
 use objects::*;
-use relations::{IdxSet, ManyToMany, OneToMany};
+use relations::{IdxSet, ManyToMany, OneToMany, Relation};
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
@@ -35,6 +35,8 @@ pub struct Collections {
 #[derive(GetCorresponding)]
 pub struct PtObjects {
     collections: Collections,
+
+    // original relations
     network_to_lines: OneToMany<Network, Line>,
     commercial_modes_to_lines: OneToMany<CommercialMode, Line>,
     lines_to_routes: OneToMany<Line, Route>,
@@ -43,6 +45,12 @@ pub struct PtObjects {
     stop_areas_to_stop_points: OneToMany<StopArea, StopPoint>,
     contributors_to_stop_points: OneToMany<Contributor, StopPoint>,
     vehicle_journeys_to_stop_points: ManyToMany<VehicleJourney, StopPoint>,
+
+    // shortcuts
+    #[get_corresponding(weight = "1.9")] routes_to_stop_points: ManyToMany<Route, StopPoint>,
+    #[get_corresponding(weight = "1.9")]
+    physical_modes_to_stop_points: ManyToMany<PhysicalMode, StopPoint>,
+    #[get_corresponding(weight = "1.9")] physical_modes_to_routes: ManyToMany<PhysicalMode, Route>,
 }
 impl PtObjects {
     pub fn new(c: Collections) -> Self {
@@ -55,18 +63,31 @@ impl PtObjects {
                 )
             })
             .collect();
+        let routes_to_vehicle_journeys = OneToMany::new(&c.routes, &c.vehicle_journeys);
+        let vehicle_journeys_to_stop_points = ManyToMany::from_forward(forward_vj_to_sp);
+        let physical_modes_to_vehicle_journeys =
+            OneToMany::new(&c.physical_modes, &c.vehicle_journeys);
         PtObjects {
+            routes_to_stop_points: ManyToMany::from_relations_chain(
+                &routes_to_vehicle_journeys,
+                &vehicle_journeys_to_stop_points,
+            ),
+            physical_modes_to_stop_points: ManyToMany::from_relations_chain(
+                &physical_modes_to_vehicle_journeys,
+                &vehicle_journeys_to_stop_points,
+            ),
+            physical_modes_to_routes: ManyToMany::from_relations_sink(
+                &physical_modes_to_vehicle_journeys,
+                &routes_to_vehicle_journeys,
+            ),
             network_to_lines: OneToMany::new(&c.networks, &c.lines),
             commercial_modes_to_lines: OneToMany::new(&c.commercial_modes, &c.lines),
             lines_to_routes: OneToMany::new(&c.lines, &c.routes),
-            routes_to_vehicle_journeys: OneToMany::new(&c.routes, &c.vehicle_journeys),
-            physical_modes_to_vehicle_journeys: OneToMany::new(
-                &c.physical_modes,
-                &c.vehicle_journeys,
-            ),
+            routes_to_vehicle_journeys: routes_to_vehicle_journeys,
+            physical_modes_to_vehicle_journeys: physical_modes_to_vehicle_journeys,
             stop_areas_to_stop_points: OneToMany::new(&c.stop_areas, &c.stop_points),
             contributors_to_stop_points: OneToMany::new(&c.contributors, &c.stop_points),
-            vehicle_journeys_to_stop_points: ManyToMany::from_forward(forward_vj_to_sp),
+            vehicle_journeys_to_stop_points: vehicle_journeys_to_stop_points,
             collections: c,
         }
     }

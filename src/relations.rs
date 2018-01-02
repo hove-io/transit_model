@@ -3,6 +3,14 @@ use collection::{Collection, Id, Idx};
 
 pub type IdxSet<T> = BTreeSet<Idx<T>>;
 
+pub trait Relation {
+    type From;
+    type To;
+    fn get_from(&self) -> IdxSet<Self::From>;
+    fn get_corresponding_forward(&self, from: &IdxSet<Self::From>) -> IdxSet<Self::To>;
+    fn get_corresponding_backward(&self, from: &IdxSet<Self::To>) -> IdxSet<Self::From>;
+}
+
 pub struct OneToMany<T, U> {
     one_to_many: BTreeMap<Idx<T>, IdxSet<U>>,
     many_to_one: BTreeMap<Idx<U>, Idx<T>>,
@@ -30,12 +38,18 @@ where
             many_to_one: many_to_one,
         }
     }
+}
 
-    pub fn get_corresponding_forward(&self, from: &IdxSet<T>) -> IdxSet<U> {
+impl<T, U> Relation for OneToMany<T, U> {
+    type From = T;
+    type To = U;
+    fn get_from(&self) -> IdxSet<T> {
+        self.one_to_many.keys().cloned().collect()
+    }
+    fn get_corresponding_forward(&self, from: &IdxSet<T>) -> IdxSet<U> {
         get_corresponding(&self.one_to_many, from)
     }
-
-    pub fn get_corresponding_backward(&self, from: &IdxSet<U>) -> IdxSet<T> {
+    fn get_corresponding_backward(&self, from: &IdxSet<U>) -> IdxSet<T> {
         from.iter()
             .filter_map(|from_idx| self.many_to_one.get(from_idx))
             .cloned()
@@ -65,12 +79,48 @@ impl<T, U> ManyToMany<T, U> {
             backward: backward,
         }
     }
+    pub fn from_relations_chain<R1, R2>(r1: &R1, r2: &R2) -> Self
+    where
+        R1: Relation<From = T>,
+        R2: Relation<From = R1::To, To = U>,
+    {
+        let forward = r1.get_from()
+            .into_iter()
+            .map(|idx| {
+                let from = Some(idx).into_iter().collect();
+                let tmp = r1.get_corresponding_forward(&from);
+                (idx, r2.get_corresponding_forward(&tmp))
+            })
+            .collect();
+        Self::from_forward(forward)
+    }
+    pub fn from_relations_sink<R1, R2>(r1: &R1, r2: &R2) -> Self
+    where
+        R1: Relation<From = T>,
+        R2: Relation<From = U, To = R1::To>,
+    {
+        let forward = r1.get_from()
+            .into_iter()
+            .map(|idx| {
+                let from = Some(idx).into_iter().collect();
+                let tmp = r1.get_corresponding_forward(&from);
+                (idx, r2.get_corresponding_backward(&tmp))
+            })
+            .collect();
+        Self::from_forward(forward)
+    }
+}
 
-    pub fn get_corresponding_forward(&self, from: &IdxSet<T>) -> IdxSet<U> {
+impl<T, U> Relation for ManyToMany<T, U> {
+    type From = T;
+    type To = U;
+    fn get_from(&self) -> IdxSet<T> {
+        self.forward.keys().cloned().collect()
+    }
+    fn get_corresponding_forward(&self, from: &IdxSet<T>) -> IdxSet<U> {
         get_corresponding(&self.forward, from)
     }
-
-    pub fn get_corresponding_backward(&self, from: &IdxSet<U>) -> IdxSet<T> {
+    fn get_corresponding_backward(&self, from: &IdxSet<U>) -> IdxSet<T> {
         get_corresponding(&self.backward, from)
     }
 }

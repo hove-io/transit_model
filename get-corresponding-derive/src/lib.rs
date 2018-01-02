@@ -6,7 +6,7 @@ extern crate syn;
 use proc_macro::TokenStream;
 use std::collections::{HashMap, HashSet};
 
-#[proc_macro_derive(GetCorresponding)]
+#[proc_macro_derive(GetCorresponding, attributes(get_corresponding))]
 pub fn get_corresponding(input: TokenStream) -> TokenStream {
     let s = input.to_string();
     let ast = syn::parse_derive_input(&s).unwrap();
@@ -62,8 +62,11 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
 }
 
 fn to_edge(field: &syn::Field) -> Option<Edge> {
-    let ident = field.ident.as_ref()?;
-    let ident = ident.as_ref();
+    use syn::PathParameters::AngleBracketed;
+    use syn::MetaItem::*;
+    use syn::NestedMetaItem::MetaItem;
+
+    let ident = field.ident.as_ref()?.as_ref();
     let mut split = ident.split("_to_");
     let _from_collection = split.next()?;
     let _to_collection = split.next()?;
@@ -75,8 +78,7 @@ fn to_edge(field: &syn::Field) -> Option<Edge> {
     } else {
         None
     }?;
-    let (from_ty, to_ty) = if let syn::PathParameters::AngleBracketed(ref data) = segment.parameters
-    {
+    let (from_ty, to_ty) = if let AngleBracketed(ref data) = segment.parameters {
         match (data.types.get(0), data.types.get(1), data.types.get(2)) {
             (Some(from_ty), Some(to_ty), None) => Some((from_ty, to_ty)),
             _ => None,
@@ -84,10 +86,29 @@ fn to_edge(field: &syn::Field) -> Option<Edge> {
     } else {
         None
     }?;
+    let weight = field
+        .attrs
+        .iter()
+        .flat_map(|attr| match attr.value {
+            List(ref i, ref v) if i == "get_corresponding" => v.as_slice(),
+            _ => &[],
+        })
+        .map(|mi| match *mi {
+            MetaItem(NameValue(ref i, syn::Lit::Str(ref l, _))) => {
+                assert_eq!(i, "weight", "{} is not a valid attribute", i);
+                l.parse::<f64>()
+                    .expect("`weight` attribute must be convertible to f64")
+            }
+            _ => panic!("Only `key = \"value\"` attributes supported."),
+        })
+        .last()
+        .unwrap_or(1.);
+
     Edge {
         ident: ident.into(),
         from: from_ty.clone(),
         to: to_ty.clone(),
+        weight: weight,
     }.into()
 }
 
@@ -134,8 +155,8 @@ fn floyd_warshall<'a>(edges: &'a [Edge]) -> HashMap<(&'a Node, &'a Node), &'a No
         let to = &e.to;
         v.insert(from);
         v.insert(to);
-        dist.insert((from, to), 1.);
-        dist.insert((to, from), 1.);
+        dist.insert((from, to), e.weight);
+        dist.insert((to, from), e.weight);
         next.insert((from, to), to);
         next.insert((to, from), from);
     }
@@ -166,6 +187,7 @@ struct Edge {
     ident: String,
     from: Node,
     to: Node,
+    weight: f64,
 }
 
 type Node = syn::Ty;
