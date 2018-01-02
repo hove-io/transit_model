@@ -29,7 +29,7 @@ impl<T> Ord for Idx<T> {
 }
 impl<T> PartialOrd for Idx<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 
@@ -107,7 +107,7 @@ impl<T> Default for Collection<T> {
 }
 
 impl<T> Collection<T> {
-    pub fn iter<'a>(&'a self) -> Iter<'a, T> {
+    pub fn iter(&self) -> Iter<T> {
         self.objects
             .iter()
             .enumerate()
@@ -115,7 +115,7 @@ impl<T> Collection<T> {
     }
 
     pub fn get_idx(&self, id: &str) -> Option<Idx<T>> {
-        self.id_to_idx.get(id).map(Clone::clone)
+        self.id_to_idx.get(id).cloned()
     }
 
     pub fn get(&self, id: &str) -> Option<&T> {
