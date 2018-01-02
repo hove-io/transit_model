@@ -26,7 +26,7 @@ where
 {
     use serde::Deserialize;
     let i = i32::deserialize(deserializer)?;
-    Ok(if i == 0 { true } else { false })
+    Ok(i == 0)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
