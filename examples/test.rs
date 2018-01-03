@@ -11,9 +11,9 @@ where
     U: Id<U>,
     IdxSet<T>: GetCorresponding<U>,
 {
-    let from = [idx].iter().cloned().collect();
-    let to = objects.get_corresponding(&from);
-    to.iter()
+    objects
+        .get_corresponding_from_idx(idx)
+        .iter()
         .map(|idx| collection[*idx].id().to_string())
         .collect()
 }
