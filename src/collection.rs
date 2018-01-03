@@ -130,6 +130,10 @@ impl<T> Collection<T> {
         self.id_to_idx.clear();
         ::std::mem::replace(&mut self.objects, Vec::new())
     }
+
+    pub fn len(&self) -> usize {
+        self.objects.len()
+    }
 }
 
 impl<T> ops::Index<Idx<T>> for Collection<T> {

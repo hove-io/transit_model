@@ -14,6 +14,7 @@ pub mod objects;
 pub mod relations;
 pub mod ntfs;
 pub(crate) mod utils;
+pub mod gtfs;
 
 use std::ops;
 
