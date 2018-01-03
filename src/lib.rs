@@ -22,6 +22,7 @@ use relations::{IdxSet, ManyToMany, OneToMany, Relation};
 #[derivative(Default)]
 pub struct Collections {
     pub contributors: Collection<Contributor>,
+    pub datasets: Collection<Dataset>,
     pub networks: Collection<Network>,
     pub commercial_modes: Collection<CommercialMode>,
     pub lines: Collection<Line>,
@@ -43,7 +44,8 @@ pub struct PtObjects {
     routes_to_vehicle_journeys: OneToMany<Route, VehicleJourney>,
     physical_modes_to_vehicle_journeys: OneToMany<PhysicalMode, VehicleJourney>,
     stop_areas_to_stop_points: OneToMany<StopArea, StopPoint>,
-    contributors_to_stop_points: OneToMany<Contributor, StopPoint>,
+    contributors_to_datasets: OneToMany<Contributor, Dataset>,
+    datasets_to_vehicle_journeys: OneToMany<Dataset, VehicleJourney>,
     vehicle_journeys_to_stop_points: ManyToMany<VehicleJourney, StopPoint>,
 
     // shortcuts
@@ -51,6 +53,10 @@ pub struct PtObjects {
     #[get_corresponding(weight = "1.9")]
     physical_modes_to_stop_points: ManyToMany<PhysicalMode, StopPoint>,
     #[get_corresponding(weight = "1.9")] physical_modes_to_routes: ManyToMany<PhysicalMode, Route>,
+    #[get_corresponding(weight = "1.9")] datasets_to_stop_points: ManyToMany<Dataset, StopPoint>,
+    #[get_corresponding(weight = "1.9")] datasets_to_routes: ManyToMany<Dataset, Route>,
+    #[get_corresponding(weight = "1.9")]
+    datasets_to_physical_modes: ManyToMany<Dataset, PhysicalMode>,
 }
 impl PtObjects {
     pub fn new(c: Collections) -> Self {
@@ -63,10 +69,11 @@ impl PtObjects {
                 )
             })
             .collect();
-        let routes_to_vehicle_journeys = OneToMany::new(&c.routes, &c.vehicle_journeys);
         let vehicle_journeys_to_stop_points = ManyToMany::from_forward(forward_vj_to_sp);
+        let routes_to_vehicle_journeys = OneToMany::new(&c.routes, &c.vehicle_journeys);
         let physical_modes_to_vehicle_journeys =
             OneToMany::new(&c.physical_modes, &c.vehicle_journeys);
+        let datasets_to_vehicle_journeys = OneToMany::new(&c.datasets, &c.vehicle_journeys);
         PtObjects {
             routes_to_stop_points: ManyToMany::from_relations_chain(
                 &routes_to_vehicle_journeys,
@@ -80,13 +87,26 @@ impl PtObjects {
                 &physical_modes_to_vehicle_journeys,
                 &routes_to_vehicle_journeys,
             ),
+            datasets_to_stop_points: ManyToMany::from_relations_chain(
+                &datasets_to_vehicle_journeys,
+                &vehicle_journeys_to_stop_points,
+            ),
+            datasets_to_routes: ManyToMany::from_relations_sink(
+                &datasets_to_vehicle_journeys,
+                &routes_to_vehicle_journeys,
+            ),
+            datasets_to_physical_modes: ManyToMany::from_relations_sink(
+                &datasets_to_vehicle_journeys,
+                &physical_modes_to_vehicle_journeys,
+            ),
             network_to_lines: OneToMany::new(&c.networks, &c.lines),
             commercial_modes_to_lines: OneToMany::new(&c.commercial_modes, &c.lines),
             lines_to_routes: OneToMany::new(&c.lines, &c.routes),
             routes_to_vehicle_journeys: routes_to_vehicle_journeys,
             physical_modes_to_vehicle_journeys: physical_modes_to_vehicle_journeys,
             stop_areas_to_stop_points: OneToMany::new(&c.stop_areas, &c.stop_points),
-            contributors_to_stop_points: OneToMany::new(&c.contributors, &c.stop_points),
+            contributors_to_datasets: OneToMany::new(&c.contributors, &c.datasets),
+            datasets_to_vehicle_journeys: datasets_to_vehicle_journeys,
             vehicle_journeys_to_stop_points: vehicle_journeys_to_stop_points,
             collections: c,
         }

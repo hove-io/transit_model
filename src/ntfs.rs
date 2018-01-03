@@ -39,7 +39,6 @@ struct Stop {
     #[serde(default)] location_type: i32,
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")] timezone: Option<String>,
-    contributor_id: Option<String>,
 }
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {
@@ -70,7 +69,6 @@ impl From<Stop> for StopPoint {
                 lat: stop.lat,
             },
             stop_area_id: stop_area_id,
-            contributor_id: stop.contributor_id.unwrap(),
         }
     }
 }
@@ -179,6 +177,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     let mut collections = Collections::default();
     collections.contributors = make_collection(path, "contributors.txt");
+    collections.datasets = make_collection(path, "datasets.txt");
     collections.commercial_modes = make_collection(path, "commercial_modes.txt");
     collections.networks = make_collection(path, "networks.txt");
     collections.lines = make_collection(path, "lines.txt");
