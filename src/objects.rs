@@ -220,10 +220,81 @@ impl Id<Dataset> for VehicleJourney {
 }
 impl_codes!(VehicleJourney);
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+pub struct Time(u32);
+impl Time {
+    pub fn new(h: u32, m: u32, s: u32) -> Time {
+        Time(h * 60 * 60 + m * 60 + s)
+    }
+    pub fn hours(&self) -> u32 {
+        self.0 / 60 / 60
+    }
+    pub fn minutes(&self) -> u32 {
+        self.0 / 60 % 60
+    }
+    pub fn seconds(&self) -> u32 {
+        self.0 % 60
+    }
+}
+impl ::serde::Serialize for Time {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ::serde::Serializer,
+    {
+        let time = format!(
+            "{:02}:{:02}:{:02}",
+            self.hours(),
+            self.minutes(),
+            self.seconds()
+        );
+        serializer.serialize_str(&time)
+    }
+}
+impl<'de> ::serde::Deserialize<'de> for Time {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        use serde::de::{self, Error, Visitor};
+        use std::fmt;
+
+        // using the visitor pattern to avoid a string allocation
+        struct TimeVisitor;
+        impl<'de> Visitor<'de> for TimeVisitor {
+            type Value = Time;
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a time in the format HH:MM:SS")
+            }
+            fn visit_str<E: de::Error>(self, time: &str) -> Result<Time, E> {
+                let mut t = time.split(":");
+                let (hours, minutes, seconds) = match (t.next(), t.next(), t.next(), t.next()) {
+                    (Some(h), Some(m), Some(s), None) => (h, m, s),
+                    _ => return Err(Error::custom("format should be HH:MM:SS")),
+                };
+                let hours: u32 = hours.parse().map_err(Error::custom)?;
+                let minutes: u32 = minutes.parse().map_err(Error::custom)?;
+                let seconds: u32 = seconds.parse().map_err(Error::custom)?;
+                // TODO: check 0 <= minutes, seconds < 60?
+                Ok(Time::new(hours, minutes, seconds))
+            }
+        }
+
+        deserializer.deserialize_str(TimeVisitor)
+    }
+}
+
 #[derive(Debug)]
 pub struct StopTime {
     pub stop_point_idx: Idx<StopPoint>,
     pub sequence: u32,
+    pub arrival_time: Time,
+    pub departure_time: Time,
+    pub boarding_duration: u16,
+    pub alighting_duration: u16,
+    pub pickup_type: u8,
+    pub dropoff_type: u8,
+    pub datetime_estimated: bool,
+    pub local_zone_id: Option<u16>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -338,5 +409,29 @@ mod tests {
         assert_eq!(0, rgb.red);
         assert_eq!(125, rgb.green);
         assert_eq!(255, rgb.blue);
+    }
+
+    #[test]
+    fn time_serialization() {
+        let ser = |h, m, s| serde_json::to_value(&Time::new(h, m, s)).unwrap();
+
+        assert_eq!("13:37:00", ser(13, 37, 0));
+        assert_eq!("00:00:00", ser(0, 0, 0));
+        assert_eq!("25:42:42", ser(25, 42, 42));
+    }
+
+    #[test]
+    fn time_deserialization() {
+        let de = |s: &str| serde_json::from_value(serde_json::Value::String(s.to_string()));
+
+        assert_eq!(Time::new(13, 37, 0), de("13:37:00").unwrap());
+        assert_eq!(Time::new(0, 0, 0), de("0:0:0").unwrap());
+        assert_eq!(Time::new(25, 42, 42), de("25:42:42").unwrap());
+
+        assert!(de("").is_err());
+        assert!(de("13:37").is_err());
+        assert!(de("AA:00:00").is_err());
+        assert!(de("00:AA:00").is_err());
+        assert!(de("00:00:AA").is_err());
     }
 }

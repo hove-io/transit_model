@@ -11,6 +11,7 @@ where
     T: Id<T>,
     for<'de> T: serde::Deserialize<'de>,
 {
+    info!("Reading {}", file);
     let mut rdr = csv::Reader::from_path(path.join(file)).unwrap();
     let vec = rdr.deserialize().map(Result::unwrap).collect();
     Collection::new(vec)
@@ -74,6 +75,7 @@ impl From<Stop> for StopPoint {
 }
 
 fn manage_stops(collections: &mut Collections, path: &path::Path) {
+    info!("Reading stops.txt");
     let mut rdr = csv::Reader::from_path(path.join("stops.txt")).unwrap();
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
@@ -99,9 +101,18 @@ struct StopTime {
     stop_id: String,
     trip_id: String,
     stop_sequence: u32,
+    arrival_time: Time,
+    departure_time: Time,
+    #[serde(default)] boarding_duration: u16,
+    #[serde(default)] alighting_duration: u16,
+    #[serde(default)] pickup_type: u8,
+    #[serde(default)] dropoff_type: u8,
+    #[serde(default, deserialize_with = "de_from_i32")] datetime_estimated: bool,
+    local_zone_id: Option<u16>,
 }
 
 fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
+    info!("Reading stop_times.txt");
     let mut rdr = csv::Reader::from_path(path.join("stop_times.txt")).unwrap();
     for stop_time in rdr.deserialize().map(Result::unwrap) {
         let stop_time: StopTime = stop_time;
@@ -114,6 +125,14 @@ fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
             obj.stop_times.push(::objects::StopTime {
                 stop_point_idx: stop_point_idx,
                 sequence: stop_time.stop_sequence,
+                arrival_time: stop_time.arrival_time,
+                departure_time: stop_time.departure_time,
+                boarding_duration: stop_time.boarding_duration,
+                alighting_duration: stop_time.alighting_duration,
+                pickup_type: stop_time.pickup_type,
+                dropoff_type: stop_time.dropoff_type,
+                datetime_estimated: stop_time.datetime_estimated,
+                local_zone_id: stop_time.local_zone_id,
             });
         });
     }
@@ -147,7 +166,7 @@ where
     let idx = match collection.get_idx(&code.object_id) {
         Some(idx) => idx,
         None => {
-            eprintln!(
+            error!(
                 "object_codes.txt: object_type={} object_id={} not found",
                 code.object_type, code.object_id
             );
@@ -158,6 +177,7 @@ where
 }
 
 fn manage_codes(collections: &mut Collections, path: &path::Path) {
+    info!("Reading object_codes.txt");
     let mut rdr = csv::Reader::from_path(path.join("object_codes.txt")).unwrap();
     for code in rdr.deserialize().map(Result::unwrap) {
         let code: Code = code;
@@ -175,6 +195,7 @@ fn manage_codes(collections: &mut Collections, path: &path::Path) {
 
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
+    info!("Loading NTFS from {:?}", path);
     let mut collections = Collections::default();
     collections.contributors = make_collection(path, "contributors.txt");
     collections.datasets = make_collection(path, "datasets.txt");
@@ -187,5 +208,8 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     manage_stops(&mut collections, path);
     manage_stop_times(&mut collections, path);
     manage_codes(&mut collections, path);
-    PtObjects::new(collections)
+    info!("Indexing");
+    let res = PtObjects::new(collections);
+    info!("Loading NTFS done");
+    res
 }

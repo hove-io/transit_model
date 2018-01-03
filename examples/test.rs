@@ -1,3 +1,4 @@
+extern crate env_logger;
 extern crate navitia_model;
 extern crate serde_json;
 
@@ -18,6 +19,8 @@ where
 }
 
 fn main() {
+    env_logger::init();
+
     let objects = navitia_model::ntfs::read(".");
 
     for (from, stop_area) in objects.stop_areas.iter() {
