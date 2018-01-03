@@ -1,3 +1,5 @@
+#![recursion_limit = "128"]
+
 extern crate proc_macro;
 #[macro_use]
 extern crate quote;
@@ -52,6 +54,12 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
                     IdxSet<T>: GetCorresponding<U>
                 {
                     from.get_corresponding(self)
+                }
+                pub fn get_corresponding_from_idx<T, U>(&self, from: Idx<T>) -> IdxSet<U>
+                where
+                    IdxSet<T>: GetCorresponding<U>
+                {
+                    self.get_corresponding(&Some(from).into_iter().collect())
                 }
             }
             #(#edges_impls)*

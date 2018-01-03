@@ -14,7 +14,7 @@ pub mod ntfs;
 
 use std::ops;
 
-use collection::Collection;
+use collection::{Collection, Idx};
 use objects::*;
 use relations::{IdxSet, ManyToMany, OneToMany, Relation};
 
