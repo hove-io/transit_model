@@ -23,7 +23,7 @@ fn load_minimal_agency() {
 #[test]
 fn load_standard_agency() {
     let agency_content = "agency_id,agency_name,agency_url,agency_timezone\n
-    id_1,My agency,http://my-agency_url.com,Europe/London";
+id_1,My agency,http://my-agency_url.com,Europe/London";
     let tmp_dir = TempDir::new("osm_transit_extractor").expect("create temp dir");
     let file_path = tmp_dir.path().join("agency.txt");
     let mut f = File::create(&file_path).unwrap();

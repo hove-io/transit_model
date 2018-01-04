@@ -10,22 +10,14 @@ fn default_agency_id() -> String {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Agency {
-    #[serde(rename = "agency_id", default = "default_agency_id")]
-    id: String,
-    #[serde(rename = "agency_name")]
-    name: String,
-    #[serde(rename = "agency_url")]
-    url: String,
-    #[serde(rename = "agency_timezone")]
-    timezone: String,
-    #[serde(rename = "agency_lang", default)]
-    lang: String,
-    #[serde(rename = "agency_phone", default)]
-    phone: String,
-    #[serde(rename = "agency_fare_url", default)]
-    fare_url: String,
-    #[serde(rename = "agency_email", default)]
-    email: String,
+    #[serde(rename = "agency_id", default = "default_agency_id")] id: String,
+    #[serde(rename = "agency_name")] name: String,
+    #[serde(rename = "agency_url")] url: String,
+    #[serde(rename = "agency_timezone")] timezone: String,
+    #[serde(rename = "agency_lang", default)] lang: String,
+    #[serde(rename = "agency_phone", default)] phone: String,
+    #[serde(rename = "agency_fare_url", default)] fare_url: String,
+    #[serde(rename = "agency_email", default)] email: String,
 }
 impl From<Agency> for objects::Network {
     fn from(agency: Agency) -> objects::Network {
@@ -48,8 +40,10 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
 pub fn read_agency<P: AsRef<path::Path>>(path: P) -> Collection<objects::Network> {
     let path = path.as_ref().join("agency.txt");
     let mut rdr = csv::Reader::from_path(path).unwrap();
-    Collection::new(rdr.deserialize()
-        .map(Result::unwrap)
-        .map(|agency: Agency| objects::Network::from(agency))
-        .collect())
+    Collection::new(
+        rdr.deserialize()
+            .map(Result::unwrap)
+            .map(|agency: Agency| objects::Network::from(agency))
+            .collect(),
+    )
 }
