@@ -154,8 +154,8 @@ pub struct Line {
     pub network_id: String,
     pub commercial_mode_id: String,
     pub geometry_id: Option<String>,
-    #[serde(rename = "line_opening_time")] pub opening_time: Option<String>,
-    #[serde(rename = "line_closing_time")] pub closing_time: Option<String>,
+    #[serde(rename = "line_opening_time")] pub opening_time: Option<Time>,
+    #[serde(rename = "line_closing_time")] pub closing_time: Option<Time>,
 }
 
 impl Id<Line> for Line {
@@ -345,6 +345,21 @@ impl Id<StopArea> for StopPoint {
 }
 impl_codes!(StopPoint);
 
+pub type Date = String;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum ExceptionType {
+    #[serde(rename = "1")] Add,
+    #[serde(rename = "2")] Remove,
+}
+
+pub type CalendarDatesT = Vec<(Date, ExceptionType)>;
+
+pub trait CalendarDates {
+    fn calendar_dates(&self) -> &CalendarDatesT;
+    fn calendar_dates_mut(&mut self) -> &mut CalendarDatesT;
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Calendar {
     #[serde(rename = "calendar_id")] pub id: String,
@@ -355,8 +370,18 @@ pub struct Calendar {
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub friday: bool,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub saturday: bool,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub sunday: bool,
-    pub start_date: String,
-    pub end_date: String,
+    pub start_date: Date,
+    pub end_date: Date,
+    #[serde(skip)] pub calendar_dates: CalendarDatesT,
+}
+
+impl CalendarDates for Calendar {
+    fn calendar_dates(&self) -> &CalendarDatesT {
+        &self.calendar_dates
+    }
+    fn calendar_dates_mut(&mut self) -> &mut CalendarDatesT {
+        &mut self.calendar_dates
+    }
 }
 
 impl Id<Calendar> for Calendar {
