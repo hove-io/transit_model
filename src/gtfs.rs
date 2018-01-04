@@ -14,10 +14,9 @@ struct Agency {
     #[serde(rename = "agency_name")] name: String,
     #[serde(rename = "agency_url")] url: String,
     #[serde(rename = "agency_timezone")] timezone: Option<String>,
-    #[serde(rename = "agency_lang", default)] lang: Option<String>,
-    #[serde(rename = "agency_phone", default)] phone: Option<String>,
-    #[serde(rename = "agency_fare_url", default)] fare_url: Option<String>,
-    #[serde(rename = "agency_email", default)] email: Option<String>,
+    #[serde(rename = "agency_lang")] lang: Option<String>,
+    #[serde(rename = "agency_phone")] phone: Option<String>,
+    #[serde(rename = "agency_email")] email: Option<String>,
 }
 impl From<Agency> for objects::Network {
     fn from(agency: Agency) -> objects::Network {
