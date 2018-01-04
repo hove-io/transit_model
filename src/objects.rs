@@ -1,4 +1,5 @@
 use collection::{Id, Idx};
+use utils::*;
 
 // We use a Vec here for memory efficiency.  Other possible types can
 // be something like BTreeSet<(String,String)> or
@@ -77,8 +78,12 @@ impl Id<PhysicalMode> for PhysicalMode {
 pub struct Network {
     #[serde(rename = "network_id")] pub id: String,
     #[serde(rename = "network_name")] pub name: String,
+    #[serde(rename = "network_url")] pub url: Option<String>,
     #[serde(skip)] pub codes: CodesT,
-    #[serde(rename = "network_timezone")] pub timezone: String,
+    #[serde(rename = "network_timezone")] pub timezone: Option<String>,
+    #[serde(rename = "network_lang")] pub lang: Option<String>,
+    #[serde(rename = "network_phone")] pub phone: Option<String>,
+    #[serde(rename = "network_sort_order")] pub sort_order: Option<u32>,
 }
 impl Id<Network> for Network {
     fn id(&self) -> &str {
@@ -339,6 +344,26 @@ impl Id<StopArea> for StopPoint {
     }
 }
 impl_codes!(StopPoint);
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Calendar {
+    #[serde(rename = "calendar_id")] pub id: String,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub monday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub tuesday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub wednesday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub thursday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub friday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub saturday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub sunday: bool,
+    pub start_date: String,
+    pub end_date: String,
+}
+
+impl Id<Calendar> for Calendar {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
 
 #[cfg(test)]
 mod tests {
