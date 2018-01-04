@@ -4,9 +4,13 @@ use collection::Collection;
 use {Collections, PtObjects};
 use objects::{self, CodesT};
 
+fn default_agency_id() -> String {
+    "1".to_string()
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Agency {
-    #[serde(rename = "agency_id")]
+    #[serde(rename = "agency_id", default = "default_agency_id")]
     id: String,
     #[serde(rename = "agency_name")]
     name: String,
@@ -41,8 +45,8 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     PtObjects::new(collections)
 }
 
-fn read_agency(path: &path::Path) -> Collection<objects::Network> {
-    let path = path.join("agency.txt");
+pub fn read_agency<P: AsRef<path::Path>>(path: P) -> Collection<objects::Network> {
+    let path = path.as_ref().join("agency.txt");
     let mut rdr = csv::Reader::from_path(path).unwrap();
     Collection::new(rdr.deserialize()
         .map(Result::unwrap)
