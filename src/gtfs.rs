@@ -20,13 +20,8 @@ struct Agency {
 }
 impl From<Agency> for objects::Network {
     fn from(agency: Agency) -> objects::Network {
-        let agency_id: String;
-        match agency.id {
-            None => agency_id = default_agency_id(),
-            Some(id) => agency_id = id,
-        }
         objects::Network {
-            id: agency_id,
+            id: agency.id.unwrap_or_else(default_agency_id),
             name: agency.name,
             codes: CodesT::default(),
             timezone: agency.timezone,

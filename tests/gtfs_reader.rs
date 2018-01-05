@@ -19,7 +19,7 @@ fn load_minimal_agency() {
     let networks = gtfs::read_agency(tmp_dir.path());
     tmp_dir.close().expect("delete temp dir");
     assert_eq!(1, networks.len());
-    let agency = &networks.into_vec()[0];
+    let agency = networks.iter().next().unwrap().1;
     assert_eq!("default_agency_id", agency.id);
 }
 
@@ -49,7 +49,7 @@ id_1,My agency,http://my-agency_url.com,Europe/London,EN,0123456789,http://my-ag
     let networks = gtfs::read_agency(tmp_dir.path());
     tmp_dir.close().expect("delete temp dir");
     assert_eq!(1, networks.len());
-    let agency = &networks.into_vec()[0];
+    let agency = networks.iter().next().unwrap().1;
     assert_eq!("id_1", agency.id);
 }
 
