@@ -67,6 +67,7 @@ impl Id<CommercialMode> for CommercialMode {
 pub struct PhysicalMode {
     #[serde(rename = "physical_mode_id")] pub id: String,
     #[serde(rename = "physical_mode_name")] pub name: String,
+    pub co2_emission: Option<f32>,
 }
 impl Id<PhysicalMode> for PhysicalMode {
     fn id(&self) -> &str {
@@ -179,8 +180,11 @@ impl_codes!(Line);
 pub struct Route {
     #[serde(rename = "route_id")] pub id: String,
     #[serde(rename = "route_name")] pub name: String,
+    pub direction_type: Option<String>,
     #[serde(skip)] pub codes: CodesT,
     pub line_id: String,
+    pub geometry_id: Option<String>,
+    pub destination_id: Option<String>,
 }
 impl Id<Route> for Route {
     fn id(&self) -> &str {
@@ -371,6 +375,25 @@ pub struct Calendar {
 }
 
 impl Id<Calendar> for Calendar {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Company {
+    #[serde(rename = "company_id")] pub id: String,
+    #[serde(rename = "company_name")] pub name: String,
+    #[serde(rename = "company_address_name")] pub address_name: Option<String>,
+    #[serde(rename = "company_address_number")] pub address_number: Option<String>,
+    #[serde(rename = "company_address_type")] pub address_type: Option<String>,
+    #[serde(rename = "company_url")] pub url: Option<String>,
+    #[serde(rename = "company_mail")] pub mail: Option<String>,
+    #[serde(rename = "company_phone")] pub phone: Option<String>,
+    #[serde(rename = "company_fax")] pub fax: Option<String>,
+}
+
+impl Id<Company> for Company {
     fn id(&self) -> &str {
         &self.id
     }
