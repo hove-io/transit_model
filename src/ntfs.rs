@@ -193,6 +193,43 @@ fn manage_codes(collections: &mut Collections, path: &path::Path) {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+struct CalendarDate {
+    calendar_id: String,
+    date: Date,
+    exception_type: ExceptionType,
+}
+
+fn insert_calendar_date(collection: &mut Collection<Calendar>, calendar_date: CalendarDate) {
+    let idx = match collection.get_idx(&calendar_date.calendar_id) {
+        Some(idx) => idx,
+        None => {
+            error!(
+                "calendar_dates.txt: calendar_id={} not found",
+                calendar_date.calendar_id
+            );
+            return;
+        }
+    };
+    collection
+        .index_mut(idx)
+        .calendar_dates
+        .push((calendar_date.date, calendar_date.exception_type))
+}
+
+fn manage_calendars(collections: &mut Collections, path: &path::Path) {
+    info!("Reading calendar.txt");
+    collections.calendars = make_collection(path, "calendar.txt");
+
+    info!("Reading calendar_dates.txt");
+    if let Ok(mut rdr) = csv::Reader::from_path(path.join("calendar_dates.txt")) {
+        for calendar_date in rdr.deserialize().map(Result::unwrap) {
+            let calendar_date: CalendarDate = calendar_date;
+            insert_calendar_date(&mut collections.calendars, calendar_date);
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 struct FeedInfo {
     #[serde(rename = "feed_info_param")] info_param: String,
     #[serde(rename = "feed_info_value")] info_value: String,
@@ -200,8 +237,7 @@ struct FeedInfo {
 
 fn manage_feed_infos(collections: &mut Collections, path: &path::Path) {
     info!("Reading feed_infos.txt");
-    let feed_infos_path = path.join("feed_infos.txt");
-    let mut rdr = csv::Reader::from_path(feed_infos_path).unwrap();
+    let mut rdr = csv::Reader::from_path(path.join("feed_infos.txt")).unwrap();
     collections.feed_infos = rdr.deserialize::<FeedInfo>().map(Result::unwrap).fold(
         HashMap::default(),
         |mut acc, r| {
@@ -228,7 +264,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     collections.routes = make_collection(path, "routes.txt");
     collections.vehicle_journeys = make_collection(path, "trips.txt");
     collections.physical_modes = make_collection(path, "physical_modes.txt");
-    collections.calendars = make_collection(path, "calendar.txt");
+    manage_calendars(&mut collections, path);
     manage_feed_infos(&mut collections, path);
     manage_stops(&mut collections, path);
     manage_stop_times(&mut collections, path);
