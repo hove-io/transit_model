@@ -353,12 +353,7 @@ pub enum ExceptionType {
     #[serde(rename = "2")] Remove,
 }
 
-pub type CalendarDatesT = Vec<(Date, ExceptionType)>;
-
-pub trait CalendarDates {
-    fn calendar_dates(&self) -> &CalendarDatesT;
-    fn calendar_dates_mut(&mut self) -> &mut CalendarDatesT;
-}
+pub type CalendarDates = Vec<(Date, ExceptionType)>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Calendar {
@@ -372,16 +367,7 @@ pub struct Calendar {
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub sunday: bool,
     pub start_date: Date,
     pub end_date: Date,
-    #[serde(skip)] pub calendar_dates: CalendarDatesT,
-}
-
-impl CalendarDates for Calendar {
-    fn calendar_dates(&self) -> &CalendarDatesT {
-        &self.calendar_dates
-    }
-    fn calendar_dates_mut(&mut self) -> &mut CalendarDatesT {
-        &mut self.calendar_dates
-    }
+    #[serde(skip)] pub calendar_dates: CalendarDates,
 }
 
 impl Id<Calendar> for Calendar {

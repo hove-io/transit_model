@@ -199,10 +199,7 @@ struct CalendarDate {
     exception_type: ExceptionType,
 }
 
-fn insert_calendar_date<T>(collection: &mut Collection<T>, calendar_date: CalendarDate)
-where
-    T: CalendarDates + Id<T>,
-{
+fn insert_calendar_date(collection: &mut Collection<Calendar>, calendar_date: CalendarDate) {
     let idx = match collection.get_idx(&calendar_date.calendar_id) {
         Some(idx) => idx,
         None => {
@@ -213,10 +210,10 @@ where
             return;
         }
     };
-    collection.mut_elt(idx, move |obj| {
-        obj.calendar_dates_mut()
-            .push((calendar_date.date, calendar_date.exception_type));
-    });
+    collection
+        .index_mut(idx)
+        .calendar_dates
+        .push((calendar_date.date, calendar_date.exception_type))
 }
 
 fn manage_calendars(collections: &mut Collections, path: &path::Path) {
