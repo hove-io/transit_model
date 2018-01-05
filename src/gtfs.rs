@@ -5,12 +5,12 @@ use {Collections, PtObjects};
 use objects::{self, CodesT};
 
 fn default_agency_id() -> String {
-    "1".to_string()
+    "default_agency_id".to_string()
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Agency {
-    #[serde(rename = "agency_id", default = "default_agency_id")] id: String,
+    #[serde(rename = "agency_id")] id: Option<String>,
     #[serde(rename = "agency_name")] name: String,
     #[serde(rename = "agency_url")] url: String,
     #[serde(rename = "agency_timezone")] timezone: Option<String>,
@@ -20,8 +20,13 @@ struct Agency {
 }
 impl From<Agency> for objects::Network {
     fn from(agency: Agency) -> objects::Network {
+        let agency_id: String;
+        match agency.id {
+            None => agency_id = default_agency_id(),
+            Some(id) => agency_id = id,
+        }
         objects::Network {
-            id: agency.id,
+            id: agency_id,
             name: agency.name,
             codes: CodesT::default(),
             timezone: agency.timezone,
