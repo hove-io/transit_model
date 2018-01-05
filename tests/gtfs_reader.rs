@@ -1,4 +1,5 @@
 extern crate navitia_model;
+extern crate serde_json;
 extern crate tempdir;
 
 use navitia_model::gtfs;
@@ -18,6 +19,8 @@ fn load_minimal_agency() {
     let networks = gtfs::read_agency(tmp_dir.path());
     tmp_dir.close().expect("delete temp dir");
     assert_eq!(1, networks.len());
+    let agency = networks.iter().next().unwrap().1;
+    assert_eq!("default_agency_id", agency.id);
 }
 
 #[test]
@@ -46,4 +49,20 @@ id_1,My agency,http://my-agency_url.com,Europe/London,EN,0123456789,http://my-ag
     let networks = gtfs::read_agency(tmp_dir.path());
     tmp_dir.close().expect("delete temp dir");
     assert_eq!(1, networks.len());
+    let agency = networks.iter().next().unwrap().1;
+    assert_eq!("id_1", agency.id);
+}
+
+#[test]
+#[should_panic]
+fn load_2_agencies_with_no_id() {
+    let agency_content = "agency_name,agency_url,agency_timezone\n
+My agency 1,http://my-agency_url.com,Europe/London
+My agency 2,http://my-agency_url.com,Europe/London";
+    let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+    let file_path = tmp_dir.path().join("agency.txt");
+    let mut f = File::create(&file_path).unwrap();
+    f.write_all(agency_content.as_bytes()).unwrap();
+    gtfs::read_agency(tmp_dir.path());
+    tmp_dir.close().expect("delete temp dir");
 }
