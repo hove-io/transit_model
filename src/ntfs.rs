@@ -7,7 +7,6 @@ use objects::*;
 use collection::{Collection, Id, Idx};
 use {Collections, PtObjects};
 use utils::*;
-use chrono::NaiveDate;
 
 fn make_collection<T>(path: &path::Path, file: &str) -> Collection<T>
 where
@@ -197,7 +196,7 @@ fn manage_codes(collections: &mut Collections, path: &path::Path) {
 struct CalendarDate {
     calendar_id: String,
     #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
-    date: NaiveDate,
+    date: Date,
     exception_type: ExceptionType,
 }
 

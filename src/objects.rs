@@ -1,6 +1,6 @@
 use collection::{Id, Idx};
 use utils::*;
-use chrono::NaiveDate;
+use chrono;
 
 // We use a Vec here for memory efficiency.  Other possible types can
 // be something like BTreeSet<(String,String)> or
@@ -351,13 +351,15 @@ impl Id<StopArea> for StopPoint {
 }
 impl_codes!(StopPoint);
 
+pub type Date = chrono::NaiveDate;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ExceptionType {
     #[serde(rename = "1")] Add,
     #[serde(rename = "2")] Remove,
 }
 
-pub type CalendarDates = Vec<(NaiveDate, ExceptionType)>;
+pub type CalendarDates = Vec<(Date, ExceptionType)>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Calendar {
@@ -370,9 +372,9 @@ pub struct Calendar {
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub saturday: bool,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub sunday: bool,
     #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
-    pub start_date: NaiveDate,
+    pub start_date: Date,
     #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
-    pub end_date: NaiveDate,
+    pub end_date: Date,
     #[serde(skip)] pub calendar_dates: CalendarDates,
 }
 
