@@ -1,5 +1,6 @@
 use collection::{Id, Idx};
 use utils::*;
+use chrono;
 
 // We use a Vec here for memory efficiency.  Other possible types can
 // be something like BTreeSet<(String,String)> or
@@ -67,6 +68,7 @@ impl Id<CommercialMode> for CommercialMode {
 pub struct PhysicalMode {
     #[serde(rename = "physical_mode_id")] pub id: String,
     #[serde(rename = "physical_mode_name")] pub name: String,
+    pub co2_emission: Option<f32>,
 }
 impl Id<PhysicalMode> for PhysicalMode {
     fn id(&self) -> &str {
@@ -83,6 +85,7 @@ pub struct Network {
     #[serde(rename = "network_timezone")] pub timezone: Option<String>,
     #[serde(rename = "network_lang")] pub lang: Option<String>,
     #[serde(rename = "network_phone")] pub phone: Option<String>,
+    #[serde(rename = "network_address")] pub address: Option<String>,
     #[serde(rename = "network_sort_order")] pub sort_order: Option<u32>,
 }
 impl Id<Network> for Network {
@@ -179,8 +182,11 @@ impl_codes!(Line);
 pub struct Route {
     #[serde(rename = "route_id")] pub id: String,
     #[serde(rename = "route_name")] pub name: String,
+    pub direction_type: Option<String>,
     #[serde(skip)] pub codes: CodesT,
     pub line_id: String,
+    pub geometry_id: Option<String>,
+    pub destination_id: Option<String>,
 }
 impl Id<Route> for Route {
     fn id(&self) -> &str {
@@ -345,7 +351,7 @@ impl Id<StopArea> for StopPoint {
 }
 impl_codes!(StopPoint);
 
-pub type Date = String;
+pub type Date = chrono::NaiveDate;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ExceptionType {
@@ -365,12 +371,30 @@ pub struct Calendar {
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub friday: bool,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub saturday: bool,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub sunday: bool,
+    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
     pub start_date: Date,
+    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
     pub end_date: Date,
     #[serde(skip)] pub calendar_dates: CalendarDates,
 }
 
 impl Id<Calendar> for Calendar {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Company {
+    #[serde(rename = "company_id")] pub id: String,
+    #[serde(rename = "company_name")] pub name: String,
+    #[serde(rename = "company_address")] pub address: Option<String>,
+    #[serde(rename = "company_url")] pub url: Option<String>,
+    #[serde(rename = "company_mail")] pub mail: Option<String>,
+    #[serde(rename = "company_phone")] pub phone: Option<String>,
+}
+
+impl Id<Company> for Company {
     fn id(&self) -> &str {
         &self.id
     }

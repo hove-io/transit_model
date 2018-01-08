@@ -195,6 +195,7 @@ fn manage_codes(collections: &mut Collections, path: &path::Path) {
 #[derive(Serialize, Deserialize, Debug)]
 struct CalendarDate {
     calendar_id: String,
+    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
     date: Date,
     exception_type: ExceptionType,
 }
@@ -265,6 +266,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     collections.vehicle_journeys = make_collection(path, "trips.txt");
     collections.physical_modes = make_collection(path, "physical_modes.txt");
     manage_calendars(&mut collections, path);
+    collections.companies = make_collection(path, "companies.txt");
     manage_feed_infos(&mut collections, path);
     manage_stops(&mut collections, path);
     manage_stop_times(&mut collections, path);
