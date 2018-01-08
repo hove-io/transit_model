@@ -1,5 +1,6 @@
 use collection::{Id, Idx};
 use utils::*;
+use chrono::NaiveDate;
 
 // We use a Vec here for memory efficiency.  Other possible types can
 // be something like BTreeSet<(String,String)> or
@@ -84,6 +85,7 @@ pub struct Network {
     #[serde(rename = "network_timezone")] pub timezone: Option<String>,
     #[serde(rename = "network_lang")] pub lang: Option<String>,
     #[serde(rename = "network_phone")] pub phone: Option<String>,
+    #[serde(rename = "network_address")] pub address: Option<String>,
     #[serde(rename = "network_sort_order")] pub sort_order: Option<u32>,
 }
 impl Id<Network> for Network {
@@ -349,15 +351,13 @@ impl Id<StopArea> for StopPoint {
 }
 impl_codes!(StopPoint);
 
-pub type Date = String;
-
 #[derive(Serialize, Deserialize, Debug)]
 pub enum ExceptionType {
     #[serde(rename = "1")] Add,
     #[serde(rename = "2")] Remove,
 }
 
-pub type CalendarDates = Vec<(Date, ExceptionType)>;
+pub type CalendarDates = Vec<(NaiveDate, ExceptionType)>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Calendar {
@@ -369,8 +369,10 @@ pub struct Calendar {
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub friday: bool,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub saturday: bool,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub sunday: bool,
-    pub start_date: Date,
-    pub end_date: Date,
+    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
+    pub start_date: NaiveDate,
+    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
+    pub end_date: NaiveDate,
     #[serde(skip)] pub calendar_dates: CalendarDates,
 }
 
@@ -384,13 +386,10 @@ impl Id<Calendar> for Calendar {
 pub struct Company {
     #[serde(rename = "company_id")] pub id: String,
     #[serde(rename = "company_name")] pub name: String,
-    #[serde(rename = "company_address_name")] pub address_name: Option<String>,
-    #[serde(rename = "company_address_number")] pub address_number: Option<String>,
-    #[serde(rename = "company_address_type")] pub address_type: Option<String>,
+    #[serde(rename = "company_address")] pub address: Option<String>,
     #[serde(rename = "company_url")] pub url: Option<String>,
     #[serde(rename = "company_mail")] pub mail: Option<String>,
     #[serde(rename = "company_phone")] pub phone: Option<String>,
-    #[serde(rename = "company_fax")] pub fax: Option<String>,
 }
 
 impl Id<Company> for Company {

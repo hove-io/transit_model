@@ -9,6 +9,8 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
+extern crate chrono;
+
 pub mod collection;
 pub mod objects;
 pub mod relations;

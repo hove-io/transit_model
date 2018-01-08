@@ -28,6 +28,7 @@ impl From<Agency> for objects::Network {
             url: Some(agency.url),
             lang: agency.lang,
             phone: agency.phone,
+            address: None,
             sort_order: None,
         }
     }
