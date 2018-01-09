@@ -24,6 +24,25 @@ macro_rules! impl_codes {
     };
 }
 
+pub type CommentLinksT = Vec<String>;
+
+pub trait CommentLinks {
+    fn comment_links(&self) -> &CommentLinksT;
+    fn comment_links_mut(&mut self) -> &mut CommentLinksT;
+}
+macro_rules! impl_comment_links {
+    ($ty:ty) => {
+        impl CommentLinks for $ty {
+            fn comment_links(&self) -> &CommentLinksT {
+                &self.comment_links
+            }
+            fn comment_links_mut(&mut self) -> &mut CommentLinksT {
+                &mut self.comment_links
+            }
+        }
+    };
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Contributor {
     #[serde(rename = "contributor_id")] pub id: String,
@@ -147,6 +166,7 @@ pub struct Line {
     #[serde(rename = "line_id")] pub id: String,
     #[serde(rename = "line_code")] pub code: Option<String>,
     #[serde(skip)] pub codes: CodesT,
+    #[serde(skip)] pub comment_links: CommentLinksT,
     #[serde(rename = "line_name")] pub name: String,
     #[serde(rename = "forward_line_name")] pub forward_name: Option<String>,
     pub forward_direction: Option<String>,
@@ -177,6 +197,7 @@ impl Id<CommercialMode> for Line {
     }
 }
 impl_codes!(Line);
+impl_comment_links!(Line);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Route {
@@ -184,6 +205,7 @@ pub struct Route {
     #[serde(rename = "route_name")] pub name: String,
     pub direction_type: Option<String>,
     #[serde(skip)] pub codes: CodesT,
+    #[serde(skip)] pub comment_links: CommentLinksT,
     pub line_id: String,
     pub geometry_id: Option<String>,
     pub destination_id: Option<String>,
@@ -199,11 +221,13 @@ impl Id<Line> for Route {
     }
 }
 impl_codes!(Route);
+impl_comment_links!(Route);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VehicleJourney {
     #[serde(rename = "trip_id")] pub id: String,
     #[serde(skip)] pub codes: CodesT,
+    #[serde(skip)] pub comment_links: CommentLinksT,
     pub route_id: String,
     pub physical_mode_id: String,
     pub dataset_id: String,
@@ -230,6 +254,7 @@ impl Id<Dataset> for VehicleJourney {
     }
 }
 impl_codes!(VehicleJourney);
+impl_comment_links!(VehicleJourney);
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Time(u32);
@@ -306,7 +331,9 @@ pub struct StopTime {
     pub dropoff_type: u8,
     pub datetime_estimated: bool,
     pub local_zone_id: Option<u16>,
+    pub comment_links: CommentLinksT,
 }
+impl_comment_links!(StopTime);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Coord {
@@ -319,6 +346,7 @@ pub struct StopArea {
     pub id: String,
     pub name: String,
     #[serde(skip)] pub codes: CodesT,
+    #[serde(skip)] pub comment_links: CommentLinksT,
     pub visible: bool,
     pub coord: Coord,
     pub timezone: Option<String>,
@@ -329,12 +357,14 @@ impl Id<StopArea> for StopArea {
     }
 }
 impl_codes!(StopArea);
+impl_comment_links!(StopArea);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StopPoint {
     pub id: String,
     pub name: String,
     #[serde(skip)] pub codes: CodesT,
+    #[serde(skip)] pub comment_links: CommentLinksT,
     pub visible: bool,
     pub coord: Coord,
     pub stop_area_id: String,
@@ -350,6 +380,7 @@ impl Id<StopArea> for StopPoint {
     }
 }
 impl_codes!(StopPoint);
+impl_comment_links!(StopPoint);
 
 pub type Date = chrono::NaiveDate;
 
@@ -395,6 +426,33 @@ pub struct Company {
 }
 
 impl Id<Company> for Company {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum CommentType {
+    Information,
+    OnDemandTransport,
+}
+
+impl Default for CommentType {
+    fn default() -> Self {
+        CommentType::Information
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Comment {
+    #[serde(rename = "comment_id")] pub id: String,
+    #[serde(deserialize_with = "de_with_empty_default")] pub comment_type: CommentType,
+    #[serde(rename = "comment_label")] pub label: Option<String>,
+    #[serde(rename = "comment_value")] pub value: String,
+    #[serde(rename = "comment_url")] pub url: Option<String>,
+}
+
+impl Id<Comment> for Comment {
     fn id(&self) -> &str {
         &self.id
     }

@@ -34,3 +34,18 @@ where
     let s = format!("{}", date.format("%Y%m%d"));
     serializer.serialize_str(&s)
 }
+
+pub fn de_with_empty_default<'de, T: Default, D>(deserializer: D) -> Result<T, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+    for<'d> T: ::serde::Deserialize<'d>,
+{
+    use serde::Deserialize;
+    let s = String::deserialize(deserializer)?;
+    if s.is_empty() {
+        return Ok(Default::default());
+    }
+
+    ::serde_json::from_value(::serde_json::value::Value::String(s))
+        .map_err(::serde::de::Error::custom)
+}

@@ -42,6 +42,7 @@ impl From<Stop> for StopArea {
             id: stop.id,
             name: stop.name,
             codes: CodesT::default(),
+            comment_links: CommentLinksT::default(),
             visible: stop.visible,
             coord: Coord {
                 lon: stop.lon,
@@ -59,6 +60,7 @@ impl From<Stop> for StopPoint {
             id: id,
             name: stop.name,
             codes: CodesT::default(),
+            comment_links: CommentLinksT::default(),
             visible: stop.visible,
             coord: Coord {
                 lon: stop.lon,
@@ -132,6 +134,7 @@ fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
                 dropoff_type: stop_time.dropoff_type,
                 datetime_estimated: stop_time.datetime_estimated,
                 local_zone_id: stop_time.local_zone_id,
+                comment_links: CommentLinksT::default(),
             });
     }
     let mut vehicle_journeys = collections.vehicle_journeys.take();
@@ -253,6 +256,60 @@ fn manage_feed_infos(collections: &mut Collections, path: &path::Path) {
     )
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct CommentLink {
+    object_id: String,
+    object_type: String,
+    comment_id: String,
+}
+
+fn insert_comment_link<T>(collection: &mut Collection<T>, comment_link: CommentLink)
+where
+    T: CommentLinks + Id<T>,
+{
+    let idx = match collection.get_idx(&comment_link.object_id) {
+        Some(idx) => idx,
+        None => {
+            error!(
+                "comment_links.txt: object_type={} object_id={} not found",
+                comment_link.object_type, comment_link.object_id
+            );
+            return;
+        }
+    };
+    collection
+        .index_mut(idx)
+        .comment_links_mut()
+        .push(comment_link.comment_id);
+}
+
+fn manage_comments(collections: &mut Collections, path: &path::Path) {
+    if csv::Reader::from_path(path.join("comments.txt")).is_ok() {
+        info!("Reading comments.txt");
+        collections.comments = make_collection(path, "comments.txt");
+
+        if let Ok(mut rdr) = csv::Reader::from_path(path.join("comment_links.txt")) {
+            info!("Reading comment_links.txt");
+            for comment_link in rdr.deserialize().map(Result::unwrap) {
+                let comment_link: CommentLink = comment_link;
+                match comment_link.object_type.as_str() {
+                    "stop_area" => insert_comment_link(&mut collections.stop_areas, comment_link),
+                    "stop_point" => insert_comment_link(&mut collections.stop_points, comment_link),
+                    "line" => insert_comment_link(&mut collections.lines, comment_link),
+                    "route" => insert_comment_link(&mut collections.routes, comment_link),
+                    "trip" => insert_comment_link(&mut collections.vehicle_journeys, comment_link),
+                    "stop_time" => {
+                        insert_comment_link(&mut collections.vehicle_journeys, comment_link)
+                    }
+                    // TODO
+                    // "line_group" => insert_comment_link(&mut collections.line_groups, code),
+                    _ => panic!("{} is not a valid object_type", comment_link.object_type),
+                }
+            }
+        }
+    }
+}
+
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     info!("Loading NTFS from {:?}", path);
@@ -271,6 +328,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     manage_stops(&mut collections, path);
     manage_stop_times(&mut collections, path);
     manage_codes(&mut collections, path);
+    manage_comments(&mut collections, path);
     info!("Indexing");
     let res = PtObjects::new(collections);
     info!("Loading NTFS done");
