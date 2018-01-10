@@ -41,6 +41,7 @@ pub struct Collections {
     pub feed_infos: HashMap<String, String>,
     pub calendars: Collection<Calendar>,
     pub companies: Collection<Company>,
+    pub comments: Collection<Comment>,
 }
 
 #[derive(GetCorresponding)]

@@ -34,3 +34,12 @@ where
     let s = format!("{}", date.format("%Y%m%d"));
     serializer.serialize_str(&s)
 }
+
+pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+    for<'d> T: ::serde::Deserialize<'d>,
+{
+    use serde::Deserialize;
+    Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
+}
