@@ -231,6 +231,13 @@ pub struct VehicleJourney {
     pub route_id: String,
     pub physical_mode_id: String,
     pub dataset_id: String,
+    pub service_id: String,
+    #[serde(rename = "trip_headsign")] pub headsign: Option<String>,
+    pub block_id: Option<String>,
+    pub company_id: String,
+    #[serde(rename = "trip_property_id")] pub property_id: Option<String>,
+    pub base_trip_id: Option<String>,
+    pub geometry_id: Option<String>,
     #[serde(skip)] pub stop_times: Vec<StopTime>,
 }
 impl Id<VehicleJourney> for VehicleJourney {
@@ -251,6 +258,11 @@ impl Id<PhysicalMode> for VehicleJourney {
 impl Id<Dataset> for VehicleJourney {
     fn id(&self) -> &str {
         &self.dataset_id
+    }
+}
+impl Id<Company> for VehicleJourney {
+    fn id(&self) -> &str {
+        &self.company_id
     }
 }
 impl_codes!(VehicleJourney);
@@ -302,7 +314,7 @@ impl<'de> ::serde::Deserialize<'de> for Time {
                 formatter.write_str("a time in the format HH:MM:SS")
             }
             fn visit_str<E: de::Error>(self, time: &str) -> Result<Time, E> {
-                let mut t = time.split(":");
+                let mut t = time.split(':');
                 let (hours, minutes, seconds) = match (t.next(), t.next(), t.next(), t.next()) {
                     (Some(h), Some(m), Some(s), None) => (h, m, s),
                     _ => return Err(Error::custom("format should be HH:MM:SS")),
@@ -348,6 +360,8 @@ pub struct StopArea {
     pub visible: bool,
     pub coord: Coord,
     pub timezone: Option<String>,
+    pub geometry_id: Option<String>,
+    pub equipment_id: Option<String>,
 }
 impl Id<StopArea> for StopArea {
     fn id(&self) -> &str {
@@ -366,6 +380,9 @@ pub struct StopPoint {
     pub visible: bool,
     pub coord: Coord,
     pub stop_area_id: String,
+    pub timezone: Option<String>,
+    pub geometry_id: Option<String>,
+    pub equipment_id: Option<String>,
 }
 impl Id<StopPoint> for StopPoint {
     fn id(&self) -> &str {

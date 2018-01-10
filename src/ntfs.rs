@@ -30,11 +30,15 @@ struct Stop {
     #[serde(default = "default_visible", deserialize_with = "de_from_u8",
             serialize_with = "ser_from_bool")]
     visible: bool,
+    city_code: Option<String>,
+    fare_zone_id: Option<String>,
     #[serde(rename = "stop_lon")] lon: f64,
     #[serde(rename = "stop_lat")] lat: f64,
     #[serde(default)] location_type: i32,
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")] timezone: Option<String>,
+    geometry_id: Option<String>,
+    equipment_id: Option<String>,
 }
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {
@@ -49,6 +53,8 @@ impl From<Stop> for StopArea {
                 lat: stop.lat,
             },
             timezone: stop.timezone,
+            geometry_id: stop.geometry_id,
+            equipment_id: stop.equipment_id,
         }
     }
 }
@@ -67,6 +73,9 @@ impl From<Stop> for StopPoint {
                 lat: stop.lat,
             },
             stop_area_id: stop_area_id,
+            timezone: stop.timezone,
+            geometry_id: stop.geometry_id,
+            equipment_id: stop.equipment_id,
         }
     }
 }
