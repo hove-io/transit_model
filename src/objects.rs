@@ -331,9 +331,7 @@ pub struct StopTime {
     pub dropoff_type: u8,
     pub datetime_estimated: bool,
     pub local_zone_id: Option<u16>,
-    pub comment_links: CommentLinksT,
 }
-impl_comment_links!(StopTime);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Coord {
@@ -431,16 +429,12 @@ impl Id<Company> for Company {
     }
 }
 
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
 #[derive(Serialize, Deserialize, Debug)]
 pub enum CommentType {
-    Information,
+    #[derivative(Default)] Information,
     OnDemandTransport,
-}
-
-impl Default for CommentType {
-    fn default() -> Self {
-        CommentType::Information
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

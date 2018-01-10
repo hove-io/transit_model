@@ -134,7 +134,6 @@ fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
                 dropoff_type: stop_time.dropoff_type,
                 datetime_estimated: stop_time.datetime_estimated,
                 local_zone_id: stop_time.local_zone_id,
-                comment_links: CommentLinksT::default(),
             });
     }
     let mut vehicle_journeys = collections.vehicle_journeys.take();
@@ -221,7 +220,6 @@ fn insert_calendar_date(collection: &mut Collection<Calendar>, calendar_date: Ca
 }
 
 fn manage_calendars(collections: &mut Collections, path: &path::Path) {
-    info!("Reading calendar.txt");
     collections.calendars = make_collection(path, "calendar.txt");
 
     info!("Reading calendar_dates.txt");
@@ -284,8 +282,7 @@ where
 }
 
 fn manage_comments(collections: &mut Collections, path: &path::Path) {
-    if csv::Reader::from_path(path.join("comments.txt")).is_ok() {
-        info!("Reading comments.txt");
+    if path.join("comments.txt").exists() {
         collections.comments = make_collection(path, "comments.txt");
 
         if let Ok(mut rdr) = csv::Reader::from_path(path.join("comment_links.txt")) {
@@ -298,11 +295,8 @@ fn manage_comments(collections: &mut Collections, path: &path::Path) {
                     "line" => insert_comment_link(&mut collections.lines, comment_link),
                     "route" => insert_comment_link(&mut collections.routes, comment_link),
                     "trip" => insert_comment_link(&mut collections.vehicle_journeys, comment_link),
-                    "stop_time" => {
-                        insert_comment_link(&mut collections.vehicle_journeys, comment_link)
-                    }
-                    // TODO
-                    // "line_group" => insert_comment_link(&mut collections.line_groups, code),
+                    "stop_time" => warn!("comments are not added to StopTime yet"),
+                    "line_group" => warn!("line_groups.txt is not parsed yet"),
                     _ => panic!("{} is not a valid object_type", comment_link.object_type),
                 }
             }
