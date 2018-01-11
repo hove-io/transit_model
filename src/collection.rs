@@ -81,7 +81,7 @@ impl<T: Id<T>> Collection<T> {
             id_to_idx: id_to_idx,
         }
     }
-    pub fn index_mut<'a>(&'a mut self, idx: Idx<T>) -> RefMut<'a, T> {
+    pub fn index_mut(&mut self, idx: Idx<T>) -> RefMut<T> {
         RefMut {
             idx: idx,
             old_id: self.objects[idx.get()].id().to_string(),

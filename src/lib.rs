@@ -57,6 +57,7 @@ pub struct PtObjects {
     stop_areas_to_stop_points: OneToMany<StopArea, StopPoint>,
     contributors_to_datasets: OneToMany<Contributor, Dataset>,
     datasets_to_vehicle_journeys: OneToMany<Dataset, VehicleJourney>,
+    companies_to_vehicle_journeys: OneToMany<Company, VehicleJourney>,
     vehicle_journeys_to_stop_points: ManyToMany<VehicleJourney, StopPoint>,
 
     // shortcuts
@@ -119,6 +120,7 @@ impl PtObjects {
             contributors_to_datasets: OneToMany::new(&c.contributors, &c.datasets),
             datasets_to_vehicle_journeys: datasets_to_vehicle_journeys,
             vehicle_journeys_to_stop_points: vehicle_journeys_to_stop_points,
+            companies_to_vehicle_journeys: OneToMany::new(&c.companies, &c.vehicle_journeys),
             collections: c,
         }
     }
