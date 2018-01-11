@@ -1,6 +1,6 @@
 use std::path;
 use csv;
-use collection::Collection;
+use collection::CollectionWithId;
 use {Collections, PtObjects};
 use objects::{self, CodesT};
 
@@ -41,10 +41,10 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     PtObjects::new(collections)
 }
 
-pub fn read_agency<P: AsRef<path::Path>>(path: P) -> Collection<objects::Network> {
+pub fn read_agency<P: AsRef<path::Path>>(path: P) -> CollectionWithId<objects::Network> {
     let path = path.as_ref().join("agency.txt");
     let mut rdr = csv::Reader::from_path(path).unwrap();
-    Collection::new(
+    CollectionWithId::new(
         rdr.deserialize()
             .map(Result::unwrap)
             .map(|agency: Agency| objects::Network::from(agency))

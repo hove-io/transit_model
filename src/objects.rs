@@ -408,7 +408,7 @@ pub type CalendarDates = Vec<(Date, ExceptionType)>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Calendar {
-    #[serde(rename = "calendar_id")] pub id: String,
+    #[serde(rename = "service_id")] pub id: String,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub monday: bool,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub tuesday: bool,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub wednesday: bool,
@@ -466,6 +466,47 @@ impl Id<Comment> for Comment {
     fn id(&self) -> &str {
         &self.id
     }
+}
+
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Disponibility {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    InformationNotDisponible,
+    #[serde(rename = "1")] Disponible,
+    #[serde(rename = "2")] NotDisponible,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Equipment {
+    #[serde(rename = "equipment_id")] pub id: String,
+    #[serde(deserialize_with = "de_with_empty_default")] pub wheelchair_boarding: Disponibility,
+    #[serde(deserialize_with = "de_with_empty_default")] pub sheltered: Disponibility,
+    #[serde(deserialize_with = "de_with_empty_default")] pub elevator: Disponibility,
+    #[serde(deserialize_with = "de_with_empty_default")] pub escalator: Disponibility,
+    #[serde(deserialize_with = "de_with_empty_default")] pub bike_accepted: Disponibility,
+    #[serde(deserialize_with = "de_with_empty_default")] pub bike_depot: Disponibility,
+    #[serde(deserialize_with = "de_with_empty_default")] pub visual_announcement: Disponibility,
+    #[serde(deserialize_with = "de_with_empty_default")] pub audible_announcement: Disponibility,
+    #[serde(deserialize_with = "de_with_empty_default")] pub appropriate_escort: Disponibility,
+    #[serde(deserialize_with = "de_with_empty_default")] pub appropriate_signage: Disponibility,
+}
+
+impl Id<Equipment> for Equipment {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Transfer {
+    pub from_stop_id: String,
+    pub to_stop_id: String,
+    pub min_transfer_time: Option<u32>,
+    pub real_min_transfer_time: Option<u32>,
+    pub equipment_id: Option<String>,
 }
 
 #[cfg(test)]

@@ -36,11 +36,30 @@ impl<T> PartialOrd for Idx<T> {
 #[derive(Debug)]
 pub struct Collection<T> {
     objects: Vec<T>,
-    id_to_idx: HashMap<String, Idx<T>>,
 }
+
+impl<T> Collection<T> {
+    pub fn new(v: Vec<T>) -> Self {
+        Collection { objects: v }
+    }
+}
+
+impl<T> Default for Collection<T> {
+    fn default() -> Self {
+        Collection::new(Vec::default())
+    }
+}
+
+impl<T> ops::Deref for Collection<T> {
+    type Target = Vec<T>;
+    fn deref(&self) -> &Vec<T> {
+        &self.objects
+    }
+}
+
 impl<T> ::serde::Serialize for Collection<T>
 where
-    T: ::serde::Serialize + Id<T>,
+    T: ::serde::Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -51,7 +70,7 @@ where
 }
 impl<'de, T> ::serde::Deserialize<'de> for Collection<T>
 where
-    T: ::serde::Deserialize<'de> + Id<T>,
+    T: ::serde::Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -61,10 +80,39 @@ where
     }
 }
 
+#[derive(Debug)]
+pub struct CollectionWithId<T> {
+    collection: Collection<T>,
+    id_to_idx: HashMap<String, Idx<T>>,
+}
+
+impl<T> ::serde::Serialize for CollectionWithId<T>
+where
+    T: ::serde::Serialize + Id<T>,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ::serde::Serializer,
+    {
+        self.collection.objects.serialize(serializer)
+    }
+}
+impl<'de, T> ::serde::Deserialize<'de> for CollectionWithId<T>
+where
+    T: ::serde::Deserialize<'de> + Id<T>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        ::serde::Deserialize::deserialize(deserializer).map(CollectionWithId::new)
+    }
+}
+
 pub type Iter<'a, T> =
     iter::Map<iter::Enumerate<slice::Iter<'a, T>>, fn((usize, &T)) -> (Idx<T>, &T)>;
 
-impl<T: Id<T>> Collection<T> {
+impl<T: Id<T>> CollectionWithId<T> {
     pub fn new(v: Vec<T>) -> Self {
         let mut id_to_idx = HashMap::default();
         for (i, obj) in v.iter().enumerate() {
@@ -76,33 +124,33 @@ impl<T: Id<T>> Collection<T> {
                 obj.id()
             );
         }
-        Collection {
-            objects: v,
+        CollectionWithId {
+            collection: Collection::new(v),
             id_to_idx: id_to_idx,
         }
     }
     pub fn index_mut(&mut self, idx: Idx<T>) -> RefMut<T> {
         RefMut {
             idx: idx,
-            old_id: self.objects[idx.get()].id().to_string(),
+            old_id: self.collection.objects[idx.get()].id().to_string(),
             collection: self,
         }
     }
 }
 pub struct RefMut<'a, T: 'a + Id<T>> {
     idx: Idx<T>,
-    collection: &'a mut Collection<T>,
+    collection: &'a mut CollectionWithId<T>,
     old_id: String,
 }
 impl<'a, T: Id<T>> ops::DerefMut for RefMut<'a, T> {
     fn deref_mut(&mut self) -> &mut T {
-        &mut self.collection.objects[self.idx.get()]
+        &mut self.collection.collection.objects[self.idx.get()]
     }
 }
 impl<'a, T: Id<T>> ops::Deref for RefMut<'a, T> {
     type Target = T;
     fn deref(&self) -> &T {
-        &self.collection.objects[self.idx.get()]
+        &self.collection.collection.objects[self.idx.get()]
     }
 }
 impl<'a, T: Id<T>> Drop for RefMut<'a, T> {
@@ -120,18 +168,19 @@ impl<'a, T: Id<T>> Drop for RefMut<'a, T> {
     }
 }
 
-impl<T> Default for Collection<T> {
+impl<T> Default for CollectionWithId<T> {
     fn default() -> Self {
-        Collection {
-            objects: Vec::default(),
+        CollectionWithId {
+            collection: Collection::new(Vec::default()),
             id_to_idx: HashMap::default(),
         }
     }
 }
 
-impl<T> Collection<T> {
+impl<T> CollectionWithId<T> {
     pub fn iter(&self) -> Iter<T> {
-        self.objects
+        self.collection
+            .objects
             .iter()
             .enumerate()
             .map(|(idx, obj)| (Idx::new(idx), obj))
@@ -146,22 +195,22 @@ impl<T> Collection<T> {
     }
 
     pub fn into_vec(self) -> Vec<T> {
-        self.objects
+        self.collection.objects
     }
 
     pub fn take(&mut self) -> Vec<T> {
         self.id_to_idx.clear();
-        ::std::mem::replace(&mut self.objects, Vec::new())
+        ::std::mem::replace(&mut self.collection.objects, Vec::new())
     }
 
     pub fn len(&self) -> usize {
-        self.objects.len()
+        self.collection.objects.len()
     }
 }
 
-impl<T> ops::Index<Idx<T>> for Collection<T> {
+impl<T> ops::Index<Idx<T>> for CollectionWithId<T> {
     type Output = T;
     fn index(&self, index: Idx<T>) -> &Self::Output {
-        &self.objects[index.get()]
+        &self.collection.objects[index.get()]
     }
 }

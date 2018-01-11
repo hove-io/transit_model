@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
-use collection::{Collection, Id, Idx};
+use collection::{CollectionWithId, Id, Idx};
 
 pub type IdxSet<T> = BTreeSet<Idx<T>>;
 
@@ -21,7 +21,7 @@ where
     T: Id<T>,
     U: Id<U> + Id<T>,
 {
-    pub fn new(one: &Collection<T>, many: &Collection<U>) -> Self {
+    pub fn new(one: &CollectionWithId<T>, many: &CollectionWithId<U>) -> Self {
         let mut one_to_many = BTreeMap::default();
         let mut many_to_one = BTreeMap::default();
         for (many_idx, obj) in many.iter() {
