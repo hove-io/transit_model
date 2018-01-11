@@ -235,8 +235,7 @@ pub struct VehicleJourney {
     #[serde(rename = "trip_headsign")] pub headsign: Option<String>,
     pub block_id: Option<String>,
     pub company_id: String,
-    #[serde(rename = "trip_property_id")] pub property_id: Option<String>,
-    pub base_trip_id: Option<String>,
+    pub trip_property_id: Option<String>,
     pub geometry_id: Option<String>,
     #[serde(skip)] pub stop_times: Vec<StopTime>,
 }

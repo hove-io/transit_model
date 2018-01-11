@@ -30,7 +30,6 @@ struct Stop {
     #[serde(default = "default_visible", deserialize_with = "de_from_u8",
             serialize_with = "ser_from_bool")]
     visible: bool,
-    city_code: Option<String>,
     fare_zone_id: Option<String>,
     #[serde(rename = "stop_lon")] lon: f64,
     #[serde(rename = "stop_lat")] lat: f64,
