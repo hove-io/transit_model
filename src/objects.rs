@@ -45,10 +45,14 @@ macro_rules! impl_comment_links {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Contributor {
-    #[serde(rename = "contributor_id")] pub id: String,
-    #[serde(rename = "contributor_name")] pub name: String,
-    #[serde(rename = "contributor_license")] pub license: Option<String>,
-    #[serde(rename = "contributor_website")] pub website: Option<String>,
+    #[serde(rename = "contributor_id")]
+    pub id: String,
+    #[serde(rename = "contributor_name")]
+    pub name: String,
+    #[serde(rename = "contributor_license")]
+    pub license: Option<String>,
+    #[serde(rename = "contributor_website")]
+    pub website: Option<String>,
 }
 impl Id<Contributor> for Contributor {
     fn id(&self) -> &str {
@@ -58,7 +62,8 @@ impl Id<Contributor> for Contributor {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Dataset {
-    #[serde(rename = "dataset_id")] pub id: String,
+    #[serde(rename = "dataset_id")]
+    pub id: String,
     pub contributor_id: String,
 }
 impl Id<Dataset> for Dataset {
@@ -74,8 +79,10 @@ impl Id<Contributor> for Dataset {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CommercialMode {
-    #[serde(rename = "commercial_mode_id")] pub id: String,
-    #[serde(rename = "commercial_mode_name")] pub name: String,
+    #[serde(rename = "commercial_mode_id")]
+    pub id: String,
+    #[serde(rename = "commercial_mode_name")]
+    pub name: String,
 }
 impl Id<CommercialMode> for CommercialMode {
     fn id(&self) -> &str {
@@ -85,8 +92,10 @@ impl Id<CommercialMode> for CommercialMode {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PhysicalMode {
-    #[serde(rename = "physical_mode_id")] pub id: String,
-    #[serde(rename = "physical_mode_name")] pub name: String,
+    #[serde(rename = "physical_mode_id")]
+    pub id: String,
+    #[serde(rename = "physical_mode_name")]
+    pub name: String,
     pub co2_emission: Option<f32>,
 }
 impl Id<PhysicalMode> for PhysicalMode {
@@ -97,15 +106,24 @@ impl Id<PhysicalMode> for PhysicalMode {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Network {
-    #[serde(rename = "network_id")] pub id: String,
-    #[serde(rename = "network_name")] pub name: String,
-    #[serde(rename = "network_url")] pub url: Option<String>,
-    #[serde(skip)] pub codes: CodesT,
-    #[serde(rename = "network_timezone")] pub timezone: Option<String>,
-    #[serde(rename = "network_lang")] pub lang: Option<String>,
-    #[serde(rename = "network_phone")] pub phone: Option<String>,
-    #[serde(rename = "network_address")] pub address: Option<String>,
-    #[serde(rename = "network_sort_order")] pub sort_order: Option<u32>,
+    #[serde(rename = "network_id")]
+    pub id: String,
+    #[serde(rename = "network_name")]
+    pub name: String,
+    #[serde(rename = "network_url")]
+    pub url: Option<String>,
+    #[serde(skip)]
+    pub codes: CodesT,
+    #[serde(rename = "network_timezone")]
+    pub timezone: Option<String>,
+    #[serde(rename = "network_lang")]
+    pub lang: Option<String>,
+    #[serde(rename = "network_phone")]
+    pub phone: Option<String>,
+    #[serde(rename = "network_address")]
+    pub address: Option<String>,
+    #[serde(rename = "network_sort_order")]
+    pub sort_order: Option<u32>,
 }
 impl Id<Network> for Network {
     fn id(&self) -> &str {
@@ -163,22 +181,34 @@ impl<'de> ::serde::Deserialize<'de> for Rgb {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Line {
-    #[serde(rename = "line_id")] pub id: String,
-    #[serde(rename = "line_code")] pub code: Option<String>,
-    #[serde(skip)] pub codes: CodesT,
-    #[serde(skip)] pub comment_links: CommentLinksT,
-    #[serde(rename = "line_name")] pub name: String,
-    #[serde(rename = "forward_line_name")] pub forward_name: Option<String>,
+    #[serde(rename = "line_id")]
+    pub id: String,
+    #[serde(rename = "line_code")]
+    pub code: Option<String>,
+    #[serde(skip)]
+    pub codes: CodesT,
+    #[serde(skip)]
+    pub comment_links: CommentLinksT,
+    #[serde(rename = "line_name")]
+    pub name: String,
+    #[serde(rename = "forward_line_name")]
+    pub forward_name: Option<String>,
     pub forward_direction: Option<String>,
-    #[serde(rename = "backward_line_name")] pub backward_name: Option<String>,
-    #[serde(rename = "line_color")] pub color: Option<Rgb>,
-    #[serde(rename = "line_text_color")] pub text_color: Option<Rgb>,
-    #[serde(rename = "line_sort_order")] pub sort_order: Option<u32>,
+    #[serde(rename = "backward_line_name")]
+    pub backward_name: Option<String>,
+    #[serde(rename = "line_color")]
+    pub color: Option<Rgb>,
+    #[serde(rename = "line_text_color")]
+    pub text_color: Option<Rgb>,
+    #[serde(rename = "line_sort_order")]
+    pub sort_order: Option<u32>,
     pub network_id: String,
     pub commercial_mode_id: String,
     pub geometry_id: Option<String>,
-    #[serde(rename = "line_opening_time")] pub opening_time: Option<Time>,
-    #[serde(rename = "line_closing_time")] pub closing_time: Option<Time>,
+    #[serde(rename = "line_opening_time")]
+    pub opening_time: Option<Time>,
+    #[serde(rename = "line_closing_time")]
+    pub closing_time: Option<Time>,
 }
 
 impl Id<Line> for Line {
@@ -201,11 +231,15 @@ impl_comment_links!(Line);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Route {
-    #[serde(rename = "route_id")] pub id: String,
-    #[serde(rename = "route_name")] pub name: String,
+    #[serde(rename = "route_id")]
+    pub id: String,
+    #[serde(rename = "route_name")]
+    pub name: String,
     pub direction_type: Option<String>,
-    #[serde(skip)] pub codes: CodesT,
-    #[serde(skip)] pub comment_links: CommentLinksT,
+    #[serde(skip)]
+    pub codes: CodesT,
+    #[serde(skip)]
+    pub comment_links: CommentLinksT,
     pub line_id: String,
     pub geometry_id: Option<String>,
     pub destination_id: Option<String>,
@@ -225,19 +259,24 @@ impl_comment_links!(Route);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VehicleJourney {
-    #[serde(rename = "trip_id")] pub id: String,
-    #[serde(skip)] pub codes: CodesT,
-    #[serde(skip)] pub comment_links: CommentLinksT,
+    #[serde(rename = "trip_id")]
+    pub id: String,
+    #[serde(skip)]
+    pub codes: CodesT,
+    #[serde(skip)]
+    pub comment_links: CommentLinksT,
     pub route_id: String,
     pub physical_mode_id: String,
     pub dataset_id: String,
     pub service_id: String,
-    #[serde(rename = "trip_headsign")] pub headsign: Option<String>,
+    #[serde(rename = "trip_headsign")]
+    pub headsign: Option<String>,
     pub block_id: Option<String>,
     pub company_id: String,
     pub trip_property_id: Option<String>,
     pub geometry_id: Option<String>,
-    #[serde(skip)] pub stop_times: Vec<StopTime>,
+    #[serde(skip)]
+    pub stop_times: Vec<StopTime>,
 }
 impl Id<VehicleJourney> for VehicleJourney {
     fn id(&self) -> &str {
@@ -354,8 +393,10 @@ pub struct Coord {
 pub struct StopArea {
     pub id: String,
     pub name: String,
-    #[serde(skip)] pub codes: CodesT,
-    #[serde(skip)] pub comment_links: CommentLinksT,
+    #[serde(skip)]
+    pub codes: CodesT,
+    #[serde(skip)]
+    pub comment_links: CommentLinksT,
     pub visible: bool,
     pub coord: Coord,
     pub timezone: Option<String>,
@@ -374,8 +415,10 @@ impl_comment_links!(StopArea);
 pub struct StopPoint {
     pub id: String,
     pub name: String,
-    #[serde(skip)] pub codes: CodesT,
-    #[serde(skip)] pub comment_links: CommentLinksT,
+    #[serde(skip)]
+    pub codes: CodesT,
+    #[serde(skip)]
+    pub comment_links: CommentLinksT,
     pub visible: bool,
     pub coord: Coord,
     pub stop_area_id: String,
@@ -408,19 +451,28 @@ pub type CalendarDates = Vec<(Date, ExceptionType)>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Calendar {
-    #[serde(rename = "service_id")] pub id: String,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub monday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub tuesday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub wednesday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub thursday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub friday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub saturday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")] pub sunday: bool,
+    #[serde(rename = "service_id")]
+    pub id: String,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub monday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub tuesday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub wednesday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub thursday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub friday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub saturday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub sunday: bool,
     #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
     pub start_date: Date,
     #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
     pub end_date: Date,
-    #[serde(skip)] pub calendar_dates: CalendarDates,
+    #[serde(skip)]
+    pub calendar_dates: CalendarDates,
 }
 
 impl Id<Calendar> for Calendar {
@@ -431,12 +483,18 @@ impl Id<Calendar> for Calendar {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Company {
-    #[serde(rename = "company_id")] pub id: String,
-    #[serde(rename = "company_name")] pub name: String,
-    #[serde(rename = "company_address")] pub address: Option<String>,
-    #[serde(rename = "company_url")] pub url: Option<String>,
-    #[serde(rename = "company_mail")] pub mail: Option<String>,
-    #[serde(rename = "company_phone")] pub phone: Option<String>,
+    #[serde(rename = "company_id")]
+    pub id: String,
+    #[serde(rename = "company_name")]
+    pub name: String,
+    #[serde(rename = "company_address")]
+    pub address: Option<String>,
+    #[serde(rename = "company_url")]
+    pub url: Option<String>,
+    #[serde(rename = "company_mail")]
+    pub mail: Option<String>,
+    #[serde(rename = "company_phone")]
+    pub phone: Option<String>,
 }
 
 impl Id<Company> for Company {
@@ -455,11 +513,16 @@ pub enum CommentType {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Comment {
-    #[serde(rename = "comment_id")] pub id: String,
-    #[serde(deserialize_with = "de_with_empty_default")] pub comment_type: CommentType,
-    #[serde(rename = "comment_label")] pub label: Option<String>,
-    #[serde(rename = "comment_value")] pub value: String,
-    #[serde(rename = "comment_url")] pub url: Option<String>,
+    #[serde(rename = "comment_id")]
+    pub id: String,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub comment_type: CommentType,
+    #[serde(rename = "comment_label")]
+    pub label: Option<String>,
+    #[serde(rename = "comment_value")]
+    pub value: String,
+    #[serde(rename = "comment_url")]
+    pub url: Option<String>,
 }
 
 impl Id<Comment> for Comment {
@@ -480,17 +543,28 @@ pub enum Availability {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Equipment {
-    #[serde(rename = "equipment_id")] pub id: String,
-    #[serde(deserialize_with = "de_with_empty_default")] pub wheelchair_boarding: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")] pub sheltered: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")] pub elevator: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")] pub escalator: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")] pub bike_accepted: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")] pub bike_depot: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")] pub visual_announcement: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")] pub audible_announcement: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")] pub appropriate_escort: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")] pub appropriate_signage: Availability,
+    #[serde(rename = "equipment_id")]
+    pub id: String,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub wheelchair_boarding: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub sheltered: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub elevator: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub escalator: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub bike_accepted: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub bike_depot: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub visual_announcement: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub audible_announcement: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub appropriate_escort: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub appropriate_signage: Availability,
 }
 
 impl Id<Equipment> for Equipment {

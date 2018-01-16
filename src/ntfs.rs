@@ -38,17 +38,23 @@ fn default_visible() -> bool {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Stop {
-    #[serde(rename = "stop_id")] id: String,
-    #[serde(rename = "stop_name")] name: String,
+    #[serde(rename = "stop_id")]
+    id: String,
+    #[serde(rename = "stop_name")]
+    name: String,
     #[serde(default = "default_visible", deserialize_with = "de_from_u8",
             serialize_with = "ser_from_bool")]
     visible: bool,
     fare_zone_id: Option<String>,
-    #[serde(rename = "stop_lon")] lon: f64,
-    #[serde(rename = "stop_lat")] lat: f64,
-    #[serde(default)] location_type: i32,
+    #[serde(rename = "stop_lon")]
+    lon: f64,
+    #[serde(rename = "stop_lat")]
+    lat: f64,
+    #[serde(default)]
+    location_type: i32,
     parent_station: Option<String>,
-    #[serde(rename = "stop_timezone")] timezone: Option<String>,
+    #[serde(rename = "stop_timezone")]
+    timezone: Option<String>,
     geometry_id: Option<String>,
     equipment_id: Option<String>,
 }
@@ -121,10 +127,14 @@ struct StopTime {
     stop_sequence: u32,
     arrival_time: Time,
     departure_time: Time,
-    #[serde(default)] boarding_duration: u16,
-    #[serde(default)] alighting_duration: u16,
-    #[serde(default)] pickup_type: u8,
-    #[serde(default)] dropoff_type: u8,
+    #[serde(default)]
+    boarding_duration: u16,
+    #[serde(default)]
+    alighting_duration: u16,
+    #[serde(default)]
+    pickup_type: u8,
+    #[serde(default)]
+    dropoff_type: u8,
     #[serde(default, deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     datetime_estimated: bool,
     local_zone_id: Option<u16>,
@@ -254,8 +264,10 @@ fn manage_calendars(collections: &mut Collections, path: &path::Path) {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct FeedInfo {
-    #[serde(rename = "feed_info_param")] info_param: String,
-    #[serde(rename = "feed_info_value")] info_value: String,
+    #[serde(rename = "feed_info_param")]
+    info_param: String,
+    #[serde(rename = "feed_info_value")]
+    info_value: String,
 }
 
 fn manage_feed_infos(collections: &mut Collections, path: &path::Path) {

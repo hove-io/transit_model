@@ -178,14 +178,6 @@ impl<T> Default for CollectionWithId<T> {
 }
 
 impl<T> CollectionWithId<T> {
-    pub fn iter(&self) -> Iter<T> {
-        self.collection
-            .objects
-            .iter()
-            .enumerate()
-            .map(|(idx, obj)| (Idx::new(idx), obj))
-    }
-
     pub fn get_idx(&self, id: &str) -> Option<Idx<T>> {
         self.id_to_idx.get(id).cloned()
     }

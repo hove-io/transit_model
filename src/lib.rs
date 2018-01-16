@@ -65,12 +65,16 @@ pub struct PtObjects {
     transfers_to_stop_points: ManyToMany<Transfer, StopPoint>,
 
     // shortcuts
-    #[get_corresponding(weight = "1.9")] routes_to_stop_points: ManyToMany<Route, StopPoint>,
+    #[get_corresponding(weight = "1.9")]
+    routes_to_stop_points: ManyToMany<Route, StopPoint>,
     #[get_corresponding(weight = "1.9")]
     physical_modes_to_stop_points: ManyToMany<PhysicalMode, StopPoint>,
-    #[get_corresponding(weight = "1.9")] physical_modes_to_routes: ManyToMany<PhysicalMode, Route>,
-    #[get_corresponding(weight = "1.9")] datasets_to_stop_points: ManyToMany<Dataset, StopPoint>,
-    #[get_corresponding(weight = "1.9")] datasets_to_routes: ManyToMany<Dataset, Route>,
+    #[get_corresponding(weight = "1.9")]
+    physical_modes_to_routes: ManyToMany<PhysicalMode, Route>,
+    #[get_corresponding(weight = "1.9")]
+    datasets_to_stop_points: ManyToMany<Dataset, StopPoint>,
+    #[get_corresponding(weight = "1.9")]
+    datasets_to_routes: ManyToMany<Dataset, Route>,
     #[get_corresponding(weight = "1.9")]
     datasets_to_physical_modes: ManyToMany<Dataset, PhysicalMode>,
 }
