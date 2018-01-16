@@ -4,16 +4,29 @@ use csv;
 use serde;
 
 use objects::*;
-use collection::{Collection, Id, Idx};
+use collection::{Collection, CollectionWithId, Id, Idx};
 use {Collections, PtObjects};
 use utils::*;
 
-fn make_collection<T>(path: &path::Path, file: &str) -> Collection<T>
+fn make_collection_with_id<T>(path: &path::Path, file: &str) -> CollectionWithId<T>
 where
     T: Id<T>,
     for<'de> T: serde::Deserialize<'de>,
 {
     info!("Reading {}", file);
+    let mut rdr = csv::Reader::from_path(path.join(file)).unwrap();
+    let vec = rdr.deserialize().map(Result::unwrap).collect();
+    CollectionWithId::new(vec)
+}
+
+fn make_collection<T>(path: &path::Path, file: &str) -> Collection<T>
+where
+    for<'de> T: serde::Deserialize<'de>,
+{
+    info!("Reading {}", file);
+    if !path.join(file).exists() {
+        panic!("file {} does not exist", file);
+    }
     let mut rdr = csv::Reader::from_path(path.join(file)).unwrap();
     let vec = rdr.deserialize().map(Result::unwrap).collect();
     Collection::new(vec)
@@ -25,17 +38,23 @@ fn default_visible() -> bool {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Stop {
-    #[serde(rename = "stop_id")] id: String,
-    #[serde(rename = "stop_name")] name: String,
+    #[serde(rename = "stop_id")]
+    id: String,
+    #[serde(rename = "stop_name")]
+    name: String,
     #[serde(default = "default_visible", deserialize_with = "de_from_u8",
             serialize_with = "ser_from_bool")]
     visible: bool,
     fare_zone_id: Option<String>,
-    #[serde(rename = "stop_lon")] lon: f64,
-    #[serde(rename = "stop_lat")] lat: f64,
-    #[serde(default)] location_type: i32,
+    #[serde(rename = "stop_lon")]
+    lon: f64,
+    #[serde(rename = "stop_lat")]
+    lat: f64,
+    #[serde(default)]
+    location_type: i32,
     parent_station: Option<String>,
-    #[serde(rename = "stop_timezone")] timezone: Option<String>,
+    #[serde(rename = "stop_timezone")]
+    timezone: Option<String>,
     geometry_id: Option<String>,
     equipment_id: Option<String>,
 }
@@ -97,8 +116,8 @@ fn manage_stops(collections: &mut Collections, path: &path::Path) {
             _ => (),
         }
     }
-    collections.stop_areas = Collection::new(stop_areas);
-    collections.stop_points = Collection::new(stop_points);
+    collections.stop_areas = CollectionWithId::new(stop_areas);
+    collections.stop_points = CollectionWithId::new(stop_points);
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -108,10 +127,14 @@ struct StopTime {
     stop_sequence: u32,
     arrival_time: Time,
     departure_time: Time,
-    #[serde(default)] boarding_duration: u16,
-    #[serde(default)] alighting_duration: u16,
-    #[serde(default)] pickup_type: u8,
-    #[serde(default)] dropoff_type: u8,
+    #[serde(default)]
+    boarding_duration: u16,
+    #[serde(default)]
+    alighting_duration: u16,
+    #[serde(default)]
+    pickup_type: u8,
+    #[serde(default)]
+    dropoff_type: u8,
     #[serde(default, deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     datetime_estimated: bool,
     local_zone_id: Option<u16>,
@@ -148,7 +171,7 @@ fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
     for vj in &mut vehicle_journeys {
         vj.stop_times.sort_unstable_by_key(|st| st.sequence);
     }
-    collections.vehicle_journeys = Collection::new(vehicle_journeys);
+    collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys);
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -159,7 +182,7 @@ struct Code {
     object_code: String,
 }
 
-fn insert_code_with_idx<T>(collection: &mut Collection<T>, idx: Idx<T>, code: Code)
+fn insert_code_with_idx<T>(collection: &mut CollectionWithId<T>, idx: Idx<T>, code: Code)
 where
     T: Codes + Id<T>,
 {
@@ -168,7 +191,7 @@ where
         .codes_mut()
         .push((code.object_system, code.object_code));
 }
-fn insert_code<T>(collection: &mut Collection<T>, code: Code)
+fn insert_code<T>(collection: &mut CollectionWithId<T>, code: Code)
 where
     T: Codes + Id<T>,
 {
@@ -204,19 +227,19 @@ fn manage_codes(collections: &mut Collections, path: &path::Path) {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct CalendarDate {
-    calendar_id: String,
+    service_id: String,
     #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
     date: Date,
     exception_type: ExceptionType,
 }
 
-fn insert_calendar_date(collection: &mut Collection<Calendar>, calendar_date: CalendarDate) {
-    let idx = match collection.get_idx(&calendar_date.calendar_id) {
+fn insert_calendar_date(collection: &mut CollectionWithId<Calendar>, calendar_date: CalendarDate) {
+    let idx = match collection.get_idx(&calendar_date.service_id) {
         Some(idx) => idx,
         None => {
             error!(
-                "calendar_dates.txt: calendar_id={} not found",
-                calendar_date.calendar_id
+                "calendar_dates.txt: service_id={} not found",
+                calendar_date.service_id
             );
             return;
         }
@@ -228,7 +251,7 @@ fn insert_calendar_date(collection: &mut Collection<Calendar>, calendar_date: Ca
 }
 
 fn manage_calendars(collections: &mut Collections, path: &path::Path) {
-    collections.calendars = make_collection(path, "calendar.txt");
+    collections.calendars = make_collection_with_id(path, "calendar.txt");
 
     info!("Reading calendar_dates.txt");
     if let Ok(mut rdr) = csv::Reader::from_path(path.join("calendar_dates.txt")) {
@@ -241,8 +264,10 @@ fn manage_calendars(collections: &mut Collections, path: &path::Path) {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct FeedInfo {
-    #[serde(rename = "feed_info_param")] info_param: String,
-    #[serde(rename = "feed_info_value")] info_value: String,
+    #[serde(rename = "feed_info_param")]
+    info_param: String,
+    #[serde(rename = "feed_info_value")]
+    info_value: String,
 }
 
 fn manage_feed_infos(collections: &mut Collections, path: &path::Path) {
@@ -269,7 +294,7 @@ struct CommentLink {
     comment_id: String,
 }
 
-fn insert_comment_link<T>(collection: &mut Collection<T>, comment_link: CommentLink)
+fn insert_comment_link<T>(collection: &mut CollectionWithId<T>, comment_link: CommentLink)
 where
     T: CommentLinks + Id<T>,
 {
@@ -291,7 +316,7 @@ where
 
 fn manage_comments(collections: &mut Collections, path: &path::Path) {
     if path.join("comments.txt").exists() {
-        collections.comments = make_collection(path, "comments.txt");
+        collections.comments = make_collection_with_id(path, "comments.txt");
 
         if let Ok(mut rdr) = csv::Reader::from_path(path.join("comment_links.txt")) {
             info!("Reading comment_links.txt");
@@ -316,21 +341,23 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     info!("Loading NTFS from {:?}", path);
     let mut collections = Collections::default();
-    collections.contributors = make_collection(path, "contributors.txt");
-    collections.datasets = make_collection(path, "datasets.txt");
-    collections.commercial_modes = make_collection(path, "commercial_modes.txt");
-    collections.networks = make_collection(path, "networks.txt");
-    collections.lines = make_collection(path, "lines.txt");
-    collections.routes = make_collection(path, "routes.txt");
-    collections.vehicle_journeys = make_collection(path, "trips.txt");
-    collections.physical_modes = make_collection(path, "physical_modes.txt");
+    collections.contributors = make_collection_with_id(path, "contributors.txt");
+    collections.datasets = make_collection_with_id(path, "datasets.txt");
+    collections.commercial_modes = make_collection_with_id(path, "commercial_modes.txt");
+    collections.networks = make_collection_with_id(path, "networks.txt");
+    collections.lines = make_collection_with_id(path, "lines.txt");
+    collections.routes = make_collection_with_id(path, "routes.txt");
+    collections.vehicle_journeys = make_collection_with_id(path, "trips.txt");
+    collections.physical_modes = make_collection_with_id(path, "physical_modes.txt");
     manage_calendars(&mut collections, path);
-    collections.companies = make_collection(path, "companies.txt");
+    collections.companies = make_collection_with_id(path, "companies.txt");
     manage_feed_infos(&mut collections, path);
     manage_stops(&mut collections, path);
     manage_stop_times(&mut collections, path);
     manage_codes(&mut collections, path);
     manage_comments(&mut collections, path);
+    collections.equipments = make_collection_with_id(path, "equipments.txt");
+    collections.transfers = make_collection(path, "transfers.txt");
     info!("Indexing");
     let res = PtObjects::new(collections);
     info!("Loading NTFS done");

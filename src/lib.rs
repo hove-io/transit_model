@@ -21,27 +21,30 @@ pub mod gtfs;
 use std::ops;
 
 use std::collections::HashMap;
-use collection::{Collection, Idx};
+use collection::{Collection, CollectionWithId, Idx};
 use objects::*;
 use relations::{IdxSet, ManyToMany, OneToMany, Relation};
+use std::collections::BTreeMap;
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
 pub struct Collections {
-    pub contributors: Collection<Contributor>,
-    pub datasets: Collection<Dataset>,
-    pub networks: Collection<Network>,
-    pub commercial_modes: Collection<CommercialMode>,
-    pub lines: Collection<Line>,
-    pub routes: Collection<Route>,
-    pub vehicle_journeys: Collection<VehicleJourney>,
-    pub physical_modes: Collection<PhysicalMode>,
-    pub stop_areas: Collection<StopArea>,
-    pub stop_points: Collection<StopPoint>,
+    pub contributors: CollectionWithId<Contributor>,
+    pub datasets: CollectionWithId<Dataset>,
+    pub networks: CollectionWithId<Network>,
+    pub commercial_modes: CollectionWithId<CommercialMode>,
+    pub lines: CollectionWithId<Line>,
+    pub routes: CollectionWithId<Route>,
+    pub vehicle_journeys: CollectionWithId<VehicleJourney>,
+    pub physical_modes: CollectionWithId<PhysicalMode>,
+    pub stop_areas: CollectionWithId<StopArea>,
+    pub stop_points: CollectionWithId<StopPoint>,
     pub feed_infos: HashMap<String, String>,
-    pub calendars: Collection<Calendar>,
-    pub companies: Collection<Company>,
-    pub comments: Collection<Comment>,
+    pub calendars: CollectionWithId<Calendar>,
+    pub companies: CollectionWithId<Company>,
+    pub comments: CollectionWithId<Comment>,
+    pub equipments: CollectionWithId<Equipment>,
+    pub transfers: Collection<Transfer>,
 }
 
 #[derive(GetCorresponding)]
@@ -59,14 +62,19 @@ pub struct PtObjects {
     datasets_to_vehicle_journeys: OneToMany<Dataset, VehicleJourney>,
     companies_to_vehicle_journeys: OneToMany<Company, VehicleJourney>,
     vehicle_journeys_to_stop_points: ManyToMany<VehicleJourney, StopPoint>,
+    transfers_to_stop_points: ManyToMany<Transfer, StopPoint>,
 
     // shortcuts
-    #[get_corresponding(weight = "1.9")] routes_to_stop_points: ManyToMany<Route, StopPoint>,
+    #[get_corresponding(weight = "1.9")]
+    routes_to_stop_points: ManyToMany<Route, StopPoint>,
     #[get_corresponding(weight = "1.9")]
     physical_modes_to_stop_points: ManyToMany<PhysicalMode, StopPoint>,
-    #[get_corresponding(weight = "1.9")] physical_modes_to_routes: ManyToMany<PhysicalMode, Route>,
-    #[get_corresponding(weight = "1.9")] datasets_to_stop_points: ManyToMany<Dataset, StopPoint>,
-    #[get_corresponding(weight = "1.9")] datasets_to_routes: ManyToMany<Dataset, Route>,
+    #[get_corresponding(weight = "1.9")]
+    physical_modes_to_routes: ManyToMany<PhysicalMode, Route>,
+    #[get_corresponding(weight = "1.9")]
+    datasets_to_stop_points: ManyToMany<Dataset, StopPoint>,
+    #[get_corresponding(weight = "1.9")]
+    datasets_to_routes: ManyToMany<Dataset, Route>,
     #[get_corresponding(weight = "1.9")]
     datasets_to_physical_modes: ManyToMany<Dataset, PhysicalMode>,
 }
@@ -78,6 +86,20 @@ impl PtObjects {
                 (
                     idx,
                     vj.stop_times.iter().map(|st| st.stop_point_idx).collect(),
+                )
+            })
+            .collect();
+
+        let forward_tr_to_sp: BTreeMap<_, _> = c.transfers
+            .iter()
+            .map(|(idx, tr)| {
+                (
+                    idx,
+                    vec![
+                        c.stop_points.get_idx(&tr.from_stop_id).unwrap(),
+                        c.stop_points.get_idx(&tr.to_stop_id).unwrap(),
+                    ].into_iter()
+                        .collect(),
                 )
             })
             .collect();
@@ -121,6 +143,7 @@ impl PtObjects {
             datasets_to_vehicle_journeys: datasets_to_vehicle_journeys,
             vehicle_journeys_to_stop_points: vehicle_journeys_to_stop_points,
             companies_to_vehicle_journeys: OneToMany::new(&c.companies, &c.vehicle_journeys),
+            transfers_to_stop_points: ManyToMany::from_forward(forward_tr_to_sp),
             collections: c,
         }
     }
