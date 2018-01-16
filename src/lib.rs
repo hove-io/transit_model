@@ -62,7 +62,7 @@ pub struct PtObjects {
     datasets_to_vehicle_journeys: OneToMany<Dataset, VehicleJourney>,
     companies_to_vehicle_journeys: OneToMany<Company, VehicleJourney>,
     vehicle_journeys_to_stop_points: ManyToMany<VehicleJourney, StopPoint>,
-    pub stop_points_to_stop_points: ManyToMany<StopPoint, StopPoint>,
+    transfers_to_stop_points: ManyToMany<Transfer, StopPoint>,
 
     // shortcuts
     #[get_corresponding(weight = "1.9")] routes_to_stop_points: ManyToMany<Route, StopPoint>,
@@ -85,14 +85,20 @@ impl PtObjects {
                 )
             })
             .collect();
-        let mut forward_sp_to_sp = BTreeMap::default();
-        c.transfers.iter().for_each(|obj| {
-            forward_sp_to_sp
-                .entry(c.stop_points.get_idx(&obj.from_stop_id).unwrap())
-                .or_insert_with(IdxSet::default)
-                .insert(c.stop_points.get_idx(&obj.to_stop_id).unwrap());
-        });
 
+        let forward_tr_to_sp: BTreeMap<_, _> = c.transfers
+            .iter()
+            .map(|(idx, tr)| {
+                (
+                    idx,
+                    vec![
+                        c.stop_points.get_idx(&tr.from_stop_id).unwrap(),
+                        c.stop_points.get_idx(&tr.to_stop_id).unwrap(),
+                    ].into_iter()
+                        .collect(),
+                )
+            })
+            .collect();
         let vehicle_journeys_to_stop_points = ManyToMany::from_forward(forward_vj_to_sp);
         let routes_to_vehicle_journeys = OneToMany::new(&c.routes, &c.vehicle_journeys);
         let physical_modes_to_vehicle_journeys =
@@ -133,7 +139,7 @@ impl PtObjects {
             datasets_to_vehicle_journeys: datasets_to_vehicle_journeys,
             vehicle_journeys_to_stop_points: vehicle_journeys_to_stop_points,
             companies_to_vehicle_journeys: OneToMany::new(&c.companies, &c.vehicle_journeys),
-            stop_points_to_stop_points: ManyToMany::from_forward(forward_sp_to_sp),
+            transfers_to_stop_points: ManyToMany::from_forward(forward_tr_to_sp),
             collections: c,
         }
     }

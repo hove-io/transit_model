@@ -468,30 +468,29 @@ impl Id<Comment> for Comment {
     }
 }
 
-#[derive(Derivative)]
-#[derivative(Default(bound = ""))]
-#[derive(Serialize, Deserialize, Debug)]
-pub enum Disponibility {
+#[derive(Serialize, Deserialize, Debug, Derivative)]
+#[derivative(Default)]
+pub enum Availability {
     #[derivative(Default)]
     #[serde(rename = "0")]
-    InformationNotDisponible,
-    #[serde(rename = "1")] Disponible,
-    #[serde(rename = "2")] NotDisponible,
+    InformationNotAvailable,
+    #[serde(rename = "1")] Available,
+    #[serde(rename = "2")] NotAvailable,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Equipment {
     #[serde(rename = "equipment_id")] pub id: String,
-    #[serde(deserialize_with = "de_with_empty_default")] pub wheelchair_boarding: Disponibility,
-    #[serde(deserialize_with = "de_with_empty_default")] pub sheltered: Disponibility,
-    #[serde(deserialize_with = "de_with_empty_default")] pub elevator: Disponibility,
-    #[serde(deserialize_with = "de_with_empty_default")] pub escalator: Disponibility,
-    #[serde(deserialize_with = "de_with_empty_default")] pub bike_accepted: Disponibility,
-    #[serde(deserialize_with = "de_with_empty_default")] pub bike_depot: Disponibility,
-    #[serde(deserialize_with = "de_with_empty_default")] pub visual_announcement: Disponibility,
-    #[serde(deserialize_with = "de_with_empty_default")] pub audible_announcement: Disponibility,
-    #[serde(deserialize_with = "de_with_empty_default")] pub appropriate_escort: Disponibility,
-    #[serde(deserialize_with = "de_with_empty_default")] pub appropriate_signage: Disponibility,
+    #[serde(deserialize_with = "de_with_empty_default")] pub wheelchair_boarding: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")] pub sheltered: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")] pub elevator: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")] pub escalator: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")] pub bike_accepted: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")] pub bike_depot: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")] pub visual_announcement: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")] pub audible_announcement: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")] pub appropriate_escort: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")] pub appropriate_signage: Availability,
 }
 
 impl Id<Equipment> for Equipment {

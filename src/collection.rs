@@ -50,13 +50,6 @@ impl<T> Default for Collection<T> {
     }
 }
 
-impl<T> ops::Deref for Collection<T> {
-    type Target = Vec<T>;
-    fn deref(&self) -> &Vec<T> {
-        &self.objects
-    }
-}
-
 impl<T> ::serde::Serialize for Collection<T>
 where
     T: ::serde::Serialize,
@@ -86,6 +79,13 @@ pub struct CollectionWithId<T> {
     id_to_idx: HashMap<String, Idx<T>>,
 }
 
+impl<T> ops::Deref for CollectionWithId<T> {
+    type Target = Collection<T>;
+    fn deref(&self) -> &Collection<T> {
+        &self.collection
+    }
+}
+
 impl<T> ::serde::Serialize for CollectionWithId<T>
 where
     T: ::serde::Serialize + Id<T>,
@@ -94,7 +94,7 @@ where
     where
         S: ::serde::Serializer,
     {
-        self.collection.objects.serialize(serializer)
+        self.objects.serialize(serializer)
     }
 }
 impl<'de, T> ::serde::Deserialize<'de> for CollectionWithId<T>
@@ -132,7 +132,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     pub fn index_mut(&mut self, idx: Idx<T>) -> RefMut<T> {
         RefMut {
             idx: idx,
-            old_id: self.collection.objects[idx.get()].id().to_string(),
+            old_id: self.objects[idx.get()].id().to_string(),
             collection: self,
         }
     }
@@ -150,7 +150,7 @@ impl<'a, T: Id<T>> ops::DerefMut for RefMut<'a, T> {
 impl<'a, T: Id<T>> ops::Deref for RefMut<'a, T> {
     type Target = T;
     fn deref(&self) -> &T {
-        &self.collection.collection.objects[self.idx.get()]
+        &self.collection.objects[self.idx.get()]
     }
 }
 impl<'a, T: Id<T>> Drop for RefMut<'a, T> {
@@ -204,13 +204,22 @@ impl<T> CollectionWithId<T> {
     }
 
     pub fn len(&self) -> usize {
-        self.collection.objects.len()
+        self.objects.len()
     }
 }
 
-impl<T> ops::Index<Idx<T>> for CollectionWithId<T> {
+impl<T> ops::Index<Idx<T>> for Collection<T> {
     type Output = T;
     fn index(&self, index: Idx<T>) -> &Self::Output {
-        &self.collection.objects[index.get()]
+        &self.objects[index.get()]
+    }
+}
+
+impl<T> Collection<T> {
+    pub fn iter(&self) -> Iter<T> {
+        self.objects
+            .iter()
+            .enumerate()
+            .map(|(idx, obj)| (Idx::new(idx), obj))
     }
 }
