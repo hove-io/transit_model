@@ -40,21 +40,40 @@ impl From<Agency> for objects::Network {
         }
     }
 }
+impl From<Agency> for objects::Company {
+    fn from(agency: Agency) -> objects::Company {
+        objects::Company {
+            id: agency.id.unwrap_or_else(default_agency_id),
+            name: agency.name,
+            address: None,
+            url: Some(agency.url),
+            mail: agency.email,
+            phone: agency.phone,
+        }
+    }
+}
 
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     let mut collections = Collections::default();
-    collections.networks = read_agency(path);
+    let (networks, companies) = read_agency(path);
+    collections.networks = networks;
+    collections.companies = companies;
     PtObjects::new(collections)
 }
 
-pub fn read_agency<P: AsRef<path::Path>>(path: P) -> CollectionWithId<objects::Network> {
+pub fn read_agency<P: AsRef<path::Path>>(path: P)
+        -> (CollectionWithId<objects::Network>, CollectionWithId<objects::Company>) {
     let path = path.as_ref().join("agency.txt");
     let mut rdr = csv::Reader::from_path(path).unwrap();
-    CollectionWithId::new(
-        rdr.deserialize()
-            .map(Result::unwrap)
-            .map(|agency: Agency| objects::Network::from(agency))
-            .collect(),
-    )
+    let gtfs_agencies : Vec<Agency> = rdr.deserialize().map(Result::unwrap).collect();
+    let networks = gtfs_agencies.iter().cloned()
+                    .map(|agency| objects::Network::from(agency))
+                    .collect();
+    let networks = CollectionWithId::new(networks);
+    let companies = gtfs_agencies.into_iter()
+                    .map(|agency| objects::Company::from(agency))
+                    .collect();
+    let companies = CollectionWithId::new(companies);
+    (networks, companies)
 }

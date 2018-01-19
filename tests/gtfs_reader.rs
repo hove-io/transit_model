@@ -1,5 +1,4 @@
 extern crate navitia_model;
-extern crate serde_json;
 extern crate tempdir;
 
 use navitia_model::gtfs;
@@ -16,11 +15,12 @@ fn load_minimal_agency() {
     let mut f = File::create(&file_path).unwrap();
     f.write_all(agency_content.as_bytes()).unwrap();
 
-    let networks = gtfs::read_agency(tmp_dir.path());
+    let (networks, companies) = gtfs::read_agency(tmp_dir.path());
     tmp_dir.close().expect("delete temp dir");
     assert_eq!(1, networks.len());
     let agency = networks.iter().next().unwrap().1;
     assert_eq!("default_agency_id", agency.id);
+    assert_eq!(1, companies.len());
 }
 
 #[test]
@@ -32,9 +32,10 @@ id_1,My agency,http://my-agency_url.com,Europe/London";
     let mut f = File::create(&file_path).unwrap();
     f.write_all(agency_content.as_bytes()).unwrap();
 
-    let networks = gtfs::read_agency(tmp_dir.path());
+    let (networks, companies) = gtfs::read_agency(tmp_dir.path());
     tmp_dir.close().expect("delete temp dir");
     assert_eq!(1, networks.len());
+    assert_eq!(1, companies.len());
 }
 
 #[test]
@@ -46,11 +47,12 @@ id_1,My agency,http://my-agency_url.com,Europe/London,EN,0123456789,http://my-ag
     let mut f = File::create(&file_path).unwrap();
     f.write_all(agency_content.as_bytes()).unwrap();
 
-    let networks = gtfs::read_agency(tmp_dir.path());
+    let (networks, companies) = gtfs::read_agency(tmp_dir.path());
     tmp_dir.close().expect("delete temp dir");
     assert_eq!(1, networks.len());
-    let agency = networks.iter().next().unwrap().1;
-    assert_eq!("id_1", agency.id);
+    let network = networks.iter().next().unwrap().1;
+    assert_eq!("id_1", network.id);
+    assert_eq!(1, companies.len());
 }
 
 #[test]
