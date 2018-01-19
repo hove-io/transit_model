@@ -62,18 +62,25 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     PtObjects::new(collections)
 }
 
-pub fn read_agency<P: AsRef<path::Path>>(path: P)
-        -> (CollectionWithId<objects::Network>, CollectionWithId<objects::Company>) {
+pub fn read_agency<P: AsRef<path::Path>>(
+    path: P,
+) -> (
+    CollectionWithId<objects::Network>,
+    CollectionWithId<objects::Company>,
+) {
     let path = path.as_ref().join("agency.txt");
     let mut rdr = csv::Reader::from_path(path).unwrap();
-    let gtfs_agencies : Vec<Agency> = rdr.deserialize().map(Result::unwrap).collect();
-    let networks = gtfs_agencies.iter().cloned()
-                    .map(|agency| objects::Network::from(agency))
-                    .collect();
+    let gtfs_agencies: Vec<Agency> = rdr.deserialize().map(Result::unwrap).collect();
+    let networks = gtfs_agencies
+        .iter()
+        .cloned()
+        .map(|agency| objects::Network::from(agency))
+        .collect();
     let networks = CollectionWithId::new(networks);
-    let companies = gtfs_agencies.into_iter()
-                    .map(|agency| objects::Company::from(agency))
-                    .collect();
+    let companies = gtfs_agencies
+        .into_iter()
+        .map(|agency| objects::Company::from(agency))
+        .collect();
     let companies = CollectionWithId::new(companies);
     (networks, companies)
 }
