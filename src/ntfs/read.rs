@@ -21,10 +21,10 @@ use serde;
 
 use objects::*;
 use collection::{Collection, CollectionWithId, Id, Idx};
-use {Collections, PtObjects};
+use Collections;
 use utils::*;
 
-fn make_collection_with_id<T>(path: &path::Path, file: &str) -> CollectionWithId<T>
+pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> CollectionWithId<T>
 where
     T: Id<T>,
     for<'de> T: serde::Deserialize<'de>,
@@ -35,7 +35,7 @@ where
     CollectionWithId::new(vec)
 }
 
-fn make_collection<T>(path: &path::Path, file: &str) -> Collection<T>
+pub fn make_collection<T>(path: &path::Path, file: &str) -> Collection<T>
 where
     for<'de> T: serde::Deserialize<'de>,
 {
@@ -114,7 +114,7 @@ impl From<Stop> for StopPoint {
     }
 }
 
-fn manage_stops(collections: &mut Collections, path: &path::Path) {
+pub fn manage_stops(collections: &mut Collections, path: &path::Path) {
     info!("Reading stops.txt");
     let mut rdr = csv::Reader::from_path(path.join("stops.txt")).unwrap();
     let mut stop_areas = vec![];
@@ -158,7 +158,7 @@ struct StopTime {
     local_zone_id: Option<u16>,
 }
 
-fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
+pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
     info!("Reading stop_times.txt");
     let mut rdr = csv::Reader::from_path(path.join("stop_times.txt")).unwrap();
     for stop_time in rdr.deserialize().map(Result::unwrap) {
@@ -226,7 +226,7 @@ where
     insert_code_with_idx(collection, idx, code);
 }
 
-fn manage_codes(collections: &mut Collections, path: &path::Path) {
+pub fn manage_codes(collections: &mut Collections, path: &path::Path) {
     info!("Reading object_codes.txt");
     let mut rdr = csv::Reader::from_path(path.join("object_codes.txt")).unwrap();
     for code in rdr.deserialize().map(Result::unwrap) {
@@ -268,8 +268,8 @@ fn insert_calendar_date(collection: &mut CollectionWithId<Calendar>, calendar_da
         .push((calendar_date.date, calendar_date.exception_type))
 }
 
-fn manage_calendars(collections: &mut Collections, path: &path::Path) {
-    collections.calendars = make_collection_with_id(path, "calendar.txt");
+pub fn manage_calendars(collections: &mut Collections, path: &path::Path) {
+    collections.calendars = make_collection_with_id(&path, "calendar.txt");
 
     info!("Reading calendar_dates.txt");
     if let Ok(mut rdr) = csv::Reader::from_path(path.join("calendar_dates.txt")) {
@@ -288,7 +288,7 @@ struct FeedInfo {
     info_value: String,
 }
 
-fn manage_feed_infos(collections: &mut Collections, path: &path::Path) {
+pub fn manage_feed_infos(collections: &mut Collections, path: &path::Path) {
     info!("Reading feed_infos.txt");
     let mut rdr = csv::Reader::from_path(path.join("feed_infos.txt")).unwrap();
     collections.feed_infos = rdr.deserialize::<FeedInfo>().map(Result::unwrap).fold(
@@ -332,9 +332,9 @@ where
         .push(comment_link.comment_id);
 }
 
-fn manage_comments(collections: &mut Collections, path: &path::Path) {
+pub fn manage_comments(collections: &mut Collections, path: &path::Path) {
     if path.join("comments.txt").exists() {
-        collections.comments = make_collection_with_id(path, "comments.txt");
+        collections.comments = make_collection_with_id(&path, "comments.txt");
 
         if let Ok(mut rdr) = csv::Reader::from_path(path.join("comment_links.txt")) {
             info!("Reading comment_links.txt");
@@ -353,31 +353,4 @@ fn manage_comments(collections: &mut Collections, path: &path::Path) {
             }
         }
     }
-}
-
-pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
-    let path = path.as_ref();
-    info!("Loading NTFS from {:?}", path);
-    let mut collections = Collections::default();
-    collections.contributors = make_collection_with_id(path, "contributors.txt");
-    collections.datasets = make_collection_with_id(path, "datasets.txt");
-    collections.commercial_modes = make_collection_with_id(path, "commercial_modes.txt");
-    collections.networks = make_collection_with_id(path, "networks.txt");
-    collections.lines = make_collection_with_id(path, "lines.txt");
-    collections.routes = make_collection_with_id(path, "routes.txt");
-    collections.vehicle_journeys = make_collection_with_id(path, "trips.txt");
-    collections.physical_modes = make_collection_with_id(path, "physical_modes.txt");
-    manage_calendars(&mut collections, path);
-    collections.companies = make_collection_with_id(path, "companies.txt");
-    manage_feed_infos(&mut collections, path);
-    manage_stops(&mut collections, path);
-    manage_stop_times(&mut collections, path);
-    manage_codes(&mut collections, path);
-    manage_comments(&mut collections, path);
-    collections.equipments = make_collection_with_id(path, "equipments.txt");
-    collections.transfers = make_collection(path, "transfers.txt");
-    info!("Indexing");
-    let res = PtObjects::new(collections);
-    info!("Loading NTFS done");
-    res
 }

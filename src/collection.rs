@@ -54,6 +54,12 @@ pub struct Collection<T> {
     objects: Vec<T>,
 }
 
+impl<T: PartialEq> PartialEq for Collection<T> {
+    fn eq(&self, other: &Collection<T>) -> bool {
+        self.objects == other.objects
+    }
+}
+
 impl<T> Collection<T> {
     pub fn new(v: Vec<T>) -> Self {
         Collection { objects: v }
@@ -93,6 +99,12 @@ where
 pub struct CollectionWithId<T> {
     collection: Collection<T>,
     id_to_idx: HashMap<String, Idx<T>>,
+}
+
+impl<T: PartialEq> PartialEq for CollectionWithId<T> {
+    fn eq(&self, other: &CollectionWithId<T>) -> bool {
+        self.collection == other.collection
+    }
 }
 
 impl<T> ops::Deref for CollectionWithId<T> {
