@@ -68,3 +68,21 @@ My agency 2,http://my-agency_url.com,Europe/London";
     gtfs::read_agency(tmp_dir.path());
     tmp_dir.close().expect("delete temp dir");
 }
+
+
+#[test]
+fn load_one_stop_point() {
+    let stops_content = "stop_id,stop_name,stop_lat,stop_lon\n\
+    id1,my stop name,0.1,1.2";
+    let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+    let file_path = tmp_dir.path().join("stops.txt");
+    let mut f = File::create(&file_path).unwrap();
+    f.write_all(stops_content.as_bytes()).unwrap();
+
+    let (stop_areas, stop_points) = gtfs::read_stops(tmp_dir.path());
+    tmp_dir.close().expect("delete temp dir");
+    assert_eq!(1, stop_areas.len());
+    assert_eq!(1, stop_points.len());
+    let stop_area = stop_areas.iter().next().unwrap().1;
+    assert_eq!("SAid1", stop_area.id);
+}
