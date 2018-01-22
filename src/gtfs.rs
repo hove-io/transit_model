@@ -79,12 +79,18 @@ struct Stop {
     #[serde(default, rename = "wheelchair_boarding")]
     wheelchair_boarding: Option<String>,
 }
-impl From<Stop> for objects::StopArea {    
+impl From<Stop> for objects::StopArea {
     fn from(stop: Stop) -> objects::StopArea {
+        let mut stop_codes : Vec<(String, String)> = vec![];
+        if let Some(c) = stop.code {
+            stop_codes.push(
+                ("gtfs_stop_code".to_string(), c)
+            );
+        }
         objects::StopArea {
             id: stop.id,
             name: stop.name,
-            codes: CodesT::default(),
+            codes: stop_codes,
             comment_links: objects::CommentLinksT::default(),
             coord: Coord {
                 lon: stop.lon,
@@ -101,10 +107,16 @@ impl From<Stop> for objects::StopPoint {
     fn from(stop: Stop) -> objects::StopPoint {
         let id = stop.id;
         let stop_area_id = stop.parent_station.unwrap_or_else(|| format!("SA{}", id));
+        let mut stop_codes : Vec<(String, String)> = vec![];
+        if let Some(c) = stop.code {
+            stop_codes.push(
+                ("gtfs_stop_code".to_string(), c)
+            );
+        }
         objects::StopPoint {
             id: id,
             name: stop.name,
-            codes: CodesT::default(),
+            codes: stop_codes,
             comment_links: objects::CommentLinksT::default(),
             coord: Coord {
                 lon: stop.lon,
@@ -172,6 +184,7 @@ pub fn read_stops<P: AsRef<path::Path>>(
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
                     new_stop_area.id = format!("SA{}", new_stop_area.id);
+                    new_stop_area.code = None;
                     stop_areas.push(objects::StopArea::from(new_stop_area));
                 }
                 stop_points.push(objects::StopPoint::from(stop));
