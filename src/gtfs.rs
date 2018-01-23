@@ -179,7 +179,7 @@ pub fn read_stops<P: AsRef<path::Path>>(
             0 => {
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
-                    new_stop_area.id = format!("SA{}", new_stop_area.id);
+                    new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
                     new_stop_area.code = None;
                     stop_areas.push(objects::StopArea::from(new_stop_area));
                 }

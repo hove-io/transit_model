@@ -108,7 +108,9 @@ fn manage_stops(collections: &mut Collections, path: &path::Path) {
         match stop.location_type {
             0 => {
                 if stop.parent_station.is_none() {
-                    stop_areas.push(StopArea::from(stop.clone()));
+                    let mut new_stop_area = stop.clone();
+                    new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
+                    stop_areas.push(StopArea::from(new_stop_area));
                 }
                 stop_points.push(StopPoint::from(stop));
             }

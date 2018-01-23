@@ -83,7 +83,7 @@ fn load_one_stop_point() {
     assert_eq!(1, stop_areas.len());
     assert_eq!(1, stop_points.len());
     let stop_area = stop_areas.iter().next().unwrap().1;
-    assert_eq!("SAid1", stop_area.id);
+    assert_eq!("Navitia:id1", stop_area.id);
 }
 
 #[test]
