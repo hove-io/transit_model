@@ -76,7 +76,7 @@ struct Stop {
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
     timezone: Option<String>,
-    #[serde(default, rename = "wheelchair_boarding")]
+    #[serde(default)]
     wheelchair_boarding: Option<String>,
 }
 impl From<Stop> for objects::StopArea {
