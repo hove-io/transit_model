@@ -93,7 +93,7 @@ impl Id<Contributor> for Dataset {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct CommercialMode {
     #[serde(rename = "commercial_mode_id")]
     pub id: String,
@@ -106,7 +106,7 @@ impl Id<CommercialMode> for CommercialMode {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct PhysicalMode {
     #[serde(rename = "physical_mode_id")]
     pub id: String,
@@ -148,7 +148,7 @@ impl Id<Network> for Network {
 }
 impl_codes!(Network);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Rgb {
     pub red: u8,
     pub green: u8,
@@ -195,7 +195,7 @@ impl<'de> ::serde::Deserialize<'de> for Rgb {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Line {
     #[serde(rename = "line_id")]
     pub id: String,
@@ -212,6 +212,7 @@ pub struct Line {
     pub forward_direction: Option<String>,
     #[serde(rename = "backward_line_name")]
     pub backward_name: Option<String>,
+    pub backward_direction: Option<String>,
     #[serde(rename = "line_color")]
     pub color: Option<Rgb>,
     #[serde(rename = "line_text_color")]
@@ -245,7 +246,7 @@ impl Id<CommercialMode> for Line {
 impl_codes!(Line);
 impl_comment_links!(Line);
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Route {
     #[serde(rename = "route_id")]
     pub id: String,
@@ -273,7 +274,7 @@ impl Id<Line> for Route {
 impl_codes!(Route);
 impl_comment_links!(Route);
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct VehicleJourney {
     #[serde(rename = "trip_id")]
     pub id: String,
@@ -385,7 +386,7 @@ impl<'de> ::serde::Deserialize<'de> for Time {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct StopTime {
     pub stop_point_idx: Idx<StopPoint>,
     pub sequence: u32,
@@ -497,7 +498,7 @@ impl Id<Calendar> for Calendar {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Company {
     #[serde(rename = "company_id")]
     pub id: String,

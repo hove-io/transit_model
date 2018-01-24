@@ -23,7 +23,7 @@ where
 {
     use serde::Deserialize;
     let i = u8::deserialize(deserializer)?;
-    Ok(i == 0)
+    Ok(i != 0)
 }
 
 pub fn ser_from_bool<S>(v: &bool, serializer: S) -> Result<S::Ok, S::Error>
