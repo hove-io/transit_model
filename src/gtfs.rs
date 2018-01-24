@@ -104,7 +104,8 @@ impl From<Stop> for objects::StopArea {
 impl From<Stop> for objects::StopPoint {
     fn from(stop: Stop) -> objects::StopPoint {
         let id = stop.id;
-        let stop_area_id = stop.parent_station.unwrap_or_else(|| format!("Navitia:{}", id));
+        let stop_area_id = stop.parent_station
+            .unwrap_or_else(|| format!("Navitia:{}", id));
         let mut stop_codes: Vec<(String, String)> = vec![];
         if let Some(c) = stop.code {
             stop_codes.push(("gtfs_stop_code".to_string(), c));
