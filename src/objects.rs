@@ -120,7 +120,7 @@ impl Id<PhysicalMode> for PhysicalMode {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Network {
     #[serde(rename = "network_id")]
     pub id: String,
