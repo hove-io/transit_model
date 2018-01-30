@@ -95,7 +95,10 @@ mod tests {
     use CollectionWithId;
     use super::{read, write};
     use super::Collections;
+    use collection::Id;
     use std::collections::HashMap;
+    use serde;
+    use std::fmt::Debug;
 
     #[test]
     fn feed_infos_serialization_deserialization() {
@@ -116,9 +119,26 @@ mod tests {
         assert_eq!(collections.feed_infos, feed_infos);
     }
 
+    fn test_serialize_deserialize_collection_with_id<T>(objects: Vec<T>)
+    where
+        T: Id<T> + PartialEq + Debug + serde::Serialize,
+        for<'de> T: serde::Deserialize<'de>,
+    {
+        let collection = CollectionWithId::new(objects);
+        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+
+        {
+            let path = tmp_dir.as_ref();
+            write::write_collection_with_id(path, "file.txt", &collection);
+            let des_collection = read::make_collection_with_id(path, "file.txt");
+            assert_eq!(des_collection, collection);
+        }
+        tmp_dir.close().expect("delete temp dir");
+    }
+
     #[test]
     fn networks_serialization_deserialization() {
-        let expected_networks = vec![
+        test_serialize_deserialize_collection_with_id(vec![
             Network {
                 id: "OIF:101".to_string(),
                 name: "SAVAC".to_string(),
@@ -141,24 +161,12 @@ mod tests {
                 sort_order: None,
                 codes: CodesT::default(),
             },
-        ];
-
-        let collection_with_id = CollectionWithId::new(expected_networks);
-
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-
-        {
-            let path = tmp_dir.as_ref();
-            write::write_collection_with_id(path, "networks.txt", &collection_with_id);
-            let networks = read::make_collection_with_id(path, "networks.txt");
-            assert_eq!(networks, collection_with_id);
-        }
-        tmp_dir.close().expect("delete temp dir");
+        ]);
     }
 
     #[test]
     fn commercial_modes_serialization_deserialization() {
-        let expected_objects = vec![
+        test_serialize_deserialize_collection_with_id(vec![
             CommercialMode {
                 id: "boarding_landing".to_string(),
                 name: "Boarding - Landing".to_string(),
@@ -167,24 +175,12 @@ mod tests {
                 id: "bus".to_string(),
                 name: "Bus".to_string(),
             },
-        ];
-
-        let expected = CollectionWithId::new(expected_objects);
-
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-
-        {
-            let path = tmp_dir.as_ref();
-            write::write_collection_with_id(path, "commercial_modes.txt", &expected);
-            let col_with_id = read::make_collection_with_id(path, "commercial_modes.txt");
-            assert_eq!(col_with_id, expected);
-        }
-        tmp_dir.close().expect("delete temp dir");
+        ]);
     }
 
     #[test]
     fn companies_serialization_deserialization() {
-        let expected_objects = vec![
+        test_serialize_deserialize_collection_with_id(vec![
             Company {
                 id: "OIF:101".to_string(),
                 name: "Foo".to_string(),
@@ -201,24 +197,12 @@ mod tests {
                 mail: None,
                 phone: None,
             },
-        ];
-
-        let expected = CollectionWithId::new(expected_objects);
-
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-
-        {
-            let path = tmp_dir.as_ref();
-            write::write_collection_with_id(path, "companies.txt", &expected);
-            let col_with_id = read::make_collection_with_id(path, "companies.txt");
-            assert_eq!(col_with_id, expected);
-        }
-        tmp_dir.close().expect("delete temp dir");
+        ]);
     }
 
     #[test]
     fn lines_serialization_deserialization() {
-        let expected_objects = vec![
+        test_serialize_deserialize_collection_with_id(vec![
             Line {
                 id: "OIF:002002002:BDEOIF829".to_string(),
                 name: "DEF".to_string(),
@@ -265,24 +249,12 @@ mod tests {
                 opening_time: None,
                 closing_time: None,
             },
-        ];
-
-        let expected = CollectionWithId::new(expected_objects);
-
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-
-        {
-            let path = tmp_dir.as_ref();
-            write::write_collection_with_id(path, "lines.txt", &expected);
-            let col_with_id = read::make_collection_with_id(path, "lines.txt");
-            assert_eq!(col_with_id, expected);
-        }
-        tmp_dir.close().expect("delete temp dir");
+        ]);
     }
 
     #[test]
     fn physical_modes_serialization_deserialization() {
-        let expected_objects = vec![
+        test_serialize_deserialize_collection_with_id(vec![
             PhysicalMode {
                 id: "Bus".to_string(),
                 name: "Bus".to_string(),
@@ -293,24 +265,12 @@ mod tests {
                 name: "Funicular".to_string(),
                 co2_emission: None,
             },
-        ];
-
-        let expected = CollectionWithId::new(expected_objects);
-
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-
-        {
-            let path = tmp_dir.as_ref();
-            write::write_collection_with_id(path, "physical_modes.txt", &expected);
-            let col_with_id = read::make_collection_with_id(path, "physical_modes.txt");
-            assert_eq!(col_with_id, expected);
-        }
-        tmp_dir.close().expect("delete temp dir");
+        ]);
     }
 
     #[test]
     fn routes_serialization_deserialization() {
-        let expected_objects = vec![
+        test_serialize_deserialize_collection_with_id(vec![
             Route {
                 id: "IF:002002002:BDE".to_string(),
                 name: "Hôtels - Hôtels".to_string(),
@@ -331,19 +291,7 @@ mod tests {
                 geometry_id: None,
                 destination_id: None,
             },
-        ];
-
-        let expected = CollectionWithId::new(expected_objects);
-
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-
-        {
-            let path = tmp_dir.as_ref();
-            write::write_collection_with_id(path, "routes.txt", &expected);
-            let col_with_id = read::make_collection_with_id(path, "routes.txt");
-            assert_eq!(col_with_id, expected);
-        }
-        tmp_dir.close().expect("delete temp dir");
+        ]);
     }
 
     #[test]
