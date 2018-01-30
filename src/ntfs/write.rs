@@ -19,6 +19,8 @@ use std::path;
 use csv;
 use collection::{CollectionWithId, Id};
 use serde;
+use objects::*;
+use super::StopTime;
 
 pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>) {
     info!("Writing feed_infos.txt");
@@ -29,6 +31,40 @@ pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>)
         wtr.serialize(feed_info).unwrap();
     }
     wtr.flush().unwrap();
+}
+
+pub fn write_vehicle_journeys_and_stop_times(
+    path: &path::Path,
+    vehicle_journeys: &CollectionWithId<VehicleJourney>,
+    stop_points: &CollectionWithId<StopPoint>,
+) {
+    info!("Writing trips.txt and stop_times.txt");
+    let mut vj_wtr = csv::Writer::from_path(&path.join("trips.txt")).unwrap();
+    let mut st_wtr = csv::Writer::from_path(&path.join("stop_times.txt")).unwrap();
+    for (_, vj) in vehicle_journeys.iter() {
+        vj_wtr.serialize(vj).unwrap();
+
+        for st in &vj.stop_times {
+            st_wtr
+                .serialize(StopTime {
+                    stop_id: stop_points[st.stop_point_idx].id.clone(),
+                    trip_id: vj.id.clone(),
+                    stop_sequence: st.sequence,
+                    arrival_time: st.arrival_time,
+                    departure_time: st.departure_time,
+                    boarding_duration: st.boarding_duration,
+                    alighting_duration: st.alighting_duration,
+                    pickup_type: st.pickup_type,
+                    dropoff_type: st.dropoff_type,
+                    datetime_estimated: st.datetime_estimated,
+                    local_zone_id: st.local_zone_id,
+                    // TODO: Add headsign and stop_time_ids
+                })
+                .unwrap();
+        }
+    }
+    st_wtr.flush().unwrap();
+    vj_wtr.flush().unwrap();
 }
 
 pub fn write_collection_with_id<T>(path: &path::Path, file: &str, collection: &CollectionWithId<T>)

@@ -23,6 +23,7 @@ use objects::*;
 use collection::{Collection, CollectionWithId, Id, Idx};
 use Collections;
 use utils::*;
+use super::StopTime;
 
 pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> CollectionWithId<T>
 where
@@ -136,26 +137,6 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) {
     }
     collections.stop_areas = CollectionWithId::new(stop_areas);
     collections.stop_points = CollectionWithId::new(stop_points);
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct StopTime {
-    stop_id: String,
-    trip_id: String,
-    stop_sequence: u32,
-    arrival_time: Time,
-    departure_time: Time,
-    #[serde(default)]
-    boarding_duration: u16,
-    #[serde(default)]
-    alighting_duration: u16,
-    #[serde(default)]
-    pickup_type: u8,
-    #[serde(default)]
-    dropoff_type: u8,
-    #[serde(default, deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    datetime_estimated: bool,
-    local_zone_id: Option<u16>,
 }
 
 pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
