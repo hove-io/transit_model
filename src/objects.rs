@@ -59,7 +59,7 @@ macro_rules! impl_comment_links {
     };
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Contributor {
     #[serde(rename = "contributor_id")]
     pub id: String,
@@ -76,11 +76,32 @@ impl Id<Contributor> for Contributor {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub enum DatasetType {
+    #[serde(rename = "0")] Theorical,
+    #[serde(rename = "1")] Revised,
+    #[serde(rename = "2")] Production,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Dataset {
     #[serde(rename = "dataset_id")]
     pub id: String,
     pub contributor_id: String,
+    #[serde(rename = "dataset_start_date", deserialize_with = "de_from_date_string",
+            serialize_with = "ser_from_naive_date")]
+    pub start_date: Date,
+    #[serde(rename = "dataset_end_date", deserialize_with = "de_from_date_string",
+            serialize_with = "ser_from_naive_date")]
+    pub end_date: Date,
+    pub dataset_type: Option<DatasetType>,
+    #[serde(rename = "dataset_extrapolation", deserialize_with = "de_from_u8",
+            serialize_with = "ser_from_bool")]
+    pub extrapolation: bool,
+    #[serde(rename = "dataset_desc")]
+    pub desc: Option<String>,
+    #[serde(rename = "dataset_system")]
+    pub system: Option<String>,
 }
 impl Id<Dataset> for Dataset {
     fn id(&self) -> &str {
@@ -548,7 +569,7 @@ impl Id<Comment> for Comment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Derivative)]
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
 #[derivative(Default)]
 pub enum Availability {
     #[derivative(Default)]
@@ -558,7 +579,7 @@ pub enum Availability {
     #[serde(rename = "2")] NotAvailable,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Equipment {
     #[serde(rename = "equipment_id")]
     pub id: String,
@@ -590,7 +611,7 @@ impl Id<Equipment> for Equipment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Transfer {
     pub from_stop_id: String,
     pub to_stop_id: String,
