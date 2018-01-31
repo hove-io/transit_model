@@ -20,7 +20,7 @@ use csv;
 use collection::{Collection, CollectionWithId, Id};
 use serde;
 use objects::*;
-use super::StopTime;
+use super::{CalendarDate, StopTime};
 
 pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>) {
     info!("Writing feed_infos.txt");
@@ -90,4 +90,27 @@ where
         wtr.serialize(obj).unwrap();
     }
     wtr.flush().unwrap();
+}
+
+pub fn write_calendar_and_calendar_dates(
+    path: &path::Path,
+    calendars: &CollectionWithId<Calendar>,
+) {
+    info!("Writing calendar.txt and calendar_dates.txt");
+    let mut c_wtr = csv::Writer::from_path(&path.join("calendar.txt")).unwrap();
+    let mut cd_wtr = csv::Writer::from_path(&path.join("calendar_dates.txt")).unwrap();
+    for (_, c) in calendars.iter() {
+        c_wtr.serialize(c).unwrap();
+        for cd in &c.calendar_dates {
+            cd_wtr
+                .serialize(CalendarDate {
+                    service_id: c.id.clone(),
+                    date: cd.0,
+                    exception_type: cd.1.clone(),
+                })
+                .unwrap();
+        }
+    }
+    cd_wtr.flush().unwrap();
+    c_wtr.flush().unwrap();
 }

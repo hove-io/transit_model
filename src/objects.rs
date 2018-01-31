@@ -479,7 +479,7 @@ impl_comment_links!(StopPoint);
 
 pub type Date = chrono::NaiveDate;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum ExceptionType {
     #[serde(rename = "1")] Add,
     #[serde(rename = "2")] Remove,
@@ -487,7 +487,7 @@ pub enum ExceptionType {
 
 pub type CalendarDates = Vec<(Date, ExceptionType)>;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Calendar {
     #[serde(rename = "service_id")]
     pub id: String,
