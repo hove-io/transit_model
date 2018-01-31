@@ -42,6 +42,14 @@ struct StopTime {
     local_zone_id: Option<u16>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct CalendarDate {
+    service_id: String,
+    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
+    date: Date,
+    exception_type: ExceptionType,
+}
+
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     info!("Loading NTFS from {:?}", path);
@@ -89,6 +97,7 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
         &pt_objects.vehicle_journeys,
         &pt_objects.stop_points,
     );
+    write::write_calendar_and_calendar_dates(path, &pt_objects.calendars);
 }
 
 #[cfg(test)]
@@ -104,24 +113,18 @@ mod tests {
     use serde;
     use std::fmt::Debug;
     use chrono;
+    use std::path;
 
-    #[test]
-    fn feed_infos_serialization_deserialization() {
-        let mut feed_infos = HashMap::default();
-        feed_infos.insert("ntfs_version".to_string(), "0.3".to_string());
-        feed_infos.insert("feed_license".to_string(), "".to_string());
-        let mut collections = Collections::default();
-
+    fn ser_deser_in_tmp_dir<F>(func: F)
+    where
+        F: FnOnce(&path::Path),
+    {
         let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
         {
             let path = tmp_dir.as_ref();
-            write::write_feed_infos(path, &feed_infos);
-            read::manage_feed_infos(&mut collections, path);
+            func(path);
         }
         tmp_dir.close().expect("delete temp dir");
-
-        assert_eq!(collections.feed_infos.len(), 2);
-        assert_eq!(collections.feed_infos, feed_infos);
     }
 
     fn test_serialize_deserialize_collection_with_id<T>(objects: Vec<T>)
@@ -130,15 +133,11 @@ mod tests {
         for<'de> T: serde::Deserialize<'de>,
     {
         let collection = CollectionWithId::new(objects);
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-
-        {
-            let path = tmp_dir.as_ref();
+        ser_deser_in_tmp_dir(|path| {
             write::write_collection_with_id(path, "file.txt", &collection);
             let des_collection = read::make_collection_with_id(path, "file.txt");
             assert_eq!(des_collection, collection);
-        }
-        tmp_dir.close().expect("delete temp dir");
+        });
     }
 
     fn test_serialize_deserialize_collection<T>(objects: Vec<T>)
@@ -147,15 +146,26 @@ mod tests {
         for<'de> T: serde::Deserialize<'de>,
     {
         let collection = Collection::new(objects);
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-
-        {
-            let path = tmp_dir.as_ref();
+        ser_deser_in_tmp_dir(|path| {
             write::write_collection(path, "file.txt", &collection);
             let des_collection = read::make_collection(path, "file.txt");
             assert_eq!(des_collection, collection);
-        }
-        tmp_dir.close().expect("delete temp dir");
+        });
+    }
+
+    #[test]
+    fn feed_infos_serialization_deserialization() {
+        let mut feed_infos = HashMap::default();
+        feed_infos.insert("ntfs_version".to_string(), "0.3".to_string());
+        feed_infos.insert("feed_license".to_string(), "".to_string());
+        let mut collections = Collections::default();
+
+        ser_deser_in_tmp_dir(|path| {
+            write::write_feed_infos(path, &feed_infos);
+            read::manage_feed_infos(&mut collections, path);
+        });
+        assert_eq!(collections.feed_infos.len(), 2);
+        assert_eq!(collections.feed_infos, feed_infos);
     }
 
     #[test]
@@ -408,10 +418,7 @@ mod tests {
             },
         ]);
 
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-
-        {
-            let path = tmp_dir.as_ref();
+        ser_deser_in_tmp_dir(|path| {
             write::write_vehicle_journeys_and_stop_times(path, &vehicle_journeys, &stop_points);
 
             let mut collections = Collections::default();
@@ -421,8 +428,7 @@ mod tests {
 
             read::manage_stop_times(&mut collections, path);
             assert_eq!(collections.vehicle_journeys, vehicle_journeys);
-        }
-        tmp_dir.close().expect("delete temp dir");
+        });
     }
 
     #[test]
@@ -506,5 +512,52 @@ mod tests {
                 equipment_id: Some("eq_1".to_string()),
             },
         ]);
+    }
+
+    #[test]
+    fn calendar_serialization_deserialization() {
+        let calendars = CollectionWithId::new(vec![
+            Calendar {
+                id: "0".to_string(),
+                monday: false,
+                tuesday: false,
+                wednesday: false,
+                thursday: false,
+                friday: false,
+                saturday: true,
+                sunday: true,
+                start_date: chrono::NaiveDate::from_ymd(2018, 1, 7),
+                end_date: chrono::NaiveDate::from_ymd(2018, 1, 28),
+                calendar_dates: vec![
+                    (
+                        chrono::NaiveDate::from_ymd(2018, 1, 7),
+                        ExceptionType::Remove,
+                    ),
+                    (chrono::NaiveDate::from_ymd(2018, 1, 15), ExceptionType::Add),
+                ],
+            },
+            Calendar {
+                id: "1".to_string(),
+                monday: true,
+                tuesday: true,
+                wednesday: true,
+                thursday: true,
+                friday: true,
+                saturday: false,
+                sunday: false,
+                start_date: chrono::NaiveDate::from_ymd(2018, 1, 6),
+                end_date: chrono::NaiveDate::from_ymd(2018, 1, 27),
+                calendar_dates: vec![],
+            },
+        ]);
+
+        ser_deser_in_tmp_dir(|path| {
+            write::write_calendar_and_calendar_dates(path, &calendars);
+
+            let mut collections = Collections::default();
+            read::manage_calendars(&mut collections, path);
+
+            assert_eq!(collections.calendars, calendars);
+        });
     }
 }

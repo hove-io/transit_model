@@ -23,7 +23,7 @@ use objects::*;
 use collection::{Collection, CollectionWithId, Id, Idx};
 use Collections;
 use utils::*;
-use super::StopTime;
+use super::{CalendarDate, StopTime};
 
 pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> CollectionWithId<T>
 where
@@ -222,14 +222,6 @@ pub fn manage_codes(collections: &mut Collections, path: &path::Path) {
             _ => panic!("{} is not a valid object_type", code.object_type),
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct CalendarDate {
-    service_id: String,
-    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
-    date: Date,
-    exception_type: ExceptionType,
 }
 
 fn insert_calendar_date(collection: &mut CollectionWithId<Calendar>, calendar_date: CalendarDate) {
