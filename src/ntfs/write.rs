@@ -17,7 +17,7 @@
 use std::collections::HashMap;
 use std::path;
 use csv;
-use collection::{CollectionWithId, Id};
+use collection::{Collection, CollectionWithId, Id};
 use serde;
 use objects::*;
 use super::StopTime;
@@ -70,6 +70,18 @@ pub fn write_vehicle_journeys_and_stop_times(
 pub fn write_collection_with_id<T>(path: &path::Path, file: &str, collection: &CollectionWithId<T>)
 where
     T: Id<T>,
+    T: serde::Serialize,
+{
+    info!("Writing {}", file);
+    let mut wtr = csv::Writer::from_path(&path.join(file)).unwrap();
+    for (_, obj) in collection.iter() {
+        wtr.serialize(obj).unwrap();
+    }
+    wtr.flush().unwrap();
+}
+
+pub fn write_collection<T>(path: &path::Path, file: &str, collection: &Collection<T>)
+where
     T: serde::Serialize,
 {
     info!("Writing {}", file);

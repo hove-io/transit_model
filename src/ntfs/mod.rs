@@ -74,12 +74,16 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
     info!("Writing NTFS to {:?}", path);
 
     write::write_feed_infos(path, &pt_objects.feed_infos);
+    write::write_collection_with_id(path, "contributors.txt", &pt_objects.contributors);
+    write::write_collection_with_id(path, "datasets.txt", &pt_objects.datasets);
     write::write_collection_with_id(path, "networks.txt", &pt_objects.networks);
     write::write_collection_with_id(path, "commercial_modes.txt", &pt_objects.networks);
     write::write_collection_with_id(path, "companies.txt", &pt_objects.companies);
     write::write_collection_with_id(path, "lines.txt", &pt_objects.lines);
     write::write_collection_with_id(path, "physical_modes.txt", &pt_objects.lines);
+    write::write_collection_with_id(path, "equipments.txt", &pt_objects.equipments);
     write::write_collection_with_id(path, "routes.txt", &pt_objects.lines);
+    write::write_collection(path, "transfers.txt", &pt_objects.transfers);
     write::write_vehicle_journeys_and_stop_times(
         path,
         &pt_objects.vehicle_journeys,
@@ -92,13 +96,14 @@ mod tests {
     extern crate tempdir;
     use self::tempdir::TempDir;
     use objects::*;
-    use CollectionWithId;
+    use {Collection, CollectionWithId};
     use super::{read, write};
     use super::Collections;
     use collection::Id;
     use std::collections::HashMap;
     use serde;
     use std::fmt::Debug;
+    use chrono;
 
     #[test]
     fn feed_infos_serialization_deserialization() {
@@ -131,6 +136,23 @@ mod tests {
             let path = tmp_dir.as_ref();
             write::write_collection_with_id(path, "file.txt", &collection);
             let des_collection = read::make_collection_with_id(path, "file.txt");
+            assert_eq!(des_collection, collection);
+        }
+        tmp_dir.close().expect("delete temp dir");
+    }
+
+    fn test_serialize_deserialize_collection<T>(objects: Vec<T>)
+    where
+        T: PartialEq + Debug + serde::Serialize,
+        for<'de> T: serde::Deserialize<'de>,
+    {
+        let collection = Collection::new(objects);
+        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+
+        {
+            let path = tmp_dir.as_ref();
+            write::write_collection(path, "file.txt", &collection);
+            let des_collection = read::make_collection(path, "file.txt");
             assert_eq!(des_collection, collection);
         }
         tmp_dir.close().expect("delete temp dir");
@@ -401,5 +423,88 @@ mod tests {
             assert_eq!(collections.vehicle_journeys, vehicle_journeys);
         }
         tmp_dir.close().expect("delete temp dir");
+    }
+
+    #[test]
+    fn contributors_serialization_deserialization() {
+        test_serialize_deserialize_collection_with_id(vec![
+            Contributor {
+                id: "Foo".to_string(),
+                name: "Foo".to_string(),
+                license: Some("ODbL".to_string()),
+                website: Some("http://www.foo.com".to_string()),
+            },
+            Contributor {
+                id: "Bar".to_string(),
+                name: "Bar".to_string(),
+                license: None,
+                website: None,
+            },
+        ]);
+    }
+
+    #[test]
+    fn datasets_serialization_deserialization() {
+        test_serialize_deserialize_collection_with_id(vec![
+            Dataset {
+                id: "Foo:0".to_string(),
+                contributor_id: "Foo".to_string(),
+                start_date: chrono::NaiveDate::from_ymd(2018, 01, 30),
+                end_date: chrono::NaiveDate::from_ymd(2018, 01, 31),
+                dataset_type: Some(DatasetType::Theorical),
+                extrapolation: false,
+                desc: Some("description".to_string()),
+                system: Some("GTFS V2".to_string()),
+            },
+            Dataset {
+                id: "Bar:0".to_string(),
+                contributor_id: "Bar".to_string(),
+                start_date: chrono::NaiveDate::from_ymd(2018, 01, 30),
+                end_date: chrono::NaiveDate::from_ymd(2018, 01, 31),
+                dataset_type: None,
+                extrapolation: false,
+                desc: None,
+                system: None,
+            },
+        ]);
+    }
+
+    #[test]
+    fn equipments_serialization_deserialization() {
+        test_serialize_deserialize_collection_with_id(vec![
+            Equipment {
+                id: "1".to_string(),
+                wheelchair_boarding: Availability::Available,
+                sheltered: Availability::InformationNotAvailable,
+                elevator: Availability::Available,
+                escalator: Availability::Available,
+                bike_accepted: Availability::Available,
+                bike_depot: Availability::Available,
+                visual_announcement: Availability::Available,
+                audible_announcement: Availability::Available,
+                appropriate_escort: Availability::Available,
+                appropriate_signage: Availability::Available,
+            },
+        ]);
+    }
+
+    #[test]
+    fn transfers_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            Transfer {
+                from_stop_id: "st_1".to_string(),
+                to_stop_id: "st_1".to_string(),
+                min_transfer_time: Some(20),
+                real_min_transfer_time: Some(30),
+                equipment_id: Some("eq_1".to_string()),
+            },
+            Transfer {
+                from_stop_id: "st_1".to_string(),
+                to_stop_id: "st_2".to_string(),
+                min_transfer_time: None,
+                real_min_transfer_time: None,
+                equipment_id: Some("eq_1".to_string()),
+            },
+        ]);
     }
 }
