@@ -368,7 +368,7 @@ fn get_lines_from_gtfs(gtfs_routes: &Vec<Route>, read_mode: RouteReadType) -> Ve
                 forward_name: None,
                 forward_direction: None,
                 backward_name: None,
-                //backward_direction: None,
+                backward_direction: None,
                 color: r.color.as_ref().map(|c| c.parse().unwrap()),
                 text_color: r.text_color.as_ref().map(|c| c.parse().unwrap()),
                 sort_order: None,
