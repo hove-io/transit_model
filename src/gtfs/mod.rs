@@ -28,5 +28,6 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let (stopareas, stoppoints) = read::read_stops(path);
     collections.stop_areas = stopareas;
     collections.stop_points = stoppoints;
+    read::read_routes(path, &mut collections);
     PtObjects::new(collections)
 }
