@@ -139,6 +139,7 @@ impl From<Stop> for objects::StopPoint {
             visible: true,
             geometry_id: None,
             equipment_id: None,
+            fare_zone_id: None,
         }
     }
 }

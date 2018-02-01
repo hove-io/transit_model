@@ -20,7 +20,7 @@ use csv;
 use collection::{Collection, CollectionWithId, Id};
 use serde;
 use objects::*;
-use super::{CalendarDate, StopTime};
+use super::{CalendarDate, Stop, StopTime};
 
 pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>) {
     info!("Writing feed_infos.txt");
@@ -113,4 +113,48 @@ pub fn write_calendar_and_calendar_dates(
     }
     cd_wtr.flush().unwrap();
     c_wtr.flush().unwrap();
+}
+
+pub fn write_stops(
+    path: &path::Path,
+    stop_points: &CollectionWithId<StopPoint>,
+    stop_areas: &CollectionWithId<StopArea>,
+) {
+    info!("Writing stops.txt");
+
+    let mut wtr = csv::Writer::from_path(&path.join("stops.txt")).unwrap();
+    for (_, st) in stop_points.iter() {
+        wtr.serialize(Stop {
+            id: st.id.clone(),
+            visible: st.visible,
+            name: st.name.clone(),
+            lat: st.coord.lat,
+            lon: st.coord.lon,
+            fare_zone_id: st.fare_zone_id.clone(),
+            location_type: 0,
+            parent_station: stop_areas.get(&st.stop_area_id).map(|sa| sa.id.clone()),
+            timezone: st.timezone.clone(),
+            equipment_id: st.equipment_id.clone(),
+            geometry_id: st.geometry_id.clone(),
+        }).unwrap();
+    }
+
+    for (_, sa) in stop_areas.iter() {
+        if !sa.id.starts_with("Navitia:") {
+            wtr.serialize(Stop {
+                id: sa.id.clone(),
+                visible: sa.visible,
+                name: sa.name.clone(),
+                lat: sa.coord.lat,
+                lon: sa.coord.lon,
+                fare_zone_id: None,
+                location_type: 1,
+                parent_station: None,
+                timezone: sa.timezone.clone(),
+                equipment_id: sa.equipment_id.clone(),
+                geometry_id: sa.geometry_id.clone(),
+            }).unwrap();
+        }
+    }
+    wtr.flush().unwrap();
 }
