@@ -234,20 +234,15 @@ fn define_route_file_read_mode(gtfs_routes: &Vec<Route>) -> RouteReadType {
         for (i2, r2) in gtfs_routes.iter().enumerate() {
             if i2 <= i1 {
                 continue;
-            } else {
-                if r1.agency_id == r2.agency_id {
-                    if r1.short_name != "" {
-                        if r1.short_name == r2.short_name {
-                            continue;
-                        } else {
-                            return RouteReadType::RouteAsNtmRoute;
-                        }
-                    } else {
-                        if r1.long_name == r2.long_name {
-                            continue;
-                        } else {
-                            return RouteReadType::RouteAsNtmRoute;
-                        }
+            }
+            if r1.agency_id == r2.agency_id {
+                if r1.short_name != "" {
+                    if r1.short_name == r2.short_name {
+                        return RouteReadType::RouteAsNtmRoute;
+                    }
+                } else {
+                    if r1.long_name == r2.long_name {
+                        return RouteReadType::RouteAsNtmRoute;
                     }
                 }
             }

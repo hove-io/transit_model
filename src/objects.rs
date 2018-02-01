@@ -261,7 +261,7 @@ impl Error for RgbError {
         match *self {
             RgbError::NotHexa => "String is not a valid Hexadecimal value",
             RgbError::TooLongHexa => "String is too long (6 char expected)",
-            RgbError::TooShortHexa => "String is too shot (4 char expected)",
+            RgbError::TooShortHexa => "String is too short (6 char expected)",
         }
     }
 }
