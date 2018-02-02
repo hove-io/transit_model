@@ -22,7 +22,7 @@ use serde;
 use objects::*;
 use collection::{Collection, CollectionWithId, Id, Idx};
 use Collections;
-use super::{CalendarDate, Stop, StopTime};
+use super::{CalendarDate, Code, CommentLink, Stop, StopTime};
 
 pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> CollectionWithId<T>
 where
@@ -147,14 +147,6 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) {
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys);
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct Code {
-    object_type: String,
-    object_id: String,
-    object_system: String,
-    object_code: String,
-}
-
 fn insert_code_with_idx<T>(collection: &mut CollectionWithId<T>, idx: Idx<T>, code: Code)
 where
     T: Codes + Id<T>,
@@ -250,13 +242,6 @@ pub fn manage_feed_infos(collections: &mut Collections, path: &path::Path) {
             acc
         },
     )
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct CommentLink {
-    object_id: String,
-    object_type: String,
-    comment_id: String,
 }
 
 fn insert_comment_link<T>(collection: &mut CollectionWithId<T>, comment_link: CommentLink)

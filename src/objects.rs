@@ -549,14 +549,14 @@ impl Id<Company> for Company {
 
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum CommentType {
     #[derivative(Default)]
     Information,
     OnDemandTransport,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Comment {
     #[serde(rename = "comment_id")]
     pub id: String,
