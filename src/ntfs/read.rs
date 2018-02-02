@@ -22,8 +22,7 @@ use serde;
 use objects::*;
 use collection::{Collection, CollectionWithId, Id, Idx};
 use Collections;
-use utils::*;
-use super::{CalendarDate, StopTime};
+use super::{CalendarDate, Stop, StopTime};
 
 pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> CollectionWithId<T>
 where
@@ -49,32 +48,6 @@ where
     Collection::new(vec)
 }
 
-fn default_visible() -> bool {
-    true
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct Stop {
-    #[serde(rename = "stop_id")]
-    id: String,
-    #[serde(rename = "stop_name")]
-    name: String,
-    #[serde(default = "default_visible", deserialize_with = "de_from_u8",
-            serialize_with = "ser_from_bool")]
-    visible: bool,
-    fare_zone_id: Option<String>,
-    #[serde(rename = "stop_lon")]
-    lon: f64,
-    #[serde(rename = "stop_lat")]
-    lat: f64,
-    #[serde(default)]
-    location_type: i32,
-    parent_station: Option<String>,
-    #[serde(rename = "stop_timezone")]
-    timezone: Option<String>,
-    geometry_id: Option<String>,
-    equipment_id: Option<String>,
-}
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {
         StopArea {
@@ -111,6 +84,7 @@ impl From<Stop> for StopPoint {
             timezone: stop.timezone,
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
+            fare_zone_id: stop.fare_zone_id,
         }
     }
 }

@@ -78,9 +78,12 @@ impl Id<Contributor> for Contributor {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum DatasetType {
-    #[serde(rename = "0")] Theorical,
-    #[serde(rename = "1")] Revised,
-    #[serde(rename = "2")] Production,
+    #[serde(rename = "0")]
+    Theorical,
+    #[serde(rename = "1")]
+    Revised,
+    #[serde(rename = "2")]
+    Production,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -421,13 +424,13 @@ pub struct StopTime {
     pub local_zone_id: Option<u16>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Coord {
     pub lon: f64,
     pub lat: f64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct StopArea {
     pub id: String,
     pub name: String,
@@ -449,7 +452,7 @@ impl Id<StopArea> for StopArea {
 impl_codes!(StopArea);
 impl_comment_links!(StopArea);
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct StopPoint {
     pub id: String,
     pub name: String,
@@ -463,6 +466,7 @@ pub struct StopPoint {
     pub timezone: Option<String>,
     pub geometry_id: Option<String>,
     pub equipment_id: Option<String>,
+    pub fare_zone_id: Option<String>,
 }
 impl Id<StopPoint> for StopPoint {
     fn id(&self) -> &str {
@@ -481,8 +485,10 @@ pub type Date = chrono::NaiveDate;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum ExceptionType {
-    #[serde(rename = "1")] Add,
-    #[serde(rename = "2")] Remove,
+    #[serde(rename = "1")]
+    Add,
+    #[serde(rename = "2")]
+    Remove,
 }
 
 pub type CalendarDates = Vec<(Date, ExceptionType)>;
@@ -545,7 +551,8 @@ impl Id<Company> for Company {
 #[derivative(Default(bound = ""))]
 #[derive(Serialize, Deserialize, Debug)]
 pub enum CommentType {
-    #[derivative(Default)] Information,
+    #[derivative(Default)]
+    Information,
     OnDemandTransport,
 }
 
@@ -575,8 +582,10 @@ pub enum Availability {
     #[derivative(Default)]
     #[serde(rename = "0")]
     InformationNotAvailable,
-    #[serde(rename = "1")] Available,
-    #[serde(rename = "2")] NotAvailable,
+    #[serde(rename = "1")]
+    Available,
+    #[serde(rename = "2")]
+    NotAvailable,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]

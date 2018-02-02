@@ -50,6 +50,33 @@ struct CalendarDate {
     exception_type: ExceptionType,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct Stop {
+    #[serde(rename = "stop_id")]
+    id: String,
+    #[serde(rename = "stop_name")]
+    name: String,
+    #[serde(default = "default_visible", deserialize_with = "de_from_u8",
+            serialize_with = "ser_from_bool")]
+    visible: bool,
+    fare_zone_id: Option<String>,
+    #[serde(rename = "stop_lon")]
+    lon: f64,
+    #[serde(rename = "stop_lat")]
+    lat: f64,
+    #[serde(default)]
+    location_type: i32,
+    parent_station: Option<String>,
+    #[serde(rename = "stop_timezone")]
+    timezone: Option<String>,
+    geometry_id: Option<String>,
+    equipment_id: Option<String>,
+}
+
+fn default_visible() -> bool {
+    true
+}
+
 pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     let path = path.as_ref();
     info!("Loading NTFS from {:?}", path);
@@ -98,6 +125,7 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
         &pt_objects.stop_points,
     );
     write::write_calendar_and_calendar_dates(path, &pt_objects.calendars);
+    write::write_stops(path, &pt_objects.stop_points, &pt_objects.stop_areas);
 }
 
 #[cfg(test)]
@@ -343,6 +371,7 @@ mod tests {
                 timezone: Some("Europe/Paris".to_string()),
                 geometry_id: None,
                 equipment_id: None,
+                fare_zone_id: Some("1".to_string()),
             },
             StopPoint {
                 id: "OIF:SP:36:2127".to_string(),
@@ -358,6 +387,7 @@ mod tests {
                 timezone: Some("Europe/Paris".to_string()),
                 geometry_id: None,
                 equipment_id: None,
+                fare_zone_id: None,
             },
         ]);
         let vehicle_journeys = CollectionWithId::new(vec![
@@ -558,6 +588,86 @@ mod tests {
             read::manage_calendars(&mut collections, path);
 
             assert_eq!(collections.calendars, calendars);
+        });
+    }
+
+    #[test]
+    fn stops_serialization_deserialization() {
+        let stop_points = CollectionWithId::new(vec![
+            StopPoint {
+                id: "sp_1".to_string(),
+                name: "sp_name_1".to_string(),
+                codes: CodesT::default(),
+                comment_links: CommentLinksT::default(),
+                visible: true,
+                coord: Coord {
+                    lon: 2.073034,
+                    lat: 48.799115,
+                },
+                timezone: Some("Europe/Paris".to_string()),
+                geometry_id: Some("geometry_1".to_string()),
+                equipment_id: Some("equipment_1".to_string()),
+                stop_area_id: "sa_1".to_string(),
+                fare_zone_id: Some("1".to_string()),
+            },
+            // stop point with no parent station
+            StopPoint {
+                id: "sa_2".to_string(),
+                name: "sa_name_2".to_string(),
+                codes: CodesT::default(),
+                comment_links: CommentLinksT::default(),
+                visible: true,
+                coord: Coord {
+                    lon: 2.173034,
+                    lat: 47.899115,
+                },
+                timezone: None,
+                geometry_id: None,
+                equipment_id: None,
+                stop_area_id: "sa_2".to_string(),
+                fare_zone_id: None,
+            },
+        ]);
+
+        let stop_areas = CollectionWithId::new(vec![
+            StopArea {
+                id: "Navitia:sa_2".to_string(),
+                name: "sa_name_2".to_string(),
+                codes: CodesT::default(),
+                comment_links: CommentLinksT::default(),
+                visible: true,
+                coord: Coord {
+                    lon: 2.173034,
+                    lat: 47.899115,
+                },
+                timezone: None,
+                geometry_id: None,
+                equipment_id: None,
+            },
+            StopArea {
+                id: "sa_1".to_string(),
+                name: "sa_name_1".to_string(),
+                codes: CodesT::default(),
+                comment_links: CommentLinksT::default(),
+                visible: true,
+                coord: Coord {
+                    lon: 2.073034,
+                    lat: 48.799115,
+                },
+                timezone: Some("Europe/Paris".to_string()),
+                geometry_id: Some("geometry_3".to_string()),
+                equipment_id: Some("equipment_1".to_string()),
+            },
+        ]);
+
+        ser_deser_in_tmp_dir(|path| {
+            write::write_stops(path, &stop_points, &stop_areas);
+
+            let mut collections = Collections::default();
+            read::manage_stops(&mut collections, path);
+
+            assert_eq!(collections.stop_points, stop_points);
+            assert_eq!(collections.stop_areas, stop_areas);
         });
     }
 }
