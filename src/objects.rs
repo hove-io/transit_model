@@ -236,6 +236,13 @@ pub struct Rgb {
     pub blue: u8,
 }
 
+impl std::fmt::Display for Rgb {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let color = format!("{:02X}{:02X}{:02X}", self.red, self.green, self.blue);
+        f.write_str(color.as_ref())
+    }
+}
+
 #[derive(Debug)]
 pub enum RgbError {
     NotHexa,

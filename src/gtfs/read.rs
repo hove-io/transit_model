@@ -18,7 +18,8 @@ use std::path;
 use csv;
 use collection::CollectionWithId;
 use Collections;
-use objects::{self, CodesT, KeysValues, Coord};
+use objects::{self, CodesT, Coord};
+use std::collections::HashSet;
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -147,6 +148,37 @@ impl From<Stop> for objects::StopPoint {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
+enum RouteType {
+    #[allow(non_camel_case_types)]
+    Tramway_LightRail,
+    Metro,
+    Rail,
+    Bus,
+    Ferry,
+    CableCar,
+    #[allow(non_camel_case_types)]
+    Gondola_SuspendedCableCar,
+    Funicular,
+    Other(u16),
+}
+
+impl RouteType {
+    fn to_gtfs_value(&self) -> String {
+        match self {
+            &RouteType::Tramway_LightRail => "0".to_string(),
+            &RouteType::Metro => "1".to_string(),
+            &RouteType::Rail => "2".to_string(),
+            &RouteType::Bus => "3".to_string(),
+            &RouteType::Ferry => "4".to_string(),
+            &RouteType::CableCar => "5".to_string(),
+            &RouteType::Gondola_SuspendedCableCar => "6".to_string(),
+            &RouteType::Funicular => "7".to_string(),
+            &RouteType::Other(i) => i.to_string(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Route {
     #[serde(rename = "route_id")]
@@ -158,13 +190,83 @@ struct Route {
     long_name: String,
     #[serde(rename = "route_desc")]
     desc: Option<String>,
-    route_type: String,
+    #[serde(deserialize_with = "de_route_type")]
+    route_type: RouteType,
     #[serde(rename = "route_url")]
     url: Option<String>,
-    #[serde(rename = "route_color")]
-    color: Option<String>,
-    #[serde(rename = "route_text_color")]
-    text_color: Option<String>,
+    #[serde(rename = "route_color", default,
+        deserialize_with = "string_to_color",
+        serialize_with = "ser_from_color")]
+    color: Option<objects::Rgb>,
+    #[serde(rename = "route_text_color", default,
+        deserialize_with = "string_to_color",
+        serialize_with = "ser_from_color")]
+    text_color: Option<objects::Rgb>,
+}
+
+impl Route {
+    fn is_same_line(&self, other: &Route) -> bool {
+        if self.agency_id == other.agency_id {
+            if self.short_name != "" {
+                if self.short_name == other.short_name {
+                    return true;
+                }
+            } else {
+                if self.long_name == other.long_name {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+
+
+fn de_route_type<'de, D>(deserializer: D) -> Result<RouteType, D::Error> 
+where
+    D: ::serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let mut i = u16::deserialize(deserializer)?;
+    if i > 7 && i < 99 {
+        i = 3;
+    }
+    let i = match i {
+        0 => RouteType::Tramway_LightRail,
+        1 => RouteType::Metro,
+        2 => RouteType::Rail,
+        3 => RouteType::Bus,
+        4 => RouteType::Ferry,
+        5 => RouteType::CableCar,
+        6 => RouteType::Gondola_SuspendedCableCar,
+        7 => RouteType::Funicular,
+        _ => RouteType::Other(i),
+    };
+    Ok(i)
+}
+
+pub fn ser_from_color<S>(color: &Option<objects::Rgb>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: ::serde::Serializer,
+{
+    let s = match color {
+        &Some(ref c) => format!("{}", c).to_string(),
+        &None => "".to_string(),
+    };
+    serializer.serialize_str(&s)
+}
+
+fn string_to_color<'de, D>(deserializer: D) -> Result<Option<objects::Rgb>, D::Error> 
+where
+    D: ::serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let s = String::deserialize(deserializer)?;
+    if s.is_empty() {
+        Ok(None)
+    } else {
+        s.parse().map(|c| Some(c)).map_err(::serde::de::Error::custom)
+    }
 }
 
 pub fn read_agency<P: AsRef<path::Path>>(
@@ -230,74 +332,77 @@ enum RouteReadType {
 }
 
 fn define_route_file_read_mode(gtfs_routes: &Vec<Route>) -> RouteReadType {
-    for (i1, r1) in gtfs_routes.iter().enumerate() {
-        for (i2, r2) in gtfs_routes.iter().enumerate() {
-            if i2 <= i1 {
-                continue;
-            }
-            if r1.agency_id == r2.agency_id {
-                if r1.short_name != "" {
-                    if r1.short_name == r2.short_name {
-                        return RouteReadType::RouteAsNtmRoute;
-                    }
-                } else {
-                    if r1.long_name == r2.long_name {
-                        return RouteReadType::RouteAsNtmRoute;
-                    }
-                }
+    let mut iter = gtfs_routes.iter();
+    while let Some(r1) = iter.next() {
+        for r2 in iter.clone() {
+            if r1.is_same_line(r2) {
+                return RouteReadType::RouteAsNtmRoute;
             }
         }
     }
-    RouteReadType::RouteAsNtmLine
+    return RouteReadType::RouteAsNtmLine;
 }
 
-fn get_commercial_mode_label(route_type: u8) -> String {
+fn get_commercial_mode_label(route_type: &RouteType) -> String {
     let result = match route_type {
-        0 => "Tram, Streetcar, Light rail",
-        1 => "Subway, Metro",
-        2 => "Rail",
-        4 => "Ferry",
-        5 => "Cable car",
-        6 => "Gondola",
-        7 => "Funicular",
-        _ => "Bus",
+        &RouteType::Tramway_LightRail => "Tram, Streetcar, Light rail",
+        &RouteType::Metro => "Subway, Metro",
+        &RouteType::Rail => "Rail",
+        &RouteType::Bus => "Bus",
+        &RouteType::Ferry => "Ferry",
+        &RouteType::CableCar => "Cable car",
+        &RouteType::Gondola_SuspendedCableCar => "Gondola, Suspended cable car",
+        &RouteType::Funicular => "Funicular",
+        _ => "Other Mode",
     };
     result.to_string()
 }
 
-fn get_physical_mode(route_type: u8) -> objects::PhysicalMode {
-    let mode = match route_type {
-        0 => objects::PhysicalMode {
-            id: "Tramway".to_string(),
-            name: "Tramway".to_string(),
+fn get_commercial_mode(route_type: &RouteType) -> objects::CommercialMode {
+    objects::CommercialMode {
+        id: route_type.to_gtfs_value(),
+        name: get_commercial_mode_label(&route_type),
+    }    
+}
+
+fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
+    match route_type {
+        &RouteType::Tramway_LightRail => objects::PhysicalMode {
+            id: "RailShuttle".to_string(),
+            name: "Navette ferrée (VAL)".to_string(),
             co2_emission: None,
         },
-        1 => objects::PhysicalMode {
+        &RouteType::Metro => objects::PhysicalMode {
             id: "Metro".to_string(),
             name: "Métro".to_string(),
             co2_emission: None,
         },
-        2 => objects::PhysicalMode {
+        &RouteType::Rail => objects::PhysicalMode {
             id: "Train".to_string(),
             name: "Train".to_string(),
             co2_emission: None,
         },
-        4 => objects::PhysicalMode {
+        &RouteType::Bus => objects::PhysicalMode {
+            id: "Bus".to_string(),
+            name: "Bus".to_string(),
+            co2_emission: None,
+        },
+        &RouteType::Ferry => objects::PhysicalMode {
             id: "Ferry".to_string(),
             name: "Ferry".to_string(),
             co2_emission: None,
         },
-        5 => objects::PhysicalMode {
+        &RouteType::CableCar => objects::PhysicalMode {
             id: "Funicular".to_string(),
             name: "Funicular".to_string(),
             co2_emission: None,
         },
-        6 => objects::PhysicalMode {
-            id: "Boat".to_string(),
-            name: "Navette maritime/fluviale".to_string(),
+        &RouteType::Gondola_SuspendedCableCar => objects::PhysicalMode {
+            id: "Funicular".to_string(),
+            name: "Funicular".to_string(),
             co2_emission: None,
         },
-        7 => objects::PhysicalMode {
+        &RouteType::Funicular => objects::PhysicalMode {
             id: "Funicular".to_string(),
             name: "Funicular".to_string(),
             co2_emission: None,
@@ -307,76 +412,67 @@ fn get_physical_mode(route_type: u8) -> objects::PhysicalMode {
             name: "Bus".to_string(),
             co2_emission: None,
         },
-    };
-    mode
+    }
 }
 
 fn get_modes_from_gtfs(
-    gtfs_routes: &Vec<Route>,
+    gtfs_routes: &[Route],
 ) -> (Vec<objects::CommercialMode>, Vec<objects::PhysicalMode>) {
-    let mut commercial_modes = vec![];
-    let mut physical_modes = vec![];
-    let mut gtfs_mode_types: Vec<u8> = gtfs_routes
+    let gtfs_mode_types: HashSet<RouteType> = gtfs_routes
         .iter()
-        .map(|r| r.route_type.parse().unwrap())
-        .map(|mode| if mode > 7 { 3 } else { mode })
+        .map(|r| r.route_type.clone())
         .collect();
-    gtfs_mode_types.sort();
-    gtfs_mode_types.dedup();
 
-    for mt in gtfs_mode_types {
-        let label = get_commercial_mode_label(mt);
-        let physical_mode = get_physical_mode(mt);
-        let commercial_mode = objects::CommercialMode {
-            id: mt.to_string(),
-            name: label,
-        };
-        commercial_modes.push(commercial_mode);
-        physical_modes.push(physical_mode);
-    }
-
+    let commercial_modes = gtfs_mode_types
+        .iter()
+        .map(|mt| get_commercial_mode(mt))
+        .collect();
+    let physical_modes = gtfs_mode_types
+        .iter()
+        .map(|mt| get_physical_mode(mt))
+        .collect();
     (commercial_modes, physical_modes)
 }
 
 fn get_lines_from_gtfs(gtfs_routes: &Vec<Route>, read_mode: RouteReadType) -> Vec<objects::Line> {
     let mut lines = vec![];
-    if read_mode == RouteReadType::RouteAsNtmLine {
-        for r in gtfs_routes {
-            let line_code = match r.short_name.as_ref() {
-                "" => None,
-                _ => Some(r.short_name.to_string()),
-            };
-            let line_agency = match r.agency_id {
-                Some(ref agency_id) => agency_id.to_string(),
-                None => default_agency_id(),
-            };
-            let mut line_mode: u8 = r.route_type.parse().unwrap();
-            if line_mode > 7 {
-                line_mode = 3;
+    match read_mode {
+        RouteReadType::RouteAsNtmLine => {
+            for r in gtfs_routes {
+                let line_code = match r.short_name.as_ref() {
+                    "" => None,
+                    _ => Some(r.short_name.to_string()),
+                };
+                let line_agency = match r.agency_id {
+                    Some(ref agency_id) => agency_id.to_string(),
+                    None => default_agency_id(),
+                };
+                let l = objects::Line {
+                    id: r.id.to_string(),
+                    code: line_code.clone(),
+                    codes: vec![],
+                    comment_links: vec![],
+                    name: r.long_name.to_string(),
+                    forward_name: None,
+                    forward_direction: None,
+                    backward_name: None,
+                    backward_direction: None,
+                    color: r.color.clone(),
+                    text_color: r.text_color.clone(),
+                    sort_order: None,
+                    network_id: line_agency,
+                    commercial_mode_id: r.route_type.to_gtfs_value(),
+                    geometry_id: None,
+                    opening_time: None,
+                    closing_time: None,
+                };
+                lines.push(l);
             }
-            let l = objects::Line {
-                id: r.id.to_string(),
-                code: line_code.clone(),
-                codes: vec![],
-                comment_links: vec![],
-                name: r.long_name.to_string(),
-                forward_name: None,
-                forward_direction: None,
-                backward_name: None,
-                backward_direction: None,
-                color: r.color.as_ref().map(|c| c.parse().unwrap()),
-                text_color: r.text_color.as_ref().map(|c| c.parse().unwrap()),
-                sort_order: None,
-                network_id: line_agency,
-                commercial_mode_id: line_mode.to_string(),
-                geometry_id: None,
-                opening_time: None,
-                closing_time: None,
-            };
-            lines.push(l);
+        },
+        RouteReadType::RouteAsNtmRoute => {
+            // TODO Build lines from GTFS routes as routes
+            unimplemented!();
         }
-    } else {
-        // TODO Build lines from GTFS routes as routes
     }
     lines
 }
