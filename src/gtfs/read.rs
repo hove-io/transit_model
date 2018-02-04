@@ -194,13 +194,11 @@ struct Route {
     route_type: RouteType,
     #[serde(rename = "route_url")]
     url: Option<String>,
-    #[serde(rename = "route_color", default,
-        deserialize_with = "string_to_color",
-        serialize_with = "ser_from_color")]
+    #[serde(rename = "route_color", default, deserialize_with = "string_to_color",
+            serialize_with = "ser_from_color")]
     color: Option<objects::Rgb>,
-    #[serde(rename = "route_text_color", default,
-        deserialize_with = "string_to_color",
-        serialize_with = "ser_from_color")]
+    #[serde(rename = "route_text_color", default, deserialize_with = "string_to_color",
+            serialize_with = "ser_from_color")]
     text_color: Option<objects::Rgb>,
 }
 
@@ -221,8 +219,7 @@ impl Route {
     }
 }
 
-
-fn de_route_type<'de, D>(deserializer: D) -> Result<RouteType, D::Error> 
+fn de_route_type<'de, D>(deserializer: D) -> Result<RouteType, D::Error>
 where
     D: ::serde::Deserializer<'de>,
 {
@@ -256,7 +253,7 @@ where
     serializer.serialize_str(&s)
 }
 
-fn string_to_color<'de, D>(deserializer: D) -> Result<Option<objects::Rgb>, D::Error> 
+fn string_to_color<'de, D>(deserializer: D) -> Result<Option<objects::Rgb>, D::Error>
 where
     D: ::serde::Deserializer<'de>,
 {
@@ -265,7 +262,9 @@ where
     if s.is_empty() {
         Ok(None)
     } else {
-        s.parse().map(|c| Some(c)).map_err(::serde::de::Error::custom)
+        s.parse()
+            .map(|c| Some(c))
+            .map_err(::serde::de::Error::custom)
     }
 }
 
@@ -362,7 +361,7 @@ fn get_commercial_mode(route_type: &RouteType) -> objects::CommercialMode {
     objects::CommercialMode {
         id: route_type.to_gtfs_value(),
         name: get_commercial_mode_label(&route_type),
-    }    
+    }
 }
 
 fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
@@ -418,10 +417,8 @@ fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
 fn get_modes_from_gtfs(
     gtfs_routes: &[Route],
 ) -> (Vec<objects::CommercialMode>, Vec<objects::PhysicalMode>) {
-    let gtfs_mode_types: HashSet<RouteType> = gtfs_routes
-        .iter()
-        .map(|r| r.route_type.clone())
-        .collect();
+    let gtfs_mode_types: HashSet<RouteType> =
+        gtfs_routes.iter().map(|r| r.route_type.clone()).collect();
 
     let commercial_modes = gtfs_mode_types
         .iter()
@@ -437,37 +434,35 @@ fn get_modes_from_gtfs(
 fn get_lines_from_gtfs(gtfs_routes: &Vec<Route>, read_mode: RouteReadType) -> Vec<objects::Line> {
     let mut lines = vec![];
     match read_mode {
-        RouteReadType::RouteAsNtmLine => {
-            for r in gtfs_routes {
-                let line_code = match r.short_name.as_ref() {
-                    "" => None,
-                    _ => Some(r.short_name.to_string()),
-                };
-                let line_agency = match r.agency_id {
-                    Some(ref agency_id) => agency_id.to_string(),
-                    None => default_agency_id(),
-                };
-                let l = objects::Line {
-                    id: r.id.to_string(),
-                    code: line_code.clone(),
-                    codes: vec![],
-                    comment_links: vec![],
-                    name: r.long_name.to_string(),
-                    forward_name: None,
-                    forward_direction: None,
-                    backward_name: None,
-                    backward_direction: None,
-                    color: r.color.clone(),
-                    text_color: r.text_color.clone(),
-                    sort_order: None,
-                    network_id: line_agency,
-                    commercial_mode_id: r.route_type.to_gtfs_value(),
-                    geometry_id: None,
-                    opening_time: None,
-                    closing_time: None,
-                };
-                lines.push(l);
-            }
+        RouteReadType::RouteAsNtmLine => for r in gtfs_routes {
+            let line_code = match r.short_name.as_ref() {
+                "" => None,
+                _ => Some(r.short_name.to_string()),
+            };
+            let line_agency = match r.agency_id {
+                Some(ref agency_id) => agency_id.to_string(),
+                None => default_agency_id(),
+            };
+            let l = objects::Line {
+                id: r.id.to_string(),
+                code: line_code.clone(),
+                codes: vec![],
+                comment_links: vec![],
+                name: r.long_name.to_string(),
+                forward_name: None,
+                forward_direction: None,
+                backward_name: None,
+                backward_direction: None,
+                color: r.color.clone(),
+                text_color: r.text_color.clone(),
+                sort_order: None,
+                network_id: line_agency,
+                commercial_mode_id: r.route_type.to_gtfs_value(),
+                geometry_id: None,
+                opening_time: None,
+                closing_time: None,
+            };
+            lines.push(l);
         },
         RouteReadType::RouteAsNtmRoute => {
             // TODO Build lines from GTFS routes as routes
