@@ -163,16 +163,15 @@ pub fn write_stops(
 fn write_comment_links_from_collection_with_id<W, T>(
     wtr: &mut csv::Writer<W>,
     collections: &CollectionWithId<T>,
-    object_type: &str,
 ) where
-    T: Id<T> + CommentLinks,
+    T: Id<T> + CommentLinks + GetObjectType,
     W: ::std::io::Write,
 {
     for (_, obj) in collections.iter() {
         for c_id in obj.comment_links() {
             wtr.serialize(CommentLink {
                 object_id: obj.id().to_string(),
-                object_type: object_type.to_string(),
+                object_type: T::get_object_type(),
                 comment_id: c_id.clone(),
             }).unwrap();
         }
@@ -188,15 +187,11 @@ pub fn write_comments(path: &path::Path, collections: &Collections) {
         c_wtr.serialize(c).unwrap();
     }
 
-    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.stop_areas, "stop_area");
-    write_comment_links_from_collection_with_id(
-        &mut cl_wtr,
-        &collections.stop_points,
-        "stop_point",
-    );
-    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.lines, "line");
-    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.routes, "route");
-    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.vehicle_journeys, "trip");
+    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.stop_areas);
+    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.stop_points);
+    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.lines);
+    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.routes);
+    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.vehicle_journeys);
     // TODO: add stop_times and line_groups
 
     cl_wtr.flush().unwrap();
@@ -206,16 +201,15 @@ pub fn write_comments(path: &path::Path, collections: &Collections) {
 fn write_codes_from_collection_with_id<W, T>(
     wtr: &mut csv::Writer<W>,
     collections: &CollectionWithId<T>,
-    object_type: &str,
 ) where
-    T: Id<T> + Codes,
+    T: Id<T> + Codes + GetObjectType,
     W: ::std::io::Write,
 {
     for (_, obj) in collections.iter() {
         for c in obj.codes() {
             wtr.serialize(Code {
                 object_id: obj.id().to_string(),
-                object_type: object_type.to_string(),
+                object_type: T::get_object_type(),
                 object_system: c.0.clone(),
                 object_code: c.1.clone(),
             }).unwrap();
@@ -227,12 +221,12 @@ pub fn write_codes(path: &path::Path, collections: &Collections) {
     info!("Writing object_codes.txt");
 
     let mut wtr = csv::Writer::from_path(&path.join("object_codes.txt")).unwrap();
-    write_codes_from_collection_with_id(&mut wtr, &collections.stop_areas, "stop_area");
-    write_codes_from_collection_with_id(&mut wtr, &collections.stop_points, "stop_point");
-    write_codes_from_collection_with_id(&mut wtr, &collections.networks, "network");
-    write_codes_from_collection_with_id(&mut wtr, &collections.lines, "line");
-    write_codes_from_collection_with_id(&mut wtr, &collections.routes, "route");
-    write_codes_from_collection_with_id(&mut wtr, &collections.vehicle_journeys, "trip");
+    write_codes_from_collection_with_id(&mut wtr, &collections.stop_areas);
+    write_codes_from_collection_with_id(&mut wtr, &collections.stop_points);
+    write_codes_from_collection_with_id(&mut wtr, &collections.networks);
+    write_codes_from_collection_with_id(&mut wtr, &collections.lines);
+    write_codes_from_collection_with_id(&mut wtr, &collections.routes);
+    write_codes_from_collection_with_id(&mut wtr, &collections.vehicle_journeys);
 
     wtr.flush().unwrap();
 }

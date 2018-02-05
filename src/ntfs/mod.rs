@@ -76,13 +76,13 @@ struct Stop {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct CommentLink {
     object_id: String,
-    object_type: String,
+    object_type: ObjectType,
     comment_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Code {
-    object_type: String,
+    object_type: ObjectType,
     object_id: String,
     object_system: String,
     object_code: String,

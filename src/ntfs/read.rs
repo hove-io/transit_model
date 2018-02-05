@@ -165,7 +165,8 @@ where
         None => {
             error!(
                 "object_codes.txt: object_type={} object_id={} not found",
-                code.object_type, code.object_id
+                code.object_type.as_str(),
+                code.object_id
             );
             return;
         }
@@ -178,14 +179,14 @@ pub fn manage_codes(collections: &mut Collections, path: &path::Path) {
     let mut rdr = csv::Reader::from_path(path.join("object_codes.txt")).unwrap();
     for code in rdr.deserialize().map(Result::unwrap) {
         let code: Code = code;
-        match code.object_type.as_str() {
-            "stop_area" => insert_code(&mut collections.stop_areas, code),
-            "stop_point" => insert_code(&mut collections.stop_points, code),
-            "network" => insert_code(&mut collections.networks, code),
-            "line" => insert_code(&mut collections.lines, code),
-            "route" => insert_code(&mut collections.routes, code),
-            "trip" => insert_code(&mut collections.vehicle_journeys, code),
-            _ => panic!("{} is not a valid object_type", code.object_type),
+        match code.object_type {
+            ObjectType::StopArea => insert_code(&mut collections.stop_areas, code),
+            ObjectType::StopPoint => insert_code(&mut collections.stop_points, code),
+            ObjectType::Network => insert_code(&mut collections.networks, code),
+            ObjectType::Line => insert_code(&mut collections.lines, code),
+            ObjectType::Route => insert_code(&mut collections.routes, code),
+            ObjectType::VehicleJourney => insert_code(&mut collections.vehicle_journeys, code),
+            _ => panic!("code does not support {}", code.object_type.as_str()),
         }
     }
 }
@@ -253,7 +254,8 @@ where
         None => {
             error!(
                 "comment_links.txt: object_type={} object_id={} not found",
-                comment_link.object_type, comment_link.object_id
+                comment_link.object_type.as_str(),
+                comment_link.object_id
             );
             return;
         }
@@ -272,15 +274,24 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) {
             info!("Reading comment_links.txt");
             for comment_link in rdr.deserialize().map(Result::unwrap) {
                 let comment_link: CommentLink = comment_link;
-                match comment_link.object_type.as_str() {
-                    "stop_area" => insert_comment_link(&mut collections.stop_areas, comment_link),
-                    "stop_point" => insert_comment_link(&mut collections.stop_points, comment_link),
-                    "line" => insert_comment_link(&mut collections.lines, comment_link),
-                    "route" => insert_comment_link(&mut collections.routes, comment_link),
-                    "trip" => insert_comment_link(&mut collections.vehicle_journeys, comment_link),
-                    "stop_time" => warn!("comments are not added to StopTime yet"),
-                    "line_group" => warn!("line_groups.txt is not parsed yet"),
-                    _ => panic!("{} is not a valid object_type", comment_link.object_type),
+                match comment_link.object_type {
+                    ObjectType::StopArea => {
+                        insert_comment_link(&mut collections.stop_areas, comment_link)
+                    }
+                    ObjectType::StopPoint => {
+                        insert_comment_link(&mut collections.stop_points, comment_link)
+                    }
+                    ObjectType::Line => insert_comment_link(&mut collections.lines, comment_link),
+                    ObjectType::Route => insert_comment_link(&mut collections.routes, comment_link),
+                    ObjectType::VehicleJourney => {
+                        insert_comment_link(&mut collections.vehicle_journeys, comment_link)
+                    }
+                    ObjectType::StopTime => warn!("comments are not added to StopTime yet"),
+                    ObjectType::LineGroup => warn!("line_groups.txt is not parsed yet"),
+                    _ => panic!(
+                        "comment does not support {}",
+                        comment_link.object_type.as_str()
+                    ),
                 }
             }
         }
