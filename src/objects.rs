@@ -18,6 +18,39 @@ use collection::{Id, Idx};
 use utils::*;
 use chrono;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "snake_case")]
+pub enum ObjectType {
+    StopArea,
+    StopPoint,
+    Network,
+    Line,
+    Route,
+    #[serde(rename = "trip")]
+    VehicleJourney,
+    StopTime,
+    LineGroup,
+}
+
+pub trait GetObjectType {
+    fn get_object_type() -> ObjectType;
+}
+
+impl ObjectType {
+    pub fn as_str(&self) -> &'static str {
+        match *self {
+            ObjectType::StopArea => "stop_area",
+            ObjectType::StopPoint => "stop_point",
+            ObjectType::Network => "network",
+            ObjectType::Line => "line",
+            ObjectType::Route => "route",
+            ObjectType::VehicleJourney => "trip",
+            ObjectType::StopTime => "stop_time",
+            ObjectType::LineGroup => "line_group",
+        }
+    }
+}
+
 // We use a Vec here for memory efficiency.  Other possible types can
 // be something like BTreeSet<(String,String)> or
 // BTreeMap<String,Vec<String>>.  Hash{Map,Set} are memory costy.
@@ -172,6 +205,12 @@ impl Id<Network> for Network {
 }
 impl_codes!(Network);
 
+impl GetObjectType for Network {
+    fn get_object_type() -> ObjectType {
+        ObjectType::Network
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rgb {
     pub red: u8,
@@ -270,6 +309,12 @@ impl Id<CommercialMode> for Line {
 impl_codes!(Line);
 impl_comment_links!(Line);
 
+impl GetObjectType for Line {
+    fn get_object_type() -> ObjectType {
+        ObjectType::Line
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Route {
     #[serde(rename = "route_id")]
@@ -297,6 +342,12 @@ impl Id<Line> for Route {
 }
 impl_codes!(Route);
 impl_comment_links!(Route);
+
+impl GetObjectType for Route {
+    fn get_object_type() -> ObjectType {
+        ObjectType::Route
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct VehicleJourney {
@@ -346,6 +397,12 @@ impl Id<Company> for VehicleJourney {
 }
 impl_codes!(VehicleJourney);
 impl_comment_links!(VehicleJourney);
+
+impl GetObjectType for VehicleJourney {
+    fn get_object_type() -> ObjectType {
+        ObjectType::VehicleJourney
+    }
+}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Time(u32);
@@ -424,6 +481,12 @@ pub struct StopTime {
     pub local_zone_id: Option<u16>,
 }
 
+impl GetObjectType for StopTime {
+    fn get_object_type() -> ObjectType {
+        ObjectType::StopTime
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Coord {
     pub lon: f64,
@@ -451,6 +514,12 @@ impl Id<StopArea> for StopArea {
 }
 impl_codes!(StopArea);
 impl_comment_links!(StopArea);
+
+impl GetObjectType for StopArea {
+    fn get_object_type() -> ObjectType {
+        ObjectType::StopArea
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct StopPoint {
@@ -480,6 +549,12 @@ impl Id<StopArea> for StopPoint {
 }
 impl_codes!(StopPoint);
 impl_comment_links!(StopPoint);
+
+impl GetObjectType for StopPoint {
+    fn get_object_type() -> ObjectType {
+        ObjectType::StopPoint
+    }
+}
 
 pub type Date = chrono::NaiveDate;
 
@@ -549,14 +624,14 @@ impl Id<Company> for Company {
 
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum CommentType {
     #[derivative(Default)]
     Information,
     OnDemandTransport,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Comment {
     #[serde(rename = "comment_id")]
     pub id: String,

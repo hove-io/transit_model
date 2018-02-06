@@ -73,6 +73,21 @@ struct Stop {
     equipment_id: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct CommentLink {
+    object_id: String,
+    object_type: ObjectType,
+    comment_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct Code {
+    object_type: ObjectType,
+    object_id: String,
+    object_system: String,
+    object_code: String,
+}
+
 fn default_visible() -> bool {
     true
 }
@@ -126,6 +141,8 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
     );
     write::write_calendar_and_calendar_dates(path, &pt_objects.calendars);
     write::write_stops(path, &pt_objects.stop_points, &pt_objects.stop_areas);
+    write::write_comments(path, &pt_objects);
+    write::write_codes(path, &pt_objects);
 }
 
 #[cfg(test)]
@@ -668,6 +685,312 @@ mod tests {
 
             assert_eq!(collections.stop_points, stop_points);
             assert_eq!(collections.stop_areas, stop_areas);
+        });
+    }
+
+    #[test]
+    fn comments_and_codes_serialization_deserialization() {
+        let mut ser_collections = Collections::default();
+        let comments = CollectionWithId::new(vec![
+            Comment {
+                id: "c:1".to_string(),
+                comment_type: CommentType::Information,
+                label: Some("label:".to_string()),
+                value: "value:1".to_string(),
+                url: Some("http://www.foo.bar".to_string()),
+            },
+            Comment {
+                id: "c:2".to_string(),
+                comment_type: CommentType::OnDemandTransport,
+                label: Some("label:2".to_string()),
+                value: "value:3".to_string(),
+                url: Some("http://www.foo.bar".to_string()),
+            },
+            Comment {
+                id: "c:3".to_string(),
+                comment_type: CommentType::Information,
+                label: None,
+                value: "value:1".to_string(),
+                url: None,
+            },
+        ]);
+
+        let stop_points = CollectionWithId::new(vec![
+            StopPoint {
+                id: "sp_1".to_string(),
+                name: "sp_name_1".to_string(),
+                codes: vec![("object_system:1".to_string(), "object_code:1".to_string())],
+                comment_links: vec!["c:1".to_string()],
+                visible: true,
+                coord: Coord {
+                    lon: 2.073034,
+                    lat: 48.799115,
+                },
+                timezone: None,
+                geometry_id: None,
+                equipment_id: None,
+                stop_area_id: "sa_1".to_string(),
+                fare_zone_id: None,
+            },
+        ]);
+
+        let stop_areas = CollectionWithId::new(vec![
+            StopArea {
+                id: "sa_1".to_string(),
+                name: "sa_name_1".to_string(),
+                codes: vec![("object_system:2".to_string(), "object_code:2".to_string())],
+                comment_links: vec!["c:2".to_string()],
+                visible: true,
+                coord: Coord {
+                    lon: 2.073034,
+                    lat: 48.799115,
+                },
+                timezone: None,
+                geometry_id: None,
+                equipment_id: None,
+            },
+        ]);
+
+        let lines = CollectionWithId::new(vec![
+            Line {
+                id: "OIF:002002003:3OIF829".to_string(),
+                name: "3".to_string(),
+                code: None,
+                codes: vec![("object_system:3".to_string(), "object_code:3".to_string())],
+                comment_links: vec!["c:1".to_string(), "c:2".to_string()],
+                forward_name: None,
+                forward_direction: None,
+                backward_name: None,
+                backward_direction: None,
+                color: None,
+                text_color: None,
+                sort_order: None,
+                network_id: "OIF:829".to_string(),
+                commercial_mode_id: "bus".to_string(),
+                geometry_id: None,
+                opening_time: None,
+                closing_time: None,
+            },
+        ]);
+
+        let routes = CollectionWithId::new(vec![
+            Route {
+                id: "OIF:002002002:CEN".to_string(),
+                name: "Hôtels - Hôtels".to_string(),
+                direction_type: None,
+                codes: vec![
+                    ("object_system:4".to_string(), "object_code:4".to_string()),
+                    ("object_system:5".to_string(), "object_code:5".to_string()),
+                ],
+                comment_links: vec!["c:3".to_string()],
+                line_id: "OIF:002002002:BDEOIF829".to_string(),
+                geometry_id: None,
+                destination_id: None,
+            },
+        ]);
+
+        let vehicle_journeys = CollectionWithId::new(vec![
+            VehicleJourney {
+                id: "OIF:90014407-1_425283-1".to_string(),
+                codes: vec![("object_system:6".to_string(), "object_code:6".to_string())],
+                comment_links: CommentLinksT::default(),
+                route_id: "OIF:800:TER".to_string(),
+                physical_mode_id: "Bus".to_string(),
+                dataset_id: "OIF:0".to_string(),
+                service_id: "2".to_string(),
+                headsign: None,
+                block_id: None,
+                company_id: "OIF:743".to_string(),
+                trip_property_id: None,
+                geometry_id: None,
+                stop_times: vec![],
+            },
+        ]);
+
+        let networks = CollectionWithId::new(vec![
+            Network {
+                id: "OIF:102".to_string(),
+                name: "SAVAC".to_string(),
+                url: None,
+                timezone: None,
+                lang: None,
+                phone: None,
+                address: None,
+                sort_order: None,
+                codes: CodesT::default(),
+            },
+        ]);
+
+        ser_collections.comments = comments;
+        ser_collections.stop_areas = stop_areas;
+        ser_collections.stop_points = stop_points;
+        ser_collections.lines = lines;
+        ser_collections.routes = routes;
+        ser_collections.vehicle_journeys = vehicle_journeys;
+        ser_collections.networks = networks;
+
+        ser_deser_in_tmp_dir(|path| {
+            write::write_collection_with_id(path, "lines.txt", &ser_collections.lines);
+            write::write_stops(
+                path,
+                &ser_collections.stop_points,
+                &ser_collections.stop_areas,
+            );
+            write::write_collection_with_id(path, "routes.txt", &ser_collections.routes);
+            write::write_collection_with_id(path, "trips.txt", &ser_collections.vehicle_journeys);
+            write::write_collection_with_id(path, "networks.txt", &ser_collections.networks);
+            write::write_comments(path, &ser_collections);
+            write::write_codes(path, &ser_collections);
+
+            let mut des_collections = Collections::default();
+            des_collections.lines = read::make_collection_with_id(path, "lines.txt");
+            des_collections.routes = read::make_collection_with_id(path, "routes.txt");
+            des_collections.vehicle_journeys = read::make_collection_with_id(path, "trips.txt");
+            des_collections.networks = read::make_collection_with_id(path, "networks.txt");
+            read::manage_stops(&mut des_collections, path);
+            read::manage_comments(&mut des_collections, path);
+            read::manage_codes(&mut des_collections, path);
+
+            assert_eq!(ser_collections.comments, des_collections.comments);
+
+            // test comment links
+            assert_eq!(
+                ser_collections
+                    .lines
+                    .get("OIF:002002003:3OIF829")
+                    .unwrap()
+                    .comment_links,
+                des_collections
+                    .lines
+                    .get("OIF:002002003:3OIF829")
+                    .unwrap()
+                    .comment_links
+            );
+
+            assert_eq!(
+                ser_collections
+                    .stop_points
+                    .get("sp_1")
+                    .unwrap()
+                    .comment_links,
+                des_collections
+                    .stop_points
+                    .get("sp_1")
+                    .unwrap()
+                    .comment_links
+            );
+
+            assert_eq!(
+                ser_collections
+                    .stop_points
+                    .get("sp_1")
+                    .unwrap()
+                    .comment_links,
+                des_collections
+                    .stop_points
+                    .get("sp_1")
+                    .unwrap()
+                    .comment_links
+            );
+
+            assert_eq!(
+                ser_collections
+                    .stop_areas
+                    .get("sa_1")
+                    .unwrap()
+                    .comment_links,
+                des_collections
+                    .stop_areas
+                    .get("sa_1")
+                    .unwrap()
+                    .comment_links
+            );
+
+            assert_eq!(
+                ser_collections
+                    .routes
+                    .get("OIF:002002002:CEN")
+                    .unwrap()
+                    .comment_links,
+                des_collections
+                    .routes
+                    .get("OIF:002002002:CEN")
+                    .unwrap()
+                    .comment_links
+            );
+
+            assert_eq!(
+                ser_collections
+                    .vehicle_journeys
+                    .get("OIF:90014407-1_425283-1")
+                    .unwrap()
+                    .comment_links,
+                des_collections
+                    .vehicle_journeys
+                    .get("OIF:90014407-1_425283-1")
+                    .unwrap()
+                    .comment_links
+            );
+
+            // test codes
+            assert_eq!(
+                ser_collections
+                    .lines
+                    .get("OIF:002002003:3OIF829")
+                    .unwrap()
+                    .codes,
+                des_collections
+                    .lines
+                    .get("OIF:002002003:3OIF829")
+                    .unwrap()
+                    .codes
+            );
+
+            assert_eq!(
+                ser_collections.stop_points.get("sp_1").unwrap().codes,
+                des_collections.stop_points.get("sp_1").unwrap().codes
+            );
+
+            assert_eq!(
+                ser_collections.stop_points.get("sp_1").unwrap().codes,
+                des_collections.stop_points.get("sp_1").unwrap().codes
+            );
+
+            assert_eq!(
+                ser_collections.stop_areas.get("sa_1").unwrap().codes,
+                des_collections.stop_areas.get("sa_1").unwrap().codes
+            );
+
+            assert_eq!(
+                ser_collections
+                    .routes
+                    .get("OIF:002002002:CEN")
+                    .unwrap()
+                    .codes,
+                des_collections
+                    .routes
+                    .get("OIF:002002002:CEN")
+                    .unwrap()
+                    .codes
+            );
+
+            assert_eq!(
+                ser_collections
+                    .vehicle_journeys
+                    .get("OIF:90014407-1_425283-1")
+                    .unwrap()
+                    .codes,
+                des_collections
+                    .vehicle_journeys
+                    .get("OIF:90014407-1_425283-1")
+                    .unwrap()
+                    .codes
+            );
+
+            assert_eq!(
+                ser_collections.networks.get("OIF:102").unwrap().codes,
+                des_collections.networks.get("OIF:102").unwrap().codes
+            );
         });
     }
 }
