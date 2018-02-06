@@ -210,7 +210,7 @@ impl Route {
                     return true;
                 }
             } else if self.long_name == other.long_name {
-                    return true;
+                return true;
             }
         }
         return false;
@@ -330,16 +330,17 @@ fn define_route_file_read_mode(gtfs_routes: &Vec<Route>) -> RouteReadType {
 }
 
 fn get_commercial_mode_label(route_type: &RouteType) -> String {
-    let result = match route_type {
-        &RouteType::Tramway_LightRail => "Tram, Streetcar, Light rail",
-        &RouteType::Metro => "Subway, Metro",
-        &RouteType::Rail => "Rail",
-        &RouteType::Bus => "Bus",
-        &RouteType::Ferry => "Ferry",
-        &RouteType::CableCar => "Cable car",
-        &RouteType::Gondola_SuspendedCableCar => "Gondola, Suspended cable car",
-        &RouteType::Funicular => "Funicular",
-        &RouteType::Other(_) => "Unknown Mode",
+    use self::RouteType::*;
+    let result = match *route_type {
+        Tramway_LightRail => "Tram, Streetcar, Light rail",
+        Metro => "Subway, Metro",
+        Rail => "Rail",
+        Bus => "Bus",
+        Ferry => "Ferry",
+        CableCar => "Cable car",
+        Gondola_SuspendedCableCar => "Gondola, Suspended cable car",
+        Funicular => "Funicular",
+        Other(_) => "Unknown Mode",
     };
     result.to_string()
 }
@@ -352,38 +353,39 @@ fn get_commercial_mode(route_type: &RouteType) -> objects::CommercialMode {
 }
 
 fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
-    match route_type {
-        &RouteType::Tramway_LightRail => objects::PhysicalMode {
+    use self::RouteType::*;
+    match *route_type {
+        Tramway_LightRail => objects::PhysicalMode {
             id: "RailShuttle".to_string(),
             name: "Navette ferrée (VAL)".to_string(),
             co2_emission: None,
         },
-        &RouteType::Metro => objects::PhysicalMode {
+        Metro => objects::PhysicalMode {
             id: "Metro".to_string(),
             name: "Métro".to_string(),
             co2_emission: None,
         },
-        &RouteType::Rail => objects::PhysicalMode {
+        Rail => objects::PhysicalMode {
             id: "Train".to_string(),
             name: "Train".to_string(),
             co2_emission: None,
         },
-        &RouteType::Bus => objects::PhysicalMode {
+        Bus => objects::PhysicalMode {
             id: "Bus".to_string(),
             name: "Bus".to_string(),
             co2_emission: None,
         },
-        &RouteType::Ferry => objects::PhysicalMode {
+        Ferry => objects::PhysicalMode {
             id: "Ferry".to_string(),
             name: "Ferry".to_string(),
             co2_emission: None,
         },
-        &RouteType::CableCar | &RouteType::Gondola_SuspendedCableCar | &RouteType::Funicular => objects::PhysicalMode {
+        CableCar | Gondola_SuspendedCableCar | Funicular => objects::PhysicalMode {
             id: "Funicular".to_string(),
             name: "Funicular".to_string(),
             co2_emission: None,
         },
-        &RouteType::Other(_) => objects::PhysicalMode {
+        Other(_) => objects::PhysicalMode {
             id: "Bus".to_string(),
             name: "Bus".to_string(),
             co2_emission: None,
@@ -628,7 +630,7 @@ mod tests {
             .collect();
         commercial_modes.sort();
         assert_eq!(commercial_modes, &["Bus", "Rail"]);
-        
+
         let lines_commercial_modes_id: Vec<String> = collections
             .lines
             .iter()
