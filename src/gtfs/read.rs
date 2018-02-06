@@ -156,12 +156,12 @@ pub fn read_agency<P: AsRef<path::Path>>(
     let networks = gtfs_agencies
         .iter()
         .cloned()
-        .map(|agency| objects::Network::from(agency))
+        .map(objects::Network::from)
         .collect();
     let networks = CollectionWithId::new(networks);
     let companies = gtfs_agencies
         .into_iter()
-        .map(|agency| objects::Company::from(agency))
+        .map(objects::Company::from)
         .collect();
     let companies = CollectionWithId::new(companies);
     (networks, companies)

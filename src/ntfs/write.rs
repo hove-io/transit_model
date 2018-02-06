@@ -179,7 +179,7 @@ fn write_comment_links_from_collection_with_id<W, T>(
 }
 
 pub fn write_comments(path: &path::Path, collections: &Collections) {
-    info!("Writing stops.txt");
+    info!("Writing comments.txt and comment_links.txt");
 
     let mut c_wtr = csv::Writer::from_path(&path.join("comments.txt")).unwrap();
     let mut cl_wtr = csv::Writer::from_path(&path.join("comment_links.txt")).unwrap();
