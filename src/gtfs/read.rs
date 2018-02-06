@@ -194,12 +194,12 @@ struct Route {
     route_type: RouteType,
     #[serde(rename = "route_url")]
     url: Option<String>,
-    #[serde(rename = "route_color", default, deserialize_with = "string_to_color",
-            serialize_with = "ser_from_color")]
+    #[serde(rename = "route_color", default, deserialize_with = "string_to_color")]
     color: Option<objects::Rgb>,
-    #[serde(rename = "route_text_color", default, deserialize_with = "string_to_color",
-            serialize_with = "ser_from_color")]
+    #[serde(rename = "route_text_color", default, deserialize_with = "string_to_color")]
     text_color: Option<objects::Rgb>,
+    #[serde(rename = "route_sort_order")]
+    sort_order: Option<u32>,
 }
 
 impl Route {
@@ -209,10 +209,8 @@ impl Route {
                 if self.short_name == other.short_name {
                     return true;
                 }
-            } else {
-                if self.long_name == other.long_name {
+            } else if self.long_name == other.long_name {
                     return true;
-                }
             }
         }
         return false;
@@ -240,17 +238,6 @@ where
         _ => RouteType::Other(i),
     };
     Ok(i)
-}
-
-pub fn ser_from_color<S>(color: &Option<objects::Rgb>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: ::serde::Serializer,
-{
-    let s = match color {
-        &Some(ref c) => format!("{}", c).to_string(),
-        &None => "".to_string(),
-    };
-    serializer.serialize_str(&s)
 }
 
 fn string_to_color<'de, D>(deserializer: D) -> Result<Option<objects::Rgb>, D::Error>
@@ -352,7 +339,7 @@ fn get_commercial_mode_label(route_type: &RouteType) -> String {
         &RouteType::CableCar => "Cable car",
         &RouteType::Gondola_SuspendedCableCar => "Gondola, Suspended cable car",
         &RouteType::Funicular => "Funicular",
-        _ => "Other Mode",
+        &RouteType::Other(_) => "Unknown Mode",
     };
     result.to_string()
 }
@@ -391,22 +378,12 @@ fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
             name: "Ferry".to_string(),
             co2_emission: None,
         },
-        &RouteType::CableCar => objects::PhysicalMode {
+        &RouteType::CableCar | &RouteType::Gondola_SuspendedCableCar | &RouteType::Funicular => objects::PhysicalMode {
             id: "Funicular".to_string(),
             name: "Funicular".to_string(),
             co2_emission: None,
         },
-        &RouteType::Gondola_SuspendedCableCar => objects::PhysicalMode {
-            id: "Funicular".to_string(),
-            name: "Funicular".to_string(),
-            co2_emission: None,
-        },
-        &RouteType::Funicular => objects::PhysicalMode {
-            id: "Funicular".to_string(),
-            name: "Funicular".to_string(),
-            co2_emission: None,
-        },
-        _ => objects::PhysicalMode {
+        &RouteType::Other(_) => objects::PhysicalMode {
             id: "Bus".to_string(),
             name: "Bus".to_string(),
             co2_emission: None,
@@ -455,7 +432,7 @@ fn get_lines_from_gtfs(gtfs_routes: &Vec<Route>, read_mode: RouteReadType) -> Ve
                 backward_direction: None,
                 color: r.color.clone(),
                 text_color: r.text_color.clone(),
-                sort_order: None,
+                sort_order: r.sort_order.clone(),
                 network_id: line_agency,
                 commercial_mode_id: r.route_type.to_gtfs_value(),
                 geometry_id: None,
@@ -644,14 +621,14 @@ mod tests {
         assert_eq!(3, collections.lines.len());
         assert_eq!(2, collections.commercial_modes.len());
 
-        let commercial_modes: Vec<String> = collections
+        let mut commercial_modes: Vec<String> = collections
             .commercial_modes
             .iter()
             .map(|(_, ref cm)| cm.name.to_string())
             .collect();
-        assert!(commercial_modes.contains(&"Bus".to_string()));
-        assert!(commercial_modes.contains(&"Rail".to_string()));
-
+        commercial_modes.sort();
+        assert_eq!(commercial_modes, &["Bus", "Rail"]);
+        
         let lines_commercial_modes_id: Vec<String> = collections
             .lines
             .iter()
