@@ -209,7 +209,7 @@ fn insert_calendar_date(collection: &mut CollectionWithId<Calendar>, calendar_da
 }
 
 pub fn manage_calendars(collections: &mut Collections, path: &path::Path) {
-    collections.calendars = make_collection_with_id(&path, "calendar.txt");
+    collections.calendars = make_collection_with_id(path, "calendar.txt");
 
     info!("Reading calendar_dates.txt");
     if let Ok(mut rdr) = csv::Reader::from_path(path.join("calendar_dates.txt")) {
@@ -268,7 +268,7 @@ where
 
 pub fn manage_comments(collections: &mut Collections, path: &path::Path) {
     if path.join("comments.txt").exists() {
-        collections.comments = make_collection_with_id(&path, "comments.txt");
+        collections.comments = make_collection_with_id(path, "comments.txt");
 
         if let Ok(mut rdr) = csv::Reader::from_path(path.join("comment_links.txt")) {
             info!("Reading comment_links.txt");
