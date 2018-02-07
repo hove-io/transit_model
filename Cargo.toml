@@ -1,20 +1,24 @@
 [package]
+authors = ["Kisio Digital <guillaume.pinot@kisio.org>"]
 name = "navitia_model"
 version = "0.1.0"
-authors = ["Kisio Digital <guillaume.pinot@kisio.org>"]
-
-[workspace]
 
 [dependencies]
+chrono = "0.4.0"
+csv = "1.0.0-beta.5"
 derivative = "1"
+env_logger = "0.5"
+log = "0.4"
 serde = "1"
 serde_derive = "1"
-csv = "1.0.0-beta.5"
-log = "0.4"
-get-corresponding-derive = { path = "get-corresponding-derive" }
-chrono = "0.4.0"
+structopt = "0.1.7"
+structopt-derive = "0.1.6"
+
+[dependencies.get-corresponding-derive]
+path = "get-corresponding-derive"
 
 [dev-dependencies]
-tempdir = "0.3.5"
 serde_json = "1"
-env_logger = "0.5.0-rc.1"
+tempdir = "0.3.5"
+
+[workspace]
