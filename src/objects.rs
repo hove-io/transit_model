@@ -704,6 +704,46 @@ pub struct Transfer {
     pub equipment_id: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
+#[derivative(Default)]
+pub enum TransportType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    Regular,
+    #[serde(rename = "1")]
+    ExclusiveSchool,
+    #[serde(rename = "2")]
+    RegularAndSchool,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct TripProperty {
+    #[serde(rename = "trip_property_id")]
+    pub id: String,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub wheelchair_accessible: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub bike_accepted: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub air_conditioned: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub visual_announcement: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub audible_announcement: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub appropriate_escort: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub appropriate_signage: Availability,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    pub school_vehicle_type: TransportType,
+}
+
+impl Id<TripProperty> for TripProperty {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

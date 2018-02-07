@@ -113,6 +113,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     read::manage_comments(&mut collections, path);
     collections.equipments = read::make_collection_with_id(path, "equipments.txt");
     collections.transfers = read::make_collection(path, "transfers.txt");
+    collections.trip_properties = read::make_collection_with_id(path, "trip_properties.txt");
     info!("Indexing");
     let res = PtObjects::new(collections);
     info!("Loading NTFS done");
@@ -133,6 +134,7 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
     write::write_collection_with_id(path, "physical_modes.txt", &pt_objects.lines);
     write::write_collection_with_id(path, "equipments.txt", &pt_objects.equipments);
     write::write_collection_with_id(path, "routes.txt", &pt_objects.lines);
+    write::write_collection_with_id(path, "trip_properties.txt", &pt_objects.trip_properties);
     write::write_collection(path, "transfers.txt", &pt_objects.transfers);
     write::write_vehicle_journeys_and_stop_times(
         path,
@@ -992,5 +994,33 @@ mod tests {
                 des_collections.networks.get("OIF:102").unwrap().codes
             );
         });
+    }
+
+    #[test]
+    fn trip_properties_serialization_deserialization() {
+        test_serialize_deserialize_collection_with_id(vec![
+            TripProperty {
+                id: "1".to_string(),
+                wheelchair_accessible: Availability::Available,
+                bike_accepted: Availability::NotAvailable,
+                air_conditioned: Availability::InformationNotAvailable,
+                visual_announcement: Availability::Available,
+                audible_announcement: Availability::Available,
+                appropriate_escort: Availability::Available,
+                appropriate_signage: Availability::Available,
+                school_vehicle_type: TransportType::Regular,
+            },
+            TripProperty {
+                id: "2".to_string(),
+                wheelchair_accessible: Availability::Available,
+                bike_accepted: Availability::NotAvailable,
+                air_conditioned: Availability::InformationNotAvailable,
+                visual_announcement: Availability::Available,
+                audible_announcement: Availability::Available,
+                appropriate_escort: Availability::Available,
+                appropriate_signage: Availability::Available,
+                school_vehicle_type: TransportType::RegularAndSchool,
+            },
+        ]);
     }
 }

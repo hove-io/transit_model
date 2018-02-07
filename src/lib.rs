@@ -61,6 +61,7 @@ pub struct Collections {
     pub comments: CollectionWithId<Comment>,
     pub equipments: CollectionWithId<Equipment>,
     pub transfers: Collection<Transfer>,
+    pub trip_properties: CollectionWithId<TripProperty>,
 }
 
 #[derive(GetCorresponding)]
