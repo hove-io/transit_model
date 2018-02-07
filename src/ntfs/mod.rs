@@ -123,7 +123,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     read::manage_codes(&mut collections, path);
     read::manage_comments(&mut collections, path);
     read::manage_object_properties(&mut collections, path);
-
+    collections.geometries = read::make_collection_with_id(path, "geometries.txt");
     info!("Indexing");
     let res = PtObjects::new(collections);
     info!("Loading NTFS done");
@@ -145,6 +145,7 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
     write::write_collection_with_id(path, "equipments.txt", &pt_objects.equipments);
     write::write_collection_with_id(path, "routes.txt", &pt_objects.lines);
     write::write_collection_with_id(path, "trip_properties.txt", &pt_objects.trip_properties);
+    write::write_collection_with_id(path, "geometries.txt", &pt_objects.geometries);
     write::write_collection(path, "transfers.txt", &pt_objects.transfers);
     write::write_vehicle_journeys_and_stop_times(
         path,
@@ -1050,6 +1051,20 @@ mod tests {
                 appropriate_escort: Availability::Available,
                 appropriate_signage: Availability::Available,
                 school_vehicle_type: TransportType::RegularAndSchool,
+            },
+        ]);
+    }
+
+    #[test]
+    fn geometries_serialization_deserialization() {
+        test_serialize_deserialize_collection_with_id(vec![
+            Geometry {
+                id: "geo-id-1".to_string(),
+                geometry_wkt: "LINESTRING(2.541951 49.013402,2.571294 49.004725)".to_string(),
+            },
+            Geometry {
+                id: "geo-id-2".to_string(),
+                geometry_wkt: "LINESTRING(2.548309 49.009182,2.549309 49.009253)".to_string(),
             },
         ]);
     }
