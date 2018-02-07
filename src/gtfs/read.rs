@@ -17,7 +17,7 @@
 use std::path;
 use csv;
 use collection::CollectionWithId;
-use objects::{self, CodesT, Coord};
+use objects::{self, Coord, KeysValues};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -45,7 +45,7 @@ impl From<Agency> for objects::Network {
         objects::Network {
             id: agency.id.unwrap_or_else(default_agency_id),
             name: agency.name,
-            codes: CodesT::default(),
+            codes: KeysValues::default(),
             timezone: agency.timezone,
             url: Some(agency.url),
             lang: agency.lang,
@@ -104,6 +104,7 @@ impl From<Stop> for objects::StopArea {
             id: stop.id,
             name: stop.name,
             codes: stop_codes,
+            object_properties: KeysValues::default(),
             comment_links: objects::CommentLinksT::default(),
             coord: Coord {
                 lon: stop.lon,
@@ -129,6 +130,7 @@ impl From<Stop> for objects::StopPoint {
             id: id,
             name: stop.name,
             codes: stop_codes,
+            object_properties: KeysValues::default(),
             comment_links: objects::CommentLinksT::default(),
             coord: Coord {
                 lon: stop.lon,

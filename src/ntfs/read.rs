@@ -22,7 +22,7 @@ use serde;
 use objects::*;
 use collection::{Collection, CollectionWithId, Id, Idx};
 use Collections;
-use super::{CalendarDate, Code, CommentLink, Stop, StopTime};
+use super::{CalendarDate, Code, CommentLink, ObjectProperty, Stop, StopTime};
 
 pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> CollectionWithId<T>
 where
@@ -53,7 +53,8 @@ impl From<Stop> for StopArea {
         StopArea {
             id: stop.id,
             name: stop.name,
-            codes: CodesT::default(),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
             comment_links: CommentLinksT::default(),
             visible: stop.visible,
             coord: Coord {
@@ -73,7 +74,8 @@ impl From<Stop> for StopPoint {
         StopPoint {
             id: id,
             name: stop.name,
-            codes: CodesT::default(),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
             comment_links: CommentLinksT::default(),
             visible: stop.visible,
             coord: Coord {
@@ -294,6 +296,48 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) {
                     ),
                 }
             }
+        }
+    }
+}
+
+fn insert_object_property<T>(collection: &mut CollectionWithId<T>, obj_prop: ObjectProperty)
+where
+    T: ObjectProperties + Id<T>,
+{
+    let idx = match collection.get_idx(&obj_prop.object_id) {
+        Some(idx) => idx,
+        None => {
+            error!(
+                "object_properties.txt: object_type={} object_id={} not found",
+                obj_prop.object_type.as_str(),
+                obj_prop.object_id
+            );
+            return;
+        }
+    };
+    collection.index_mut(idx).object_properties_mut().push((
+        obj_prop.object_property_name,
+        obj_prop.object_property_value,
+    ));
+}
+
+pub fn manage_object_properties(collections: &mut Collections, path: &path::Path) {
+    info!("Reading object_properties.txt");
+    let mut rdr = csv::Reader::from_path(path.join("object_properties.txt")).unwrap();
+    for obj_prop in rdr.deserialize().map(Result::unwrap) {
+        let obj_prop: ObjectProperty = obj_prop;
+        match obj_prop.object_type {
+            ObjectType::StopArea => insert_object_property(&mut collections.stop_areas, obj_prop),
+            ObjectType::StopPoint => insert_object_property(&mut collections.stop_points, obj_prop),
+            ObjectType::Line => insert_object_property(&mut collections.lines, obj_prop),
+            ObjectType::Route => insert_object_property(&mut collections.routes, obj_prop),
+            ObjectType::VehicleJourney => {
+                insert_object_property(&mut collections.vehicle_journeys, obj_prop)
+            }
+            _ => panic!(
+                "object_property does not support {}",
+                obj_prop.object_type.as_str()
+            ),
         }
     }
 }
