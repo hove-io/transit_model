@@ -88,6 +88,14 @@ struct Code {
     object_code: String,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct ObjectProperty {
+    object_type: ObjectType,
+    object_id: String,
+    object_property_name: String,
+    object_property_value: String,
+}
+
 fn default_visible() -> bool {
     true
 }
@@ -104,16 +112,18 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     collections.routes = read::make_collection_with_id(path, "routes.txt");
     collections.vehicle_journeys = read::make_collection_with_id(path, "trips.txt");
     collections.physical_modes = read::make_collection_with_id(path, "physical_modes.txt");
-    read::manage_calendars(&mut collections, path);
     collections.companies = read::make_collection_with_id(path, "companies.txt");
+    collections.equipments = read::make_collection_with_id(path, "equipments.txt");
+    collections.transfers = read::make_collection(path, "transfers.txt");
+    collections.trip_properties = read::make_collection_with_id(path, "trip_properties.txt");
+    read::manage_calendars(&mut collections, path);
     read::manage_feed_infos(&mut collections, path);
     read::manage_stops(&mut collections, path);
     read::manage_stop_times(&mut collections, path);
     read::manage_codes(&mut collections, path);
     read::manage_comments(&mut collections, path);
-    collections.equipments = read::make_collection_with_id(path, "equipments.txt");
-    collections.transfers = read::make_collection(path, "transfers.txt");
-    collections.trip_properties = read::make_collection_with_id(path, "trip_properties.txt");
+    read::manage_object_properties(&mut collections, path);
+
     info!("Indexing");
     let res = PtObjects::new(collections);
     info!("Loading NTFS done");
@@ -145,6 +155,7 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
     write::write_stops(path, &pt_objects.stop_points, &pt_objects.stop_areas);
     write::write_comments(path, pt_objects);
     write::write_codes(path, pt_objects);
+    write::write_object_properties(path, &pt_objects);
 }
 
 #[cfg(test)]
@@ -227,7 +238,7 @@ mod tests {
                 phone: Some("0123456789".to_string()),
                 address: Some("somewhere".to_string()),
                 sort_order: Some(1),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
             },
             Network {
                 id: "OIF:102".to_string(),
@@ -238,7 +249,7 @@ mod tests {
                 phone: None,
                 address: None,
                 sort_order: None,
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
             },
         ]);
     }
@@ -286,7 +297,8 @@ mod tests {
                 id: "OIF:002002002:BDEOIF829".to_string(),
                 name: "DEF".to_string(),
                 code: Some("DEF".to_string()),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 forward_name: Some("Hôtels - Hôtels".to_string()),
                 forward_direction: Some("OIF:SA:4:126".to_string()),
@@ -313,7 +325,8 @@ mod tests {
                 id: "OIF:002002003:3OIF829".to_string(),
                 name: "3".to_string(),
                 code: None,
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 forward_name: None,
                 forward_direction: None,
@@ -354,7 +367,8 @@ mod tests {
                 id: "IF:002002002:BDE".to_string(),
                 name: "Hôtels - Hôtels".to_string(),
                 direction_type: Some("foward".to_string()),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 line_id: "OIF:002002002:BDEOIF829".to_string(),
                 geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
@@ -364,7 +378,8 @@ mod tests {
                 id: "OIF:002002002:CEN".to_string(),
                 name: "Hôtels - Hôtels".to_string(),
                 direction_type: None,
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 line_id: "OIF:002002002:BDEOIF829".to_string(),
                 geometry_id: None,
@@ -379,7 +394,8 @@ mod tests {
             StopPoint {
                 id: "OIF:SP:36:2085".to_string(),
                 name: "Gare de Saint-Cyr l'École".to_string(),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
@@ -395,7 +411,8 @@ mod tests {
             StopPoint {
                 id: "OIF:SP:36:2127".to_string(),
                 name: "Division Leclerc".to_string(),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
@@ -412,7 +429,8 @@ mod tests {
         let vehicle_journeys = CollectionWithId::new(vec![
             VehicleJourney {
                 id: "OIF:87604986-1_11595-1".to_string(),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 route_id: "OIF:078078001:1".to_string(),
                 physical_mode_id: "Bus".to_string(),
@@ -452,7 +470,8 @@ mod tests {
             },
             VehicleJourney {
                 id: "OIF:90014407-1_425283-1".to_string(),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 route_id: "OIF:800:TER".to_string(),
                 physical_mode_id: "Bus".to_string(),
@@ -616,7 +635,8 @@ mod tests {
             StopPoint {
                 id: "sp_1".to_string(),
                 name: "sp_name_1".to_string(),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
@@ -633,7 +653,8 @@ mod tests {
             StopPoint {
                 id: "sa_2".to_string(),
                 name: "sa_name_2".to_string(),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
@@ -652,7 +673,8 @@ mod tests {
             StopArea {
                 id: "Navitia:sa_2".to_string(),
                 name: "sa_name_2".to_string(),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
@@ -666,7 +688,8 @@ mod tests {
             StopArea {
                 id: "sa_1".to_string(),
                 name: "sa_name_1".to_string(),
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
@@ -691,7 +714,7 @@ mod tests {
     }
 
     #[test]
-    fn comments_and_codes_serialization_deserialization() {
+    fn comments_codes_object_properties_serialization_deserialization() {
         let mut ser_collections = Collections::default();
         let comments = CollectionWithId::new(vec![
             Comment {
@@ -722,6 +745,7 @@ mod tests {
                 id: "sp_1".to_string(),
                 name: "sp_name_1".to_string(),
                 codes: vec![("object_system:1".to_string(), "object_code:1".to_string())],
+                object_properties: vec![("prop_name:1".to_string(), "prop_value:1".to_string())],
                 comment_links: vec!["c:1".to_string()],
                 visible: true,
                 coord: Coord {
@@ -741,6 +765,7 @@ mod tests {
                 id: "sa_1".to_string(),
                 name: "sa_name_1".to_string(),
                 codes: vec![("object_system:2".to_string(), "object_code:2".to_string())],
+                object_properties: vec![("prop_name:2".to_string(), "prop_value:2".to_string())],
                 comment_links: vec!["c:2".to_string()],
                 visible: true,
                 coord: Coord {
@@ -759,6 +784,7 @@ mod tests {
                 name: "3".to_string(),
                 code: None,
                 codes: vec![("object_system:3".to_string(), "object_code:3".to_string())],
+                object_properties: vec![("prop_name:3".to_string(), "prop_value:3".to_string())],
                 comment_links: vec!["c:1".to_string(), "c:2".to_string()],
                 forward_name: None,
                 forward_direction: None,
@@ -784,6 +810,7 @@ mod tests {
                     ("object_system:4".to_string(), "object_code:4".to_string()),
                     ("object_system:5".to_string(), "object_code:5".to_string()),
                 ],
+                object_properties: vec![("prop_name:4".to_string(), "prop_value:4".to_string())],
                 comment_links: vec!["c:3".to_string()],
                 line_id: "OIF:002002002:BDEOIF829".to_string(),
                 geometry_id: None,
@@ -795,6 +822,7 @@ mod tests {
             VehicleJourney {
                 id: "OIF:90014407-1_425283-1".to_string(),
                 codes: vec![("object_system:6".to_string(), "object_code:6".to_string())],
+                object_properties: vec![("prop_name:6".to_string(), "prop_value:6".to_string())],
                 comment_links: CommentLinksT::default(),
                 route_id: "OIF:800:TER".to_string(),
                 physical_mode_id: "Bus".to_string(),
@@ -819,7 +847,7 @@ mod tests {
                 phone: None,
                 address: None,
                 sort_order: None,
-                codes: CodesT::default(),
+                codes: KeysValues::default(),
             },
         ]);
 
@@ -843,6 +871,7 @@ mod tests {
             write::write_collection_with_id(path, "networks.txt", &ser_collections.networks);
             write::write_comments(path, &ser_collections);
             write::write_codes(path, &ser_collections);
+            write::write_object_properties(path, &ser_collections);
 
             let mut des_collections = Collections::default();
             des_collections.lines = read::make_collection_with_id(path, "lines.txt");
@@ -852,6 +881,7 @@ mod tests {
             read::manage_stops(&mut des_collections, path);
             read::manage_comments(&mut des_collections, path);
             read::manage_codes(&mut des_collections, path);
+            read::manage_object_properties(&mut des_collections, path);
 
             assert_eq!(ser_collections.comments, des_collections.comments);
 

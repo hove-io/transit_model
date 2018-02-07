@@ -21,7 +21,7 @@ use collection::{Collection, CollectionWithId, Id};
 use serde;
 use objects::*;
 use Collections;
-use super::{CalendarDate, Code, CommentLink, Stop, StopTime};
+use super::{CalendarDate, Code, CommentLink, ObjectProperty, Stop, StopTime};
 
 pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>) {
     info!("Writing feed_infos.txt");
@@ -227,6 +227,38 @@ pub fn write_codes(path: &path::Path, collections: &Collections) {
     write_codes_from_collection_with_id(&mut wtr, &collections.lines);
     write_codes_from_collection_with_id(&mut wtr, &collections.routes);
     write_codes_from_collection_with_id(&mut wtr, &collections.vehicle_journeys);
+
+    wtr.flush().unwrap();
+}
+
+fn write_object_properties_from_collection_with_id<W, T>(
+    wtr: &mut csv::Writer<W>,
+    collections: &CollectionWithId<T>,
+) where
+    T: Id<T> + ObjectProperties + GetObjectType,
+    W: ::std::io::Write,
+{
+    for (_, obj) in collections.iter() {
+        for c in obj.object_properties() {
+            wtr.serialize(ObjectProperty {
+                object_id: obj.id().to_string(),
+                object_type: T::get_object_type(),
+                object_property_name: c.0.clone(),
+                object_property_value: c.1.clone(),
+            }).unwrap();
+        }
+    }
+}
+
+pub fn write_object_properties(path: &path::Path, collections: &Collections) {
+    info!("Writing object_properties.txt");
+
+    let mut wtr = csv::Writer::from_path(&path.join("object_properties.txt")).unwrap();
+    write_object_properties_from_collection_with_id(&mut wtr, &collections.stop_areas);
+    write_object_properties_from_collection_with_id(&mut wtr, &collections.stop_points);
+    write_object_properties_from_collection_with_id(&mut wtr, &collections.lines);
+    write_object_properties_from_collection_with_id(&mut wtr, &collections.routes);
+    write_object_properties_from_collection_with_id(&mut wtr, &collections.vehicle_journeys);
 
     wtr.flush().unwrap();
 }

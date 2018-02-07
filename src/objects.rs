@@ -54,20 +54,37 @@ impl ObjectType {
 // We use a Vec here for memory efficiency.  Other possible types can
 // be something like BTreeSet<(String,String)> or
 // BTreeMap<String,Vec<String>>.  Hash{Map,Set} are memory costy.
-pub type CodesT = Vec<(String, String)>;
+pub type KeysValues = Vec<(String, String)>;
 
 pub trait Codes {
-    fn codes(&self) -> &CodesT;
-    fn codes_mut(&mut self) -> &mut CodesT;
+    fn codes(&self) -> &KeysValues;
+    fn codes_mut(&mut self) -> &mut KeysValues;
 }
 macro_rules! impl_codes {
     ($ty:ty) => {
         impl Codes for $ty {
-            fn codes(&self) -> &CodesT {
+            fn codes(&self) -> &KeysValues {
                 &self.codes
             }
-            fn codes_mut(&mut self) -> &mut CodesT {
+            fn codes_mut(&mut self) -> &mut KeysValues {
                 &mut self.codes
+            }
+        }
+    };
+}
+
+pub trait ObjectProperties {
+    fn object_properties(&self) -> &KeysValues;
+    fn object_properties_mut(&mut self) -> &mut KeysValues;
+}
+macro_rules! impl_object_properties {
+    ($ty:ty) => {
+        impl ObjectProperties for $ty {
+            fn object_properties(&self) -> &KeysValues {
+                &self.object_properties
+            }
+            fn object_properties_mut(&mut self) -> &mut KeysValues {
+                &mut self.object_properties
             }
         }
     };
@@ -186,7 +203,7 @@ pub struct Network {
     #[serde(rename = "network_url")]
     pub url: Option<String>,
     #[serde(skip)]
-    pub codes: CodesT,
+    pub codes: KeysValues,
     #[serde(rename = "network_timezone")]
     pub timezone: Option<String>,
     #[serde(rename = "network_lang")]
@@ -265,7 +282,9 @@ pub struct Line {
     #[serde(rename = "line_code")]
     pub code: Option<String>,
     #[serde(skip)]
-    pub codes: CodesT,
+    pub codes: KeysValues,
+    #[serde(skip)]
+    pub object_properties: KeysValues,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     #[serde(rename = "line_name")]
@@ -307,6 +326,7 @@ impl Id<CommercialMode> for Line {
     }
 }
 impl_codes!(Line);
+impl_object_properties!(Line);
 impl_comment_links!(Line);
 
 impl GetObjectType for Line {
@@ -323,7 +343,9 @@ pub struct Route {
     pub name: String,
     pub direction_type: Option<String>,
     #[serde(skip)]
-    pub codes: CodesT,
+    pub codes: KeysValues,
+    #[serde(skip)]
+    pub object_properties: KeysValues,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     pub line_id: String,
@@ -341,6 +363,7 @@ impl Id<Line> for Route {
     }
 }
 impl_codes!(Route);
+impl_object_properties!(Route);
 impl_comment_links!(Route);
 
 impl GetObjectType for Route {
@@ -354,7 +377,9 @@ pub struct VehicleJourney {
     #[serde(rename = "trip_id")]
     pub id: String,
     #[serde(skip)]
-    pub codes: CodesT,
+    pub codes: KeysValues,
+    #[serde(skip)]
+    pub object_properties: KeysValues,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     pub route_id: String,
@@ -396,6 +421,7 @@ impl Id<Company> for VehicleJourney {
     }
 }
 impl_codes!(VehicleJourney);
+impl_object_properties!(VehicleJourney);
 impl_comment_links!(VehicleJourney);
 
 impl GetObjectType for VehicleJourney {
@@ -498,7 +524,9 @@ pub struct StopArea {
     pub id: String,
     pub name: String,
     #[serde(skip)]
-    pub codes: CodesT,
+    pub codes: KeysValues,
+    #[serde(skip)]
+    pub object_properties: KeysValues,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     pub visible: bool,
@@ -513,6 +541,7 @@ impl Id<StopArea> for StopArea {
     }
 }
 impl_codes!(StopArea);
+impl_object_properties!(StopArea);
 impl_comment_links!(StopArea);
 
 impl GetObjectType for StopArea {
@@ -526,7 +555,9 @@ pub struct StopPoint {
     pub id: String,
     pub name: String,
     #[serde(skip)]
-    pub codes: CodesT,
+    pub codes: KeysValues,
+    #[serde(skip)]
+    pub object_properties: KeysValues,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     pub visible: bool,
@@ -548,6 +579,7 @@ impl Id<StopArea> for StopPoint {
     }
 }
 impl_codes!(StopPoint);
+impl_object_properties!(StopPoint);
 impl_comment_links!(StopPoint);
 
 impl GetObjectType for StopPoint {
