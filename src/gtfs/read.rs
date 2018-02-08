@@ -18,7 +18,7 @@ use std::path;
 use csv;
 use collection::CollectionWithId;
 use Collections;
-use objects::{self, KeysValues, Coord};
+use objects::{self, Coord, KeysValues};
 use std::collections::HashSet;
 
 fn default_agency_id() -> String {
@@ -182,7 +182,7 @@ impl RouteType {
 impl<'de> ::serde::Deserialize<'de> for RouteType {
     fn deserialize<D>(deserializer: D) -> Result<RouteType, D::Error>
     where
-        D: ::serde::Deserializer<'de>
+        D: ::serde::Deserializer<'de>,
     {
         let mut i = u16::deserialize(deserializer)?;
         if i > 7 && i < 99 {
@@ -240,7 +240,6 @@ impl Route {
         return false;
     }
 }
-
 
 pub fn read_agency<P: AsRef<path::Path>>(
     path: P,
@@ -497,8 +496,10 @@ mod tests {
     #[test]
     fn load_complete_agency() {
         let agency_content =
-            "agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url,agency_email\n\
-             id_1,My agency,http://my-agency_url.com,Europe/London,EN,0123456789,http://my-agency_fare_url.com,my-mail@example.com";
+            "agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,\
+             agency_fare_url,agency_email\n\
+             id_1,My agency,http://my-agency_url.com,Europe/London,EN,0123456789,\
+             http://my-agency_fare_url.com,my-mail@example.com";
         let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
         let file_path = tmp_dir.path().join("agency.txt");
         let mut f = File::create(&file_path).unwrap();
