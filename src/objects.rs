@@ -267,8 +267,8 @@ impl Error for RgbError {
     fn description(&self) -> &str {
         match *self {
             RgbError::NotHexa => "String is not a valid Hexadecimal value",
-            RgbError::TooLongHexa => "String is too long (6 char expected)",
-            RgbError::TooShortHexa => "String is too short (6 char expected)",
+            RgbError::TooLongHexa => "String is too long (6 characters expected)",
+            RgbError::TooShortHexa => "String is too short (6 characters expected)",
         }
     }
 }

@@ -148,7 +148,7 @@ impl From<Stop> for objects::StopPoint {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Serialize, Debug, Clone, Eq, PartialEq, Hash)]
 enum RouteType {
     #[allow(non_camel_case_types)]
     Tramway_LightRail,
@@ -179,6 +179,31 @@ impl RouteType {
     }
 }
 
+impl<'de> ::serde::Deserialize<'de> for RouteType {
+    fn deserialize<D>(deserializer: D) -> Result<RouteType, D::Error>
+    where
+        D: ::serde::Deserializer<'de>
+    {
+        let mut i = u16::deserialize(deserializer)?;
+        if i > 7 && i < 99 {
+            i = 3;
+            error!("illegal route_type: '{}', using '3' as fallback", i);
+        }
+        let i = match i {
+            0 => RouteType::Tramway_LightRail,
+            1 => RouteType::Metro,
+            2 => RouteType::Rail,
+            3 => RouteType::Bus,
+            4 => RouteType::Ferry,
+            5 => RouteType::CableCar,
+            6 => RouteType::Gondola_SuspendedCableCar,
+            7 => RouteType::Funicular,
+            _ => RouteType::Other(i),
+        };
+        Ok(i)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Route {
     #[serde(rename = "route_id")]
@@ -190,13 +215,12 @@ struct Route {
     long_name: String,
     #[serde(rename = "route_desc")]
     desc: Option<String>,
-    #[serde(deserialize_with = "de_route_type")]
     route_type: RouteType,
     #[serde(rename = "route_url")]
     url: Option<String>,
-    #[serde(rename = "route_color", default, deserialize_with = "string_to_color")]
+    #[serde(rename = "route_color", default)]
     color: Option<objects::Rgb>,
-    #[serde(rename = "route_text_color", default, deserialize_with = "string_to_color")]
+    #[serde(rename = "route_text_color", default)]
     text_color: Option<objects::Rgb>,
     #[serde(rename = "route_sort_order")]
     sort_order: Option<u32>,
@@ -217,43 +241,6 @@ impl Route {
     }
 }
 
-fn de_route_type<'de, D>(deserializer: D) -> Result<RouteType, D::Error>
-where
-    D: ::serde::Deserializer<'de>,
-{
-    use serde::Deserialize;
-    let mut i = u16::deserialize(deserializer)?;
-    if i > 7 && i < 99 {
-        i = 3;
-    }
-    let i = match i {
-        0 => RouteType::Tramway_LightRail,
-        1 => RouteType::Metro,
-        2 => RouteType::Rail,
-        3 => RouteType::Bus,
-        4 => RouteType::Ferry,
-        5 => RouteType::CableCar,
-        6 => RouteType::Gondola_SuspendedCableCar,
-        7 => RouteType::Funicular,
-        _ => RouteType::Other(i),
-    };
-    Ok(i)
-}
-
-fn string_to_color<'de, D>(deserializer: D) -> Result<Option<objects::Rgb>, D::Error>
-where
-    D: ::serde::Deserializer<'de>,
-{
-    use serde::Deserialize;
-    let s = String::deserialize(deserializer)?;
-    if s.is_empty() {
-        Ok(None)
-    } else {
-        s.parse()
-            .map(|c| Some(c))
-            .map_err(::serde::de::Error::custom)
-    }
-}
 
 pub fn read_agency<P: AsRef<path::Path>>(
     path: P,
@@ -357,12 +344,12 @@ fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
     match *route_type {
         Tramway_LightRail => objects::PhysicalMode {
             id: "RailShuttle".to_string(),
-            name: "Navette ferrée (VAL)".to_string(),
+            name: "Rail Shuttle".to_string(),
             co2_emission: None,
         },
         Metro => objects::PhysicalMode {
             id: "Metro".to_string(),
-            name: "Métro".to_string(),
+            name: "Metro".to_string(),
             co2_emission: None,
         },
         Rail => objects::PhysicalMode {
@@ -414,9 +401,9 @@ fn get_lines_from_gtfs(gtfs_routes: &Vec<Route>, read_mode: RouteReadType) -> Ve
     let mut lines = vec![];
     match read_mode {
         RouteReadType::RouteAsNtmLine => for r in gtfs_routes {
-            let line_code = match r.short_name.as_ref() {
-                "" => None,
-                _ => Some(r.short_name.to_string()),
+            let line_code = match r.short_name.is_empty() {
+                true => None,
+                false => Some(r.short_name.to_string()),
             };
             let line_agency = match r.agency_id {
                 Some(ref agency_id) => agency_id.to_string(),
