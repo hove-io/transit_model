@@ -18,7 +18,7 @@ use std::path;
 use csv;
 use collection::CollectionWithId;
 use Collections;
-use objects::{self, CodesT, Coord};
+use objects::{self, KeysValues, Coord};
 use std::collections::HashSet;
 
 fn default_agency_id() -> String {
@@ -413,6 +413,7 @@ fn get_lines_from_gtfs(gtfs_routes: &Vec<Route>, read_mode: RouteReadType) -> Ve
                 id: r.id.to_string(),
                 code: line_code.clone(),
                 codes: vec![],
+                object_properties: KeysValues::default(),
                 comment_links: vec![],
                 name: r.long_name.to_string(),
                 forward_name: None,
