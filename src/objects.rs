@@ -780,8 +780,8 @@ impl Id<TripProperty> for TripProperty {
 pub struct Geometry {
     #[serde(rename = "geometry_id")]
     pub id: String,
-    #[serde(deserialize_with = "de_with_empty_default")]
-    pub geometry_wkt: String,
+    #[serde(rename = "geometry_wkt")]
+    pub wkt: String,
 }
 
 impl Id<Geometry> for Geometry {

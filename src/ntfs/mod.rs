@@ -116,6 +116,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     collections.equipments = read::make_collection_with_id(path, "equipments.txt");
     collections.transfers = read::make_collection(path, "transfers.txt");
     collections.trip_properties = read::make_collection_with_id(path, "trip_properties.txt");
+    collections.geometries = read::make_collection_with_id(path, "geometries.txt");
     read::manage_calendars(&mut collections, path);
     read::manage_feed_infos(&mut collections, path);
     read::manage_stops(&mut collections, path);
@@ -123,7 +124,6 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     read::manage_codes(&mut collections, path);
     read::manage_comments(&mut collections, path);
     read::manage_object_properties(&mut collections, path);
-    collections.geometries = read::make_collection_with_id(path, "geometries.txt");
     info!("Indexing");
     let res = PtObjects::new(collections);
     info!("Loading NTFS done");
@@ -1060,11 +1060,11 @@ mod tests {
         test_serialize_deserialize_collection_with_id(vec![
             Geometry {
                 id: "geo-id-1".to_string(),
-                geometry_wkt: "LINESTRING(2.541951 49.013402,2.571294 49.004725)".to_string(),
+                wkt: "LINESTRING(2.541951 49.013402,2.571294 49.004725)".to_string(),
             },
             Geometry {
                 id: "geo-id-2".to_string(),
-                geometry_wkt: "LINESTRING(2.548309 49.009182,2.549309 49.009253)".to_string(),
+                wkt: "LINESTRING(2.548309 49.009182,2.549309 49.009253)".to_string(),
             },
         ]);
     }
