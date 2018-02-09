@@ -33,7 +33,7 @@ where
         info!("Skipping {}", file);
         CollectionWithId::default()
     } else {
-        make_opt_collection_with_id(path, file)
+        make_collection_with_id(path, file)
     }
 }
 
