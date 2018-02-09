@@ -17,6 +17,7 @@
 use collection::{Id, Idx};
 use utils::*;
 use chrono;
+use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
@@ -235,6 +236,65 @@ pub struct Rgb {
     pub blue: u8,
 }
 
+impl std::fmt::Display for Rgb {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let color = format!("{:02X}{:02X}{:02X}", self.red, self.green, self.blue);
+        f.write_str(color.as_ref())
+    }
+}
+
+#[derive(Debug)]
+pub enum RgbError {
+    NotHexa,
+    TooLongHexa,
+    TooShortHexa,
+}
+
+use std::error::Error;
+use std;
+
+impl std::fmt::Display for RgbError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            RgbError::NotHexa => f.write_str("RgbError_NotHexa"),
+            RgbError::TooLongHexa => f.write_str("RgbError_TooLongHexa"),
+            RgbError::TooShortHexa => f.write_str("RgbError_NumberOfChar"),
+        }
+    }
+}
+
+impl Error for RgbError {
+    fn description(&self) -> &str {
+        match *self {
+            RgbError::NotHexa => "String is not a valid Hexadecimal value",
+            RgbError::TooLongHexa => "String is too long (6 characters expected)",
+            RgbError::TooShortHexa => "String is too short (6 characters expected)",
+        }
+    }
+}
+
+impl FromStr for Rgb {
+    type Err = RgbError;
+
+    fn from_str(color_hex: &str) -> Result<Self, Self::Err> {
+        let color_dec = u32::from_str_radix(&color_hex, 16).map_err(|_err| RgbError::NotHexa)?;
+
+        if color_dec >= 1 << 24 {
+            return Err(RgbError::TooLongHexa);
+        }
+
+        if color_hex.chars().count() != 6 {
+            return Err(RgbError::TooShortHexa);
+        }
+
+        Ok(Rgb {
+            red: (color_dec >> 16) as u8,
+            green: (color_dec >> 8) as u8,
+            blue: color_dec as u8,
+        })
+    }
+}
+
 impl ::serde::Serialize for Rgb {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -253,25 +313,7 @@ impl<'de> ::serde::Deserialize<'de> for Rgb {
         use serde::de::Error;
 
         let color_hex = String::deserialize(deserializer)?;
-        let color_dec = u32::from_str_radix(&color_hex, 16).map_err(Error::custom)?;
-
-        if color_dec >= 1 << 24 {
-            return Err(Error::custom(
-                "color should be in hexadecimal format (ex: FF4500)",
-            ));
-        }
-
-        if color_hex.chars().count() != 6 {
-            return Err(Error::custom(
-                "color should have 6 hexadecimal digits (ex: FF4500)",
-            ));
-        }
-
-        Ok(Rgb {
-            red: (color_dec >> 16) as u8,
-            green: (color_dec >> 8) as u8,
-            blue: color_dec as u8,
-        })
+        Rgb::from_str(&color_hex).map_err(Error::custom)
     }
 }
 
