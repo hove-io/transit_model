@@ -24,6 +24,19 @@ use collection::{Collection, CollectionWithId, Id, Idx};
 use Collections;
 use super::{CalendarDate, Code, CommentLink, ObjectProperty, Stop, StopTime};
 
+pub fn make_opt_collection_with_id<T>(path: &path::Path, file: &str) -> CollectionWithId<T>
+where
+    T: Id<T>,
+    for<'de> T: serde::Deserialize<'de>,
+{
+    if !path.join(file).exists() {
+        info!("Skipping {}", file);
+        CollectionWithId::default()
+    } else {
+        make_opt_collection_with_id(path, file)
+    }
+}
+
 pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> CollectionWithId<T>
 where
     T: Id<T>,
@@ -35,14 +48,23 @@ where
     CollectionWithId::new(vec)
 }
 
-pub fn make_collection<T>(path: &path::Path, file: &str) -> Collection<T>
+pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> Collection<T>
+where
+    for<'de> T: serde::Deserialize<'de>,
+{
+    if !path.join(file).exists() {
+        info!("Skipping {}", file);
+        Collection::default()
+    } else {
+        make_collection(path, file)
+    }
+}
+
+fn make_collection<T>(path: &path::Path, file: &str) -> Collection<T>
 where
     for<'de> T: serde::Deserialize<'de>,
 {
     info!("Reading {}", file);
-    if !path.join(file).exists() {
-        panic!("file {} does not exist", file);
-    }
     let mut rdr = csv::Reader::from_path(path.join(file)).unwrap();
     let vec = rdr.deserialize().map(Result::unwrap).collect();
     Collection::new(vec)
@@ -177,8 +199,13 @@ where
 }
 
 pub fn manage_codes(collections: &mut Collections, path: &path::Path) {
-    info!("Reading object_codes.txt");
-    let mut rdr = csv::Reader::from_path(path.join("object_codes.txt")).unwrap();
+    let file = "object_codes.txt";
+    if !path.join(file).exists() {
+        info!("Skipping {}", file);
+        return;
+    }
+    info!("Reading {}", file);
+    let mut rdr = csv::Reader::from_path(path.join(file)).unwrap();
     for code in rdr.deserialize().map(Result::unwrap) {
         let code: Code = code;
         match code.object_type {
@@ -322,8 +349,13 @@ where
 }
 
 pub fn manage_object_properties(collections: &mut Collections, path: &path::Path) {
-    info!("Reading object_properties.txt");
-    let mut rdr = csv::Reader::from_path(path.join("object_properties.txt")).unwrap();
+    let file = "object_properties.txt";
+    if !path.join(file).exists() {
+        info!("Skipping {}", file);
+        return;
+    }
+    info!("Reading {}", file);
+    let mut rdr = csv::Reader::from_path(path.join(file)).unwrap();
     for obj_prop in rdr.deserialize().map(Result::unwrap) {
         let obj_prop: ObjectProperty = obj_prop;
         match obj_prop.object_type {

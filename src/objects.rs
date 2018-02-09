@@ -149,7 +149,7 @@ pub struct Dataset {
             serialize_with = "ser_from_naive_date")]
     pub end_date: Date,
     pub dataset_type: Option<DatasetType>,
-    #[serde(rename = "dataset_extrapolation", deserialize_with = "de_from_u8",
+    #[serde(rename = "dataset_extrapolation", default, deserialize_with = "de_from_u8",
             serialize_with = "ser_from_bool")]
     pub extrapolation: bool,
     #[serde(rename = "dataset_desc")]
