@@ -64,7 +64,7 @@ struct Stop {
     lon: f64,
     #[serde(rename = "stop_lat")]
     lat: f64,
-    #[serde(default)]
+    #[serde(deserialize_with = "de_with_empty_default")]
     location_type: i32,
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
@@ -113,10 +113,10 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     collections.vehicle_journeys = read::make_collection_with_id(path, "trips.txt");
     collections.physical_modes = read::make_collection_with_id(path, "physical_modes.txt");
     collections.companies = read::make_collection_with_id(path, "companies.txt");
-    collections.equipments = read::make_collection_with_id(path, "equipments.txt");
-    collections.transfers = read::make_collection(path, "transfers.txt");
-    collections.trip_properties = read::make_collection_with_id(path, "trip_properties.txt");
-    collections.geometries = read::make_collection_with_id(path, "geometries.txt");
+    collections.equipments = read::make_opt_collection_with_id(path, "equipments.txt");
+    collections.transfers = read::make_opt_collection(path, "transfers.txt");
+    collections.trip_properties = read::make_opt_collection_with_id(path, "trip_properties.txt");
+    collections.geometries = read::make_opt_collection_with_id(path, "geometries.txt");
     read::manage_calendars(&mut collections, path);
     read::manage_feed_infos(&mut collections, path);
     read::manage_stops(&mut collections, path);
@@ -207,7 +207,7 @@ mod tests {
         let collection = Collection::new(objects);
         ser_deser_in_tmp_dir(|path| {
             write::write_collection(path, "file.txt", &collection);
-            let des_collection = read::make_collection(path, "file.txt");
+            let des_collection = read::make_opt_collection(path, "file.txt");
             assert_eq!(des_collection, collection);
         });
     }
