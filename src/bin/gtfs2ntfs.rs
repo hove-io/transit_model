@@ -18,9 +18,8 @@ extern crate env_logger;
 #[macro_use]
 extern crate log;
 extern crate navitia_model;
-extern crate structopt;
 #[macro_use]
-extern crate structopt_derive;
+extern crate structopt;
 
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -32,7 +31,7 @@ struct Opt {
     #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    ///output directory
+    /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: PathBuf,
 }
