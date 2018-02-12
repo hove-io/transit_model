@@ -156,7 +156,7 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
     write::write_stops(path, &pt_objects.stop_points, &pt_objects.stop_areas);
     write::write_comments(path, pt_objects);
     write::write_codes(path, pt_objects);
-    write::write_object_properties(path, &pt_objects);
+    write::write_object_properties(path, pt_objects);
 }
 
 #[cfg(test)]

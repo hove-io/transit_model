@@ -277,7 +277,7 @@ impl FromStr for Rgb {
     type Err = RgbError;
 
     fn from_str(color_hex: &str) -> Result<Self, Self::Err> {
-        let color_dec = u32::from_str_radix(&color_hex, 16).map_err(|_err| RgbError::NotHexa)?;
+        let color_dec = u32::from_str_radix(color_hex, 16).map_err(|_err| RgbError::NotHexa)?;
 
         if color_dec >= 1 << 24 {
             return Err(RgbError::TooLongHexa);

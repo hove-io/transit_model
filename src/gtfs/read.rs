@@ -165,16 +165,16 @@ enum RouteType {
 
 impl RouteType {
     fn to_gtfs_value(&self) -> String {
-        match self {
-            &RouteType::Tramway_LightRail => "0".to_string(),
-            &RouteType::Metro => "1".to_string(),
-            &RouteType::Rail => "2".to_string(),
-            &RouteType::Bus => "3".to_string(),
-            &RouteType::Ferry => "4".to_string(),
-            &RouteType::CableCar => "5".to_string(),
-            &RouteType::Gondola_SuspendedCableCar => "6".to_string(),
-            &RouteType::Funicular => "7".to_string(),
-            &RouteType::Other(i) => i.to_string(),
+        match *self {
+            RouteType::Tramway_LightRail => "0".to_string(),
+            RouteType::Metro => "1".to_string(),
+            RouteType::Rail => "2".to_string(),
+            RouteType::Bus => "3".to_string(),
+            RouteType::Ferry => "4".to_string(),
+            RouteType::CableCar => "5".to_string(),
+            RouteType::Gondola_SuspendedCableCar => "6".to_string(),
+            RouteType::Funicular => "7".to_string(),
+            RouteType::Other(i) => i.to_string(),
         }
     }
 }
@@ -237,7 +237,7 @@ impl Route {
                 return true;
             }
         }
-        return false;
+        false
     }
 }
 
@@ -303,7 +303,7 @@ enum RouteReadType {
     RouteAsNtmLine,
 }
 
-fn define_route_file_read_mode(gtfs_routes: &Vec<Route>) -> RouteReadType {
+fn define_route_file_read_mode(gtfs_routes: &[Route]) -> RouteReadType {
     let mut iter = gtfs_routes.iter();
     while let Some(r1) = iter.next() {
         for r2 in iter.clone() {
@@ -312,7 +312,7 @@ fn define_route_file_read_mode(gtfs_routes: &Vec<Route>) -> RouteReadType {
             }
         }
     }
-    return RouteReadType::RouteAsNtmLine;
+    RouteReadType::RouteAsNtmLine
 }
 
 fn get_commercial_mode_label(route_type: &RouteType) -> String {
@@ -334,7 +334,7 @@ fn get_commercial_mode_label(route_type: &RouteType) -> String {
 fn get_commercial_mode(route_type: &RouteType) -> objects::CommercialMode {
     objects::CommercialMode {
         id: route_type.to_gtfs_value(),
-        name: get_commercial_mode_label(&route_type),
+        name: get_commercial_mode_label(route_type),
     }
 }
 
@@ -356,11 +356,6 @@ fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
             name: "Train".to_string(),
             co2_emission: None,
         },
-        Bus => objects::PhysicalMode {
-            id: "Bus".to_string(),
-            name: "Bus".to_string(),
-            co2_emission: None,
-        },
         Ferry => objects::PhysicalMode {
             id: "Ferry".to_string(),
             name: "Ferry".to_string(),
@@ -371,7 +366,7 @@ fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
             name: "Funicular".to_string(),
             co2_emission: None,
         },
-        Other(_) => objects::PhysicalMode {
+        Bus | Other(_) => objects::PhysicalMode {
             id: "Bus".to_string(),
             name: "Bus".to_string(),
             co2_emission: None,
@@ -396,14 +391,16 @@ fn get_modes_from_gtfs(
     (commercial_modes, physical_modes)
 }
 
-fn get_lines_from_gtfs(gtfs_routes: &Vec<Route>, read_mode: RouteReadType) -> Vec<objects::Line> {
+fn get_lines_from_gtfs(gtfs_routes: &[Route], read_mode: &RouteReadType) -> Vec<objects::Line> {
     let mut lines = vec![];
-    match read_mode {
+    match *read_mode {
         RouteReadType::RouteAsNtmLine => for r in gtfs_routes {
-            let line_code = match r.short_name.is_empty() {
-                true => None,
-                false => Some(r.short_name.to_string()),
+            let line_code = if r.short_name.is_empty() {
+                None
+            } else {
+                Some(r.short_name.to_string())
             };
+
             let line_agency = match r.agency_id {
                 Some(ref agency_id) => agency_id.to_string(),
                 None => default_agency_id(),
@@ -421,7 +418,7 @@ fn get_lines_from_gtfs(gtfs_routes: &Vec<Route>, read_mode: RouteReadType) -> Ve
                 backward_direction: None,
                 color: r.color.clone(),
                 text_color: r.text_color.clone(),
-                sort_order: r.sort_order.clone(),
+                sort_order: r.sort_order,
                 network_id: line_agency,
                 commercial_mode_id: r.route_type.to_gtfs_value(),
                 geometry_id: None,
@@ -449,7 +446,7 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
     collections.physical_modes = physical_modes;
 
     let gtfs_reading_mode = define_route_file_read_mode(&gtfs_routes);
-    let lines = get_lines_from_gtfs(&gtfs_routes, gtfs_reading_mode);
+    let lines = get_lines_from_gtfs(&gtfs_routes, &gtfs_reading_mode);
     collections.lines = CollectionWithId::new(lines);;
 }
 
