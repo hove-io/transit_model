@@ -18,8 +18,9 @@ use std::path;
 use csv;
 use collection::CollectionWithId;
 use Collections;
-use objects::{self, Coord, KeysValues};
+use objects::{self, CommentLinksT, Coord, KeysValues};
 use std::collections::HashSet;
+use utils::*;
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -224,7 +225,7 @@ impl<'de> ::serde::Deserialize<'de> for RouteType {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, Hash, PartialEq)]
 struct Route {
     #[serde(rename = "route_id")]
     id: String,
@@ -259,6 +260,37 @@ impl Route {
         }
         false
     }
+}
+
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+enum DirectionType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    Forward,
+    #[serde(rename = "1")]
+    Backward,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct Trip {
+    route_id: String,
+    service_id: String,
+    #[serde(rename = "trip_id")]
+    id: String,
+    #[serde(rename = "trip_headsign")]
+    headsign: Option<String>,
+    #[serde(rename = "trip_short_name")]
+    short_name: Option<String>,
+    #[serde(deserialize_with = "de_with_empty_default", rename = "direction_id")]
+    direction: DirectionType,
+    block_id: Option<String>,
+    shape_id: Option<String>,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    wheelchair_accessible: u8,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    bikes_allowed: u8,
 }
 
 pub fn read_agency<P: AsRef<path::Path>>(
@@ -450,24 +482,28 @@ fn get_modes_from_gtfs(
 
 fn get_lines_from_gtfs(gtfs_routes: &[Route], read_mode: &RouteReadType) -> Vec<objects::Line> {
     let mut lines = vec![];
+
+    let line_code = |r: &Route| {
+        if r.short_name.is_empty() {
+            None
+        } else {
+            Some(r.short_name.to_string())
+        }
+    };
+
+    let line_agency = |r: &Route| match r.agency_id {
+        Some(ref agency_id) => agency_id.to_string(),
+        None => default_agency_id(),
+    };
+
     match *read_mode {
         RouteReadType::RouteAsNtmLine => for r in gtfs_routes {
-            let line_code = if r.short_name.is_empty() {
-                None
-            } else {
-                Some(r.short_name.to_string())
-            };
-
-            let line_agency = match r.agency_id {
-                Some(ref agency_id) => agency_id.to_string(),
-                None => default_agency_id(),
-            };
             let l = objects::Line {
                 id: r.id.to_string(),
-                code: line_code.clone(),
-                codes: vec![],
+                code: line_code(r),
+                codes: KeysValues::default(),
                 object_properties: KeysValues::default(),
-                comment_links: vec![],
+                comment_links: CommentLinksT::default(),
                 name: r.long_name.to_string(),
                 forward_name: None,
                 forward_direction: None,
@@ -476,7 +512,7 @@ fn get_lines_from_gtfs(gtfs_routes: &[Route], read_mode: &RouteReadType) -> Vec<
                 color: r.color.clone(),
                 text_color: r.text_color.clone(),
                 sort_order: r.sort_order,
-                network_id: line_agency,
+                network_id: line_agency(r),
                 commercial_mode_id: r.route_type.to_gtfs_value(),
                 geometry_id: None,
                 opening_time: None,
@@ -485,16 +521,193 @@ fn get_lines_from_gtfs(gtfs_routes: &[Route], read_mode: &RouteReadType) -> Vec<
             lines.push(l);
         },
         RouteReadType::RouteAsNtmRoute => {
-            // TODO Build lines from GTFS routes as routes
-            unimplemented!();
+            let mut routes: HashSet<&Route> = HashSet::new();
+            let mut backward_routes: HashSet<&Route> = HashSet::new();
+            let mut iter = gtfs_routes.iter();
+            while let Some(r1) = iter.next() {
+                if !backward_routes.contains(r1) {
+                    routes.insert(r1);
+                }
+                for r2 in iter.clone() {
+                    if r1.is_same_line(r2) {
+                        backward_routes.insert(r2);
+                        if r1.id > r2.id {
+                            routes.remove(r1);
+                            routes.insert(r2);
+                        }
+                    } else {
+                        routes.insert(r2);
+                    }
+                }
+            }
+
+            for r in routes {
+                let l = objects::Line {
+                    id: r.id.to_string(),
+                    code: line_code(r),
+                    codes: KeysValues::default(),
+                    object_properties: KeysValues::default(),
+                    comment_links: CommentLinksT::default(),
+                    name: r.long_name.to_string(),
+                    forward_name: None,
+                    forward_direction: None,
+                    backward_name: None,
+                    backward_direction: None,
+                    color: r.color.clone(),
+                    text_color: r.text_color.clone(),
+                    sort_order: r.sort_order,
+                    network_id: line_agency(r),
+                    commercial_mode_id: r.route_type.to_gtfs_value(),
+                    geometry_id: None,
+                    opening_time: None,
+                    closing_time: None,
+                };
+                lines.push(l);
+            }
         }
     }
     lines
 }
 
+fn get_routes_from_gtfs(
+    gtfs_routes: &[Route],
+    gtfs_trips: &[Trip],
+    read_mode: &RouteReadType,
+) -> Vec<objects::Route> {
+    let mut routes = vec![];
+
+    match *read_mode {
+        RouteReadType::RouteAsNtmLine => {
+            let backward_routes: HashSet<_> = gtfs_trips
+                .iter()
+                .filter(|t| t.direction == DirectionType::Backward)
+                .map(|t| t.route_id.clone())
+                .collect();
+            for r in gtfs_routes {
+                let route = objects::Route {
+                    id: r.id.to_string(),
+                    name: r.long_name.to_string(),
+                    direction_type: Some("forward".to_string()),
+                    codes: KeysValues::default(),
+                    object_properties: KeysValues::default(),
+                    comment_links: CommentLinksT::default(),
+                    line_id: r.id.to_string(),
+                    geometry_id: None,
+                    destination_id: None,
+                };
+                routes.push(route);
+                if backward_routes.contains(&r.id) {
+                    let route = objects::Route {
+                        id: r.id.to_string() + "_R",
+                        name: r.long_name.to_string(),
+                        direction_type: Some("backward".to_string()),
+                        codes: KeysValues::default(),
+                        object_properties: KeysValues::default(),
+                        comment_links: CommentLinksT::default(),
+                        line_id: r.id.to_string(),
+                        geometry_id: None,
+                        destination_id: None,
+                    };
+                    routes.push(route);
+                }
+            }
+        }
+        RouteReadType::RouteAsNtmRoute => {
+            let routes_directions: HashSet<(String, DirectionType)> = gtfs_trips
+                .iter()
+                .map(|t| (t.route_id.clone(), t.direction.clone()))
+                .collect();
+
+            let same_lines = get_same_lines(gtfs_routes);
+            for r in gtfs_routes {
+                let current_route_directions: HashSet<_> = routes_directions
+                    .iter()
+                    .filter(|h| h.0 == r.id)
+                    .map(|h| h.1.clone())
+                    .collect();
+                if current_route_directions.len() > 1 {
+                    let route = objects::Route {
+                        id: r.id.to_string(),
+                        name: r.long_name.to_string(),
+                        direction_type: Some("forward".to_string()),
+                        codes: KeysValues::default(),
+                        object_properties: KeysValues::default(),
+                        comment_links: CommentLinksT::default(),
+                        line_id: get_line_id_of_route(r, &same_lines),
+                        geometry_id: None,
+                        destination_id: None,
+                    };
+                    routes.push(route);
+                    let route = objects::Route {
+                        id: r.id.to_string() + "_R",
+                        name: r.long_name.to_string(),
+                        direction_type: Some("backward".to_string()),
+                        codes: KeysValues::default(),
+                        object_properties: KeysValues::default(),
+                        comment_links: CommentLinksT::default(),
+                        line_id: get_line_id_of_route(r, &same_lines),
+                        geometry_id: None,
+                        destination_id: None,
+                    };
+                    routes.push(route);
+                } else if current_route_directions.is_empty() {
+                    panic!("RouteAsNtmRoute - Coudn't find trips for route_id {}", r.id);
+                } else {
+                    let direction = current_route_directions.iter().next().unwrap();
+                    let direction_name = if *direction == DirectionType::Forward {
+                        "forward"
+                    } else {
+                        "backward"
+                    };
+                    let route = objects::Route {
+                        id: r.id.to_string(),
+                        name: r.long_name.to_string(),
+                        direction_type: Some(direction_name.to_string()),
+                        codes: KeysValues::default(),
+                        object_properties: KeysValues::default(),
+                        comment_links: CommentLinksT::default(),
+                        line_id: get_line_id_of_route(r, &same_lines),
+                        geometry_id: None,
+                        destination_id: None,
+                    };
+                    routes.push(route);
+                }
+            }
+        }
+    }
+    routes
+}
+
+fn get_line_id_of_route(r: &Route, same_lines: &HashMap<String, String>) -> String {
+    same_lines
+        .get(&r.id)
+        .map_or_else(|| r.id.clone(), |id| id.clone())
+}
+
+use std::collections::HashMap;
+fn get_same_lines(gtfs_routes: &[Route]) -> HashMap<String, String> {
+    let mut same_lines = HashMap::new();
+
+    let mut iter = gtfs_routes.iter();
+
+    while let Some(r1) = iter.next() {
+        for r2 in iter.clone() {
+            if r1.is_same_line(r2) {
+                if r2.id > r1.id {
+                    same_lines.insert(r2.id.clone(), r1.id.clone());
+                } else {
+                    same_lines.insert(r1.id.clone(), r2.id.clone());
+                }
+            }
+        }
+    }
+
+    same_lines
+}
+
 pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections) {
-    let path = path.as_ref().join("routes.txt");
-    let mut rdr = csv::Reader::from_path(path).unwrap();
+    let path = path.as_ref();
+    let mut rdr = csv::Reader::from_path(path.join("routes.txt")).unwrap();
     let gtfs_routes: Vec<Route> = rdr.deserialize().map(Result::unwrap).collect();
     let (commercial_modes, physical_modes) = get_modes_from_gtfs(&gtfs_routes);
     collections.commercial_modes = CollectionWithId::new(commercial_modes).unwrap();
@@ -503,6 +716,11 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
     let gtfs_reading_mode = define_route_file_read_mode(&gtfs_routes);
     let lines = get_lines_from_gtfs(&gtfs_routes, &gtfs_reading_mode);
     collections.lines = CollectionWithId::new(lines).unwrap();
+
+    let mut rdr = csv::Reader::from_path(path.join("trips.txt")).unwrap();
+    let gtfs_trips: Vec<Trip> = rdr.deserialize().map(Result::unwrap).collect();
+    let routes = get_routes_from_gtfs(&gtfs_routes, &gtfs_trips, &gtfs_reading_mode);
+    collections.routes = CollectionWithId::new(routes).unwrap();
 }
 
 #[cfg(test)]
@@ -650,24 +868,38 @@ mod tests {
 
     #[test]
     fn gtfs_routes_as_line() {
-        let stops_content = "route_id,agency_id,route_short_name,route_long_name,route_type\n\
-                             route_1,agency_1,1,My line 1,3\n\
-                             route_2,agency_2,2,My line 2,8\n\
-                             route_3,agency_3,3,My line 3,2";
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF\n\
+                              route_2,agency_2,,My line 2,2,7BC142,000000\n\
+                              route_3,agency_3,3,My line 3,8,,\n\
+                              route_4,agency_4,3,My line 3 for agency 3,8,,";
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,,service_1,,\n\
+             2,route_1,1,service_1,,\n\
+             3,route_2,0,service_2,,\n\
+             4,route_3,0,service_3,,\n\
+             5,route_4,0,service_4,,";
+
         let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
         let file_path = tmp_dir.path().join("routes.txt");
         let mut f = File::create(&file_path).unwrap();
-        f.write_all(stops_content.as_bytes()).unwrap();
+        f.write_all(routes_content.as_bytes()).unwrap();
+
+        let file_path = tmp_dir.path().join("trips.txt");
+        let mut f = File::create(&file_path).unwrap();
+        f.write_all(trips_content.as_bytes()).unwrap();
 
         let mut collections = Collections::default();
-        super::read_routes(tmp_dir.path(), &mut collections);
-        assert_eq!(3, collections.lines.len());
+        super::read_routes(tmp_dir, &mut collections);
+        assert_eq!(4, collections.lines.len());
         assert_eq!(2, collections.commercial_modes.len());
 
         let mut commercial_modes: Vec<String> = collections
             .commercial_modes
             .iter()
-            .map(|(_, ref cm)| cm.name.to_string())
+            .map(|(_, cm)| cm.name.clone())
             .collect();
         commercial_modes.sort();
         assert_eq!(commercial_modes, &["Bus", "Rail"]);
@@ -675,11 +907,111 @@ mod tests {
         let lines_commercial_modes_id: Vec<String> = collections
             .lines
             .iter()
-            .map(|(_, ref l)| l.commercial_mode_id.to_string())
+            .map(|(_, l)| l.commercial_mode_id.clone())
             .collect();
         assert!(lines_commercial_modes_id.contains(&"2".to_string()));
         assert!(lines_commercial_modes_id.contains(&"3".to_string()));
         assert!(!lines_commercial_modes_id.contains(&"8".to_string()));
+
+        assert_eq!(2, collections.physical_modes.len());
+        let mut physical_modes: Vec<String> = collections
+            .physical_modes
+            .iter()
+            .map(|(_, pm)| pm.name.clone())
+            .collect();
+        physical_modes.sort();
+        assert_eq!(physical_modes, &["Bus", "Train"]);
+
+        assert_eq!(5, collections.routes.len());
+
+        let mut route_ids: Vec<String> = collections
+            .routes
+            .iter()
+            .map(|(_, r)| r.id.clone())
+            .collect();
+        route_ids.sort();
+
+        assert_eq!(
+            route_ids,
+            &["route_1", "route_1_R", "route_2", "route_3", "route_4"]
+        );
+    }
+
+    #[test]
+    fn gtfs_routes_as_route() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1A,3,8F7A32,FFFFFF\n\
+                              route_2,agency_1,1,My line 1B,3,8F7A32,FFFFFF\n\
+                              route_3,agency_2,,My line 2,2,7BC142,000000\n\
+                              route_4,agency_3,3,My line 3,8,,\n\
+                              route_5,agency_2,1,My line 1 for agency 2,3,8F7A32,FFFFFF";
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,\n\
+             2,route_1,1,service_1,,\n\
+             3,route_2,0,service_2,,\n\
+             4,route_3,0,service_2,,\n\
+             5,route_3,1,service_2,,\n\
+             6,route_4,1,service_2,,\n\
+             7,route_5,0,service_3,,";
+
+        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        let file_path = tmp_dir.path().join("routes.txt");
+        let mut f = File::create(&file_path).unwrap();
+        f.write_all(routes_content.as_bytes()).unwrap();
+
+        let file_path = tmp_dir.path().join("trips.txt");
+        let mut f = File::create(&file_path).unwrap();
+        f.write_all(trips_content.as_bytes()).unwrap();
+
+        let mut collections = Collections::default();
+        super::read_routes(tmp_dir, &mut collections);
+
+        assert_eq!(4, collections.lines.len());
+        assert_eq!(2, collections.commercial_modes.len());
+
+        let mut lines_ids: Vec<String> = collections
+            .lines
+            .iter()
+            .map(|(_, l)| l.id.clone())
+            .collect();
+        lines_ids.sort();
+
+        assert_eq!(lines_ids, &["route_1", "route_3", "route_4", "route_5"]);
+
+        assert_eq!(7, collections.routes.len());
+        let mut route_ids: Vec<String> = collections
+            .routes
+            .iter()
+            .map(|(_, r)| r.id.clone())
+            .collect();
+        route_ids.sort();
+
+        assert_eq!(
+            route_ids,
+            &[
+                "route_1",
+                "route_1_R",
+                "route_2",
+                "route_3",
+                "route_3_R",
+                "route_4",
+                "route_5"
+            ]
+        );
+
+        // route_1 and route_2 belong to the same line
+        use objects::Route;
+        let route_2: &Route = collections
+            .routes
+            .iter()
+            .map(|(_, r)| r)
+            .filter(|r| r.id == "route_2".to_string())
+            .next()
+            .unwrap();
+
+        assert_eq!(route_2.line_id, "route_1");
     }
 
     fn create_file_with_content(temp_dir: &TempDir, file_name: String, content: String) {

@@ -229,7 +229,7 @@ impl GetObjectType for Network {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Rgb {
     pub red: u8,
     pub green: u8,
