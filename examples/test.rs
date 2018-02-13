@@ -15,12 +15,13 @@
 // <http://www.gnu.org/licenses/>.
 
 extern crate env_logger;
+extern crate failure;
 extern crate navitia_model;
 extern crate serde_json;
 
 use navitia_model::collection::{CollectionWithId, Id, Idx};
 use navitia_model::relations::IdxSet;
-use navitia_model::{GetCorresponding, PtObjects};
+use navitia_model::{GetCorresponding, PtObjects, Result};
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &PtObjects) -> Vec<String>
 where
@@ -34,10 +35,8 @@ where
         .collect()
 }
 
-fn main() {
-    env_logger::init();
-
-    let objects = navitia_model::ntfs::read(".");
+fn run() -> Result<()> {
+    let objects = navitia_model::ntfs::read(".")?;
 
     for (from, stop_area) in objects.stop_areas.iter() {
         let cms = get(from, &objects.commercial_modes, &objects);
@@ -48,5 +47,16 @@ fn main() {
             "{}: cms: {:?}, pms: {:?}, ns: {:?}, cs: {:?}, codes: {:?}",
             stop_area.id, cms, pms, ns, cs, stop_area.codes
         );
+    }
+    Ok(())
+}
+
+fn main() {
+    env_logger::init();
+    if let Err(err) = run() {
+        for cause in err.causes() {
+            eprintln!("{}", cause);
+        }
+        std::process::exit(1);
     }
 }

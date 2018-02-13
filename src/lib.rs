@@ -18,6 +18,8 @@ extern crate csv;
 #[macro_use]
 extern crate derivative;
 #[macro_use]
+extern crate failure;
+#[macro_use]
 extern crate get_corresponding_derive;
 #[macro_use]
 extern crate log;
@@ -41,6 +43,10 @@ use collection::{Collection, CollectionWithId, Idx};
 use objects::*;
 use relations::{IdxSet, ManyToMany, OneToMany, Relation};
 use std::collections::BTreeMap;
+use std::result::Result as StdResult;
+
+pub type Error = failure::Error;
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
@@ -168,7 +174,7 @@ impl PtObjects {
     }
 }
 impl ::serde::Serialize for PtObjects {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
     where
         S: ::serde::Serializer,
     {
@@ -176,7 +182,7 @@ impl ::serde::Serialize for PtObjects {
     }
 }
 impl<'de> ::serde::Deserialize<'de> for PtObjects {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
     {
