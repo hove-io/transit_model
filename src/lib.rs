@@ -63,6 +63,7 @@ pub struct Collections {
     pub transfers: Collection<Transfer>,
     pub trip_properties: CollectionWithId<TripProperty>,
     pub geometries: CollectionWithId<Geometry>,
+    pub admin_stations: Collection<AdminStation>,
 }
 
 #[derive(GetCorresponding)]

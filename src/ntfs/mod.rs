@@ -114,9 +114,10 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
     collections.physical_modes = read::make_collection_with_id(path, "physical_modes.txt");
     collections.companies = read::make_collection_with_id(path, "companies.txt");
     collections.equipments = read::make_opt_collection_with_id(path, "equipments.txt");
-    collections.transfers = read::make_opt_collection(path, "transfers.txt");
     collections.trip_properties = read::make_opt_collection_with_id(path, "trip_properties.txt");
     collections.geometries = read::make_opt_collection_with_id(path, "geometries.txt");
+    collections.transfers = read::make_opt_collection(path, "transfers.txt");
+    collections.admin_stations = read::make_opt_collection(path, "admin_stations.txt");
     read::manage_calendars(&mut collections, path);
     read::manage_feed_infos(&mut collections, path);
     read::manage_stops(&mut collections, path);
@@ -147,6 +148,7 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
     write::write_collection_with_id(path, "trip_properties.txt", &pt_objects.trip_properties);
     write::write_collection_with_id(path, "geometries.txt", &pt_objects.geometries);
     write::write_collection(path, "transfers.txt", &pt_objects.transfers);
+    write::write_collection(path, "admin_stations.txt", &pt_objects.admin_stations);
     write::write_vehicle_journeys_and_stop_times(
         path,
         &pt_objects.vehicle_journeys,
@@ -1065,6 +1067,27 @@ mod tests {
             Geometry {
                 id: "geo-id-2".to_string(),
                 wkt: "LINESTRING(2.548309 49.009182,2.549309 49.009253)".to_string(),
+            },
+        ]);
+    }
+
+    #[test]
+    fn admin_stations_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            AdminStation {
+                admin_id: "admin:1".to_string(),
+                admin_name: "Paris 12".to_string(),
+                stop_id: "OIF:SA:8768600".to_string(),
+            },
+            AdminStation {
+                admin_id: "admin:1".to_string(),
+                admin_name: "Paris 12".to_string(),
+                stop_id: "OIF:SA:8768666".to_string(),
+            },
+            AdminStation {
+                admin_id: "admin:2".to_string(),
+                admin_name: "Paris Nord".to_string(),
+                stop_id: "OIF:SA:8727100".to_string(),
             },
         ]);
     }

@@ -832,6 +832,13 @@ impl Id<Geometry> for Geometry {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct AdminStation {
+    pub admin_id: String,
+    pub admin_name: String,
+    pub stop_id: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
