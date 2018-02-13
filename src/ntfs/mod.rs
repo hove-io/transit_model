@@ -127,7 +127,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<PtObjects> {
     read::manage_comments(&mut collections, path)?;
     read::manage_object_properties(&mut collections, path)?;
     info!("Indexing");
-    let res = PtObjects::new(collections);
+    let res = PtObjects::new(collections)?;
     info!("Loading NTFS done");
     Ok(res)
 }

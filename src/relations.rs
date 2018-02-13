@@ -16,6 +16,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use collection::{CollectionWithId, Id, Idx};
+use Result;
+use failure::ResultExt;
 
 pub type IdxSet<T> = BTreeSet<Idx<T>>;
 
@@ -37,22 +39,30 @@ where
     T: Id<T>,
     U: Id<U> + Id<T>,
 {
-    pub fn new(one: &CollectionWithId<T>, many: &CollectionWithId<U>) -> Self {
+    fn new_impl(one: &CollectionWithId<T>, many: &CollectionWithId<U>) -> Result<Self> {
         let mut one_to_many = BTreeMap::default();
         let mut many_to_one = BTreeMap::default();
         for (many_idx, obj) in many.iter() {
             let one_id = <U as Id<T>>::id(obj);
-            let one_idx = one.get_idx(one_id).expect(one_id);
+            let one_idx = one.get_idx(one_id)
+                .ok_or_else(|| format_err!("id={:?} not found", one_id))?;
             many_to_one.insert(many_idx, one_idx);
             one_to_many
                 .entry(one_idx)
                 .or_insert_with(IdxSet::default)
                 .insert(many_idx);
         }
-        OneToMany {
+        Ok(OneToMany {
             one_to_many: one_to_many,
             many_to_one: many_to_one,
-        }
+        })
+    }
+    pub fn new(
+        one: &CollectionWithId<T>,
+        many: &CollectionWithId<U>,
+        rel_name: &str,
+    ) -> Result<Self> {
+        Ok(Self::new_impl(one, many).with_context(|_| format!("Error indexing {}", rel_name))?)
     }
 }
 
