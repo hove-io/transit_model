@@ -55,7 +55,7 @@ where
     let vec = rdr.deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(path))?;
-    Ok(CollectionWithId::new(vec))
+    CollectionWithId::new(vec)
 }
 
 pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> Result<Collection<T>>
@@ -147,8 +147,8 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
             i => warn!("stop.location_type = {} not yet supported, skipping.", i),
         }
     }
-    collections.stop_areas = CollectionWithId::new(stop_areas);
-    collections.stop_points = CollectionWithId::new(stop_points);
+    collections.stop_areas = CollectionWithId::new(stop_areas)?;
+    collections.stop_points = CollectionWithId::new(stop_points)?;
     Ok(())
 }
 
@@ -199,7 +199,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
     for vj in &mut vehicle_journeys {
         vj.stop_times.sort_unstable_by_key(|st| st.sequence);
     }
-    collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys);
+    collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     Ok(())
 }
 

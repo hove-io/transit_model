@@ -194,7 +194,7 @@ mod tests {
         T: Id<T> + PartialEq + Debug + serde::Serialize,
         for<'de> T: serde::Deserialize<'de>,
     {
-        let collection = CollectionWithId::new(objects);
+        let collection = CollectionWithId::new(objects).unwrap();
         ser_deser_in_tmp_dir(|path| {
             write::write_collection_with_id(path, "file.txt", &collection);
             let des_collection = read::make_collection_with_id(path, "file.txt").unwrap();
@@ -429,7 +429,7 @@ mod tests {
                 equipment_id: None,
                 fare_zone_id: None,
             },
-        ]);
+        ]).unwrap();
         let vehicle_journeys = CollectionWithId::new(vec![
             VehicleJourney {
                 id: "OIF:87604986-1_11595-1".to_string(),
@@ -488,7 +488,7 @@ mod tests {
                 geometry_id: None,
                 stop_times: vec![],
             },
-        ]);
+        ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
             write::write_vehicle_journeys_and_stop_times(path, &vehicle_journeys, &stop_points);
@@ -621,7 +621,7 @@ mod tests {
                 end_date: chrono::NaiveDate::from_ymd(2018, 1, 27),
                 calendar_dates: vec![],
             },
-        ]);
+        ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
             write::write_calendar_and_calendar_dates(path, &calendars);
@@ -671,7 +671,7 @@ mod tests {
                 stop_area_id: "sa_2".to_string(),
                 fare_zone_id: None,
             },
-        ]);
+        ]).unwrap();
 
         let stop_areas = CollectionWithId::new(vec![
             StopArea {
@@ -704,7 +704,7 @@ mod tests {
                 geometry_id: Some("geometry_3".to_string()),
                 equipment_id: Some("equipment_1".to_string()),
             },
-        ]);
+        ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
             write::write_stops(path, &stop_points, &stop_areas);
@@ -742,7 +742,7 @@ mod tests {
                 value: "value:1".to_string(),
                 url: None,
             },
-        ]);
+        ]).unwrap();
 
         let stop_points = CollectionWithId::new(vec![
             StopPoint {
@@ -762,7 +762,7 @@ mod tests {
                 stop_area_id: "sa_1".to_string(),
                 fare_zone_id: None,
             },
-        ]);
+        ]).unwrap();
 
         let stop_areas = CollectionWithId::new(vec![
             StopArea {
@@ -780,7 +780,7 @@ mod tests {
                 geometry_id: None,
                 equipment_id: None,
             },
-        ]);
+        ]).unwrap();
 
         let lines = CollectionWithId::new(vec![
             Line {
@@ -803,7 +803,7 @@ mod tests {
                 opening_time: None,
                 closing_time: None,
             },
-        ]);
+        ]).unwrap();
 
         let routes = CollectionWithId::new(vec![
             Route {
@@ -820,7 +820,7 @@ mod tests {
                 geometry_id: None,
                 destination_id: None,
             },
-        ]);
+        ]).unwrap();
 
         let vehicle_journeys = CollectionWithId::new(vec![
             VehicleJourney {
@@ -839,7 +839,7 @@ mod tests {
                 geometry_id: None,
                 stop_times: vec![],
             },
-        ]);
+        ]).unwrap();
 
         let networks = CollectionWithId::new(vec![
             Network {
@@ -853,7 +853,7 @@ mod tests {
                 sort_order: None,
                 codes: KeysValues::default(),
             },
-        ]);
+        ]).unwrap();
 
         ser_collections.comments = comments;
         ser_collections.stop_areas = stop_areas;
