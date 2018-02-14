@@ -18,10 +18,24 @@ mod read;
 
 use std::path;
 use {Collections, PtObjects};
+use std::fs::File;
+use gtfs::read::Config;
 
-pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
-    let path = path.as_ref();
+extern crate serde_json;
+
+pub fn read<P: AsRef<path::Path>>(path: P, config_path: Option<P>) -> PtObjects {
     let mut collections = Collections::default();
+
+    if let Some(config_path) = config_path {
+        let json_config_file = File::open(config_path).unwrap();
+        let config: Config = serde_json::from_reader(json_config_file).unwrap();
+        info!("config loaded: {:#?}", config);
+        let (contributors, datasets) = read::read_config(config);
+        collections.contributors = contributors;
+        collections.datasets = datasets;
+    }
+
+    let path = path.as_ref();
     let (networks, companies) = read::read_agency(path);
     collections.networks = networks;
     collections.companies = companies;

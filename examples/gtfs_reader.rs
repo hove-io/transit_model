@@ -20,7 +20,7 @@ extern crate navitia_model;
 extern crate serde_json;
 
 fn main() {
-    let objects = navitia_model::gtfs::read(".");
+    let objects = navitia_model::gtfs::read(".", None);
     let json_objs = json!(objects);
     println!("{:?}", json_objs.to_string());
 }
