@@ -34,7 +34,7 @@ where
 
 #[test]
 fn minimal() {
-    let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/");
+    let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
 
     assert_eq!(6, ntm.stop_areas.len());
     assert_eq!(10, ntm.stop_points.len());

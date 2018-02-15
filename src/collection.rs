@@ -20,6 +20,7 @@ use std::iter;
 use std::slice;
 use std::ops;
 use std::cmp::Ordering;
+use {Result, StdResult};
 
 pub trait Id<T> {
     fn id(&self) -> &str;
@@ -76,7 +77,7 @@ impl<T> ::serde::Serialize for Collection<T>
 where
     T: ::serde::Serialize,
 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
     where
         S: ::serde::Serializer,
     {
@@ -87,7 +88,7 @@ impl<'de, T> ::serde::Deserialize<'de> for Collection<T>
 where
     T: ::serde::Deserialize<'de>,
 {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
     {
@@ -118,7 +119,7 @@ impl<T> ::serde::Serialize for CollectionWithId<T>
 where
     T: ::serde::Serialize + Id<T>,
 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
     where
         S: ::serde::Serializer,
     {
@@ -129,11 +130,13 @@ impl<'de, T> ::serde::Deserialize<'de> for CollectionWithId<T>
 where
     T: ::serde::Deserialize<'de> + Id<T>,
 {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
     {
-        ::serde::Deserialize::deserialize(deserializer).map(CollectionWithId::new)
+        use serde::de::Error;
+        ::serde::Deserialize::deserialize(deserializer)
+            .and_then(|v| CollectionWithId::new(v).map_err(D::Error::custom))
     }
 }
 
@@ -141,10 +144,10 @@ pub type Iter<'a, T> =
     iter::Map<iter::Enumerate<slice::Iter<'a, T>>, fn((usize, &T)) -> (Idx<T>, &T)>;
 
 impl<T: Id<T>> CollectionWithId<T> {
-    pub fn new(v: Vec<T>) -> Self {
+    pub fn new(v: Vec<T>) -> Result<Self> {
         let mut id_to_idx = HashMap::default();
         for (i, obj) in v.iter().enumerate() {
-            assert!(
+            ensure!(
                 id_to_idx
                     .insert(obj.id().to_string(), Idx::new(i))
                     .is_none(),
@@ -152,10 +155,10 @@ impl<T: Id<T>> CollectionWithId<T> {
                 obj.id()
             );
         }
-        CollectionWithId {
+        Ok(CollectionWithId {
             collection: Collection::new(v),
             id_to_idx: id_to_idx,
-        }
+        })
     }
     pub fn index_mut(&mut self, idx: Idx<T>) -> RefMut<T> {
         RefMut {

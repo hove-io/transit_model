@@ -255,12 +255,12 @@ pub fn read_agency<P: AsRef<path::Path>>(
         .cloned()
         .map(objects::Network::from)
         .collect();
-    let networks = CollectionWithId::new(networks);
+    let networks = CollectionWithId::new(networks).unwrap();
     let companies = gtfs_agencies
         .into_iter()
         .map(objects::Company::from)
         .collect();
-    let companies = CollectionWithId::new(companies);
+    let companies = CollectionWithId::new(companies).unwrap();
     (networks, companies)
 }
 
@@ -292,8 +292,8 @@ pub fn read_stops<P: AsRef<path::Path>>(
         }
     }
 
-    let stoppoints = CollectionWithId::new(stop_points);
-    let stopareas = CollectionWithId::new(stop_areas);
+    let stoppoints = CollectionWithId::new(stop_points).unwrap();
+    let stopareas = CollectionWithId::new(stop_areas).unwrap();
     (stopareas, stoppoints)
 }
 
@@ -440,14 +440,12 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
     let mut rdr = csv::Reader::from_path(path).unwrap();
     let gtfs_routes: Vec<Route> = rdr.deserialize().map(Result::unwrap).collect();
     let (commercial_modes, physical_modes) = get_modes_from_gtfs(&gtfs_routes);
-    let commercial_modes = CollectionWithId::new(commercial_modes);
-    let physical_modes = CollectionWithId::new(physical_modes);
-    collections.commercial_modes = commercial_modes;
-    collections.physical_modes = physical_modes;
+    collections.commercial_modes = CollectionWithId::new(commercial_modes).unwrap();
+    collections.physical_modes = CollectionWithId::new(physical_modes).unwrap();
 
     let gtfs_reading_mode = define_route_file_read_mode(&gtfs_routes);
     let lines = get_lines_from_gtfs(&gtfs_routes, &gtfs_reading_mode);
-    collections.lines = CollectionWithId::new(lines);;
+    collections.lines = CollectionWithId::new(lines).unwrap();
 }
 
 #[cfg(test)]

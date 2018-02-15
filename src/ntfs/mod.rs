@@ -21,6 +21,7 @@ use std::path;
 use {Collections, PtObjects};
 use utils::*;
 use objects::*;
+use Result;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
@@ -100,35 +101,35 @@ fn default_visible() -> bool {
     true
 }
 
-pub fn read<P: AsRef<path::Path>>(path: P) -> PtObjects {
+pub fn read<P: AsRef<path::Path>>(path: P) -> Result<PtObjects> {
     let path = path.as_ref();
     info!("Loading NTFS from {:?}", path);
     let mut collections = Collections::default();
-    collections.contributors = read::make_collection_with_id(path, "contributors.txt");
-    collections.datasets = read::make_collection_with_id(path, "datasets.txt");
-    collections.commercial_modes = read::make_collection_with_id(path, "commercial_modes.txt");
-    collections.networks = read::make_collection_with_id(path, "networks.txt");
-    collections.lines = read::make_collection_with_id(path, "lines.txt");
-    collections.routes = read::make_collection_with_id(path, "routes.txt");
-    collections.vehicle_journeys = read::make_collection_with_id(path, "trips.txt");
-    collections.physical_modes = read::make_collection_with_id(path, "physical_modes.txt");
-    collections.companies = read::make_collection_with_id(path, "companies.txt");
-    collections.equipments = read::make_opt_collection_with_id(path, "equipments.txt");
-    collections.trip_properties = read::make_opt_collection_with_id(path, "trip_properties.txt");
-    collections.geometries = read::make_opt_collection_with_id(path, "geometries.txt");
-    collections.transfers = read::make_opt_collection(path, "transfers.txt");
-    collections.admin_stations = read::make_opt_collection(path, "admin_stations.txt");
-    read::manage_calendars(&mut collections, path);
-    read::manage_feed_infos(&mut collections, path);
-    read::manage_stops(&mut collections, path);
-    read::manage_stop_times(&mut collections, path);
-    read::manage_codes(&mut collections, path);
-    read::manage_comments(&mut collections, path);
-    read::manage_object_properties(&mut collections, path);
+    collections.contributors = read::make_collection_with_id(path, "contributors.txt")?;
+    collections.datasets = read::make_collection_with_id(path, "datasets.txt")?;
+    collections.commercial_modes = read::make_collection_with_id(path, "commercial_modes.txt")?;
+    collections.networks = read::make_collection_with_id(path, "networks.txt")?;
+    collections.lines = read::make_collection_with_id(path, "lines.txt")?;
+    collections.routes = read::make_collection_with_id(path, "routes.txt")?;
+    collections.vehicle_journeys = read::make_collection_with_id(path, "trips.txt")?;
+    collections.physical_modes = read::make_collection_with_id(path, "physical_modes.txt")?;
+    collections.companies = read::make_collection_with_id(path, "companies.txt")?;
+    collections.equipments = read::make_opt_collection_with_id(path, "equipments.txt")?;
+    collections.trip_properties = read::make_opt_collection_with_id(path, "trip_properties.txt")?;
+    collections.geometries = read::make_opt_collection_with_id(path, "geometries.txt")?;
+    collections.transfers = read::make_opt_collection(path, "transfers.txt")?;
+    collections.admin_stations = read::make_opt_collection(path, "admin_stations.txt")?;
+    read::manage_calendars(&mut collections, path)?;
+    read::manage_feed_infos(&mut collections, path)?;
+    read::manage_stops(&mut collections, path)?;
+    read::manage_stop_times(&mut collections, path)?;
+    read::manage_codes(&mut collections, path)?;
+    read::manage_comments(&mut collections, path)?;
+    read::manage_object_properties(&mut collections, path)?;
     info!("Indexing");
-    let res = PtObjects::new(collections);
+    let res = PtObjects::new(collections)?;
     info!("Loading NTFS done");
-    res
+    Ok(res)
 }
 
 pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
@@ -193,10 +194,10 @@ mod tests {
         T: Id<T> + PartialEq + Debug + serde::Serialize,
         for<'de> T: serde::Deserialize<'de>,
     {
-        let collection = CollectionWithId::new(objects);
+        let collection = CollectionWithId::new(objects).unwrap();
         ser_deser_in_tmp_dir(|path| {
             write::write_collection_with_id(path, "file.txt", &collection);
-            let des_collection = read::make_collection_with_id(path, "file.txt");
+            let des_collection = read::make_collection_with_id(path, "file.txt").unwrap();
             assert_eq!(des_collection, collection);
         });
     }
@@ -209,7 +210,7 @@ mod tests {
         let collection = Collection::new(objects);
         ser_deser_in_tmp_dir(|path| {
             write::write_collection(path, "file.txt", &collection);
-            let des_collection = read::make_opt_collection(path, "file.txt");
+            let des_collection = read::make_opt_collection(path, "file.txt").unwrap();
             assert_eq!(des_collection, collection);
         });
     }
@@ -223,7 +224,7 @@ mod tests {
 
         ser_deser_in_tmp_dir(|path| {
             write::write_feed_infos(path, &feed_infos);
-            read::manage_feed_infos(&mut collections, path);
+            read::manage_feed_infos(&mut collections, path).unwrap();
         });
         assert_eq!(collections.feed_infos.len(), 2);
         assert_eq!(collections.feed_infos, feed_infos);
@@ -428,7 +429,7 @@ mod tests {
                 equipment_id: None,
                 fare_zone_id: None,
             },
-        ]);
+        ]).unwrap();
         let vehicle_journeys = CollectionWithId::new(vec![
             VehicleJourney {
                 id: "OIF:87604986-1_11595-1".to_string(),
@@ -487,17 +488,17 @@ mod tests {
                 geometry_id: None,
                 stop_times: vec![],
             },
-        ]);
+        ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
             write::write_vehicle_journeys_and_stop_times(path, &vehicle_journeys, &stop_points);
 
             let mut collections = Collections::default();
             collections.vehicle_journeys =
-                read::make_collection_with_id::<VehicleJourney>(path, "trips.txt");
+                read::make_collection_with_id::<VehicleJourney>(path, "trips.txt").unwrap();
             collections.stop_points = stop_points;
 
-            read::manage_stop_times(&mut collections, path);
+            read::manage_stop_times(&mut collections, path).unwrap();
             assert_eq!(collections.vehicle_journeys, vehicle_journeys);
         });
     }
@@ -620,13 +621,13 @@ mod tests {
                 end_date: chrono::NaiveDate::from_ymd(2018, 1, 27),
                 calendar_dates: vec![],
             },
-        ]);
+        ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
             write::write_calendar_and_calendar_dates(path, &calendars);
 
             let mut collections = Collections::default();
-            read::manage_calendars(&mut collections, path);
+            read::manage_calendars(&mut collections, path).unwrap();
 
             assert_eq!(collections.calendars, calendars);
         });
@@ -670,7 +671,7 @@ mod tests {
                 stop_area_id: "sa_2".to_string(),
                 fare_zone_id: None,
             },
-        ]);
+        ]).unwrap();
 
         let stop_areas = CollectionWithId::new(vec![
             StopArea {
@@ -703,13 +704,13 @@ mod tests {
                 geometry_id: Some("geometry_3".to_string()),
                 equipment_id: Some("equipment_1".to_string()),
             },
-        ]);
+        ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
             write::write_stops(path, &stop_points, &stop_areas);
 
             let mut collections = Collections::default();
-            read::manage_stops(&mut collections, path);
+            read::manage_stops(&mut collections, path).unwrap();
 
             assert_eq!(collections.stop_points, stop_points);
             assert_eq!(collections.stop_areas, stop_areas);
@@ -741,7 +742,7 @@ mod tests {
                 value: "value:1".to_string(),
                 url: None,
             },
-        ]);
+        ]).unwrap();
 
         let stop_points = CollectionWithId::new(vec![
             StopPoint {
@@ -761,7 +762,7 @@ mod tests {
                 stop_area_id: "sa_1".to_string(),
                 fare_zone_id: None,
             },
-        ]);
+        ]).unwrap();
 
         let stop_areas = CollectionWithId::new(vec![
             StopArea {
@@ -779,7 +780,7 @@ mod tests {
                 geometry_id: None,
                 equipment_id: None,
             },
-        ]);
+        ]).unwrap();
 
         let lines = CollectionWithId::new(vec![
             Line {
@@ -802,7 +803,7 @@ mod tests {
                 opening_time: None,
                 closing_time: None,
             },
-        ]);
+        ]).unwrap();
 
         let routes = CollectionWithId::new(vec![
             Route {
@@ -819,7 +820,7 @@ mod tests {
                 geometry_id: None,
                 destination_id: None,
             },
-        ]);
+        ]).unwrap();
 
         let vehicle_journeys = CollectionWithId::new(vec![
             VehicleJourney {
@@ -838,7 +839,7 @@ mod tests {
                 geometry_id: None,
                 stop_times: vec![],
             },
-        ]);
+        ]).unwrap();
 
         let networks = CollectionWithId::new(vec![
             Network {
@@ -852,7 +853,7 @@ mod tests {
                 sort_order: None,
                 codes: KeysValues::default(),
             },
-        ]);
+        ]).unwrap();
 
         ser_collections.comments = comments;
         ser_collections.stop_areas = stop_areas;
@@ -877,14 +878,15 @@ mod tests {
             write::write_object_properties(path, &ser_collections);
 
             let mut des_collections = Collections::default();
-            des_collections.lines = read::make_collection_with_id(path, "lines.txt");
-            des_collections.routes = read::make_collection_with_id(path, "routes.txt");
-            des_collections.vehicle_journeys = read::make_collection_with_id(path, "trips.txt");
-            des_collections.networks = read::make_collection_with_id(path, "networks.txt");
-            read::manage_stops(&mut des_collections, path);
-            read::manage_comments(&mut des_collections, path);
-            read::manage_codes(&mut des_collections, path);
-            read::manage_object_properties(&mut des_collections, path);
+            des_collections.lines = read::make_collection_with_id(path, "lines.txt").unwrap();
+            des_collections.routes = read::make_collection_with_id(path, "routes.txt").unwrap();
+            des_collections.vehicle_journeys =
+                read::make_collection_with_id(path, "trips.txt").unwrap();
+            des_collections.networks = read::make_collection_with_id(path, "networks.txt").unwrap();
+            read::manage_stops(&mut des_collections, path).unwrap();
+            read::manage_comments(&mut des_collections, path).unwrap();
+            read::manage_codes(&mut des_collections, path).unwrap();
+            read::manage_object_properties(&mut des_collections, path).unwrap();
 
             assert_eq!(ser_collections.comments, des_collections.comments);
 

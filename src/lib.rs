@@ -18,6 +18,8 @@ extern crate csv;
 #[macro_use]
 extern crate derivative;
 #[macro_use]
+extern crate failure;
+#[macro_use]
 extern crate get_corresponding_derive;
 #[macro_use]
 extern crate log;
@@ -36,11 +38,14 @@ pub mod gtfs;
 
 use std::ops;
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use collection::{Collection, CollectionWithId, Idx};
 use objects::*;
 use relations::{IdxSet, ManyToMany, OneToMany, Relation};
-use std::collections::BTreeMap;
+use std::result::Result as StdResult;
+
+pub type Error = failure::Error;
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
@@ -71,7 +76,7 @@ pub struct PtObjects {
     collections: Collections,
 
     // original relations
-    network_to_lines: OneToMany<Network, Line>,
+    networks_to_lines: OneToMany<Network, Line>,
     commercial_modes_to_lines: OneToMany<CommercialMode, Line>,
     lines_to_routes: OneToMany<Line, Route>,
     routes_to_vehicle_journeys: OneToMany<Route, VehicleJourney>,
@@ -97,37 +102,44 @@ pub struct PtObjects {
     #[get_corresponding(weight = "1.9")]
     datasets_to_physical_modes: ManyToMany<Dataset, PhysicalMode>,
 }
+
 impl PtObjects {
-    pub fn new(c: Collections) -> Self {
+    pub fn new(c: Collections) -> Result<Self> {
         let forward_vj_to_sp = c.vehicle_journeys
             .iter()
             .map(|(idx, vj)| {
-                (
-                    idx,
-                    vj.stop_times.iter().map(|st| st.stop_point_idx).collect(),
-                )
+                let sps = vj.stop_times.iter().map(|st| st.stop_point_idx).collect();
+                (idx, sps)
             })
             .collect();
 
-        let forward_tr_to_sp: BTreeMap<_, _> = c.transfers
+        let forward_tr_to_sp = c.transfers
             .iter()
             .map(|(idx, tr)| {
-                (
-                    idx,
-                    vec![
-                        c.stop_points.get_idx(&tr.from_stop_id).unwrap(),
-                        c.stop_points.get_idx(&tr.to_stop_id).unwrap(),
-                    ].into_iter()
-                        .collect(),
-                )
+                let mut stop_points = IdxSet::default();
+                stop_points.insert(c.stop_points.get_idx(&tr.from_stop_id).ok_or_else(|| {
+                    format_err!("Invalid id: transfer.from_stop_id={:?}", tr.from_stop_id)
+                })?);
+                stop_points.insert(c.stop_points.get_idx(&tr.to_stop_id).ok_or_else(|| {
+                    format_err!("Invalid id: transfer.to_stop_id={:?}", tr.to_stop_id)
+                })?);
+                Ok((idx, stop_points))
             })
-            .collect();
+            .collect::<StdResult<BTreeMap<_, _>, Error>>()?;
         let vehicle_journeys_to_stop_points = ManyToMany::from_forward(forward_vj_to_sp);
-        let routes_to_vehicle_journeys = OneToMany::new(&c.routes, &c.vehicle_journeys);
-        let physical_modes_to_vehicle_journeys =
-            OneToMany::new(&c.physical_modes, &c.vehicle_journeys);
-        let datasets_to_vehicle_journeys = OneToMany::new(&c.datasets, &c.vehicle_journeys);
-        PtObjects {
+        let routes_to_vehicle_journeys =
+            OneToMany::new(&c.routes, &c.vehicle_journeys, "routes_to_vehicle_journeys")?;
+        let physical_modes_to_vehicle_journeys = OneToMany::new(
+            &c.physical_modes,
+            &c.vehicle_journeys,
+            "physical_modes_to_vehicle_journeys",
+        )?;
+        let datasets_to_vehicle_journeys = OneToMany::new(
+            &c.datasets,
+            &c.vehicle_journeys,
+            "datasets_to_vehicle_journeys",
+        )?;
+        Ok(PtObjects {
             routes_to_stop_points: ManyToMany::from_relations_chain(
                 &routes_to_vehicle_journeys,
                 &vehicle_journeys_to_stop_points,
@@ -152,23 +164,39 @@ impl PtObjects {
                 &datasets_to_vehicle_journeys,
                 &physical_modes_to_vehicle_journeys,
             ),
-            network_to_lines: OneToMany::new(&c.networks, &c.lines),
-            commercial_modes_to_lines: OneToMany::new(&c.commercial_modes, &c.lines),
-            lines_to_routes: OneToMany::new(&c.lines, &c.routes),
-            routes_to_vehicle_journeys: routes_to_vehicle_journeys,
-            physical_modes_to_vehicle_journeys: physical_modes_to_vehicle_journeys,
-            stop_areas_to_stop_points: OneToMany::new(&c.stop_areas, &c.stop_points),
-            contributors_to_datasets: OneToMany::new(&c.contributors, &c.datasets),
-            datasets_to_vehicle_journeys: datasets_to_vehicle_journeys,
-            vehicle_journeys_to_stop_points: vehicle_journeys_to_stop_points,
-            companies_to_vehicle_journeys: OneToMany::new(&c.companies, &c.vehicle_journeys),
             transfers_to_stop_points: ManyToMany::from_forward(forward_tr_to_sp),
+            datasets_to_vehicle_journeys: datasets_to_vehicle_journeys,
+            routes_to_vehicle_journeys: routes_to_vehicle_journeys,
+            vehicle_journeys_to_stop_points: vehicle_journeys_to_stop_points,
+            physical_modes_to_vehicle_journeys: physical_modes_to_vehicle_journeys,
+            networks_to_lines: OneToMany::new(&c.networks, &c.lines, "networks_to_lines")?,
+            commercial_modes_to_lines: OneToMany::new(
+                &c.commercial_modes,
+                &c.lines,
+                "commercial_modes_to_lines",
+            )?,
+            lines_to_routes: OneToMany::new(&c.lines, &c.routes, "lines_to_routes")?,
+            stop_areas_to_stop_points: OneToMany::new(
+                &c.stop_areas,
+                &c.stop_points,
+                "stop_areas_to_stop_points",
+            )?,
+            contributors_to_datasets: OneToMany::new(
+                &c.contributors,
+                &c.datasets,
+                "contributors_to_datasets",
+            )?,
+            companies_to_vehicle_journeys: OneToMany::new(
+                &c.companies,
+                &c.vehicle_journeys,
+                "companies_to_vehicle_journeys",
+            )?,
             collections: c,
-        }
+        })
     }
 }
 impl ::serde::Serialize for PtObjects {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
     where
         S: ::serde::Serializer,
     {
@@ -176,11 +204,13 @@ impl ::serde::Serialize for PtObjects {
     }
 }
 impl<'de> ::serde::Deserialize<'de> for PtObjects {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
     {
-        ::serde::Deserialize::deserialize(deserializer).map(PtObjects::new)
+        use serde::de::Error;
+        ::serde::Deserialize::deserialize(deserializer)
+            .and_then(|o| PtObjects::new(o).map_err(D::Error::custom))
     }
 }
 impl ops::Deref for PtObjects {

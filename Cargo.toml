@@ -12,6 +12,7 @@ log = "0.4"
 serde = "1"
 serde_derive = "1"
 structopt = "0.2"
+failure = "0.1.1"
 
 [dependencies.get-corresponding-derive]
 path = "get-corresponding-derive"
