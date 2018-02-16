@@ -15,12 +15,25 @@
 // <http://www.gnu.org/licenses/>.
 
 extern crate csv;
+extern crate env_logger;
 extern crate navitia_model;
 #[macro_use]
 extern crate serde_json;
+use navitia_model::Result;
 
-fn main() {
-    let objects = navitia_model::gtfs::read(".", None);
+fn run() -> Result<()> {
+    let objects = navitia_model::gtfs::read(".", None)?;
     let json_objs = json!(objects);
     println!("{:?}", json_objs.to_string());
+    Ok(())
+}
+
+fn main() {
+    env_logger::init();
+    if let Err(err) = run() {
+        for cause in err.causes() {
+            eprintln!("{}", cause);
+        }
+        std::process::exit(1);
+    }
 }

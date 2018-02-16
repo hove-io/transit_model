@@ -20,15 +20,16 @@ use std::path;
 use {Collections, PtObjects};
 use std::fs::File;
 use gtfs::read::Config;
+use Result;
 
 extern crate serde_json;
 
-pub fn read<P: AsRef<path::Path>>(path: P, config_path: Option<P>) -> PtObjects {
+pub fn read<P: AsRef<path::Path>>(path: P, config_path: Option<P>) -> Result<PtObjects> {
     let mut collections = Collections::default();
 
     if let Some(config_path) = config_path {
-        let json_config_file = File::open(config_path).unwrap();
-        let config: Config = serde_json::from_reader(json_config_file).unwrap();
+        let json_config_file = File::open(config_path)?;
+        let config: Config = serde_json::from_reader(json_config_file)?;
         info!("config loaded: {:#?}", config);
         let (contributors, datasets) = read::read_config(config);
         collections.contributors = contributors;
@@ -43,5 +44,5 @@ pub fn read<P: AsRef<path::Path>>(path: P, config_path: Option<P>) -> PtObjects 
     collections.stop_areas = stopareas;
     collections.stop_points = stoppoints;
     read::read_routes(path, &mut collections);
-    PtObjects::new(collections).unwrap()
+    Ok(PtObjects::new(collections)?)
 }

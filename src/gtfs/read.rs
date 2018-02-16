@@ -309,8 +309,8 @@ pub fn read_config(
     CollectionWithId<objects::Contributor>,
     CollectionWithId<objects::Dataset>,
 ) {
-    let contributors = CollectionWithId::new(vec![config.contributor]);
-    let datasets = CollectionWithId::new(vec![config.dataset]);
+    let contributors = CollectionWithId::new(vec![config.contributor]).unwrap();
+    let datasets = CollectionWithId::new(vec![config.dataset]).unwrap();
     (contributors, datasets)
 }
 
