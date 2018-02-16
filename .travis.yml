@@ -7,5 +7,5 @@ rust:
 matrix:
   include:
   - rust: nightly
-    before_script: cargo install rustfmt-nightly --force
+    before_script: rustup component add rustfmt-preview
     script: cargo fmt --all -- --write-mode diff
