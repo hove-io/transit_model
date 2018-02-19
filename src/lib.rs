@@ -28,12 +28,13 @@ extern crate serde;
 extern crate serde_derive;
 
 extern crate chrono;
-
+#[macro_use]
+pub(crate) mod utils;
 pub mod collection;
 pub mod objects;
+pub(crate) mod common_format;
 pub mod relations;
 pub mod ntfs;
-pub(crate) mod utils;
 pub mod gtfs;
 
 use std::ops;

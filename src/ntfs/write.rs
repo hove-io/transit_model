@@ -21,7 +21,8 @@ use collection::{Collection, CollectionWithId, Id};
 use serde;
 use objects::*;
 use Collections;
-use super::{CalendarDate, Code, CommentLink, ObjectProperty, Stop, StopTime};
+use common_format::CalendarDate;
+use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
 
 pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>) {
     info!("Writing feed_infos.txt");
