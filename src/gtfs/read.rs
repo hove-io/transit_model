@@ -297,6 +297,23 @@ pub fn read_stops<P: AsRef<path::Path>>(
     (stopareas, stoppoints)
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Config {
+    contributor: objects::Contributor,
+    dataset: objects::Dataset,
+}
+
+pub fn read_config(
+    config: Config,
+) -> (
+    CollectionWithId<objects::Contributor>,
+    CollectionWithId<objects::Dataset>,
+) {
+    let contributors = CollectionWithId::new(vec![config.contributor]).unwrap();
+    let datasets = CollectionWithId::new(vec![config.dataset]).unwrap();
+    (contributors, datasets)
+}
+
 #[derive(Eq, PartialEq)]
 enum RouteReadType {
     RouteAsNtmRoute,

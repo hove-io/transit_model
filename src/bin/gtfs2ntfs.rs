@@ -24,6 +24,8 @@ extern crate structopt;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
+use navitia_model::Result;
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.")]
 struct Opt {
@@ -34,14 +36,28 @@ struct Opt {
     /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: PathBuf,
+
+    /// config file
+    #[structopt(short = "c", long = "config", parse(from_os_str))]
+    config_path: Option<PathBuf>,
 }
 
-fn main() {
-    env_logger::init();
+fn run() -> Result<()> {
     info!("Launching gtfs2ntfs...");
 
     let opt = Opt::from_args();
 
-    let objects = navitia_model::gtfs::read(opt.input);
+    let objects = navitia_model::gtfs::read(opt.input, opt.config_path)?;
     navitia_model::ntfs::write(opt.output, &objects);
+    Ok(())
+}
+
+fn main() {
+    env_logger::init();
+    if let Err(err) = run() {
+        for cause in err.causes() {
+            eprintln!("{}", cause);
+        }
+        std::process::exit(1);
+    }
 }
