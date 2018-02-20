@@ -34,19 +34,19 @@ pub fn read<P: AsRef<path::Path>>(path: P, config_path: Option<P>) -> Result<PtO
         let config: Config = serde_json::from_reader(json_config_file)?;
         contributor_as_prefix = Some(config.contributor.id.clone() + ":");
         info!("config loaded: {:#?}", config);
-        let (contributors, datasets) = read::read_config(config);
+        let (contributors, datasets) = read::read_config(config)?;
         collections.contributors = contributors;
         collections.datasets = datasets;
     }
 
     let path = path.as_ref();
-    let (networks, companies) = read::read_agency(path, &contributor_as_prefix);
+    let (networks, companies) = read::read_agency(path, &contributor_as_prefix)?;
     collections.networks = networks;
     collections.companies = companies;
-    let (stopareas, stoppoints) = read::read_stops(path, &contributor_as_prefix);
+    let (stopareas, stoppoints) = read::read_stops(path, &contributor_as_prefix)?;
     collections.stop_areas = stopareas;
     collections.stop_points = stoppoints;
     manage_calendars(&mut collections, path)?;
-    read::read_routes(path, &mut collections);
+    read::read_routes(path, &mut collections)?;
     Ok(PtObjects::new(collections)?)
 }
