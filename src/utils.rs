@@ -59,3 +59,10 @@ where
     use serde::Deserialize;
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
 }
+
+#[macro_export]
+macro_rules! ctx_from_path {
+    ( $path:expr ) => {
+        |_| format!("Error reading {:?}", $path)
+    }
+}

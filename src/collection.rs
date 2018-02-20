@@ -21,6 +21,10 @@ use std::slice;
 use std::ops;
 use std::cmp::Ordering;
 use {Result, StdResult};
+use failure::ResultExt;
+use std::path;
+use csv;
+use serde;
 
 pub trait Id<T> {
     fn id(&self) -> &str;
@@ -245,4 +249,56 @@ impl<T> Collection<T> {
             .enumerate()
             .map(|(idx, obj)| (Idx::new(idx), obj))
     }
+}
+
+pub fn make_opt_collection_with_id<T>(path: &path::Path, file: &str) -> Result<CollectionWithId<T>>
+where
+    T: Id<T>,
+    for<'de> T: serde::Deserialize<'de>,
+{
+    if !path.join(file).exists() {
+        info!("Skipping {}", file);
+        Ok(CollectionWithId::default())
+    } else {
+        make_collection_with_id(path, file)
+    }
+}
+
+pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> Result<CollectionWithId<T>>
+where
+    T: Id<T>,
+    for<'de> T: serde::Deserialize<'de>,
+{
+    info!("Reading {}", file);
+    let path = path.join(file);
+    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let vec = rdr.deserialize()
+        .collect::<StdResult<_, _>>()
+        .with_context(ctx_from_path!(path))?;
+    CollectionWithId::new(vec)
+}
+
+pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> Result<Collection<T>>
+where
+    for<'de> T: serde::Deserialize<'de>,
+{
+    if !path.join(file).exists() {
+        info!("Skipping {}", file);
+        Ok(Collection::default())
+    } else {
+        make_collection(path, file)
+    }
+}
+
+pub fn make_collection<T>(path: &path::Path, file: &str) -> Result<Collection<T>>
+where
+    for<'de> T: serde::Deserialize<'de>,
+{
+    info!("Reading {}", file);
+    let path = path.join(file);
+    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let vec = rdr.deserialize()
+        .collect::<StdResult<_, _>>()
+        .with_context(ctx_from_path!(path))?;
+    Ok(Collection::new(vec))
 }

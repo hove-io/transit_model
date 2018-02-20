@@ -16,72 +16,13 @@
 
 use std::path;
 use csv;
-use serde;
 
 use objects::*;
-use collection::{Collection, CollectionWithId, Id, Idx};
+use collection::*;
 use Collections;
-use super::{CalendarDate, Code, CommentLink, ObjectProperty, Stop, StopTime};
-use {Result, StdResult};
+use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
+use Result;
 use failure::ResultExt;
-
-macro_rules! ctx_from_path {
-    ( $path:expr ) => {
-        |_| format!("Error reading {:?}", $path)
-    }
-}
-
-pub fn make_opt_collection_with_id<T>(path: &path::Path, file: &str) -> Result<CollectionWithId<T>>
-where
-    T: Id<T>,
-    for<'de> T: serde::Deserialize<'de>,
-{
-    if !path.join(file).exists() {
-        info!("Skipping {}", file);
-        Ok(CollectionWithId::default())
-    } else {
-        make_collection_with_id(path, file)
-    }
-}
-
-pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> Result<CollectionWithId<T>>
-where
-    T: Id<T>,
-    for<'de> T: serde::Deserialize<'de>,
-{
-    info!("Reading {}", file);
-    let path = path.join(file);
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let vec = rdr.deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
-    CollectionWithId::new(vec)
-}
-
-pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> Result<Collection<T>>
-where
-    for<'de> T: serde::Deserialize<'de>,
-{
-    if !path.join(file).exists() {
-        info!("Skipping {}", file);
-        Ok(Collection::default())
-    } else {
-        make_collection(path, file)
-    }
-}
-
-fn make_collection<T>(path: &path::Path, file: &str) -> Result<Collection<T>>
-where
-    for<'de> T: serde::Deserialize<'de>,
-{
-    info!("Reading {}", file);
-    let path = path.join(file);
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let vec = rdr.deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
-    Ok(Collection::new(vec))
-}
 
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {
@@ -253,38 +194,6 @@ pub fn manage_codes(collections: &mut Collections, path: &path::Path) -> Result<
                 path,
                 code.object_type.as_str()
             ),
-        }
-    }
-    Ok(())
-}
-
-fn insert_calendar_date(collection: &mut CollectionWithId<Calendar>, calendar_date: CalendarDate) {
-    let idx = match collection.get_idx(&calendar_date.service_id) {
-        Some(idx) => idx,
-        None => {
-            error!(
-                "calendar_dates.txt: service_id={} not found",
-                calendar_date.service_id
-            );
-            return;
-        }
-    };
-    collection
-        .index_mut(idx)
-        .calendar_dates
-        .push((calendar_date.date, calendar_date.exception_type))
-}
-
-pub fn manage_calendars(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    collections.calendars = make_collection_with_id(path, "calendar.txt")?;
-
-    info!("Reading calendar_dates.txt");
-    let path = path.join("calendar_dates.txt");
-    if let Ok(mut rdr) = csv::Reader::from_path(&path) {
-        for calendar_date in rdr.deserialize() {
-            let calendar_date = calendar_date.with_context(ctx_from_path!(path))?;
-            let calendar_date: CalendarDate = calendar_date;
-            insert_calendar_date(&mut collections.calendars, calendar_date);
         }
     }
     Ok(())
