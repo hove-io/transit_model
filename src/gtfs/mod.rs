@@ -27,10 +27,12 @@ extern crate serde_json;
 
 pub fn read<P: AsRef<path::Path>>(path: P, config_path: Option<P>) -> Result<PtObjects> {
     let mut collections = Collections::default();
+    let mut contributor_as_prefix = None;
 
     if let Some(config_path) = config_path {
         let json_config_file = File::open(config_path)?;
         let config: Config = serde_json::from_reader(json_config_file)?;
+        contributor_as_prefix = Some(config.contributor.id.clone());
         info!("config loaded: {:#?}", config);
         let (contributors, datasets) = read::read_config(config);
         collections.contributors = contributors;
@@ -38,10 +40,10 @@ pub fn read<P: AsRef<path::Path>>(path: P, config_path: Option<P>) -> Result<PtO
     }
 
     let path = path.as_ref();
-    let (networks, companies) = read::read_agency(path);
+    let (networks, companies) = read::read_agency(path, &contributor_as_prefix);
     collections.networks = networks;
     collections.companies = companies;
-    let (stopareas, stoppoints) = read::read_stops(path);
+    let (stopareas, stoppoints) = read::read_stops(path, &contributor_as_prefix);
     collections.stop_areas = stopareas;
     collections.stop_points = stoppoints;
     manage_calendars(&mut collections, path)?;

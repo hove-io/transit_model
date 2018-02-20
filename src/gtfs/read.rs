@@ -242,7 +242,7 @@ impl Route {
 }
 
 pub fn read_agency<P: AsRef<path::Path>>(
-    path: P,
+    path: P, id_prefix: &Option<String>
 ) -> (
     CollectionWithId<objects::Network>,
     CollectionWithId<objects::Company>,
@@ -254,25 +254,41 @@ pub fn read_agency<P: AsRef<path::Path>>(
         .iter()
         .cloned()
         .map(objects::Network::from)
+        .map(|mut network| {network.id = id_prefix.clone().unwrap_or(String::new()) + &network.id; network})
         .collect();
     let networks = CollectionWithId::new(networks).unwrap();
     let companies = gtfs_agencies
         .into_iter()
         .map(objects::Company::from)
+        .map(|mut company| {company.id = id_prefix.clone().unwrap_or(String::new()) + &company.id; company})
         .collect();
     let companies = CollectionWithId::new(companies).unwrap();
     (networks, companies)
 }
 
 pub fn read_stops<P: AsRef<path::Path>>(
-    path: P,
+    path: P, id_prefix: &Option<String>
 ) -> (
     CollectionWithId<objects::StopArea>,
     CollectionWithId<objects::StopPoint>,
 ) {
     let path = path.as_ref().join("stops.txt");
     let mut rdr = csv::Reader::from_path(path).unwrap();
-    let gtfs_stops: Vec<Stop> = rdr.deserialize().map(Result::unwrap).collect();
+    let mut gtfs_stops: Vec<Stop> = rdr.deserialize()
+        .map(Result::unwrap)
+        .collect();
+    if let &Some(ref prefix) = id_prefix {
+        gtfs_stops = gtfs_stops
+            .into_iter()
+            .map(|mut stop| {
+                stop.id = prefix.clone() + &stop.id;
+                if let Some(parent) = stop.parent_station {
+                    stop.parent_station = Some(prefix.clone() + &parent);
+                }
+                stop
+            })
+            .collect();
+    }
 
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
@@ -287,11 +303,12 @@ pub fn read_stops<P: AsRef<path::Path>>(
                 }
                 stop_points.push(objects::StopPoint::from(stop));
             }
-            1 => stop_areas.push(objects::StopArea::from(stop)),
+            1 => {
+                stop_areas.push(objects::StopArea::from(stop))
+            },
             _ => (),
         }
     }
-
     let stoppoints = CollectionWithId::new(stop_points).unwrap();
     let stopareas = CollectionWithId::new(stop_areas).unwrap();
     (stopareas, stoppoints)
@@ -299,8 +316,8 @@ pub fn read_stops<P: AsRef<path::Path>>(
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    contributor: objects::Contributor,
-    dataset: objects::Dataset,
+    pub contributor: objects::Contributor,
+    pub dataset: objects::Dataset,
 }
 
 pub fn read_config(
@@ -482,7 +499,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(agency_content.as_bytes()).unwrap();
 
-        let (networks, companies) = super::read_agency(tmp_dir.path());
+        let (networks, companies) = super::read_agency(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         assert_eq!(1, networks.len());
         let agency = networks.iter().next().unwrap().1;
@@ -499,7 +516,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(agency_content.as_bytes()).unwrap();
 
-        let (networks, companies) = super::read_agency(tmp_dir.path());
+        let (networks, companies) = super::read_agency(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         assert_eq!(1, networks.len());
         assert_eq!(1, companies.len());
@@ -517,7 +534,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(agency_content.as_bytes()).unwrap();
 
-        let (networks, companies) = super::read_agency(tmp_dir.path());
+        let (networks, companies) = super::read_agency(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         assert_eq!(1, networks.len());
         let network = networks.iter().next().unwrap().1;
@@ -535,7 +552,7 @@ mod tests {
         let file_path = tmp_dir.path().join("agency.txt");
         let mut f = File::create(&file_path).unwrap();
         f.write_all(agency_content.as_bytes()).unwrap();
-        super::read_agency(tmp_dir.path());
+        super::read_agency(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
     }
 
@@ -548,7 +565,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(stops_content.as_bytes()).unwrap();
 
-        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path());
+        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         assert_eq!(1, stop_areas.len());
         assert_eq!(1, stop_points.len());
@@ -571,7 +588,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(stops_content.as_bytes()).unwrap();
 
-        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path());
+        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         //validate stop_point code
         assert_eq!(1, stop_points.len());
@@ -600,7 +617,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(stops_content.as_bytes()).unwrap();
 
-        let (stop_areas, _) = super::read_stops(tmp_dir.path());
+        let (stop_areas, _) = super::read_stops(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         //validate stop_area code
         assert_eq!(1, stop_areas.len());
