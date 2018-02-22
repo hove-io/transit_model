@@ -32,7 +32,7 @@ pub fn read<P: AsRef<path::Path>>(path: P, config_path: Option<P>) -> Result<PtO
     if let Some(config_path) = config_path {
         let json_config_file = File::open(config_path)?;
         let config: Config = serde_json::from_reader(json_config_file)?;
-        contributor_as_prefix = Some(config.contributor.id.clone());
+        contributor_as_prefix = Some(config.contributor.id.clone() + ":");
         info!("config loaded: {:#?}", config);
         let (contributors, datasets) = read::read_config(config);
         collections.contributors = contributors;
