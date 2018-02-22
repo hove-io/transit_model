@@ -228,7 +228,7 @@ impl<'de> ::serde::Deserialize<'de> for RouteType {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct Route {
     #[serde(rename = "route_id")]
     id: String,
@@ -251,17 +251,14 @@ struct Route {
 }
 
 impl Route {
-    fn is_same_line(&self, other: &Route) -> bool {
-        if self.agency_id == other.agency_id {
-            if self.short_name != "" {
-                if self.short_name == other.short_name {
-                    return true;
-                }
-            } else if self.long_name == other.long_name {
-                return true;
-            }
-        }
-        false
+    fn get_line_key(&self) -> (Option<String>, String) {
+        let name = if self.short_name != "" {
+            self.short_name.clone()
+        } else {
+            self.long_name.clone()
+        };
+
+        (self.agency_id.clone(), name)
     }
 }
 
@@ -399,24 +396,6 @@ pub fn read_config(
     Ok((contributors, datasets))
 }
 
-#[derive(Eq, PartialEq)]
-enum RouteReadType {
-    RouteAsNtmRoute,
-    RouteAsNtmLine,
-}
-
-fn define_route_file_read_mode(gtfs_routes: &[Route]) -> RouteReadType {
-    let mut iter = gtfs_routes.iter();
-    while let Some(r1) = iter.next() {
-        for r2 in iter.clone() {
-            if r1.is_same_line(r2) {
-                return RouteReadType::RouteAsNtmRoute;
-            }
-        }
-    }
-    RouteReadType::RouteAsNtmLine
-}
-
 fn get_commercial_mode_label(route_type: &RouteType) -> String {
     use self::RouteType::*;
     let result = match *route_type {
@@ -493,7 +472,28 @@ fn get_modes_from_gtfs(
     (commercial_modes, physical_modes)
 }
 
-fn get_lines_from_gtfs(gtfs_routes: &[Route], read_mode: &RouteReadType) -> Vec<objects::Line> {
+fn get_route_with_smallest_name<'a>(routes: &'a [&Route]) -> &'a Route {
+    routes
+        .into_iter()
+        .fold(None, |min, x| match min {
+            None => Some(x),
+            Some(y) => Some(if x.id < y.id { x } else { y }),
+        })
+        .unwrap()
+}
+
+type MapLineRoutes<'a> = HashMap<(Option<String>, String), Vec<&'a Route>>;
+fn map_line_routes(gtfs_routes: &[Route]) -> MapLineRoutes {
+    let mut map = HashMap::new();
+    for r in gtfs_routes {
+        map.entry(r.get_line_key())
+            .or_insert_with(|| vec![])
+            .push(r);
+    }
+    map
+}
+
+fn make_lines(map_line_routes: &MapLineRoutes) -> Vec<objects::Line> {
     let mut lines = vec![];
 
     let line_code = |r: &Route| {
@@ -504,216 +504,87 @@ fn get_lines_from_gtfs(gtfs_routes: &[Route], read_mode: &RouteReadType) -> Vec<
         }
     };
 
-    let line_agency = |r: &Route| match r.agency_id {
-        Some(ref agency_id) => agency_id.to_string(),
-        None => default_agency_id(),
+    let line_agency = |r: &Route| {
+        r.agency_id
+            .as_ref()
+            .map(|id| id.to_string())
+            .unwrap_or_else(default_agency_id)
     };
 
-    match *read_mode {
-        RouteReadType::RouteAsNtmLine => for r in gtfs_routes {
-            let l = objects::Line {
-                id: r.id.to_string(),
-                code: line_code(r),
-                codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
-                comment_links: CommentLinksT::default(),
-                name: r.long_name.to_string(),
-                forward_name: None,
-                forward_direction: None,
-                backward_name: None,
-                backward_direction: None,
-                color: r.color.clone(),
-                text_color: r.text_color.clone(),
-                sort_order: r.sort_order,
-                network_id: line_agency(r),
-                commercial_mode_id: r.route_type.to_gtfs_value(),
-                geometry_id: None,
-                opening_time: None,
-                closing_time: None,
-            };
-            lines.push(l);
-        },
-        RouteReadType::RouteAsNtmRoute => {
-            let mut routes: HashSet<&Route> = HashSet::new();
-            let mut backward_routes: HashSet<&Route> = HashSet::new();
-            let mut iter = gtfs_routes.iter();
-            while let Some(r1) = iter.next() {
-                if !backward_routes.contains(r1) {
-                    routes.insert(r1);
-                }
-                for r2 in iter.clone() {
-                    if r1.is_same_line(r2) {
-                        backward_routes.insert(r2);
-                        if r1.id > r2.id {
-                            routes.remove(r1);
-                            routes.insert(r2);
-                        }
-                    } else {
-                        routes.insert(r2);
-                    }
-                }
-            }
-
-            for r in routes {
-                let l = objects::Line {
-                    id: r.id.to_string(),
-                    code: line_code(r),
-                    codes: KeysValues::default(),
-                    object_properties: KeysValues::default(),
-                    comment_links: CommentLinksT::default(),
-                    name: r.long_name.to_string(),
-                    forward_name: None,
-                    forward_direction: None,
-                    backward_name: None,
-                    backward_direction: None,
-                    color: r.color.clone(),
-                    text_color: r.text_color.clone(),
-                    sort_order: r.sort_order,
-                    network_id: line_agency(r),
-                    commercial_mode_id: r.route_type.to_gtfs_value(),
-                    geometry_id: None,
-                    opening_time: None,
-                    closing_time: None,
-                };
-                lines.push(l);
-            }
-        }
+    for routes in map_line_routes.values() {
+        let r = get_route_with_smallest_name(routes);
+        lines.push(objects::Line {
+            id: r.id.to_string(),
+            code: line_code(r),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            name: r.long_name.to_string(),
+            forward_name: None,
+            forward_direction: None,
+            backward_name: None,
+            backward_direction: None,
+            color: r.color.clone(),
+            text_color: r.text_color.clone(),
+            sort_order: r.sort_order,
+            network_id: line_agency(r),
+            commercial_mode_id: r.route_type.to_gtfs_value(),
+            geometry_id: None,
+            opening_time: None,
+            closing_time: None,
+        });
     }
+
     lines
 }
 
-fn get_routes_from_gtfs(
-    gtfs_routes: &[Route],
+fn make_routes(
     gtfs_trips: &[Trip],
-    read_mode: &RouteReadType,
-) -> Vec<objects::Route> {
+    map_line_routes: &MapLineRoutes,
+) -> Result<Vec<objects::Route>> {
     let mut routes = vec![];
 
-    match *read_mode {
-        RouteReadType::RouteAsNtmLine => {
-            let backward_routes: HashSet<_> = gtfs_trips
-                .iter()
-                .filter(|t| t.direction == DirectionType::Backward)
-                .map(|t| t.route_id.clone())
-                .collect();
-            for r in gtfs_routes {
-                let route = objects::Route {
-                    id: r.id.to_string(),
-                    name: r.long_name.to_string(),
-                    direction_type: Some("forward".to_string()),
+    let get_id = |r: &Route, d: &DirectionType| match *d {
+        DirectionType::Forward => r.id.clone(),
+        DirectionType::Backward => r.id.clone() + "_R",
+    };
+
+    let get_direction_name = |d: &DirectionType| match *d {
+        DirectionType::Forward => "forward".to_string(),
+        DirectionType::Backward => "backward".to_string(),
+    };
+
+    for rs in map_line_routes.values() {
+        let sr = get_route_with_smallest_name(rs);
+        for r in rs {
+            let mut route_directions: HashSet<&DirectionType> = HashSet::new();
+            for t in gtfs_trips.iter().filter(|t| t.route_id == r.id) {
+                route_directions.insert(&t.direction);
+            }
+            if route_directions.is_empty() {
+                ensure!(
+                    !route_directions.is_empty(),
+                    "Coudn't find trips for route_id {}",
+                    r.id,
+                );
+            }
+
+            for d in route_directions {
+                routes.push(objects::Route {
+                    id: get_id(r, d),
+                    name: r.long_name.clone(),
+                    direction_type: Some(get_direction_name(d)),
                     codes: KeysValues::default(),
                     object_properties: KeysValues::default(),
                     comment_links: CommentLinksT::default(),
-                    line_id: r.id.to_string(),
+                    line_id: sr.id.clone(),
                     geometry_id: None,
                     destination_id: None,
-                };
-                routes.push(route);
-                if backward_routes.contains(&r.id) {
-                    let route = objects::Route {
-                        id: r.id.to_string() + "_R",
-                        name: r.long_name.to_string(),
-                        direction_type: Some("backward".to_string()),
-                        codes: KeysValues::default(),
-                        object_properties: KeysValues::default(),
-                        comment_links: CommentLinksT::default(),
-                        line_id: r.id.to_string(),
-                        geometry_id: None,
-                        destination_id: None,
-                    };
-                    routes.push(route);
-                }
-            }
-        }
-        RouteReadType::RouteAsNtmRoute => {
-            let routes_directions: HashSet<(String, DirectionType)> = gtfs_trips
-                .iter()
-                .map(|t| (t.route_id.clone(), t.direction.clone()))
-                .collect();
-
-            let same_lines = get_same_lines(gtfs_routes);
-            for r in gtfs_routes {
-                let current_route_directions: HashSet<_> = routes_directions
-                    .iter()
-                    .filter(|h| h.0 == r.id)
-                    .map(|h| h.1.clone())
-                    .collect();
-
-                if current_route_directions.len() > 1 {
-                    let route = objects::Route {
-                        id: r.id.to_string(),
-                        name: r.long_name.to_string(),
-                        direction_type: Some("forward".to_string()),
-                        codes: KeysValues::default(),
-                        object_properties: KeysValues::default(),
-                        comment_links: CommentLinksT::default(),
-                        line_id: get_line_id_of_route(r, &same_lines),
-                        geometry_id: None,
-                        destination_id: None,
-                    };
-                    routes.push(route);
-                    let route = objects::Route {
-                        id: r.id.to_string() + "_R",
-                        name: r.long_name.to_string(),
-                        direction_type: Some("backward".to_string()),
-                        codes: KeysValues::default(),
-                        object_properties: KeysValues::default(),
-                        comment_links: CommentLinksT::default(),
-                        line_id: get_line_id_of_route(r, &same_lines),
-                        geometry_id: None,
-                        destination_id: None,
-                    };
-                    routes.push(route);
-                } else if current_route_directions.is_empty() {
-                    panic!("RouteAsNtmRoute - Coudn't find trips for route_id {}", r.id);
-                } else {
-                    let direction = current_route_directions.iter().next().unwrap();
-                    let direction_name = if *direction == DirectionType::Forward {
-                        "forward"
-                    } else {
-                        "backward"
-                    };
-                    let route = objects::Route {
-                        id: r.id.to_string(),
-                        name: r.long_name.to_string(),
-                        direction_type: Some(direction_name.to_string()),
-                        codes: KeysValues::default(),
-                        object_properties: KeysValues::default(),
-                        comment_links: CommentLinksT::default(),
-                        line_id: get_line_id_of_route(r, &same_lines),
-                        geometry_id: None,
-                        destination_id: None,
-                    };
-                    routes.push(route);
-                }
+                });
             }
         }
     }
-    routes
-}
-
-fn get_line_id_of_route(r: &Route, same_lines: &HashMap<String, String>) -> String {
-    same_lines
-        .get(&r.id)
-        .map_or_else(|| r.id.clone(), |id| id.clone())
-}
-
-fn get_same_lines(gtfs_routes: &[Route]) -> HashMap<String, String> {
-    let mut same_lines = HashMap::new();
-    let mut iter = gtfs_routes.iter();
-    while let Some(r1) = iter.next() {
-        for r2 in iter.clone() {
-            if r1.is_same_line(r2) {
-                if r2.id > r1.id {
-                    same_lines.insert(r2.id.clone(), r1.id.clone());
-                } else {
-                    same_lines.insert(r1.id.clone(), r2.id.clone());
-                }
-            }
-        }
-    }
-
-    same_lines
+    Ok(routes)
 }
 
 pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections) -> Result<()> {
@@ -723,12 +594,13 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
     let gtfs_routes: Vec<Route> = rdr.deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(routes_path))?;
+
     let (commercial_modes, physical_modes) = get_modes_from_gtfs(&gtfs_routes);
     collections.commercial_modes = CollectionWithId::new(commercial_modes)?;
     collections.physical_modes = CollectionWithId::new(physical_modes)?;
 
-    let gtfs_reading_mode = define_route_file_read_mode(&gtfs_routes);
-    let lines = get_lines_from_gtfs(&gtfs_routes, &gtfs_reading_mode);
+    let map_line_routes = map_line_routes(&gtfs_routes);
+    let lines = make_lines(&map_line_routes);
     collections.lines = CollectionWithId::new(lines)?;
 
     let trips_path = path.join("trips.txt");
@@ -736,7 +608,8 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
     let gtfs_trips: Vec<Trip> = rdr.deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(trips_path))?;
-    let routes = get_routes_from_gtfs(&gtfs_routes, &gtfs_trips, &gtfs_reading_mode);
+    let routes =
+        make_routes(&gtfs_trips, &map_line_routes).with_context(ctx_from_path!(routes_path))?;
     collections.routes = CollectionWithId::new(routes)?;
 
     Ok(())
@@ -962,14 +835,16 @@ mod tests {
                               route_1,agency_1,1,My line 1A,3,8F7A32,FFFFFF\n\
                               route_2,agency_1,1,My line 1B,3,8F7A32,FFFFFF\n\
                               route_4,agency_2,1,My line 1B,3,8F7A32,FFFFFF\n\
-                              route_3,agency_2,1,My line 1B,3,8F7A32,FFFFFF";
+                              route_3,agency_2,1,My line 1B,3,8F7A32,FFFFFF\n\
+                              route_5,,1,My line 1C,3,8F7A32,FFFFFF";
 
         let trips_content =
             "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
              1,route_1,0,service_1,,\n\
              2,route_2,0,service_1,,\n\
              3,route_3,0,service_2,,\n\
-             4,route_4,0,service_2,,";
+             4,route_4,0,service_2,,\n\
+             5,route_5,0,service_3,,";
 
         let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
         let file_path = tmp_dir.path().join("routes.txt");
@@ -983,7 +858,7 @@ mod tests {
         let mut collections = Collections::default();
         super::read_routes(tmp_dir, &mut collections).unwrap();
 
-        assert_eq!(2, collections.lines.len());
+        assert_eq!(3, collections.lines.len());
 
         let mut lines_ids: Vec<String> = collections
             .lines
@@ -992,9 +867,9 @@ mod tests {
             .collect();
         lines_ids.sort();
 
-        assert_eq!(lines_ids, &["route_1", "route_3"]);
+        assert_eq!(lines_ids, &["route_1", "route_3", "route_5"]);
 
-        assert_eq!(4, collections.routes.len());
+        assert_eq!(5, collections.routes.len());
 
         assert_eq!(
             collections.routes.get("route_1").unwrap().line_id,
@@ -1011,6 +886,10 @@ mod tests {
         assert_eq!(
             collections.routes.get("route_4").unwrap().line_id,
             "route_3"
+        );
+        assert_eq!(
+            collections.routes.get("route_5").unwrap().line_id,
+            "route_5"
         );
     }
 
@@ -1138,8 +1017,8 @@ mod tests {
         create_file_with_content(&tmp_dir, "stops.txt".to_string(), stops_content);
         create_file_with_content(&tmp_dir, "agency.txt".to_string(), agency_content);
         let prefix = Some("my_prefix:".to_string());
-        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &prefix);
-        let (networks, companies) = super::read_agency(tmp_dir.path(), &prefix);
+        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &prefix).unwrap();
+        let (networks, companies) = super::read_agency(tmp_dir.path(), &prefix).unwrap();
         tmp_dir.close().expect("delete temp dir");
 
         assert_eq!(2, stop_areas.len());

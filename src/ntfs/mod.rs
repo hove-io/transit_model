@@ -134,12 +134,12 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
     write::write_collection_with_id(path, "contributors.txt", &pt_objects.contributors);
     write::write_collection_with_id(path, "datasets.txt", &pt_objects.datasets);
     write::write_collection_with_id(path, "networks.txt", &pt_objects.networks);
-    write::write_collection_with_id(path, "commercial_modes.txt", &pt_objects.networks);
+    write::write_collection_with_id(path, "commercial_modes.txt", &pt_objects.commercial_modes);
     write::write_collection_with_id(path, "companies.txt", &pt_objects.companies);
     write::write_collection_with_id(path, "lines.txt", &pt_objects.lines);
-    write::write_collection_with_id(path, "physical_modes.txt", &pt_objects.lines);
+    write::write_collection_with_id(path, "physical_modes.txt", &pt_objects.physical_modes);
     write::write_collection_with_id(path, "equipments.txt", &pt_objects.equipments);
-    write::write_collection_with_id(path, "routes.txt", &pt_objects.lines);
+    write::write_collection_with_id(path, "routes.txt", &pt_objects.routes);
     write::write_collection_with_id(path, "trip_properties.txt", &pt_objects.trip_properties);
     write::write_collection_with_id(path, "geometries.txt", &pt_objects.geometries);
     write::write_collection(path, "transfers.txt", &pt_objects.transfers);
