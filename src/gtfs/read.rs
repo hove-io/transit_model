@@ -25,10 +25,6 @@ fn default_agency_id() -> String {
     "default_agency_id".to_string()
 }
 
-trait PrefixId {
-    fn alter_id_with_prefix(&mut self, prefix: Option<String>);
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Agency {
     #[serde(rename = "agency_id")]
@@ -73,10 +69,10 @@ impl From<Agency> for objects::Company {
         }
     }
 }
-impl PrefixId for Agency {
-    fn alter_id_with_prefix(&mut self, prefix: Option<String>) {
+impl Agency {
+    fn alter_id_with_prefix(&mut self, prefix: &Option<String>) {
         let mut altered_id = self.id.clone().unwrap_or_else(default_agency_id);
-        if let Some(id_prefix) = prefix {
+        if let Some(ref id_prefix) = *prefix {
             altered_id = id_prefix.clone() + &altered_id;
         }
         self.id = Some(altered_id);
@@ -158,19 +154,16 @@ impl From<Stop> for objects::StopPoint {
     }
 }
 
-impl PrefixId for Stop {
-    fn alter_id_with_prefix(&mut self, prefix: Option<String>) {
-        if let Some(id_prefix) = prefix {
+impl Stop {
+    fn alter_id_with_prefix(&mut self, prefix: &Option<String>) {
+        if let Some(ref id_prefix) = *prefix {
             self.id = id_prefix.clone() + &self.id;
         }
     }
-}
-
-impl Stop {
-    fn alter_parent_with_prefix(&mut self, prefix: Option<String>) {
+    fn alter_parent_with_prefix(&mut self, prefix: &Option<String>) {
         if prefix.is_some() && self.parent_station.is_some() {
             self.parent_station =
-                Some(prefix.unwrap().clone() + &self.parent_station.clone().unwrap());
+                Some(prefix.clone().unwrap() + &self.parent_station.clone().unwrap());
         }
     }
 }
@@ -282,7 +275,7 @@ pub fn read_agency<P: AsRef<path::Path>>(
         .iter()
         .cloned()
         .map(|mut agency| {
-            agency.alter_id_with_prefix(id_prefix.clone());
+            agency.alter_id_with_prefix(id_prefix);
             agency
         })
         .map(objects::Network::from)
@@ -291,7 +284,7 @@ pub fn read_agency<P: AsRef<path::Path>>(
     let companies = gtfs_agencies
         .into_iter()
         .map(|mut agency| {
-            agency.alter_id_with_prefix(id_prefix.clone());
+            agency.alter_id_with_prefix(&id_prefix);
             agency
         })
         .map(objects::Company::from)
@@ -323,17 +316,17 @@ pub fn read_stops<P: AsRef<path::Path>>(
                         prefix_generated = prefix.to_string() + &prefix_generated;
                     }
                     new_stop_area.code = None;
-                    new_stop_area.alter_id_with_prefix(Some(prefix_generated));
+                    new_stop_area.alter_id_with_prefix(&Some(prefix_generated));
                     stop.parent_station = Some(new_stop_area.id.clone());
                     stop_areas.push(objects::StopArea::from(new_stop_area));
                 } else {
-                    stop.alter_parent_with_prefix(id_prefix.clone());
+                    stop.alter_parent_with_prefix(id_prefix);
                 }
-                stop.alter_id_with_prefix(id_prefix.clone());
+                stop.alter_id_with_prefix(id_prefix);
                 stop_points.push(objects::StopPoint::from(stop));
             }
             1 => {
-                stop.alter_id_with_prefix(id_prefix.clone());
+                stop.alter_id_with_prefix(id_prefix);
                 stop_areas.push(objects::StopArea::from(stop))
             }
             _ => (),
