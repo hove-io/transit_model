@@ -69,6 +69,15 @@ impl From<Agency> for objects::Company {
         }
     }
 }
+impl Agency {
+    fn alter_id_with_prefix(&mut self, prefix: &Option<String>) {
+        let mut altered_id = self.id.clone().unwrap_or_else(default_agency_id);
+        if let Some(ref id_prefix) = *prefix {
+            altered_id = id_prefix.clone() + &altered_id;
+        }
+        self.id = Some(altered_id);
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Stop {
@@ -121,15 +130,12 @@ impl From<Stop> for objects::StopArea {
 }
 impl From<Stop> for objects::StopPoint {
     fn from(stop: Stop) -> objects::StopPoint {
-        let id = stop.id;
-        let stop_area_id = stop.parent_station
-            .unwrap_or_else(|| format!("Navitia:{}", id));
         let mut stop_codes: Vec<(String, String)> = vec![];
         if let Some(c) = stop.code {
             stop_codes.push(("gtfs_stop_code".to_string(), c));
         }
         objects::StopPoint {
-            id: id,
+            id: stop.id,
             name: stop.name,
             codes: stop_codes,
             object_properties: KeysValues::default(),
@@ -138,12 +144,26 @@ impl From<Stop> for objects::StopPoint {
                 lon: stop.lon,
                 lat: stop.lat,
             },
-            stop_area_id: stop_area_id,
+            stop_area_id: stop.parent_station.unwrap(),
             timezone: stop.timezone,
             visible: true,
             geometry_id: None,
             equipment_id: None,
             fare_zone_id: None,
+        }
+    }
+}
+
+impl Stop {
+    fn alter_id_with_prefix(&mut self, prefix: &Option<String>) {
+        if let Some(ref id_prefix) = *prefix {
+            self.id = id_prefix.clone() + &self.id;
+        }
+    }
+    fn alter_parent_with_prefix(&mut self, prefix: &Option<String>) {
+        if prefix.is_some() && self.parent_station.is_some() {
+            self.parent_station =
+                Some(prefix.clone().unwrap() + &self.parent_station.clone().unwrap());
         }
     }
 }
@@ -243,6 +263,7 @@ impl Route {
 
 pub fn read_agency<P: AsRef<path::Path>>(
     path: P,
+    id_prefix: &Option<String>,
 ) -> (
     CollectionWithId<objects::Network>,
     CollectionWithId<objects::Company>,
@@ -253,11 +274,19 @@ pub fn read_agency<P: AsRef<path::Path>>(
     let networks = gtfs_agencies
         .iter()
         .cloned()
+        .map(|mut agency| {
+            agency.alter_id_with_prefix(id_prefix);
+            agency
+        })
         .map(objects::Network::from)
         .collect();
     let networks = CollectionWithId::new(networks).unwrap();
     let companies = gtfs_agencies
         .into_iter()
+        .map(|mut agency| {
+            agency.alter_id_with_prefix(&id_prefix);
+            agency
+        })
         .map(objects::Company::from)
         .collect();
     let companies = CollectionWithId::new(companies).unwrap();
@@ -266,6 +295,7 @@ pub fn read_agency<P: AsRef<path::Path>>(
 
 pub fn read_stops<P: AsRef<path::Path>>(
     path: P,
+    id_prefix: &Option<String>,
 ) -> (
     CollectionWithId<objects::StopArea>,
     CollectionWithId<objects::StopPoint>,
@@ -276,22 +306,32 @@ pub fn read_stops<P: AsRef<path::Path>>(
 
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
-    for stop in gtfs_stops {
+    for mut stop in gtfs_stops {
         match stop.location_type {
             0 => {
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
-                    new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
+                    let mut prefix_generated = "Navitia:".to_string();
+                    if let Some(ref prefix) = *id_prefix {
+                        prefix_generated = prefix.to_string() + &prefix_generated;
+                    }
                     new_stop_area.code = None;
+                    new_stop_area.alter_id_with_prefix(&Some(prefix_generated));
+                    stop.parent_station = Some(new_stop_area.id.clone());
                     stop_areas.push(objects::StopArea::from(new_stop_area));
+                } else {
+                    stop.alter_parent_with_prefix(id_prefix);
                 }
+                stop.alter_id_with_prefix(id_prefix);
                 stop_points.push(objects::StopPoint::from(stop));
             }
-            1 => stop_areas.push(objects::StopArea::from(stop)),
+            1 => {
+                stop.alter_id_with_prefix(id_prefix);
+                stop_areas.push(objects::StopArea::from(stop))
+            }
             _ => (),
         }
     }
-
     let stoppoints = CollectionWithId::new(stop_points).unwrap();
     let stopareas = CollectionWithId::new(stop_areas).unwrap();
     (stopareas, stoppoints)
@@ -299,8 +339,8 @@ pub fn read_stops<P: AsRef<path::Path>>(
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    contributor: objects::Contributor,
-    dataset: objects::Dataset,
+    pub contributor: objects::Contributor,
+    pub dataset: objects::Dataset,
 }
 
 pub fn read_config(
@@ -482,7 +522,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(agency_content.as_bytes()).unwrap();
 
-        let (networks, companies) = super::read_agency(tmp_dir.path());
+        let (networks, companies) = super::read_agency(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         assert_eq!(1, networks.len());
         let agency = networks.iter().next().unwrap().1;
@@ -499,7 +539,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(agency_content.as_bytes()).unwrap();
 
-        let (networks, companies) = super::read_agency(tmp_dir.path());
+        let (networks, companies) = super::read_agency(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         assert_eq!(1, networks.len());
         assert_eq!(1, companies.len());
@@ -517,7 +557,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(agency_content.as_bytes()).unwrap();
 
-        let (networks, companies) = super::read_agency(tmp_dir.path());
+        let (networks, companies) = super::read_agency(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         assert_eq!(1, networks.len());
         let network = networks.iter().next().unwrap().1;
@@ -535,7 +575,7 @@ mod tests {
         let file_path = tmp_dir.path().join("agency.txt");
         let mut f = File::create(&file_path).unwrap();
         f.write_all(agency_content.as_bytes()).unwrap();
-        super::read_agency(tmp_dir.path());
+        super::read_agency(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
     }
 
@@ -548,7 +588,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(stops_content.as_bytes()).unwrap();
 
-        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path());
+        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         assert_eq!(1, stop_areas.len());
         assert_eq!(1, stop_points.len());
@@ -571,7 +611,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(stops_content.as_bytes()).unwrap();
 
-        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path());
+        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         //validate stop_point code
         assert_eq!(1, stop_points.len());
@@ -600,7 +640,7 @@ mod tests {
         let mut f = File::create(&file_path).unwrap();
         f.write_all(stops_content.as_bytes()).unwrap();
 
-        let (stop_areas, _) = super::read_stops(tmp_dir.path());
+        let (stop_areas, _) = super::read_stops(tmp_dir.path(), &None);
         tmp_dir.close().expect("delete temp dir");
         //validate stop_area code
         assert_eq!(1, stop_areas.len());
@@ -642,4 +682,74 @@ mod tests {
         assert!(!lines_commercial_modes_id.contains(&"8".to_string()));
     }
 
+    fn create_file_with_content(temp_dir: &TempDir, file_name: String, content: String) {
+        let file_path = temp_dir.path().join(file_name);
+        let mut f = File::create(&file_path).unwrap();
+        f.write_all(content.as_bytes()).unwrap();
+    }
+
+    #[test]
+    fn prefix_on_all_pt_object_id() {
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
+                             sp:01,my stop point name,0.1,1.2,0,\n\
+                             sp:02,my stop point name child,0.2,1.5,0,sp:01\n\
+                             sa:03,my stop area name,0.3,2.2,1,"
+            .to_string();
+        let agency_content = "agency_id,agency_name,agency_url,agency_timezone,agency_lang\n\
+                              584,TAM,http://whatever.canaltp.fr/,Europe/Paris,fr\n\
+                              285,Phébus,http://plop.kisio.com/,Europe/London,en"
+            .to_string();
+        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        create_file_with_content(&tmp_dir, "stops.txt".to_string(), stops_content);
+        create_file_with_content(&tmp_dir, "agency.txt".to_string(), agency_content);
+        let prefix = Some("my_prefix:".to_string());
+        let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &prefix);
+        let (networks, companies) = super::read_agency(tmp_dir.path(), &prefix);
+        tmp_dir.close().expect("delete temp dir");
+
+        assert_eq!(2, stop_areas.len());
+        assert_eq!(2, stop_points.len());
+        assert_eq!(2, networks.len());
+        assert_eq!(2, companies.len());
+
+        let mut companies_ids: Vec<String> = companies
+            .iter()
+            .map(|(_, company)| company.id.clone())
+            .collect();
+        companies_ids.sort();
+        assert_eq!(vec!["my_prefix:285", "my_prefix:584"], companies_ids);
+
+        let mut networks_ids: Vec<String> = networks
+            .iter()
+            .map(|(_, network)| network.id.clone())
+            .collect();
+        networks_ids.sort();
+        assert_eq!(vec!["my_prefix:285", "my_prefix:584"], networks_ids);
+
+        let mut stop_areas_ids: Vec<String> = stop_areas
+            .iter()
+            .map(|(_, stop_area)| stop_area.id.clone())
+            .collect();
+        stop_areas_ids.sort();
+        assert_eq!(
+            vec!["my_prefix:Navitia:sp:01", "my_prefix:sa:03"],
+            stop_areas_ids
+        );
+
+        let mut stop_points_ids: Vec<(String, String)> = stop_points
+            .iter()
+            .map(|(_, stop_point)| (stop_point.id.clone(), stop_point.stop_area_id.clone()))
+            .collect();
+        stop_points_ids.sort();
+        assert_eq!(
+            vec![
+                (
+                    "my_prefix:sp:01".to_string(),
+                    "my_prefix:Navitia:sp:01".to_string(),
+                ),
+                ("my_prefix:sp:02".to_string(), "my_prefix:sp:01".to_string()),
+            ],
+            stop_points_ids
+        );
+    }
 }
