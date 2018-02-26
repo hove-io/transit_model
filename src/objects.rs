@@ -337,9 +337,9 @@ pub struct Line {
     #[serde(rename = "backward_line_name")]
     pub backward_name: Option<String>,
     pub backward_direction: Option<String>,
-    #[serde(rename = "line_color")]
+    #[serde(rename = "line_color", default, deserialize_with = "de_invalid_option")]
     pub color: Option<Rgb>,
-    #[serde(rename = "line_text_color")]
+    #[serde(rename = "line_text_color", default, deserialize_with = "de_invalid_option")]
     pub text_color: Option<Rgb>,
     #[serde(rename = "line_sort_order")]
     pub sort_order: Option<u32>,

@@ -60,6 +60,18 @@ where
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
 }
 
+pub fn de_invalid_option<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+    Option<T>: ::serde::Deserialize<'de>,
+{
+    use serde::Deserialize;
+    Option::<T>::deserialize(de).or_else(|e| {
+        error!("{}", e);
+        Ok(None)
+    })
+}
+
 #[macro_export]
 macro_rules! ctx_from_path {
     ( $path:expr ) => {
