@@ -320,7 +320,7 @@ pub fn read_agency<P: AsRef<path::Path>>(
     let companies = gtfs_agencies
         .into_iter()
         .map(|mut agency| {
-            agency.alter_id_with_prefix(&id_prefix);
+            agency.alter_id_with_prefix(id_prefix);
             agency
         })
         .map(objects::Company::from)
@@ -473,13 +473,7 @@ fn get_modes_from_gtfs(
 }
 
 fn get_route_with_smallest_name<'a>(routes: &'a [&Route]) -> &'a Route {
-    routes
-        .into_iter()
-        .fold(None, |min, x| match min {
-            None => Some(x),
-            Some(y) => Some(if x.id < y.id { x } else { y }),
-        })
-        .unwrap()
+    routes.iter().min_by_key(|r| &r.id).unwrap()
 }
 
 type MapLineRoutes<'a> = HashMap<(Option<String>, String), Vec<&'a Route>>;
@@ -493,7 +487,7 @@ fn map_line_routes(gtfs_routes: &[Route]) -> MapLineRoutes {
     map
 }
 
-fn make_lines(map_line_routes: &MapLineRoutes) -> Vec<objects::Line> {
+fn make_lines(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objects::Line> {
     let mut lines = vec![];
 
     let line_code = |r: &Route| {
@@ -513,26 +507,29 @@ fn make_lines(map_line_routes: &MapLineRoutes) -> Vec<objects::Line> {
 
     for routes in map_line_routes.values() {
         let r = get_route_with_smallest_name(routes);
-        lines.push(objects::Line {
-            id: r.id.to_string(),
-            code: line_code(r),
-            codes: KeysValues::default(),
-            object_properties: KeysValues::default(),
-            comment_links: CommentLinksT::default(),
-            name: r.long_name.to_string(),
-            forward_name: None,
-            forward_direction: None,
-            backward_name: None,
-            backward_direction: None,
-            color: r.color.clone(),
-            text_color: r.text_color.clone(),
-            sort_order: r.sort_order,
-            network_id: line_agency(r),
-            commercial_mode_id: r.route_type.to_gtfs_value(),
-            geometry_id: None,
-            opening_time: None,
-            closing_time: None,
-        });
+
+        if gtfs_trips.iter().find(|t| t.route_id == r.id).is_some() {
+            lines.push(objects::Line {
+                id: r.id.to_string(),
+                code: line_code(r),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
+                comment_links: CommentLinksT::default(),
+                name: r.long_name.to_string(),
+                forward_name: None,
+                forward_direction: None,
+                backward_name: None,
+                backward_direction: None,
+                color: r.color.clone(),
+                text_color: r.text_color.clone(),
+                sort_order: r.sort_order,
+                network_id: line_agency(r),
+                commercial_mode_id: r.route_type.to_gtfs_value(),
+                geometry_id: None,
+                opening_time: None,
+                closing_time: None,
+            });
+        }
     }
 
     lines
@@ -562,11 +559,7 @@ fn make_routes(
                 route_directions.insert(&t.direction);
             }
             if route_directions.is_empty() {
-                ensure!(
-                    !route_directions.is_empty(),
-                    "Coudn't find trips for route_id {}",
-                    r.id,
-                );
+                warn!("Coudn't find trips for route_id {}", r.id);
             }
 
             for d in route_directions {
@@ -599,15 +592,16 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
     collections.commercial_modes = CollectionWithId::new(commercial_modes)?;
     collections.physical_modes = CollectionWithId::new(physical_modes)?;
 
-    let map_line_routes = map_line_routes(&gtfs_routes);
-    let lines = make_lines(&map_line_routes);
-    collections.lines = CollectionWithId::new(lines)?;
-
     let trips_path = path.join("trips.txt");
     let mut rdr = csv::Reader::from_path(&trips_path).with_context(ctx_from_path!(trips_path))?;
     let gtfs_trips: Vec<Trip> = rdr.deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(trips_path))?;
+
+    let map_line_routes = map_line_routes(&gtfs_routes);
+    let lines = make_lines(&gtfs_trips, &map_line_routes);
+    collections.lines = CollectionWithId::new(lines)?;
+
     let routes =
         make_routes(&gtfs_trips, &map_line_routes).with_context(ctx_from_path!(routes_path))?;
     collections.routes = CollectionWithId::new(routes)?;
@@ -994,6 +988,32 @@ mod tests {
             collections.routes.get("route_3").unwrap().line_id,
             "route_3"
         );
+    }
+
+    #[test]
+    fn gtfs_routes_with_no_trips() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF\n\
+                              route_2,agency_2,2,My line 2,3,8F7A32,FFFFFF";
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,";
+
+        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        let file_path = tmp_dir.path().join("routes.txt");
+        let mut f = File::create(&file_path).unwrap();
+        f.write_all(routes_content.as_bytes()).unwrap();
+
+        let file_path = tmp_dir.path().join("trips.txt");
+        let mut f = File::create(&file_path).unwrap();
+        f.write_all(trips_content.as_bytes()).unwrap();
+
+        let mut collections = Collections::default();
+        super::read_routes(tmp_dir, &mut collections).unwrap();
+
+        assert_eq!(1, collections.lines.len());
+        assert_eq!(1, collections.routes.len());
     }
 
     fn create_file_with_content(temp_dir: &TempDir, file_name: String, content: String) {
