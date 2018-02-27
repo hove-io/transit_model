@@ -1,7 +1,7 @@
 # GTFS reading specification
 
 ## Purpose
-This document aim to describe how the [GTFS format](https://developers.google.com/transit/gtfs/reference) is read in the Navitia Transit Model. To improve readability of this document, the specification will describe the transformation of a GTFS feed into a [NTFS feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/) (which is a bunch of csv files accordingly to the memory Navitia Transit Model).
+This document aims to describe how the [GTFS format](https://developers.google.com/transit/gtfs/reference) is read in the Navitia Transit Model. To improve readability of this document, the specification will describe the transformation of a GTFS feed into a [NTFS feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/) (which is a bunch of csv files accordingly to the memory Navitia Transit Model).
 
 ## Introduction
 ### Prepending data
@@ -59,7 +59,7 @@ Like the GTFS, the NTFS group stop_points and stop_areas in on file : stops.txt.
 | NTFS file | NTFS field | Constraint | GTFS file | GTFS field | Note |
 | --- | --- | --- | --- | --- | --- |
 | stops.txt | stop_id | ID | stops.txt | stop_id |  |
-| object_codes.txt | object_property_value | Optionnal | stops.txt | stop_code | This GTFS property is stored as an associated code for this stop. See (2) for complementary properties. |
+| object_codes.txt | object_code | Optionnal | stops.txt | stop_code | This GTFS property is stored as an associated code for this stop. See (2) for complementary properties. |
 | stops.txt | stop_name | Required | stops.txt | stop_name |  |
 | stops.txt | stop_lat | Required | stops.txt | stop_lat |  |
 | stops.txt | stop_lon | Required | stops.txt | stop_lon |  |
@@ -81,8 +81,8 @@ The `parent_station` of the stop_point should then contain the generated `stop_a
 (2) The `stop_code` field should be added as a complementary object_code with the following properties :
 + `object_type` : _stop_point_ or _stop_area_  accordingly to the `location_type` value
 + `object_id` : NTFS `stop_id` 
-+ `object_property_name` : Fixed value "_gtfs_stop_code_"
-+ `object_property_value` : value of the `stop_code` property
++ `object_system` : Fixed value "_gtfs_stop_code_"
++ `object_code` : value of the `stop_code` property
 
 (3) The `comment` object is a complex type with additional properties : 
 * `comment_id` : specify an identifier with the pattern **\<prefix>:stop:<stop_id of GTFS>**
