@@ -75,11 +75,9 @@ impl From<Agency> for objects::Company {
 }
 impl Agency {
     fn alter_id_with_prefix(&mut self, prefix: &Option<String>) {
-        let mut altered_id = self.id.clone().unwrap_or_else(default_agency_id);
-        if let Some(ref id_prefix) = *prefix {
-            altered_id = id_prefix.clone() + &altered_id;
-        }
-        self.id = Some(altered_id);
+        let altered_id = self.id.clone().unwrap_or_else(default_agency_id);
+
+        self.id = Some(prefix_id(prefix, &altered_id));
     }
 }
 
@@ -160,9 +158,7 @@ impl From<Stop> for objects::StopPoint {
 
 impl Stop {
     fn alter_id_with_prefix(&mut self, prefix: &Option<String>) {
-        if let Some(ref id_prefix) = *prefix {
-            self.id = id_prefix.clone() + &self.id;
-        }
+        self.id = prefix_id(prefix, &self.id);
     }
     fn alter_parent_with_prefix(&mut self, prefix: &Option<String>) {
         if prefix.is_some() && self.parent_station.is_some() {
@@ -487,7 +483,19 @@ fn map_line_routes(gtfs_routes: &[Route]) -> MapLineRoutes {
     map
 }
 
-fn make_lines(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objects::Line> {
+fn prefix_id(prefix: &Option<String>, id: &str) -> String {
+    if let Some(ref id_prefix) = *prefix {
+        id_prefix.clone() + id
+    } else {
+        id.to_string()
+    }
+}
+
+fn make_lines(
+    gtfs_trips: &[Trip],
+    map_line_routes: &MapLineRoutes,
+    id_prefix: &Option<String>,
+) -> Vec<objects::Line> {
     let mut lines = vec![];
 
     let line_code = |r: &Route| {
@@ -510,7 +518,7 @@ fn make_lines(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objec
 
         if gtfs_trips.iter().any(|t| t.route_id == r.id) {
             lines.push(objects::Line {
-                id: r.id.to_string(),
+                id: prefix_id(id_prefix, &r.id),
                 code: line_code(r),
                 codes: KeysValues::default(),
                 object_properties: KeysValues::default(),
@@ -538,12 +546,16 @@ fn make_lines(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objec
 fn make_routes(
     gtfs_trips: &[Trip],
     map_line_routes: &MapLineRoutes,
-) -> Result<Vec<objects::Route>> {
+    id_prefix: &Option<String>,
+) -> Vec<objects::Route> {
     let mut routes = vec![];
 
-    let get_id = |r: &Route, d: &DirectionType| match *d {
-        DirectionType::Forward => r.id.clone(),
-        DirectionType::Backward => r.id.clone() + "_R",
+    let get_id = |r: &Route, d: &DirectionType| {
+        let id = prefix_id(id_prefix, &r.id);
+        match *d {
+            DirectionType::Forward => id,
+            DirectionType::Backward => id + "_R",
+        }
     };
 
     let get_direction_name = |d: &DirectionType| match *d {
@@ -570,17 +582,21 @@ fn make_routes(
                     codes: KeysValues::default(),
                     object_properties: KeysValues::default(),
                     comment_links: CommentLinksT::default(),
-                    line_id: sr.id.clone(),
+                    line_id: prefix_id(id_prefix, &sr.id),
                     geometry_id: None,
                     destination_id: None,
                 });
             }
         }
     }
-    Ok(routes)
+    routes
 }
 
-pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections) -> Result<()> {
+pub fn read_routes<P: AsRef<path::Path>>(
+    path: P,
+    id_prefix: &Option<String>,
+    collections: &mut Collections,
+) -> Result<()> {
     let path = path.as_ref();
     let routes_path = path.join("routes.txt");
     let mut rdr = csv::Reader::from_path(&routes_path).with_context(ctx_from_path!(routes_path))?;
@@ -599,11 +615,10 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
         .with_context(ctx_from_path!(trips_path))?;
 
     let map_line_routes = map_line_routes(&gtfs_routes);
-    let lines = make_lines(&gtfs_trips, &map_line_routes);
+    let lines = make_lines(&gtfs_trips, &map_line_routes, id_prefix);
     collections.lines = CollectionWithId::new(lines)?;
 
-    let routes =
-        make_routes(&gtfs_trips, &map_line_routes).with_context(ctx_from_path!(routes_path))?;
+    let routes = make_routes(&gtfs_trips, &map_line_routes, id_prefix);
     collections.routes = CollectionWithId::new(routes)?;
 
     Ok(())
@@ -774,7 +789,7 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(tmp_dir, &None, &mut collections).unwrap();
             assert_eq!(4, collections.lines.len());
             assert_eq!(2, collections.commercial_modes.len());
 
@@ -841,7 +856,7 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(tmp_dir, &None, &mut collections).unwrap();
 
             assert_eq!(3, collections.lines.len());
 
@@ -898,7 +913,7 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(tmp_dir, &None, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
 
@@ -934,7 +949,7 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(tmp_dir, &None, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
 
@@ -986,7 +1001,7 @@ mod tests {
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(tmp_dir, &None, &mut collections).unwrap();
             assert_eq!(1, collections.lines.len());
             assert_eq!(1, collections.routes.len());
         });
@@ -1002,17 +1017,32 @@ mod tests {
                               584,TAM,http://whatever.canaltp.fr/,Europe/Paris,fr\n\
                               285,Phébus,http://plop.kisio.com/,Europe/London,en";
 
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1A,3,8F7A32,FFFFFF\n\
+                              route_2,agency_1,2,My line 1B,3,8F7A32,FFFFFF";
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,\n\
+             2,route_2,0,service_2,,";
+
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
             create_file_with_content(&tmp_dir, "agency.txt", agency_content);
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
 
+            let mut collections = Collections::default();
             let prefix = Some("my_prefix:".to_string());
             let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &prefix).unwrap();
             let (networks, companies) = super::read_agency(tmp_dir.path(), &prefix).unwrap();
+            super::read_routes(tmp_dir, &prefix, &mut collections).unwrap();
             assert_eq!(2, stop_areas.len());
             assert_eq!(2, stop_points.len());
             assert_eq!(2, networks.len());
             assert_eq!(2, companies.len());
+            assert_eq!(2, collections.lines.len());
+            assert_eq!(2, collections.routes.len());
 
             let mut companies_ids: Vec<String> = companies
                 .iter()
@@ -1053,6 +1083,22 @@ mod tests {
                 ],
                 stop_points_ids
             );
+
+            let mut line_ids: Vec<String> = collections
+                .lines
+                .iter()
+                .map(|(_, l)| l.id.clone())
+                .collect();
+            line_ids.sort();
+            assert_eq!(vec!["my_prefix:route_1", "my_prefix:route_2"], line_ids);
+
+            let mut route_ids: Vec<String> = collections
+                .routes
+                .iter()
+                .map(|(_, l)| l.id.clone())
+                .collect();
+            route_ids.sort();
+            assert_eq!(vec!["my_prefix:route_1", "my_prefix:route_2"], route_ids);
         });
     }
 }

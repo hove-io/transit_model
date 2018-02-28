@@ -161,12 +161,12 @@ impl<T: Id<T>> CollectionWithId<T> {
         }
         Ok(CollectionWithId {
             collection: Collection::new(v),
-            id_to_idx: id_to_idx,
+            id_to_idx,
         })
     }
     pub fn index_mut(&mut self, idx: Idx<T>) -> RefMut<T> {
         RefMut {
-            idx: idx,
+            idx,
             old_id: self.objects[idx.get()].id().to_string(),
             collection: self,
         }

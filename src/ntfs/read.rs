@@ -48,7 +48,7 @@ impl From<Stop> for StopPoint {
         let id = stop.id;
         let stop_area_id = stop.parent_station.unwrap_or_else(|| id.clone());
         StopPoint {
-            id: id,
+            id,
             name: stop.name,
             codes: KeysValues::default(),
             object_properties: KeysValues::default(),
@@ -58,7 +58,7 @@ impl From<Stop> for StopPoint {
                 lon: stop.lon,
                 lat: stop.lat,
             },
-            stop_area_id: stop_area_id,
+            stop_area_id,
             timezone: stop.timezone,
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
@@ -124,7 +124,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             .index_mut(vj_idx)
             .stop_times
             .push(::objects::StopTime {
-                stop_point_idx: stop_point_idx,
+                stop_point_idx,
                 sequence: stop_time.stop_sequence,
                 arrival_time: stop_time.arrival_time,
                 departure_time: stop_time.departure_time,

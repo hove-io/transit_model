@@ -47,6 +47,6 @@ pub fn read<P: AsRef<path::Path>>(path: P, config_path: Option<P>) -> Result<PtO
     collections.stop_areas = stopareas;
     collections.stop_points = stoppoints;
     manage_calendars(&mut collections, path)?;
-    read::read_routes(path, &mut collections)?;
+    read::read_routes(path, &contributor_as_prefix, &mut collections)?;
     Ok(PtObjects::new(collections)?)
 }
