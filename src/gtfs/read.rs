@@ -15,11 +15,11 @@
 // <http://www.gnu.org/licenses/>.
 
 use Result;
-use collection::CollectionWithId;
+use collection::{CollectionWithId, Id};
 use csv;
 use failure::ResultExt;
 use model::Collections;
-use objects::{self, CommentLinksT, Contributor, Coord, KeysValues};
+use objects::{self, Availability, CommentLinksT, Contributor, Coord, KeysValues, TransportType};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs::File;
@@ -27,6 +27,7 @@ use std::path;
 use std::result::Result as StdResult;
 use utils::*;
 extern crate serde_json;
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -266,6 +267,12 @@ struct Route {
     sort_order: Option<u32>,
 }
 
+impl Id<Route> for Route {
+    fn id(&self) -> &str {
+        &self.id
+    }
+}
+
 impl Route {
     fn get_line_key(&self) -> (Option<String>, String) {
         let name = if self.short_name != "" {
@@ -275,6 +282,14 @@ impl Route {
         };
 
         (self.agency_id.clone(), name)
+    }
+
+    fn get_id_by_direction(&self, d: &DirectionType) -> String {
+        let id = self.id.clone();
+        match *d {
+            DirectionType::Forward => id,
+            DirectionType::Backward => id + "_R",
+        }
     }
 }
 
@@ -303,10 +318,39 @@ struct Trip {
     direction: DirectionType,
     block_id: Option<String>,
     shape_id: Option<String>,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_default", default)]
     wheelchair_accessible: u8,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_default", default)]
     bikes_allowed: u8,
+}
+
+impl Trip {
+    fn to_ntfs_vehicle_journey(
+        &self,
+        routes: &CollectionWithId<Route>,
+        dataset: &objects::Dataset,
+        trip_property_id: String,
+    ) -> objects::VehicleJourney {
+        let route = routes.get(&self.route_id).unwrap();
+        let physical_mode = get_physical_mode(&route.route_type);
+
+        objects::VehicleJourney {
+            id: self.id.clone(),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            route_id: route.get_id_by_direction(&self.direction),
+            physical_mode_id: physical_mode.id,
+            dataset_id: dataset.id.clone(),
+            service_id: self.service_id.clone(),
+            headsign: self.short_name.clone().or_else(|| self.headsign.clone()),
+            block_id: self.block_id.clone(),
+            company_id: route.agency_id.clone().unwrap_or_else(default_agency_id),
+            trip_property_id: Some(trip_property_id),
+            geometry_id: self.shape_id.clone(),
+            stop_times: vec![],
+        }
+    }
 }
 
 pub fn read_agency<P: AsRef<path::Path>>(
@@ -315,6 +359,7 @@ pub fn read_agency<P: AsRef<path::Path>>(
     CollectionWithId<objects::Network>,
     CollectionWithId<objects::Company>,
 )> {
+    info!("Reading agency.txt");
     let path = path.as_ref().join("agency.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
     let gtfs_agencies: Vec<Agency> = rdr.deserialize()
@@ -390,6 +435,7 @@ pub fn read_stops<P: AsRef<path::Path>>(
     CollectionWithId<objects::StopArea>,
     CollectionWithId<objects::StopPoint>,
 )> {
+    info!("Reading stops.txt");
     let path = path.as_ref().join("stops.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
     let gtfs_stops: Vec<Stop> = rdr.deserialize()
@@ -454,7 +500,7 @@ pub fn read_config<P: AsRef<path::Path>>(
     if let Some(config_path) = config_path {
         let json_config_file = File::open(config_path)?;
         let config: Config = serde_json::from_reader(json_config_file)?;
-        info!("config loaded: {:#?}", config);
+        info!("Reading dataset and contributor from config: {:?}", config);
 
         contributor = config.contributor;
 
@@ -543,10 +589,12 @@ fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
 }
 
 fn get_modes_from_gtfs(
-    gtfs_routes: &[Route],
+    gtfs_routes: &CollectionWithId<Route>,
 ) -> (Vec<objects::CommercialMode>, Vec<objects::PhysicalMode>) {
-    let gtfs_mode_types: HashSet<RouteType> =
-        gtfs_routes.iter().map(|r| r.route_type.clone()).collect();
+    let gtfs_mode_types: HashSet<RouteType> = gtfs_routes
+        .iter()
+        .map(|(_, r)| r.route_type.clone())
+        .collect();
 
     let commercial_modes = gtfs_mode_types
         .iter()
@@ -564,9 +612,9 @@ fn get_route_with_smallest_name<'a>(routes: &'a [&Route]) -> &'a Route {
 }
 
 type MapLineRoutes<'a> = HashMap<(Option<String>, String), Vec<&'a Route>>;
-fn map_line_routes(gtfs_routes: &[Route]) -> MapLineRoutes {
+fn map_line_routes(gtfs_routes: &CollectionWithId<Route>) -> MapLineRoutes {
     let mut map = HashMap::new();
-    for r in gtfs_routes {
+    for r in gtfs_routes.iter().map(|(_, r)| r) {
         map.entry(r.get_line_key())
             .or_insert_with(|| vec![])
             .push(r);
@@ -625,14 +673,6 @@ fn make_lines(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objec
 fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objects::Route> {
     let mut routes = vec![];
 
-    let get_id = |r: &Route, d: &DirectionType| {
-        let id = r.id.clone();
-        match *d {
-            DirectionType::Forward => id,
-            DirectionType::Backward => id + "_R",
-        }
-    };
-
     let get_direction_name = |d: &DirectionType| match *d {
         DirectionType::Forward => "forward".to_string(),
         DirectionType::Backward => "backward".to_string(),
@@ -651,7 +691,7 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<obje
 
             for d in route_directions {
                 routes.push(objects::Route {
-                    id: get_id(r, d),
+                    id: r.get_id_by_direction(d),
                     name: r.long_name.clone(),
                     direction_type: Some(get_direction_name(d)),
                     codes: KeysValues::default(),
@@ -667,7 +707,69 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<obje
     routes
 }
 
+fn get_availability(i: u8) -> Result<Availability> {
+    let availability = match i {
+        0 => Availability::InformationNotAvailable,
+        1 => Availability::Available,
+        2 => Availability::NotAvailable,
+        i => bail!("invalid trip property {}", i,),
+    };
+
+    Ok(availability)
+}
+
+fn make_ntfs_vehicle_journeys(
+    gtfs_trips: &[Trip],
+    routes: &CollectionWithId<Route>,
+    datasets: &CollectionWithId<objects::Dataset>,
+) -> Result<(Vec<objects::VehicleJourney>, Vec<objects::TripProperty>)> {
+    // there always is one dataset from config or a default one
+    let (_, dataset) = datasets.iter().next().unwrap();
+    let mut vehicle_journeys: Vec<objects::VehicleJourney> = vec![];
+    let mut gtfs_tps_ids: HashMap<(u8, u8), u8> = HashMap::new();
+    let mut id_incr: u8 = 0;
+
+    for t in gtfs_trips {
+        let trip_property_id = match gtfs_tps_ids.entry((t.wheelchair_accessible, t.bikes_allowed))
+        {
+            Vacant(entry) => {
+                id_incr += 1;
+                entry.insert(id_incr)
+            }
+            Occupied(entry) => entry.into_mut(),
+        };
+
+        vehicle_journeys.push(t.to_ntfs_vehicle_journey(
+            routes,
+            dataset,
+            trip_property_id.to_string(),
+        ));
+    }
+
+    let trip_properties: Result<Vec<objects::TripProperty>> = gtfs_tps_ids
+        .iter()
+        .map(|(tps, id)| {
+            let trip_property = objects::TripProperty {
+                id: id.to_string(),
+                wheelchair_accessible: get_availability(tps.0)?,
+                bike_accepted: get_availability(tps.1)?,
+                air_conditioned: Availability::InformationNotAvailable,
+                visual_announcement: Availability::InformationNotAvailable,
+                audible_announcement: Availability::InformationNotAvailable,
+                appropriate_escort: Availability::InformationNotAvailable,
+                appropriate_signage: Availability::InformationNotAvailable,
+                school_vehicle_type: TransportType::Regular,
+            };
+
+            Ok(trip_property)
+        })
+        .collect();
+
+    Ok((vehicle_journeys, trip_properties?))
+}
+
 pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections) -> Result<()> {
+    info!("Reading routes.txt");
     let path = path.as_ref();
     let routes_path = path.join("routes.txt");
     let mut rdr = csv::Reader::from_path(&routes_path).with_context(ctx_from_path!(routes_path))?;
@@ -675,7 +777,9 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(routes_path))?;
 
-    let (commercial_modes, physical_modes) = get_modes_from_gtfs(&gtfs_routes);
+    let gtfs_routes_collection = CollectionWithId::new(gtfs_routes)?;
+
+    let (commercial_modes, physical_modes) = get_modes_from_gtfs(&gtfs_routes_collection);
     collections.commercial_modes = CollectionWithId::new(commercial_modes)?;
     collections.physical_modes = CollectionWithId::new(physical_modes)?;
 
@@ -685,12 +789,18 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(trips_path))?;
 
-    let map_line_routes = map_line_routes(&gtfs_routes);
+    let map_line_routes = map_line_routes(&gtfs_routes_collection);
     let lines = make_lines(&gtfs_trips, &map_line_routes);
     collections.lines = CollectionWithId::new(lines)?;
 
     let routes = make_routes(&gtfs_trips, &map_line_routes);
     collections.routes = CollectionWithId::new(routes)?;
+
+    let (vehicle_journeys, trip_properties) =
+        make_ntfs_vehicle_journeys(&gtfs_trips, &gtfs_routes_collection, &collections.datasets)
+            .with_context(ctx_from_path!(trips_path))?;
+    collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
+    collections.trip_properties = CollectionWithId::new(trip_properties)?;
 
     Ok(())
 }
@@ -700,7 +810,7 @@ mod tests {
     extern crate tempdir;
     use self::tempdir::TempDir;
     use collection::CollectionWithId;
-    use collection::add_prefix;
+    use gtfs::add_prefix_to_collections;
     use gtfs::read::EquipmentList;
     use model::Collections;
     use objects::*;
@@ -873,6 +983,9 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
             super::read_routes(tmp_dir, &mut collections).unwrap();
             assert_eq!(4, collections.lines.len());
             assert_eq!(2, collections.commercial_modes.len());
@@ -940,6 +1053,9 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
             super::read_routes(tmp_dir, &mut collections).unwrap();
 
             assert_eq!(3, collections.lines.len());
@@ -988,6 +1104,9 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
             super::read_routes(tmp_dir, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
@@ -1024,6 +1143,9 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
             super::read_routes(tmp_dir, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
@@ -1072,6 +1194,9 @@ mod tests {
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
             super::read_routes(tmp_dir, &mut collections).unwrap();
             assert_eq!(1, collections.lines.len());
             assert_eq!(1, collections.routes.len());
@@ -1096,7 +1221,7 @@ mod tests {
         let trips_content =
             "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
              1,route_1,0,service_1,,\n\
-             2,route_2,0,service_2,,";
+             2,route_2,1,service_2,,";
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
@@ -1105,26 +1230,22 @@ mod tests {
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let prefix = "my_prefix:".to_string();
+
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (stop_areas, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
-            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
+            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
             collections.networks = networks;
             collections.companies = companies;
             collections.comments = comments;
+            super::read_routes(tmp_dir, &mut collections).unwrap();
 
-            add_prefix(&mut collections.networks, &prefix).unwrap();
-            add_prefix(&mut collections.companies, &prefix).unwrap();
-            add_prefix(&mut collections.stop_points, &prefix).unwrap();
-            add_prefix(&mut collections.stop_areas, &prefix).unwrap();
-            add_prefix(&mut collections.routes, &prefix).unwrap();
-            add_prefix(&mut collections.lines, &prefix).unwrap();
-            add_prefix(&mut collections.comments, &prefix).unwrap();
+            add_prefix_to_collections("my_prefix".to_string(), &mut collections).unwrap();
 
             let mut companies_ids: Vec<String> = collections
                 .companies
@@ -1184,7 +1305,44 @@ mod tests {
                 .map(|(_, l)| l.id.clone())
                 .collect();
             route_ids.sort();
-            assert_eq!(vec!["my_prefix:route_1", "my_prefix:route_2"], route_ids);
+            assert_eq!(vec!["my_prefix:route_1", "my_prefix:route_2_R"], route_ids);
+
+            let mut tpp_ids: Vec<String> = collections
+                .trip_properties
+                .iter()
+                .map(|(_, tpp)| tpp.id.clone())
+                .collect();
+            tpp_ids.sort();
+            assert_eq!(vec!["my_prefix:1"], tpp_ids);
+        });
+    }
+
+    #[test]
+    fn gtfs_trips() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF\n\
+                              route_2,agency_2,2,My line 2,3,8F7A32,FFFFFF\n\
+                              route_3,agency_3,3,My line 3,3,8F7A32,FFFFFF";
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,\n\
+             2,route_2,0,service_1,1,2\n\
+             3,route_3,0,service_1,1,2";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+
+            let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+
+            super::read_routes(tmp_dir, &mut collections).unwrap();
+            assert_eq!(3, collections.lines.len());
+            assert_eq!(3, collections.routes.len());
+            assert_eq!(3, collections.vehicle_journeys.len());
+            assert_eq!(2, collections.trip_properties.len());
             let comment_vec = collections.comments.into_vec();
 
             assert_eq!(comment_vec[0].id, "my_prefix:stop:sp:01");

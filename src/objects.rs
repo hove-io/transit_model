@@ -527,6 +527,14 @@ impl Id<Company> for VehicleJourney {
         &self.company_id
     }
 }
+impl AddPrefix for VehicleJourney {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+        self.route_id = prefix.to_string() + &self.route_id;
+        self.dataset_id = prefix.to_string() + &self.dataset_id;
+        self.company_id = prefix.to_string() + &self.company_id;
+    }
+}
 impl_codes!(VehicleJourney);
 impl_object_properties!(VehicleJourney);
 impl_comment_links!(VehicleJourney);
@@ -918,6 +926,12 @@ pub struct TripProperty {
 impl Id<TripProperty> for TripProperty {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl AddPrefix for TripProperty {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
     }
 }
 
