@@ -20,7 +20,7 @@ use std::iter;
 use std::slice;
 use std::ops;
 use std::cmp::Ordering;
-use {Result, StdResult};
+use {AddPrefix, Result, StdResult};
 use failure::ResultExt;
 use std::path;
 use csv;
@@ -301,4 +301,23 @@ where
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(path))?;
     Ok(Collection::new(vec))
+}
+
+pub fn add_prefix<T>(
+    collection: &mut CollectionWithId<T>,
+    prefix: &str,
+) -> Result<CollectionWithId<T>>
+where
+    T: AddPrefix + Id<T>,
+{
+    let objects = collection.take();
+    let objs_with_prefix = objects
+        .into_iter()
+        .map(|mut obj| {
+            obj.add_prefix(prefix);
+            obj
+        })
+        .collect();
+
+    CollectionWithId::new(objs_with_prefix)
 }

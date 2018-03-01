@@ -40,6 +40,10 @@ struct Opt {
     /// config file
     #[structopt(short = "c", long = "config", parse(from_os_str))]
     config_path: Option<PathBuf>,
+
+    /// prefix
+    #[structopt(short = "p", long = "prefix")]
+    prefix: Option<String>,
 }
 
 fn run() -> Result<()> {
@@ -47,7 +51,8 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let objects = navitia_model::gtfs::read(opt.input, opt.config_path)?;
+    let objects = navitia_model::gtfs::read(opt.input, opt.config_path, opt.prefix)?;
+
     navitia_model::ntfs::write(opt.output, &objects)?;
     Ok(())
 }

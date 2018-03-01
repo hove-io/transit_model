@@ -19,6 +19,10 @@ use utils::*;
 use chrono;
 use std::str::FromStr;
 
+pub trait AddPrefix {
+    fn add_prefix(&mut self, prefix: &str);
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum ObjectType {
@@ -126,6 +130,22 @@ impl Id<Contributor> for Contributor {
         &self.id
     }
 }
+impl AddPrefix for Contributor {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+
+impl Default for Contributor {
+    fn default() -> Contributor {
+        Contributor {
+            id: "default_contributor".to_string(),
+            name: "Default contributor".to_string(),
+            license: Some("Unknown license".to_string()),
+            website: None,
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum DatasetType {
@@ -157,6 +177,27 @@ pub struct Dataset {
     #[serde(rename = "dataset_system")]
     pub system: Option<String>,
 }
+impl Default for Dataset {
+    fn default() -> Dataset {
+        // Todo: calculate validity periods
+        use chrono::{Duration, Utc};
+        let duration = Duration::days(15);
+        let today = Utc::today();
+        let start_date = today - duration;
+        let end_date = today + duration;
+
+        Dataset {
+            id: "default_dataset".to_string(),
+            contributor_id: "default_contributor".to_string(),
+            start_date: start_date.naive_utc(),
+            end_date: end_date.naive_utc(),
+            dataset_type: None,
+            extrapolation: false,
+            desc: None,
+            system: None,
+        }
+    }
+}
 impl Id<Dataset> for Dataset {
     fn id(&self) -> &str {
         &self.id
@@ -165,6 +206,11 @@ impl Id<Dataset> for Dataset {
 impl Id<Contributor> for Dataset {
     fn id(&self) -> &str {
         &self.contributor_id
+    }
+}
+impl AddPrefix for Dataset {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
     }
 }
 
@@ -226,6 +272,12 @@ impl_codes!(Network);
 impl GetObjectType for Network {
     fn get_object_type() -> ObjectType {
         ObjectType::Network
+    }
+}
+
+impl AddPrefix for Network {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
     }
 }
 
@@ -367,6 +419,12 @@ impl Id<CommercialMode> for Line {
         &self.commercial_mode_id
     }
 }
+impl AddPrefix for Line {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+        self.network_id = prefix.to_string() + &self.network_id;
+    }
+}
 impl_codes!(Line);
 impl_object_properties!(Line);
 impl_comment_links!(Line);
@@ -402,6 +460,12 @@ impl Id<Route> for Route {
 impl Id<Line> for Route {
     fn id(&self) -> &str {
         &self.line_id
+    }
+}
+impl AddPrefix for Route {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+        self.line_id = prefix.to_string() + &self.line_id;
     }
 }
 impl_codes!(Route);
@@ -582,6 +646,11 @@ impl Id<StopArea> for StopArea {
         &self.id
     }
 }
+impl AddPrefix for StopArea {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
 impl_codes!(StopArea);
 impl_object_properties!(StopArea);
 impl_comment_links!(StopArea);
@@ -618,6 +687,12 @@ impl Id<StopPoint> for StopPoint {
 impl Id<StopArea> for StopPoint {
     fn id(&self) -> &str {
         &self.stop_area_id
+    }
+}
+impl AddPrefix for StopPoint {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+        self.stop_area_id = prefix.to_string() + &self.stop_area_id;
     }
 }
 impl_codes!(StopPoint);
@@ -693,6 +768,12 @@ pub struct Company {
 impl Id<Company> for Company {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl AddPrefix for Company {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
     }
 }
 

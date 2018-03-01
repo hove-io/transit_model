@@ -18,35 +18,43 @@ mod read;
 
 use std::path;
 use {Collections, PtObjects};
-use std::fs::File;
-use gtfs::read::Config;
 use Result;
 use common_format::manage_calendars;
+use collection::add_prefix;
 
-extern crate serde_json;
-
-pub fn read<P: AsRef<path::Path>>(path: P, config_path: Option<P>) -> Result<PtObjects> {
+pub fn read<P: AsRef<path::Path>>(
+    path: P,
+    config_path: Option<P>,
+    prefix: Option<String>,
+) -> Result<PtObjects> {
     let mut collections = Collections::default();
-    let mut contributor_as_prefix = None;
 
-    if let Some(config_path) = config_path {
-        let json_config_file = File::open(config_path)?;
-        let config: Config = serde_json::from_reader(json_config_file)?;
-        contributor_as_prefix = Some(config.contributor.id.clone() + ":");
-        info!("config loaded: {:#?}", config);
-        let (contributors, datasets) = read::read_config(config)?;
-        collections.contributors = contributors;
-        collections.datasets = datasets;
-    }
+    let (contributors, datasets) = read::read_config(config_path)?;
+    collections.contributors = contributors;
+    collections.datasets = datasets;
 
     let path = path.as_ref();
-    let (networks, companies) = read::read_agency(path, &contributor_as_prefix)?;
+    let (networks, companies) = read::read_agency(path)?;
     collections.networks = networks;
     collections.companies = companies;
-    let (stopareas, stoppoints) = read::read_stops(path, &contributor_as_prefix)?;
-    collections.stop_areas = stopareas;
-    collections.stop_points = stoppoints;
+    let (stop_areas, stop_points) = read::read_stops(path)?;
+    collections.stop_areas = stop_areas;
+    collections.stop_points = stop_points;
     manage_calendars(&mut collections, path)?;
-    read::read_routes(path, &contributor_as_prefix, &mut collections)?;
+    read::read_routes(path, &mut collections)?;
+
+    //add prefixes
+    if let Some(prefix) = prefix {
+        let prefix = prefix + ":";
+        collections.networks = add_prefix(&mut collections.networks, &prefix)?;
+        collections.companies = add_prefix(&mut collections.companies, &prefix)?;
+        collections.stop_points = add_prefix(&mut collections.stop_points, &prefix)?;
+        collections.stop_areas = add_prefix(&mut collections.stop_areas, &prefix)?;
+        collections.routes = add_prefix(&mut collections.routes, &prefix)?;
+        collections.lines = add_prefix(&mut collections.lines, &prefix)?;
+        collections.contributors = add_prefix(&mut collections.contributors, &prefix)?;
+        collections.datasets = add_prefix(&mut collections.datasets, &prefix)?;
+    }
+
     Ok(PtObjects::new(collections)?)
 }

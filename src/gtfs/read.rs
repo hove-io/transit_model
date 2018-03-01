@@ -18,12 +18,14 @@ use std::path;
 use csv;
 use collection::CollectionWithId;
 use Collections;
-use objects::{self, CommentLinksT, Coord, KeysValues};
+use objects::{self, CommentLinksT, Contributor, Coord, KeysValues};
 use std::collections::HashSet;
 use utils::*;
 use {Result, StdResult};
 use failure::ResultExt;
 use std::collections::HashMap;
+use std::fs::File;
+extern crate serde_json;
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -71,13 +73,6 @@ impl From<Agency> for objects::Company {
             mail: agency.email,
             phone: agency.phone,
         }
-    }
-}
-impl Agency {
-    fn alter_id_with_prefix(&mut self, prefix: &Option<String>) {
-        let altered_id = self.id.clone().unwrap_or_else(default_agency_id);
-
-        self.id = Some(prefix_id(prefix, &altered_id));
     }
 }
 
@@ -152,18 +147,6 @@ impl From<Stop> for objects::StopPoint {
             geometry_id: None,
             equipment_id: None,
             fare_zone_id: None,
-        }
-    }
-}
-
-impl Stop {
-    fn alter_id_with_prefix(&mut self, prefix: &Option<String>) {
-        self.id = prefix_id(prefix, &self.id);
-    }
-    fn alter_parent_with_prefix(&mut self, prefix: &Option<String>) {
-        if prefix.is_some() && self.parent_station.is_some() {
-            self.parent_station =
-                Some(prefix.clone().unwrap() + &self.parent_station.clone().unwrap());
         }
     }
 }
@@ -291,7 +274,6 @@ struct Trip {
 
 pub fn read_agency<P: AsRef<path::Path>>(
     path: P,
-    id_prefix: &Option<String>,
 ) -> Result<
     (
         CollectionWithId<objects::Network>,
@@ -306,19 +288,11 @@ pub fn read_agency<P: AsRef<path::Path>>(
     let networks = gtfs_agencies
         .iter()
         .cloned()
-        .map(|mut agency| {
-            agency.alter_id_with_prefix(id_prefix);
-            agency
-        })
         .map(objects::Network::from)
         .collect();
     let networks = CollectionWithId::new(networks)?;
     let companies = gtfs_agencies
         .into_iter()
-        .map(|mut agency| {
-            agency.alter_id_with_prefix(id_prefix);
-            agency
-        })
         .map(objects::Company::from)
         .collect();
     let companies = CollectionWithId::new(companies)?;
@@ -327,7 +301,6 @@ pub fn read_agency<P: AsRef<path::Path>>(
 
 pub fn read_stops<P: AsRef<path::Path>>(
     path: P,
-    id_prefix: &Option<String>,
 ) -> Result<
     (
         CollectionWithId<objects::StopArea>,
@@ -347,24 +320,14 @@ pub fn read_stops<P: AsRef<path::Path>>(
             0 => {
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
-                    let mut prefix_generated = "Navitia:".to_string();
-                    if let Some(ref prefix) = *id_prefix {
-                        prefix_generated = prefix.to_string() + &prefix_generated;
-                    }
+                    new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
                     new_stop_area.code = None;
-                    new_stop_area.alter_id_with_prefix(&Some(prefix_generated));
                     stop.parent_station = Some(new_stop_area.id.clone());
                     stop_areas.push(objects::StopArea::from(new_stop_area));
-                } else {
-                    stop.alter_parent_with_prefix(id_prefix);
                 }
-                stop.alter_id_with_prefix(id_prefix);
                 stop_points.push(objects::StopPoint::from(stop));
             }
-            1 => {
-                stop.alter_id_with_prefix(id_prefix);
-                stop_areas.push(objects::StopArea::from(stop))
-            }
+            1 => stop_areas.push(objects::StopArea::from(stop)),
             _ => (),
         }
     }
@@ -373,22 +336,56 @@ pub fn read_stops<P: AsRef<path::Path>>(
     Ok((stopareas, stoppoints))
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Config {
-    pub contributor: objects::Contributor,
-    pub dataset: objects::Dataset,
+#[derive(Deserialize, Debug)]
+struct Dataset {
+    dataset_id: String,
 }
 
-pub fn read_config(
-    config: Config,
+#[derive(Deserialize, Debug)]
+struct Config {
+    contributor: objects::Contributor,
+    dataset: Dataset,
+}
+
+pub fn read_config<P: AsRef<path::Path>>(
+    config_path: Option<P>,
 ) -> Result<
     (
         CollectionWithId<objects::Contributor>,
         CollectionWithId<objects::Dataset>,
     ),
 > {
-    let contributors = CollectionWithId::new(vec![config.contributor])?;
-    let datasets = CollectionWithId::new(vec![config.dataset])?;
+    let contributor;
+    let dataset;
+    if let Some(config_path) = config_path {
+        let json_config_file = File::open(config_path)?;
+        let config: Config = serde_json::from_reader(json_config_file)?;
+        info!("config loaded: {:#?}", config);
+
+        contributor = config.contributor;
+
+        use chrono::{Duration, Utc};
+        let duration = Duration::days(15);
+        let today = Utc::today();
+        let start_date = today - duration;
+        let end_date = today + duration;
+        dataset = objects::Dataset {
+            id: config.dataset.dataset_id,
+            contributor_id: contributor.id.clone(),
+            start_date: start_date.naive_utc(),
+            end_date: end_date.naive_utc(),
+            dataset_type: None,
+            extrapolation: false,
+            desc: None,
+            system: None,
+        };
+    } else {
+        contributor = Contributor::default();
+        dataset = objects::Dataset::default();
+    }
+
+    let contributors = CollectionWithId::new(vec![contributor])?;
+    let datasets = CollectionWithId::new(vec![dataset])?;
     Ok((contributors, datasets))
 }
 
@@ -483,19 +480,7 @@ fn map_line_routes(gtfs_routes: &[Route]) -> MapLineRoutes {
     map
 }
 
-fn prefix_id(prefix: &Option<String>, id: &str) -> String {
-    if let Some(ref id_prefix) = *prefix {
-        id_prefix.clone() + id
-    } else {
-        id.to_string()
-    }
-}
-
-fn make_lines(
-    gtfs_trips: &[Trip],
-    map_line_routes: &MapLineRoutes,
-    id_prefix: &Option<String>,
-) -> Vec<objects::Line> {
+fn make_lines(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objects::Line> {
     let mut lines = vec![];
 
     let line_code = |r: &Route| {
@@ -518,7 +503,7 @@ fn make_lines(
 
         if gtfs_trips.iter().any(|t| t.route_id == r.id) {
             lines.push(objects::Line {
-                id: prefix_id(id_prefix, &r.id),
+                id: r.id.clone(),
                 code: line_code(r),
                 codes: KeysValues::default(),
                 object_properties: KeysValues::default(),
@@ -543,15 +528,11 @@ fn make_lines(
     lines
 }
 
-fn make_routes(
-    gtfs_trips: &[Trip],
-    map_line_routes: &MapLineRoutes,
-    id_prefix: &Option<String>,
-) -> Vec<objects::Route> {
+fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objects::Route> {
     let mut routes = vec![];
 
     let get_id = |r: &Route, d: &DirectionType| {
-        let id = prefix_id(id_prefix, &r.id);
+        let id = r.id.clone();
         match *d {
             DirectionType::Forward => id,
             DirectionType::Backward => id + "_R",
@@ -582,7 +563,7 @@ fn make_routes(
                     codes: KeysValues::default(),
                     object_properties: KeysValues::default(),
                     comment_links: CommentLinksT::default(),
-                    line_id: prefix_id(id_prefix, &sr.id),
+                    line_id: sr.id.clone(),
                     geometry_id: None,
                     destination_id: None,
                 });
@@ -592,11 +573,7 @@ fn make_routes(
     routes
 }
 
-pub fn read_routes<P: AsRef<path::Path>>(
-    path: P,
-    id_prefix: &Option<String>,
-    collections: &mut Collections,
-) -> Result<()> {
+pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections) -> Result<()> {
     let path = path.as_ref();
     let routes_path = path.join("routes.txt");
     let mut rdr = csv::Reader::from_path(&routes_path).with_context(ctx_from_path!(routes_path))?;
@@ -615,10 +592,10 @@ pub fn read_routes<P: AsRef<path::Path>>(
         .with_context(ctx_from_path!(trips_path))?;
 
     let map_line_routes = map_line_routes(&gtfs_routes);
-    let lines = make_lines(&gtfs_trips, &map_line_routes, id_prefix);
+    let lines = make_lines(&gtfs_trips, &map_line_routes);
     collections.lines = CollectionWithId::new(lines)?;
 
-    let routes = make_routes(&gtfs_trips, &map_line_routes, id_prefix);
+    let routes = make_routes(&gtfs_trips, &map_line_routes);
     collections.routes = CollectionWithId::new(routes)?;
 
     Ok(())
@@ -631,6 +608,7 @@ mod tests {
     use std::fs::File;
     use std::io::prelude::*;
     use Collections;
+    use collection::add_prefix;
 
     fn create_file_with_content(temp_dir: &TempDir, file_name: &str, content: &str) {
         let file_path = temp_dir.path().join(file_name);
@@ -654,7 +632,7 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            let (networks, companies) = super::read_agency(tmp_dir.path(), &None).unwrap();
+            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
             assert_eq!(1, networks.len());
             let agency = networks.iter().next().unwrap().1;
             assert_eq!("default_agency_id", agency.id);
@@ -669,7 +647,7 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            let (networks, companies) = super::read_agency(tmp_dir.path(), &None).unwrap();
+            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
             assert_eq!(1, networks.len());
             assert_eq!(1, companies.len());
         });
@@ -685,7 +663,7 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            let (networks, companies) = super::read_agency(tmp_dir.path(), &None).unwrap();
+            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
             assert_eq!(1, networks.len());
             let network = networks.iter().next().unwrap().1;
             assert_eq!("id_1", network.id);
@@ -702,7 +680,7 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            super::read_agency(tmp_dir.path(), &None).unwrap();
+            super::read_agency(tmp_dir.path()).unwrap();
         });
     }
 
@@ -713,7 +691,7 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &None).unwrap();
+            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path()).unwrap();
             assert_eq!(1, stop_areas.len());
             assert_eq!(1, stop_points.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -734,7 +712,7 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &None).unwrap();
+            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path()).unwrap();
             //validate stop_point code
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
@@ -761,7 +739,7 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            let (stop_areas, _) = super::read_stops(tmp_dir.path(), &None).unwrap();
+            let (stop_areas, _) = super::read_stops(tmp_dir.path()).unwrap();
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -789,7 +767,7 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            super::read_routes(tmp_dir, &None, &mut collections).unwrap();
+            super::read_routes(tmp_dir, &mut collections).unwrap();
             assert_eq!(4, collections.lines.len());
             assert_eq!(2, collections.commercial_modes.len());
 
@@ -856,7 +834,7 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            super::read_routes(tmp_dir, &None, &mut collections).unwrap();
+            super::read_routes(tmp_dir, &mut collections).unwrap();
 
             assert_eq!(3, collections.lines.len());
 
@@ -871,25 +849,16 @@ mod tests {
 
             assert_eq!(5, collections.routes.len());
 
+            let mut line_ids: Vec<String> = collections
+                .routes
+                .iter()
+                .map(|(_, r)| r.line_id.clone())
+                .collect();
+            line_ids.sort();
+
             assert_eq!(
-                collections.routes.get("route_1").unwrap().line_id,
-                "route_1"
-            );
-            assert_eq!(
-                collections.routes.get("route_2").unwrap().line_id,
-                "route_1"
-            );
-            assert_eq!(
-                collections.routes.get("route_3").unwrap().line_id,
-                "route_3"
-            );
-            assert_eq!(
-                collections.routes.get("route_4").unwrap().line_id,
-                "route_3"
-            );
-            assert_eq!(
-                collections.routes.get("route_5").unwrap().line_id,
-                "route_5"
+                line_ids,
+                &["route_1", "route_1", "route_3", "route_3", "route_5"]
             );
         });
     }
@@ -913,7 +882,7 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            super::read_routes(tmp_dir, &None, &mut collections).unwrap();
+            super::read_routes(tmp_dir, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
 
@@ -949,7 +918,7 @@ mod tests {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            super::read_routes(tmp_dir, &None, &mut collections).unwrap();
+            super::read_routes(tmp_dir, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
 
@@ -972,18 +941,14 @@ mod tests {
 
             assert_eq!(route_ids, &["route_1", "route_2", "route_3",]);
 
-            assert_eq!(
-                collections.routes.get("route_1").unwrap().line_id,
-                "route_1"
-            );
-            assert_eq!(
-                collections.routes.get("route_2").unwrap().line_id,
-                "route_1"
-            );
-            assert_eq!(
-                collections.routes.get("route_3").unwrap().line_id,
-                "route_3"
-            );
+            let mut line_ids: Vec<String> = collections
+                .routes
+                .iter()
+                .map(|(_, r)| r.line_id.clone())
+                .collect();
+            line_ids.sort();
+
+            assert_eq!(line_ids, &["route_1", "route_1", "route_3",]);
         });
     }
 
@@ -1001,7 +966,7 @@ mod tests {
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            super::read_routes(tmp_dir, &None, &mut collections).unwrap();
+            super::read_routes(tmp_dir, &mut collections).unwrap();
             assert_eq!(1, collections.lines.len());
             assert_eq!(1, collections.routes.len());
         });
@@ -1033,32 +998,36 @@ mod tests {
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let prefix = Some("my_prefix:".to_string());
-            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &prefix).unwrap();
-            let (networks, companies) = super::read_agency(tmp_dir.path(), &prefix).unwrap();
-            super::read_routes(tmp_dir, &prefix, &mut collections).unwrap();
-            assert_eq!(2, stop_areas.len());
-            assert_eq!(2, stop_points.len());
-            assert_eq!(2, networks.len());
-            assert_eq!(2, companies.len());
-            assert_eq!(2, collections.lines.len());
-            assert_eq!(2, collections.routes.len());
+            let prefix = "my_prefix:";
+            let (mut stop_areas, mut stop_points) = super::read_stops(tmp_dir.path()).unwrap();
+            let (mut networks, mut companies) = super::read_agency(tmp_dir.path()).unwrap();
+            super::read_routes(tmp_dir, &mut collections).unwrap();
 
-            let mut companies_ids: Vec<String> = companies
+            collections.networks = add_prefix(&mut networks, prefix).unwrap();
+            collections.companies = add_prefix(&mut companies, &prefix).unwrap();
+            collections.stop_points = add_prefix(&mut stop_points, &prefix).unwrap();
+            collections.stop_areas = add_prefix(&mut stop_areas, &prefix).unwrap();
+            collections.routes = add_prefix(&mut collections.routes, &prefix).unwrap();
+            collections.lines = add_prefix(&mut collections.lines, &prefix).unwrap();
+
+            let mut companies_ids: Vec<String> = collections
+                .companies
                 .iter()
                 .map(|(_, company)| company.id.clone())
                 .collect();
             companies_ids.sort();
             assert_eq!(vec!["my_prefix:285", "my_prefix:584"], companies_ids);
 
-            let mut networks_ids: Vec<String> = networks
+            let mut networks_ids: Vec<String> = collections
+                .networks
                 .iter()
                 .map(|(_, network)| network.id.clone())
                 .collect();
             networks_ids.sort();
             assert_eq!(vec!["my_prefix:285", "my_prefix:584"], networks_ids);
 
-            let mut stop_areas_ids: Vec<String> = stop_areas
+            let mut stop_areas_ids: Vec<String> = collections
+                .stop_areas
                 .iter()
                 .map(|(_, stop_area)| stop_area.id.clone())
                 .collect();
@@ -1068,7 +1037,8 @@ mod tests {
                 stop_areas_ids
             );
 
-            let mut stop_points_ids: Vec<(String, String)> = stop_points
+            let mut stop_points_ids: Vec<(String, String)> = collections
+                .stop_points
                 .iter()
                 .map(|(_, stop_point)| (stop_point.id.clone(), stop_point.stop_area_id.clone()))
                 .collect();
