@@ -77,6 +77,17 @@ impl From<Agency> for objects::Company {
     }
 }
 
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum StopLocationType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    StopArea,
+    #[serde(rename = "1")]
+    StopPoint,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Stop {
     #[serde(rename = "stop_id")]
@@ -96,13 +107,14 @@ struct Stop {
     #[serde(rename = "stop_url")]
     url: Option<String>,
     #[serde(default)]
-    location_type: i32,
+    location_type: StopLocationType,
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
     timezone: Option<String>,
     #[serde(default)]
     wheelchair_boarding: Option<String>,
 }
+
 impl From<Stop> for objects::StopArea {
     fn from(stop: Stop) -> objects::StopArea {
         let mut stop_codes: Vec<(String, String)> = vec![];
@@ -300,6 +312,7 @@ pub fn read_agency<P: AsRef<path::Path>>(
 
 pub fn read_stops<P: AsRef<path::Path>>(
     path: P,
+    comments: &mut Vec<objects::Comment>,
 ) -> Result<(
     CollectionWithId<objects::StopArea>,
     CollectionWithId<objects::StopPoint>,
@@ -313,8 +326,25 @@ pub fn read_stops<P: AsRef<path::Path>>(
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
     for mut stop in gtfs_stops {
+        let mut comment_links: CommentLinksT = vec![];
+        if !stop.desc.is_empty() {
+            let mut prefix_generated = "stop:".to_string();
+            if let Some(ref prefix) = *id_prefix {
+                prefix_generated = prefix.to_string() + &prefix_generated;
+            }
+            let comment_id = prefix_generated.to_string() + &stop.id;
+            let comment = objects::Comment {
+                id: comment_id,
+                comment_type: objects::CommentType::Information,
+                label: None,
+                value: stop.desc.to_string(),
+                url: None,
+            };
+            comment_links.push(comment.id.clone());
+            comments.push(comment);
+        }
         match stop.location_type {
-            0 => {
+            StopLocationType::StopArea => {
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
                     new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
@@ -322,10 +352,15 @@ pub fn read_stops<P: AsRef<path::Path>>(
                     stop.parent_station = Some(new_stop_area.id.clone());
                     stop_areas.push(objects::StopArea::from(new_stop_area));
                 }
-                stop_points.push(objects::StopPoint::from(stop));
+                let mut stop_point = objects::StopPoint::from(stop);
+                stop_point.comment_links = comment_links;
+                stop_points.push(stop_point);
             }
-            1 => stop_areas.push(objects::StopArea::from(stop)),
-            _ => (),
+            StopLocationType::StopPoint => {
+                let mut stop_area = objects::StopArea::from(stop);
+                stop_area.comment_links = comment_links;
+                stop_areas.push(stop_area);
+            }
         }
     }
     let stoppoints = CollectionWithId::new(stop_points)?;
@@ -603,6 +638,7 @@ mod tests {
     use collection::add_prefix;
     use model::Collections;
     use std::fs::File;
+    use objects::*;
     use std::io::prelude::*;
 
     fn create_file_with_content(temp_dir: &TempDir, file_name: &str, content: &str) {
@@ -686,7 +722,7 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path()).unwrap();
+            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &mut vec![]).unwrap();
             assert_eq!(1, stop_areas.len());
             assert_eq!(1, stop_points.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -707,7 +743,7 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path()).unwrap();
+            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &mut vec![]).unwrap();
             //validate stop_point code
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
@@ -734,7 +770,7 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            let (stop_areas, _) = super::read_stops(tmp_dir.path()).unwrap();
+            let (stop_areas, _) = super::read_stops(tmp_dir.path(), &mut vec![]).unwrap();
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -969,10 +1005,10 @@ mod tests {
 
     #[test]
     fn prefix_on_all_pt_object_id() {
-        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
-                             sp:01,my stop point name,0.1,1.2,0,\n\
-                             sp:02,my stop point name child,0.2,1.5,0,sp:01\n\
-                             sa:03,my stop area name,0.3,2.2,1,";
+        let stops_content = "stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station\n\
+                             sp:01,my stop point name,my first desc,0.1,1.2,0,\n\
+                             sp:02,my stop point name child,,0.2,1.5,0,sp:01\n\
+                             sa:03,my stop area name,my second desc,0.3,2.2,1,";
         let agency_content = "agency_id,agency_name,agency_url,agency_timezone,agency_lang\n\
                               584,TAM,http://whatever.canaltp.fr/,Europe/Paris,fr\n\
                               285,Phébus,http://plop.kisio.com/,Europe/London,en";
@@ -993,13 +1029,10 @@ mod tests {
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let prefix = "my_prefix:";
-            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path()).unwrap();
-            collections.stop_areas = stop_areas;
-            collections.stop_points = stop_points;
-            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
-            collections.networks = networks;
-            collections.companies = companies;
+            let prefix = Some("my_prefix:".to_string());
+            let mut comments: Vec<Comment> = vec![];
+            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path(), &mut comments).unwrap();
+            let (networks, companies) = super::read_agency(tmp_dir.path(), &prefix).unwrap();
             super::read_routes(tmp_dir, &mut collections).unwrap();
 
             add_prefix(&mut collections.networks, prefix).unwrap();
@@ -1025,21 +1058,24 @@ mod tests {
             networks_ids.sort();
             assert_eq!(vec!["my_prefix:285", "my_prefix:584"], networks_ids);
 
-            let mut stop_areas_ids: Vec<String> = collections
+            let mut stop_areas_ids: Vec<(String, CommentLinksT)> = collections
                 .stop_areas
                 .iter()
-                .map(|(_, stop_area)| stop_area.id.clone())
+                .map(|(_, stop_area)| (stop_area.id.clone(), stop_area.comment_links.clone()))
                 .collect();
             stop_areas_ids.sort();
             assert_eq!(
-                vec!["my_prefix:Navitia:sp:01", "my_prefix:sa:03"],
+                vec![
+                    ("my_prefix:Navitia:sp:01".to_string(), vec![]),
+                    ("my_prefix:sa:03".to_string(), vec!["my_prefix:stop:sa:03".to_string()]),
+                ],
                 stop_areas_ids
             );
 
-            let mut stop_points_ids: Vec<(String, String)> = collections
+            let mut stop_points_ids: Vec<(String, String, CommentLinksT)> = collections
                 .stop_points
                 .iter()
-                .map(|(_, stop_point)| (stop_point.id.clone(), stop_point.stop_area_id.clone()))
+                .map(|(_, stop_point)| (stop_point.id.clone(), stop_point.stop_area_id.clone(), stop_point.comment_links.clone()))
                 .collect();
             stop_points_ids.sort();
             assert_eq!(
@@ -1047,8 +1083,9 @@ mod tests {
                     (
                         "my_prefix:sp:01".to_string(),
                         "my_prefix:Navitia:sp:01".to_string(),
+                        vec!["my_prefix:stop:sp:01".to_string()]
                     ),
-                    ("my_prefix:sp:02".to_string(), "my_prefix:sp:01".to_string()),
+                    ("my_prefix:sp:02".to_string(), "my_prefix:sp:01".to_string(), vec![]),
                 ],
                 stop_points_ids
             );
@@ -1068,6 +1105,11 @@ mod tests {
                 .collect();
             route_ids.sort();
             assert_eq!(vec!["my_prefix:route_1", "my_prefix:route_2"], route_ids);
+
+            assert_eq!(comments[0].id, "my_prefix:stop:sp:01");
+            assert_eq!(comments[0].value,  "my first desc");
+            assert_eq!(comments[1].id, "my_prefix:stop:sa:03");
+            assert_eq!(comments[1].value,  "my second desc");
         });
     }
 }
