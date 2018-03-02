@@ -20,6 +20,7 @@ use std::path;
 use {Collections, PtObjects};
 use objects::Comment;
 use std::fs::File;
+use gtfs::read::EquipmentList;
 use Result;
 use collection::CollectionWithId;
 use common_format::manage_calendars;
@@ -34,6 +35,7 @@ pub fn read<P: AsRef<path::Path>>(
     prefix: Option<String>,
 ) -> Result<Model> {
     let mut collections = Collections::default();
+    let mut equipments = EquipmentList::default();
     let mut comments: Vec<Comment> = vec![];
 
     let (contributors, datasets) = read::read_config(config_path)?;
@@ -44,11 +46,13 @@ pub fn read<P: AsRef<path::Path>>(
     let (networks, companies) = read::read_agency(path)?;
     collections.networks = networks;
     collections.companies = companies;
-    let (stop_areas, stop_points) = read::read_stops(path, &mut comments)?;
-    collections.stop_areas = stop_areas;
-    collections.stop_points = stop_points;
+    let (stopareas, stoppoints) =
+        read::read_stops(path, &mut comments, &mut equipments)?;
+    collections.stop_areas = stopareas;
+    collections.stop_points = stoppoints;
     manage_calendars(&mut collections, path)?;
     read::read_routes(path, &mut collections)?;
+    collections.equipments = CollectionWithId::new(equipments.get_equipments())?;
     collections.comments = CollectionWithId::new(comments)?;
 
     //add prefixes
