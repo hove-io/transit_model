@@ -53,8 +53,8 @@ where
                 .insert(many_idx);
         }
         Ok(OneToMany {
-            one_to_many: one_to_many,
-            many_to_one: many_to_one,
+            one_to_many,
+            many_to_one,
         })
     }
     pub fn new(
@@ -100,10 +100,7 @@ impl<T, U> ManyToMany<T, U> {
                     .or_insert_with(IdxSet::default)
                     .insert(from_idx);
             });
-        ManyToMany {
-            forward: forward,
-            backward: backward,
-        }
+        ManyToMany { forward, backward }
     }
     pub fn from_relations_chain<R1, R2>(r1: &R1, r2: &R2) -> Self
     where
