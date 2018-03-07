@@ -84,3 +84,16 @@ fn minimal() {
         &["GDL", "NAT", "CDG", "DEF"]
     );
 }
+
+#[test]
+fn ntfs() {
+    let pt_objects = navitia_model::ntfs::read("fixtures/ntfs/").unwrap();
+
+    // comments
+    assert_eq!(1, pt_objects.comments.len());
+    let rera_lines_idx = pt_objects.lines.get_idx("RERA").unwrap();
+    let rera_comment_indexes = &pt_objects.lines[rera_lines_idx].comment_links;
+    for comment in pt_objects.comments.iter_from(rera_comment_indexes) {
+        assert_eq!(comment.id.to_string(), "RERACOM1");
+    }
+}

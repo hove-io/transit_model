@@ -274,12 +274,10 @@ struct Trip {
 
 pub fn read_agency<P: AsRef<path::Path>>(
     path: P,
-) -> Result<
-    (
-        CollectionWithId<objects::Network>,
-        CollectionWithId<objects::Company>,
-    ),
-> {
+) -> Result<(
+    CollectionWithId<objects::Network>,
+    CollectionWithId<objects::Company>,
+)> {
     let path = path.as_ref().join("agency.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
     let gtfs_agencies: Vec<Agency> = rdr.deserialize()
@@ -301,12 +299,10 @@ pub fn read_agency<P: AsRef<path::Path>>(
 
 pub fn read_stops<P: AsRef<path::Path>>(
     path: P,
-) -> Result<
-    (
-        CollectionWithId<objects::StopArea>,
-        CollectionWithId<objects::StopPoint>,
-    ),
-> {
+) -> Result<(
+    CollectionWithId<objects::StopArea>,
+    CollectionWithId<objects::StopPoint>,
+)> {
     let path = path.as_ref().join("stops.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
     let gtfs_stops: Vec<Stop> = rdr.deserialize()
@@ -349,12 +345,10 @@ struct Config {
 
 pub fn read_config<P: AsRef<path::Path>>(
     config_path: Option<P>,
-) -> Result<
-    (
-        CollectionWithId<objects::Contributor>,
-        CollectionWithId<objects::Dataset>,
-    ),
-> {
+) -> Result<(
+    CollectionWithId<objects::Contributor>,
+    CollectionWithId<objects::Dataset>,
+)> {
     let contributor;
     let dataset;
     if let Some(config_path) = config_path {

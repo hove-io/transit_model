@@ -74,7 +74,7 @@ where
 
 #[macro_export]
 macro_rules! ctx_from_path {
-    ( $path:expr ) => {
+    ($path: expr) => {
         |_| format!("Error reading {:?}", $path)
-    }
+    };
 }

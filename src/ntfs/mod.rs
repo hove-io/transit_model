@@ -111,6 +111,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<PtObjects> {
     collections.equipments = make_opt_collection_with_id(path, "equipments.txt")?;
     collections.trip_properties = make_opt_collection_with_id(path, "trip_properties.txt")?;
     collections.geometries = make_opt_collection_with_id(path, "geometries.txt")?;
+    collections.comments = make_opt_collection_with_id(path, "comments.txt")?;
     collections.transfers = make_opt_collection(path, "transfers.txt")?;
     collections.admin_stations = make_opt_collection(path, "admin_stations.txt")?;
     common_format::manage_calendars(&mut collections, path)?;
@@ -723,21 +724,21 @@ mod tests {
                 id: "c:1".to_string(),
                 comment_type: CommentType::Information,
                 label: Some("label:".to_string()),
-                value: "value:1".to_string(),
+                name: "value:1".to_string(),
                 url: Some("http://www.foo.bar".to_string()),
             },
             Comment {
                 id: "c:2".to_string(),
                 comment_type: CommentType::OnDemandTransport,
                 label: Some("label:2".to_string()),
-                value: "value:3".to_string(),
+                name: "value:3".to_string(),
                 url: Some("http://www.foo.bar".to_string()),
             },
             Comment {
                 id: "c:3".to_string(),
                 comment_type: CommentType::Information,
                 label: None,
-                value: "value:1".to_string(),
+                name: "value:1".to_string(),
                 url: None,
             },
         ]).unwrap();
@@ -748,7 +749,7 @@ mod tests {
                 name: "sp_name_1".to_string(),
                 codes: vec![("object_system:1".to_string(), "object_code:1".to_string())],
                 object_properties: vec![("prop_name:1".to_string(), "prop_value:1".to_string())],
-                comment_links: vec!["c:1".to_string()],
+                comment_links: vec![comments.get_idx("c:1").unwrap()],
                 visible: true,
                 coord: Coord {
                     lon: 2.073034,
@@ -768,7 +769,7 @@ mod tests {
                 name: "sa_name_1".to_string(),
                 codes: vec![("object_system:2".to_string(), "object_code:2".to_string())],
                 object_properties: vec![("prop_name:2".to_string(), "prop_value:2".to_string())],
-                comment_links: vec!["c:2".to_string()],
+                comment_links: vec![comments.get_idx("c:2").unwrap()],
                 visible: true,
                 coord: Coord {
                     lon: 2.073034,
@@ -787,7 +788,10 @@ mod tests {
                 code: None,
                 codes: vec![("object_system:3".to_string(), "object_code:3".to_string())],
                 object_properties: vec![("prop_name:3".to_string(), "prop_value:3".to_string())],
-                comment_links: vec!["c:1".to_string(), "c:2".to_string()],
+                comment_links: vec![
+                    comments.get_idx("c:1").unwrap(),
+                    comments.get_idx("c:2").unwrap(),
+                ],
                 forward_name: None,
                 forward_direction: None,
                 backward_name: None,
@@ -813,7 +817,7 @@ mod tests {
                     ("object_system:5".to_string(), "object_code:5".to_string()),
                 ],
                 object_properties: vec![("prop_name:4".to_string(), "prop_value:4".to_string())],
-                comment_links: vec!["c:3".to_string()],
+                comment_links: vec![comments.get_idx("c:3").unwrap()],
                 line_id: "OIF:002002002:BDEOIF829".to_string(),
                 geometry_id: None,
                 destination_id: None,
