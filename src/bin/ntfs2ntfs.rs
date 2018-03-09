@@ -35,7 +35,7 @@ struct Opt {
 
     /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
-    output: PathBuf,
+    output: Option<PathBuf>,
 }
 
 fn run() -> Result<()> {
@@ -44,7 +44,10 @@ fn run() -> Result<()> {
     let opt = Opt::from_args();
 
     let objects = navitia_model::ntfs::read(opt.input)?;
-    navitia_model::ntfs::write(opt.output, &objects);
+
+    if let Some(output) = opt.output {
+        navitia_model::ntfs::write(output, &objects)?;
+    }
     Ok(())
 }
 

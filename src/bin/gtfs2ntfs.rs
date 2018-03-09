@@ -48,7 +48,7 @@ fn run() -> Result<()> {
     let opt = Opt::from_args();
 
     let objects = navitia_model::gtfs::read(opt.input, opt.config_path)?;
-    navitia_model::ntfs::write(opt.output, &objects);
+    navitia_model::ntfs::write(opt.output, &objects)?;
     Ok(())
 }
 

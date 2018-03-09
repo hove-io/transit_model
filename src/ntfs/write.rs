@@ -22,29 +22,37 @@ use serde;
 use objects::*;
 use Collections;
 use common_format::CalendarDate;
-use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
+use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
+use failure::ResultExt;
 
-pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>) {
+pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>) -> Result<()> {
     info!("Writing feed_infos.txt");
-    let mut wtr = csv::Writer::from_path(&path.join("feed_infos.txt")).unwrap();
+    let path = path.join("feed_infos.txt");
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     wtr.write_record(&["feed_info_param", "feed_info_value"])
-        .unwrap();
+        .with_context(ctx_from_path!(path))?;
     for feed_info in feed_infos {
-        wtr.serialize(feed_info).unwrap();
+        wtr.serialize(feed_info).with_context(ctx_from_path!(path))?;
     }
-    wtr.flush().unwrap();
+    wtr.flush().with_context(ctx_from_path!(path))?;
+    Ok(())
 }
 
 pub fn write_vehicle_journeys_and_stop_times(
     path: &path::Path,
     vehicle_journeys: &CollectionWithId<VehicleJourney>,
     stop_points: &CollectionWithId<StopPoint>,
-) {
+) -> Result<()> {
     info!("Writing trips.txt and stop_times.txt");
-    let mut vj_wtr = csv::Writer::from_path(&path.join("trips.txt")).unwrap();
-    let mut st_wtr = csv::Writer::from_path(&path.join("stop_times.txt")).unwrap();
+    let trip_path = path.join("trips.txt");
+    let stop_times_path = path.join("stop_times.txt");
+    let mut vj_wtr = csv::Writer::from_path(&trip_path).with_context(ctx_from_path!(trip_path))?;
+    let mut st_wtr =
+        csv::Writer::from_path(&stop_times_path).with_context(ctx_from_path!(stop_times_path))?;
     for (_, vj) in vehicle_journeys.iter() {
-        vj_wtr.serialize(vj).unwrap();
+        vj_wtr
+            .serialize(vj)
+            .with_context(ctx_from_path!(trip_path))?;
 
         for st in &vj.stop_times {
             st_wtr
@@ -62,47 +70,67 @@ pub fn write_vehicle_journeys_and_stop_times(
                     local_zone_id: st.local_zone_id,
                     // TODO: Add headsign and stop_time_ids
                 })
-                .unwrap();
+                .with_context(ctx_from_path!(st_wtr))?;
         }
     }
-    st_wtr.flush().unwrap();
-    vj_wtr.flush().unwrap();
+    st_wtr
+        .flush()
+        .with_context(ctx_from_path!(stop_times_path))?;
+    vj_wtr.flush().with_context(ctx_from_path!(trip_path))?;
+
+    Ok(())
 }
 
-pub fn write_collection_with_id<T>(path: &path::Path, file: &str, collection: &CollectionWithId<T>)
+pub fn write_collection_with_id<T>(
+    path: &path::Path,
+    file: &str,
+    collection: &CollectionWithId<T>,
+) -> Result<()>
 where
     T: Id<T>,
     T: serde::Serialize,
 {
     info!("Writing {}", file);
-    let mut wtr = csv::Writer::from_path(&path.join(file)).unwrap();
+    let path = path.join(file);
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for (_, obj) in collection.iter() {
-        wtr.serialize(obj).unwrap();
+        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
     }
-    wtr.flush().unwrap();
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
 }
 
-pub fn write_collection<T>(path: &path::Path, file: &str, collection: &Collection<T>)
+pub fn write_collection<T>(path: &path::Path, file: &str, collection: &Collection<T>) -> Result<()>
 where
     T: serde::Serialize,
 {
     info!("Writing {}", file);
-    let mut wtr = csv::Writer::from_path(&path.join(file)).unwrap();
+    let path = path.join(file);
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for (_, obj) in collection.iter() {
-        wtr.serialize(obj).unwrap();
+        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
     }
-    wtr.flush().unwrap();
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
 }
 
 pub fn write_calendar_and_calendar_dates(
     path: &path::Path,
     calendars: &CollectionWithId<Calendar>,
-) {
+) -> Result<()> {
     info!("Writing calendar.txt and calendar_dates.txt");
-    let mut c_wtr = csv::Writer::from_path(&path.join("calendar.txt")).unwrap();
-    let mut cd_wtr = csv::Writer::from_path(&path.join("calendar_dates.txt")).unwrap();
+    let calendar_path = path.join("calendar.txt");
+    let calendar_dates_path = path.join("calendar_dates.txt");
+    let mut c_wtr =
+        csv::Writer::from_path(&calendar_path).with_context(ctx_from_path!(calendar_path))?;
+    let mut cd_wtr = csv::Writer::from_path(&calendar_dates_path)
+        .with_context(ctx_from_path!(calendar_dates_path))?;
     for (_, c) in calendars.iter() {
-        c_wtr.serialize(c).unwrap();
+        c_wtr
+            .serialize(c)
+            .with_context(ctx_from_path!(calendar_path))?;
         for cd in &c.calendar_dates {
             cd_wtr
                 .serialize(CalendarDate {
@@ -110,21 +138,25 @@ pub fn write_calendar_and_calendar_dates(
                     date: cd.0,
                     exception_type: cd.1.clone(),
                 })
-                .unwrap();
+                .with_context(ctx_from_path!(calendar_dates_path))?;
         }
     }
-    cd_wtr.flush().unwrap();
-    c_wtr.flush().unwrap();
+    cd_wtr
+        .flush()
+        .with_context(ctx_from_path!(calendar_dates_path))?;
+    c_wtr.flush().with_context(ctx_from_path!(calendar_path))?;
+
+    Ok(())
 }
 
 pub fn write_stops(
     path: &path::Path,
     stop_points: &CollectionWithId<StopPoint>,
     stop_areas: &CollectionWithId<StopArea>,
-) {
+) -> Result<()> {
     info!("Writing stops.txt");
-
-    let mut wtr = csv::Writer::from_path(&path.join("stops.txt")).unwrap();
+    let path = path.join("stops.txt");
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for (_, st) in stop_points.iter() {
         wtr.serialize(Stop {
             id: st.id.clone(),
@@ -138,7 +170,7 @@ pub fn write_stops(
             timezone: st.timezone.clone(),
             equipment_id: st.equipment_id.clone(),
             geometry_id: st.geometry_id.clone(),
-        }).unwrap();
+        }).with_context(ctx_from_path!(path))?;
     }
 
     for (_, sa) in stop_areas.iter() {
@@ -155,16 +187,20 @@ pub fn write_stops(
                 timezone: sa.timezone.clone(),
                 equipment_id: sa.equipment_id.clone(),
                 geometry_id: sa.geometry_id.clone(),
-            }).unwrap();
+            }).with_context(ctx_from_path!(path))?;
         }
     }
-    wtr.flush().unwrap();
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
 }
 
 fn write_comment_links_from_collection_with_id<W, T>(
     wtr: &mut csv::Writer<W>,
     collections: &CollectionWithId<T>,
-) where
+    path: &path::Path,
+) -> Result<()>
+where
     T: Id<T> + CommentLinks + GetObjectType,
     W: ::std::io::Write,
 {
@@ -174,35 +210,70 @@ fn write_comment_links_from_collection_with_id<W, T>(
                 object_id: obj.id().to_string(),
                 object_type: T::get_object_type(),
                 comment_id: c_id.clone(),
-            }).unwrap();
+            }).with_context(ctx_from_path!(path))?;
         }
     }
+
+    Ok(())
 }
 
-pub fn write_comments(path: &path::Path, collections: &Collections) {
+pub fn write_comments(path: &path::Path, collections: &Collections) -> Result<()> {
     info!("Writing comments.txt and comment_links.txt");
 
-    let mut c_wtr = csv::Writer::from_path(&path.join("comments.txt")).unwrap();
-    let mut cl_wtr = csv::Writer::from_path(&path.join("comment_links.txt")).unwrap();
+    let comments_path = path.join("comments.txt");
+    let comment_links_path = path.join("comment_links.txt");
+
+    let mut c_wtr =
+        csv::Writer::from_path(&comments_path).with_context(ctx_from_path!(comments_path))?;
+    let mut cl_wtr = csv::Writer::from_path(&comment_links_path)
+        .with_context(ctx_from_path!(comment_links_path))?;
     for (_, c) in collections.comments.iter() {
-        c_wtr.serialize(c).unwrap();
+        c_wtr
+            .serialize(c)
+            .with_context(ctx_from_path!(comments_path))?;
     }
 
-    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.stop_areas);
-    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.stop_points);
-    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.lines);
-    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.routes);
-    write_comment_links_from_collection_with_id(&mut cl_wtr, &collections.vehicle_journeys);
+    write_comment_links_from_collection_with_id(
+        &mut cl_wtr,
+        &collections.stop_areas,
+        &comment_links_path,
+    )?;
+    write_comment_links_from_collection_with_id(
+        &mut cl_wtr,
+        &collections.stop_points,
+        &comment_links_path,
+    )?;
+    write_comment_links_from_collection_with_id(
+        &mut cl_wtr,
+        &collections.lines,
+        &comment_links_path,
+    )?;
+    write_comment_links_from_collection_with_id(
+        &mut cl_wtr,
+        &collections.routes,
+        &comment_links_path,
+    )?;
+    write_comment_links_from_collection_with_id(
+        &mut cl_wtr,
+        &collections.vehicle_journeys,
+        &comment_links_path,
+    )?;
     // TODO: add stop_times and line_groups
 
-    cl_wtr.flush().unwrap();
-    c_wtr.flush().unwrap();
+    cl_wtr
+        .flush()
+        .with_context(ctx_from_path!(comment_links_path))?;
+    c_wtr.flush().with_context(ctx_from_path!(comments_path))?;
+
+    Ok(())
 }
 
 fn write_codes_from_collection_with_id<W, T>(
     wtr: &mut csv::Writer<W>,
     collections: &CollectionWithId<T>,
-) where
+    path: &path::Path,
+) -> Result<()>
+where
     T: Id<T> + Codes + GetObjectType,
     W: ::std::io::Write,
 {
@@ -213,29 +284,37 @@ fn write_codes_from_collection_with_id<W, T>(
                 object_type: T::get_object_type(),
                 object_system: c.0.clone(),
                 object_code: c.1.clone(),
-            }).unwrap();
+            }).with_context(ctx_from_path!(path))?;
         }
     }
+
+    Ok(())
 }
 
-pub fn write_codes(path: &path::Path, collections: &Collections) {
+pub fn write_codes(path: &path::Path, collections: &Collections) -> Result<()> {
     info!("Writing object_codes.txt");
 
-    let mut wtr = csv::Writer::from_path(&path.join("object_codes.txt")).unwrap();
-    write_codes_from_collection_with_id(&mut wtr, &collections.stop_areas);
-    write_codes_from_collection_with_id(&mut wtr, &collections.stop_points);
-    write_codes_from_collection_with_id(&mut wtr, &collections.networks);
-    write_codes_from_collection_with_id(&mut wtr, &collections.lines);
-    write_codes_from_collection_with_id(&mut wtr, &collections.routes);
-    write_codes_from_collection_with_id(&mut wtr, &collections.vehicle_journeys);
+    let path = path.join("object_codes.txt");
 
-    wtr.flush().unwrap();
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    write_codes_from_collection_with_id(&mut wtr, &collections.stop_areas, &path)?;
+    write_codes_from_collection_with_id(&mut wtr, &collections.stop_points, &path)?;
+    write_codes_from_collection_with_id(&mut wtr, &collections.networks, &path)?;
+    write_codes_from_collection_with_id(&mut wtr, &collections.lines, &path)?;
+    write_codes_from_collection_with_id(&mut wtr, &collections.routes, &path)?;
+    write_codes_from_collection_with_id(&mut wtr, &collections.vehicle_journeys, &path)?;
+
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
 }
 
 fn write_object_properties_from_collection_with_id<W, T>(
     wtr: &mut csv::Writer<W>,
     collections: &CollectionWithId<T>,
-) where
+    path: &path::Path,
+) -> Result<()>
+where
     T: Id<T> + ObjectProperties + GetObjectType,
     W: ::std::io::Write,
 {
@@ -246,20 +325,30 @@ fn write_object_properties_from_collection_with_id<W, T>(
                 object_type: T::get_object_type(),
                 object_property_name: c.0.clone(),
                 object_property_value: c.1.clone(),
-            }).unwrap();
+            }).with_context(ctx_from_path!(path))?;
         }
     }
+
+    Ok(())
 }
 
-pub fn write_object_properties(path: &path::Path, collections: &Collections) {
+pub fn write_object_properties(path: &path::Path, collections: &Collections) -> Result<()> {
     info!("Writing object_properties.txt");
 
-    let mut wtr = csv::Writer::from_path(&path.join("object_properties.txt")).unwrap();
-    write_object_properties_from_collection_with_id(&mut wtr, &collections.stop_areas);
-    write_object_properties_from_collection_with_id(&mut wtr, &collections.stop_points);
-    write_object_properties_from_collection_with_id(&mut wtr, &collections.lines);
-    write_object_properties_from_collection_with_id(&mut wtr, &collections.routes);
-    write_object_properties_from_collection_with_id(&mut wtr, &collections.vehicle_journeys);
+    let path = path.join("object_properties.txt");
 
-    wtr.flush().unwrap();
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    write_object_properties_from_collection_with_id(&mut wtr, &collections.stop_areas, &path)?;
+    write_object_properties_from_collection_with_id(&mut wtr, &collections.stop_points, &path)?;
+    write_object_properties_from_collection_with_id(&mut wtr, &collections.lines, &path)?;
+    write_object_properties_from_collection_with_id(&mut wtr, &collections.routes, &path)?;
+    write_object_properties_from_collection_with_id(
+        &mut wtr,
+        &collections.vehicle_journeys,
+        &path,
+    )?;
+
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
 }

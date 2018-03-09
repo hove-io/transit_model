@@ -126,34 +126,36 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<PtObjects> {
     Ok(res)
 }
 
-pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) {
+pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to {:?}", path);
 
-    write::write_feed_infos(path, &pt_objects.feed_infos);
-    write::write_collection_with_id(path, "contributors.txt", &pt_objects.contributors);
-    write::write_collection_with_id(path, "datasets.txt", &pt_objects.datasets);
-    write::write_collection_with_id(path, "networks.txt", &pt_objects.networks);
-    write::write_collection_with_id(path, "commercial_modes.txt", &pt_objects.commercial_modes);
-    write::write_collection_with_id(path, "companies.txt", &pt_objects.companies);
-    write::write_collection_with_id(path, "lines.txt", &pt_objects.lines);
-    write::write_collection_with_id(path, "physical_modes.txt", &pt_objects.physical_modes);
-    write::write_collection_with_id(path, "equipments.txt", &pt_objects.equipments);
-    write::write_collection_with_id(path, "routes.txt", &pt_objects.routes);
-    write::write_collection_with_id(path, "trip_properties.txt", &pt_objects.trip_properties);
-    write::write_collection_with_id(path, "geometries.txt", &pt_objects.geometries);
-    write::write_collection(path, "transfers.txt", &pt_objects.transfers);
-    write::write_collection(path, "admin_stations.txt", &pt_objects.admin_stations);
+    write::write_feed_infos(path, &pt_objects.feed_infos)?;
+    write::write_collection_with_id(path, "contributors.txt", &pt_objects.contributors)?;
+    write::write_collection_with_id(path, "datasets.txt", &pt_objects.datasets)?;
+    write::write_collection_with_id(path, "networks.txt", &pt_objects.networks)?;
+    write::write_collection_with_id(path, "commercial_modes.txt", &pt_objects.commercial_modes)?;
+    write::write_collection_with_id(path, "companies.txt", &pt_objects.companies)?;
+    write::write_collection_with_id(path, "lines.txt", &pt_objects.lines)?;
+    write::write_collection_with_id(path, "physical_modes.txt", &pt_objects.physical_modes)?;
+    write::write_collection_with_id(path, "equipments.txt", &pt_objects.equipments)?;
+    write::write_collection_with_id(path, "routes.txt", &pt_objects.routes)?;
+    write::write_collection_with_id(path, "trip_properties.txt", &pt_objects.trip_properties)?;
+    write::write_collection_with_id(path, "geometries.txt", &pt_objects.geometries)?;
+    write::write_collection(path, "transfers.txt", &pt_objects.transfers)?;
+    write::write_collection(path, "admin_stations.txt", &pt_objects.admin_stations)?;
     write::write_vehicle_journeys_and_stop_times(
         path,
         &pt_objects.vehicle_journeys,
         &pt_objects.stop_points,
-    );
-    write::write_calendar_and_calendar_dates(path, &pt_objects.calendars);
-    write::write_stops(path, &pt_objects.stop_points, &pt_objects.stop_areas);
-    write::write_comments(path, pt_objects);
-    write::write_codes(path, pt_objects);
-    write::write_object_properties(path, pt_objects);
+    )?;
+    write::write_calendar_and_calendar_dates(path, &pt_objects.calendars)?;
+    write::write_stops(path, &pt_objects.stop_points, &pt_objects.stop_areas)?;
+    write::write_comments(path, pt_objects)?;
+    write::write_codes(path, pt_objects)?;
+    write::write_object_properties(path, pt_objects)?;
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -191,7 +193,7 @@ mod tests {
     {
         let collection = CollectionWithId::new(objects).unwrap();
         ser_deser_in_tmp_dir(|path| {
-            write::write_collection_with_id(path, "file.txt", &collection);
+            write::write_collection_with_id(path, "file.txt", &collection).unwrap();
             let des_collection = make_collection_with_id(path, "file.txt").unwrap();
             assert_eq!(des_collection, collection);
         });
@@ -204,7 +206,7 @@ mod tests {
     {
         let collection = Collection::new(objects);
         ser_deser_in_tmp_dir(|path| {
-            write::write_collection(path, "file.txt", &collection);
+            write::write_collection(path, "file.txt", &collection).unwrap();
             let des_collection = make_opt_collection(path, "file.txt").unwrap();
             assert_eq!(des_collection, collection);
         });
@@ -218,7 +220,7 @@ mod tests {
         let mut collections = Collections::default();
 
         ser_deser_in_tmp_dir(|path| {
-            write::write_feed_infos(path, &feed_infos);
+            write::write_feed_infos(path, &feed_infos).unwrap();
             read::manage_feed_infos(&mut collections, path).unwrap();
         });
         assert_eq!(collections.feed_infos.len(), 2);
@@ -486,7 +488,8 @@ mod tests {
         ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
-            write::write_vehicle_journeys_and_stop_times(path, &vehicle_journeys, &stop_points);
+            write::write_vehicle_journeys_and_stop_times(path, &vehicle_journeys, &stop_points)
+                .unwrap();
 
             let mut collections = Collections::default();
             collections.vehicle_journeys =
@@ -619,7 +622,7 @@ mod tests {
         ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
-            write::write_calendar_and_calendar_dates(path, &calendars);
+            write::write_calendar_and_calendar_dates(path, &calendars).unwrap();
 
             let mut collections = Collections::default();
             manage_calendars(&mut collections, path).unwrap();
@@ -702,7 +705,7 @@ mod tests {
         ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
-            write::write_stops(path, &stop_points, &stop_areas);
+            write::write_stops(path, &stop_points, &stop_areas).unwrap();
 
             let mut collections = Collections::default();
             read::manage_stops(&mut collections, path).unwrap();
@@ -859,18 +862,20 @@ mod tests {
         ser_collections.networks = networks;
 
         ser_deser_in_tmp_dir(|path| {
-            write::write_collection_with_id(path, "lines.txt", &ser_collections.lines);
+            write::write_collection_with_id(path, "lines.txt", &ser_collections.lines).unwrap();
             write::write_stops(
                 path,
                 &ser_collections.stop_points,
                 &ser_collections.stop_areas,
-            );
-            write::write_collection_with_id(path, "routes.txt", &ser_collections.routes);
-            write::write_collection_with_id(path, "trips.txt", &ser_collections.vehicle_journeys);
-            write::write_collection_with_id(path, "networks.txt", &ser_collections.networks);
-            write::write_comments(path, &ser_collections);
-            write::write_codes(path, &ser_collections);
-            write::write_object_properties(path, &ser_collections);
+            ).unwrap();
+            write::write_collection_with_id(path, "routes.txt", &ser_collections.routes).unwrap();
+            write::write_collection_with_id(path, "trips.txt", &ser_collections.vehicle_journeys)
+                .unwrap();
+            write::write_collection_with_id(path, "networks.txt", &ser_collections.networks)
+                .unwrap();
+            write::write_comments(path, &ser_collections).unwrap();
+            write::write_codes(path, &ser_collections).unwrap();
+            write::write_object_properties(path, &ser_collections).unwrap();
 
             let mut des_collections = Collections::default();
             des_collections.lines = make_collection_with_id(path, "lines.txt").unwrap();
