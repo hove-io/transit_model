@@ -27,7 +27,7 @@ use structopt::StructOpt;
 use navitia_model::Result;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.")]
+#[structopt(name = "ntfs2ntfs", about = "Convert an NTFS to an NTFS.")]
 struct Opt {
     /// input directory.
     #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
@@ -35,20 +35,19 @@ struct Opt {
 
     /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
-    output: PathBuf,
-
-    /// config file
-    #[structopt(short = "c", long = "config", parse(from_os_str))]
-    config_path: Option<PathBuf>,
+    output: Option<PathBuf>,
 }
 
 fn run() -> Result<()> {
-    info!("Launching gtfs2ntfs...");
+    info!("Launching ntfs2ntfs...");
 
     let opt = Opt::from_args();
 
-    let objects = navitia_model::gtfs::read(opt.input, opt.config_path)?;
-    navitia_model::ntfs::write(opt.output, &objects)?;
+    let objects = navitia_model::ntfs::read(opt.input)?;
+
+    if let Some(output) = opt.output {
+        navitia_model::ntfs::write(output, &objects)?;
+    }
     Ok(())
 }
 
