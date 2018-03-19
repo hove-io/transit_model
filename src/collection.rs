@@ -303,21 +303,16 @@ where
     Ok(Collection::new(vec))
 }
 
-pub fn add_prefix<T>(
-    collection: &mut CollectionWithId<T>,
-    prefix: &str,
-) -> Result<CollectionWithId<T>>
+pub fn add_prefix<T>(collection: &mut CollectionWithId<T>, prefix: &str) -> Result<()>
 where
     T: AddPrefix + Id<T>,
 {
-    let objects = collection.take();
-    let objs_with_prefix = objects
-        .into_iter()
-        .map(|mut obj| {
-            obj.add_prefix(prefix);
-            obj
-        })
-        .collect();
+    let mut objects = collection.take();
+    for obj in &mut objects {
+        obj.add_prefix(prefix);
+    }
 
-    CollectionWithId::new(objs_with_prefix)
+    *collection = CollectionWithId::new(objects)?;
+
+    Ok(())
 }

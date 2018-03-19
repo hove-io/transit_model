@@ -211,6 +211,7 @@ impl Id<Contributor> for Dataset {
 impl AddPrefix for Dataset {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
+        self.contributor_id = prefix.to_string() + &self.contributor_id;
     }
 }
 

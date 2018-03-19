@@ -999,16 +999,20 @@ mod tests {
 
             let mut collections = Collections::default();
             let prefix = "my_prefix:";
-            let (mut stop_areas, mut stop_points) = super::read_stops(tmp_dir.path()).unwrap();
-            let (mut networks, mut companies) = super::read_agency(tmp_dir.path()).unwrap();
+            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path()).unwrap();
+            collections.stop_areas = stop_areas;
+            collections.stop_points = stop_points;
+            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
+            collections.networks = networks;
+            collections.companies = companies;
             super::read_routes(tmp_dir, &mut collections).unwrap();
 
-            collections.networks = add_prefix(&mut networks, prefix).unwrap();
-            collections.companies = add_prefix(&mut companies, &prefix).unwrap();
-            collections.stop_points = add_prefix(&mut stop_points, &prefix).unwrap();
-            collections.stop_areas = add_prefix(&mut stop_areas, &prefix).unwrap();
-            collections.routes = add_prefix(&mut collections.routes, &prefix).unwrap();
-            collections.lines = add_prefix(&mut collections.lines, &prefix).unwrap();
+            add_prefix(&mut collections.networks, prefix).unwrap();
+            add_prefix(&mut collections.companies, &prefix).unwrap();
+            add_prefix(&mut collections.stop_points, &prefix).unwrap();
+            add_prefix(&mut collections.stop_areas, &prefix).unwrap();
+            add_prefix(&mut collections.routes, &prefix).unwrap();
+            add_prefix(&mut collections.lines, &prefix).unwrap();
 
             let mut companies_ids: Vec<String> = collections
                 .companies

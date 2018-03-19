@@ -46,14 +46,14 @@ pub fn read<P: AsRef<path::Path>>(
     //add prefixes
     if let Some(prefix) = prefix {
         let prefix = prefix + ":";
-        collections.networks = add_prefix(&mut collections.networks, &prefix)?;
-        collections.companies = add_prefix(&mut collections.companies, &prefix)?;
-        collections.stop_points = add_prefix(&mut collections.stop_points, &prefix)?;
-        collections.stop_areas = add_prefix(&mut collections.stop_areas, &prefix)?;
-        collections.routes = add_prefix(&mut collections.routes, &prefix)?;
-        collections.lines = add_prefix(&mut collections.lines, &prefix)?;
-        collections.contributors = add_prefix(&mut collections.contributors, &prefix)?;
-        collections.datasets = add_prefix(&mut collections.datasets, &prefix)?;
+        add_prefix(&mut collections.networks, &prefix)?;
+        add_prefix(&mut collections.companies, &prefix)?;
+        add_prefix(&mut collections.stop_points, &prefix)?;
+        add_prefix(&mut collections.stop_areas, &prefix)?;
+        add_prefix(&mut collections.routes, &prefix)?;
+        add_prefix(&mut collections.lines, &prefix)?;
+        add_prefix(&mut collections.contributors, &prefix)?;
+        add_prefix(&mut collections.datasets, &prefix)?;
     }
 
     Ok(PtObjects::new(collections)?)
