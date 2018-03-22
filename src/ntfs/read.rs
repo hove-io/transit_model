@@ -227,7 +227,11 @@ pub fn manage_feed_infos(collections: &mut Collections, path: &path::Path) -> Re
     Ok(())
 }
 
-fn insert_comment_link<T>(collection: &mut CollectionWithId<T>, comment_link: CommentLink)
+fn insert_comment_link<T>(
+    collection: &mut CollectionWithId<T>,
+    comments: &CollectionWithId<Comment>,
+    comment_link: &CommentLink,
+) -> Result<()>
 where
     T: CommentLinks + Id<T>,
 {
@@ -239,13 +243,21 @@ where
                 comment_link.object_type.as_str(),
                 comment_link.object_id
             );
-            return;
+            return Ok(());
         }
+    };
+    let comment_idx = match comments.get_idx(&comment_link.comment_id) {
+        Some(comment_idx) => comment_idx,
+        None => bail!(
+            "comment.txt: comment_id={} not found",
+            comment_link.comment_id
+        ),
     };
     collection
         .index_mut(idx)
         .comment_links_mut()
-        .push(comment_link.comment_id);
+        .push(comment_idx);
+    Ok(())
 }
 
 pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Result<()> {
@@ -258,17 +270,31 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Resu
             for comment_link in rdr.deserialize() {
                 let comment_link: CommentLink = comment_link.with_context(ctx_from_path!(path))?;
                 match comment_link.object_type {
-                    ObjectType::StopArea => {
-                        insert_comment_link(&mut collections.stop_areas, comment_link)
-                    }
-                    ObjectType::StopPoint => {
-                        insert_comment_link(&mut collections.stop_points, comment_link)
-                    }
-                    ObjectType::Line => insert_comment_link(&mut collections.lines, comment_link),
-                    ObjectType::Route => insert_comment_link(&mut collections.routes, comment_link),
-                    ObjectType::VehicleJourney => {
-                        insert_comment_link(&mut collections.vehicle_journeys, comment_link)
-                    }
+                    ObjectType::StopArea => insert_comment_link(
+                        &mut collections.stop_areas,
+                        &collections.comments,
+                        &comment_link,
+                    )?,
+                    ObjectType::StopPoint => insert_comment_link(
+                        &mut collections.stop_points,
+                        &collections.comments,
+                        &comment_link,
+                    )?,
+                    ObjectType::Line => insert_comment_link(
+                        &mut collections.lines,
+                        &collections.comments,
+                        &comment_link,
+                    )?,
+                    ObjectType::Route => insert_comment_link(
+                        &mut collections.routes,
+                        &collections.comments,
+                        &comment_link,
+                    )?,
+                    ObjectType::VehicleJourney => insert_comment_link(
+                        &mut collections.vehicle_journeys,
+                        &collections.comments,
+                        &comment_link,
+                    )?,
                     ObjectType::StopTime => warn!("comments are not added to StopTime yet"),
                     ObjectType::LineGroup => warn!("line_groups.txt is not parsed yet"),
                     _ => bail!(

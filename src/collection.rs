@@ -25,6 +25,7 @@ use failure::ResultExt;
 use std::path;
 use csv;
 use serde;
+use std::borrow::Borrow;
 
 pub trait Id<T> {
     fn id(&self) -> &str;
@@ -68,6 +69,18 @@ impl<T: PartialEq> PartialEq for Collection<T> {
 impl<T> Collection<T> {
     pub fn new(v: Vec<T>) -> Self {
         Collection { objects: v }
+    }
+
+    pub fn iter_from<'a, I>(&'a self, indexes: I) -> Box<Iterator<Item = &T> + 'a>
+    where
+        I: IntoIterator + 'a,
+        I::Item: Borrow<Idx<T>>,
+    {
+        Box::new(
+            indexes
+                .into_iter()
+                .map(move |item| &self.objects[item.borrow().get()]),
+        )
     }
 }
 
