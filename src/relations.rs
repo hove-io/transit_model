@@ -14,21 +14,110 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+//! Modeling the relations between objects.
+//!
+//! This module defines types for modeling the relations between
+//! objects, and use them thanks to the `GetCorresponding` custom
+//! derive.
+//!
+//! Let's clarify that with an example. Suppose that `Bike`s have a
+//! `Brand`. `Bike`s also have an `Owner`, and these `Owner`s have a
+//! `Job`. `Bike`s also have a `Kind`.
+//!
+//! Let's defines these relations and use them a bit:
+//!
+//! ```no_run
+//! # #[macro_use] extern crate get_corresponding_derive;
+//! # extern crate navitia_model;
+//! # use navitia_model::relations::*;
+//! # use navitia_model::collection::Idx;
+//! # struct Bike;
+//! # struct Brand;
+//! # struct Owner;
+//! # struct Job;
+//! # struct Kind;
+//! # fn get_mbk_brand() -> Idx<Brand> { unimplemented!() }
+//! #[derive(Default, GetCorresponding)]
+//! pub struct World {
+//!     bikes_to_brands: OneToMany<Bike, Brand>,
+//!     bikes_to_owners: OneToMany<Bike, Owner>,
+//!     owners_to_jobs: OneToMany<Owner, Job>,
+//!     #[get_corresponding(weight = "1.1")]
+//!     bikes_to_kinds: OneToMany<Bike, Kind>,
+//! }
+//! fn main() {
+//!     let world = World::default();
+//!     let mbk: Idx<Brand> = get_mbk_brand();
+//!     let owners_with_mbk: IdxSet<Owner> = world.get_corresponding_from_idx(mbk);
+//!     let jobs_with_mbk: IdxSet<Job> = world.get_corresponding(&owners_with_mbk);
+//!     println!(
+//!         "{} owners with {} different jobs own a bike of the brand MBK.",
+//!         owners_with_mbk.len(),
+//!         jobs_with_mbk.len()
+//!     );
+//! }
+//! ```
+//!
+//! First, we want to model the relations between the object. One bike
+//! have a brand, and a brand have several bikes (hopefully). Thus, we
+//! use a `OneToMany<Bike, Brand>` to model this relation.
+//!
+//! We repeat this process to model every relations. We obtain without
+//! too much effort the `World` struct.
+//!
+//! The `GetCorresponding` derive looks at each field of the `World`
+//! struct, keeping the fields containing `_to_` with a type with 2
+//! generics, and interpret that as a relation. For example,
+//! `bikes_to_brands: OneToMany<Bike, Brand>` is a relation between
+//! `Bike` and `Brand`. Using all the relations, it generates a graph,
+//! compute the shortest path between all the types, and generate an
+//! `impl GetCorresponding` for each feasible path.
+//!
+//! The weight of the relations can be tuned as shown for the
+//! `bikes_to_kinds` relation. This is not really useful for this
+//! example, but can be important when the relations are more complex.
+//!
+//! These `impl GetCorresponding` are used by
+//! `World::get_corresponding_from_idx` and `World::get_corresponding`
+//! that are helpers to explore the `World`.
+//!
+//! Thus, when we call `world.get_corresponding_from_idx(mbk)` for
+//! `Owner`, we will use the generated code that, basically, gets all
+//! the `Bike`s correponding to the `Brand` MBK, and then gets all the
+//! `Owner`s corresponding to these `Bike`s.
+
 use Result;
 use collection::{CollectionWithId, Id, Idx};
 use failure::ResultExt;
 use std::collections::{BTreeMap, BTreeSet};
 
+/// A set of `Idx<T>`
 pub type IdxSet<T> = BTreeSet<Idx<T>>;
 
+/// An object linking 2 types together.
 pub trait Relation {
+    /// The type of the source object
     type From;
+
+    /// The type of the targer object
     type To;
+
+    /// Returns the complete set of the source objects.
     fn get_from(&self) -> IdxSet<Self::From>;
+
+    /// For a given set of the source objects, returns the
+    /// correponding targets objects.
     fn get_corresponding_forward(&self, from: &IdxSet<Self::From>) -> IdxSet<Self::To>;
+
+    /// For a given set of the target objects, returns the
+    /// correponding source objects.
     fn get_corresponding_backward(&self, from: &IdxSet<Self::To>) -> IdxSet<Self::From>;
 }
 
+/// A one to many relation, i.e. a `T` have one correponding `U`, and
+/// a `U` can have multiple corresponding `T`.
+#[derive(Derivative, Debug)]
+#[derivative(Default(bound = ""))]
 pub struct OneToMany<T, U> {
     one_to_many: BTreeMap<Idx<T>, IdxSet<U>>,
     many_to_one: BTreeMap<Idx<U>, Idx<T>>,
@@ -57,6 +146,8 @@ where
             many_to_one,
         })
     }
+    /// Construct the relation automatically from the 2 given
+    /// `CollectionWithId`s.
     pub fn new(
         one: &CollectionWithId<T>,
         many: &CollectionWithId<U>,
@@ -83,12 +174,16 @@ impl<T, U> Relation for OneToMany<T, U> {
     }
 }
 
+/// A many to many relation, i.e. a `T` can have multiple `U`, and
+/// vice versa.
+#[derive(Default, Debug)]
 pub struct ManyToMany<T, U> {
     forward: BTreeMap<Idx<T>, IdxSet<U>>,
     backward: BTreeMap<Idx<U>, IdxSet<T>>,
 }
 
 impl<T, U> ManyToMany<T, U> {
+    /// Constructor from the forward relation.
     pub fn from_forward(forward: BTreeMap<Idx<T>, IdxSet<U>>) -> Self {
         let mut backward = BTreeMap::default();
         forward
@@ -102,6 +197,9 @@ impl<T, U> ManyToMany<T, U> {
             });
         ManyToMany { forward, backward }
     }
+
+    /// Constructor from 2 chained relations, i.e. from the relations
+    /// `A->B` and `B->C`, constructs the relation `A->C`.
     pub fn from_relations_chain<R1, R2>(r1: &R1, r2: &R2) -> Self
     where
         R1: Relation<From = T>,
@@ -117,6 +215,9 @@ impl<T, U> ManyToMany<T, U> {
             .collect();
         Self::from_forward(forward)
     }
+
+    /// Constructor from 2 relations with a common sink, i.e. from the
+    /// relations `A->B` and `C->B`, constructs the relation `A->C`.
     pub fn from_relations_sink<R1, R2>(r1: &R1, r2: &R2) -> Self
     where
         R1: Relation<From = T>,
