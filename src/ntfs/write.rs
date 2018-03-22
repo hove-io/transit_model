@@ -20,7 +20,7 @@ use csv;
 use collection::{Collection, CollectionWithId, Id};
 use serde;
 use objects::*;
-use Collections;
+use model::Collections;
 use common_format::CalendarDate;
 use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
 use failure::ResultExt;

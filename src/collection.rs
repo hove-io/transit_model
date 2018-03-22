@@ -20,12 +20,15 @@ use std::iter;
 use std::slice;
 use std::ops;
 use std::cmp::Ordering;
-use {AddPrefix, Result, StdResult};
+use std::result::Result as StdResult;
 use failure::ResultExt;
 use std::path;
 use csv;
 use serde;
 use std::borrow::Borrow;
+
+use objects::AddPrefix;
+use Result;
 
 pub trait Id<T> {
     fn id(&self) -> &str;

@@ -21,9 +21,10 @@ extern crate serde_json;
 
 use navitia_model::collection::{CollectionWithId, Id, Idx};
 use navitia_model::relations::IdxSet;
-use navitia_model::{GetCorresponding, PtObjects, Result};
+use navitia_model::{Model, Result};
+use navitia_model::model::GetCorresponding;
 
-fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &PtObjects) -> Vec<String>
+fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
 where
     U: Id<U>,
     IdxSet<T>: GetCorresponding<U>,

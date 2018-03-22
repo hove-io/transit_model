@@ -19,7 +19,7 @@ use csv;
 
 use objects::*;
 use collection::*;
-use Collections;
+use model::Collections;
 use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
 use Result;
 use failure::ResultExt;

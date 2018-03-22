@@ -17,11 +17,12 @@
 use std::path;
 use csv;
 use collection::CollectionWithId;
-use Collections;
+use model::Collections;
 use objects::{self, CommentLinksT, Contributor, Coord, KeysValues};
 use std::collections::HashSet;
 use utils::*;
-use {Result, StdResult};
+use Result;
+use std::result::Result as StdResult;
 use failure::ResultExt;
 use std::collections::HashMap;
 use std::fs::File;
@@ -601,7 +602,7 @@ mod tests {
     use self::tempdir::TempDir;
     use std::fs::File;
     use std::io::prelude::*;
-    use Collections;
+    use model::Collections;
     use collection::add_prefix;
 
     fn create_file_with_content(temp_dir: &TempDir, file_name: &str, content: &str) {
