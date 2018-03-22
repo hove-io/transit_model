@@ -133,9 +133,8 @@ impl EquipmentList {
     pub fn get_equipments(self) -> Vec<objects::Equipment> {
         self.equipments
     }
-    fn push(&mut self, mut equipment: objects::Equipment, prefix: &Option<String>) -> String {
-        equipment.id =
-            prefix.clone().unwrap_or("".to_string()) + &self.current_unaltered_id.to_string();
+    fn push(&mut self, mut equipment: objects::Equipment) -> String {
+        equipment.id = self.current_unaltered_id.to_string();
         let equipment_id = equipment.id.clone();
         self.equipments.push(equipment);
         self.current_unaltered_id += 1;
@@ -339,25 +338,21 @@ pub fn read_agency<P: AsRef<path::Path>>(
 }
 
 fn manage_comment_from_stop(
-    comments: &mut Vec<objects::Comment>,
+    comments: &mut CollectionWithId<objects::Comment>,
     stop: &Stop,
 ) -> CommentLinksT {
-    let mut comment_links: CommentLinksT = vec![];
+    let mut comment_links: CommentLinksT = CommentLinksT::default();
     if !stop.desc.is_empty() {
-        let mut prefix_generated = "stop:".to_string();
-        if let Some(ref prefix) = *id_prefix {
-            prefix_generated = prefix.to_string() + &prefix_generated;
-        }
-        let comment_id = prefix_generated.to_string() + &stop.id;
+        let comment_id = "stop:".to_string() + &stop.id;
         let comment = objects::Comment {
             id: comment_id,
             comment_type: objects::CommentType::Information,
             label: None,
-            value: stop.desc.to_string(),
+            name: stop.desc.to_string(),
             url: None,
         };
-        comment_links.push(comment.id.clone());
-        comments.push(comment);
+        let idx = comments.push(comment).unwrap();
+        comment_links.push(idx);
     }
     comment_links
 }
@@ -377,22 +372,19 @@ fn get_equipment_id_and_populate_equipments(
         }
     };
     if wheelchair_availability.is_some() {
-        let equipment_id = equipments.push(
-            objects::Equipment {
-                id: "".to_string(),
-                wheelchair_boarding: wheelchair_availability.unwrap(),
-                sheltered: objects::Availability::InformationNotAvailable,
-                elevator: objects::Availability::InformationNotAvailable,
-                escalator: objects::Availability::InformationNotAvailable,
-                bike_accepted: objects::Availability::InformationNotAvailable,
-                bike_depot: objects::Availability::InformationNotAvailable,
-                visual_announcement: objects::Availability::InformationNotAvailable,
-                audible_announcement: objects::Availability::InformationNotAvailable,
-                appropriate_escort: objects::Availability::InformationNotAvailable,
-                appropriate_signage: objects::Availability::InformationNotAvailable,
-            },
-            id_prefix,
-        );
+        let equipment_id = equipments.push(objects::Equipment {
+            id: "".to_string(),
+            wheelchair_boarding: wheelchair_availability.unwrap(),
+            sheltered: objects::Availability::InformationNotAvailable,
+            elevator: objects::Availability::InformationNotAvailable,
+            escalator: objects::Availability::InformationNotAvailable,
+            bike_accepted: objects::Availability::InformationNotAvailable,
+            bike_depot: objects::Availability::InformationNotAvailable,
+            visual_announcement: objects::Availability::InformationNotAvailable,
+            audible_announcement: objects::Availability::InformationNotAvailable,
+            appropriate_escort: objects::Availability::InformationNotAvailable,
+            appropriate_signage: objects::Availability::InformationNotAvailable,
+        });
 
         return Some(equipment_id);
     }
@@ -401,14 +393,12 @@ fn get_equipment_id_and_populate_equipments(
 
 pub fn read_stops<P: AsRef<path::Path>>(
     path: P,
-    comments: &mut Vec<objects::Comment>,
+    comments: &mut CollectionWithId<objects::Comment>,
     equipments: &mut EquipmentList,
-) -> Result<
-    (
-        CollectionWithId<objects::StopArea>,
-        CollectionWithId<objects::StopPoint>,
-    ),
-> {
+) -> Result<(
+    CollectionWithId<objects::StopArea>,
+    CollectionWithId<objects::StopPoint>,
+)> {
     let path = path.as_ref().join("stops.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
     let gtfs_stops: Vec<Stop> = rdr.deserialize()
@@ -714,14 +704,13 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
 mod tests {
     extern crate tempdir;
     use self::tempdir::TempDir;
+    use collection::CollectionWithId;
     use collection::add_prefix;
-    use model::Collections;
-    use std::fs::File;
-    use objects::*;
-    use std::io::prelude::*;
-    use Collections;
     use gtfs::read::EquipmentList;
-    use collection::add_prefix;
+    use model::Collections;
+    use objects::*;
+    use std::fs::File;
+    use std::io::prelude::*;
 
     fn create_file_with_content(temp_dir: &TempDir, file_name: &str, content: &str) {
         let file_path = temp_dir.path().join(file_name);
@@ -805,8 +794,9 @@ mod tests {
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut vec![], &mut equipments).unwrap();
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_areas.len());
             assert_eq!(1, stop_points.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -828,8 +818,9 @@ mod tests {
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut vec![], &mut equipments).unwrap();
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
             //validate stop_point code
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
@@ -857,8 +848,9 @@ mod tests {
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, _) =
-                super::read_stops(tmp_dir.path(), &mut vec![], &mut equipments).unwrap();
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -1118,20 +1110,26 @@ mod tests {
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let prefix = Some("my_prefix:".to_string());
-            let mut comments: Vec<Comment> = vec![];
+            let prefix = "my_prefix:".to_string();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (stop_areas, stop_points) =
                 super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
             let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
             super::read_routes(tmp_dir, &mut collections).unwrap();
+            collections.stop_areas = stop_areas;
+            collections.stop_points = stop_points;
+            collections.networks = networks;
+            collections.companies = companies;
+            collections.comments = comments;
 
-            add_prefix(&mut collections.networks, prefix).unwrap();
+            add_prefix(&mut collections.networks, &prefix).unwrap();
             add_prefix(&mut collections.companies, &prefix).unwrap();
             add_prefix(&mut collections.stop_points, &prefix).unwrap();
             add_prefix(&mut collections.stop_areas, &prefix).unwrap();
             add_prefix(&mut collections.routes, &prefix).unwrap();
             add_prefix(&mut collections.lines, &prefix).unwrap();
+            add_prefix(&mut collections.comments, &prefix).unwrap();
 
             let mut companies_ids: Vec<String> = collections
                 .companies
@@ -1149,33 +1147,24 @@ mod tests {
             networks_ids.sort();
             assert_eq!(vec!["my_prefix:285", "my_prefix:584"], networks_ids);
 
-            let mut stop_areas_ids: Vec<(String, CommentLinksT)> = collections
+            let mut stop_areas_ids: Vec<String> = collections
                 .stop_areas
                 .iter()
-                .map(|(_, stop_area)| (stop_area.id.clone(), stop_area.comment_links.clone()))
+                .map(|(_, stop_area)| (stop_area.id.clone()))
                 .collect();
             stop_areas_ids.sort();
             assert_eq!(
                 vec![
-                    ("my_prefix:Navitia:sp:01".to_string(), vec![]),
-                    (
-                        "my_prefix:sa:03".to_string(),
-                        vec!["my_prefix:stop:sa:03".to_string()],
-                    ),
+                    "my_prefix:Navitia:sp:01".to_string(),
+                    "my_prefix:sa:03".to_string(),
                 ],
                 stop_areas_ids
             );
 
-            let mut stop_points_ids: Vec<(String, String, CommentLinksT)> = collections
+            let mut stop_points_ids: Vec<(String, String)> = collections
                 .stop_points
                 .iter()
-                .map(|(_, stop_point)| {
-                    (
-                        stop_point.id.clone(),
-                        stop_point.stop_area_id.clone(),
-                        stop_point.comment_links.clone(),
-                    )
-                })
+                .map(|(_, stop_point)| (stop_point.id.clone(), stop_point.stop_area_id.clone()))
                 .collect();
             stop_points_ids.sort();
             assert_eq!(
@@ -1183,13 +1172,8 @@ mod tests {
                     (
                         "my_prefix:sp:01".to_string(),
                         "my_prefix:Navitia:sp:01".to_string(),
-                        vec!["my_prefix:stop:sp:01".to_string()],
                     ),
-                    (
-                        "my_prefix:sp:02".to_string(),
-                        "my_prefix:sp:01".to_string(),
-                        vec![],
-                    ),
+                    ("my_prefix:sp:02".to_string(), "my_prefix:sp:01".to_string()),
                 ],
                 stop_points_ids
             );
@@ -1209,11 +1193,12 @@ mod tests {
                 .collect();
             route_ids.sort();
             assert_eq!(vec!["my_prefix:route_1", "my_prefix:route_2"], route_ids);
+            let comment_vec = collections.comments.into_vec();
 
-            assert_eq!(comments[0].id, "my_prefix:stop:sp:01");
-            assert_eq!(comments[0].value, "my first desc");
-            assert_eq!(comments[1].id, "my_prefix:stop:sa:03");
-            assert_eq!(comments[1].value, "my second desc");
+            assert_eq!(comment_vec[0].id, "my_prefix:stop:sp:01");
+            assert_eq!(comment_vec[0].name, "my first desc");
+            assert_eq!(comment_vec[1].id, "my_prefix:stop:sa:03");
+            assert_eq!(comment_vec[1].name, "my second desc");
         });
     }
 
@@ -1227,13 +1212,19 @@ mod tests {
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
 
-            let prefix = Some("my_prefix:".to_string());
-            let mut comments: Vec<Comment> = vec![];
+            let prefix = "my_prefix:".to_string();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (stop_areas, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments, &prefix).unwrap();
+            let (mut stop_areas, mut stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            add_prefix(&mut stop_areas, &prefix).unwrap();
+            add_prefix(&mut stop_points, &prefix).unwrap();
+            let mut equipments_collection =
+                CollectionWithId::new(equipments.get_equipments()).unwrap();
+            add_prefix(&mut equipments_collection, &prefix).unwrap();
             assert_eq!(2, stop_areas.len());
             assert_eq!(2, stop_points.len());
+            assert_eq!(2, equipments_collection.len());
 
             let mut stop_point_equipment_ids: Vec<Option<String>> = stop_points
                 .iter()
@@ -1254,9 +1245,8 @@ mod tests {
                 vec![None, Some("my_prefix:2".to_string())],
                 stop_areas_equipment_ids
             );
-            let equipments_result = equipments.get_equipments();
             assert_eq!(
-                equipments_result,
+                equipments_collection.into_vec(),
                 vec![
                     Equipment {
                         id: "my_prefix:1".to_string(),

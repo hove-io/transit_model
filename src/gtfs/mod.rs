@@ -16,17 +16,13 @@
 
 mod read;
 
-use std::path;
-use {Collections, PtObjects};
-use objects::Comment;
-use std::fs::File;
-use gtfs::read::EquipmentList;
 use Result;
 use collection::CollectionWithId;
-use common_format::manage_calendars;
 use collection::add_prefix;
 use common_format::manage_calendars;
+use gtfs::read::EquipmentList;
 use model::{Collections, Model};
+use objects::Comment;
 use std::path;
 
 pub fn read<P: AsRef<path::Path>>(
@@ -36,7 +32,7 @@ pub fn read<P: AsRef<path::Path>>(
 ) -> Result<Model> {
     let mut collections = Collections::default();
     let mut equipments = EquipmentList::default();
-    let mut comments: Vec<Comment> = vec![];
+    let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
 
     let (contributors, datasets) = read::read_config(config_path)?;
     collections.contributors = contributors;
@@ -46,14 +42,13 @@ pub fn read<P: AsRef<path::Path>>(
     let (networks, companies) = read::read_agency(path)?;
     collections.networks = networks;
     collections.companies = companies;
-    let (stopareas, stoppoints) =
-        read::read_stops(path, &mut comments, &mut equipments)?;
-    collections.stop_areas = stopareas;
-    collections.stop_points = stoppoints;
+    let (stop_areas, stop_points) = read::read_stops(path, &mut comments, &mut equipments)?;
+    collections.stop_areas = stop_areas;
+    collections.stop_points = stop_points;
     manage_calendars(&mut collections, path)?;
     read::read_routes(path, &mut collections)?;
     collections.equipments = CollectionWithId::new(equipments.get_equipments())?;
-    collections.comments = CollectionWithId::new(comments)?;
+    collections.comments = comments;
 
     //add prefixes
     if let Some(prefix) = prefix {
@@ -66,6 +61,8 @@ pub fn read<P: AsRef<path::Path>>(
         add_prefix(&mut collections.lines, &prefix)?;
         add_prefix(&mut collections.contributors, &prefix)?;
         add_prefix(&mut collections.datasets, &prefix)?;
+        add_prefix(&mut collections.equipments, &prefix)?;
+        add_prefix(&mut collections.comments, &prefix)?;
     }
     Ok(Model::new(collections)?)
 }

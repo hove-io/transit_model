@@ -187,6 +187,18 @@ impl<T: Id<T>> CollectionWithId<T> {
             collection: self,
         }
     }
+
+    pub fn push(&mut self, item: T) -> Result<Idx<T>> {
+        let next_index = self.collection.objects.len();
+        let idx = Idx::new(next_index);
+        ensure!(
+            self.id_to_idx.insert(item.id().to_string(), idx).is_none(),
+            "{} already found",
+            item.id()
+        );
+        self.collection.objects.push(item);
+        Ok(idx)
+    }
 }
 pub struct RefMut<'a, T: 'a + Id<T>> {
     idx: Idx<T>,

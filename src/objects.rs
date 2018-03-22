@@ -650,6 +650,10 @@ impl Id<StopArea> for StopArea {
 impl AddPrefix for StopArea {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
+        let equipment_id_opt = self.equipment_id.clone();
+        if let Some(equipment_id) = equipment_id_opt {
+            self.equipment_id = Some(prefix.to_string() + &equipment_id);
+        }
     }
 }
 impl_codes!(StopArea);
@@ -694,6 +698,10 @@ impl AddPrefix for StopPoint {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
         self.stop_area_id = prefix.to_string() + &self.stop_area_id;
+        let equipment_id_opt = self.equipment_id.clone();
+        if let Some(equipment_id) = equipment_id_opt {
+            self.equipment_id = Some(prefix.to_string() + &equipment_id);
+        }
     }
 }
 impl_codes!(StopPoint);
@@ -807,6 +815,12 @@ impl Id<Comment> for Comment {
     }
 }
 
+impl AddPrefix for Comment {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
 #[derivative(Default)]
 pub enum Availability {
@@ -848,6 +862,12 @@ pub struct Equipment {
 impl Id<Equipment> for Equipment {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl AddPrefix for Equipment {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
     }
 }
 
