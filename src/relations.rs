@@ -59,7 +59,7 @@
 //! ```
 //!
 //! First, we want to model the relations between the object. One bike
-//! have a brand, and a brand have several bikes (hopefully). Thus, we
+//! has a brand, and a brand has several bikes (hopefully). Thus, we
 //! use a `OneToMany<Bike, Brand>` to model this relation.
 //!
 //! We repeat this process to model every relations. We obtain without
@@ -114,7 +114,7 @@ pub trait Relation {
     fn get_corresponding_backward(&self, from: &IdxSet<Self::To>) -> IdxSet<Self::From>;
 }
 
-/// A one to many relation, i.e. a `T` have one correponding `U`, and
+/// A one to many relation, i.e. a `T` has one correponding `U`, and
 /// a `U` can have multiple corresponding `T`.
 #[derive(Derivative, Debug)]
 #[derivative(Default(bound = ""))]
