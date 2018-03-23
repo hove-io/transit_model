@@ -18,9 +18,9 @@ extern crate navitia_model;
 use navitia_model::objects::*;
 use navitia_model::collection::{CollectionWithId, Id, Idx};
 use navitia_model::relations::IdxSet;
-use navitia_model::{GetCorresponding, PtObjects};
+use navitia_model::model::{GetCorresponding, Model};
 
-fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &PtObjects) -> Vec<String>
+fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
 where
     U: Id<U>,
     IdxSet<T>: GetCorresponding<U>,

@@ -19,7 +19,7 @@ mod read;
 mod write;
 
 use std::path;
-use {Collections, PtObjects};
+use model::{Collections, Model};
 use utils::*;
 use objects::*;
 use Result;
@@ -95,7 +95,7 @@ fn default_visible() -> bool {
     true
 }
 
-pub fn read<P: AsRef<path::Path>>(path: P) -> Result<PtObjects> {
+pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let path = path.as_ref();
     info!("Loading NTFS from {:?}", path);
     let mut collections = Collections::default();
@@ -122,12 +122,12 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<PtObjects> {
     read::manage_comments(&mut collections, path)?;
     read::manage_object_properties(&mut collections, path)?;
     info!("Indexing");
-    let res = PtObjects::new(collections)?;
+    let res = Model::new(collections)?;
     info!("Loading NTFS done");
     Ok(res)
 }
 
-pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &PtObjects) -> Result<()> {
+pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &Model) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to {:?}", path);
 
@@ -164,7 +164,7 @@ mod tests {
     extern crate tempdir;
     use self::tempdir::TempDir;
     use objects::*;
-    use {Collection, CollectionWithId};
+    use collection::{Collection, CollectionWithId};
     use super::{read, write};
     use super::Collections;
     use std::collections::HashMap;

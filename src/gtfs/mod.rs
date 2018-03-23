@@ -17,7 +17,7 @@
 mod read;
 
 use std::path;
-use {Collections, PtObjects};
+use model::{Collections, Model};
 use Result;
 use common_format::manage_calendars;
 use collection::add_prefix;
@@ -26,7 +26,7 @@ pub fn read<P: AsRef<path::Path>>(
     path: P,
     config_path: Option<P>,
     prefix: Option<String>,
-) -> Result<PtObjects> {
+) -> Result<Model> {
     let mut collections = Collections::default();
 
     let (contributors, datasets) = read::read_config(config_path)?;
@@ -56,5 +56,5 @@ pub fn read<P: AsRef<path::Path>>(
         add_prefix(&mut collections.datasets, &prefix)?;
     }
 
-    Ok(PtObjects::new(collections)?)
+    Ok(Model::new(collections)?)
 }
