@@ -24,6 +24,12 @@
 //! `Brand`. `Bike`s also have an `Owner`, and these `Owner`s have a
 //! `Job`. `Bike`s also have a `Kind`.
 //!
+//! ```raw
+//! Brand - Bike - Owner - Job
+//!          |
+//!         Kind
+//! ```
+//!
 //! Let's defines these relations and use them a bit:
 //!
 //! ```no_run
@@ -42,7 +48,6 @@
 //!     bikes_to_brands: OneToMany<Bike, Brand>,
 //!     bikes_to_owners: OneToMany<Bike, Owner>,
 //!     owners_to_jobs: OneToMany<Owner, Job>,
-//!     #[get_corresponding(weight = "1.1")]
 //!     bikes_to_kinds: OneToMany<Bike, Kind>,
 //! }
 //! fn main() {
@@ -62,7 +67,7 @@
 //! has a brand, and a brand has several bikes (hopefully). Thus, we
 //! use a `OneToMany<Bike, Brand>` to model this relation.
 //!
-//! We repeat this process to model every relations. We obtain without
+//! We repeat this process to model every relation. We obtain without
 //! too much effort the `World` struct.
 //!
 //! The `GetCorresponding` derive looks at each field of the `World`
@@ -73,18 +78,88 @@
 //! compute the shortest path between all the types, and generate an
 //! `impl GetCorresponding` for each feasible path.
 //!
-//! The weight of the relations can be tuned as shown for the
-//! `bikes_to_kinds` relation. This is not really useful for this
-//! example, but can be important when the relations are more complex.
-//!
 //! These `impl GetCorresponding` are used by
 //! `World::get_corresponding_from_idx` and `World::get_corresponding`
 //! that are helpers to explore the `World`.
 //!
 //! Thus, when we call `world.get_corresponding_from_idx(mbk)` for
 //! `Owner`, we will use the generated code that, basically, gets all
-//! the `Bike`s correponding to the `Brand` MBK, and then gets all the
-//! `Owner`s corresponding to these `Bike`s.
+//! the `Bike`s corresponding to the `Brand` MBK, and then gets all
+//! the `Owner`s corresponding to these `Bike`s.
+//!
+//! Imagine that, in our application, we use a lot the `Owner->Kind`
+//! and `Brand->Kind` search.  To do these searches, we pass by
+//! `Bike`, and there is a lot of `Bike`s in our model.  Thus, as an
+//! optimization, we want to precompute these relations.
+//!
+//! ```raw
+//! Brand - Bike - Owner - Job
+//!    \     |      /
+//!     `-- Kind --'
+//! ```
+//!
+//! The shortcuts `Brand - Kind` and `Kind - Owner` allow our
+//! optimization, but we now have a problem for the `Owner->Brand`
+//! search: we can do `Owner->Kind->Brand` and `Owner->Bike->Brand`
+//! with a cost of 2.  The first solution is clearly wrong, introduced
+//! by our shortcut.  To fix this problem, we can put a weight of 1.9
+//! on `Brand - Kind` and `Kind - Owner`.  The path
+//! `Owner->Kind->Brand` now cost 3.8 and is discarded.
+//!
+//! Let's implement that:
+//!
+//! ```
+//! # #[macro_use] extern crate get_corresponding_derive;
+//! # extern crate navitia_model;
+//! # use navitia_model::relations::*;
+//! # use navitia_model::collection::Idx;
+//! # struct Bike;
+//! # struct Brand;
+//! # struct Owner;
+//! # struct Job;
+//! # struct Kind;
+//! # fn get_mbk_brand() -> Idx<Brand> { unimplemented!() }
+//! #[derive(GetCorresponding)]
+//! pub struct World {
+//!     bikes_to_brands: OneToMany<Bike, Brand>,
+//!     bikes_to_owners: OneToMany<Bike, Owner>,
+//!     owners_to_jobs: OneToMany<Owner, Job>,
+//!     bikes_to_kinds: OneToMany<Bike, Kind>,
+//!
+//!     // shortcuts
+//!     #[get_corresponding(weight = "1.9")]
+//!     brands_to_kinds: ManyToMany<Brand, Kind>,
+//!     #[get_corresponding(weight = "1.9")]
+//!     kinds_to_owners: ManyToMany<Kind, Owner>,
+//! }
+//! # fn create_bikes_to_brands() -> OneToMany<Bike, Brand> { unimplemented!() }
+//! # fn create_bikes_to_owners() -> OneToMany<Bike, Owner> { unimplemented!() }
+//! # fn create_owners_to_jobs() -> OneToMany<Owner, Job> { unimplemented!() }
+//! # fn create_bikes_to_kinds() -> OneToMany<Bike, Kind> { unimplemented!() }
+//! impl World {
+//!     fn new() -> World {
+//!         let bikes_to_brands = create_bikes_to_brands();
+//!         let bikes_to_owners = create_bikes_to_owners();
+//!         let owners_to_jobs = create_owners_to_jobs();
+//!         let bikes_to_kinds = create_bikes_to_kinds();
+//!         World {
+//!             brands_to_kinds: ManyToMany::from_relations_source(
+//!                 &bikes_to_brands,
+//!                 &bikes_to_kinds,
+//!             ),
+//!             kinds_to_owners: ManyToMany::from_relations_source(
+//!                 &bikes_to_kinds,
+//!                 &bikes_to_owners,
+//!             ),
+//!             bikes_to_brands,
+//!             bikes_to_owners,
+//!             owners_to_jobs,
+//!             bikes_to_kinds,
+//!         }
+//!     }
+//! }
+//! # fn main() {}
+//! ```
 
 use Result;
 use collection::{CollectionWithId, Id, Idx};
@@ -105,16 +180,19 @@ pub trait Relation {
     /// Returns the complete set of the source objects.
     fn get_from(&self) -> IdxSet<Self::From>;
 
+    /// Returns the complete set of the target objects.
+    fn get_to(&self) -> IdxSet<Self::To>;
+
     /// For a given set of the source objects, returns the
-    /// correponding targets objects.
+    /// corresponding targets objects.
     fn get_corresponding_forward(&self, from: &IdxSet<Self::From>) -> IdxSet<Self::To>;
 
     /// For a given set of the target objects, returns the
-    /// correponding source objects.
+    /// corresponding source objects.
     fn get_corresponding_backward(&self, from: &IdxSet<Self::To>) -> IdxSet<Self::From>;
 }
 
-/// A one to many relation, i.e. a `T` has one correponding `U`, and
+/// A one to many relation, i.e. a `T` has one corresponding `U`, and
 /// a `U` can have multiple corresponding `T`.
 #[derive(Derivative, Debug)]
 #[derivative(Default(bound = ""))]
@@ -162,6 +240,9 @@ impl<T, U> Relation for OneToMany<T, U> {
     type To = U;
     fn get_from(&self) -> IdxSet<T> {
         self.one_to_many.keys().cloned().collect()
+    }
+    fn get_to(&self) -> IdxSet<U> {
+        self.many_to_one.keys().cloned().collect()
     }
     fn get_corresponding_forward(&self, from: &IdxSet<T>) -> IdxSet<U> {
         get_corresponding(&self.one_to_many, from)
@@ -233,6 +314,25 @@ impl<T, U> ManyToMany<T, U> {
             .collect();
         Self::from_forward(forward)
     }
+
+    /// Constructor from 2 relations with a common source, i.e. from
+    /// the relations `B->A` and `B->C`, constructs the relation
+    /// `A->C`.
+    pub fn from_relations_source<R1, R2>(r1: &R1, r2: &R2) -> Self
+    where
+        R1: Relation<To = T>,
+        R2: Relation<From = R1::From, To = U>,
+    {
+        let forward = r1.get_to()
+            .into_iter()
+            .map(|idx| {
+                let from = Some(idx).into_iter().collect();
+                let tmp = r1.get_corresponding_backward(&from);
+                (idx, r2.get_corresponding_forward(&tmp))
+            })
+            .collect();
+        Self::from_forward(forward)
+    }
 }
 
 impl<T, U> Relation for ManyToMany<T, U> {
@@ -240,6 +340,9 @@ impl<T, U> Relation for ManyToMany<T, U> {
     type To = U;
     fn get_from(&self) -> IdxSet<T> {
         self.forward.keys().cloned().collect()
+    }
+    fn get_to(&self) -> IdxSet<U> {
+        self.backward.keys().cloned().collect()
     }
     fn get_corresponding_forward(&self, from: &IdxSet<T>) -> IdxSet<U> {
         get_corresponding(&self.forward, from)
