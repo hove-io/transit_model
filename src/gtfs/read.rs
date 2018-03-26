@@ -14,18 +14,18 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use std::path;
-use csv;
+use Result;
 use collection::CollectionWithId;
+use csv;
+use failure::ResultExt;
 use model::Collections;
 use objects::{self, CommentLinksT, Contributor, Coord, KeysValues};
-use std::collections::HashSet;
-use utils::*;
-use Result;
-use std::result::Result as StdResult;
-use failure::ResultExt;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fs::File;
+use std::path;
+use std::result::Result as StdResult;
+use utils::*;
 extern crate serde_json;
 
 fn default_agency_id() -> String {
@@ -600,10 +600,10 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
 mod tests {
     extern crate tempdir;
     use self::tempdir::TempDir;
+    use collection::add_prefix;
+    use model::Collections;
     use std::fs::File;
     use std::io::prelude::*;
-    use model::Collections;
-    use collection::add_prefix;
 
     fn create_file_with_content(temp_dir: &TempDir, file_name: &str, content: &str) {
         let file_path = temp_dir.path().join(file_name);

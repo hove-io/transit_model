@@ -14,10 +14,10 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use collection::{Id, Idx};
-use utils::*;
 use chrono;
+use collection::{Id, Idx};
 use std::str::FromStr;
+use utils::*;
 
 pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);
@@ -303,8 +303,8 @@ pub enum RgbError {
     TooShortHexa,
 }
 
-use std::error::Error;
 use std;
+use std::error::Error;
 
 impl std::fmt::Display for RgbError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

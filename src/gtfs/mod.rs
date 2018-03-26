@@ -16,11 +16,11 @@
 
 mod read;
 
-use std::path;
-use model::{Collections, Model};
 use Result;
-use common_format::manage_calendars;
 use collection::add_prefix;
+use common_format::manage_calendars;
+use model::{Collections, Model};
+use std::path;
 
 pub fn read<P: AsRef<path::Path>>(
     path: P,

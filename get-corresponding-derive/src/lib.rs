@@ -70,9 +70,9 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
 }
 
 fn to_edge(field: &syn::Field) -> Option<Edge> {
-    use syn::PathParameters::AngleBracketed;
     use syn::MetaItem::*;
     use syn::NestedMetaItem::MetaItem;
+    use syn::PathParameters::AngleBracketed;
 
     let ident = field.ident.as_ref()?.as_ref();
     let mut split = ident.split("_to_");

@@ -14,12 +14,12 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use std::result::Result as StdResult;
-use std::ops;
-use std::collections::{BTreeMap, HashMap};
 use collection::{Collection, CollectionWithId, Idx};
 use objects::*;
 use relations::{IdxSet, ManyToMany, OneToMany, Relation};
+use std::collections::{BTreeMap, HashMap};
+use std::ops;
+use std::result::Result as StdResult;
 use {Error, Result};
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]

@@ -14,10 +14,10 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use std::collections::{BTreeMap, BTreeSet};
-use collection::{CollectionWithId, Id, Idx};
 use Result;
+use collection::{CollectionWithId, Id, Idx};
 use failure::ResultExt;
+use std::collections::{BTreeMap, BTreeSet};
 
 pub type IdxSet<T> = BTreeSet<Idx<T>>;
 

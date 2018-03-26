@@ -15,13 +15,13 @@
 // <http://www.gnu.org/licenses/>.
 
 use Result;
-use failure::ResultExt;
-use csv;
-use std::path;
 use collection::*;
-use objects::{Calendar, Date, ExceptionType};
-use utils::{de_from_date_string, ser_from_naive_date};
+use csv;
+use failure::ResultExt;
 use model::Collections;
+use objects::{Calendar, Date, ExceptionType};
+use std::path;
+use utils::{de_from_date_string, ser_from_naive_date};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CalendarDate {
