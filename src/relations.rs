@@ -45,10 +45,10 @@
 //! # fn get_mbk_brand() -> Idx<Brand> { unimplemented!() }
 //! #[derive(Default, GetCorresponding)]
 //! pub struct World {
-//!     bikes_to_brands: OneToMany<Bike, Brand>,
-//!     bikes_to_owners: OneToMany<Bike, Owner>,
-//!     owners_to_jobs: OneToMany<Owner, Job>,
-//!     bikes_to_kinds: OneToMany<Bike, Kind>,
+//!     brands_to_bikes: OneToMany<Brand, Bike>,
+//!     owners_to_bikes: OneToMany<Owner, Bike>,
+//!     jobs_to_owners: OneToMany<Job, Owner>,
+//!     kinds_to_bikes: OneToMany<Kind, Bike>,
 //! }
 //! fn main() {
 //!     let world = World::default();
@@ -121,10 +121,10 @@
 //! # fn get_mbk_brand() -> Idx<Brand> { unimplemented!() }
 //! #[derive(GetCorresponding)]
 //! pub struct World {
-//!     bikes_to_brands: OneToMany<Bike, Brand>,
-//!     bikes_to_owners: OneToMany<Bike, Owner>,
-//!     owners_to_jobs: OneToMany<Owner, Job>,
-//!     bikes_to_kinds: OneToMany<Bike, Kind>,
+//!     brands_to_bikes: OneToMany<Brand, Bike>,
+//!     owners_to_bikes: OneToMany<Owner, Bike>,
+//!     jobs_to_owners: OneToMany<Job, Owner>,
+//!     kinds_to_bikes: OneToMany<Kind, Bike>,
 //!
 //!     // shortcuts
 //!     #[get_corresponding(weight = "1.9")]
@@ -132,29 +132,29 @@
 //!     #[get_corresponding(weight = "1.9")]
 //!     kinds_to_owners: ManyToMany<Kind, Owner>,
 //! }
-//! # fn create_bikes_to_brands() -> OneToMany<Bike, Brand> { unimplemented!() }
-//! # fn create_bikes_to_owners() -> OneToMany<Bike, Owner> { unimplemented!() }
-//! # fn create_owners_to_jobs() -> OneToMany<Owner, Job> { unimplemented!() }
-//! # fn create_bikes_to_kinds() -> OneToMany<Bike, Kind> { unimplemented!() }
+//! # fn create_brands_to_bikes() -> OneToMany<Brand, Bike> { unimplemented!() }
+//! # fn create_owners_to_bikes() -> OneToMany<Owner, Bike> { unimplemented!() }
+//! # fn create_jobs_to_owners() -> OneToMany<Job, Owner> { unimplemented!() }
+//! # fn create_kinds_to_bikes() -> OneToMany<Kind, Bike> { unimplemented!() }
 //! impl World {
 //!     fn new() -> World {
-//!         let bikes_to_brands = create_bikes_to_brands();
-//!         let bikes_to_owners = create_bikes_to_owners();
-//!         let owners_to_jobs = create_owners_to_jobs();
-//!         let bikes_to_kinds = create_bikes_to_kinds();
+//!         let brands_to_bikes = create_brands_to_bikes();
+//!         let owners_to_bikes = create_owners_to_bikes();
+//!         let jobs_to_owners = create_jobs_to_owners();
+//!         let kinds_to_bikes = create_kinds_to_bikes();
 //!         World {
-//!             brands_to_kinds: ManyToMany::from_relations_source(
-//!                 &bikes_to_brands,
-//!                 &bikes_to_kinds,
+//!             brands_to_kinds: ManyToMany::from_relations_sink(
+//!                 &brands_to_bikes,
+//!                 &kinds_to_bikes,
 //!             ),
-//!             kinds_to_owners: ManyToMany::from_relations_source(
-//!                 &bikes_to_kinds,
-//!                 &bikes_to_owners,
+//!             kinds_to_owners: ManyToMany::from_relations_sink(
+//!                 &kinds_to_bikes,
+//!                 &owners_to_bikes,
 //!             ),
-//!             bikes_to_brands,
-//!             bikes_to_owners,
-//!             owners_to_jobs,
-//!             bikes_to_kinds,
+//!             brands_to_bikes,
+//!             owners_to_bikes,
+//!             jobs_to_owners,
+//!             kinds_to_bikes,
 //!         }
 //!     }
 //! }
@@ -192,8 +192,8 @@ pub trait Relation {
     fn get_corresponding_backward(&self, from: &IdxSet<Self::To>) -> IdxSet<Self::From>;
 }
 
-/// A one to many relation, i.e. a `T` has one corresponding `U`, and
-/// a `U` can have multiple corresponding `T`.
+/// A one to many relation, i.e. to one `T` corresponds many `U`,
+/// and a `U` has one corresponding `T`.
 #[derive(Derivative, Debug)]
 #[derivative(Default(bound = ""))]
 pub struct OneToMany<T, U> {
