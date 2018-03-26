@@ -102,7 +102,7 @@
 //! optimization, but we now have a problem for the `Owner->Brand`
 //! search: we can do `Owner->Kind->Brand` and `Owner->Bike->Brand`
 //! with a cost of 2.  The first solution is clearly wrong, introduced
-//! by our shortcut.  To fix this problem, we can put a weight of 1.9
+//! by our shortcuts.  To fix this problem, we can put a weight of 1.9
 //! on `Brand - Kind` and `Kind - Owner`.  The path
 //! `Owner->Kind->Brand` now cost 3.8 and is discarded.
 //!
