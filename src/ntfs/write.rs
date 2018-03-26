@@ -14,16 +14,16 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
+use collection::{Collection, CollectionWithId, Id};
+use common_format::CalendarDate;
+use csv;
+use failure::ResultExt;
+use model::Collections;
+use objects::*;
+use serde;
 use std::collections::HashMap;
 use std::path;
-use csv;
-use collection::{Collection, CollectionWithId, Id};
-use serde;
-use objects::*;
-use model::Collections;
-use common_format::CalendarDate;
-use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
-use failure::ResultExt;
 
 pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>) -> Result<()> {
     info!("Writing feed_infos.txt");

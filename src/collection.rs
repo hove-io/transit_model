@@ -14,21 +14,21 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use std::collections::HashMap;
-use std::marker::PhantomData;
-use std::iter;
-use std::slice;
-use std::ops;
-use std::cmp::Ordering;
-use std::result::Result as StdResult;
-use failure::ResultExt;
-use std::path;
 use csv;
+use failure::ResultExt;
 use serde;
 use std::borrow::Borrow;
+use std::cmp::Ordering;
+use std::collections::HashMap;
+use std::iter;
+use std::marker::PhantomData;
+use std::ops;
+use std::path;
+use std::result::Result as StdResult;
+use std::slice;
 
-use objects::AddPrefix;
 use Result;
+use objects::AddPrefix;
 
 pub trait Id<T> {
     fn id(&self) -> &str;

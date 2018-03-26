@@ -18,12 +18,12 @@ use common_format;
 mod read;
 mod write;
 
-use std::path;
-use model::{Collections, Model};
-use utils::*;
-use objects::*;
 use Result;
 use collection::*;
+use model::{Collections, Model};
+use objects::*;
+use std::path;
+use utils::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
@@ -163,17 +163,17 @@ pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &Model) -> Result<()> {
 mod tests {
     extern crate tempdir;
     use self::tempdir::TempDir;
-    use objects::*;
-    use collection::{Collection, CollectionWithId};
-    use super::{read, write};
     use super::Collections;
-    use std::collections::HashMap;
-    use serde;
-    use std::fmt::Debug;
+    use super::{read, write};
     use chrono;
-    use std::path;
     use collection::*;
+    use collection::{Collection, CollectionWithId};
     use common_format::*;
+    use objects::*;
+    use serde;
+    use std::collections::HashMap;
+    use std::fmt::Debug;
+    use std::path;
 
     fn ser_deser_in_tmp_dir<F>(func: F)
     where

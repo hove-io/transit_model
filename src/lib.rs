@@ -31,12 +31,12 @@ extern crate chrono;
 #[macro_use]
 pub(crate) mod utils;
 pub mod collection;
-pub mod objects;
 pub(crate) mod common_format;
-pub mod relations;
-pub mod ntfs;
 pub mod gtfs;
 pub mod model;
+pub mod ntfs;
+pub mod objects;
+pub mod relations;
 
 pub type Error = failure::Error;
 pub type Result<T> = std::result::Result<T, Error>;

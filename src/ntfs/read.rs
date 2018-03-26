@@ -14,15 +14,15 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use std::path;
 use csv;
+use std::path;
 
-use objects::*;
-use collection::*;
-use model::Collections;
 use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
 use Result;
+use collection::*;
 use failure::ResultExt;
+use model::Collections;
+use objects::*;
 
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {

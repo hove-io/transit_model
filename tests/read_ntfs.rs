@@ -15,10 +15,10 @@
 // <http://www.gnu.org/licenses/>.
 
 extern crate navitia_model;
-use navitia_model::objects::*;
 use navitia_model::collection::{CollectionWithId, Id, Idx};
-use navitia_model::relations::IdxSet;
 use navitia_model::model::{GetCorresponding, Model};
+use navitia_model::objects::*;
+use navitia_model::relations::IdxSet;
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
 where
