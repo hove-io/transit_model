@@ -163,7 +163,7 @@ A Navitia Line is created to group one or several Navitia Routes when they are c
 | trips.txt | trip_id | Required | trips.txt | trip_id |  |
 | trips.txt | trip_headsign | Optionnal | trips.txt |  | `trip_short_name`, of if empty `trip_headsign` |
 | trips.txt | block_id | Optionnal | trips.txt | block_id |  |
-| trips.txt | company_id | Required | trips.txt | agency_id |  |
+| trips.txt | company_id | Required | routes.txt | agency_id | The company corresponding to the agency_id of the trip's route_id |
 | trips.txt | physical_mode_id | Required |  |  | use the `route_type` See "Mapping of route_type with modes" chapter |
 | trips.txt | trip_property_id | Optionnal | trips.txt |  | (1) |
 | trips.txt | dataset_id | Required |  |  | The `dataset_id` provided (cf. [gtfs2ntfs.md](./gtfs2ntfs.md) ) |
@@ -181,9 +181,35 @@ Be carefull to only create necessary trip_properties and avoid dupplicates.
 | NTFS file | NTFS field | Constraint | GTFS file | GTFS field | Note |
 | --- | --- | --- | --- | --- | --- |
 | stop_times.txt | trip_id | Required | stop_times.txt | trip_id |  |
-| stop_times.txt | arrival_time | Optionnal | stop_times.txt | arrival_time |  |
-| stop_times.txt | departure_time | Optionnal | stop_times.txt | departure_time |  |
+| stop_times.txt | arrival_time | Optionnal | stop_times.txt | arrival_time | If not specified, see (1) |
+| stop_times.txt | departure_time | Optionnal | stop_times.txt | departure_time | If not specified, see (1) |
 | stop_times.txt | stop_id | Required | stop_times.txt | stop_id |  |
 | stop_times.txt | stop_sequence | Required | stop_times.txt | stop_sequence |  |
 | stop_times.txt | stop_headsign | Optionnal | stop_times.txt | stop_headsign |  |
-| trips.txt | service_id | Required | trips.txt | service_id |  |
+| stop_times.txt | pickup_type | Optionnal | stop_times.txt | pickup_type |  |
+| stop_times.txt | drop_off_type | Optionnal | stop_times.txt | drop_off_type |  |
+| stop_times.txt | date_time_estimated | Optionnal | stop_times.txt | timepoint | GTFS and NTFS values are inverted. See (2) |
+
+(1) GTFS `arrival_time` and `departure_time` should contain values.
+* if both of them are empty :
+    * if the stop_time is the first or the last of the trip, an error shoud be logged and the stop_time ignored
+    * if not, the time should be interpolated (see below).     
+* if one of them is empty, a warning should be logged and the value of the other field should be copied to the empty one.
+
+**Interpolation**
+If a stop_time needs to be interpolated : 
+* collect the nearest preceding stop_time and the nearest following stop_time containing a valid time value
+* apply a simple distribution for all the intermediate stop_times
+For exemple : 
+
+| GTFS passing time | NTFS Extrapolated time |
+| --- | --- |
+| 9:00 | 9:00 |
+| - | 9h30 |
+| - | 10:00 |
+| 10:30 | 10:30 |
+
+(2) The GTFS `timepoint` conversion tules for NTFS `date_time_estimated` are :
+* if `timepoint` is unspecified => `date_time_estimated` equals 0
+* if `timepoint` equals 1 => `date_time_estimated` equals 0
+* if `timepoint` equals 0 => `date_time_estimated` equals 1
