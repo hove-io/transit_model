@@ -8,5 +8,4 @@ COPY --from=builder /home/rust/src/target/x86_64-unknown-linux-musl/release/gtfs
 VOLUME /app/input
 VOLUME /app/output
 
-ENTRYPOINT ["./gtfs2ntfs"]
-CMD ["-i", "./input", "-o", "./output"]
+ENTRYPOINT ["./gtfs2ntfs", "-i", "./input", "-o", "./output"]
