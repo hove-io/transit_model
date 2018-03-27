@@ -20,6 +20,7 @@ use serde;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry::*;
 use std::iter;
 use std::marker::PhantomData;
 use std::ops;
@@ -191,13 +192,14 @@ impl<T: Id<T>> CollectionWithId<T> {
     pub fn push(&mut self, item: T) -> Result<Idx<T>> {
         let next_index = self.collection.objects.len();
         let idx = Idx::new(next_index);
-        ensure!(
-            self.id_to_idx.insert(item.id().to_string(), idx).is_none(),
-            "{} already found",
-            item.id()
-        );
-        self.collection.objects.push(item);
-        Ok(idx)
+        match self.id_to_idx.entry(item.id().to_string()) {
+            Occupied(_) => bail!("{} already found", item.id()),
+            Vacant(v) => {
+                v.insert(idx);
+                self.collection.objects.push(item);
+                Ok(idx)
+            }
+        }
     }
 }
 pub struct RefMut<'a, T: 'a + Id<T>> {

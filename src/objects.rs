@@ -66,7 +66,7 @@ pub trait Codes {
     fn codes_mut(&mut self) -> &mut KeysValues;
 }
 macro_rules! impl_codes {
-    ($ty: ty) => {
+    ($ty:ty) => {
         impl Codes for $ty {
             fn codes(&self) -> &KeysValues {
                 &self.codes
@@ -83,7 +83,7 @@ pub trait ObjectProperties {
     fn object_properties_mut(&mut self) -> &mut KeysValues;
 }
 macro_rules! impl_object_properties {
-    ($ty: ty) => {
+    ($ty:ty) => {
         impl ObjectProperties for $ty {
             fn object_properties(&self) -> &KeysValues {
                 &self.object_properties
@@ -102,7 +102,7 @@ pub trait CommentLinks {
     fn comment_links_mut(&mut self) -> &mut CommentLinksT;
 }
 macro_rules! impl_comment_links {
-    ($ty: ty) => {
+    ($ty:ty) => {
         impl CommentLinks for $ty {
             fn comment_links(&self) -> &CommentLinksT {
                 &self.comment_links

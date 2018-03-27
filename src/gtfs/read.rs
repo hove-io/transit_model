@@ -86,6 +86,8 @@ pub enum StopLocationType {
     StopArea,
     #[serde(rename = "1")]
     StopPoint,
+    #[serde(rename = "2")]
+    StopEntrace,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -117,15 +119,11 @@ struct Stop {
 
 pub struct EquipmentList {
     equipments: Vec<objects::Equipment>,
-    current_unaltered_id: u64,
 }
 
 impl Default for EquipmentList {
     fn default() -> Self {
-        EquipmentList {
-            equipments: vec![],
-            current_unaltered_id: 1,
-        }
+        EquipmentList { equipments: vec![] }
     }
 }
 
@@ -133,11 +131,10 @@ impl EquipmentList {
     pub fn get_equipments(self) -> Vec<objects::Equipment> {
         self.equipments
     }
-    fn push(&mut self, mut equipment: objects::Equipment) -> String {
-        equipment.id = self.current_unaltered_id.to_string();
+    pub fn push(&mut self, mut equipment: objects::Equipment) -> String {
+        equipment.id = self.equipments.len().to_string();
         let equipment_id = equipment.id.clone();
         self.equipments.push(equipment);
-        self.current_unaltered_id += 1;
         equipment_id
     }
 }
@@ -361,34 +358,28 @@ fn get_equipment_id_and_populate_equipments(
     equipments: &mut EquipmentList,
     stop: &Stop,
 ) -> Option<String> {
-    let wheelchair_boarding = stop.wheelchair_boarding.clone();
-    let wheelchair_availability: Option<objects::Availability> = {
-        if wheelchair_boarding == Some("1".to_string()) {
-            Some(objects::Availability::Available)
-        } else if wheelchair_boarding == Some("2".to_string()) {
-            Some(objects::Availability::NotAvailable)
-        } else {
-            None
-        }
-    };
-    if wheelchair_availability.is_some() {
-        let equipment_id = equipments.push(objects::Equipment {
-            id: "".to_string(),
-            wheelchair_boarding: wheelchair_availability.unwrap(),
-            sheltered: objects::Availability::InformationNotAvailable,
-            elevator: objects::Availability::InformationNotAvailable,
-            escalator: objects::Availability::InformationNotAvailable,
-            bike_accepted: objects::Availability::InformationNotAvailable,
-            bike_depot: objects::Availability::InformationNotAvailable,
-            visual_announcement: objects::Availability::InformationNotAvailable,
-            audible_announcement: objects::Availability::InformationNotAvailable,
-            appropriate_escort: objects::Availability::InformationNotAvailable,
-            appropriate_signage: objects::Availability::InformationNotAvailable,
-        });
-
-        return Some(equipment_id);
-    }
-    None
+    stop.wheelchair_boarding
+        .as_ref()
+        .and_then(|availability| match availability.as_str() {
+            "1" => Some(objects::Availability::Available),
+            "2" => Some(objects::Availability::NotAvailable),
+            _ => None,
+        })
+        .map(|availlability| {
+            equipments.push(objects::Equipment {
+                id: "".to_string(),
+                wheelchair_boarding: availlability,
+                sheltered: objects::Availability::InformationNotAvailable,
+                elevator: objects::Availability::InformationNotAvailable,
+                escalator: objects::Availability::InformationNotAvailable,
+                bike_accepted: objects::Availability::InformationNotAvailable,
+                bike_depot: objects::Availability::InformationNotAvailable,
+                visual_announcement: objects::Availability::InformationNotAvailable,
+                audible_announcement: objects::Availability::InformationNotAvailable,
+                appropriate_escort: objects::Availability::InformationNotAvailable,
+                appropriate_signage: objects::Availability::InformationNotAvailable,
+            })
+        })
 }
 
 pub fn read_stops<P: AsRef<path::Path>>(
@@ -430,6 +421,10 @@ pub fn read_stops<P: AsRef<path::Path>>(
                 stop_area.equipment_id = equipment_id;
                 stop_areas.push(stop_area);
             }
+            StopLocationType::StopEntrace => warn!(
+                "stop location type {:?} not handled for the moment, skipping",
+                StopLocationType::StopEntrace
+            ),
         }
     }
     let stoppoints = CollectionWithId::new(stop_points)?;
@@ -1150,14 +1145,11 @@ mod tests {
             let mut stop_areas_ids: Vec<String> = collections
                 .stop_areas
                 .iter()
-                .map(|(_, stop_area)| (stop_area.id.clone()))
+                .map(|(_, stop_area)| stop_area.id.clone())
                 .collect();
             stop_areas_ids.sort();
             assert_eq!(
-                vec![
-                    "my_prefix:Navitia:sp:01".to_string(),
-                    "my_prefix:sa:03".to_string(),
-                ],
+                vec!["my_prefix:Navitia:sp:01", "my_prefix:sa:03"],
                 stop_areas_ids
             );
 
@@ -1201,6 +1193,26 @@ mod tests {
             assert_eq!(comment_vec[1].name, "my second desc");
         });
     }
+    #[test]
+    fn push_on_collection() {
+        let mut c = CollectionWithId::default();
+        c.push(Comment {
+            id: "foo".into(),
+            name: "toto".into(),
+            comment_type: CommentType::Information,
+            url: None,
+            label: None,
+        }).unwrap();
+        assert!(c.push(Comment {
+            id: "foo".into(),
+            name: "tata".into(),
+            comment_type: CommentType::Information,
+            url: None,
+            label: None,
+        }).is_err());
+        let id = c.get_idx("foo").unwrap();
+        assert_eq!(id, c.iter().next().unwrap().0);
+    }
 
     #[test]
     fn stops_generates_equipments() {
@@ -1232,7 +1244,7 @@ mod tests {
                 .collect();
             stop_point_equipment_ids.sort();
             assert_eq!(
-                vec![None, Some("my_prefix:1".to_string())],
+                vec![None, Some("my_prefix:0".to_string())],
                 stop_point_equipment_ids
             );
 
@@ -1242,14 +1254,14 @@ mod tests {
                 .collect();
             stop_areas_equipment_ids.sort();
             assert_eq!(
-                vec![None, Some("my_prefix:2".to_string())],
+                vec![None, Some("my_prefix:1".to_string())],
                 stop_areas_equipment_ids
             );
             assert_eq!(
                 equipments_collection.into_vec(),
                 vec![
                     Equipment {
-                        id: "my_prefix:1".to_string(),
+                        id: "my_prefix:0".to_string(),
                         wheelchair_boarding: Availability::Available,
                         sheltered: Availability::InformationNotAvailable,
                         elevator: Availability::InformationNotAvailable,
@@ -1262,7 +1274,7 @@ mod tests {
                         appropriate_signage: Availability::InformationNotAvailable,
                     },
                     Equipment {
-                        id: "my_prefix:2".to_string(),
+                        id: "my_prefix:1".to_string(),
                         wheelchair_boarding: Availability::NotAvailable,
                         sheltered: Availability::InformationNotAvailable,
                         elevator: Availability::InformationNotAvailable,
