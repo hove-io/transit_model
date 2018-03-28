@@ -54,13 +54,13 @@ where
 pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>
 where
     D: ::serde::Deserializer<'de>,
-    for<'d> T: ::serde::Deserialize<'d>,
+    T: ::serde::Deserialize<'de>,
 {
     use serde::Deserialize;
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
 }
 
-pub fn de_invalid_option<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
+pub fn de_with_invalid_option<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
 where
     D: ::serde::Deserializer<'de>,
     Option<T>: ::serde::Deserialize<'de>,
@@ -70,6 +70,15 @@ where
         error!("{}", e);
         Ok(None)
     })
+}
+
+pub fn de_with_empty_or_invalid_default<'de, D, T>(de: D) -> Result<T, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+    Option<T>: ::serde::Deserialize<'de>,
+    T: Default,
+{
+    de_with_invalid_option(de).map(|opt| opt.unwrap_or_else(Default::default))
 }
 
 macro_rules! ctx_from_path {

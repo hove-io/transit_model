@@ -1,2 +1,5 @@
 object_id,object_type,comment_id
 RERA,line,RERACOM1
+RERA,line,RERACOM2
+RERA,line,RERACOM3
+RERA,line,RERACOM4
