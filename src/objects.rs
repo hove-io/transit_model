@@ -390,9 +390,9 @@ pub struct Line {
     #[serde(rename = "backward_line_name")]
     pub backward_name: Option<String>,
     pub backward_direction: Option<String>,
-    #[serde(rename = "line_color", default, deserialize_with = "de_invalid_option")]
+    #[serde(rename = "line_color", default, deserialize_with = "de_with_invalid_option")]
     pub color: Option<Rgb>,
-    #[serde(rename = "line_text_color", default, deserialize_with = "de_invalid_option")]
+    #[serde(rename = "line_text_color", default, deserialize_with = "de_with_invalid_option")]
     pub text_color: Option<Rgb>,
     #[serde(rename = "line_sort_order")]
     pub sort_order: Option<u32>,
@@ -781,6 +781,7 @@ impl AddPrefix for Company {
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "snake_case")]
 pub enum CommentType {
     #[derivative(Default)]
     Information,
@@ -791,7 +792,7 @@ pub enum CommentType {
 pub struct Comment {
     #[serde(rename = "comment_id")]
     pub id: String,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub comment_type: CommentType,
     #[serde(rename = "comment_label")]
     pub label: Option<String>,

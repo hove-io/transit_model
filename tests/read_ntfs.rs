@@ -90,10 +90,44 @@ fn ntfs() {
     let pt_objects = navitia_model::ntfs::read("fixtures/ntfs/").unwrap();
 
     // comments
-    assert_eq!(1, pt_objects.comments.len());
+    use CommentType::*;
+    fn assert_eq_comment(comment: &Comment, id: &str, name: &str, comment_type: CommentType) {
+        let expect = Comment {
+            id: id.to_string(),
+            name: name.to_string(),
+            comment_type,
+            label: None,
+            url: None,
+        };
+        assert_eq!(comment, &expect);
+    }
+    assert_eq!(4, pt_objects.comments.len());
     let rera_lines_idx = pt_objects.lines.get_idx("RERA").unwrap();
     let rera_comment_indexes = &pt_objects.lines[rera_lines_idx].comment_links;
-    for comment in pt_objects.comments.iter_from(rera_comment_indexes) {
-        assert_eq!(comment.id.to_string(), "RERACOM1");
-    }
+    let mut iter = pt_objects.comments.iter_from(rera_comment_indexes);
+    assert_eq_comment(
+        iter.next().unwrap(),
+        "RERACOM1",
+        "some information",
+        Information,
+    );
+    assert_eq_comment(
+        iter.next().unwrap(),
+        "RERACOM2",
+        "strange comment type",
+        Information,
+    );
+    assert_eq_comment(
+        iter.next().unwrap(),
+        "RERACOM3",
+        "no comment type",
+        Information,
+    );
+    assert_eq_comment(
+        iter.next().unwrap(),
+        "RERACOM4",
+        "on demand transport comment",
+        OnDemandTransport,
+    );
+    assert_eq!(iter.next(), None);
 }
