@@ -279,6 +279,10 @@ impl<T> Collection<T> {
             .enumerate()
             .map(|(idx, obj)| (Idx::new(idx), obj))
     }
+
+    pub fn values(&self) -> slice::Iter<T> {
+        self.objects.iter()
+    }
 }
 
 pub fn make_opt_collection_with_id<T>(path: &path::Path, file: &str) -> Result<CollectionWithId<T>>
