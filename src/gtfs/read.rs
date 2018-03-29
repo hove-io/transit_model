@@ -807,7 +807,7 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
 mod tests {
     extern crate tempdir;
     use self::tempdir::TempDir;
-    use collection::CollectionWithId;
+    use collection::{Collection, CollectionWithId, Id};
     use gtfs::add_prefix_to_collections;
     use gtfs::read::EquipmentList;
     use model::Collections;
@@ -1016,12 +1016,8 @@ mod tests {
 
             assert_eq!(5, collections.routes.len());
 
-            let mut route_ids: Vec<String> =
-                collections.routes.values().map(|r| r.id.clone()).collect();
-            route_ids.sort();
-
             assert_eq!(
-                route_ids,
+                extract_ids(&collections.routes),
                 &["route_1", "route_1_R", "route_2", "route_3", "route_4"]
             );
         });
@@ -1054,13 +1050,10 @@ mod tests {
             super::read_routes(tmp_dir, &mut collections).unwrap();
 
             assert_eq!(3, collections.lines.len());
-
-            let mut lines_ids: Vec<String> =
-                collections.lines.values().map(|l| l.id.clone()).collect();
-            lines_ids.sort();
-
-            assert_eq!(lines_ids, &["route_1", "route_3", "route_5"]);
-
+            assert_eq!(
+                extract_ids(&collections.lines),
+                &["route_1", "route_3", "route_5"]
+            );
             assert_eq!(5, collections.routes.len());
 
             let mut line_ids: Vec<String> = collections
@@ -1104,12 +1097,8 @@ mod tests {
             assert_eq!(2, collections.lines.len());
 
             assert_eq!(5, collections.routes.len());
-            let mut route_ids: Vec<String> =
-                collections.routes.values().map(|r| r.id.clone()).collect();
-            route_ids.sort();
-
             assert_eq!(
-                route_ids,
+                extract_ids(&collections.routes),
                 &["route_1", "route_1_R", "route_2", "route_3", "route_3_R",]
             );
         });
@@ -1138,19 +1127,11 @@ mod tests {
             super::read_routes(tmp_dir, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
-
-            let mut lines_ids: Vec<String> =
-                collections.lines.values().map(|l| l.id.clone()).collect();
-            lines_ids.sort();
-
-            assert_eq!(lines_ids, &["route_1", "route_3"]);
-
-            assert_eq!(3, collections.routes.len());
-            let mut route_ids: Vec<String> =
-                collections.routes.values().map(|r| r.id.clone()).collect();
-            route_ids.sort();
-
-            assert_eq!(route_ids, &["route_1", "route_2", "route_3",]);
+            assert_eq!(extract_ids(&collections.lines), &["route_1", "route_3"]);
+            assert_eq!(
+                extract_ids(&collections.routes),
+                &["route_1", "route_2", "route_3",]
+            );
 
             let mut line_ids: Vec<String> = collections
                 .routes
@@ -1231,31 +1212,17 @@ mod tests {
 
             add_prefix_to_collections("my_prefix".to_string(), &mut collections).unwrap();
 
-            let mut companies_ids: Vec<String> = collections
-                .companies
-                .values()
-                .map(|company| company.id.clone())
-                .collect();
-            companies_ids.sort();
-            assert_eq!(vec!["my_prefix:285", "my_prefix:584"], companies_ids);
-
-            let mut networks_ids: Vec<String> = collections
-                .networks
-                .values()
-                .map(|network| network.id.clone())
-                .collect();
-            networks_ids.sort();
-            assert_eq!(vec!["my_prefix:285", "my_prefix:584"], networks_ids);
-
-            let mut stop_areas_ids: Vec<String> = collections
-                .stop_areas
-                .values()
-                .map(|stop_area| stop_area.id.clone())
-                .collect();
-            stop_areas_ids.sort();
+            assert_eq!(
+                vec!["my_prefix:285", "my_prefix:584"],
+                extract_ids(&collections.companies)
+            );
+            assert_eq!(
+                vec!["my_prefix:285", "my_prefix:584"],
+                extract_ids(&collections.networks)
+            );
             assert_eq!(
                 vec!["my_prefix:Navitia:sp:01", "my_prefix:sa:03"],
-                stop_areas_ids
+                extract_ids(&collections.stop_areas)
             );
 
             let mut stop_points_ids: Vec<(String, String)> = collections
@@ -1275,23 +1242,18 @@ mod tests {
                 stop_points_ids
             );
 
-            let mut line_ids: Vec<String> =
-                collections.lines.values().map(|l| l.id.clone()).collect();
-            line_ids.sort();
-            assert_eq!(vec!["my_prefix:route_1", "my_prefix:route_2"], line_ids);
-
-            let mut route_ids: Vec<String> =
-                collections.routes.values().map(|l| l.id.clone()).collect();
-            route_ids.sort();
-            assert_eq!(vec!["my_prefix:route_1", "my_prefix:route_2_R"], route_ids);
-
-            let mut tpp_ids: Vec<String> = collections
-                .trip_properties
-                .values()
-                .map(|tpp| tpp.id.clone())
-                .collect();
-            tpp_ids.sort();
-            assert_eq!(vec!["my_prefix:1"], tpp_ids);
+            assert_eq!(
+                vec!["my_prefix:route_1", "my_prefix:route_2"],
+                extract_ids(&collections.lines)
+            );
+            assert_eq!(
+                vec!["my_prefix:route_1", "my_prefix:route_2_R"],
+                extract_ids(&collections.routes)
+            );
+            assert_eq!(
+                vec!["my_prefix:1"],
+                extract_ids(&collections.trip_properties)
+            );
 
             let comment_vec = collections.comments.into_vec();
 
@@ -1415,5 +1377,11 @@ mod tests {
                 ]
             );
         });
+    }
+
+    fn extract_ids<T: Id<T>>(c: &Collection<T>) -> Vec<String> {
+        let mut ids: Vec<String> = c.values().map(|l| l.id().to_string()).collect();
+        ids.sort();
+        ids
     }
 }
