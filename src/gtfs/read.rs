@@ -77,6 +77,19 @@ impl From<Agency> for objects::Company {
     }
 }
 
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum StopLocationType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    StopArea,
+    #[serde(rename = "1")]
+    StopPoint,
+    #[serde(rename = "2")]
+    StopEntrace,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Stop {
     #[serde(rename = "stop_id")]
@@ -96,13 +109,36 @@ struct Stop {
     #[serde(rename = "stop_url")]
     url: Option<String>,
     #[serde(default)]
-    location_type: i32,
+    location_type: StopLocationType,
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
     timezone: Option<String>,
     #[serde(default)]
     wheelchair_boarding: Option<String>,
 }
+
+pub struct EquipmentList {
+    equipments: Vec<objects::Equipment>,
+}
+
+impl Default for EquipmentList {
+    fn default() -> Self {
+        EquipmentList { equipments: vec![] }
+    }
+}
+
+impl EquipmentList {
+    pub fn get_equipments(self) -> Vec<objects::Equipment> {
+        self.equipments
+    }
+    pub fn push(&mut self, mut equipment: objects::Equipment) -> String {
+        equipment.id = self.equipments.len().to_string();
+        let equipment_id = equipment.id.clone();
+        self.equipments.push(equipment);
+        equipment_id
+    }
+}
+
 impl From<Stop> for objects::StopArea {
     fn from(stop: Stop) -> objects::StopArea {
         let mut stop_codes: Vec<(String, String)> = vec![];
@@ -298,8 +334,58 @@ pub fn read_agency<P: AsRef<path::Path>>(
     Ok((networks, companies))
 }
 
+fn manage_comment_from_stop(
+    comments: &mut CollectionWithId<objects::Comment>,
+    stop: &Stop,
+) -> CommentLinksT {
+    let mut comment_links: CommentLinksT = CommentLinksT::default();
+    if !stop.desc.is_empty() {
+        let comment_id = "stop:".to_string() + &stop.id;
+        let comment = objects::Comment {
+            id: comment_id,
+            comment_type: objects::CommentType::Information,
+            label: None,
+            name: stop.desc.to_string(),
+            url: None,
+        };
+        let idx = comments.push(comment).unwrap();
+        comment_links.push(idx);
+    }
+    comment_links
+}
+
+fn get_equipment_id_and_populate_equipments(
+    equipments: &mut EquipmentList,
+    stop: &Stop,
+) -> Option<String> {
+    stop.wheelchair_boarding
+        .as_ref()
+        .and_then(|availability| match availability.as_str() {
+            "1" => Some(objects::Availability::Available),
+            "2" => Some(objects::Availability::NotAvailable),
+            _ => None,
+        })
+        .map(|availlability| {
+            equipments.push(objects::Equipment {
+                id: "".to_string(),
+                wheelchair_boarding: availlability,
+                sheltered: objects::Availability::InformationNotAvailable,
+                elevator: objects::Availability::InformationNotAvailable,
+                escalator: objects::Availability::InformationNotAvailable,
+                bike_accepted: objects::Availability::InformationNotAvailable,
+                bike_depot: objects::Availability::InformationNotAvailable,
+                visual_announcement: objects::Availability::InformationNotAvailable,
+                audible_announcement: objects::Availability::InformationNotAvailable,
+                appropriate_escort: objects::Availability::InformationNotAvailable,
+                appropriate_signage: objects::Availability::InformationNotAvailable,
+            })
+        })
+}
+
 pub fn read_stops<P: AsRef<path::Path>>(
     path: P,
+    comments: &mut CollectionWithId<objects::Comment>,
+    equipments: &mut EquipmentList,
 ) -> Result<(
     CollectionWithId<objects::StopArea>,
     CollectionWithId<objects::StopPoint>,
@@ -313,8 +399,10 @@ pub fn read_stops<P: AsRef<path::Path>>(
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
     for mut stop in gtfs_stops {
+        let comment_links = manage_comment_from_stop(comments, &stop);
+        let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
-            0 => {
+            StopLocationType::StopArea => {
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
                     new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
@@ -322,10 +410,21 @@ pub fn read_stops<P: AsRef<path::Path>>(
                     stop.parent_station = Some(new_stop_area.id.clone());
                     stop_areas.push(objects::StopArea::from(new_stop_area));
                 }
-                stop_points.push(objects::StopPoint::from(stop));
+                let mut stop_point = objects::StopPoint::from(stop);
+                stop_point.comment_links = comment_links;
+                stop_point.equipment_id = equipment_id;
+                stop_points.push(stop_point);
             }
-            1 => stop_areas.push(objects::StopArea::from(stop)),
-            _ => (),
+            StopLocationType::StopPoint => {
+                let mut stop_area = objects::StopArea::from(stop);
+                stop_area.comment_links = comment_links;
+                stop_area.equipment_id = equipment_id;
+                stop_areas.push(stop_area);
+            }
+            StopLocationType::StopEntrace => warn!(
+                "stop location type {:?} not handled for the moment, skipping",
+                StopLocationType::StopEntrace
+            ),
         }
     }
     let stoppoints = CollectionWithId::new(stop_points)?;
@@ -600,8 +699,11 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
 mod tests {
     extern crate tempdir;
     use self::tempdir::TempDir;
+    use collection::CollectionWithId;
     use collection::add_prefix;
+    use gtfs::read::EquipmentList;
     use model::Collections;
+    use objects::*;
     use std::fs::File;
     use std::io::prelude::*;
 
@@ -686,7 +788,10 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path()).unwrap();
+            let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let (stop_areas, stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_areas.len());
             assert_eq!(1, stop_points.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -707,7 +812,10 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path()).unwrap();
+            let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let (stop_areas, stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
             //validate stop_point code
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
@@ -734,7 +842,10 @@ mod tests {
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            let (stop_areas, _) = super::read_stops(tmp_dir.path()).unwrap();
+            let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let (stop_areas, _) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -969,10 +1080,11 @@ mod tests {
 
     #[test]
     fn prefix_on_all_pt_object_id() {
-        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
-                             sp:01,my stop point name,0.1,1.2,0,\n\
-                             sp:02,my stop point name child,0.2,1.5,0,sp:01\n\
-                             sa:03,my stop area name,0.3,2.2,1,";
+        let stops_content =
+            "stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station\n\
+             sp:01,my stop point name,my first desc,0.1,1.2,0,\n\
+             sp:02,my stop point name child,,0.2,1.5,0,sp:01\n\
+             sa:03,my stop area name,my second desc,0.3,2.2,1,";
         let agency_content = "agency_id,agency_name,agency_url,agency_timezone,agency_lang\n\
                               584,TAM,http://whatever.canaltp.fr/,Europe/Paris,fr\n\
                               285,Phébus,http://plop.kisio.com/,Europe/London,en";
@@ -993,21 +1105,26 @@ mod tests {
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let prefix = "my_prefix:";
-            let (stop_areas, stop_points) = super::read_stops(tmp_dir.path()).unwrap();
+            let prefix = "my_prefix:".to_string();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let mut equipments = EquipmentList::default();
+            let (stop_areas, stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
+            super::read_routes(tmp_dir, &mut collections).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
-            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
             collections.networks = networks;
             collections.companies = companies;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            collections.comments = comments;
 
-            add_prefix(&mut collections.networks, prefix).unwrap();
+            add_prefix(&mut collections.networks, &prefix).unwrap();
             add_prefix(&mut collections.companies, &prefix).unwrap();
             add_prefix(&mut collections.stop_points, &prefix).unwrap();
             add_prefix(&mut collections.stop_areas, &prefix).unwrap();
             add_prefix(&mut collections.routes, &prefix).unwrap();
             add_prefix(&mut collections.lines, &prefix).unwrap();
+            add_prefix(&mut collections.comments, &prefix).unwrap();
 
             let mut companies_ids: Vec<String> = collections
                 .companies
@@ -1068,6 +1185,109 @@ mod tests {
                 .collect();
             route_ids.sort();
             assert_eq!(vec!["my_prefix:route_1", "my_prefix:route_2"], route_ids);
+            let comment_vec = collections.comments.into_vec();
+
+            assert_eq!(comment_vec[0].id, "my_prefix:stop:sp:01");
+            assert_eq!(comment_vec[0].name, "my first desc");
+            assert_eq!(comment_vec[1].id, "my_prefix:stop:sa:03");
+            assert_eq!(comment_vec[1].name, "my second desc");
+        });
+    }
+    #[test]
+    fn push_on_collection() {
+        let mut c = CollectionWithId::default();
+        c.push(Comment {
+            id: "foo".into(),
+            name: "toto".into(),
+            comment_type: CommentType::Information,
+            url: None,
+            label: None,
+        }).unwrap();
+        assert!(c.push(Comment {
+            id: "foo".into(),
+            name: "tata".into(),
+            comment_type: CommentType::Information,
+            url: None,
+            label: None,
+        }).is_err());
+        let id = c.get_idx("foo").unwrap();
+        assert_eq!(id, c.iter().next().unwrap().0);
+    }
+
+    #[test]
+    fn stops_generates_equipments() {
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,wheelchair_boarding\n\
+                             sp:01,my stop point name,0.1,1.2,0,,1\n\
+                             sp:02,my stop point name child,0.2,1.5,0,sp:01,\n\
+                             sa:03,my stop area name,0.3,2.2,1,,2";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+
+            let prefix = "my_prefix:".to_string();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let mut equipments = EquipmentList::default();
+            let (mut stop_areas, mut stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            add_prefix(&mut stop_areas, &prefix).unwrap();
+            add_prefix(&mut stop_points, &prefix).unwrap();
+            let mut equipments_collection =
+                CollectionWithId::new(equipments.get_equipments()).unwrap();
+            add_prefix(&mut equipments_collection, &prefix).unwrap();
+            assert_eq!(2, stop_areas.len());
+            assert_eq!(2, stop_points.len());
+            assert_eq!(2, equipments_collection.len());
+
+            let mut stop_point_equipment_ids: Vec<Option<String>> = stop_points
+                .iter()
+                .map(|(_, stop_point)| stop_point.equipment_id.clone())
+                .collect();
+            stop_point_equipment_ids.sort();
+            assert_eq!(
+                vec![None, Some("my_prefix:0".to_string())],
+                stop_point_equipment_ids
+            );
+
+            let mut stop_areas_equipment_ids: Vec<Option<String>> = stop_areas
+                .iter()
+                .map(|(_, stop_area)| stop_area.equipment_id.clone())
+                .collect();
+            stop_areas_equipment_ids.sort();
+            assert_eq!(
+                vec![None, Some("my_prefix:1".to_string())],
+                stop_areas_equipment_ids
+            );
+            assert_eq!(
+                equipments_collection.into_vec(),
+                vec![
+                    Equipment {
+                        id: "my_prefix:0".to_string(),
+                        wheelchair_boarding: Availability::Available,
+                        sheltered: Availability::InformationNotAvailable,
+                        elevator: Availability::InformationNotAvailable,
+                        escalator: Availability::InformationNotAvailable,
+                        bike_accepted: Availability::InformationNotAvailable,
+                        bike_depot: Availability::InformationNotAvailable,
+                        visual_announcement: Availability::InformationNotAvailable,
+                        audible_announcement: Availability::InformationNotAvailable,
+                        appropriate_escort: Availability::InformationNotAvailable,
+                        appropriate_signage: Availability::InformationNotAvailable,
+                    },
+                    Equipment {
+                        id: "my_prefix:1".to_string(),
+                        wheelchair_boarding: Availability::NotAvailable,
+                        sheltered: Availability::InformationNotAvailable,
+                        elevator: Availability::InformationNotAvailable,
+                        escalator: Availability::InformationNotAvailable,
+                        bike_accepted: Availability::InformationNotAvailable,
+                        bike_depot: Availability::InformationNotAvailable,
+                        visual_announcement: Availability::InformationNotAvailable,
+                        audible_announcement: Availability::InformationNotAvailable,
+                        appropriate_escort: Availability::InformationNotAvailable,
+                        appropriate_signage: Availability::InformationNotAvailable,
+                    },
+                ]
+            );
         });
     }
 }

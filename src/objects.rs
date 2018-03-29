@@ -66,7 +66,7 @@ pub trait Codes {
     fn codes_mut(&mut self) -> &mut KeysValues;
 }
 macro_rules! impl_codes {
-    ($ty: ty) => {
+    ($ty:ty) => {
         impl Codes for $ty {
             fn codes(&self) -> &KeysValues {
                 &self.codes
@@ -83,7 +83,7 @@ pub trait ObjectProperties {
     fn object_properties_mut(&mut self) -> &mut KeysValues;
 }
 macro_rules! impl_object_properties {
-    ($ty: ty) => {
+    ($ty:ty) => {
         impl ObjectProperties for $ty {
             fn object_properties(&self) -> &KeysValues {
                 &self.object_properties
@@ -102,7 +102,7 @@ pub trait CommentLinks {
     fn comment_links_mut(&mut self) -> &mut CommentLinksT;
 }
 macro_rules! impl_comment_links {
-    ($ty: ty) => {
+    ($ty:ty) => {
         impl CommentLinks for $ty {
             fn comment_links(&self) -> &CommentLinksT {
                 &self.comment_links
@@ -650,6 +650,10 @@ impl Id<StopArea> for StopArea {
 impl AddPrefix for StopArea {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
+        let equipment_id_opt = self.equipment_id.clone();
+        if let Some(equipment_id) = equipment_id_opt {
+            self.equipment_id = Some(prefix.to_string() + &equipment_id);
+        }
     }
 }
 impl_codes!(StopArea);
@@ -694,6 +698,10 @@ impl AddPrefix for StopPoint {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
         self.stop_area_id = prefix.to_string() + &self.stop_area_id;
+        let equipment_id_opt = self.equipment_id.clone();
+        if let Some(equipment_id) = equipment_id_opt {
+            self.equipment_id = Some(prefix.to_string() + &equipment_id);
+        }
     }
 }
 impl_codes!(StopPoint);
@@ -808,6 +816,12 @@ impl Id<Comment> for Comment {
     }
 }
 
+impl AddPrefix for Comment {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
 #[derivative(Default)]
 pub enum Availability {
@@ -849,6 +863,12 @@ pub struct Equipment {
 impl Id<Equipment> for Equipment {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl AddPrefix for Equipment {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
     }
 }
 
