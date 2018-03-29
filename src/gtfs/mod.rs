@@ -72,8 +72,6 @@ pub fn read<P: AsRef<path::Path>>(
     //add prefixes
     if let Some(prefix) = prefix {
         add_prefix_to_collections(prefix, &mut collections)?;
-        add_prefix(&mut collections.equipments, &prefix)?;
-        add_prefix(&mut collections.comments, &prefix)?;
     }
 
     Ok(Model::new(collections)?)
