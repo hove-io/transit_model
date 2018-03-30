@@ -19,7 +19,8 @@ use collection::{CollectionWithId, Id};
 use csv;
 use failure::ResultExt;
 use model::Collections;
-use objects::{self, Availability, CommentLinksT, Contributor, Coord, KeysValues, TransportType};
+use objects::{self, Availability, CommentLinksT, Contributor, Coord, KeysValues, Time,
+              TransportType};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs::File;
@@ -351,6 +352,70 @@ impl Trip {
             stop_times: vec![],
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct StopTime {
+    trip_id: String,
+    arrival_time: Time,
+    departure_time: Time,
+    stop_id: String,
+    stop_sequence: u32,
+    #[serde(deserialize_with = "de_with_empty_default", default)]
+    pickup_type: u8,
+    #[serde(deserialize_with = "de_with_empty_default", default)]
+    dropoff_type: u8,
+}
+
+pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Result<()> {
+    info!("Reading stop_times.txt");
+    let path = path.join("stop_times.txt");
+    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    for stop_time in rdr.deserialize() {
+        let stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
+        let stop_point_idx = collections
+            .stop_points
+            .get_idx(&stop_time.stop_id)
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: stop_id={:?} not found",
+                    path,
+                    stop_time.stop_id
+                )
+            })?;
+        let vj_idx = collections
+            .vehicle_journeys
+            .get_idx(&stop_time.trip_id)
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: trip_id={:?} not found",
+                    path,
+                    stop_time.stop_id
+                )
+            })?;
+        collections
+            .vehicle_journeys
+            .index_mut(vj_idx)
+            .stop_times
+            .push(objects::StopTime {
+                stop_point_idx,
+                sequence: stop_time.stop_sequence,
+                arrival_time: stop_time.arrival_time,
+                departure_time: stop_time.departure_time,
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: stop_time.pickup_type,
+                dropoff_type: stop_time.dropoff_type,
+                datetime_estimated: false,
+                local_zone_id: None,
+            });
+    }
+    let mut vehicle_journeys = collections.vehicle_journeys.take();
+    for vj in &mut vehicle_journeys {
+        vj.stop_times.sort_unstable_by_key(|st| st.sequence);
+    }
+    collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
+    Ok(())
 }
 
 pub fn read_agency<P: AsRef<path::Path>>(

@@ -68,6 +68,7 @@ pub fn read<P: AsRef<path::Path>>(
     read::read_routes(path, &mut collections)?;
     collections.equipments = CollectionWithId::new(equipments.get_equipments())?;
     collections.comments = comments;
+    read::manage_stop_times(&mut collections, path)?;
 
     //add prefixes
     if let Some(prefix) = prefix {
