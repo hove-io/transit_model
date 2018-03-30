@@ -988,13 +988,10 @@ mod tests {
             assert_eq!(4, collections.lines.len());
             assert_eq!(2, collections.commercial_modes.len());
 
-            let mut commercial_modes: Vec<String> = collections
-                .commercial_modes
-                .values()
-                .map(|cm| cm.name.clone())
-                .collect();
-            commercial_modes.sort();
-            assert_eq!(commercial_modes, &["Bus", "Rail"]);
+            assert_eq!(
+                extract(|r| &r.name, &collections.commercial_modes),
+                &["Bus", "Rail"]
+            );
 
             let lines_commercial_modes_id: Vec<String> = collections
                 .lines
@@ -1006,13 +1003,10 @@ mod tests {
             assert!(!lines_commercial_modes_id.contains(&"8".to_string()));
 
             assert_eq!(2, collections.physical_modes.len());
-            let mut physical_modes: Vec<String> = collections
-                .physical_modes
-                .values()
-                .map(|pm| pm.name.clone())
-                .collect();
-            physical_modes.sort();
-            assert_eq!(physical_modes, &["Bus", "Train"]);
+            assert_eq!(
+                extract(|r| &r.name, &collections.physical_modes),
+                &["Bus", "Train"]
+            );
 
             assert_eq!(5, collections.routes.len());
 
@@ -1056,15 +1050,8 @@ mod tests {
             );
             assert_eq!(5, collections.routes.len());
 
-            let mut line_ids: Vec<String> = collections
-                .routes
-                .values()
-                .map(|r| r.line_id.clone())
-                .collect();
-            line_ids.sort();
-
             assert_eq!(
-                line_ids,
+                extract(|r| &r.line_id, &collections.routes),
                 &["route_1", "route_1", "route_3", "route_3", "route_5"]
             );
         });
@@ -1133,14 +1120,10 @@ mod tests {
                 &["route_1", "route_2", "route_3",]
             );
 
-            let mut line_ids: Vec<String> = collections
-                .routes
-                .values()
-                .map(|r| r.line_id.clone())
-                .collect();
-            line_ids.sort();
-
-            assert_eq!(line_ids, &["route_1", "route_1", "route_3",]);
+            assert_eq!(
+                extract(|r| &r.line_id, &collections.routes),
+                &["route_1", "route_1", "route_3",]
+            );
         });
     }
 
@@ -1225,21 +1208,15 @@ mod tests {
                 extract_ids(&collections.stop_areas)
             );
 
-            let mut stop_points_ids: Vec<(String, String)> = collections
-                .stop_points
-                .values()
-                .map(|stop_point| (stop_point.id.clone(), stop_point.stop_area_id.clone()))
-                .collect();
-            stop_points_ids.sort();
             assert_eq!(
                 vec![
-                    (
-                        "my_prefix:sp:01".to_string(),
-                        "my_prefix:Navitia:sp:01".to_string(),
-                    ),
-                    ("my_prefix:sp:02".to_string(), "my_prefix:sp:01".to_string()),
+                    ("my_prefix:sp:01", "my_prefix:Navitia:sp:01"),
+                    ("my_prefix:sp:02", "my_prefix:sp:01"),
                 ],
-                stop_points_ids
+                extract(
+                    |sp| (sp.id.as_str(), sp.stop_area_id.as_str()),
+                    &collections.stop_points,
+                )
             );
 
             assert_eq!(
@@ -1339,12 +1316,10 @@ mod tests {
             stop_point_equipment_ids.sort();
             assert_eq!(vec![None, Some("0".to_string())], stop_point_equipment_ids);
 
-            let mut stop_areas_equipment_ids: Vec<Option<String>> = stop_areas
-                .iter()
-                .map(|(_, stop_area)| stop_area.equipment_id.clone())
-                .collect();
-            stop_areas_equipment_ids.sort();
-            assert_eq!(vec![None, Some("1".to_string())], stop_areas_equipment_ids);
+            assert_eq!(
+                vec![&None, &Some("1".to_string())],
+                extract(|sa| &sa.equipment_id, &stop_areas)
+            );
             assert_eq!(
                 equipments_collection.into_vec(),
                 vec![
@@ -1379,9 +1354,13 @@ mod tests {
         });
     }
 
-    fn extract_ids<T: Id<T>>(c: &Collection<T>) -> Vec<String> {
-        let mut ids: Vec<String> = c.values().map(|l| l.id().to_string()).collect();
-        ids.sort();
-        ids
+    fn extract<'a, T, S: ::std::cmp::Ord + 'a>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
+        let mut extracted_props: Vec<S> = c.values().map(|l| f(l)).collect();
+        extracted_props.sort();
+        extracted_props
+    }
+
+    fn extract_ids<'a, T: Id<T>>(c: &'a Collection<T>) -> Vec<&'a str> {
+        extract(T::id, c)
     }
 }
