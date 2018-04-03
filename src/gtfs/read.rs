@@ -989,7 +989,7 @@ mod tests {
             assert_eq!(2, collections.commercial_modes.len());
 
             assert_eq!(
-                extract(|r| &r.name, &collections.commercial_modes),
+                extract(|cm| &cm.name, &collections.commercial_modes),
                 &["Bus", "Rail"]
             );
 
@@ -1004,7 +1004,7 @@ mod tests {
 
             assert_eq!(2, collections.physical_modes.len());
             assert_eq!(
-                extract(|r| &r.name, &collections.physical_modes),
+                extract(|pm| &pm.name, &collections.physical_modes),
                 &["Bus", "Train"]
             );
 
@@ -1354,13 +1354,13 @@ mod tests {
         });
     }
 
-    fn extract<'a, T, S: ::std::cmp::Ord + 'a>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
+    fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
         let mut extracted_props: Vec<S> = c.values().map(|l| f(l)).collect();
         extracted_props.sort();
         extracted_props
     }
 
-    fn extract_ids<'a, T: Id<T>>(c: &'a Collection<T>) -> Vec<&'a str> {
+    fn extract_ids<T: Id<T>>(c: &Collection<T>) -> Vec<&str> {
         extract(T::id, c)
     }
 }
