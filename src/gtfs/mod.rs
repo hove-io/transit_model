@@ -28,6 +28,7 @@ use std::path;
 fn add_prefix_to_collections(prefix: String, collections: &mut Collections) -> Result<()> {
     let prefix = prefix + ":";
     info!("Adding prefix: \"{}\"", &prefix);
+    add_prefix(&mut collections.commercial_modes, &prefix)?;
     add_prefix(&mut collections.networks, &prefix)?;
     add_prefix(&mut collections.companies, &prefix)?;
     add_prefix(&mut collections.stop_points, &prefix)?;

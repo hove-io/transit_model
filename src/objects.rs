@@ -227,6 +227,11 @@ impl Id<CommercialMode> for CommercialMode {
         &self.id
     }
 }
+impl AddPrefix for CommercialMode {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct PhysicalMode {
@@ -424,6 +429,7 @@ impl AddPrefix for Line {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
         self.network_id = prefix.to_string() + &self.network_id;
+        self.commercial_mode_id = prefix.to_string() + &self.commercial_mode_id;
     }
 }
 impl_codes!(Line);
@@ -533,6 +539,9 @@ impl AddPrefix for VehicleJourney {
         self.route_id = prefix.to_string() + &self.route_id;
         self.dataset_id = prefix.to_string() + &self.dataset_id;
         self.company_id = prefix.to_string() + &self.company_id;
+        self.trip_property_id = self.trip_property_id
+            .as_ref()
+            .map(|id| prefix.to_string() + &id);
     }
 }
 impl_codes!(VehicleJourney);
