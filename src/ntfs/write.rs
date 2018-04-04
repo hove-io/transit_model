@@ -320,11 +320,11 @@ fn write_object_properties_from_collection_with_id<W, T>(
     path: &path::Path,
 ) -> Result<()>
 where
-    T: Id<T> + ObjectProperties + GetObjectType,
+    T: Id<T> + Properties + GetObjectType,
     W: ::std::io::Write,
 {
     for obj in collection.values() {
-        for c in obj.object_properties() {
+        for c in obj.properties() {
             wtr.serialize(ObjectProperty {
                 object_id: obj.id().to_string(),
                 object_type: T::get_object_type(),

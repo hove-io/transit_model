@@ -311,7 +311,7 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Resu
 
 fn insert_object_property<T>(collection: &mut CollectionWithId<T>, obj_prop: ObjectProperty)
 where
-    T: ObjectProperties + Id<T>,
+    T: Properties + Id<T>,
 {
     let idx = match collection.get_idx(&obj_prop.object_id) {
         Some(idx) => idx,
@@ -324,7 +324,7 @@ where
             return;
         }
     };
-    collection.index_mut(idx).object_properties_mut().push((
+    collection.index_mut(idx).properties_mut().push((
         obj_prop.object_property_name,
         obj_prop.object_property_value,
     ));
