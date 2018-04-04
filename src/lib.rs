@@ -39,7 +39,6 @@ pub(crate) mod utils;
 pub mod collection;
 pub(crate) mod common_format;
 pub mod gtfs;
-#[allow(missing_docs)]
 pub mod model;
 pub mod ntfs;
 #[allow(missing_docs)]

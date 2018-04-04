@@ -14,6 +14,8 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+//! Definition of the navitia transit model.
+
 use collection::{Collection, CollectionWithId, Idx};
 use objects::*;
 use relations::{IdxSet, ManyToMany, OneToMany, Relation};
@@ -22,8 +24,10 @@ use std::ops;
 use std::result::Result as StdResult;
 use {Error, Result};
 
+/// The set of collections representing the model.
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
+#[allow(missing_docs)]
 pub struct Collections {
     pub contributors: CollectionWithId<Contributor>,
     pub datasets: CollectionWithId<Dataset>,
@@ -46,6 +50,7 @@ pub struct Collections {
     pub admin_stations: Collection<AdminStation>,
 }
 
+/// The navitia transit model.
 #[derive(GetCorresponding)]
 pub struct Model {
     collections: Collections,
@@ -79,6 +84,35 @@ pub struct Model {
 }
 
 impl Model {
+    /// Constructs a model from the given `Collections`.  Fails in
+    /// case of incoherence, as invalid external references.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::model::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// let _: Model = Model::new(Collections::default())?;
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    ///
+    /// ```
+    /// # use navitia_model::model::*;
+    /// # use navitia_model::collection::Collection;
+    /// # use navitia_model::objects::Transfer;
+    /// let mut collections = Collections::default();
+    /// // This transfer is invalid as there is no stop points in collections
+    /// collections.transfers = Collection::new(vec![Transfer {
+    ///     from_stop_id: "invalid".into(),
+    ///     to_stop_id: "also_invalid".into(),
+    ///     min_transfer_time: None,
+    ///     real_min_transfer_time: None,
+    ///     equipment_id: None,
+    /// }]);
+    /// assert!(Model::new(collections).is_err());
+    /// ```
     pub fn new(c: Collections) -> Result<Self> {
         let forward_vj_to_sp = c.vehicle_journeys
             .iter()
