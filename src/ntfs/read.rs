@@ -23,6 +23,7 @@ use collection::*;
 use failure::ResultExt;
 use model::Collections;
 use objects::*;
+use utils::make_collection_with_id;
 
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {

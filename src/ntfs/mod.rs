@@ -14,12 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use common_format;
 mod read;
 mod write;
 
 use Result;
-use collection::*;
+use common_format;
 use model::{Collections, Model};
 use objects::*;
 use std::path;
@@ -174,6 +173,7 @@ mod tests {
     use std::collections::HashMap;
     use std::fmt::Debug;
     use std::path;
+    use utils::*;
 
     fn ser_deser_in_tmp_dir<F>(func: F)
     where

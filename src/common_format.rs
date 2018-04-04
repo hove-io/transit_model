@@ -21,7 +21,7 @@ use failure::ResultExt;
 use model::Collections;
 use objects::{Calendar, Date, ExceptionType};
 use std::path;
-use utils::{de_from_date_string, ser_from_naive_date};
+use utils::{de_from_date_string, make_collection_with_id, ser_from_naive_date};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CalendarDate {

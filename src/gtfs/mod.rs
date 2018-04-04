@@ -18,12 +18,12 @@ mod read;
 
 use Result;
 use collection::CollectionWithId;
-use collection::add_prefix;
 use common_format::manage_calendars;
 use gtfs::read::EquipmentList;
 use model::{Collections, Model};
 use objects::Comment;
 use std::path;
+use utils::add_prefix;
 
 fn add_prefix_to_collections(prefix: String, collections: &mut Collections) -> Result<()> {
     let prefix = prefix + ":";

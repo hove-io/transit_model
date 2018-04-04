@@ -14,6 +14,13 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+//! The `navitia_model` crate proposes a model to manage transit data.
+//! It can import and export data from [GTFS](http://gtfs.org/) and
+//! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
+
+#![deny(missing_docs)]
+
+extern crate chrono;
 extern crate csv;
 #[macro_use]
 extern crate derivative;
@@ -27,18 +34,24 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
-extern crate chrono;
 #[macro_use]
 pub(crate) mod utils;
 pub mod collection;
 pub(crate) mod common_format;
+#[allow(missing_docs)]
 pub mod gtfs;
+#[allow(missing_docs)]
 pub mod model;
+#[allow(missing_docs)]
 pub mod ntfs;
+#[allow(missing_docs)]
 pub mod objects;
 pub mod relations;
 
+/// The error type used by the crate.
 pub type Error = failure::Error;
+
+/// The corresponding result type used by the crate.
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub use model::Model;

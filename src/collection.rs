@@ -14,9 +14,10 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use csv;
-use failure::ResultExt;
-use serde;
+//! Collections of objects with typed indices and buildin identifier
+//! support.
+
+use Result;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -24,17 +25,16 @@ use std::collections::hash_map::Entry::*;
 use std::iter;
 use std::marker::PhantomData;
 use std::ops;
-use std::path;
 use std::result::Result as StdResult;
 use std::slice;
 
-use Result;
-use objects::AddPrefix;
-
+/// An object that have a unique identifier.
 pub trait Id<T> {
+    /// Returns the unique identifier.
     fn id(&self) -> &str;
 }
 
+/// Typed index.
 #[derive(Derivative, Debug)]
 #[derivative(Copy(bound = ""), Clone(bound = ""), PartialEq(bound = ""), Eq(bound = ""),
              Hash(bound = ""))]
@@ -59,7 +59,11 @@ impl<T> PartialOrd for Idx<T> {
     }
 }
 
-#[derive(Debug)]
+/// The `Collection` object looks like a `Map<Idx<T>, T>`, with opaque
+/// keys.  Then, you can easily store indices and don't mess up
+/// between different types of indices.
+#[derive(Debug, Derivative)]
+#[derivative(Default(bound = ""))]
 pub struct Collection<T> {
     objects: Vec<T>,
 }
@@ -71,10 +75,81 @@ impl<T: PartialEq> PartialEq for Collection<T> {
 }
 
 impl<T> Collection<T> {
+    /// Creates the `Collection` from a `Vec`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// let _: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
+    /// ```
     pub fn new(v: Vec<T>) -> Self {
         Collection { objects: v }
     }
 
+    /// Returns the number of elements in the collection, also referred to as its 'length'.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
+    /// assert_eq!(c.len(), 6);
+    /// ```
+    pub fn len(&self) -> usize {
+        self.objects.len()
+    }
+
+    /// Iterates over the `(Idx<T>, &T)` of the `Collection`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
+    /// let (k, v): (Idx<i32>, &i32) = c.iter().nth(4).unwrap();
+    /// assert_eq!(v, &5);
+    /// assert_eq!(&c[k], &5);
+    /// ```
+    pub fn iter(&self) -> Iter<T> {
+        self.objects
+            .iter()
+            .enumerate()
+            .map(|(idx, obj)| (Idx::new(idx), obj))
+    }
+
+    /// Iterates over the `&T` of the `Collection`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
+    /// let values: Vec<&i32> = c.values().collect();
+    /// assert_eq!(values, &[&1, &1, &2, &3, &5, &8]);
+    /// ```
+    pub fn values(&self) -> slice::Iter<T> {
+        self.objects.iter()
+    }
+
+    /// Iterates on the objects corresponding to the given indices.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # use std::collections::BTreeSet;
+    /// # fn get_transit_indices(c: &Collection<&'static str>) -> BTreeSet<Idx<&'static str>> {
+    /// #     c.iter()
+    /// #         .filter(|&(_, &v)| v != "bike" && v != "walking" && v != "car")
+    /// #         .map(|(k, _)| k)
+    /// #         .collect()
+    /// # }
+    /// let c = Collection::new(vec!["bike", "bus", "walking", "car", "metro", "train"]);
+    /// let transit_indices: BTreeSet<Idx<&str>> = get_transit_indices(&c);
+    /// let transit_refs: Vec<&&str> = c.iter_from(&transit_indices).collect();
+    /// assert_eq!(transit_refs, &[&"bus", &"metro", &"train"]);
+    /// ```
     pub fn iter_from<'a, I>(&'a self, indexes: I) -> Box<Iterator<Item = &T> + 'a>
     where
         I: IntoIterator + 'a,
@@ -88,9 +163,23 @@ impl<T> Collection<T> {
     }
 }
 
-impl<T> Default for Collection<T> {
-    fn default() -> Self {
-        Collection::new(Vec::default())
+/// The type returned by `Collection::iter`.
+pub type Iter<'a, T> =
+    iter::Map<iter::Enumerate<slice::Iter<'a, T>>, fn((usize, &T)) -> (Idx<T>, &T)>;
+
+impl<'a, T> IntoIterator for &'a Collection<T> {
+    type Item = (Idx<T>, &'a T);
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Iter<'a, T> {
+        self.iter()
+    }
+}
+
+impl<T> ops::Index<Idx<T>> for Collection<T> {
+    type Output = T;
+    fn index(&self, index: Idx<T>) -> &Self::Output {
+        &self.objects[index.get()]
     }
 }
 
@@ -117,54 +206,35 @@ where
     }
 }
 
-#[derive(Debug)]
+/// A `Collection` with identifier support.
+#[derive(Debug, Derivative)]
+#[derivative(Default(bound = ""))]
 pub struct CollectionWithId<T> {
     collection: Collection<T>,
     id_to_idx: HashMap<String, Idx<T>>,
 }
 
-impl<T: PartialEq> PartialEq for CollectionWithId<T> {
-    fn eq(&self, other: &CollectionWithId<T>) -> bool {
-        self.collection == other.collection
-    }
-}
-
-impl<T> ops::Deref for CollectionWithId<T> {
-    type Target = Collection<T>;
-    fn deref(&self) -> &Collection<T> {
-        &self.collection
-    }
-}
-
-impl<T> ::serde::Serialize for CollectionWithId<T>
-where
-    T: ::serde::Serialize + Id<T>,
-{
-    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
-    where
-        S: ::serde::Serializer,
-    {
-        self.objects.serialize(serializer)
-    }
-}
-impl<'de, T> ::serde::Deserialize<'de> for CollectionWithId<T>
-where
-    T: ::serde::Deserialize<'de> + Id<T>,
-{
-    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        use serde::de::Error;
-        ::serde::Deserialize::deserialize(deserializer)
-            .and_then(|v| CollectionWithId::new(v).map_err(D::Error::custom))
-    }
-}
-
-pub type Iter<'a, T> =
-    iter::Map<iter::Enumerate<slice::Iter<'a, T>>, fn((usize, &T)) -> (Idx<T>, &T)>;
-
 impl<T: Id<T>> CollectionWithId<T> {
+    /// Creates a `CollectionWithId` from a `Vec`. Fails if there is
+    /// duplicates in identifiers.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    /// }
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// assert_eq!(c.len(), 2);
+    /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
+    /// assert!(CollectionWithId::new(vec![Obj("foo"), Obj("foo")]).is_err());
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
     pub fn new(v: Vec<T>) -> Result<Self> {
         let mut id_to_idx = HashMap::default();
         for (i, obj) in v.iter().enumerate() {
@@ -181,6 +251,41 @@ impl<T: Id<T>> CollectionWithId<T> {
             id_to_idx,
         })
     }
+
+    /// Access to a mutable reference of the corresponding object.
+    ///
+    /// The `drop` of the proxy object panic if the identifier is
+    /// modified to an indentifier already on the collection.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let idx = c.get_idx("foo").unwrap();
+    /// c.index_mut(idx).0 = "baz";
+    /// assert!(c.get("foo").is_none());
+    /// assert_eq!(c.get("baz"), Some(&Obj("baz")));
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    ///
+    /// ```should_panic
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let idx = c.get_idx("foo").unwrap();
+    /// c.index_mut(idx).0 = "bar"; // panic
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
     pub fn index_mut(&mut self, idx: Idx<T>) -> RefMut<T> {
         RefMut {
             idx,
@@ -189,6 +294,27 @@ impl<T: Id<T>> CollectionWithId<T> {
         }
     }
 
+    /// Push an element in the `CollectionWithId`.  Fails if the
+    /// identifier of the new object is already in the collection.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let baz_idx = c.push(Obj("baz"))?;
+    /// assert_eq!(&c[baz_idx], &Obj("baz"));
+    /// assert!(c.push(Obj("baz")).is_err());
+    /// let foobar_idx = c.push(Obj("foobar"))?;
+    /// assert_eq!(&c[baz_idx], &Obj("baz"));
+    /// assert_eq!(&c[foobar_idx], &Obj("foobar"));
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
     pub fn push(&mut self, item: T) -> Result<Idx<T>> {
         let next_index = self.collection.objects.len();
         let idx = Idx::new(next_index);
@@ -202,6 +328,95 @@ impl<T: Id<T>> CollectionWithId<T> {
         }
     }
 }
+
+impl<T> CollectionWithId<T> {
+    /// Returns the index corresponding to the identifier.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let idx = c.get_idx("foo").unwrap();
+    /// assert_eq!(&c[idx], &Obj("foo"));
+    /// assert!(c.get_idx("baz").is_none());
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn get_idx(&self, id: &str) -> Option<Idx<T>> {
+        self.id_to_idx.get(id).cloned()
+    }
+
+    /// Returns a reference to the object corresponding to the
+    /// identifier.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
+    /// assert!(c.get("baz").is_none());
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn get(&self, id: &str) -> Option<&T> {
+        self.get_idx(id).map(|idx| &self[idx])
+    }
+
+    /// Converts `self` into a vector without clones or allocation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let v = c.into_vec();
+    /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn into_vec(self) -> Vec<T> {
+        self.collection.objects
+    }
+
+    /// Takes the corresponding vector without clones or allocation,
+    /// leaving `self` empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let v = c.take();
+    /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);
+    /// assert_eq!(c.len(), 0);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn take(&mut self) -> Vec<T> {
+        self.id_to_idx.clear();
+        ::std::mem::replace(&mut self.collection.objects, Vec::new())
+    }
+}
+
+/// The structure returned by `CollectionWithId::index_mut`.
 pub struct RefMut<'a, T: 'a + Id<T>> {
     idx: Idx<T>,
     collection: &'a mut CollectionWithId<T>,
@@ -233,120 +448,49 @@ impl<'a, T: Id<T>> Drop for RefMut<'a, T> {
     }
 }
 
-impl<T> Default for CollectionWithId<T> {
-    fn default() -> Self {
-        CollectionWithId {
-            collection: Collection::new(Vec::default()),
-            id_to_idx: HashMap::default(),
-        }
+impl<T: PartialEq> PartialEq for CollectionWithId<T> {
+    fn eq(&self, other: &CollectionWithId<T>) -> bool {
+        self.collection == other.collection
     }
 }
 
-impl<T> CollectionWithId<T> {
-    pub fn get_idx(&self, id: &str) -> Option<Idx<T>> {
-        self.id_to_idx.get(id).cloned()
-    }
-
-    pub fn get(&self, id: &str) -> Option<&T> {
-        self.get_idx(id).map(|idx| &self[idx])
-    }
-
-    pub fn into_vec(self) -> Vec<T> {
-        self.collection.objects
-    }
-
-    pub fn take(&mut self) -> Vec<T> {
-        self.id_to_idx.clear();
-        ::std::mem::replace(&mut self.collection.objects, Vec::new())
-    }
-
-    pub fn len(&self) -> usize {
-        self.objects.len()
+impl<T> ops::Deref for CollectionWithId<T> {
+    type Target = Collection<T>;
+    fn deref(&self) -> &Collection<T> {
+        &self.collection
     }
 }
 
-impl<T> ops::Index<Idx<T>> for Collection<T> {
-    type Output = T;
-    fn index(&self, index: Idx<T>) -> &Self::Output {
-        &self.objects[index.get()]
+impl<'a, T> IntoIterator for &'a CollectionWithId<T> {
+    type Item = (Idx<T>, &'a T);
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Iter<'a, T> {
+        self.iter()
     }
 }
 
-impl<T> Collection<T> {
-    pub fn iter(&self) -> Iter<T> {
-        self.objects
-            .iter()
-            .enumerate()
-            .map(|(idx, obj)| (Idx::new(idx), obj))
-    }
-
-    pub fn values(&self) -> slice::Iter<T> {
-        self.objects.iter()
-    }
-}
-
-pub fn make_opt_collection_with_id<T>(path: &path::Path, file: &str) -> Result<CollectionWithId<T>>
+impl<T> ::serde::Serialize for CollectionWithId<T>
 where
-    T: Id<T>,
-    for<'de> T: serde::Deserialize<'de>,
+    T: ::serde::Serialize + Id<T>,
 {
-    if !path.join(file).exists() {
-        info!("Skipping {}", file);
-        Ok(CollectionWithId::default())
-    } else {
-        make_collection_with_id(path, file)
+    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
+    where
+        S: ::serde::Serializer,
+    {
+        self.objects.serialize(serializer)
     }
 }
-
-pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> Result<CollectionWithId<T>>
+impl<'de, T> ::serde::Deserialize<'de> for CollectionWithId<T>
 where
-    T: Id<T>,
-    for<'de> T: serde::Deserialize<'de>,
+    T: ::serde::Deserialize<'de> + Id<T>,
 {
-    info!("Reading {}", file);
-    let path = path.join(file);
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let vec = rdr.deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
-    CollectionWithId::new(vec)
-}
-
-pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> Result<Collection<T>>
-where
-    for<'de> T: serde::Deserialize<'de>,
-{
-    if !path.join(file).exists() {
-        info!("Skipping {}", file);
-        Ok(Collection::default())
-    } else {
-        make_collection(path, file)
+    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        use serde::de::Error;
+        ::serde::Deserialize::deserialize(deserializer)
+            .and_then(|v| CollectionWithId::new(v).map_err(D::Error::custom))
     }
-}
-
-pub fn make_collection<T>(path: &path::Path, file: &str) -> Result<Collection<T>>
-where
-    for<'de> T: serde::Deserialize<'de>,
-{
-    info!("Reading {}", file);
-    let path = path.join(file);
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let vec = rdr.deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
-    Ok(Collection::new(vec))
-}
-
-pub fn add_prefix<T>(collection: &mut CollectionWithId<T>, prefix: &str) -> Result<()>
-where
-    T: AddPrefix + Id<T>,
-{
-    let mut objects = collection.take();
-    for obj in &mut objects {
-        obj.add_prefix(prefix);
-    }
-
-    *collection = CollectionWithId::new(objects)?;
-
-    Ok(())
 }
