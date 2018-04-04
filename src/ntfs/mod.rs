@@ -14,6 +14,9 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+//! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
+//! format management.
+
 mod read;
 mod write;
 
@@ -94,6 +97,9 @@ fn default_visible() -> bool {
     true
 }
 
+/// Imports a `Model` from the
+/// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
+/// files in the given directory.
 pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let path = path.as_ref();
     info!("Loading NTFS from {:?}", path);
@@ -126,34 +132,37 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     Ok(res)
 }
 
-pub fn write<P: AsRef<path::Path>>(path: P, pt_objects: &Model) -> Result<()> {
+/// Exports a `Model` to the
+/// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
+/// files in the given directory.
+pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to {:?}", path);
 
-    write::write_feed_infos(path, &pt_objects.feed_infos)?;
-    write::write_collection_with_id(path, "contributors.txt", &pt_objects.contributors)?;
-    write::write_collection_with_id(path, "datasets.txt", &pt_objects.datasets)?;
-    write::write_collection_with_id(path, "networks.txt", &pt_objects.networks)?;
-    write::write_collection_with_id(path, "commercial_modes.txt", &pt_objects.commercial_modes)?;
-    write::write_collection_with_id(path, "companies.txt", &pt_objects.companies)?;
-    write::write_collection_with_id(path, "lines.txt", &pt_objects.lines)?;
-    write::write_collection_with_id(path, "physical_modes.txt", &pt_objects.physical_modes)?;
-    write::write_collection_with_id(path, "equipments.txt", &pt_objects.equipments)?;
-    write::write_collection_with_id(path, "routes.txt", &pt_objects.routes)?;
-    write::write_collection_with_id(path, "trip_properties.txt", &pt_objects.trip_properties)?;
-    write::write_collection_with_id(path, "geometries.txt", &pt_objects.geometries)?;
-    write::write_collection(path, "transfers.txt", &pt_objects.transfers)?;
-    write::write_collection(path, "admin_stations.txt", &pt_objects.admin_stations)?;
+    write::write_feed_infos(path, &model.feed_infos)?;
+    write::write_collection_with_id(path, "contributors.txt", &model.contributors)?;
+    write::write_collection_with_id(path, "datasets.txt", &model.datasets)?;
+    write::write_collection_with_id(path, "networks.txt", &model.networks)?;
+    write::write_collection_with_id(path, "commercial_modes.txt", &model.commercial_modes)?;
+    write::write_collection_with_id(path, "companies.txt", &model.companies)?;
+    write::write_collection_with_id(path, "lines.txt", &model.lines)?;
+    write::write_collection_with_id(path, "physical_modes.txt", &model.physical_modes)?;
+    write::write_collection_with_id(path, "equipments.txt", &model.equipments)?;
+    write::write_collection_with_id(path, "routes.txt", &model.routes)?;
+    write::write_collection_with_id(path, "trip_properties.txt", &model.trip_properties)?;
+    write::write_collection_with_id(path, "geometries.txt", &model.geometries)?;
+    write::write_collection(path, "transfers.txt", &model.transfers)?;
+    write::write_collection(path, "admin_stations.txt", &model.admin_stations)?;
     write::write_vehicle_journeys_and_stop_times(
         path,
-        &pt_objects.vehicle_journeys,
-        &pt_objects.stop_points,
+        &model.vehicle_journeys,
+        &model.stop_points,
     )?;
-    write::write_calendar_and_calendar_dates(path, &pt_objects.calendars)?;
-    write::write_stops(path, &pt_objects.stop_points, &pt_objects.stop_areas)?;
-    write::write_comments(path, pt_objects)?;
-    write::write_codes(path, pt_objects)?;
-    write::write_object_properties(path, pt_objects)?;
+    write::write_calendar_and_calendar_dates(path, &model.calendars)?;
+    write::write_stops(path, &model.stop_points, &model.stop_areas)?;
+    write::write_comments(path, model)?;
+    write::write_codes(path, model)?;
+    write::write_object_properties(path, model)?;
 
     Ok(())
 }

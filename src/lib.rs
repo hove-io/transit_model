@@ -38,11 +38,9 @@ extern crate serde_derive;
 pub(crate) mod utils;
 pub mod collection;
 pub(crate) mod common_format;
-#[allow(missing_docs)]
 pub mod gtfs;
 #[allow(missing_docs)]
 pub mod model;
-#[allow(missing_docs)]
 pub mod ntfs;
 #[allow(missing_docs)]
 pub mod objects;
