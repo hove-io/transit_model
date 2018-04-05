@@ -53,7 +53,7 @@ fn run() -> Result<()> {
 
     let objects = navitia_model::gtfs::read(opt.input, opt.config_path, opt.prefix)?;
 
-    navitia_model::ntfs::write(opt.output, &objects)?;
+    navitia_model::ntfs::write(&objects, opt.output)?;
     Ok(())
 }
 

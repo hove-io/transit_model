@@ -39,7 +39,7 @@ where
 fn run() -> Result<()> {
     let objects = navitia_model::ntfs::read(".")?;
 
-    for (from, stop_area) in objects.stop_areas.iter() {
+    for (from, stop_area) in &objects.stop_areas {
         let cms = get(from, &objects.commercial_modes, &objects);
         let pms = get(from, &objects.physical_modes, &objects);
         let ns = get(from, &objects.networks, &objects);

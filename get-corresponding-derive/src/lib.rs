@@ -65,16 +65,21 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
             }
         });
         quote! {
+            /// A trait to get the objects corresponding to a set of objects.
             pub trait GetCorresponding<T: Sized> {
+                /// for the given self, returns the set of
+                /// corresponding `T` indices.
                 fn get_corresponding(&self, &#name) -> IdxSet<T>;
             }
             impl #name {
+                /// Gets the set of `U` indices corresponding to the `from` set.
                 pub fn get_corresponding<T, U>(&self, from: &IdxSet<T>) -> IdxSet<U>
                 where
                     IdxSet<T>: GetCorresponding<U>
                 {
                     from.get_corresponding(self)
                 }
+                /// Gets the set of `U` indices corresponding to the `from` index.
                 pub fn get_corresponding_from_idx<T, U>(&self, from: Idx<T>) -> IdxSet<U>
                 where
                     IdxSet<T>: GetCorresponding<U>

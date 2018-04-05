@@ -15,7 +15,11 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::NaiveDate;
-use objects::Date;
+use collection::{Collection, CollectionWithId, Id};
+use csv;
+use failure::ResultExt;
+use objects::{AddPrefix, Date};
+use std::path;
 
 pub fn de_from_u8<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
@@ -85,4 +89,73 @@ macro_rules! ctx_from_path {
     ($path:expr) => {
         |_| format!("Error reading {:?}", $path)
     };
+}
+
+pub fn make_opt_collection_with_id<T>(
+    path: &path::Path,
+    file: &str,
+) -> ::Result<CollectionWithId<T>>
+where
+    T: Id<T>,
+    for<'de> T: ::serde::Deserialize<'de>,
+{
+    if !path.join(file).exists() {
+        info!("Skipping {}", file);
+        Ok(CollectionWithId::default())
+    } else {
+        make_collection_with_id(path, file)
+    }
+}
+
+pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> ::Result<CollectionWithId<T>>
+where
+    T: Id<T>,
+    for<'de> T: ::serde::Deserialize<'de>,
+{
+    info!("Reading {}", file);
+    let path = path.join(file);
+    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let vec = rdr.deserialize()
+        .collect::<Result<_, _>>()
+        .with_context(ctx_from_path!(path))?;
+    CollectionWithId::new(vec)
+}
+
+pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> ::Result<Collection<T>>
+where
+    for<'de> T: ::serde::Deserialize<'de>,
+{
+    if !path.join(file).exists() {
+        info!("Skipping {}", file);
+        Ok(Collection::default())
+    } else {
+        make_collection(path, file)
+    }
+}
+
+pub fn make_collection<T>(path: &path::Path, file: &str) -> ::Result<Collection<T>>
+where
+    for<'de> T: ::serde::Deserialize<'de>,
+{
+    info!("Reading {}", file);
+    let path = path.join(file);
+    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let vec = rdr.deserialize()
+        .collect::<Result<_, _>>()
+        .with_context(ctx_from_path!(path))?;
+    Ok(Collection::new(vec))
+}
+
+pub fn add_prefix<T>(collection: &mut CollectionWithId<T>, prefix: &str) -> ::Result<()>
+where
+    T: AddPrefix + Id<T>,
+{
+    let mut objects = collection.take();
+    for obj in &mut objects {
+        obj.add_prefix(prefix);
+    }
+
+    *collection = CollectionWithId::new(objects)?;
+
+    Ok(())
 }

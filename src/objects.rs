@@ -14,6 +14,10 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+//! The different objects contained in the navitia transit model.
+
+#![allow(missing_docs)]
+
 use chrono;
 use collection::{Id, Idx};
 use std::str::FromStr;
@@ -78,17 +82,17 @@ macro_rules! impl_codes {
     };
 }
 
-pub trait ObjectProperties {
-    fn object_properties(&self) -> &KeysValues;
-    fn object_properties_mut(&mut self) -> &mut KeysValues;
+pub trait Properties {
+    fn properties(&self) -> &KeysValues;
+    fn properties_mut(&mut self) -> &mut KeysValues;
 }
-macro_rules! impl_object_properties {
+macro_rules! impl_properties {
     ($ty:ty) => {
-        impl ObjectProperties for $ty {
-            fn object_properties(&self) -> &KeysValues {
+        impl Properties for $ty {
+            fn properties(&self) -> &KeysValues {
                 &self.object_properties
             }
-            fn object_properties_mut(&mut self) -> &mut KeysValues {
+            fn properties_mut(&mut self) -> &mut KeysValues {
                 &mut self.object_properties
             }
         }
@@ -433,7 +437,7 @@ impl AddPrefix for Line {
     }
 }
 impl_codes!(Line);
-impl_object_properties!(Line);
+impl_properties!(Line);
 impl_comment_links!(Line);
 
 impl GetObjectType for Line {
@@ -476,7 +480,7 @@ impl AddPrefix for Route {
     }
 }
 impl_codes!(Route);
-impl_object_properties!(Route);
+impl_properties!(Route);
 impl_comment_links!(Route);
 
 impl GetObjectType for Route {
@@ -545,7 +549,7 @@ impl AddPrefix for VehicleJourney {
     }
 }
 impl_codes!(VehicleJourney);
-impl_object_properties!(VehicleJourney);
+impl_properties!(VehicleJourney);
 impl_comment_links!(VehicleJourney);
 
 impl GetObjectType for VehicleJourney {
@@ -674,7 +678,7 @@ impl AddPrefix for StopArea {
     }
 }
 impl_codes!(StopArea);
-impl_object_properties!(StopArea);
+impl_properties!(StopArea);
 impl_comment_links!(StopArea);
 
 impl GetObjectType for StopArea {
@@ -722,7 +726,7 @@ impl AddPrefix for StopPoint {
     }
 }
 impl_codes!(StopPoint);
-impl_object_properties!(StopPoint);
+impl_properties!(StopPoint);
 impl_comment_links!(StopPoint);
 
 impl GetObjectType for StopPoint {

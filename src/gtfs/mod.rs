@@ -14,16 +14,18 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+//! [GTFS](http://gtfs.org/) format management.
+
 mod read;
 
 use Result;
 use collection::CollectionWithId;
-use collection::add_prefix;
 use common_format::manage_calendars;
 use gtfs::read::EquipmentList;
 use model::{Collections, Model};
 use objects::Comment;
-use std::path;
+use std::path::Path;
+use utils::add_prefix;
 
 fn add_prefix_to_collections(prefix: String, collections: &mut Collections) -> Result<()> {
     let prefix = prefix + ":";
@@ -45,11 +47,20 @@ fn add_prefix_to_collections(prefix: String, collections: &mut Collections) -> R
     Ok(())
 }
 
-pub fn read<P: AsRef<path::Path>>(
-    path: P,
-    config_path: Option<P>,
-    prefix: Option<String>,
-) -> Result<Model> {
+/// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
+/// `path` directory.
+///
+/// The `config_path` argument allows you to give a file containing a
+/// json representing the contributor and dataset used for this
+/// GTFS. If not given, default values will be created.
+///
+/// The `prefix` argument is a string that will be prepended to every
+/// identifiers, allowing to namespace the dataset. By default, no
+/// prefix will be added to the identifiers.
+pub fn read<P>(path: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
+where
+    P: AsRef<Path>,
+{
     let mut collections = Collections::default();
     let mut equipments = EquipmentList::default();
     let mut comments: CollectionWithId<Comment> = CollectionWithId::default();

@@ -49,7 +49,7 @@ pub fn write_vehicle_journeys_and_stop_times(
     let mut vj_wtr = csv::Writer::from_path(&trip_path).with_context(ctx_from_path!(trip_path))?;
     let mut st_wtr =
         csv::Writer::from_path(&stop_times_path).with_context(ctx_from_path!(stop_times_path))?;
-    for (_, vj) in vehicle_journeys.iter() {
+    for vj in vehicle_journeys.values() {
         vj_wtr
             .serialize(vj)
             .with_context(ctx_from_path!(trip_path))?;
@@ -93,7 +93,7 @@ where
     info!("Writing {}", file);
     let path = path.join(file);
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
-    for (_, obj) in collection.iter() {
+    for obj in collection.values() {
         wtr.serialize(obj).with_context(ctx_from_path!(path))?;
     }
     wtr.flush().with_context(ctx_from_path!(path))?;
@@ -108,7 +108,7 @@ where
     info!("Writing {}", file);
     let path = path.join(file);
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
-    for (_, obj) in collection.iter() {
+    for obj in collection.values() {
         wtr.serialize(obj).with_context(ctx_from_path!(path))?;
     }
     wtr.flush().with_context(ctx_from_path!(path))?;
@@ -127,7 +127,7 @@ pub fn write_calendar_and_calendar_dates(
         csv::Writer::from_path(&calendar_path).with_context(ctx_from_path!(calendar_path))?;
     let mut cd_wtr = csv::Writer::from_path(&calendar_dates_path)
         .with_context(ctx_from_path!(calendar_dates_path))?;
-    for (_, c) in calendars.iter() {
+    for c in calendars.values() {
         c_wtr
             .serialize(c)
             .with_context(ctx_from_path!(calendar_path))?;
@@ -157,7 +157,7 @@ pub fn write_stops(
     info!("Writing stops.txt");
     let path = path.join("stops.txt");
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
-    for (_, st) in stop_points.iter() {
+    for st in stop_points.values() {
         wtr.serialize(Stop {
             id: st.id.clone(),
             visible: st.visible,
@@ -173,7 +173,7 @@ pub fn write_stops(
         }).with_context(ctx_from_path!(path))?;
     }
 
-    for (_, sa) in stop_areas.iter() {
+    for sa in stop_areas.values() {
         if !sa.id.starts_with("Navitia:") {
             wtr.serialize(Stop {
                 id: sa.id.clone(),
@@ -205,7 +205,7 @@ where
     T: Id<T> + CommentLinks + GetObjectType,
     W: ::std::io::Write,
 {
-    for (_, obj) in collection.iter() {
+    for obj in collection.values() {
         for comment in comments.iter_from(obj.comment_links()) {
             wtr.serialize(CommentLink {
                 object_id: obj.id().to_string(),
@@ -227,7 +227,7 @@ pub fn write_comments(path: &path::Path, collections: &Collections) -> Result<()
         csv::Writer::from_path(&comments_path).with_context(ctx_from_path!(comments_path))?;
     let mut cl_wtr = csv::Writer::from_path(&comment_links_path)
         .with_context(ctx_from_path!(comment_links_path))?;
-    for (_, c) in collections.comments.iter() {
+    for c in collections.comments.values() {
         c_wtr
             .serialize(c)
             .with_context(ctx_from_path!(comments_path))?;
@@ -282,7 +282,7 @@ where
     T: Id<T> + Codes + GetObjectType,
     W: ::std::io::Write,
 {
-    for (_, obj) in collections.iter() {
+    for obj in collections.values() {
         for c in obj.codes() {
             wtr.serialize(Code {
                 object_id: obj.id().to_string(),
@@ -316,15 +316,15 @@ pub fn write_codes(path: &path::Path, collections: &Collections) -> Result<()> {
 
 fn write_object_properties_from_collection_with_id<W, T>(
     wtr: &mut csv::Writer<W>,
-    collections: &CollectionWithId<T>,
+    collection: &CollectionWithId<T>,
     path: &path::Path,
 ) -> Result<()>
 where
-    T: Id<T> + ObjectProperties + GetObjectType,
+    T: Id<T> + Properties + GetObjectType,
     W: ::std::io::Write,
 {
-    for (_, obj) in collections.iter() {
-        for c in obj.object_properties() {
+    for obj in collection.values() {
+        for c in obj.properties() {
             wtr.serialize(ObjectProperty {
                 object_id: obj.id().to_string(),
                 object_type: T::get_object_type(),

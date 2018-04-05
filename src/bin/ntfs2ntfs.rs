@@ -46,7 +46,7 @@ fn run() -> Result<()> {
     let objects = navitia_model::ntfs::read(opt.input)?;
 
     if let Some(output) = opt.output {
-        navitia_model::ntfs::write(output, &objects)?;
+        navitia_model::ntfs::write(&objects, output)?;
     }
     Ok(())
 }

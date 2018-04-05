@@ -209,7 +209,7 @@ where
     fn new_impl(one: &CollectionWithId<T>, many: &CollectionWithId<U>) -> Result<Self> {
         let mut one_to_many = BTreeMap::default();
         let mut many_to_one = BTreeMap::default();
-        for (many_idx, obj) in many.iter() {
+        for (many_idx, obj) in many {
             let one_id = <U as Id<T>>::id(obj);
             let one_idx = one.get_idx(one_id)
                 .ok_or_else(|| format_err!("id={:?} not found", one_id))?;
