@@ -363,7 +363,7 @@ struct StopTime {
     #[serde(deserialize_with = "de_with_empty_default", default)]
     pickup_type: u8,
     #[serde(deserialize_with = "de_with_empty_default", default)]
-    dropoff_type: u8,
+    drop_off_type: u8,
 }
 
 pub fn manage_stop_times<P: AsRef<path::Path>>(
@@ -407,7 +407,7 @@ pub fn manage_stop_times<P: AsRef<path::Path>>(
                 boarding_duration: 0,
                 alighting_duration: 0,
                 pickup_type: stop_time.pickup_type,
-                dropoff_type: stop_time.dropoff_type,
+                drop_off_type: stop_time.drop_off_type,
                 datetime_estimated: false,
                 local_zone_id: None,
             });
@@ -1461,7 +1461,7 @@ mod tests {
 
         let stop_times_content = "trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled\n\
                                   1,06:00:00,06:00:00,sp:01,1,,,,\n\
-                                  1,06:06:27,06:06:27,sp:02,2,,,,";
+                                  1,06:06:27,06:06:27,sp:02,2,,2,1,";
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
@@ -1484,8 +1484,33 @@ mod tests {
             super::manage_stop_times(&mut collections, &tmp_dir).unwrap();
 
             assert_eq!(
-                2,
-                collections.vehicle_journeys.into_vec()[0].stop_times.len()
+                collections.vehicle_journeys.into_vec()[0].stop_times,
+                vec![
+                    StopTime {
+                        stop_point_idx: collections.stop_points.get_idx("sp:01").unwrap(),
+                        sequence: 1,
+                        arrival_time: Time::new(6, 0, 0),
+                        departure_time: Time::new(6, 0, 0),
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: 0,
+                        drop_off_type: 0,
+                        datetime_estimated: false,
+                        local_zone_id: None,
+                    },
+                    StopTime {
+                        stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
+                        sequence: 2,
+                        arrival_time: Time::new(6, 6, 27),
+                        departure_time: Time::new(6, 6, 27),
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: 2,
+                        drop_off_type: 1,
+                        datetime_estimated: false,
+                        local_zone_id: None,
+                    },
+                ]
             );
         });
     }

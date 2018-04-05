@@ -41,7 +41,7 @@ struct StopTime {
     #[serde(default)]
     pickup_type: u8,
     #[serde(default)]
-    dropoff_type: u8,
+    drop_off_type: u8,
     #[serde(default, deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     datetime_estimated: bool,
     local_zone_id: Option<u16>,
@@ -461,7 +461,7 @@ mod tests {
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 0,
-                        dropoff_type: 1,
+                        drop_off_type: 1,
                         datetime_estimated: false,
                         local_zone_id: None,
                     },
@@ -473,7 +473,7 @@ mod tests {
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 0,
-                        dropoff_type: 0,
+                        drop_off_type: 0,
                         datetime_estimated: false,
                         local_zone_id: None,
                     },

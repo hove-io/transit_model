@@ -65,7 +65,7 @@ pub fn write_vehicle_journeys_and_stop_times(
                     boarding_duration: st.boarding_duration,
                     alighting_duration: st.alighting_duration,
                     pickup_type: st.pickup_type,
-                    dropoff_type: st.dropoff_type,
+                    drop_off_type: st.drop_off_type,
                     datetime_estimated: st.datetime_estimated,
                     local_zone_id: st.local_zone_id,
                     // TODO: Add headsign and stop_time_ids
