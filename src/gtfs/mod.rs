@@ -49,7 +49,7 @@ fn add_prefix_to_collections(prefix: String, collections: &mut Collections) -> R
 /// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
 /// `path` directory.
 ///
-/// The `config_path` argument allow you to give a file containing a
+/// The `config_path` argument allows you to give a file containing a
 /// json representing the contributor and dataset used for this
 /// GTFS. If not given, default values will be created.
 ///

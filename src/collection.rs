@@ -28,7 +28,7 @@ use std::ops;
 use std::result::Result as StdResult;
 use std::slice;
 
-/// An object that have a unique identifier.
+/// An object that has a unique identifier.
 pub trait Id<T> {
     /// Returns the unique identifier.
     fn id(&self) -> &str;
