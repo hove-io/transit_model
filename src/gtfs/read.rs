@@ -28,7 +28,6 @@ use std::path;
 use std::result::Result as StdResult;
 use utils::*;
 extern crate serde_json;
-use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -330,7 +329,7 @@ impl Trip {
         &self,
         routes: &CollectionWithId<Route>,
         dataset: &objects::Dataset,
-        trip_property_id: String,
+        trip_property_id: &Option<String>,
     ) -> objects::VehicleJourney {
         let route = routes.get(&self.route_id).unwrap();
         let physical_mode = get_physical_mode(&route.route_type);
@@ -347,7 +346,7 @@ impl Trip {
             headsign: self.short_name.clone().or_else(|| self.headsign.clone()),
             block_id: self.block_id.clone(),
             company_id: route.agency_id.clone().unwrap_or_else(default_agency_id),
-            trip_property_id: Some(trip_property_id),
+            trip_property_id: trip_property_id.clone(),
             geometry_id: self.shape_id.clone(),
             stop_times: vec![],
         }
@@ -792,32 +791,26 @@ fn make_ntfs_vehicle_journeys(
     // there always is one dataset from config or a default one
     let (_, dataset) = datasets.iter().next().unwrap();
     let mut vehicle_journeys: Vec<objects::VehicleJourney> = vec![];
-    let mut gtfs_tps_ids: HashMap<(u8, u8), u8> = HashMap::new();
-    let mut id_incr: u8 = 0;
+    let mut trip_properties: Vec<objects::TripProperty> = vec![];
+    let mut map_tps_trips: HashMap<(u8, u8), Vec<&Trip>> = HashMap::new();
+    let mut id_incr: u8 = 1;
+    let mut property_id: Option<String>;
 
     for t in gtfs_trips {
-        let trip_property_id = match gtfs_tps_ids.entry((t.wheelchair_accessible, t.bikes_allowed))
-        {
-            Vacant(entry) => {
-                id_incr += 1;
-                entry.insert(id_incr)
-            }
-            Occupied(entry) => entry.into_mut(),
-        };
-
-        vehicle_journeys.push(t.to_ntfs_vehicle_journey(
-            routes,
-            dataset,
-            trip_property_id.to_string(),
-        ));
+        map_tps_trips
+            .entry((t.wheelchair_accessible, t.bikes_allowed))
+            .or_insert_with(|| vec![])
+            .push(t);
     }
 
-    let trip_properties: Result<Vec<objects::TripProperty>> = gtfs_tps_ids
-        .iter()
-        .map(|(&(weelchair_id, bike_id), id)| {
-            let trip_property = objects::TripProperty {
-                id: id.to_string(),
-                wheelchair_accessible: get_availability(weelchair_id)?,
+    for (&(wheelchair_id, bike_id), trips) in &map_tps_trips {
+        if wheelchair_id == 0 && bike_id == 0 {
+            property_id = None;
+        } else {
+            property_id = Some(id_incr.to_string());
+            trip_properties.push(objects::TripProperty {
+                id: id_incr.to_string(),
+                wheelchair_accessible: get_availability(wheelchair_id)?,
                 bike_accepted: get_availability(bike_id)?,
                 air_conditioned: Availability::InformationNotAvailable,
                 visual_announcement: Availability::InformationNotAvailable,
@@ -825,13 +818,15 @@ fn make_ntfs_vehicle_journeys(
                 appropriate_escort: Availability::InformationNotAvailable,
                 appropriate_signage: Availability::InformationNotAvailable,
                 school_vehicle_type: TransportType::Regular,
-            };
+            });
+            id_incr += 1;
+        }
+        for t in trips {
+            vehicle_journeys.push(t.to_ntfs_vehicle_journey(routes, dataset, &property_id));
+        }
+    }
 
-            Ok(trip_property)
-        })
-        .collect();
-
-    Ok((vehicle_journeys, trip_properties?))
+    Ok((vehicle_journeys, trip_properties))
 }
 
 pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections) -> Result<()> {
@@ -1236,7 +1231,7 @@ mod tests {
         let trips_content =
             "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
              1,route_1,0,service_1,,\n\
-             2,route_2,1,service_2,,";
+             2,route_2,1,service_2,1,2";
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
@@ -1334,7 +1329,34 @@ mod tests {
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
-            assert_eq!(2, collections.trip_properties.len());
+            assert_eq!(1, collections.trip_properties.len());
+        });
+    }
+
+    #[test]
+    fn gtfs_trips_with_no_accessibility_information() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF";
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,\n\
+             2,route_1,0,service_2,,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+
+            let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+
+            super::read_routes(tmp_dir, &mut collections).unwrap();
+            assert_eq!(2, collections.vehicle_journeys.len());
+            assert_eq!(0, collections.trip_properties.len());
+            for vj in collections.vehicle_journeys.values() {
+                assert!(vj.trip_property_id.is_none());
+            }
         });
     }
 

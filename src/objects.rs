@@ -545,7 +545,7 @@ impl AddPrefix for VehicleJourney {
         self.company_id = prefix.to_string() + &self.company_id;
         self.trip_property_id = self.trip_property_id
             .as_ref()
-            .map(|id| prefix.to_string() + &id);
+            .map(|id| prefix.to_string() + id);
     }
 }
 impl_codes!(VehicleJourney);
