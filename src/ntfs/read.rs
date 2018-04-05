@@ -132,7 +132,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
                 boarding_duration: stop_time.boarding_duration,
                 alighting_duration: stop_time.alighting_duration,
                 pickup_type: stop_time.pickup_type,
-                dropoff_type: stop_time.dropoff_type,
+                drop_off_type: stop_time.drop_off_type,
                 datetime_estimated: stop_time.datetime_estimated,
                 local_zone_id: stop_time.local_zone_id,
             });

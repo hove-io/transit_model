@@ -630,7 +630,7 @@ pub struct StopTime {
     pub boarding_duration: u16,
     pub alighting_duration: u16,
     pub pickup_type: u8,
-    pub dropoff_type: u8,
+    pub drop_off_type: u8,
     pub datetime_estimated: bool,
     pub local_zone_id: Option<u16>,
 }
