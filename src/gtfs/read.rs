@@ -329,7 +329,7 @@ impl Trip {
         &self,
         routes: &CollectionWithId<Route>,
         dataset: &objects::Dataset,
-        trip_property_id: Option<String>,
+        trip_property_id: &Option<String>,
     ) -> objects::VehicleJourney {
         let route = routes.get(&self.route_id).unwrap();
         let physical_mode = get_physical_mode(&route.route_type);
@@ -346,7 +346,7 @@ impl Trip {
             headsign: self.short_name.clone().or_else(|| self.headsign.clone()),
             block_id: self.block_id.clone(),
             company_id: route.agency_id.clone().unwrap_or_else(default_agency_id),
-            trip_property_id,
+            trip_property_id: trip_property_id.clone(),
             geometry_id: self.shape_id.clone(),
             stop_times: vec![],
         }
@@ -794,6 +794,7 @@ fn make_ntfs_vehicle_journeys(
     let mut trip_properties: Vec<objects::TripProperty> = vec![];
     let mut map_tps_trips: HashMap<(u8, u8), Vec<&Trip>> = HashMap::new();
     let mut id_incr: u8 = 1;
+    let mut property_id: Option<String>;
 
     for t in gtfs_trips {
         map_tps_trips
@@ -802,18 +803,14 @@ fn make_ntfs_vehicle_journeys(
             .push(t);
     }
 
-    // If there is no accessibility information in the trips
-    if map_tps_trips.len() == 1 && map_tps_trips.keys().next() == Some(&(0, 0)) {
-        for trips in map_tps_trips.values() {
-            for t in trips {
-                vehicle_journeys.push(t.to_ntfs_vehicle_journey(routes, dataset, None));
-            }
-        }
-    } else {
-        for (&(weelchair_id, bike_id), trips) in &map_tps_trips {
+    for (&(wheelchair_id, bike_id), trips) in &map_tps_trips {
+        if wheelchair_id == 0 && bike_id == 0 {
+            property_id = None;
+        } else {
+            property_id = Some(id_incr.to_string());
             trip_properties.push(objects::TripProperty {
                 id: id_incr.to_string(),
-                wheelchair_accessible: get_availability(weelchair_id)?,
+                wheelchair_accessible: get_availability(wheelchair_id)?,
                 bike_accepted: get_availability(bike_id)?,
                 air_conditioned: Availability::InformationNotAvailable,
                 visual_announcement: Availability::InformationNotAvailable,
@@ -822,15 +819,10 @@ fn make_ntfs_vehicle_journeys(
                 appropriate_signage: Availability::InformationNotAvailable,
                 school_vehicle_type: TransportType::Regular,
             });
-
-            for t in trips {
-                vehicle_journeys.push(t.to_ntfs_vehicle_journey(
-                    routes,
-                    dataset,
-                    Some(id_incr.to_string()),
-                ));
-            }
             id_incr += 1;
+        }
+        for t in trips {
+            vehicle_journeys.push(t.to_ntfs_vehicle_journey(routes, dataset, &property_id));
         }
     }
 
@@ -1299,7 +1291,7 @@ mod tests {
                 extract_ids(&collections.routes)
             );
             assert_eq!(
-                vec!["my_prefix:1", "my_prefix:2"],
+                vec!["my_prefix:1"],
                 extract_ids(&collections.trip_properties)
             );
 
@@ -1337,7 +1329,7 @@ mod tests {
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
-            assert_eq!(2, collections.trip_properties.len());
+            assert_eq!(1, collections.trip_properties.len());
         });
     }
 
