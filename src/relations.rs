@@ -161,10 +161,10 @@
 //! # fn main() {}
 //! ```
 
-use Result;
 use collection::{CollectionWithId, Id, Idx};
 use failure::ResultExt;
 use std::collections::{BTreeMap, BTreeSet};
+use Result;
 
 /// A set of `Idx<T>`
 pub type IdxSet<T> = BTreeSet<Idx<T>>;

@@ -18,12 +18,12 @@ use csv;
 use std::path;
 
 use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
-use Result;
 use collection::*;
 use failure::ResultExt;
 use model::Collections;
 use objects::*;
 use utils::make_collection_with_id;
+use Result;
 
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {

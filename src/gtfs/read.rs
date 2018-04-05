@@ -14,7 +14,6 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use Result;
 use collection::{CollectionWithId, Id};
 use csv;
 use failure::ResultExt;
@@ -27,6 +26,7 @@ use std::fs::File;
 use std::path;
 use std::result::Result as StdResult;
 use utils::*;
+use Result;
 extern crate serde_json;
 
 fn default_agency_id() -> String {
@@ -116,28 +116,6 @@ struct Stop {
     timezone: Option<String>,
     #[serde(default)]
     wheelchair_boarding: Option<String>,
-}
-
-pub struct EquipmentList {
-    equipments: Vec<objects::Equipment>,
-}
-
-impl Default for EquipmentList {
-    fn default() -> Self {
-        EquipmentList { equipments: vec![] }
-    }
-}
-
-impl EquipmentList {
-    pub fn get_equipments(self) -> Vec<objects::Equipment> {
-        self.equipments
-    }
-    pub fn push(&mut self, mut equipment: objects::Equipment) -> String {
-        equipment.id = self.equipments.len().to_string();
-        let equipment_id = equipment.id.clone();
-        self.equipments.push(equipment);
-        equipment_id
-    }
 }
 
 impl From<Stop> for objects::StopArea {
@@ -464,6 +442,36 @@ fn manage_comment_from_stop(
         comment_links.push(idx);
     }
     comment_links
+}
+
+pub struct EquipmentList {
+    equipments: HashMap<objects::Equipment, String>,
+}
+
+impl Default for EquipmentList {
+    fn default() -> Self {
+        EquipmentList {
+            equipments: HashMap::new(),
+        }
+    }
+}
+
+impl EquipmentList {
+    pub fn into_equipments(self) -> Vec<objects::Equipment> {
+        let mut eqs: Vec<objects::Equipment> = vec![];
+        for (eq, id) in self.equipments {
+            let mut eq = eq;
+            eq.id = id.clone();
+            eqs.push(eq);
+        }
+        eqs.sort_unstable_by_key(|eq| eq.id.clone());
+        eqs
+    }
+    pub fn push(&mut self, equipment: objects::Equipment) -> String {
+        let equipment_id = self.equipments.len().to_string();
+        let id = self.equipments.entry(equipment).or_insert(equipment_id);
+        id.clone()
+    }
 }
 
 fn get_equipment_id_and_populate_equipments(
@@ -1149,7 +1157,7 @@ mod tests {
             assert_eq!(5, collections.routes.len());
             assert_eq!(
                 extract_ids(&collections.routes),
-                &["route_1", "route_1_R", "route_2", "route_3", "route_3_R",]
+                &["route_1", "route_1_R", "route_2", "route_3", "route_3_R"]
             );
         });
     }
@@ -1180,12 +1188,12 @@ mod tests {
             assert_eq!(extract_ids(&collections.lines), &["route_1", "route_3"]);
             assert_eq!(
                 extract_ids(&collections.routes),
-                &["route_1", "route_2", "route_3",]
+                &["route_1", "route_2", "route_3"]
             );
 
             assert_eq!(
                 extract(|r| &r.line_id, &collections.routes),
-                &["route_1", "route_1", "route_3",]
+                &["route_1", "route_1", "route_3"]
             );
         });
     }
@@ -1395,7 +1403,8 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let (stop_areas, stop_points) =
                 super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
-            let equipments_collection = CollectionWithId::new(equipments.get_equipments()).unwrap();
+            let equipments_collection =
+                CollectionWithId::new(equipments.into_equipments()).unwrap();
             assert_eq!(2, stop_areas.len());
             assert_eq!(2, stop_points.len());
             assert_eq!(2, equipments_collection.len());
@@ -1441,6 +1450,53 @@ mod tests {
                         appropriate_signage: Availability::InformationNotAvailable,
                     },
                 ]
+            );
+        });
+    }
+
+    #[test]
+    fn stops_do_not_generate_duplicate_equipments() {
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,wheelchair_boarding\n\
+                             sp:01,my stop point name 1,0.1,1.2,0,,1\n\
+                             sp:02,my stop point name 2,0.2,1.5,0,,1";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let mut equipments = EquipmentList::default();
+            let (_, stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            let equipments_collection =
+                CollectionWithId::new(equipments.into_equipments()).unwrap();
+            assert_eq!(2, stop_points.len());
+            assert_eq!(1, equipments_collection.len());
+
+            let mut stop_point_equipment_ids: Vec<Option<String>> = stop_points
+                .iter()
+                .map(|(_, stop_point)| stop_point.equipment_id.clone())
+                .collect();
+            stop_point_equipment_ids.sort();
+            assert_eq!(
+                vec![Some("0".to_string()), Some("0".to_string())],
+                stop_point_equipment_ids
+            );
+
+            assert_eq!(
+                equipments_collection.into_vec(),
+                vec![Equipment {
+                    id: "0".to_string(),
+                    wheelchair_boarding: Availability::Available,
+                    sheltered: Availability::InformationNotAvailable,
+                    elevator: Availability::InformationNotAvailable,
+                    escalator: Availability::InformationNotAvailable,
+                    bike_accepted: Availability::InformationNotAvailable,
+                    bike_depot: Availability::InformationNotAvailable,
+                    visual_announcement: Availability::InformationNotAvailable,
+                    audible_announcement: Availability::InformationNotAvailable,
+                    appropriate_escort: Availability::InformationNotAvailable,
+                    appropriate_signage: Availability::InformationNotAvailable,
+                }]
             );
         });
     }

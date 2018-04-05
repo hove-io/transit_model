@@ -20,12 +20,12 @@
 mod read;
 mod write;
 
-use Result;
 use common_format;
 use model::{Collections, Model};
 use objects::*;
 use std::path;
 use utils::*;
+use Result;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
@@ -53,8 +53,11 @@ struct Stop {
     id: String,
     #[serde(rename = "stop_name")]
     name: String,
-    #[serde(default = "default_visible", deserialize_with = "de_from_u8",
-            serialize_with = "ser_from_bool")]
+    #[serde(
+        default = "default_visible",
+        deserialize_with = "de_from_u8",
+        serialize_with = "ser_from_bool"
+    )]
     visible: bool,
     fare_zone_id: Option<String>,
     #[serde(rename = "stop_lon")]
@@ -557,21 +560,19 @@ mod tests {
 
     #[test]
     fn equipments_serialization_deserialization() {
-        test_serialize_deserialize_collection_with_id(vec![
-            Equipment {
-                id: "1".to_string(),
-                wheelchair_boarding: Availability::Available,
-                sheltered: Availability::InformationNotAvailable,
-                elevator: Availability::Available,
-                escalator: Availability::Available,
-                bike_accepted: Availability::Available,
-                bike_depot: Availability::Available,
-                visual_announcement: Availability::Available,
-                audible_announcement: Availability::Available,
-                appropriate_escort: Availability::Available,
-                appropriate_signage: Availability::Available,
-            },
-        ]);
+        test_serialize_deserialize_collection_with_id(vec![Equipment {
+            id: "1".to_string(),
+            wheelchair_boarding: Availability::Available,
+            sheltered: Availability::InformationNotAvailable,
+            elevator: Availability::Available,
+            escalator: Availability::Available,
+            bike_accepted: Availability::Available,
+            bike_depot: Availability::Available,
+            visual_announcement: Availability::Available,
+            audible_announcement: Availability::Available,
+            appropriate_escort: Availability::Available,
+            appropriate_signage: Availability::Available,
+        }]);
     }
 
     #[test]
@@ -752,119 +753,107 @@ mod tests {
             },
         ]).unwrap();
 
-        let stop_points = CollectionWithId::new(vec![
-            StopPoint {
-                id: "sp_1".to_string(),
-                name: "sp_name_1".to_string(),
-                codes: vec![("object_system:1".to_string(), "object_code:1".to_string())],
-                object_properties: vec![("prop_name:1".to_string(), "prop_value:1".to_string())],
-                comment_links: vec![comments.get_idx("c:1").unwrap()],
-                visible: true,
-                coord: Coord {
-                    lon: 2.073034,
-                    lat: 48.799115,
-                },
-                timezone: None,
-                geometry_id: None,
-                equipment_id: None,
-                stop_area_id: "sa_1".to_string(),
-                fare_zone_id: None,
+        let stop_points = CollectionWithId::new(vec![StopPoint {
+            id: "sp_1".to_string(),
+            name: "sp_name_1".to_string(),
+            codes: vec![("object_system:1".to_string(), "object_code:1".to_string())],
+            object_properties: vec![("prop_name:1".to_string(), "prop_value:1".to_string())],
+            comment_links: vec![comments.get_idx("c:1").unwrap()],
+            visible: true,
+            coord: Coord {
+                lon: 2.073034,
+                lat: 48.799115,
             },
-        ]).unwrap();
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+            stop_area_id: "sa_1".to_string(),
+            fare_zone_id: None,
+        }]).unwrap();
 
-        let stop_areas = CollectionWithId::new(vec![
-            StopArea {
-                id: "sa_1".to_string(),
-                name: "sa_name_1".to_string(),
-                codes: vec![("object_system:2".to_string(), "object_code:2".to_string())],
-                object_properties: vec![("prop_name:2".to_string(), "prop_value:2".to_string())],
-                comment_links: vec![comments.get_idx("c:2").unwrap()],
-                visible: true,
-                coord: Coord {
-                    lon: 2.073034,
-                    lat: 48.799115,
-                },
-                timezone: None,
-                geometry_id: None,
-                equipment_id: None,
+        let stop_areas = CollectionWithId::new(vec![StopArea {
+            id: "sa_1".to_string(),
+            name: "sa_name_1".to_string(),
+            codes: vec![("object_system:2".to_string(), "object_code:2".to_string())],
+            object_properties: vec![("prop_name:2".to_string(), "prop_value:2".to_string())],
+            comment_links: vec![comments.get_idx("c:2").unwrap()],
+            visible: true,
+            coord: Coord {
+                lon: 2.073034,
+                lat: 48.799115,
             },
-        ]).unwrap();
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+        }]).unwrap();
 
-        let lines = CollectionWithId::new(vec![
-            Line {
-                id: "OIF:002002003:3OIF829".to_string(),
-                name: "3".to_string(),
-                code: None,
-                codes: vec![("object_system:3".to_string(), "object_code:3".to_string())],
-                object_properties: vec![("prop_name:3".to_string(), "prop_value:3".to_string())],
-                comment_links: vec![
-                    comments.get_idx("c:1").unwrap(),
-                    comments.get_idx("c:2").unwrap(),
-                ],
-                forward_name: None,
-                forward_direction: None,
-                backward_name: None,
-                backward_direction: None,
-                color: None,
-                text_color: None,
-                sort_order: None,
-                network_id: "OIF:829".to_string(),
-                commercial_mode_id: "bus".to_string(),
-                geometry_id: None,
-                opening_time: None,
-                closing_time: None,
-            },
-        ]).unwrap();
+        let lines = CollectionWithId::new(vec![Line {
+            id: "OIF:002002003:3OIF829".to_string(),
+            name: "3".to_string(),
+            code: None,
+            codes: vec![("object_system:3".to_string(), "object_code:3".to_string())],
+            object_properties: vec![("prop_name:3".to_string(), "prop_value:3".to_string())],
+            comment_links: vec![
+                comments.get_idx("c:1").unwrap(),
+                comments.get_idx("c:2").unwrap(),
+            ],
+            forward_name: None,
+            forward_direction: None,
+            backward_name: None,
+            backward_direction: None,
+            color: None,
+            text_color: None,
+            sort_order: None,
+            network_id: "OIF:829".to_string(),
+            commercial_mode_id: "bus".to_string(),
+            geometry_id: None,
+            opening_time: None,
+            closing_time: None,
+        }]).unwrap();
 
-        let routes = CollectionWithId::new(vec![
-            Route {
-                id: "OIF:002002002:CEN".to_string(),
-                name: "Hôtels - Hôtels".to_string(),
-                direction_type: None,
-                codes: vec![
-                    ("object_system:4".to_string(), "object_code:4".to_string()),
-                    ("object_system:5".to_string(), "object_code:5".to_string()),
-                ],
-                object_properties: vec![("prop_name:4".to_string(), "prop_value:4".to_string())],
-                comment_links: vec![comments.get_idx("c:3").unwrap()],
-                line_id: "OIF:002002002:BDEOIF829".to_string(),
-                geometry_id: None,
-                destination_id: None,
-            },
-        ]).unwrap();
+        let routes = CollectionWithId::new(vec![Route {
+            id: "OIF:002002002:CEN".to_string(),
+            name: "Hôtels - Hôtels".to_string(),
+            direction_type: None,
+            codes: vec![
+                ("object_system:4".to_string(), "object_code:4".to_string()),
+                ("object_system:5".to_string(), "object_code:5".to_string()),
+            ],
+            object_properties: vec![("prop_name:4".to_string(), "prop_value:4".to_string())],
+            comment_links: vec![comments.get_idx("c:3").unwrap()],
+            line_id: "OIF:002002002:BDEOIF829".to_string(),
+            geometry_id: None,
+            destination_id: None,
+        }]).unwrap();
 
-        let vehicle_journeys = CollectionWithId::new(vec![
-            VehicleJourney {
-                id: "OIF:90014407-1_425283-1".to_string(),
-                codes: vec![("object_system:6".to_string(), "object_code:6".to_string())],
-                object_properties: vec![("prop_name:6".to_string(), "prop_value:6".to_string())],
-                comment_links: CommentLinksT::default(),
-                route_id: "OIF:800:TER".to_string(),
-                physical_mode_id: "Bus".to_string(),
-                dataset_id: "OIF:0".to_string(),
-                service_id: "2".to_string(),
-                headsign: None,
-                block_id: None,
-                company_id: "OIF:743".to_string(),
-                trip_property_id: None,
-                geometry_id: None,
-                stop_times: vec![],
-            },
-        ]).unwrap();
+        let vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+            id: "OIF:90014407-1_425283-1".to_string(),
+            codes: vec![("object_system:6".to_string(), "object_code:6".to_string())],
+            object_properties: vec![("prop_name:6".to_string(), "prop_value:6".to_string())],
+            comment_links: CommentLinksT::default(),
+            route_id: "OIF:800:TER".to_string(),
+            physical_mode_id: "Bus".to_string(),
+            dataset_id: "OIF:0".to_string(),
+            service_id: "2".to_string(),
+            headsign: None,
+            block_id: None,
+            company_id: "OIF:743".to_string(),
+            trip_property_id: None,
+            geometry_id: None,
+            stop_times: vec![],
+        }]).unwrap();
 
-        let networks = CollectionWithId::new(vec![
-            Network {
-                id: "OIF:102".to_string(),
-                name: "SAVAC".to_string(),
-                url: None,
-                timezone: None,
-                lang: None,
-                phone: None,
-                address: None,
-                sort_order: None,
-                codes: KeysValues::default(),
-            },
-        ]).unwrap();
+        let networks = CollectionWithId::new(vec![Network {
+            id: "OIF:102".to_string(),
+            name: "SAVAC".to_string(),
+            url: None,
+            timezone: None,
+            lang: None,
+            phone: None,
+            address: None,
+            sort_order: None,
+            codes: KeysValues::default(),
+        }]).unwrap();
 
         ser_collections.comments = comments;
         ser_collections.stop_areas = stop_areas;
