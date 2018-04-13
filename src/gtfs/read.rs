@@ -444,29 +444,25 @@ fn manage_comment_from_stop(
     comment_links
 }
 
+#[derive(Default)]
 pub struct EquipmentList {
     equipments: HashMap<objects::Equipment, String>,
 }
 
-impl Default for EquipmentList {
-    fn default() -> Self {
-        EquipmentList {
-            equipments: HashMap::new(),
-        }
-    }
-}
-
 impl EquipmentList {
     pub fn into_equipments(self) -> Vec<objects::Equipment> {
-        let mut eqs: Vec<objects::Equipment> = vec![];
-        for (eq, id) in self.equipments {
-            let mut eq = eq;
-            eq.id = id.clone();
-            eqs.push(eq);
-        }
-        eqs.sort_unstable_by_key(|eq| eq.id.clone());
+        let mut eqs: Vec<_> = self.equipments
+            .into_iter()
+            .map(|(mut eq, id)| {
+                eq.id = id;
+                eq
+            })
+            .collect();
+
+        eqs.sort_by(|l, r| l.id.cmp(&r.id));
         eqs
     }
+
     pub fn push(&mut self, equipment: objects::Equipment) -> String {
         let equipment_id = self.equipments.len().to_string();
         let id = self.equipments.entry(equipment).or_insert(equipment_id);
