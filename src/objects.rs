@@ -166,15 +166,25 @@ pub struct Dataset {
     #[serde(rename = "dataset_id")]
     pub id: String,
     pub contributor_id: String,
-    #[serde(rename = "dataset_start_date", deserialize_with = "de_from_date_string",
-            serialize_with = "ser_from_naive_date")]
+    #[serde(
+        rename = "dataset_start_date",
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
     pub start_date: Date,
-    #[serde(rename = "dataset_end_date", deserialize_with = "de_from_date_string",
-            serialize_with = "ser_from_naive_date")]
+    #[serde(
+        rename = "dataset_end_date",
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
     pub end_date: Date,
     pub dataset_type: Option<DatasetType>,
-    #[serde(rename = "dataset_extrapolation", default, deserialize_with = "de_from_u8",
-            serialize_with = "ser_from_bool")]
+    #[serde(
+        rename = "dataset_extrapolation",
+        default,
+        deserialize_with = "de_from_u8",
+        serialize_with = "ser_from_bool"
+    )]
     pub extrapolation: bool,
     #[serde(rename = "dataset_desc")]
     pub desc: Option<String>,
@@ -843,7 +853,7 @@ impl AddPrefix for Comment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash)]
 #[derivative(Default)]
 pub enum Availability {
     #[derivative(Default)]
@@ -855,7 +865,7 @@ pub enum Availability {
     NotAvailable,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
 pub struct Equipment {
     #[serde(rename = "equipment_id")]
     pub id: String,

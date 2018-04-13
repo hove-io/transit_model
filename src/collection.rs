@@ -17,16 +17,16 @@
 //! Collections of objects with typed indices and buildin identifier
 //! support.
 
-use Result;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::collections::hash_map::Entry::*;
+use std::collections::HashMap;
 use std::iter;
 use std::marker::PhantomData;
 use std::ops;
 use std::result::Result as StdResult;
 use std::slice;
+use Result;
 
 /// An object that has a unique identifier.
 pub trait Id<T> {
@@ -36,8 +36,9 @@ pub trait Id<T> {
 
 /// Typed index.
 #[derive(Derivative, Debug)]
-#[derivative(Copy(bound = ""), Clone(bound = ""), PartialEq(bound = ""), Eq(bound = ""),
-             Hash(bound = ""))]
+#[derivative(
+    Copy(bound = ""), Clone(bound = ""), PartialEq(bound = ""), Eq(bound = ""), Hash(bound = "")
+)]
 pub struct Idx<T>(u32, PhantomData<T>);
 
 impl<T> Idx<T> {

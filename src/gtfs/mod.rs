@@ -18,7 +18,6 @@
 
 mod read;
 
-use Result;
 use collection::CollectionWithId;
 use common_format::manage_calendars;
 use gtfs::read::EquipmentList;
@@ -26,6 +25,7 @@ use model::{Collections, Model};
 use objects::Comment;
 use std::path::Path;
 use utils::add_prefix;
+use Result;
 
 fn add_prefix_to_collections(prefix: String, collections: &mut Collections) -> Result<()> {
     let prefix = prefix + ":";
@@ -78,7 +78,7 @@ where
     collections.stop_points = stop_points;
     manage_calendars(&mut collections, path)?;
     read::read_routes(path, &mut collections)?;
-    collections.equipments = CollectionWithId::new(equipments.get_equipments())?;
+    collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
     collections.comments = comments;
     read::manage_stop_times(&mut collections, path)?;
 
