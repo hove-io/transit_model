@@ -24,25 +24,26 @@ use gtfs::read::EquipmentList;
 use model::{Collections, Model};
 use objects::Comment;
 use std::path::Path;
-use utils::add_prefix;
+use utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
 use Result;
 
-fn add_prefix_to_collections(prefix: String, collections: &mut Collections) -> Result<()> {
+fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
     let prefix = prefix + ":";
     info!("Adding prefix: \"{}\"", &prefix);
-    add_prefix(&mut collections.commercial_modes, &prefix)?;
-    add_prefix(&mut collections.networks, &prefix)?;
-    add_prefix(&mut collections.companies, &prefix)?;
-    add_prefix(&mut collections.stop_points, &prefix)?;
-    add_prefix(&mut collections.stop_areas, &prefix)?;
-    add_prefix(&mut collections.routes, &prefix)?;
-    add_prefix(&mut collections.lines, &prefix)?;
-    add_prefix(&mut collections.contributors, &prefix)?;
-    add_prefix(&mut collections.datasets, &prefix)?;
-    add_prefix(&mut collections.vehicle_journeys, &prefix)?;
-    add_prefix(&mut collections.trip_properties, &prefix)?;
-    add_prefix(&mut collections.equipments, &prefix)?;
-    add_prefix(&mut collections.comments, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.commercial_modes, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.networks, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.companies, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.stop_points, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.stop_areas, &prefix)?;
+    add_prefix_to_collection(&mut collections.transfers, &prefix);
+    add_prefix_to_collection_with_id(&mut collections.routes, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.lines, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.contributors, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.datasets, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.vehicle_journeys, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.trip_properties, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.equipments, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.comments, &prefix)?;
 
     Ok(())
 }
@@ -74,6 +75,7 @@ where
     collections.networks = networks;
     collections.companies = companies;
     let (stop_areas, stop_points) = read::read_stops(path, &mut comments, &mut equipments)?;
+    collections.transfers = read::read_transfers(path, &stop_points)?;
     collections.stop_areas = stop_areas;
     collections.stop_points = stop_points;
     manage_calendars(&mut collections, path)?;
@@ -84,7 +86,7 @@ where
 
     //add prefixes
     if let Some(prefix) = prefix {
-        add_prefix_to_collections(prefix, &mut collections)?;
+        add_prefix(prefix, &mut collections)?;
     }
 
     Ok(Model::new(collections)?)

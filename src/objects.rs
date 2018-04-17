@@ -657,6 +657,24 @@ pub struct Coord {
     pub lat: f64,
 }
 
+// Mean earth radius from International Union of Geodesy Geophysics
+const EARTH_RADIUS: f64 = 6_371.000_8;
+
+impl Coord {
+    /// Calculate the orthodromic distance between 2 geographic coordinates
+    pub fn distance_to(&self, other: &Self) -> f64 {
+        let phi1 = self.lat.to_radians();
+        let phi2 = other.lat.to_radians();
+        let lambda1 = self.lon.to_radians();
+        let lambda2 = other.lon.to_radians();
+
+        let x = f64::sin((phi2 - phi1) / 2.).powi(2);
+        let y = f64::cos(phi1) * f64::cos(phi2) * f64::sin((lambda2 - lambda1) / 2.).powi(2);
+
+        2. * EARTH_RADIUS * f64::asin(f64::sqrt(x + y))
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct StopArea {
     pub id: String,
@@ -715,6 +733,7 @@ pub struct StopPoint {
     pub equipment_id: Option<String>,
     pub fare_zone_id: Option<String>,
 }
+
 impl Id<StopPoint> for StopPoint {
     fn id(&self) -> &str {
         &self.id
@@ -910,6 +929,13 @@ pub struct Transfer {
     pub min_transfer_time: Option<u32>,
     pub real_min_transfer_time: Option<u32>,
     pub equipment_id: Option<String>,
+}
+
+impl AddPrefix for Transfer {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.from_stop_id = prefix.to_string() + &self.from_stop_id;
+        self.to_stop_id = prefix.to_string() + &self.to_stop_id;
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
