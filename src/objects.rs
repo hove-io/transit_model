@@ -657,11 +657,12 @@ pub struct Coord {
     pub lat: f64,
 }
 
-// Mean earth radius from International Union of Geodesy Geophysics
-const EARTH_RADIUS: f64 = 6_371.000_8;
+// WGS84 equatorial radius in meters
+const EARTH_RADIUS: f64 = 6_371_000.0;
 
 impl Coord {
-    /// Calculate the orthodromic distance between 2 geographic coordinates
+    /// Calculate the orthodromic distance in meters
+    /// between 2 geographic coordinates
     pub fn distance_to(&self, other: &Self) -> f64 {
         let phi1 = self.lat.to_radians();
         let phi2 = other.lat.to_radians();
@@ -1098,5 +1099,36 @@ mod tests {
         assert!(de("AA:00:00").is_err());
         assert!(de("00:AA:00").is_err());
         assert!(de("00:00:AA").is_err());
+    }
+
+    fn nearly_equal(x: f64, y: f64, epsilon: f64) -> bool {
+        if x == y {
+            true
+        } else {
+            let normalized_delta = (x - y).abs() / y;
+            normalized_delta < epsilon
+        }
+    }
+
+    #[test]
+    fn orthodromic_distance() {
+        // distances are compared with the distance calculated in http://boulter.com/gps/distance/
+        // with 5% tolerance
+        const TOLERANCE: f64 = 0.05;
+
+        let coord1 = Coord {
+            lon: 2.377054,
+            lat: 48.846995,
+        };
+        let coord2 = Coord {
+            lon: 2.374377,
+            lat: 48.844304,
+        };
+        // http://boulter.com/gps/distance/?from=48.846995+2.377054&to=48.846995+2.377054&units=k
+        assert!(nearly_equal(coord1.distance_to(&coord1), 0.0, TOLERANCE));
+
+        // http://boulter.com/gps/distance/?from=48.846995+2.377054&to=48.844304+2.374377&units=k
+        assert!(nearly_equal(coord1.distance_to(&coord2), 360., TOLERANCE));
+        assert!(nearly_equal(coord2.distance_to(&coord1), 360., TOLERANCE));
     }
 }

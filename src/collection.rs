@@ -143,8 +143,7 @@ impl<T> Collection<T> {
     /// for elem in c.values_mut() {
     ///     *elem *= 2;
     /// }
-    /// let values: Vec<&i32> = c.values().collect();
-    /// assert_eq!(values, &[&2, &2, &4, &6, &10, &16]);
+    /// assert_eq!(c, Collection::new(vec![2, 2, 4, 6, 10, 16]));
     /// ```
     pub fn values_mut(&mut self) -> slice::IterMut<T> {
         self.objects.iter_mut()

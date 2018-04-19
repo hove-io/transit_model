@@ -549,9 +549,8 @@ pub fn read_stops<P: AsRef<path::Path>>(
     Ok((stopareas, stoppoints))
 }
 
-#[derive(Derivative)]
-#[derivative(Default(bound = ""))]
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Derivative)]
+#[derivative(Default)]
 enum TransferType {
     #[derivative(Default)]
     #[serde(rename = "0")]
@@ -608,9 +607,15 @@ pub fn read_transfers<P: AsRef<path::Path>>(
             }
             TransferType::Timed => (Some(0), Some(0)),
             TransferType::WithTransferTime => {
+                if transfer.min_transfer_time.is_none() {
+                    warn!(
+                        "The min_transfer_time between from_stop_id {} and to_stop_id {} is empty",
+                        from_stop_point.id, to_stop_point.id
+                    );
+                }
                 (transfer.min_transfer_time, transfer.min_transfer_time)
             }
-            TransferType::NotPossible => (Some(86400), Some(84600)),
+            TransferType::NotPossible => (Some(86400), Some(86400)),
         };
 
         transfers.push(objects::Transfer {
@@ -1656,9 +1661,9 @@ mod tests {
     #[test]
     fn read_tranfers() {
         let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,wheelchair_boarding\n\
-                             sp:01,my stop point name 1,0.1,1.2,0,,1\n\
-                             sp:02,my stop point name 2,0.2,1.5,0,,1\n\
-                             sp:03,my stop point name 3,0.2,1.5,0,,1";
+                             sp:01,my stop point name 1,48.857332,2.346331,0,,1\n\
+                             sp:02,my stop point name 2,48.858195,2.347448,0,,1\n\
+                             sp:03,my stop point name 3,48.859031,2.346958,0,,1";
 
         let transfers_content = "from_stop_id,to_stop_id,transfer_type,min_transfer_time\n\
                                  sp:01,sp:01,1,\n\
@@ -1681,7 +1686,74 @@ mod tests {
                 super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
 
             let transfers = super::read_transfers(tmp_dir.path(), &stop_points).unwrap();
-            assert_eq!(9, transfers.len());
+            assert_eq!(
+                transfers.values().collect::<Vec<_>>(),
+                vec![
+                    &Transfer {
+                        from_stop_id: "sp:01".to_string(),
+                        to_stop_id: "sp:01".to_string(),
+                        min_transfer_time: Some(0),
+                        real_min_transfer_time: Some(0),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:01".to_string(),
+                        to_stop_id: "sp:02".to_string(),
+                        min_transfer_time: Some(160),
+                        real_min_transfer_time: Some(280),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:01".to_string(),
+                        to_stop_id: "sp:03".to_string(),
+                        min_transfer_time: Some(60),
+                        real_min_transfer_time: Some(60),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:02".to_string(),
+                        to_stop_id: "sp:01".to_string(),
+                        min_transfer_time: Some(160),
+                        real_min_transfer_time: Some(280),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:02".to_string(),
+                        to_stop_id: "sp:02".to_string(),
+                        min_transfer_time: Some(0),
+                        real_min_transfer_time: Some(0),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:02".to_string(),
+                        to_stop_id: "sp:03".to_string(),
+                        min_transfer_time: Some(86400),
+                        real_min_transfer_time: Some(86400),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:03".to_string(),
+                        to_stop_id: "sp:01".to_string(),
+                        min_transfer_time: Some(247),
+                        real_min_transfer_time: Some(367),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:03".to_string(),
+                        to_stop_id: "sp:02".to_string(),
+                        min_transfer_time: None,
+                        real_min_transfer_time: None,
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:03".to_string(),
+                        to_stop_id: "sp:03".to_string(),
+                        min_transfer_time: Some(0),
+                        real_min_transfer_time: Some(120),
+                        equipment_id: None,
+                    },
+                ]
+            );
         });
     }
 }
