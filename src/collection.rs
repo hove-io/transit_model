@@ -133,6 +133,22 @@ impl<T> Collection<T> {
         self.objects.iter()
     }
 
+    /// Iterates over the `&mut T` of the `Collection`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// let mut c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
+    /// for elem in c.values_mut() {
+    ///     *elem *= 2;
+    /// }
+    /// assert_eq!(c, Collection::new(vec![2, 2, 4, 6, 10, 16]));
+    /// ```
+    pub fn values_mut(&mut self) -> slice::IterMut<T> {
+        self.objects.iter_mut()
+    }
+
     /// Iterates on the objects corresponding to the given indices.
     ///
     /// # Examples

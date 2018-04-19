@@ -657,6 +657,25 @@ pub struct Coord {
     pub lat: f64,
 }
 
+// WGS84 equatorial radius in meters
+const EARTH_RADIUS: f64 = 6_371_000.0;
+
+impl Coord {
+    /// Calculate the orthodromic distance in meters
+    /// between 2 geographic coordinates
+    pub fn distance_to(&self, other: &Self) -> f64 {
+        let phi1 = self.lat.to_radians();
+        let phi2 = other.lat.to_radians();
+        let lambda1 = self.lon.to_radians();
+        let lambda2 = other.lon.to_radians();
+
+        let x = f64::sin((phi2 - phi1) / 2.).powi(2);
+        let y = f64::cos(phi1) * f64::cos(phi2) * f64::sin((lambda2 - lambda1) / 2.).powi(2);
+
+        2. * EARTH_RADIUS * f64::asin(f64::sqrt(x + y))
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct StopArea {
     pub id: String,
@@ -715,6 +734,7 @@ pub struct StopPoint {
     pub equipment_id: Option<String>,
     pub fare_zone_id: Option<String>,
 }
+
 impl Id<StopPoint> for StopPoint {
     fn id(&self) -> &str {
         &self.id
@@ -912,6 +932,13 @@ pub struct Transfer {
     pub equipment_id: Option<String>,
 }
 
+impl AddPrefix for Transfer {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.from_stop_id = prefix.to_string() + &self.from_stop_id;
+        self.to_stop_id = prefix.to_string() + &self.to_stop_id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
 #[derivative(Default)]
 pub enum TransportType {
@@ -1072,5 +1099,36 @@ mod tests {
         assert!(de("AA:00:00").is_err());
         assert!(de("00:AA:00").is_err());
         assert!(de("00:00:AA").is_err());
+    }
+
+    fn nearly_equal(x: f64, y: f64, epsilon: f64) -> bool {
+        if x == y {
+            true
+        } else {
+            let normalized_delta = (x - y).abs() / y;
+            normalized_delta < epsilon
+        }
+    }
+
+    #[test]
+    fn orthodromic_distance() {
+        // distances are compared with the distance calculated in http://boulter.com/gps/distance/
+        // with 5% tolerance
+        const TOLERANCE: f64 = 0.05;
+
+        let coord1 = Coord {
+            lon: 2.377054,
+            lat: 48.846995,
+        };
+        let coord2 = Coord {
+            lon: 2.374377,
+            lat: 48.844304,
+        };
+        // http://boulter.com/gps/distance/?from=48.846995+2.377054&to=48.846995+2.377054&units=k
+        assert!(nearly_equal(coord1.distance_to(&coord1), 0.0, TOLERANCE));
+
+        // http://boulter.com/gps/distance/?from=48.846995+2.377054&to=48.844304+2.374377&units=k
+        assert!(nearly_equal(coord1.distance_to(&coord2), 360., TOLERANCE));
+        assert!(nearly_equal(coord2.distance_to(&coord1), 360., TOLERANCE));
     }
 }

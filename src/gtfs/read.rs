@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use collection::{CollectionWithId, Id};
+use collection::{Collection, CollectionWithId, Id};
 use csv;
 use failure::ResultExt;
 use model::Collections;
@@ -549,6 +549,87 @@ pub fn read_stops<P: AsRef<path::Path>>(
     Ok((stopareas, stoppoints))
 }
 
+#[derive(Deserialize, Debug, Derivative)]
+#[derivative(Default)]
+enum TransferType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    Recommended,
+    #[serde(rename = "1")]
+    Timed,
+    #[serde(rename = "2")]
+    WithTransferTime,
+    #[serde(rename = "3")]
+    NotPossible,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Transfer {
+    from_stop_id: String,
+    to_stop_id: String,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    transfer_type: TransferType,
+    min_transfer_time: Option<u32>,
+}
+
+pub fn read_transfers<P: AsRef<path::Path>>(
+    path: P,
+    stop_points: &CollectionWithId<objects::StopPoint>,
+) -> Result<Collection<objects::Transfer>> {
+    info!("Reading tranfers.txt");
+    let path = path.as_ref().join("transfers.txt");
+    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut transfers = vec![];
+    for transfer in rdr.deserialize() {
+        let transfer: Transfer = transfer.with_context(ctx_from_path!(path))?;
+        let from_stop_point = stop_points.get(&transfer.from_stop_id).ok_or_else(|| {
+            format_err!(
+                "Problem reading {:?}: from_stop_id={:?} not found",
+                path,
+                transfer.from_stop_id
+            )
+        })?;
+
+        let to_stop_point = stop_points.get(&transfer.to_stop_id).ok_or_else(|| {
+            format_err!(
+                "Problem reading {:?}: to_stop_id={:?} not found",
+                path,
+                transfer.to_stop_id
+            )
+        })?;
+
+        let (min_transfer_time, real_min_transfer_time) = match transfer.transfer_type {
+            TransferType::Recommended => {
+                let distance = from_stop_point.coord.distance_to(&to_stop_point.coord);
+                let transfer_time = (distance / 0.785) as u32;
+
+                (Some(transfer_time), Some(transfer_time + 2 * 60))
+            }
+            TransferType::Timed => (Some(0), Some(0)),
+            TransferType::WithTransferTime => {
+                if transfer.min_transfer_time.is_none() {
+                    warn!(
+                        "The min_transfer_time between from_stop_id {} and to_stop_id {} is empty",
+                        from_stop_point.id, to_stop_point.id
+                    );
+                }
+                (transfer.min_transfer_time, transfer.min_transfer_time)
+            }
+            TransferType::NotPossible => (Some(86400), Some(86400)),
+        };
+
+        transfers.push(objects::Transfer {
+            from_stop_id: from_stop_point.id.clone(),
+            to_stop_id: to_stop_point.id.clone(),
+            min_transfer_time: min_transfer_time,
+            real_min_transfer_time: real_min_transfer_time,
+            equipment_id: None,
+        });
+    }
+
+    Ok(Collection::new(transfers))
+}
+
 #[derive(Deserialize, Debug)]
 struct Dataset {
     dataset_id: String,
@@ -875,7 +956,7 @@ mod tests {
     extern crate tempdir;
     use self::tempdir::TempDir;
     use collection::{Collection, CollectionWithId, Id};
-    use gtfs::add_prefix_to_collections;
+    use gtfs::add_prefix;
     use gtfs::read::EquipmentList;
     use model::Collections;
     use objects::*;
@@ -895,6 +976,16 @@ mod tests {
         let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
         func(&tmp_dir);
         tmp_dir.close().expect("delete temp dir");
+    }
+
+    fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
+        let mut extracted_props: Vec<S> = c.values().map(|l| f(l)).collect();
+        extracted_props.sort();
+        extracted_props
+    }
+
+    fn extract_ids<T: Id<T>>(c: &Collection<T>) -> Vec<&str> {
+        extract(T::id, c)
     }
 
     #[test]
@@ -1260,7 +1351,7 @@ mod tests {
             collections.comments = comments;
             super::read_routes(tmp_dir, &mut collections).unwrap();
 
-            add_prefix_to_collections("my_prefix".to_string(), &mut collections).unwrap();
+            add_prefix("my_prefix".to_string(), &mut collections).unwrap();
 
             assert_eq!(
                 vec!["my_prefix:285", "my_prefix:584"],
@@ -1567,13 +1658,102 @@ mod tests {
         });
     }
 
-    fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
-        let mut extracted_props: Vec<S> = c.values().map(|l| f(l)).collect();
-        extracted_props.sort();
-        extracted_props
-    }
+    #[test]
+    fn read_tranfers() {
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,wheelchair_boarding\n\
+                             sp:01,my stop point name 1,48.857332,2.346331,0,,1\n\
+                             sp:02,my stop point name 2,48.858195,2.347448,0,,1\n\
+                             sp:03,my stop point name 3,48.859031,2.346958,0,,1";
 
-    fn extract_ids<T: Id<T>>(c: &Collection<T>) -> Vec<&str> {
-        extract(T::id, c)
+        let transfers_content = "from_stop_id,to_stop_id,transfer_type,min_transfer_time\n\
+                                 sp:01,sp:01,1,\n\
+                                 sp:01,sp:02,0,\n\
+                                 sp:01,sp:03,2,60\n\
+                                 sp:02,sp:01,0,\n\
+                                 sp:02,sp:02,1,\n\
+                                 sp:02,sp:03,3,\n\
+                                 sp:03,sp:01,0,\n\
+                                 sp:03,sp:02,2,\n\
+                                 sp:03,sp:03,0,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+            create_file_with_content(&tmp_dir, "transfers.txt", transfers_content);
+
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let mut equipments = EquipmentList::default();
+            let (_, stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+
+            let transfers = super::read_transfers(tmp_dir.path(), &stop_points).unwrap();
+            assert_eq!(
+                transfers.values().collect::<Vec<_>>(),
+                vec![
+                    &Transfer {
+                        from_stop_id: "sp:01".to_string(),
+                        to_stop_id: "sp:01".to_string(),
+                        min_transfer_time: Some(0),
+                        real_min_transfer_time: Some(0),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:01".to_string(),
+                        to_stop_id: "sp:02".to_string(),
+                        min_transfer_time: Some(160),
+                        real_min_transfer_time: Some(280),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:01".to_string(),
+                        to_stop_id: "sp:03".to_string(),
+                        min_transfer_time: Some(60),
+                        real_min_transfer_time: Some(60),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:02".to_string(),
+                        to_stop_id: "sp:01".to_string(),
+                        min_transfer_time: Some(160),
+                        real_min_transfer_time: Some(280),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:02".to_string(),
+                        to_stop_id: "sp:02".to_string(),
+                        min_transfer_time: Some(0),
+                        real_min_transfer_time: Some(0),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:02".to_string(),
+                        to_stop_id: "sp:03".to_string(),
+                        min_transfer_time: Some(86400),
+                        real_min_transfer_time: Some(86400),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:03".to_string(),
+                        to_stop_id: "sp:01".to_string(),
+                        min_transfer_time: Some(247),
+                        real_min_transfer_time: Some(367),
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:03".to_string(),
+                        to_stop_id: "sp:02".to_string(),
+                        min_transfer_time: None,
+                        real_min_transfer_time: None,
+                        equipment_id: None,
+                    },
+                    &Transfer {
+                        from_stop_id: "sp:03".to_string(),
+                        to_stop_id: "sp:03".to_string(),
+                        min_transfer_time: Some(0),
+                        real_min_transfer_time: Some(120),
+                        equipment_id: None,
+                    },
+                ]
+            );
+        });
     }
 }

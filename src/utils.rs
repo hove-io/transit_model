@@ -146,7 +146,10 @@ where
     Ok(Collection::new(vec))
 }
 
-pub fn add_prefix<T>(collection: &mut CollectionWithId<T>, prefix: &str) -> ::Result<()>
+pub fn add_prefix_to_collection_with_id<T>(
+    collection: &mut CollectionWithId<T>,
+    prefix: &str,
+) -> ::Result<()>
 where
     T: AddPrefix + Id<T>,
 {
@@ -158,4 +161,13 @@ where
     *collection = CollectionWithId::new(objects)?;
 
     Ok(())
+}
+
+pub fn add_prefix_to_collection<T>(collection: &mut Collection<T>, prefix: &str)
+where
+    T: AddPrefix,
+{
+    for obj in &mut collection.values_mut() {
+        obj.add_prefix(prefix);
+    }
 }
