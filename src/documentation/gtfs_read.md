@@ -227,9 +227,9 @@ For exemple :
 
 (1) NTFS `min_transfer_time` and `real_min_transfer_time` are calculated as follows.
 
-| GTFS `transfer_type` | NTFS `min_transfer_time` | NTFS `real_min_transfer_time` |
-| --- | --- | --- |
-| 0 | time between 2 stop points | time between 2 stop points + 2 minutes |
+| GTFS `transfer_type` | NTFS `min_transfer_time` | NTFS `real_min_transfer_time` | Note |
+| --- | --- | --- |--- |
+| 0 | time between 2 stop points | time between 2 stop points + 2 minutes | The time is calculated with the distance as the crow flies and a walking speed of 0.785 m/s. Speed value is lowered because effective transit is not straight |
 | 1 | 0 | 0 |
 | 2 | GTFS `min_transfer_time` | GTFS `min_transfer_time` |
 | 3 | 86400 | 86400 |
