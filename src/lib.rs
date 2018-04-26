@@ -40,6 +40,7 @@ pub mod collection;
 pub(crate) mod common_format;
 pub mod gtfs;
 pub mod model;
+pub mod netex;
 pub mod ntfs;
 pub mod objects;
 pub mod relations;
