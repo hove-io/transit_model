@@ -576,8 +576,13 @@ pub fn read_transfers<P: AsRef<path::Path>>(
     path: P,
     stop_points: &CollectionWithId<objects::StopPoint>,
 ) -> Result<Collection<objects::Transfer>> {
-    info!("Reading tranfers.txt");
-    let path = path.as_ref().join("transfers.txt");
+    let file = "transfers.txt";
+    let path = path.as_ref().join(file);
+    if !path.exists() {
+        info!("Skipping {}", file);
+        return Ok(Collection::new(vec![]));
+    }
+    info!("Reading {}", file);
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
     let mut transfers = vec![];
     for transfer in rdr.deserialize() {
