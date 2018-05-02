@@ -20,6 +20,7 @@
 
 use chrono;
 use collection::{Id, Idx};
+use std::collections::BTreeSet;
 use std::str::FromStr;
 use utils::*;
 
@@ -161,6 +162,27 @@ pub enum DatasetType {
     Production,
 }
 
+#[derive(Debug)]
+pub struct ValidityPeriod {
+    pub start_date: Date,
+    pub end_date: Date,
+}
+
+impl Default for ValidityPeriod {
+    fn default() -> ValidityPeriod {
+        use chrono::{Duration, Utc};
+        let duration = Duration::days(15);
+        let today = Utc::today();
+        let start_date = today - duration;
+        let end_date = today + duration;
+
+        ValidityPeriod {
+            start_date: start_date.naive_utc(),
+            end_date: end_date.naive_utc(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Dataset {
     #[serde(rename = "dataset_id")]
@@ -191,20 +213,33 @@ pub struct Dataset {
     #[serde(rename = "dataset_system")]
     pub system: Option<String>,
 }
+
+impl Dataset {
+    pub fn new(dataset_id: String, contributor_id: String) -> Dataset {
+        let validity_period = ValidityPeriod::default();
+
+        Dataset {
+            id: dataset_id,
+            contributor_id: contributor_id,
+            start_date: validity_period.start_date,
+            end_date: validity_period.end_date,
+            dataset_type: None,
+            extrapolation: false,
+            desc: None,
+            system: None,
+        }
+    }
+}
+
 impl Default for Dataset {
     fn default() -> Dataset {
-        // Todo: calculate validity periods
-        use chrono::{Duration, Utc};
-        let duration = Duration::days(15);
-        let today = Utc::today();
-        let start_date = today - duration;
-        let end_date = today + duration;
+        let validity_period = ValidityPeriod::default();
 
         Dataset {
             id: "default_dataset".to_string(),
             contributor_id: "default_contributor".to_string(),
-            start_date: start_date.naive_utc(),
-            end_date: end_date.naive_utc(),
+            start_date: validity_period.start_date,
+            end_date: validity_period.end_date,
             dataset_type: None,
             extrapolation: false,
             desc: None,
@@ -870,8 +905,6 @@ pub enum ExceptionType {
     #[serde(rename = "2")]
     Remove,
 }
-
-use std::collections::BTreeSet;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Calendar {

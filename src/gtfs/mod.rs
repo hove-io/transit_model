@@ -66,11 +66,16 @@ where
     let mut equipments = EquipmentList::default();
     let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
 
-    let (contributors, datasets) = read::read_config(config_path)?;
+    let path = path.as_ref();
+
+    manage_calendars(&mut collections, path)?;
+
+    let (contributors, mut datasets) = read::read_config(config_path)?;
+    read::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
+
     collections.contributors = contributors;
     collections.datasets = datasets;
 
-    let path = path.as_ref();
     let (networks, companies) = read::read_agency(path)?;
     collections.networks = networks;
     collections.companies = companies;
@@ -78,7 +83,7 @@ where
     collections.transfers = read::read_transfers(path, &stop_points)?;
     collections.stop_areas = stop_areas;
     collections.stop_points = stop_points;
-    manage_calendars(&mut collections, path)?;
+
     read::read_routes(path, &mut collections)?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
     collections.comments = comments;
