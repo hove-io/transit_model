@@ -14,13 +14,16 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use chrono::{self, Datelike};
 use collection::*;
 use csv;
 use failure::ResultExt;
 use model::Collections;
-use objects::{Calendar, Date, ExceptionType};
+use objects::{self, Date, ExceptionType};
+use std::collections::BTreeSet;
 use std::path;
-use utils::{de_from_date_string, make_collection_with_id, ser_from_naive_date};
+use utils::*;
+use utils::{de_from_date_string, ser_from_naive_date};
 use Result;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -31,34 +34,135 @@ pub struct CalendarDate {
     pub exception_type: ExceptionType,
 }
 
-fn insert_calendar_date(collection: &mut CollectionWithId<Calendar>, calendar_date: CalendarDate) {
-    let idx = match collection.get_idx(&calendar_date.service_id) {
-        Some(idx) => idx,
-        None => {
-            error!(
-                "calendar_dates.txt: service_id={} not found",
-                calendar_date.service_id
-            );
-            return;
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct Calendar {
+    #[serde(rename = "service_id")]
+    id: String,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    monday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    tuesday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    wednesday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    thursday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    friday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    saturday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    sunday: bool,
+    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
+    start_date: Date,
+    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
+    end_date: Date,
+}
+
+impl Calendar {
+    fn get_valid_days(&self) -> Vec<chrono::Weekday> {
+        let mut valid_days: Vec<chrono::Weekday> = vec![];
+        if self.monday {
+            valid_days.push(chrono::Weekday::Mon);
         }
-    };
-    collection
-        .index_mut(idx)
-        .calendar_dates
-        .push((calendar_date.date, calendar_date.exception_type))
+        if self.tuesday {
+            valid_days.push(chrono::Weekday::Tue);
+        }
+        if self.wednesday {
+            valid_days.push(chrono::Weekday::Wed);
+        }
+        if self.thursday {
+            valid_days.push(chrono::Weekday::Thu);
+        }
+        if self.friday {
+            valid_days.push(chrono::Weekday::Fri);
+        }
+        if self.saturday {
+            valid_days.push(chrono::Weekday::Sat);
+        }
+        if self.sunday {
+            valid_days.push(chrono::Weekday::Sun);
+        }
+
+        valid_days
+    }
+
+    fn get_valid_dates(&self) -> BTreeSet<Date> {
+        let valid_days = self.get_valid_days();
+        let duration = self.end_date - self.start_date;
+        (0..duration.num_days() + 1)
+            .map(|i| self.start_date + chrono::Duration::days(i))
+            .filter(|d| valid_days.contains(&d.weekday()))
+            .collect()
+    }
+}
+
+fn manage_calendar_dates(
+    calendars: &mut CollectionWithId<objects::Calendar>,
+    path: &path::Path,
+) -> Result<()> {
+    let file = "calendar_dates.txt";
+    let path = path.join(file);
+    if !path.exists() {
+        info!("Skipping {}", file);
+    } else {
+        info!("Reading {}", file);
+
+        let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+        for calendar_date in rdr.deserialize() {
+            let calendar_date: CalendarDate = calendar_date.with_context(ctx_from_path!(path))?;
+
+            let is_inserted = calendars
+                .get_mut(&calendar_date.service_id)
+                .map(|mut calendar| match calendar_date.exception_type {
+                    ExceptionType::Add => {
+                        calendar.dates.insert(calendar_date.date);
+                    }
+                    ExceptionType::Remove => {
+                        calendar.dates.remove(&calendar_date.date);
+                    }
+                });
+            is_inserted.unwrap_or_else(|| {
+                if calendar_date.exception_type == ExceptionType::Add {
+                    let mut dates = BTreeSet::new();
+                    dates.insert(calendar_date.date);
+                    calendars
+                        .push(objects::Calendar {
+                            id: calendar_date.service_id,
+                            dates,
+                        })
+                        .unwrap();
+                }
+            });
+        }
+    }
+
+    Ok(())
 }
 
 pub fn manage_calendars(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    collections.calendars = make_collection_with_id(path, "calendar.txt")?;
+    let mut calendars: Vec<objects::Calendar> = vec![];
 
-    info!("Reading calendar_dates.txt");
-    let path = path.join("calendar_dates.txt");
-    if let Ok(mut rdr) = csv::Reader::from_path(&path) {
-        for calendar_date in rdr.deserialize() {
-            let calendar_date = calendar_date.with_context(ctx_from_path!(path))?;
-            let calendar_date: CalendarDate = calendar_date;
-            insert_calendar_date(&mut collections.calendars, calendar_date);
+    let file = "calendar.txt";
+    let calendar_path = path.join(file);
+    if !calendar_path.exists() {
+        info!("Skipping {}", file);
+    } else {
+        info!("Reading {}", file);
+        let mut rdr =
+            csv::Reader::from_path(&calendar_path).with_context(ctx_from_path!(calendar_path))?;
+        for calendar in rdr.deserialize() {
+            let calendar: Calendar = calendar.with_context(ctx_from_path!(calendar_path))?;
+
+            calendars.push(objects::Calendar {
+                id: calendar.id.clone(),
+                dates: calendar.get_valid_dates(),
+            });
         }
     }
+
+    collections.calendars = CollectionWithId::new(calendars)?;
+
+    manage_calendar_dates(&mut collections.calendars, &path)?;
+
     Ok(())
 }

@@ -335,6 +335,27 @@ impl<T: Id<T>> CollectionWithId<T> {
         }
     }
 
+    /// Returns an option of a mutable reference of the corresponding object.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// c.get_mut("foo").unwrap().0 = "baz";
+    /// assert!(c.get("foo").is_none());
+    /// assert_eq!(c.get("baz"), Some(&Obj("baz")));
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn get_mut(&mut self, id: &str) -> Option<RefMut<T>> {
+        self.get_idx(id).map(move |idx| self.index_mut(idx))
+    }
+
     /// Push an element in the `CollectionWithId`.  Fails if the
     /// identifier of the new object is already in the collection.
     ///

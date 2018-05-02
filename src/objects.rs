@@ -622,7 +622,7 @@ impl FromStr for Time {
         let hours: u32 = hours.parse()?;
         let minutes: u32 = minutes.parse()?;
         let seconds: u32 = seconds.parse()?;
-        if minutes > 59 || seconds > 59  {
+        if minutes > 59 || seconds > 59 {
             return Err(TimeError::WrongValue);
         }
         Ok(Time::new(hours, minutes, seconds))
@@ -762,13 +762,14 @@ impl Approx {
     /// }
     /// ```
     pub fn sq_distance_to(&self, coord: &Coord) -> f64 {
-        fn sq(f: f64) -> f64 { f * f }
+        fn sq(f: f64) -> f64 {
+            f * f
+        }
         let delta_lat = self.lat_rad - coord.lat.to_radians();
         let delta_lon = self.lon_rad - coord.lon.to_radians();
         sq(EARTH_RADIUS) * (sq(delta_lat) + sq(self.cos_lat * delta_lon))
     }
 }
-
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct StopArea {
@@ -869,32 +870,13 @@ pub enum ExceptionType {
     Remove,
 }
 
-pub type CalendarDates = Vec<(Date, ExceptionType)>;
+use std::collections::BTreeSet;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Calendar {
-    #[serde(rename = "service_id")]
     pub id: String,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    pub monday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    pub tuesday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    pub wednesday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    pub thursday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    pub friday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    pub saturday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    pub sunday: bool,
-    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
-    pub start_date: Date,
-    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
-    pub end_date: Date,
     #[serde(skip)]
-    pub calendar_dates: CalendarDates,
+    pub dates: BTreeSet<Date>,
 }
 
 impl Id<Calendar> for Calendar {
@@ -1226,8 +1208,20 @@ mod tests {
 
     #[test]
     fn approx_distance() {
-        assert!(nearly_equal(COORD1.approx().sq_distance_to(&COORD1).sqrt(), 0.0, TOLERANCE));
-        assert!(nearly_equal(COORD1.approx().sq_distance_to(&COORD2).sqrt(), 357.64, TOLERANCE));
-        assert!(nearly_equal(COORD2.approx().sq_distance_to(&COORD1).sqrt(), 357.64, TOLERANCE));
+        assert!(nearly_equal(
+            COORD1.approx().sq_distance_to(&COORD1).sqrt(),
+            0.0,
+            TOLERANCE
+        ));
+        assert!(nearly_equal(
+            COORD1.approx().sq_distance_to(&COORD2).sqrt(),
+            357.64,
+            TOLERANCE
+        ));
+        assert!(nearly_equal(
+            COORD2.approx().sq_distance_to(&COORD1).sqrt(),
+            357.64,
+            TOLERANCE
+        ));
     }
 }
