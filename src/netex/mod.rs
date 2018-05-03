@@ -18,12 +18,12 @@
 
 mod read;
 
-use collection::CollectionWithId;
 use model::{Collections, Model};
 use std::path::Path;
 use utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
 use std::fs;
 use Result;
+
 
 fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
     let prefix = prefix + ":";
