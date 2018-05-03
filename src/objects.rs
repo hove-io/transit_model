@@ -657,7 +657,7 @@ pub struct Coord {
     pub lat: f64,
 }
 
-// WGS84 equatorial radius in meters
+// Mean Earth radius in meters
 const EARTH_RADIUS: f64 = 6_371_000.0;
 
 impl Coord {
@@ -674,7 +674,64 @@ impl Coord {
 
         2. * EARTH_RADIUS * f64::asin(f64::sqrt(x + y))
     }
+
+    /// Returns a proxy object allowing to compute approximate
+    /// distances for cheap computation.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use navitia_model::objects::Coord;
+    /// let v: Vec<Coord> = vec![];
+    /// let from = Coord { lon: 2.37715, lat: 48.846781 };
+    /// let approx = from.approx();
+    /// for coord in &v {
+    ///     println!("distance({:?}, {:?}) = {}", from, coord, approx.sq_distance_to(coord).sqrt());
+    /// }
+    /// ```
+    pub fn approx(&self) -> Approx {
+        let lat_rad = self.lat.to_radians();
+        Approx {
+            cos_lat: lat_rad.cos(),
+            lon_rad: self.lon.to_radians(),
+            lat_rad,
+        }
+    }
 }
+
+/// Proxy object to compute approximate distances.
+pub struct Approx {
+    cos_lat: f64,
+    lon_rad: f64,
+    lat_rad: f64,
+}
+impl Approx {
+    /// Returns the squared distance to `coord`.  Squared distance is
+    /// returned to skip a `sqrt` call, that is not important for
+    /// distance comparison or sorting.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use navitia_model::objects::Coord;
+    /// let v: Vec<Coord> = vec![];
+    /// let from = Coord { lon: 2.37715, lat: 48.846781 };
+    /// let one_km_squared = 1_000. * 1_000.;
+    /// let approx = from.approx();
+    /// for coord in &v {
+    ///     if approx.sq_distance_to(coord) < one_km_squared {
+    ///         println!("{:?} is within 1km", coord);
+    ///     }
+    /// }
+    /// ```
+    pub fn sq_distance_to(&self, coord: &Coord) -> f64 {
+        fn sq(f: f64) -> f64 { f * f }
+        let delta_lat = self.lat_rad - coord.lat.to_radians();
+        let delta_lon = self.lon_rad - coord.lon.to_radians();
+        sq(EARTH_RADIUS) * (sq(delta_lat) + sq(self.cos_lat * delta_lon))
+    }
+}
+
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct StopArea {
@@ -1110,25 +1167,30 @@ mod tests {
         }
     }
 
+    const TOLERANCE: f64 = 0.001;
+
+    // distance between COORD1 and COORD2 is 357.64 from
+    // https://gps-coordinates.org/distance-between-coordinates.php
+    const COORD1: Coord = Coord {
+        lon: 2.377054,
+        lat: 48.846995,
+    };
+    const COORD2: Coord = Coord {
+        lon: 2.374377,
+        lat: 48.844304,
+    };
+
     #[test]
     fn orthodromic_distance() {
-        // distances are compared with the distance calculated in http://boulter.com/gps/distance/
-        // with 5% tolerance
-        const TOLERANCE: f64 = 0.05;
+        assert!(nearly_equal(COORD1.distance_to(&COORD1), 0.0, TOLERANCE));
+        assert!(nearly_equal(COORD1.distance_to(&COORD2), 357.64, TOLERANCE));
+        assert!(nearly_equal(COORD2.distance_to(&COORD1), 357.64, TOLERANCE));
+    }
 
-        let coord1 = Coord {
-            lon: 2.377054,
-            lat: 48.846995,
-        };
-        let coord2 = Coord {
-            lon: 2.374377,
-            lat: 48.844304,
-        };
-        // http://boulter.com/gps/distance/?from=48.846995+2.377054&to=48.846995+2.377054&units=k
-        assert!(nearly_equal(coord1.distance_to(&coord1), 0.0, TOLERANCE));
-
-        // http://boulter.com/gps/distance/?from=48.846995+2.377054&to=48.844304+2.374377&units=k
-        assert!(nearly_equal(coord1.distance_to(&coord2), 360., TOLERANCE));
-        assert!(nearly_equal(coord2.distance_to(&coord1), 360., TOLERANCE));
+    #[test]
+    fn approx_distance() {
+        assert!(nearly_equal(COORD1.approx().sq_distance_to(&COORD1).sqrt(), 0.0, TOLERANCE));
+        assert!(nearly_equal(COORD1.approx().sq_distance_to(&COORD2).sqrt(), 357.64, TOLERANCE));
+        assert!(nearly_equal(COORD2.approx().sq_distance_to(&COORD1).sqrt(), 357.64, TOLERANCE));
     }
 }
