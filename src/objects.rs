@@ -682,7 +682,8 @@ impl Coord {
     ///
     /// ```
     /// # use navitia_model::objects::Coord;
-    /// let v: Vec<Coord> = vec![];
+    /// # fn get_coords() -> Vec<Coord> { vec![] }
+    /// let v: Vec<Coord> = get_coords();
     /// let from = Coord { lon: 2.37715, lat: 48.846781 };
     /// let approx = from.approx();
     /// for coord in &v {
@@ -714,7 +715,8 @@ impl Approx {
     ///
     /// ```
     /// # use navitia_model::objects::Coord;
-    /// let v: Vec<Coord> = vec![];
+    /// # fn get_coords() -> Vec<Coord> { vec![] }
+    /// let v: Vec<Coord> = get_coords();
     /// let from = Coord { lon: 2.37715, lat: 48.846781 };
     /// let one_km_squared = 1_000. * 1_000.;
     /// let approx = from.approx();
