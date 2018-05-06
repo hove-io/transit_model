@@ -178,6 +178,30 @@ impl<T> Collection<T> {
                 .map(move |item| &self.objects[item.borrow().get()]),
         )
     }
+
+    /// Push an element in the `Collection` without control.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = Collection::new(vec![])?;
+    /// let foo_idx = c.push(Obj("foo"))?;
+    /// let bar_idx = c.push(Obj("bar"))?;
+    /// assert_ne!(foo_idx, &Obj("foo")?);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn push(&mut self, item: T) -> Result<Idx<T>> {
+        let next_index = self.objects.len();
+        let idx = Idx::new(next_index);
+        self.objects.push(item);
+        Ok(idx)
+    }
 }
 
 /// The type returned by `Collection::iter`.
