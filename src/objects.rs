@@ -568,6 +568,28 @@ impl GetObjectType for VehicleJourney {
     }
 }
 
+#[derive(Debug)]
+pub enum TimeError {
+    WrongFormat,
+    WrongValue,
+}
+impl std::fmt::Display for TimeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match *self {
+            TimeError::WrongFormat => f.write_str("TimeError::WrongFormat"),
+            TimeError::WrongValue => f.write_str("TimeError::WrongValue"),
+        }
+    }
+}
+impl Error for TimeError {
+    fn description(&self) -> &str {
+        match *self {
+            TimeError::WrongFormat => "Time format should be HH:MM:SS",
+            TimeError::WrongValue => "Minutes and Seconds should be in [0..59] range",
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Time(u32);
 impl Time {
@@ -582,6 +604,23 @@ impl Time {
     }
     pub fn seconds(&self) -> u32 {
         self.0 % 60
+    }
+}
+impl FromStr for Time {
+    type Err = TimeError;
+    fn from_str(time: &str) -> Result<Self, Self::Err> {
+        let mut t = time.split(':');
+        let (hours, minutes, seconds) = match (t.next(), t.next(), t.next(), t.next()) {
+            (Some(h), Some(m), Some(s), None) => (h, m, s),
+            _ => return Err(TimeError::WrongFormat),
+        };
+        let hours: u32 = hours.parse().map_err(|_err| TimeError::WrongFormat)?;
+        let minutes: u32 = minutes.parse().map_err(|_err| TimeError::WrongFormat)?;
+        let seconds: u32 = seconds.parse().map_err(|_err| TimeError::WrongFormat)?;
+        if minutes > 59 || seconds > 59  {
+            return Err(TimeError::WrongValue);
+        }
+        Ok(Time::new(hours, minutes, seconds))
     }
 }
 impl ::serde::Serialize for Time {
@@ -614,16 +653,7 @@ impl<'de> ::serde::Deserialize<'de> for Time {
                 formatter.write_str("a time in the format HH:MM:SS")
             }
             fn visit_str<E: de::Error>(self, time: &str) -> Result<Time, E> {
-                let mut t = time.split(':');
-                let (hours, minutes, seconds) = match (t.next(), t.next(), t.next(), t.next()) {
-                    (Some(h), Some(m), Some(s), None) => (h, m, s),
-                    _ => return Err(Error::custom("format should be HH:MM:SS")),
-                };
-                let hours: u32 = hours.parse().map_err(Error::custom)?;
-                let minutes: u32 = minutes.parse().map_err(Error::custom)?;
-                let seconds: u32 = seconds.parse().map_err(Error::custom)?;
-                // TODO: check 0 <= minutes, seconds < 60?
-                Ok(Time::new(hours, minutes, seconds))
+                time.parse().map_err(Error::custom)
             }
         }
 
