@@ -188,10 +188,11 @@ impl<T> Collection<T> {
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
-    /// let mut c = Collection::new(vec![])?;
+    /// let mut c = Collection::new(vec![]);
     /// let foo_idx = c.push(Obj("foo"))?;
     /// let bar_idx = c.push(Obj("bar"))?;
-    /// assert_ne!(foo_idx, &Obj("foo")?);
+    /// assert_eq!(&c[foo_idx], &Obj("foo"));
+    /// assert_ne!(&c[foo_idx], &Obj("bar"));
     /// # Ok(())
     /// # }
     /// # fn main() { run().unwrap() }
