@@ -47,7 +47,8 @@ fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
 }
 
 /// Imports a `Model` from the [Netex](http://netex-cen.eu/) files in the
-/// `path` directory.
+/// `path` directory. Refers to the [Netex Github repo](https://github.com/NeTEx-CEN/NeTEx/)
+/// for details.
 ///
 /// The `config_path` argument allows you to give a path to a file
 /// containing a json representing the contributor and dataset used
@@ -61,7 +62,8 @@ where
     P: AsRef<Path>,
 {
     let path = path.as_ref();
-
+    info!("Reading Netex data from {:?}", path);
+    
     let mut collections = Collections::default();
     for entry in fs::read_dir(path)? {
         let file = entry?;
