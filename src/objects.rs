@@ -576,8 +576,8 @@ pub enum TimeError {
 impl std::fmt::Display for TimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
-            TimeError::WrongFormat => f.write_str("TimeError::WrongFormat"),
-            TimeError::WrongValue => f.write_str("TimeError::WrongValue"),
+            TimeError::WrongFormat => f.write_str("wrong format"),
+            TimeError::WrongValue => f.write_str("wrong value"),
         }
     }
 }

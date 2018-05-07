@@ -189,19 +189,18 @@ impl<T> Collection<T> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
     /// let mut c = Collection::new(vec![]);
-    /// let foo_idx = c.push(Obj("foo"))?;
-    /// let bar_idx = c.push(Obj("bar"))?;
+    /// let foo_idx = c.push(Obj("foo"));
+    /// let bar_idx = c.push(Obj("bar"));
     /// assert_eq!(&c[foo_idx], &Obj("foo"));
     /// assert_ne!(&c[foo_idx], &Obj("bar"));
     /// # Ok(())
     /// # }
     /// # fn main() { run().unwrap() }
     /// ```
-    pub fn push(&mut self, item: T) -> Result<Idx<T>> {
+    pub fn push(&mut self, item: T) -> Idx<T> {
         let next_index = self.objects.len();
-        let idx = Idx::new(next_index);
         self.objects.push(item);
-        Ok(idx)
+        Idx::new(next_index)
     }
 }
 
