@@ -573,6 +573,11 @@ pub enum TimeError {
     WrongFormat,
     WrongValue,
 }
+impl From<std::num::ParseIntError> for TimeError {
+    fn from(_error: std::num::ParseIntError) -> Self {
+        TimeError::WrongFormat
+    }
+}
 impl std::fmt::Display for TimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
@@ -614,9 +619,9 @@ impl FromStr for Time {
             (Some(h), Some(m), Some(s), None) => (h, m, s),
             _ => return Err(TimeError::WrongFormat),
         };
-        let hours: u32 = hours.parse().map_err(|_err| TimeError::WrongFormat)?;
-        let minutes: u32 = minutes.parse().map_err(|_err| TimeError::WrongFormat)?;
-        let seconds: u32 = seconds.parse().map_err(|_err| TimeError::WrongFormat)?;
+        let hours: u32 = hours.parse()?;
+        let minutes: u32 = minutes.parse()?;
+        let seconds: u32 = seconds.parse()?;
         if minutes > 59 || seconds > 59  {
             return Err(TimeError::WrongValue);
         }
