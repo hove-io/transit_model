@@ -20,7 +20,58 @@ use csv;
 use failure::ResultExt;
 use objects::{AddPrefix, Date};
 use std::path;
+use std::io;
+use std::fs;
+use zip;
+use walkdir::WalkDir; 
+use std::io::{Read, Write};
 
+pub fn unzip_to<P: AsRef<path::Path>>(zip_file: P, dest_path: P) -> ::Result<()> {
+    let dest_path = dest_path.as_ref();
+    let file = fs::File::open(zip_file.as_ref())?;
+    let mut zip = zip::ZipArchive::new(file)?;
+    for i in 0..zip.len()
+    {
+        let mut file = zip.by_index(i)?;
+        let outpath = file.sanitized_name();
+        let mut outfile = fs::File::create(&dest_path.join(outpath))?;
+        io::copy(&mut file, &mut outfile)?;
+    }
+    Ok(())
+}
+
+pub fn zip_to<P: AsRef<path::Path>>(source_path: P, zip_file: P) -> ::Result<()> {
+    let source_path = source_path.as_ref();
+    let file = fs::File::create(zip_file.as_ref())?;
+    let walkdir = WalkDir::new(source_path);
+    let it = walkdir.into_iter();
+
+    let mut zip = zip::ZipWriter::new(file);
+    let options = zip::write::FileOptions::default()
+        .compression_method(zip::CompressionMethod::Bzip2)
+        .unix_permissions(0o755);
+    let mut buffer = Vec::new();
+    for entry in it {
+        let path = entry?.path().to_owned();
+        let name = path.strip_prefix(path::Path::new(source_path))
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        if path.is_file() {
+            println!("adding {:?} as {:?} ...", path, name);
+            zip.start_file(name, options)?;
+            let mut f = fs::File::open(path)?;
+
+            f.read_to_end(&mut buffer)?;
+            zip.write_all(&*buffer)?;
+            buffer.clear();
+        }
+    }
+    zip.finish()?;
+    Ok(())    
+}
 pub fn de_from_u8<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
     D: ::serde::Deserializer<'de>,

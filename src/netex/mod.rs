@@ -23,6 +23,9 @@ use std::path::Path;
 use utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
 use std::fs;
 use Result;
+extern crate tempdir;
+use self::tempdir::TempDir;
+
 
 
 fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
@@ -63,6 +66,7 @@ where
 {
     let path = path.as_ref();
     info!("Reading Netex data from {:?}", path);
+    println!("Reading Netex data from {:?}", path);
     
     let mut collections = Collections::default();
     for entry in fs::read_dir(path)? {
@@ -82,4 +86,22 @@ where
     }
 
     Ok(Model::new(collections)?)
+}
+
+/// This function is a shortcut to call the read function on all files of a zip archive. 
+pub fn read_from_zip<P>(zip_file: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
+where
+    P: AsRef<Path>,
+{
+    info!("Reading Netex data from ZIP file {:?}", zip_file.as_ref());
+    // let input_tmp_dir = TempDir::new("netex_input").unwrap();
+    let input_tmp_dir = Path::new("fixtures/netex/RATP_Line7bis-extract-2009-NeTEx/input_tmp");
+    // ::utils::unzip_to(zip_file.as_ref(), input_tmp_dir.path());
+    ::utils::unzip_to(zip_file.as_ref(), input_tmp_dir);
+    // let config_path = match config_path {
+    //     None => None,
+    //     Some(c) => Some(c.as_ref().clone())
+    // };
+    // let config_path = config_path.map(|c| c.as_ref().to_owned().as_ref()).clone(); 
+    read(input_tmp_dir, None, prefix)
 }
