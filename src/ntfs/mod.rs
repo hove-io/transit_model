@@ -161,7 +161,7 @@ pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
         &model.vehicle_journeys,
         &model.stop_points,
     )?;
-    write::write_calendar_and_calendar_dates(path, &model.calendars)?;
+    write::write_calendar_dates(path, &model.calendars)?;
     write::write_stops(path, &model.stop_points, &model.stop_areas)?;
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
@@ -179,7 +179,7 @@ mod tests {
     use chrono;
     use collection::*;
     use collection::{Collection, CollectionWithId};
-    use common_format::*;
+    use common_format;
     use objects::*;
     use serde;
     use std::collections::HashMap;
@@ -597,46 +597,29 @@ mod tests {
 
     #[test]
     fn calendar_serialization_deserialization() {
+        let mut dates1 = ::std::collections::BTreeSet::new();
+        dates1.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
+        dates1.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+
+        let mut dates2 = ::std::collections::BTreeSet::new();
+        dates2.insert(chrono::NaiveDate::from_ymd(2018, 6, 1));
+
         let calendars = CollectionWithId::new(vec![
             Calendar {
                 id: "0".to_string(),
-                monday: false,
-                tuesday: false,
-                wednesday: false,
-                thursday: false,
-                friday: false,
-                saturday: true,
-                sunday: true,
-                start_date: chrono::NaiveDate::from_ymd(2018, 1, 7),
-                end_date: chrono::NaiveDate::from_ymd(2018, 1, 28),
-                calendar_dates: vec![
-                    (
-                        chrono::NaiveDate::from_ymd(2018, 1, 7),
-                        ExceptionType::Remove,
-                    ),
-                    (chrono::NaiveDate::from_ymd(2018, 1, 15), ExceptionType::Add),
-                ],
+                dates: dates1,
             },
             Calendar {
                 id: "1".to_string(),
-                monday: true,
-                tuesday: true,
-                wednesday: true,
-                thursday: true,
-                friday: true,
-                saturday: false,
-                sunday: false,
-                start_date: chrono::NaiveDate::from_ymd(2018, 1, 6),
-                end_date: chrono::NaiveDate::from_ymd(2018, 1, 27),
-                calendar_dates: vec![],
+                dates: dates2,
             },
         ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
-            write::write_calendar_and_calendar_dates(path, &calendars).unwrap();
+            write::write_calendar_dates(path, &calendars).unwrap();
 
             let mut collections = Collections::default();
-            manage_calendars(&mut collections, path).unwrap();
+            common_format::manage_calendars(&mut collections, path).unwrap();
 
             assert_eq!(collections.calendars, calendars);
         });

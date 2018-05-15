@@ -18,8 +18,9 @@ use collection::{Collection, CollectionWithId, Id};
 use csv;
 use failure::ResultExt;
 use model::Collections;
-use objects::{self, Availability, CommentLinksT, Contributor, Coord, KeysValues, Time,
-              TransportType};
+use objects::{
+    self, Availability, CommentLinksT, Contributor, Coord, KeysValues, Time, TransportType,
+};
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs::File;
@@ -960,11 +961,14 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
 mod tests {
     extern crate tempdir;
     use self::tempdir::TempDir;
+    use chrono;
     use collection::{Collection, CollectionWithId, Id};
+    use common_format;
     use gtfs::add_prefix;
     use gtfs::read::EquipmentList;
     use model::Collections;
     use objects::*;
+    use std::collections::BTreeSet;
     use std::fs::File;
     use std::io::prelude::*;
 
@@ -1756,6 +1760,99 @@ mod tests {
                         min_transfer_time: Some(0),
                         real_min_transfer_time: Some(120),
                         equipment_id: None,
+                    },
+                ]
+            );
+        });
+    }
+
+    #[test]
+    fn gtfs_with_calendars_and_no_calendar_dates() {
+        let content = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
+                       1,0,0,0,0,0,1,1,20180501,20180508\n\
+                       2,1,0,0,0,0,0,0,20180502,20180506";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "calendar.txt", content);
+
+            let mut collections = Collections::default();
+            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+
+            let mut dates = BTreeSet::new();
+            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
+            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+            assert_eq!(
+                collections.calendars.into_vec(),
+                vec![
+                    Calendar {
+                        id: "1".to_string(),
+                        dates,
+                    },
+                    Calendar {
+                        id: "2".to_string(),
+                        dates: BTreeSet::new(),
+                    },
+                ]
+            );
+        });
+    }
+
+    #[test]
+    fn gtfs_with_calendars_dates_and_no_calendar() {
+        let content = "service_id,date,exception_type\n\
+                       1,20180212,1\n\
+                       1,20180211,2\n\
+                       2,20180211,2";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "calendar_dates.txt", content);
+
+            let mut collections = Collections::default();
+            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+
+            let mut dates = BTreeSet::new();
+            dates.insert(chrono::NaiveDate::from_ymd(2018, 2, 12));
+            assert_eq!(
+                collections.calendars.into_vec(),
+                vec![Calendar {
+                    id: "1".to_string(),
+                    dates,
+                }]
+            );
+        });
+    }
+
+    #[test]
+    fn gtfs_with_calendars_and_calendar_dates() {
+        let calendars_content = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
+                                 1,0,0,0,0,0,1,1,20180501,20180508\n\
+                                 2,0,0,0,0,0,0,1,20180502,20180506";
+
+        let calendar_dates_content = "service_id,date,exception_type\n\
+                                      1,20180507,1\n\
+                                      1,20180505,2\n\
+                                      2,20180506,2";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "calendar.txt", calendars_content);
+            create_file_with_content(&tmp_dir, "calendar_dates.txt", calendar_dates_content);
+
+            let mut collections = Collections::default();
+            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+
+            let mut dates = BTreeSet::new();
+            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 7));
+            assert_eq!(
+                collections.calendars.into_vec(),
+                vec![
+                    Calendar {
+                        id: "1".to_string(),
+                        dates,
+                    },
+                    Calendar {
+                        id: "2".to_string(),
+                        dates: BTreeSet::new(),
                     },
                 ]
             );

@@ -116,35 +116,25 @@ where
     Ok(())
 }
 
-pub fn write_calendar_and_calendar_dates(
+pub fn write_calendar_dates(
     path: &path::Path,
     calendars: &CollectionWithId<Calendar>,
 ) -> Result<()> {
-    info!("Writing calendar.txt and calendar_dates.txt");
-    let calendar_path = path.join("calendar.txt");
+    info!("Writing calendar_dates.txt");
     let calendar_dates_path = path.join("calendar_dates.txt");
-    let mut c_wtr =
-        csv::Writer::from_path(&calendar_path).with_context(ctx_from_path!(calendar_path))?;
-    let mut cd_wtr = csv::Writer::from_path(&calendar_dates_path)
+    let mut wtr = csv::Writer::from_path(&calendar_dates_path)
         .with_context(ctx_from_path!(calendar_dates_path))?;
     for c in calendars.values() {
-        c_wtr
-            .serialize(c)
-            .with_context(ctx_from_path!(calendar_path))?;
-        for cd in &c.calendar_dates {
-            cd_wtr
-                .serialize(CalendarDate {
-                    service_id: c.id.clone(),
-                    date: cd.0,
-                    exception_type: cd.1.clone(),
-                })
-                .with_context(ctx_from_path!(calendar_dates_path))?;
+        for d in &c.dates {
+            wtr.serialize(CalendarDate {
+                service_id: c.id.clone(),
+                date: *d,
+                exception_type: ExceptionType::Add,
+            }).with_context(ctx_from_path!(calendar_dates_path))?;
         }
     }
-    cd_wtr
-        .flush()
+    wtr.flush()
         .with_context(ctx_from_path!(calendar_dates_path))?;
-    c_wtr.flush().with_context(ctx_from_path!(calendar_path))?;
 
     Ok(())
 }
