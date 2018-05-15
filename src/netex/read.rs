@@ -97,6 +97,7 @@ struct NetexContext{
     routepoint_mapping : RoutePointMapping,
     route_line_map : RouteLineMap,
     route_mode_map : HashMap<String, String>,
+    journeypattern_route_map : HashMap<String, String>,
 }
 
 pub fn read_netex_file<P: AsRef<path::Path>>(
@@ -114,6 +115,7 @@ pub fn read_netex_file<P: AsRef<path::Path>>(
         routepoint_mapping : HashMap::new(),
         route_line_map : HashMap::new(),
         route_mode_map : HashMap::new(),
+        journeypattern_route_map : HashMap::new(),
     };
 
     root.get_child("dataObjects", context.namespace.as_str()).unwrap().children()
@@ -198,6 +200,15 @@ fn read_service_frame(
         context,
         &routes_node,
     );
+    let journey_patterns_node = service_frame.get_child("journeyPatterns", &context.namespace);
+    if journey_patterns_node.is_some() {
+        read_journey_patterns(
+            collections,
+            context,
+            &journey_patterns_node.unwrap(),
+        );
+    }
+
     let connections_node = service_frame.get_child("connections", &context.namespace);
     if connections_node.is_some() {
         read_connections(
@@ -286,20 +297,6 @@ fn read_organisations(
         };
     }
     Ok(())
-
-    // organisations.children().map(
-    //     |node| collections.companies.push(
-    //         objects::Company {
-    //             id: node.attr("id").unwrap().to_string(),
-    //             name: node.get_child("Name", &context.namespace).unwrap().text().to_string(),
-    //             address: None,
-    //             url: None,
-    //             mail: None,
-    //             phone: None,
-    //         }
-    //     )
-    //     .map(|_| ())
-    // ).collect()
 }
 
 fn read_vehicle_journeys(
@@ -308,42 +305,67 @@ fn read_vehicle_journeys(
     vehicle_journeys: &Element,
 ) {
     for node in vehicle_journeys.children() {
-        // assuming all children are ServiceJourney
-        if node.name() != "ServiceJourney" {
-            panic!("read_vehicle_journeys : node is expected to be ServiceJourney");
-        };
-        let route_id = node.get_child("RouteRef", &context.namespace).unwrap().attr("ref").unwrap();
-        let mode_name = context.route_mode_map.get(route_id).unwrap().to_string();
-        let mut vj = objects::VehicleJourney {
-            id : node.attr("id").unwrap().to_string(),
-            codes: KeysValues::default(),
-            object_properties: KeysValues::default(),
-            comment_links: CommentLinksT::default(),
-            route_id: route_id.to_string(),
-            physical_mode_id: netex_mode_to_physical_mode_id(&mode_name).to_string(),
-            dataset_id: "default_dataset".to_string(),
-            service_id: "".to_string(), 
-            headsign: None,
-            block_id: None,
-            company_id: node.get_child("OperatorRef", &context.namespace).map(
-                    |c| c.attr("ref").unwrap().to_string()
-                ).unwrap_or(context.first_operator_id.to_string()),
-            trip_property_id: None,
-            geometry_id: None,
-            stop_times: vec![],
-        };
-        let calls_node = node.get_child("calls", &context.namespace).unwrap();
-        read_stop_times(
-            collections,
-            context,
-            &mut vj,
-            &calls_node,
-        );
-        collections.vehicle_journeys.push(vj).unwrap();
+        match node.name() {
+            "ServiceJourney" => read_service_journey(collections, context, node),
+            _ => println!("Reading {} not implemented", node.name()),
+        }
     }
 }
 
-fn read_stop_times(
+fn read_service_journey(
+    collections: &mut Collections,
+    context: &mut NetexContext,
+    service_journey: &Element,
+) {
+    let vj_id = service_journey.attr("id").unwrap().to_string();
+    let journey_pattern_ref = service_journey
+        .get_child("JourneyPatternRef", &context.namespace)
+        .map(|n| n.attr("ref").unwrap().to_string());
+    let route_ref = service_journey
+        .get_child("RouteRef", &context.namespace)
+        .map(|n| n.attr("ref").unwrap().to_string());
+    let route_id: Option<String> = route_ref.or(
+            context.journeypattern_route_map.get(
+                &journey_pattern_ref.unwrap_or("".to_string()), 
+            )
+            .map(|s| s.to_string())
+    );
+    if route_id.is_none() {
+        panic!("read_vehicle_journeys : impossible to find Route for id {}", vj_id);
+    }
+    let route_id = route_id.unwrap();
+    let mode_name = context.route_mode_map.get(&route_id).unwrap().to_string();
+    let mut vj = objects::VehicleJourney {
+        id : vj_id,
+        codes: KeysValues::default(),
+        object_properties: KeysValues::default(),
+        comment_links: CommentLinksT::default(),
+        route_id: route_id,
+        physical_mode_id: netex_mode_to_physical_mode_id(&mode_name).to_string(),
+        dataset_id: "default_dataset".to_string(),
+        service_id: "".to_string(), 
+        headsign: None,
+        block_id: None,
+        company_id: service_journey.get_child("OperatorRef", &context.namespace).map(
+                |c| c.attr("ref").unwrap().to_string()
+            ).unwrap_or(context.first_operator_id.to_string()),
+        trip_property_id: None,
+        geometry_id: None,
+        stop_times: vec![],
+    };
+    let calls_node = service_journey.get_child("calls", &context.namespace);
+    if calls_node.is_some() {
+        read_calls_stop_times(
+            collections,
+            context,
+            &mut vj,
+            &calls_node.unwrap(),
+        );
+    }
+    collections.vehicle_journeys.push(vj).unwrap();
+}
+
+fn read_calls_stop_times(
     collections: &mut Collections,
     context: &mut NetexContext,
     vj: &mut objects::VehicleJourney,
@@ -390,8 +412,12 @@ fn read_network(
     context: &mut NetexContext,
     network: &Element
 ) -> objects::Network {
+    let network_id: String = match network.get_child("PrivateCode", &context.namespace) {
+        None => network.attr("id").unwrap().to_string(),
+        Some(n) => n.text().to_string(),
+    };
     objects::Network {
-        id: network.get_child("PrivateCode", &context.namespace).unwrap().text().to_string(),
+        id: network_id,
         name: network.get_child("Name", &context.namespace).unwrap().text().to_string(),
         url: None,
         codes: KeysValues::default(),
@@ -501,6 +527,21 @@ fn read_routes(
             destination_id: None,
         };
         collections.routes.push(route).unwrap();
+    }
+}
+
+fn read_journey_patterns(
+    collections: &mut Collections,
+    context: &mut NetexContext,
+    journey_patterns: &Element,
+) {
+    for jp in journey_patterns.children() {
+        let jp_id = jp.attr("id").unwrap().to_string();
+        let r = jp.get_child("RouteRef", &context.namespace);
+        if let Some(ref_node) = r {
+            let route_id = ref_node.attr("ref").unwrap().to_string();
+            context.journeypattern_route_map.insert(jp_id, route_id);
+        }
     }
 }
 

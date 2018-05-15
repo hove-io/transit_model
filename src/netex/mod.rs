@@ -49,8 +49,9 @@ fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
     Ok(())
 }
 
-/// Imports a `Model` from the [Netex](http://netex-cen.eu/) files in the
-/// `path` directory. Refers to the [Netex Github repo](https://github.com/NeTEx-CEN/NeTEx/)
+/// Imports a `Model` from one or several [Netex](http://netex-cen.eu/) files.
+/// The `path` can be a single file, a directory or a zip file. 
+/// Refers to the [Netex Github repo](https://github.com/NeTEx-CEN/NeTEx/)
 /// for details.
 ///
 /// The `config_path` argument allows you to give a path to a file
@@ -67,14 +68,31 @@ where
     let path = path.as_ref();
     info!("Reading Netex data from {:?}", path);
     println!("Reading Netex data from {:?}", path);
-    
     let mut collections = Collections::default();
-    for entry in fs::read_dir(path)? {
-        let file = entry?;
-        if file.path().extension().unwrap() == "xml" {
-            read::read_netex_file(&mut collections, file.path().as_path());
+    if path.is_file() {
+        match path.extension().unwrap().to_str().unwrap() {
+            "zip" => {
+                let input_tmp_dir = Path::new("fixtures/netex/RATP_Line7bis-extract-2009-NeTEx/input_tmp");
+                ::utils::unzip_to(path.as_ref(), input_tmp_dir);
+                for entry in fs::read_dir(input_tmp_dir)? {
+                    let file = entry?;
+                    if file.path().extension().unwrap() == "xml" {
+                        read::read_netex_file(&mut collections, file.path().as_path())?;
+                    }
+                }
+            },
+            "xml" => read::read_netex_file(&mut collections, path)?,
+            _ => bail!("Provided netex file should be xml or zip : {:?}", path),
+        };
+    } else {
+        for entry in fs::read_dir(path)? {
+            let file = entry?;
+            if file.path().extension().unwrap() == "xml" {
+                read::read_netex_file(&mut collections, file.path().as_path())?;
+            }
         }
-    }
+    };
+    
 
     let (contributors, datasets) = read::read_config(config_path)?;
     collections.contributors = contributors;
@@ -88,20 +106,20 @@ where
     Ok(Model::new(collections)?)
 }
 
-/// This function is a shortcut to call the read function on all files of a zip archive. 
-pub fn read_from_zip<P>(zip_file: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
-where
-    P: AsRef<Path>,
-{
-    info!("Reading Netex data from ZIP file {:?}", zip_file.as_ref());
-    // let input_tmp_dir = TempDir::new("netex_input").unwrap();
-    let input_tmp_dir = Path::new("fixtures/netex/RATP_Line7bis-extract-2009-NeTEx/input_tmp");
-    // ::utils::unzip_to(zip_file.as_ref(), input_tmp_dir.path());
-    ::utils::unzip_to(zip_file.as_ref(), input_tmp_dir);
-    // let config_path = match config_path {
-    //     None => None,
-    //     Some(c) => Some(c.as_ref().clone())
-    // };
-    // let config_path = config_path.map(|c| c.as_ref().to_owned().as_ref()).clone(); 
-    read(input_tmp_dir, None, prefix)
-}
+// /// This function is a shortcut to call the read function on all files of a zip archive. 
+// pub fn read_from_dir<P>(zip_file: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
+// where
+//     P: AsRef<Path>,
+// {
+//     info!("Reading Netex data from ZIP file {:?}", zip_file.as_ref());
+//     // let input_tmp_dir = TempDir::new("netex_input").unwrap();
+//     let input_tmp_dir = Path::new("fixtures/netex/RATP_Line7bis-extract-2009-NeTEx/input_tmp");
+//     // ::utils::unzip_to(zip_file.as_ref(), input_tmp_dir.path());
+//     ::utils::unzip_to(zip_file.as_ref(), input_tmp_dir);
+//     // let config_path = match config_path {
+//     //     None => None,
+//     //     Some(c) => Some(c.as_ref().clone())
+//     // };
+//     // let config_path = config_path.map(|c| c.as_ref().to_owned().as_ref()).clone(); 
+//     read(input_tmp_dir, None, prefix)
+// }
