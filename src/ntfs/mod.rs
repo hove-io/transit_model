@@ -29,7 +29,6 @@ use Result;
 extern crate tempdir;
 use self::tempdir::TempDir;
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
     stop_id: String,
@@ -173,7 +172,7 @@ pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
     Ok(())
 }
 
-/// Exports a `Model` to a 
+/// Exports a `Model` to a
 /// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
 /// ZIP archiveat the given full path.
 pub fn write_to_zip<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {

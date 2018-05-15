@@ -207,7 +207,6 @@ impl<T> Collection<T> {
     pub fn append(&mut self, other: &mut Vec<T>) {
         self.objects.append(other);
     }
-    
 }
 
 /// The type returned by `Collection::iter`.
@@ -399,8 +398,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// Moves all the elements of `other` Vec into Self, leaving other empty.
     /// If one of the Vec items is already in the collection, this function returns an Err.
     /// Else returns the last Idx inserted
-    pub fn append(&mut self, other: &mut Vec<T>) -> Result<Idx<T>> 
-    {
+    pub fn append(&mut self, other: &mut Vec<T>) -> Result<Idx<T>> {
         if other.is_empty() {
             bail!("provided Vec is empty")
         } else {
@@ -411,7 +409,7 @@ impl<T: Id<T>> CollectionWithId<T> {
                     None => break,
                     Some(item) => idx = self.push(item),
                 };
-            };
+            }
             idx
         }
     }

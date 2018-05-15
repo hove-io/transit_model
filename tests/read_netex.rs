@@ -40,5 +40,3 @@ fn read_netex_oslo() {
         &Path::new("fixtures/netex/Full_PublicationDelivery_109_Oslo_morningbus_example_result_to_check.zip"),
     ).unwrap()
 }
-
-

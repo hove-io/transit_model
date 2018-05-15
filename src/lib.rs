@@ -30,9 +30,9 @@ extern crate failure;
 extern crate get_corresponding_derive;
 #[macro_use]
 extern crate log;
-extern crate zip;
-extern crate walkdir;
 extern crate serde;
+extern crate walkdir;
+extern crate zip;
 #[macro_use]
 extern crate serde_derive;
 

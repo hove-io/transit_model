@@ -19,14 +19,12 @@
 mod read;
 
 use model::{Collections, Model};
+use std::fs;
 use std::path::Path;
 use utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
-use std::fs;
 use Result;
 extern crate tempdir;
 use self::tempdir::TempDir;
-
-
 
 fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
     let prefix = prefix + ":";
@@ -50,7 +48,7 @@ fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
 }
 
 /// Imports a `Model` from one or several [Netex](http://netex-cen.eu/) files.
-/// The `path` can be a single file, a directory or a zip file. 
+/// The `path` can be a single file, a directory or a zip file.
 /// Refers to the [Netex Github repo](https://github.com/NeTEx-CEN/NeTEx/)
 /// for details.
 ///
@@ -72,7 +70,8 @@ where
     if path.is_file() {
         match path.extension().unwrap().to_str().unwrap() {
             "zip" => {
-                let input_tmp_dir = Path::new("fixtures/netex/RATP_Line7bis-extract-2009-NeTEx/input_tmp");
+                let input_tmp_dir =
+                    Path::new("fixtures/netex/RATP_Line7bis-extract-2009-NeTEx/input_tmp");
                 ::utils::unzip_to(path.as_ref(), input_tmp_dir);
                 for entry in fs::read_dir(input_tmp_dir)? {
                     let file = entry?;
@@ -80,7 +79,7 @@ where
                         read::read_netex_file(&mut collections, file.path().as_path())?;
                     }
                 }
-            },
+            }
             "xml" => read::read_netex_file(&mut collections, path)?,
             _ => bail!("Provided netex file should be xml or zip : {:?}", path),
         };
@@ -92,7 +91,6 @@ where
             }
         }
     };
-    
 
     let (contributors, datasets) = read::read_config(config_path)?;
     collections.contributors = contributors;
@@ -106,7 +104,7 @@ where
     Ok(Model::new(collections)?)
 }
 
-// /// This function is a shortcut to call the read function on all files of a zip archive. 
+// /// This function is a shortcut to call the read function on all files of a zip archive.
 // pub fn read_from_dir<P>(zip_file: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
 // where
 //     P: AsRef<Path>,
@@ -120,6 +118,6 @@ where
 //     //     None => None,
 //     //     Some(c) => Some(c.as_ref().clone())
 //     // };
-//     // let config_path = config_path.map(|c| c.as_ref().to_owned().as_ref()).clone(); 
+//     // let config_path = config_path.map(|c| c.as_ref().to_owned().as_ref()).clone();
 //     read(input_tmp_dir, None, prefix)
 // }
