@@ -202,6 +202,27 @@ impl<T> Collection<T> {
         self.objects.push(item);
         Idx::new(next_index)
     }
+
+    /// Moves all the elements of `other` Vec into Self, leaving other empty.
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = Collection::new(vec![Obj("foo"), Obj("bar")]);
+    /// let mut v = vec![Obj("foo"), Obj("baz")];
+    /// c.append(&mut v);
+    /// assert_eq!(c.len(), 4);
+    /// assert_eq!(v, vec![]);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```    
+    pub fn append(&mut self, other: &mut Vec<T>) {
+        self.objects.append(other);
+    }
 }
 
 /// The type returned by `Collection::iter`.
@@ -387,6 +408,44 @@ impl<T: Id<T>> CollectionWithId<T> {
                 self.collection.objects.push(item);
                 Ok(idx)
             }
+        }
+    }
+
+    /// Moves all the elements of `other` Vec into Self, leaving other empty.
+    /// If one of the Vec items is already in the collection, this function returns an Err.
+    /// Else returns the last Idx inserted
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let mut v = vec![Obj("baz")];
+    /// let baz_idx = c.append(&mut v)?;
+    /// assert_eq!(&c[baz_idx], &Obj("baz"));
+    /// assert_eq!(v, vec![]);
+    ///
+    /// let mut v = vec![];
+    /// assert!(c.append(&mut v).is_err());
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn append(&mut self, other: &mut Vec<T>) -> Result<Idx<T>> {
+        if other.is_empty() {
+            bail!("provided Vec is empty")
+        } else {
+            let mut idx: Result<Idx<T>> = Err(format_err!("Non initialisé"));
+            loop {
+                let i = other.pop();
+                match i {
+                    None => break,
+                    Some(item) => idx = self.push(item),
+                };
+            }
+            idx
         }
     }
 }
