@@ -20,24 +20,10 @@ use csv;
 use failure::ResultExt;
 use objects::{AddPrefix, Date};
 use std::fs;
-use std::io;
 use std::io::{Read, Write};
 use std::path;
 use walkdir::WalkDir;
 use zip;
-
-pub fn unzip_to<P: AsRef<path::Path>>(zip_file: P, dest_path: P) -> ::Result<()> {
-    let dest_path = dest_path.as_ref();
-    let file = fs::File::open(zip_file.as_ref())?;
-    let mut zip = zip::ZipArchive::new(file)?;
-    for i in 0..zip.len() {
-        let mut file = zip.by_index(i)?;
-        let outpath = file.sanitized_name();
-        let mut outfile = fs::File::create(&dest_path.join(outpath))?;
-        io::copy(&mut file, &mut outfile)?;
-    }
-    Ok(())
-}
 
 pub fn zip_to<P: AsRef<path::Path>>(source_path: P, zip_file: P) -> ::Result<()> {
     let source_path = source_path.as_ref();

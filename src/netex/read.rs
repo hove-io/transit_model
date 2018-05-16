@@ -15,13 +15,12 @@
 // <http://www.gnu.org/licenses/>.
 
 use collection::CollectionWithId;
-use failure::ResultExt;
 use model::Collections;
 use objects::{self, CommentLinksT, Contributor, Coord, KeysValues};
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::Read;
 use std::path;
-use std::result::Result as StdResult;
 use Result;
 
 extern crate quick_xml;
@@ -90,7 +89,6 @@ type RoutePointMapping = HashMap<RoutePointId, StopPointId>;
 type RouteLineMap = HashMap<String, String>;
 
 struct NetexContext {
-    current_filename: String,
     namespace: String,
     first_operator_id: String,
     routepoint_mapping: RoutePointMapping,
@@ -99,13 +97,13 @@ struct NetexContext {
     journeypattern_route_map: HashMap<String, String>,
 }
 
-pub fn read_netex_file<P: AsRef<path::Path>>(collections: &mut Collections, path: P) -> Result<()> {
-    let path = path.as_ref().to_str().unwrap();
-    let mut reader = Reader::from_file(path).with_context(ctx_from_path!(path))?;
-    let root = Element::from_reader(&mut reader).with_context(ctx_from_path!(path))?;
+pub fn read_netex_file<R: Read>(collections: &mut Collections, mut file: R) -> Result<()> {
+    let mut file_content = "".to_string();
+    file.read_to_string(&mut file_content)?;
+    let mut reader = Reader::from_str(&file_content);
+    let root = Element::from_reader(&mut reader)?;
 
     let mut context = NetexContext {
-        current_filename: path.to_string(),
         namespace: root.ns().unwrap_or("".to_string()),
         first_operator_id: "".to_string(),
         routepoint_mapping: HashMap::new(),
@@ -188,7 +186,7 @@ fn read_service_frame(
     read_routes(collections, context, &routes_node);
     let journey_patterns_node = service_frame.get_child("journeyPatterns", &context.namespace);
     if journey_patterns_node.is_some() {
-        read_journey_patterns(collections, context, &journey_patterns_node.unwrap());
+        read_journey_patterns(context, &journey_patterns_node.unwrap());
     }
 
     let connections_node = service_frame.get_child("connections", &context.namespace);
@@ -266,7 +264,7 @@ fn read_organisations(
             .into_iter()
             .filter(|c| collections.companies.get_idx(&c.id).is_none())
             .collect();
-        collections.companies.append(&mut companies);
+        collections.companies.append(&mut companies)?;
     } else {
         context.first_operator_id = "default_company".to_string();
         if collections
@@ -540,7 +538,6 @@ fn read_routes(collections: &mut Collections, context: &mut NetexContext, routes
 }
 
 fn read_journey_patterns(
-    collections: &mut Collections,
     context: &mut NetexContext,
     journey_patterns: &Element,
 ) {

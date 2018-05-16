@@ -16,27 +16,63 @@
 
 extern crate navitia_model;
 extern crate zip;
+extern crate tempdir;
+extern crate failure;
 
 use std::path::Path;
+use std::fs;
+use std::io::Read;
+use tempdir::TempDir;
+pub type Error = failure::Error;
+pub type Result<T> = std::result::Result<T, Error>;
+
+
+fn compare_ntfs_zips<P, T>(ntfs_zipfile1: P, ntfs_zipfile2: T) -> Result<()>
+where
+    P: AsRef<Path>,
+    T: AsRef<Path>,
+{
+    let file1 = fs::File::open(ntfs_zipfile1.as_ref())?;
+    let file2 = fs::File::open(ntfs_zipfile2.as_ref())?;
+    let mut zip1 = zip::ZipArchive::new(file1)?;
+    let mut zip2 = zip::ZipArchive::new(file2)?;
+    assert_eq!(zip1.len(), zip2.len(), "Number of files in ZIP are different.");
+    for i in 0..zip1.len() {
+        let mut file1 = zip1.by_index(i)?;
+        let mut file2 = zip2.by_name(file1.name())?;
+        assert_eq!(file1.size(), file2.size(), "size of file {} is different.", file1.name());
+        let mut file1_content = vec![];
+        let mut file2_content = vec![];
+        file1.read_to_end(&mut file1_content)?;
+        file2.read_to_end(&mut file2_content)?;
+        let compare = file1_content == file2_content; //to avoid having file content in std output
+        assert!(compare, "content of file {} is different", file1.name());
+    }
+    Ok(())
+}
 
 #[test]
 fn ratp_line7bis() {
-    let input_data = "fixtures/netex/RATP_Line7bis-extract-2009-NeTEx/input.zip";
-    let read_result = navitia_model::netex::read(input_data, None, None);
+    let input_data = "fixtures/netex/RATP_Line7bis-extract-2009-NeTEx.zip";
+    let expected_result_file = "fixtures/netex/expected_result/ratp_result.zip";
+
+    let read_result = navitia_model::netex::read(Path::new(input_data), None, None);
     assert!(read_result.is_ok(), "{:?}", read_result.err().unwrap());
-    navitia_model::ntfs::write_to_zip(
-        &read_result.unwrap(),
-        &Path::new("fixtures/netex/RATP_Line7bis-extract-2009-NeTEx/result_to_check.zip"),
-    ).unwrap()
+    let tmp_dir = TempDir::new("netex_computed_result").unwrap();
+    let file_path = tmp_dir.path().join("netex_computed_result.zip");
+    navitia_model::ntfs::write_to_zip(&read_result.unwrap(), file_path.clone()).unwrap();
+    compare_ntfs_zips(expected_result_file, file_path.as_path()).unwrap();
 }
 
 #[test]
 fn read_netex_oslo() {
     let input_data = "fixtures/netex/Full_PublicationDelivery_109_Oslo_morningbus_example.xml";
+    let expected_result_file = "fixtures/netex/expected_result/oslo_result.zip";
+
     let read_result = navitia_model::netex::read(Path::new(input_data), None, None);
     assert!(read_result.is_ok(), "{:?}", read_result.err().unwrap());
-    navitia_model::ntfs::write_to_zip(
-        &read_result.unwrap(),
-        &Path::new("fixtures/netex/Full_PublicationDelivery_109_Oslo_morningbus_example_result_to_check.zip"),
-    ).unwrap()
+    let tmp_dir = TempDir::new("netex_computed_result").unwrap();
+    let file_path = tmp_dir.path().join("netex_computed_result.zip");
+    navitia_model::ntfs::write_to_zip(&read_result.unwrap(), file_path.clone()).unwrap();
+    compare_ntfs_zips(expected_result_file, file_path.as_path()).unwrap();
 }
