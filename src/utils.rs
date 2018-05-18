@@ -115,7 +115,8 @@ where
     info!("Reading {}", file);
     let path = path.join(file);
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let vec = rdr.deserialize()
+    let vec = rdr
+        .deserialize()
         .collect::<Result<_, _>>()
         .with_context(ctx_from_path!(path))?;
     CollectionWithId::new(vec)
@@ -140,7 +141,8 @@ where
     info!("Reading {}", file);
     let path = path.join(file);
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let vec = rdr.deserialize()
+    let vec = rdr
+        .deserialize()
         .collect::<Result<_, _>>()
         .with_context(ctx_from_path!(path))?;
     Ok(Collection::new(vec))
