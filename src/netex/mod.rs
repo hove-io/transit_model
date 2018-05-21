@@ -106,4 +106,3 @@ where
 
     Ok(Model::new(collections)?)
 }
-

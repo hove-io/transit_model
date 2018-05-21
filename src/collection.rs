@@ -436,7 +436,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     pub fn append(&mut self, other: &mut Vec<T>) -> Result<Idx<T>> {
         if other.is_empty() {
             bail!("provided Vec is empty")
-        } 
+        }
         let mut idx = Err(format_err!("Not initialised"));
         loop {
             let i = other.pop();

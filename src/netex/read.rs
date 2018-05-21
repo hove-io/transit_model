@@ -537,10 +537,7 @@ fn read_routes(collections: &mut Collections, context: &mut NetexContext, routes
     }
 }
 
-fn read_journey_patterns(
-    context: &mut NetexContext,
-    journey_patterns: &Element,
-) {
+fn read_journey_patterns(context: &mut NetexContext, journey_patterns: &Element) {
     for jp in journey_patterns.children() {
         let jp_id = jp.attr("id").unwrap().to_string();
         let r = jp.get_child("RouteRef", &context.namespace);

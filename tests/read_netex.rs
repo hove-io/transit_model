@@ -14,18 +14,17 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-extern crate navitia_model;
-extern crate zip;
-extern crate tempdir;
 extern crate failure;
+extern crate navitia_model;
+extern crate tempdir;
+extern crate zip;
 
-use std::path::Path;
 use std::fs;
 use std::io::Read;
+use std::path::Path;
 use tempdir::TempDir;
 pub type Error = failure::Error;
 pub type Result<T> = std::result::Result<T, Error>;
-
 
 fn compare_ntfs_zips<P, T>(ntfs_zipfile1: P, ntfs_zipfile2: T) -> Result<()>
 where
@@ -36,11 +35,20 @@ where
     let file2 = fs::File::open(ntfs_zipfile2.as_ref())?;
     let mut zip1 = zip::ZipArchive::new(file1)?;
     let mut zip2 = zip::ZipArchive::new(file2)?;
-    assert_eq!(zip1.len(), zip2.len(), "Number of files in ZIP are different.");
+    assert_eq!(
+        zip1.len(),
+        zip2.len(),
+        "Number of files in ZIP are different."
+    );
     for i in 0..zip1.len() {
         let mut file1 = zip1.by_index(i)?;
         let mut file2 = zip2.by_name(file1.name())?;
-        assert_eq!(file1.size(), file2.size(), "size of file {} is different.", file1.name());
+        assert_eq!(
+            file1.size(),
+            file2.size(),
+            "size of file {} is different.",
+            file1.name()
+        );
         let mut file1_content = vec![];
         let mut file2_content = vec![];
         file1.read_to_end(&mut file1_content)?;
