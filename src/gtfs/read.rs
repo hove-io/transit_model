@@ -21,8 +21,7 @@ use model::Collections;
 use objects::{
     self, Availability, CommentLinksT, Contributor, Coord, KeysValues, Time, TransportType,
 };
-use std::collections::HashMap;
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs::File;
 use std::path;
 use std::result::Result as StdResult;
@@ -664,22 +663,7 @@ pub fn read_config<P: AsRef<path::Path>>(
         info!("Reading dataset and contributor from config: {:?}", config);
 
         contributor = config.contributor;
-
-        use chrono::{Duration, Utc};
-        let duration = Duration::days(15);
-        let today = Utc::today();
-        let start_date = today - duration;
-        let end_date = today + duration;
-        dataset = objects::Dataset {
-            id: config.dataset.dataset_id,
-            contributor_id: contributor.id.clone(),
-            start_date: start_date.naive_utc(),
-            end_date: end_date.naive_utc(),
-            dataset_type: None,
-            extrapolation: false,
-            desc: None,
-            system: None,
-        };
+        dataset = objects::Dataset::new(config.dataset.dataset_id, contributor.id.clone());
     } else {
         contributor = Contributor::default();
         dataset = objects::Dataset::default();
@@ -958,6 +942,42 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
             .with_context(ctx_from_path!(trips_path))?;
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     collections.trip_properties = CollectionWithId::new(trip_properties)?;
+
+    Ok(())
+}
+
+pub fn get_validity_period(
+    calendars: &CollectionWithId<objects::Calendar>,
+) -> Option<objects::ValidityPeriod> {
+    let dates = calendars.values().fold(BTreeSet::new(), |acc, c| {
+        acc.union(&c.dates).cloned().collect()
+    });
+
+    if dates.is_empty() {
+        return None;
+    }
+
+    Some(objects::ValidityPeriod {
+        start_date: *dates.iter().next().unwrap(),
+        end_date: *dates.iter().next_back().unwrap(),
+    })
+}
+
+pub fn set_dataset_validity_period(
+    datasets: &mut CollectionWithId<objects::Dataset>,
+    calendars: &CollectionWithId<objects::Calendar>,
+) -> Result<()> {
+    let validity_period = get_validity_period(calendars);
+
+    if let Some(vp) = validity_period {
+        let mut objects = datasets.take();
+        for d in &mut objects {
+            d.start_date = vp.start_date;
+            d.end_date = vp.end_date;
+        }
+
+        *datasets = CollectionWithId::new(objects)?;
+    }
 
     Ok(())
 }
@@ -1862,6 +1882,71 @@ mod tests {
                         dates: BTreeSet::new(),
                     },
                 ]
+            );
+        });
+    }
+
+    #[test]
+    fn set_dataset_validity_period() {
+        let calendars_content = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
+                                 1,1,1,1,1,1,0,0,20180501,20180508\n\
+                                 2,0,0,0,0,0,1,1,20180514,20180520";
+
+        let calendar_dates_content = "service_id,date,exception_type\n\
+                                      2,20180520,2";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "calendar.txt", calendars_content);
+            create_file_with_content(&tmp_dir, "calendar_dates.txt", calendar_dates_content);
+
+            let mut collections = Collections::default();
+            let (_, mut datasets) = super::read_config(None::<&str>).unwrap();
+
+            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+            super::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
+
+            assert_eq!(
+                datasets.into_vec(),
+                vec![Dataset {
+                    id: "default_dataset".to_string(),
+                    contributor_id: "default_contributor".to_string(),
+                    start_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
+                    end_date: chrono::NaiveDate::from_ymd(2018, 5, 19),
+                    dataset_type: None,
+                    extrapolation: false,
+                    desc: None,
+                    system: None,
+                }]
+            );
+        });
+    }
+
+    #[test]
+    fn set_dataset_validity_period_with_only_one_date() {
+        let calendars_content = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
+                                 1,1,1,1,1,1,0,0,20180501,20180501";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "calendar.txt", calendars_content);
+
+            let mut collections = Collections::default();
+            let (_, mut datasets) = super::read_config(None::<&str>).unwrap();
+
+            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+            super::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
+
+            assert_eq!(
+                datasets.into_vec(),
+                vec![Dataset {
+                    id: "default_dataset".to_string(),
+                    contributor_id: "default_contributor".to_string(),
+                    start_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
+                    end_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
+                    dataset_type: None,
+                    extrapolation: false,
+                    desc: None,
+                    system: None,
+                }]
             );
         });
     }

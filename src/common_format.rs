@@ -152,7 +152,6 @@ pub fn manage_calendars(collections: &mut Collections, path: &path::Path) -> Res
             csv::Reader::from_path(&calendar_path).with_context(ctx_from_path!(calendar_path))?;
         for calendar in rdr.deserialize() {
             let calendar: Calendar = calendar.with_context(ctx_from_path!(calendar_path))?;
-
             calendars.push(objects::Calendar {
                 id: calendar.id.clone(),
                 dates: calendar.get_valid_dates(),
