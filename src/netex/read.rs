@@ -199,9 +199,15 @@ fn read_service_frame(
 
 fn read_service_calendar_frame(
     _collections: &mut Collections,
-    _context: &mut NetexContext,
-    _service_frame: &Element,
+    context: &mut NetexContext,
+    service_frame: &Element,
 ) -> Result<()> {
+    // each ServiceCalendarFrame seems to represent one Calendar
+    for day_types_node in service_frame.get_child("dayTypes", &context.namespace) {
+        for day_type in day_types_node.get_child("DayType", &context.namespace) {
+            //
+        }
+    }
     Ok(())
 }
 
@@ -323,6 +329,10 @@ fn read_service_journey(
             vj_id
         );
     }
+    let calendar_id = service_journey
+        .get_child("dayTypes", &context.namespace).unwrap()
+        .get_child("DayTypeRef", &context.namespace)
+        .map(|n| n.attr("ref").unwrap().to_string()).unwrap();
     let route_id = route_id.unwrap();
     let mode_name = context.route_mode_map.get(&route_id).unwrap().to_string();
     let mut vj = objects::VehicleJourney {
@@ -333,7 +343,7 @@ fn read_service_journey(
         route_id: route_id,
         physical_mode_id: netex_mode_to_physical_mode_id(&mode_name).to_string(),
         dataset_id: "default_dataset".to_string(),
-        service_id: "".to_string(),
+        service_id: calendar_id,
         headsign: None,
         block_id: None,
         company_id: service_journey
