@@ -211,8 +211,7 @@ where
         let mut many_to_one = BTreeMap::default();
         for (many_idx, obj) in many {
             let one_id = <U as Id<T>>::id(obj);
-            let one_idx = one
-                .get_idx(one_id)
+            let one_idx = one.get_idx(one_id)
                 .ok_or_else(|| format_err!("id={:?} not found", one_id))?;
             many_to_one.insert(many_idx, one_idx);
             one_to_many
@@ -287,8 +286,7 @@ impl<T, U> ManyToMany<T, U> {
         R1: Relation<From = T>,
         R2: Relation<From = R1::To, To = U>,
     {
-        let forward = r1
-            .get_from()
+        let forward = r1.get_from()
             .into_iter()
             .map(|idx| {
                 let from = Some(idx).into_iter().collect();
@@ -306,8 +304,7 @@ impl<T, U> ManyToMany<T, U> {
         R1: Relation<From = T>,
         R2: Relation<From = U, To = R1::To>,
     {
-        let forward = r1
-            .get_from()
+        let forward = r1.get_from()
             .into_iter()
             .map(|idx| {
                 let from = Some(idx).into_iter().collect();
@@ -326,8 +323,7 @@ impl<T, U> ManyToMany<T, U> {
         R1: Relation<To = T>,
         R2: Relation<From = R1::From, To = U>,
     {
-        let forward = r1
-            .get_to()
+        let forward = r1.get_to()
             .into_iter()
             .map(|idx| {
                 let from = Some(idx).into_iter().collect();

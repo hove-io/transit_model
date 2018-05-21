@@ -114,8 +114,7 @@ impl Model {
     /// assert!(Model::new(collections).is_err());
     /// ```
     pub fn new(c: Collections) -> Result<Self> {
-        let forward_vj_to_sp = c
-            .vehicle_journeys
+        let forward_vj_to_sp = c.vehicle_journeys
             .iter()
             .map(|(idx, vj)| {
                 let sps = vj.stop_times.iter().map(|st| st.stop_point_idx).collect();
@@ -123,8 +122,7 @@ impl Model {
             })
             .collect();
 
-        let forward_tr_to_sp = c
-            .transfers
+        let forward_tr_to_sp = c.transfers
             .iter()
             .map(|(idx, tr)| {
                 let mut stop_points = IdxSet::default();

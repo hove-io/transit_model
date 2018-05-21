@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use chrono;
 use collection::CollectionWithId;
 use model::Collections;
 use objects::{self, CommentLinksT, Contributor, Coord, KeysValues};
@@ -29,6 +30,8 @@ use self::quick_xml::Reader;
 extern crate minidom;
 use self::minidom::Element;
 use std::str::FromStr;
+
+pub type Date = chrono::NaiveDate;
 
 // TODO : a déplacer et mutualiser avec ce qui est fait dans le GTFS
 #[derive(Deserialize, Debug)]
@@ -198,17 +201,60 @@ fn read_service_frame(
 }
 
 fn read_service_calendar_frame(
-    _collections: &mut Collections,
+    collections: &mut Collections,
     context: &mut NetexContext,
-    service_frame: &Element,
+    service_calendar_frame: &Element,
 ) -> Result<()> {
     // each ServiceCalendarFrame seems to represent one Calendar
-    for day_types_node in service_frame.get_child("dayTypes", &context.namespace) {
-        for day_type in day_types_node.get_child("DayType", &context.namespace) {
-            //
-        }
+    for node in service_calendar_frame.children() {
+        //let's hope calendars (DayType) are defined before used by dayTypeAssignments
+        match node.name() {
+            "dayTypes" => {
+                for day_type in node.children() {
+                    assert!(
+                        day_type.name() == "DayType",
+                        "dayTypes child is expected to be DayType, found {:?}",
+                        day_type.name()
+                    );
+                    let calendar_id = day_type.attr("id").unwrap().to_string();
+                    let calendar = objects::Calendar::new(calendar_id);
+                    collections.calendars.push(calendar).unwrap();
+                }
+            }
+            "dayTypeAssignments" => {
+                for assignment_node in node.children() {
+                    assert!(
+                        assignment_node.name() == "DayTypeAssignment",
+                        "dayTypeAssignments child is expected to be DayTypeAssignment, found {:?}",
+                        assignment_node.name()
+                    );
+                    read_day_type_assignments(collections, context, assignment_node);
+                }
+            }
+            _ => (),
+        };
     }
     Ok(())
+}
+
+fn read_day_type_assignments(
+    collections: &mut Collections,
+    context: &mut NetexContext,
+    day_type_assignment: &Element,
+) {
+    let calendar_id = day_type_assignment
+        .get_child("DayTypeRef", &context.namespace)
+        .unwrap()
+        .attr("ref")
+        .unwrap();
+    let day: Date = day_type_assignment
+        .get_child("Date", &context.namespace)
+        .unwrap()
+        .text()
+        .parse()
+        .unwrap();
+    let mut c = collections.calendars.get_mut(calendar_id).unwrap();
+    c.dates.insert(day);
 }
 
 fn read_stop_assignements(
@@ -330,9 +376,11 @@ fn read_service_journey(
         );
     }
     let calendar_id = service_journey
-        .get_child("dayTypes", &context.namespace).unwrap()
+        .get_child("dayTypes", &context.namespace)
+        .unwrap()
         .get_child("DayTypeRef", &context.namespace)
-        .map(|n| n.attr("ref").unwrap().to_string()).unwrap();
+        .map(|n| n.attr("ref").unwrap().to_string())
+        .unwrap();
     let route_id = route_id.unwrap();
     let mode_name = context.route_mode_map.get(&route_id).unwrap().to_string();
     let mut vj = objects::VehicleJourney {

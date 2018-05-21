@@ -588,8 +588,7 @@ impl AddPrefix for VehicleJourney {
         self.route_id = prefix.to_string() + &self.route_id;
         self.dataset_id = prefix.to_string() + &self.dataset_id;
         self.company_id = prefix.to_string() + &self.company_id;
-        self.trip_property_id = self
-            .trip_property_id
+        self.trip_property_id = self.trip_property_id
             .as_ref()
             .map(|id| prefix.to_string() + id);
     }
@@ -912,7 +911,14 @@ pub struct Calendar {
     #[serde(skip)]
     pub dates: BTreeSet<Date>,
 }
-
+impl Calendar {
+    pub fn new(calendar_id: String) -> Calendar {
+        Calendar {
+            id: calendar_id,
+            dates: BTreeSet::new(),
+        }
+    }
+}
 impl Id<Calendar> for Calendar {
     fn id(&self) -> &str {
         &self.id
