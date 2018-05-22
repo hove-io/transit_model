@@ -588,7 +588,8 @@ impl AddPrefix for VehicleJourney {
         self.route_id = prefix.to_string() + &self.route_id;
         self.dataset_id = prefix.to_string() + &self.dataset_id;
         self.company_id = prefix.to_string() + &self.company_id;
-        self.trip_property_id = self.trip_property_id
+        self.trip_property_id = self
+            .trip_property_id
             .as_ref()
             .map(|id| prefix.to_string() + id);
     }

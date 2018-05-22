@@ -300,7 +300,8 @@ fn read_organisations(
         .children()
         .map(|node| objects::Company {
             id: node.attr("id").unwrap().to_string(),
-            name: node.get_child("Name", &context.namespace)
+            name: node
+                .get_child("Name", &context.namespace)
                 .unwrap()
                 .text()
                 .to_string(),
@@ -419,7 +420,8 @@ fn read_calls_stop_times(
     for call in calls.children() {
         // assuming all children are Call
         stop_sequence = stop_sequence + 1;
-        let routepoint_id = call.get_child("ScheduledStopPointRef", &context.namespace)
+        let routepoint_id = call
+            .get_child("ScheduledStopPointRef", &context.namespace)
             .unwrap()
             .attr("ref")
             .unwrap();
@@ -502,7 +504,8 @@ fn read_lines_and_commercial_modes(
     network_id: &str,
 ) {
     for l in lines.children() {
-        let mode_name = l.get_child("TransportMode", &context.namespace)
+        let mode_name = l
+            .get_child("TransportMode", &context.namespace)
             .unwrap()
             .text();
         if collections.commercial_modes.get(&mode_name).is_none() {
@@ -528,15 +531,18 @@ fn read_lines_and_commercial_modes(
                 })
                 .unwrap();
         };
-        let private_code = l.get_child("PrivateCode", &context.namespace)
+        let private_code = l
+            .get_child("PrivateCode", &context.namespace)
             .map(|s| s.text().to_string());
-        let public_code = l.get_child("PublicCode", &context.namespace)
+        let public_code = l
+            .get_child("PublicCode", &context.namespace)
             .map(|s| s.text().to_string());
         let line_code = public_code.or(private_code);
         let line = objects::Line {
             id: l.attr("id").unwrap().to_string(),
             code: line_code,
-            name: l.get_child("Name", &context.namespace)
+            name: l
+                .get_child("Name", &context.namespace)
                 .unwrap()
                 .text()
                 .to_string(),
@@ -556,7 +562,8 @@ fn read_lines_and_commercial_modes(
             opening_time: None,
             closing_time: None,
         };
-        for r in l.get_child("routes", &context.namespace)
+        for r in l
+            .get_child("routes", &context.namespace)
             .unwrap()
             .children()
         {
@@ -575,7 +582,8 @@ fn read_routes(collections: &mut Collections, context: &mut NetexContext, routes
     for r in routes.children() {
         let route = objects::Route {
             id: r.attr("id").unwrap().to_string(),
-            name: r.get_child("Name", &context.namespace)
+            name: r
+                .get_child("Name", &context.namespace)
                 .unwrap()
                 .text()
                 .to_string(),
@@ -613,14 +621,16 @@ fn read_connections(
 ) {
     for cnx in connections.children() {
         let transfer = objects::Transfer {
-            from_stop_id: cnx.get_child("From", &context.namespace)
+            from_stop_id: cnx
+                .get_child("From", &context.namespace)
                 .unwrap()
                 .get_child("StopPlaceRef", &context.namespace)
                 .unwrap()
                 .attr("ref")
                 .unwrap()
                 .to_string(),
-            to_stop_id: cnx.get_child("To", &context.namespace)
+            to_stop_id: cnx
+                .get_child("To", &context.namespace)
                 .unwrap()
                 .get_child("StopPlaceRef", &context.namespace)
                 .unwrap()
@@ -721,7 +731,8 @@ fn read_stop_place(
             object_properties: KeysValues::default(),
             comment_links: objects::CommentLinksT::default(),
             coord: Coord {
-                lon: quai.get_child("Centroid", &context.namespace)
+                lon: quai
+                    .get_child("Centroid", &context.namespace)
                     .unwrap()
                     .get_child("Location", &context.namespace)
                     .unwrap()
@@ -730,7 +741,8 @@ fn read_stop_place(
                     .text()
                     .parse()
                     .unwrap(),
-                lat: quai.get_child("Centroid", &context.namespace)
+                lat: quai
+                    .get_child("Centroid", &context.namespace)
                     .unwrap()
                     .get_child("Location", &context.namespace)
                     .unwrap()

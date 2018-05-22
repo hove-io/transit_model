@@ -407,7 +407,8 @@ pub fn read_agency<P: AsRef<path::Path>>(
     info!("Reading agency.txt");
     let path = path.as_ref().join("agency.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let gtfs_agencies: Vec<Agency> = rdr.deserialize()
+    let gtfs_agencies: Vec<Agency> = rdr
+        .deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(path))?;
     let networks = gtfs_agencies
@@ -451,7 +452,8 @@ pub struct EquipmentList {
 
 impl EquipmentList {
     pub fn into_equipments(self) -> Vec<objects::Equipment> {
-        let mut eqs: Vec<_> = self.equipments
+        let mut eqs: Vec<_> = self
+            .equipments
             .into_iter()
             .map(|(mut eq, id)| {
                 eq.id = id;
@@ -509,7 +511,8 @@ pub fn read_stops<P: AsRef<path::Path>>(
     info!("Reading stops.txt");
     let path = path.as_ref().join("stops.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let gtfs_stops: Vec<Stop> = rdr.deserialize()
+    let gtfs_stops: Vec<Stop> = rdr
+        .deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(path))?;
 
@@ -909,7 +912,8 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
     let path = path.as_ref();
     let routes_path = path.join("routes.txt");
     let mut rdr = csv::Reader::from_path(&routes_path).with_context(ctx_from_path!(routes_path))?;
-    let gtfs_routes: Vec<Route> = rdr.deserialize()
+    let gtfs_routes: Vec<Route> = rdr
+        .deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(routes_path))?;
 
@@ -921,7 +925,8 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
 
     let trips_path = path.join("trips.txt");
     let mut rdr = csv::Reader::from_path(&trips_path).with_context(ctx_from_path!(trips_path))?;
-    let gtfs_trips: Vec<Trip> = rdr.deserialize()
+    let gtfs_trips: Vec<Trip> = rdr
+        .deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(trips_path))?;
 
@@ -1494,13 +1499,15 @@ mod tests {
             url: None,
             label: None,
         }).unwrap();
-        assert!(c.push(Comment {
-            id: "foo".into(),
-            name: "tata".into(),
-            comment_type: CommentType::Information,
-            url: None,
-            label: None,
-        }).is_err());
+        assert!(
+            c.push(Comment {
+                id: "foo".into(),
+                name: "tata".into(),
+                comment_type: CommentType::Information,
+                url: None,
+                label: None,
+            }).is_err()
+        );
         let id = c.get_idx("foo").unwrap();
         assert_eq!(id, c.iter().next().unwrap().0);
     }

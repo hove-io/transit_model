@@ -38,7 +38,8 @@ pub fn zip_to<P: AsRef<path::Path>>(source_path: P, zip_file: P) -> ::Result<()>
     let mut buffer = Vec::new();
     for entry in it {
         let path = entry?.path().to_owned();
-        let name = path.strip_prefix(path::Path::new(source_path))
+        let name = path
+            .strip_prefix(path::Path::new(source_path))
             .unwrap()
             .to_str()
             .unwrap()
@@ -151,7 +152,8 @@ where
     info!("Reading {}", file);
     let path = path.join(file);
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let vec = rdr.deserialize()
+    let vec = rdr
+        .deserialize()
         .collect::<Result<_, _>>()
         .with_context(ctx_from_path!(path))?;
     CollectionWithId::new(vec)
@@ -176,7 +178,8 @@ where
     info!("Reading {}", file);
     let path = path.join(file);
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let vec = rdr.deserialize()
+    let vec = rdr
+        .deserialize()
         .collect::<Result<_, _>>()
         .with_context(ctx_from_path!(path))?;
     Ok(Collection::new(vec))
