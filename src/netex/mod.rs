@@ -18,12 +18,12 @@
 
 mod read;
 
-use read_utils;
-use model::{Collections, Model};
 use collection::CollectionWithId;
+use model::{Collections, Model};
+use read_utils;
+use read_utils::{add_prefix, get_validity_period};
 use std::fs;
 use std::path::Path;
-use read_utils::{add_prefix, get_validity_period};
 use Result;
 extern crate tempdir;
 extern crate zip;
@@ -56,14 +56,20 @@ where
                 for i in 0..zip.len() {
                     let mut file = zip.by_index(i)?;
                     match file.sanitized_name().extension() {
-                        None => info!("Netex read : skipping file in ZIP : {:?}", file.sanitized_name()),
+                        None => info!(
+                            "Netex read : skipping file in ZIP : {:?}",
+                            file.sanitized_name()
+                        ),
                         Some(ext) => {
                             if ext == "xml" {
                                 read::read_netex_file(&mut collections, file)?;
                             } else {
-                                info!("Netex read : skipping file in ZIP : {:?}", file.sanitized_name());
+                                info!(
+                                    "Netex read : skipping file in ZIP : {:?}",
+                                    file.sanitized_name()
+                                );
                             }
-                        },
+                        }
                     }
                 }
             }
@@ -79,7 +85,6 @@ where
             }
         }
     };
-
 
     let (contributor, mut dataset) = read_utils::read_config(config_path)?;
     let vp = get_validity_period(&collections.calendars);

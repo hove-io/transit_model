@@ -14,17 +14,15 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use std::path;
 use collection::CollectionWithId;
 use model::Collections;
 use objects::{self, Contributor};
-use std::fs::File;
 use std::collections::BTreeSet;
+use std::fs::File;
+use std::path;
 use utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
 use Result;
 extern crate serde_json;
-
-
 
 #[derive(Deserialize, Debug)]
 struct ConfigDataset {
@@ -39,10 +37,7 @@ struct Config {
 
 pub fn read_config<P: AsRef<path::Path>>(
     config_path: Option<P>,
-) -> Result<(
-    objects::Contributor,
-    objects::Dataset,
-)> {
+) -> Result<(objects::Contributor, objects::Dataset)> {
     let contributor;
     let dataset;
     if let Some(config_path) = config_path {

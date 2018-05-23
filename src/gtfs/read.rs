@@ -21,11 +21,11 @@ use model::Collections;
 use objects::{
     self, Availability, CommentLinksT, Contributor, Coord, KeysValues, Time, TransportType,
 };
+use read_utils;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path;
 use std::result::Result as StdResult;
-use read_utils;
 use utils::*;
 use Result;
 extern crate serde_json;

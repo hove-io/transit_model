@@ -23,10 +23,9 @@ use common_format::manage_calendars;
 use gtfs::read::EquipmentList;
 use model::{Collections, Model};
 use objects::Comment;
-use std::path::Path;
 use read_utils::add_prefix;
+use std::path::Path;
 use Result;
-
 
 /// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
 /// `path` directory.
