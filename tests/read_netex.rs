@@ -67,12 +67,15 @@ fn ratp_line7bis() {
     let read_result = navitia_model::netex::read(Path::new(input_data), None, None);
     assert!(read_result.is_ok(), "{:?}", read_result.err().unwrap());
     let tmp_dir = TempDir::new("netex_computed_result").unwrap();
-    let file_path = tmp_dir.path().join("netex_computed_result.zip");
+    let file_path = tmp_dir.path().join("netex_computed_result_ratp.zip");
+    // let tmp_dir = Path::new("fixtures/netex/computed_result/");
+    // let file_path = tmp_dir.join("netex_computed_result_ratp.zip");
     navitia_model::ntfs::write_to_zip(&read_result.unwrap(), file_path.clone()).unwrap();
     compare_ntfs_zips(expected_result_file, file_path.as_path()).unwrap();
 }
 
 #[test]
+#[should_panic(expected = "No valid calendar in Netex Data")] // for the moment, reading calendars for olso is not implemented
 fn read_netex_oslo() {
     let input_data = "fixtures/netex/Full_PublicationDelivery_109_Oslo_morningbus_example.xml";
     let expected_result_file = "fixtures/netex/expected_result/oslo_result.zip";
@@ -80,7 +83,9 @@ fn read_netex_oslo() {
     let read_result = navitia_model::netex::read(Path::new(input_data), None, None);
     assert!(read_result.is_ok(), "{:?}", read_result.err().unwrap());
     let tmp_dir = TempDir::new("netex_computed_result").unwrap();
-    let file_path = tmp_dir.path().join("netex_computed_result.zip");
+    let file_path = tmp_dir.path().join("netex_computed_result_oslo.zip");
+    // let tmp_dir = Path::new("fixtures/netex/computed_result/");
+    // let file_path = tmp_dir.join("netex_computed_result_oslo.zip");
     navitia_model::ntfs::write_to_zip(&read_result.unwrap(), file_path.clone()).unwrap();
     compare_ntfs_zips(expected_result_file, file_path.as_path()).unwrap();
 }

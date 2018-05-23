@@ -15,13 +15,10 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono;
-use collection::CollectionWithId;
 use model::Collections;
-use objects::{self, CommentLinksT, Contributor, Coord, KeysValues};
+use objects::{self, CommentLinksT, Coord, KeysValues};
 use std::collections::HashMap;
-use std::fs::File;
 use std::io::Read;
-use std::path;
 use Result;
 
 extern crate quick_xml;
@@ -32,59 +29,6 @@ use self::minidom::Element;
 use std::str::FromStr;
 
 pub type Date = chrono::NaiveDate;
-
-// TODO : a déplacer et mutualiser avec ce qui est fait dans le GTFS
-#[derive(Deserialize, Debug)]
-struct Dataset {
-    dataset_id: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Config {
-    contributor: objects::Contributor,
-    dataset: Dataset,
-}
-
-pub fn read_config<P: AsRef<path::Path>>(
-    config_path: Option<P>,
-) -> Result<(
-    CollectionWithId<objects::Contributor>,
-    CollectionWithId<objects::Dataset>,
-)> {
-    let contributor;
-    let dataset;
-    if let Some(config_path) = config_path {
-        let json_config_file = File::open(config_path)?;
-        let config: Config = serde_json::from_reader(json_config_file)?;
-        info!("Reading dataset and contributor from config: {:?}", config);
-
-        contributor = config.contributor;
-
-        use chrono::{Duration, Utc};
-        let duration = Duration::days(15);
-        let today = Utc::today();
-        let start_date = today - duration;
-        let end_date = today + duration;
-        dataset = objects::Dataset {
-            id: config.dataset.dataset_id,
-            contributor_id: contributor.id.clone(),
-            start_date: start_date.naive_utc(),
-            end_date: end_date.naive_utc(),
-            dataset_type: None,
-            extrapolation: false,
-            desc: None,
-            system: None,
-        };
-    } else {
-        contributor = Contributor::default();
-        dataset = objects::Dataset::default();
-    }
-
-    let contributors = CollectionWithId::new(vec![contributor])?;
-    let datasets = CollectionWithId::new(vec![dataset])?;
-    Ok((contributors, datasets))
-}
-// fin TODO : a déplacer et mutualiser avec ce qui est fait dans le GTFS
 
 type RoutePointId = String;
 type StopPointId = String;

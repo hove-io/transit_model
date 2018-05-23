@@ -24,29 +24,9 @@ use gtfs::read::EquipmentList;
 use model::{Collections, Model};
 use objects::Comment;
 use std::path::Path;
-use utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
+use read_utils::add_prefix;
 use Result;
 
-fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
-    let prefix = prefix + ":";
-    info!("Adding prefix: \"{}\"", &prefix);
-    add_prefix_to_collection_with_id(&mut collections.commercial_modes, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.networks, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.companies, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.stop_points, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.stop_areas, &prefix)?;
-    add_prefix_to_collection(&mut collections.transfers, &prefix);
-    add_prefix_to_collection_with_id(&mut collections.routes, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.lines, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.contributors, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.datasets, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.vehicle_journeys, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.trip_properties, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.equipments, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.comments, &prefix)?;
-
-    Ok(())
-}
 
 /// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
 /// `path` directory.

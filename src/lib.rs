@@ -46,7 +46,7 @@ pub mod netex;
 pub mod ntfs;
 pub mod objects;
 pub mod relations;
-
+mod read_utils;
 /// The error type used by the crate.
 pub type Error = failure::Error;
 

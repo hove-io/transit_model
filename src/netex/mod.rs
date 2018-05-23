@@ -18,34 +18,15 @@
 
 mod read;
 
+use read_utils;
 use model::{Collections, Model};
+use collection::CollectionWithId;
 use std::fs;
 use std::path::Path;
-use utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
+use read_utils::{add_prefix, get_validity_period};
 use Result;
 extern crate tempdir;
 extern crate zip;
-
-fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
-    let prefix = prefix + ":";
-    info!("Adding prefix: \"{}\"", &prefix);
-    add_prefix_to_collection_with_id(&mut collections.commercial_modes, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.networks, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.companies, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.stop_points, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.stop_areas, &prefix)?;
-    add_prefix_to_collection(&mut collections.transfers, &prefix);
-    add_prefix_to_collection_with_id(&mut collections.routes, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.lines, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.contributors, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.datasets, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.vehicle_journeys, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.trip_properties, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.equipments, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.comments, &prefix)?;
-
-    Ok(())
-}
 
 /// Imports a `Model` from one or several [Netex](http://netex-cen.eu/) files.
 /// The `path` can be a single file, a directory or a zip file.
@@ -70,9 +51,6 @@ where
     if path.is_file() {
         match path.extension().unwrap().to_str().unwrap() {
             "zip" => {
-                // let input_tmp_dir =
-                //     Path::new("fixtures/netex/RATP_Line7bis-extract-2009-NeTEx/input_tmp");
-                // ::utils::unzip_to(path.as_ref(), input_tmp_dir);
                 let zip_file = fs::File::open(path)?;
                 let mut zip = zip::ZipArchive::new(zip_file)?;
                 for i in 0..zip.len() {
@@ -83,7 +61,7 @@ where
                             if ext == "xml" {
                                 read::read_netex_file(&mut collections, file)?;
                             } else {
-                                info!("Netex read : skipping file in ZIP : {:?}", file.sanitized_name()),
+                                info!("Netex read : skipping file in ZIP : {:?}", file.sanitized_name());
                             }
                         },
                     }
@@ -102,10 +80,19 @@ where
         }
     };
 
-    let (contributors, datasets) = read::read_config(config_path)?;
-    collections.contributors = contributors;
-    collections.datasets = datasets;
 
+    let (contributor, mut dataset) = read_utils::read_config(config_path)?;
+    let vp = get_validity_period(&collections.calendars);
+    if vp.is_none() {
+        bail!("No valid calendar in Netex Data");
+    }
+    let vp = vp.unwrap();
+    dataset.start_date = vp.start_date;
+    dataset.end_date = vp.end_date;
+    dataset.system = Some("Netex".to_string());
+
+    collections.contributors = CollectionWithId::new(vec![contributor])?;
+    collections.datasets = CollectionWithId::new(vec![dataset])?;
     //add prefixes
     if let Some(prefix) = prefix {
         add_prefix(prefix, &mut collections)?;
