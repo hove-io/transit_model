@@ -174,7 +174,7 @@ pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
 
 /// Exports a `Model` to a
 /// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
-/// ZIP archiveat the given full path.
+/// ZIP archive at the given full path.
 pub fn write_to_zip<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to ZIP File {:?}", path);
