@@ -77,8 +77,15 @@ where
                 let mut zip = zip::ZipArchive::new(zip_file)?;
                 for i in 0..zip.len() {
                     let mut file = zip.by_index(i)?;
-                    if file.sanitized_name().extension().unwrap() == "xml" {
-                        read::read_netex_file(&mut collections, file)?;
+                    match file.sanitized_name().extension() {
+                        None => info!("Netex read : skipping file in ZIP : {:?}", file.sanitized_name()),
+                        Some(ext) => {
+                            if ext == "xml" {
+                                read::read_netex_file(&mut collections, file)?;
+                            } else {
+                                info!("Netex read : skipping file in ZIP : {:?}", file.sanitized_name()),
+                            }
+                        },
                     }
                 }
             }
