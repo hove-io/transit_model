@@ -53,8 +53,7 @@ where
         let mut file2_content = vec![];
         file1.read_to_end(&mut file1_content)?;
         file2.read_to_end(&mut file2_content)?;
-        let compare = file1_content == file2_content; //to avoid having file content in std output
-        assert!(compare, "content of file {} is different", file1.name());
+        assert!(file1_content == file2_content, "content of file {} is different", file1.name());
     }
     Ok(())
 }
@@ -68,8 +67,6 @@ fn ratp_line7bis() {
     assert!(read_result.is_ok(), "{:?}", read_result.err().unwrap());
     let tmp_dir = TempDir::new("netex_computed_result").unwrap();
     let file_path = tmp_dir.path().join("netex_computed_result_ratp.zip");
-    // let tmp_dir = Path::new("fixtures/netex/computed_result/");
-    // let file_path = tmp_dir.join("netex_computed_result_ratp.zip");
     navitia_model::ntfs::write_to_zip(&read_result.unwrap(), file_path.clone()).unwrap();
     compare_ntfs_zips(expected_result_file, file_path.as_path()).unwrap();
 }
@@ -84,8 +81,6 @@ fn read_netex_oslo() {
     assert!(read_result.is_ok(), "{:?}", read_result.err().unwrap());
     let tmp_dir = TempDir::new("netex_computed_result").unwrap();
     let file_path = tmp_dir.path().join("netex_computed_result_oslo.zip");
-    // let tmp_dir = Path::new("fixtures/netex/computed_result/");
-    // let file_path = tmp_dir.join("netex_computed_result_oslo.zip");
     navitia_model::ntfs::write_to_zip(&read_result.unwrap(), file_path.clone()).unwrap();
     compare_ntfs_zips(expected_result_file, file_path.as_path()).unwrap();
 }

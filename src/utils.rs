@@ -33,8 +33,7 @@ pub fn zip_to<P: AsRef<path::Path>>(source_path: P, zip_file: P) -> ::Result<()>
 
     let mut zip = zip::ZipWriter::new(file);
     let options = zip::write::FileOptions::default()
-        .compression_method(zip::CompressionMethod::Bzip2)
-        .unix_permissions(0o755);
+        .compression_method(zip::CompressionMethod::Bzip2);
     let mut buffer = Vec::new();
     for entry in it {
         let path = entry?.path().to_owned();
@@ -46,7 +45,7 @@ pub fn zip_to<P: AsRef<path::Path>>(source_path: P, zip_file: P) -> ::Result<()>
             .to_string();
 
         if path.is_file() {
-            println!("adding {:?} as {:?} ...", path, name);
+            debug!("adding {:?} as {:?} ...", path, name);
             zip.start_file(name, options)?;
             let mut f = fs::File::open(path)?;
 
