@@ -32,8 +32,8 @@ pub fn zip_to<P: AsRef<path::Path>>(source_path: P, zip_file: P) -> ::Result<()>
     let it = walkdir.into_iter();
 
     let mut zip = zip::ZipWriter::new(file);
-    let options = zip::write::FileOptions::default()
-        .compression_method(zip::CompressionMethod::Bzip2);
+    let options =
+        zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Bzip2);
     let mut buffer = Vec::new();
     for entry in it {
         let path = entry?.path().to_owned();

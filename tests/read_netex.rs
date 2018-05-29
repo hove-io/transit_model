@@ -53,7 +53,11 @@ where
         let mut file2_content = vec![];
         file1.read_to_end(&mut file1_content)?;
         file2.read_to_end(&mut file2_content)?;
-        assert!(file1_content == file2_content, "content of file {} is different", file1.name());
+        assert!(
+            file1_content == file2_content,
+            "content of file {} is different",
+            file1.name()
+        );
     }
     Ok(())
 }

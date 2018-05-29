@@ -58,18 +58,22 @@ pub fn read_netex_file<R: Read>(collections: &mut Collections, mut file: R) -> R
     };
 
     root.get_child("dataObjects", context.namespace.as_str())
-        .unwrap()
-        .children()
-        .filter(|frame| frame.name() == "CompositeFrame")
-        .map(|frame| {
-            read_composite_data_frame(collections, &mut context, frame).map_err(|_| {
-                format_err!(
-                    "Reading Frame id={:?}",
-                    frame.attr("id").unwrap_or("undefined")
-                )
-            })
-        })
-        .collect()
+        .map_or_else(
+            || bail!("Netex file does't contain a 'dataObjects' node"),
+            |f| {
+                f.children()
+                    .filter(|frame| frame.name() == "CompositeFrame")
+                    .map(|frame| {
+                        read_composite_data_frame(collections, &mut context, frame).map_err(|_| {
+                            format_err!(
+                                "Reading Frame id={:?}",
+                                frame.attr("id").unwrap_or("undefined")
+                            )
+                        })
+                    })
+                    .collect()
+            },
+        )
 }
 
 fn read_composite_data_frame(
@@ -79,17 +83,23 @@ fn read_composite_data_frame(
 ) -> Result<()> {
     composite_frame
         .get_child("frames", &mut context.namespace)
-        .unwrap()
-        .children()
-        .map(|frame| match frame.name() {
-            "SiteFrame" => read_site_frame(collections, context, &frame),
-            "ServiceFrame" => read_service_frame(collections, context, &frame),
-            "ServiceCalendarFrame" => read_service_calendar_frame(collections, context, &frame),
-            "TimetableFrame" => read_time_table_frame(collections, context, &frame),
-            "ResourceFrame" => read_resource_frame(collections, context, &frame),
-            _ => Ok(()),
-        })
-        .collect()
+        .map_or_else(
+            || bail!("CompositeDataFrame does't contain a 'frames' node"),
+            |f| {
+                f.children()
+                    .map(|frame| match frame.name() {
+                        "SiteFrame" => read_site_frame(collections, context, &frame),
+                        "ServiceFrame" => read_service_frame(collections, context, &frame),
+                        "ServiceCalendarFrame" => {
+                            read_service_calendar_frame(collections, context, &frame)
+                        }
+                        "TimetableFrame" => read_time_table_frame(collections, context, &frame),
+                        "ResourceFrame" => read_resource_frame(collections, context, &frame),
+                        _ => Ok(()),
+                    })
+                    .collect()
+            },
+        )
 }
 
 fn read_resource_frame(
@@ -113,28 +123,24 @@ fn read_service_frame(
     context: &mut NetexContext,
     service_frame: &Element,
 ) -> Result<()> {
-    let network_node = service_frame
-        .get_child("Network", &context.namespace);
+    let network_node = service_frame.get_child("Network", &context.namespace);
     if let Some(network_node) = network_node {
         let network = read_network(collections, context, &network_node);
         context.network_id = network.id.to_string();
         collections.networks.push(network)?;
     } else {
         //reseting the value to avoid using an id from an other file
-        context.network_id = "".to_string(); 
+        context.network_id = "".to_string();
     }
-    let lines_node = service_frame
-        .get_child("lines", &context.namespace);
+    let lines_node = service_frame.get_child("lines", &context.namespace);
     if let Some(lines_node) = lines_node {
         read_lines_and_commercial_modes(collections, context, &lines_node);
     }
-    let stop_assignments_node = service_frame
-        .get_child("stopAssignments", &context.namespace);
+    let stop_assignments_node = service_frame.get_child("stopAssignments", &context.namespace);
     if let Some(stop_assignments_node) = stop_assignments_node {
         read_stop_assignements(collections, context, &stop_assignments_node);
     }
-    let routes_node = service_frame
-        .get_child("routes", &context.namespace);
+    let routes_node = service_frame.get_child("routes", &context.namespace);
     if let Some(routes_node) = routes_node {
         read_routes(collections, context, &routes_node);
     }
@@ -234,8 +240,7 @@ fn read_time_table_frame(
     context: &mut NetexContext,
     time_table_frame: &Element,
 ) -> Result<()> {
-    let vj_node = time_table_frame
-        .get_child("vehicleJourneys", &context.namespace);
+    let vj_node = time_table_frame.get_child("vehicleJourneys", &context.namespace);
     if let Some(vj_node) = vj_node {
         read_vehicle_journeys(collections, context, &vj_node);
     }

@@ -178,7 +178,7 @@ pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
 pub fn write_to_zip<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to ZIP File {:?}", path);
-    let input_tmp_dir = TempDir::new("read_netex_work").unwrap();
+    let input_tmp_dir = TempDir::new("read_netex_work")?;
     write(model, input_tmp_dir.path())?;
     zip_to(input_tmp_dir.path(), path)?;
     Ok(())
