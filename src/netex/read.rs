@@ -39,6 +39,7 @@ type RouteLineMap = HashMap<String, String>;
 struct NetexContext {
     namespace: String,
     first_operator_id: String,
+    network_id: String,
     routepoint_mapping: RoutePointMapping,
     route_line_map: RouteLineMap,
     route_mode_map: HashMap<String, String>,
@@ -113,31 +114,39 @@ fn read_service_frame(
     service_frame: &Element,
 ) -> Result<()> {
     let network_node = service_frame
-        .get_child("Network", &context.namespace)
-        .unwrap();
-    let network = read_network(collections, context, &network_node);
+        .get_child("Network", &context.namespace);
+    if let Some(network_node) = network_node {
+        let network = read_network(collections, context, &network_node);
+        context.network_id = network.id.to_string();
+        collections.networks.push(network)?;
+    } else {
+        //reseting the value to avoid using an id from an other file
+        context.network_id = "".to_string(); 
+    }
     let lines_node = service_frame
-        .get_child("lines", &context.namespace)
-        .unwrap();
-    read_lines_and_commercial_modes(collections, context, &lines_node, &network.id);
+        .get_child("lines", &context.namespace);
+    if let Some(lines_node) = lines_node {
+        read_lines_and_commercial_modes(collections, context, &lines_node);
+    }
     let stop_assignments_node = service_frame
-        .get_child("stopAssignments", &context.namespace)
-        .unwrap();
-    read_stop_assignements(collections, context, &stop_assignments_node);
+        .get_child("stopAssignments", &context.namespace);
+    if let Some(stop_assignments_node) = stop_assignments_node {
+        read_stop_assignements(collections, context, &stop_assignments_node);
+    }
     let routes_node = service_frame
-        .get_child("routes", &context.namespace)
-        .unwrap();
-    read_routes(collections, context, &routes_node);
+        .get_child("routes", &context.namespace);
+    if let Some(routes_node) = routes_node {
+        read_routes(collections, context, &routes_node);
+    }
     let journey_patterns_node = service_frame.get_child("journeyPatterns", &context.namespace);
-    if journey_patterns_node.is_some() {
-        read_journey_patterns(context, &journey_patterns_node.unwrap());
+    if let Some(journey_patterns_node) = journey_patterns_node {
+        read_journey_patterns(context, &journey_patterns_node);
     }
 
     let connections_node = service_frame.get_child("connections", &context.namespace);
-    if connections_node.is_some() {
-        read_connections(collections, context, &connections_node.unwrap());
+    if let Some(connections_node) = connections_node {
+        read_connections(collections, context, &connections_node);
     }
-    collections.networks.push(network).unwrap();
     Ok(())
 }
 
@@ -152,19 +161,19 @@ fn read_service_calendar_frame(
         match node.name() {
             "dayTypes" => {
                 for day_type in node.children() {
-                    assert!(
+                    ensure!(
                         day_type.name() == "DayType",
                         "dayTypes child is expected to be DayType, found {:?}",
                         day_type.name()
                     );
-                    let calendar_id = day_type.attr("id").unwrap().to_string();
+                    let calendar_id = day_type.attr("id").unwrap_or(&"".to_string()).to_string();
                     let calendar = objects::Calendar::new(calendar_id);
-                    collections.calendars.push(calendar).unwrap();
+                    collections.calendars.push(calendar)?;
                 }
             }
             "dayTypeAssignments" => {
                 for assignment_node in node.children() {
-                    assert!(
+                    ensure!(
                         assignment_node.name() == "DayTypeAssignment",
                         "dayTypeAssignments child is expected to be DayTypeAssignment, found {:?}",
                         assignment_node.name()
@@ -226,9 +235,10 @@ fn read_time_table_frame(
     time_table_frame: &Element,
 ) -> Result<()> {
     let vj_node = time_table_frame
-        .get_child("vehicleJourneys", &context.namespace)
-        .unwrap();
-    read_vehicle_journeys(collections, context, &vj_node);
+        .get_child("vehicleJourneys", &context.namespace);
+    if let Some(vj_node) = vj_node {
+        read_vehicle_journeys(collections, context, &vj_node);
+    }
     Ok(())
 }
 
@@ -240,7 +250,7 @@ fn read_organisations(
     let companies: Vec<_> = organisations
         .children()
         .map(|node| objects::Company {
-            id: node.attr("id").unwrap().to_string(),
+            id: node.attr("id").unwrap_or("").to_string(),
             name: node
                 .get_child("Name", &context.namespace)
                 .unwrap()
@@ -442,7 +452,6 @@ fn read_lines_and_commercial_modes(
     collections: &mut Collections,
     context: &mut NetexContext,
     lines: &Element,
-    network_id: &str,
 ) {
     for l in lines.children() {
         let mode_name = l
@@ -497,7 +506,7 @@ fn read_lines_and_commercial_modes(
             color: None,
             text_color: None,
             sort_order: None,
-            network_id: network_id.to_string(),
+            network_id: context.network_id.to_string(),
             commercial_mode_id: mode_name.to_string(),
             geometry_id: None,
             opening_time: None,

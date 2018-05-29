@@ -93,10 +93,10 @@ where
 
     let (contributor, mut dataset) = read_utils::read_config(config_path)?;
     let vp = get_validity_period(&collections.calendars);
-    if vp.is_none() {
-        bail!("No valid calendar in Netex Data");
-    }
-    let vp = vp.unwrap();
+    let vp = match vp {
+        None => bail!("No valid calendar in Netex Data"),
+        Some(vp) => vp,
+    };
     dataset.start_date = vp.start_date;
     dataset.end_date = vp.end_date;
     dataset.system = Some("Netex".to_string());
