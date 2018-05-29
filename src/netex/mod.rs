@@ -49,8 +49,8 @@ where
     println!("Reading Netex data from {:?}", path);
     let mut collections = Collections::default();
     if path.is_file() {
-        match path.extension().unwrap().to_str().unwrap() {
-            "zip" => {
+        match path.extension().and_then(|ext| ext.to_str()) {
+            Some("zip") => {
                 let zip_file = fs::File::open(path)?;
                 let mut zip = zip::ZipArchive::new(zip_file)?;
                 for i in 0..zip.len() {
@@ -73,15 +73,20 @@ where
                     }
                 }
             }
-            "xml" => read::read_netex_file(&mut collections, fs::File::open(path)?)?,
+            Some("xml") => read::read_netex_file(&mut collections, fs::File::open(path)?)?,
             _ => bail!("Provided netex file should be xml or zip : {:?}", path),
         };
     } else {
         for entry in fs::read_dir(path)? {
             let file = entry?;
-            if file.path().extension().unwrap() == "xml" {
+            if file.path().extension().map_or(false, |ext| ext == "xml") {
                 let file = fs::File::open(file.path())?;
                 read::read_netex_file(&mut collections, file)?;
+            } else {
+                info!(
+                    "Netex read : skipping file in directory : {:?}",
+                    file.file_name()
+                );
             }
         }
     };

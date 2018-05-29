@@ -35,6 +35,7 @@ type StopPointId = String;
 type RoutePointMapping = HashMap<RoutePointId, StopPointId>;
 type RouteLineMap = HashMap<String, String>;
 
+#[derive(Default)]
 struct NetexContext {
     namespace: String,
     first_operator_id: String,
@@ -52,11 +53,7 @@ pub fn read_netex_file<R: Read>(collections: &mut Collections, mut file: R) -> R
 
     let mut context = NetexContext {
         namespace: root.ns().unwrap_or("".to_string()),
-        first_operator_id: "".to_string(),
-        routepoint_mapping: HashMap::new(),
-        route_line_map: HashMap::new(),
-        route_mode_map: HashMap::new(),
-        journeypattern_route_map: HashMap::new(),
+        ..Default::default()
     };
 
     root.get_child("dataObjects", context.namespace.as_str())

@@ -423,29 +423,18 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let mut v = vec![Obj("baz")];
-    /// let baz_idx = c.append(&mut v)?;
-    /// assert_eq!(&c[baz_idx], &Obj("baz"));
+    /// assert!(c.append(&mut v).is_ok());
+    /// assert_eq!(c.len(), 3);
     /// assert_eq!(v, vec![]);
-    ///
-    /// let mut v = vec![];
-    /// assert!(c.append(&mut v).is_err());
     /// # Ok(())
     /// # }
     /// # fn main() { run().unwrap() }
     /// ```
-    pub fn append(&mut self, other: &mut Vec<T>) -> Result<Idx<T>> {
-        if other.is_empty() {
-            bail!("provided Vec is empty")
+    pub fn append(&mut self, other: &mut Vec<T>) -> Result<()> {
+        for item in other.drain(..) {
+            let _ = self.push(item)?;
         }
-        let mut idx = Err(format_err!("Not initialised"));
-        loop {
-            let i = other.pop();
-            match i {
-                None => break,
-                Some(item) => idx = self.push(item),
-            };
-        }
-        idx
+        Ok(())
     }
 }
 
