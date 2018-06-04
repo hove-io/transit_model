@@ -202,6 +202,27 @@ impl<T> Collection<T> {
         self.objects.push(item);
         Idx::new(next_index)
     }
+
+    /// Moves all the elements of `other` Vec into Self, leaving other empty.
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = Collection::new(vec![Obj("foo"), Obj("bar")]);
+    /// let mut v = vec![Obj("foo"), Obj("baz")];
+    /// c.append(&mut v);
+    /// assert_eq!(c.len(), 4);
+    /// assert_eq!(v, vec![]);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```    
+    pub fn append(&mut self, other: &mut Vec<T>) {
+        self.objects.append(other);
+    }
 }
 
 /// The type returned by `Collection::iter`.
@@ -388,6 +409,31 @@ impl<T: Id<T>> CollectionWithId<T> {
                 Ok(idx)
             }
         }
+    }
+
+    /// Moves all the elements of `other` Vec into Self, leaving other empty.
+    /// If one of the Vec items is already in the collection, this function returns an Err.
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let mut v = vec![Obj("baz")];
+    /// assert!(c.append(&mut v).is_ok());
+    /// assert_eq!(c.len(), 3);
+    /// assert_eq!(v, vec![]);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn append(&mut self, other: &mut Vec<T>) -> Result<()> {
+        for item in other.drain(..) {
+            let _ = self.push(item)?;
+        }
+        Ok(())
     }
 }
 

@@ -21,7 +21,8 @@ use model::Collections;
 use objects::{
     self, Availability, CommentLinksT, Contributor, Coord, KeysValues, Time, TransportType,
 };
-use std::collections::{BTreeSet, HashMap, HashSet};
+use read_utils;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path;
 use std::result::Result as StdResult;
@@ -946,28 +947,11 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
     Ok(())
 }
 
-pub fn get_validity_period(
-    calendars: &CollectionWithId<objects::Calendar>,
-) -> Option<objects::ValidityPeriod> {
-    let dates = calendars.values().fold(BTreeSet::new(), |acc, c| {
-        acc.union(&c.dates).cloned().collect()
-    });
-
-    if dates.is_empty() {
-        return None;
-    }
-
-    Some(objects::ValidityPeriod {
-        start_date: *dates.iter().next().unwrap(),
-        end_date: *dates.iter().next_back().unwrap(),
-    })
-}
-
 pub fn set_dataset_validity_period(
     datasets: &mut CollectionWithId<objects::Dataset>,
     calendars: &CollectionWithId<objects::Calendar>,
 ) -> Result<()> {
-    let validity_period = get_validity_period(calendars);
+    let validity_period = read_utils::get_validity_period(calendars);
 
     if let Some(vp) = validity_period {
         let mut objects = datasets.take();

@@ -1,6 +1,8 @@
 # navitia_model [![Build Status](https://travis-ci.org/CanalTP/navitia_model.svg?branch=master)](https://travis-ci.org/CanalTP/navitia_model)
 
-navitia_model is a rust crate to manage transit data. Its model corresponds to the one used in [navitia](https://github.com/CanalTP/navitia). This repository also provides (incomplete) [GTFS](http://gtfs.org/) to [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md) and (soon) NTFS to GTFS conversion.
+navitia_model is a rust crate to manage transit data. Its model corresponds to the one used in [navitia](https://github.com/CanalTP/navitia). This repository also provides :
+- (incomplete) [GTFS](http://gtfs.org/) to [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md) and (soon) NTFS to GTFS conversion.
+- (incomplete) [Netex](http://netex-cen.eu/) to [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md) and (soon) Netex to GTFS conversion. Conversion fixtures comes from official [Github repository](https://github.com/NeTEx-CEN/NeTEx/).
 
 ## Compile
 

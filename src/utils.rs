@@ -19,8 +19,44 @@ use collection::{Collection, CollectionWithId, Id};
 use csv;
 use failure::ResultExt;
 use objects::{AddPrefix, Date};
+use std::fs;
+use std::io::{Read, Write};
 use std::path;
+use walkdir::WalkDir;
+use zip;
 
+pub fn zip_to<P: AsRef<path::Path>>(source_path: P, zip_file: P) -> ::Result<()> {
+    let source_path = source_path.as_ref();
+    let file = fs::File::create(zip_file.as_ref())?;
+    let walkdir = WalkDir::new(source_path);
+    let it = walkdir.into_iter();
+
+    let mut zip = zip::ZipWriter::new(file);
+    let options =
+        zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Bzip2);
+    let mut buffer = Vec::new();
+    for entry in it {
+        let path = entry?.path().to_owned();
+        let name = path
+            .strip_prefix(path::Path::new(source_path))
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        if path.is_file() {
+            debug!("adding {:?} as {:?} ...", path, name);
+            zip.start_file(name, options)?;
+            let mut f = fs::File::open(path)?;
+
+            f.read_to_end(&mut buffer)?;
+            zip.write_all(&*buffer)?;
+            buffer.clear();
+        }
+    }
+    zip.finish()?;
+    Ok(())
+}
 pub fn de_from_u8<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
     D: ::serde::Deserializer<'de>,
