@@ -31,6 +31,8 @@ extern crate get_corresponding_derive;
 #[macro_use]
 extern crate log;
 extern crate serde;
+extern crate walkdir;
+extern crate zip;
 #[macro_use]
 extern crate serde_derive;
 
@@ -40,10 +42,11 @@ pub mod collection;
 pub(crate) mod common_format;
 pub mod gtfs;
 pub mod model;
+pub mod netex;
 pub mod ntfs;
 pub mod objects;
+mod read_utils;
 pub mod relations;
-
 /// The error type used by the crate.
 pub type Error = failure::Error;
 
