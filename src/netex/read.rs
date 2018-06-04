@@ -19,6 +19,7 @@ use model::Collections;
 use objects::{self, CommentLinksT, Coord, KeysValues};
 use std::collections::HashMap;
 use std::io::Read;
+use std;
 use Result;
 
 extern crate quick_xml;
@@ -197,20 +198,27 @@ fn read_day_type_assignments(
     collections: &mut Collections,
     context: &mut NetexContext,
     day_type_assignment: &Element,
-) {
-    let calendar_id = day_type_assignment
+) -> Result<()> {
+    let day_type_ref = day_type_assignment
         .get_child("DayTypeRef", &context.namespace)
-        .unwrap()
-        .attr("ref")
-        .unwrap();
-    let day: Date = day_type_assignment
+        .ok_or_else(
+            || format_err!("No 'DayTypeRef' node. Skipping DayTypeAssignment.")
+        )?;
+    let calendar_id = day_type_ref.attr("ref")
+        .ok_or_else(
+            || format_err!("No 'ref' for 'DayTypeRef' node. Skipping DayTypeAssignment.")
+        )?;
+    let date = day_type_assignment
         .get_child("Date", &context.namespace)
-        .unwrap()
-        .text()
-        .parse()
-        .unwrap();
-    let mut c = collections.calendars.get_mut(calendar_id).unwrap();
+        .ok_or_else(
+            || format_err!("No 'Date' node. Skipping DayTypeAssignment.")
+        )?;
+    let day = date.text().parse()?;
+    let mut c = collections.calendars.get_mut(calendar_id).ok_or_else(
+        || format_err!("Calendar {} not found. Skipping DayTypeAssignment.", calendar_id)
+    )?;
     c.dates.insert(day);
+    Ok(())
 }
 
 fn read_stop_assignements(
@@ -342,28 +350,23 @@ fn read_service_journey(
     let mode_name = context.route_mode_map.get(&route_id).unwrap().to_string();
     let mut vj = objects::VehicleJourney {
         id: vj_id,
-        codes: KeysValues::default(),
-        object_properties: KeysValues::default(),
-        comment_links: CommentLinksT::default(),
         route_id: route_id,
         physical_mode_id: netex_mode_to_physical_mode_id(&mode_name).to_string(),
         dataset_id: "default_dataset".to_string(),
         service_id: calendar_id,
-        headsign: None,
-        block_id: None,
         company_id: service_journey
             .get_child("OperatorRef", &context.namespace)
             .map(|c| c.attr("ref").unwrap().to_string())
             .unwrap_or(context.first_operator_id.to_string()),
-        trip_property_id: None,
-        geometry_id: None,
-        stop_times: vec![],
+        ..Default::default()
     };
     let calls_node = service_journey.get_child("calls", &context.namespace);
-    if calls_node.is_some() {
-        read_calls_stop_times(collections, context, &mut vj, &calls_node.unwrap());
+    if let Some(calls_node) = calls_node {
+        read_calls_stop_times(collections, context, &mut vj, &calls_node);
+        collections.vehicle_journeys.push(vj).unwrap();
+    } else {
+        warn!("Ignoring VehicleJourney : No calls node in ServiceJourney {}.", vj.id);
     }
-    collections.vehicle_journeys.push(vj).unwrap();
 }
 
 fn read_calls_stop_times(
@@ -372,42 +375,46 @@ fn read_calls_stop_times(
     vj: &mut objects::VehicleJourney,
     calls: &Element,
 ) {
-    let mut stop_sequence = 0;
-    for call in calls.children() {
+    for (stop_sequence, call) in calls.children().enumerate() {
         // assuming all children are Call
-        stop_sequence = stop_sequence + 1;
-        let routepoint_id = call
+        if stop_sequence > std::u32::MAX as usize {
+            warn!("The VehicleJourney {} seems to have far more calls than possible !", vj.id);
+            break;
+        }
+        let stoppoint_id = call
             .get_child("ScheduledStopPointRef", &context.namespace)
-            .unwrap()
-            .attr("ref")
-            .unwrap();
-        let stoppoint_id = context.routepoint_mapping.get(routepoint_id).unwrap();
-        vj.stop_times.push(objects::StopTime {
-            stop_point_idx: collections.stop_points.get_idx(&stoppoint_id).unwrap(),
-            sequence: stop_sequence,
-            arrival_time: objects::Time::from_str(
-                call.get_child("Arrival", &context.namespace)
-                    .unwrap()
-                    .get_child("Time", &context.namespace)
-                    .unwrap()
-                    .text()
-                    .as_ref(),
-            ).unwrap(),
-            departure_time: objects::Time::from_str(
-                call.get_child("Departure", &context.namespace)
-                    .unwrap()
-                    .get_child("Time", &context.namespace)
-                    .unwrap()
-                    .text()
-                    .as_ref(),
-            ).unwrap(),
-            boarding_duration: 0,
-            alighting_duration: 0,
-            pickup_type: 0,
-            drop_off_type: 0,
-            datetime_estimated: false,
-            local_zone_id: None,
-        });
+            .and_then(|n| n.attr("ref"))
+            .and_then(|routepoint_id| context.routepoint_mapping.get(routepoint_id));
+        if let Some(stoppoint_id) = stoppoint_id {
+            vj.stop_times.push(objects::StopTime {
+                stop_point_idx: collections.stop_points.get_idx(&stoppoint_id).unwrap(),
+                sequence: stop_sequence as u32,
+                arrival_time: objects::Time::from_str(
+                    call.get_child("Arrival", &context.namespace)
+                        .unwrap()
+                        .get_child("Time", &context.namespace)
+                        .unwrap()
+                        .text()
+                        .as_ref(),
+                ).unwrap(),
+                departure_time: objects::Time::from_str(
+                    call.get_child("Departure", &context.namespace)
+                        .unwrap()
+                        .get_child("Time", &context.namespace)
+                        .unwrap()
+                        .text()
+                        .as_ref(),
+                ).unwrap(),
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 0,
+                datetime_estimated: false,
+                local_zone_id: None,
+            });
+        } else {
+            warn!("Trouble finding a StopPoint for the VehicleJourney {}!", vj.id);
+        }
     }
 }
 

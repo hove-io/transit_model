@@ -557,6 +557,27 @@ pub struct VehicleJourney {
     #[serde(skip)]
     pub stop_times: Vec<StopTime>,
 }
+impl Default for VehicleJourney {
+    fn default() -> VehicleJourney {
+        VehicleJourney {
+            id: "default_vehiclejourney".to_string(),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            route_id: "default_route".to_string(),
+            physical_mode_id: "default_physical_mode".to_string(),
+            dataset_id: "default_dataset".to_string(),
+            service_id: "".to_string(),
+            headsign: None,
+            block_id: None,
+            company_id: "".to_string(),
+            trip_property_id: None,
+            geometry_id: None,
+            stop_times: vec![],
+        }
+    }
+}
+
 impl Id<VehicleJourney> for VehicleJourney {
     fn id(&self) -> &str {
         &self.id

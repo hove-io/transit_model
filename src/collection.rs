@@ -413,7 +413,6 @@ impl<T: Id<T>> CollectionWithId<T> {
 
     /// Moves all the elements of `other` Vec into Self, leaving other empty.
     /// If one of the Vec items is already in the collection, this function returns an Err.
-    /// Else returns the last Idx inserted
     /// # Examples
     ///
     /// ```
