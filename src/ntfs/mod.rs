@@ -26,6 +26,8 @@ use objects::*;
 use std::path;
 use utils::*;
 use Result;
+extern crate tempdir;
+use self::tempdir::TempDir;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
@@ -167,6 +169,18 @@ pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
 
+    Ok(())
+}
+
+/// Exports a `Model` to a
+/// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
+/// ZIP archive at the given full path.
+pub fn write_to_zip<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
+    let path = path.as_ref();
+    info!("Writing NTFS to ZIP File {:?}", path);
+    let input_tmp_dir = TempDir::new("write_ntfs_for_zip")?;
+    write(model, input_tmp_dir.path())?;
+    zip_to(input_tmp_dir.path(), path)?;
     Ok(())
 }
 
