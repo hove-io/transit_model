@@ -46,22 +46,7 @@ pub fn read_config<P: AsRef<path::Path>>(
         info!("Reading dataset and contributor from config: {:?}", config);
 
         contributor = config.contributor;
-
-        use chrono::{Duration, Utc};
-        let duration = Duration::days(15);
-        let today = Utc::today();
-        let start_date = today - duration;
-        let end_date = today + duration;
-        dataset = objects::Dataset {
-            id: config.dataset.dataset_id,
-            contributor_id: contributor.id.clone(),
-            start_date: start_date.naive_utc(),
-            end_date: end_date.naive_utc(),
-            dataset_type: None,
-            extrapolation: false,
-            desc: None,
-            system: None,
-        };
+        dataset = objects::Dataset::new(config.dataset.dataset_id, contributor.id.clone());
     } else {
         contributor = Contributor::default();
         dataset = objects::Dataset::default();

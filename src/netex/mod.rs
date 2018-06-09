@@ -21,7 +21,6 @@ mod read;
 use collection::CollectionWithId;
 use model::{Collections, Model};
 use read_utils;
-use read_utils::{add_prefix, get_validity_period};
 use std::fs;
 use std::path::Path;
 use Result;
@@ -60,15 +59,14 @@ where
                             "Netex read : skipping file in ZIP : {:?}",
                             file.sanitized_name()
                         ),
-                        Some(ext) => {
-                            if ext == "xml" {
-                                read::read_netex_file(&mut collections, file)?;
-                            } else {
-                                info!(
-                                    "Netex read : skipping file in ZIP : {:?}",
-                                    file.sanitized_name()
-                                );
-                            }
+                        Some(ext) if ext == "xml" => {
+                            read::read_netex_file(&mut collections, file)?;
+                        }
+                        _ => {
+                            info!(
+                                "Netex read : skipping file in ZIP : {:?}",
+                                file.sanitized_name()
+                            );
                         }
                     }
                 }
@@ -92,7 +90,7 @@ where
     };
 
     let (contributor, mut dataset) = read_utils::read_config(config_path)?;
-    let vp = get_validity_period(&collections.calendars);
+    let vp = read_utils::get_validity_period(&collections.calendars);
     let vp = match vp {
         None => bail!("No valid calendar in Netex Data"),
         Some(vp) => vp,
@@ -105,7 +103,7 @@ where
     collections.datasets = CollectionWithId::new(vec![dataset])?;
     //add prefixes
     if let Some(prefix) = prefix {
-        add_prefix(prefix, &mut collections)?;
+        read_utils::add_prefix(prefix, &mut collections)?;
     }
 
     Ok(Model::new(collections)?)
