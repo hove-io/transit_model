@@ -55,10 +55,6 @@ where
                 for i in 0..zip.len() {
                     let mut file = zip.by_index(i)?;
                     match file.sanitized_name().extension() {
-                        None => info!(
-                            "Netex read : skipping file in ZIP : {:?}",
-                            file.sanitized_name()
-                        ),
                         Some(ext) if ext == "xml" => {
                             read::read_netex_file(&mut collections, file)?;
                         }
