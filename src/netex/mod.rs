@@ -19,11 +19,12 @@
 mod read;
 
 use collection::CollectionWithId;
-use model::{Collections, Model};
+use model::Model;
 use read_utils;
 use std::fs;
 use std::path::Path;
 use Result;
+use self::read::NetexReader;
 extern crate tempdir;
 extern crate zip;
 
@@ -46,7 +47,7 @@ where
     let path = path.as_ref();
     info!("Reading Netex data from {:?}", path);
     println!("Reading Netex data from {:?}", path);
-    let mut collections = Collections::default();
+    let mut netex_reader = NetexReader::new();
     if path.is_file() {
         match path.extension().and_then(|ext| ext.to_str()) {
             Some("zip") => {
@@ -56,7 +57,7 @@ where
                     let mut file = zip.by_index(i)?;
                     match file.sanitized_name().extension() {
                         Some(ext) if ext == "xml" => {
-                            read::read_netex_file(&mut collections, file)?;
+                            netex_reader.read_netex_file(file)?;
                         }
                         _ => {
                             info!(
@@ -67,7 +68,7 @@ where
                     }
                 }
             }
-            Some("xml") => read::read_netex_file(&mut collections, fs::File::open(path)?)?,
+            Some("xml") => netex_reader.read_netex_file(fs::File::open(path)?)?,
             _ => bail!("Provided netex file should be xml or zip : {:?}", path),
         };
     } else {
@@ -75,7 +76,7 @@ where
             let file = entry?;
             if file.path().extension().map_or(false, |ext| ext == "xml") {
                 let file = fs::File::open(file.path())?;
-                read::read_netex_file(&mut collections, file)?;
+                netex_reader.read_netex_file(file)?;
             } else {
                 info!(
                     "Netex read : skipping file in directory : {:?}",
@@ -86,7 +87,7 @@ where
     };
 
     let (contributor, mut dataset) = read_utils::read_config(config_path)?;
-    let vp = read_utils::get_validity_period(&collections.calendars);
+    let vp = read_utils::get_validity_period(&netex_reader.collections.calendars);
     let vp = match vp {
         None => bail!("No valid calendar in Netex Data"),
         Some(vp) => vp,
@@ -95,12 +96,12 @@ where
     dataset.end_date = vp.end_date;
     dataset.system = Some("Netex".to_string());
 
-    collections.contributors = CollectionWithId::new(vec![contributor])?;
-    collections.datasets = CollectionWithId::new(vec![dataset])?;
+    netex_reader.collections.contributors = CollectionWithId::new(vec![contributor])?;
+    netex_reader.collections.datasets = CollectionWithId::new(vec![dataset])?;
     //add prefixes
     if let Some(prefix) = prefix {
-        read_utils::add_prefix(prefix, &mut collections)?;
+        read_utils::add_prefix(prefix, &mut netex_reader.collections)?;
     }
 
-    Ok(Model::new(collections)?)
+    Ok(Model::new(netex_reader.collections)?)
 }
