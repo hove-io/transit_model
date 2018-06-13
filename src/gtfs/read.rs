@@ -80,16 +80,19 @@ impl From<Agency> for objects::Company {
 }
 
 #[derive(Derivative)]
-#[derivative(Default(bound = ""))]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum StopLocationType {
     #[derivative(Default)]
     #[serde(rename = "0")]
-    StopArea,
-    #[serde(rename = "1")]
     StopPoint,
+    #[serde(rename = "1")]
+    StopArea,
     #[serde(rename = "2")]
     StopEntrace,
+}
+
+impl Default for StopLocationType {
+    fn default() -> StopLocationType {StopLocationType::StopPoint}
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -110,7 +113,7 @@ struct Stop {
     fare_zone_id: Option<String>,
     #[serde(rename = "stop_url")]
     url: Option<String>,
-    #[serde(default)]
+    #[serde(default,deserialize_with = "de_with_empty_default")]
     location_type: StopLocationType,
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
@@ -201,8 +204,8 @@ impl RouteType {
 
 impl<'de> ::serde::Deserialize<'de> for RouteType {
     fn deserialize<D>(deserializer: D) -> StdResult<RouteType, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
+        where
+            D: ::serde::Deserializer<'de>,
     {
         let mut i = u16::deserialize(deserializer)?;
         if i > 7 && i < 99 {
@@ -523,7 +526,7 @@ pub fn read_stops<P: AsRef<path::Path>>(
         let comment_links = manage_comment_from_stop(comments, &stop);
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
-            StopLocationType::StopArea => {
+            StopLocationType::StopPoint => {
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
                     new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
@@ -536,7 +539,7 @@ pub fn read_stops<P: AsRef<path::Path>>(
                 stop_point.equipment_id = equipment_id;
                 stop_points.push(stop_point);
             }
-            StopLocationType::StopPoint => {
+            StopLocationType::StopArea => {
                 let mut stop_area = objects::StopArea::from(stop);
                 stop_area.comment_links = comment_links;
                 stop_area.equipment_id = equipment_id;
@@ -759,6 +762,7 @@ fn get_route_with_smallest_name<'a>(routes: &'a [&Route]) -> &'a Route {
 }
 
 type MapLineRoutes<'a> = HashMap<(Option<String>, String), Vec<&'a Route>>;
+
 fn map_line_routes(gtfs_routes: &CollectionWithId<Route>) -> MapLineRoutes {
     let mut map = HashMap::new();
     for r in gtfs_routes.values() {
@@ -1977,6 +1981,26 @@ mod tests {
                     name: "Train".to_string(),
                     co2_emission: None
                 }])
+        });
+    }
+
+    #[test]
+    fn location_type_default_value() {
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type\n\
+                            stop:1,Tornio pouet,65.843294,24.145138,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+            let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let (stop_areas, stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            assert_eq!(1, stop_points.len());
+            assert_eq!(1, stop_areas.len());
+            let stop_area = stop_areas.iter().next().unwrap().1;
+            assert_eq!("Navitia:stop:1", stop_area.id);
+            let stop_point = stop_points.iter().next().unwrap().1;
+            assert_eq!("stop:1", stop_point.id);
         });
     }
 }
