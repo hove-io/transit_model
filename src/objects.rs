@@ -23,6 +23,7 @@ use collection::{Id, Idx};
 use std::collections::BTreeSet;
 use std::str::FromStr;
 use utils::*;
+use std::hash::{Hash, Hasher};
 
 pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);
@@ -282,7 +283,7 @@ impl AddPrefix for CommercialMode {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PhysicalMode {
     #[serde(rename = "physical_mode_id")]
     pub id: String,
@@ -295,6 +296,20 @@ impl Id<PhysicalMode> for PhysicalMode {
         &self.id
     }
 }
+
+impl Hash for PhysicalMode {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (&self.id, &self.name).hash(state);
+    }
+}
+
+impl PartialEq for PhysicalMode {
+    fn eq(&self, other: &PhysicalMode) -> bool {
+        self.id == other.id && self.name == other.name
+    }
+}
+
+impl Eq for PhysicalMode {}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Network {

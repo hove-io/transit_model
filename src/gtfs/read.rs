@@ -591,21 +591,23 @@ pub fn read_transfers<P: AsRef<path::Path>>(
     let mut transfers = vec![];
     for transfer in rdr.deserialize() {
         let transfer: Transfer = transfer.with_context(ctx_from_path!(path))?;
-        let from_stop_point = stop_points.get(&transfer.from_stop_id).ok_or_else(|| {
-            format_err!(
+        let from_stop_point = skip_fail!(stop_points.get(&transfer.from_stop_id).ok_or_else(
+            || format_err!(
                 "Problem reading {:?}: from_stop_id={:?} not found",
                 path,
                 transfer.from_stop_id
             )
-        })?;
+        ));
 
-        let to_stop_point = stop_points.get(&transfer.to_stop_id).ok_or_else(|| {
-            format_err!(
-                "Problem reading {:?}: to_stop_id={:?} not found",
-                path,
-                transfer.to_stop_id
-            )
-        })?;
+        let to_stop_point = skip_fail!(stop_points.get(&transfer.to_stop_id).ok_or_else(
+            || {
+                format_err!(
+                    "Problem reading {:?}: to_stop_id={:?} not found",
+                    path,
+                    transfer.to_stop_id
+                )
+            }
+        ));
 
         let (min_transfer_time, real_min_transfer_time) = match transfer.transfer_type {
             TransferType::Recommended => {
@@ -744,10 +746,11 @@ fn get_modes_from_gtfs(
         .iter()
         .map(|mt| get_commercial_mode(mt))
         .collect();
-    let physical_modes = gtfs_mode_types
+    let physical_modes_set: HashSet<objects::PhysicalMode> = gtfs_mode_types
         .iter()
         .map(|mt| get_physical_mode(mt))
         .collect();
+    let physical_modes: Vec<objects::PhysicalMode> = physical_modes_set.into_iter().collect();
     (commercial_modes, physical_modes)
 }
 
@@ -1932,6 +1935,48 @@ mod tests {
                     system: None,
                 }]
             );
+        });
+    }
+
+    #[test]
+    fn deduplicate_funicular_physical_mode() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color\n\
+                                 route:1,agency:1,S1,S 1,,5,,ffea00,000000\n\
+                                 route:2,agency:1,L2,L 2,,6,,ffea00,000000\n\
+                                 route:3,agency:1,L3,L 3,,2,,ffea00,000000\n\
+                                 route:4,agency:2,57,57,,7,,ffea00,000000";
+        let trips_content = "route_id,service_id,trip_id,trip_headsign,direction_id,shape_id\n\
+                             route:1,service:1,trip:1,pouet,0,\n\
+                             route:2,service:1,trip:2,pouet,0,\n\
+                             route:3,service:1,trip:3,pouet,0,\n\
+                             route:4,service:1,trip:4,pouet,0,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+
+            let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+
+            super::read_routes(tmp_dir, &mut collections).unwrap();
+            // physical mode file should contain only two modes (5,6,7 => funicular 2 => train)
+            assert_eq!(4, collections.lines.len());
+            assert_eq!(4, collections.commercial_modes.len());
+            assert_eq!(
+                collections.physical_modes.into_vec(),
+                vec![
+                PhysicalMode {
+                id: "Funicular".to_string(),
+                name: "Funicular".to_string(),
+                co2_emission: None
+            },
+                PhysicalMode {
+                    id: "Train".to_string(),
+                    name: "Train".to_string(),
+                    co2_emission: None
+                }])
         });
     }
 }
