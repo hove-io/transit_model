@@ -19,12 +19,11 @@ extern crate navitia_model;
 extern crate tempdir;
 extern crate zip;
 
+use navitia_model::Result;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
 use tempdir::TempDir;
-pub type Error = failure::Error;
-pub type Result<T> = std::result::Result<T, Error>;
 
 fn compare_ntfs_zips<P, T>(ntfs_zipfile1: P, ntfs_zipfile2: T) -> Result<()>
 where
