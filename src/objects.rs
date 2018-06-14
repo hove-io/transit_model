@@ -21,9 +21,9 @@
 use chrono;
 use collection::{Id, Idx};
 use std::collections::BTreeSet;
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use utils::*;
-use std::hash::{Hash, Hasher};
 
 pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);
@@ -283,7 +283,7 @@ impl AddPrefix for CommercialMode {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Ord)]
 pub struct PhysicalMode {
     #[serde(rename = "physical_mode_id")]
     pub id: String,
