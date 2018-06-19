@@ -222,7 +222,7 @@ impl Dataset {
 
         Dataset {
             id: dataset_id,
-            contributor_id: contributor_id,
+            contributor_id,
             start_date: validity_period.start_date,
             end_date: validity_period.end_date,
             dataset_type: None,

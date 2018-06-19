@@ -348,6 +348,58 @@ struct StopTime {
     drop_off_type: u8,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct Shape {
+    #[serde(rename = "shape_id")]
+    id: String,
+    #[serde(rename = "shape_pt_lat")]
+    lat: f64,
+    #[serde(rename = "shape_pt_lon")]
+    lon: f64,
+    #[serde(rename = "shape_pt_sequence")]
+    sequence: u32,
+}
+
+fn make_wkt_linestring(coords: &[Coord]) -> String {
+    let mut strings = coords.iter().fold(String::new(), |acc, s| {
+        acc + &s.lon.to_string() + " " + &s.lat.to_string() + ","
+    });
+
+    strings.pop();
+
+    format!("LINESTRING({})", strings)
+}
+
+pub fn manage_shapes<P: AsRef<path::Path>>(path: P) -> Result<CollectionWithId<objects::Geometry>> {
+    info!("Reading shapes.txt");
+    let path = path.as_ref().join("shapes.txt");
+    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut shapes: Vec<Shape> = rdr
+        .deserialize()
+        .collect::<StdResult<_, _>>()
+        .with_context(ctx_from_path!(path))?;
+
+    shapes.sort_unstable_by_key(|s| s.sequence);
+    let mut map: HashMap<String, Vec<Coord>> = HashMap::new();
+    for s in &shapes {
+        map.entry(s.id.clone())
+            .or_insert_with(|| vec![])
+            .push(objects::Coord {
+                lon: s.lon,
+                lat: s.lat,
+            });
+    }
+
+    Ok(CollectionWithId::new(
+        map.iter()
+            .map(|(id, coords)| objects::Geometry {
+                id: id.to_string(),
+                wkt: make_wkt_linestring(coords),
+            })
+            .collect(),
+    )?)
+}
+
 pub fn manage_stop_times<P: AsRef<path::Path>>(
     collections: &mut Collections,
     path: P,
@@ -635,8 +687,8 @@ pub fn read_transfers<P: AsRef<path::Path>>(
         transfers.push(objects::Transfer {
             from_stop_id: from_stop_point.id.clone(),
             to_stop_id: to_stop_point.id.clone(),
-            min_transfer_time: min_transfer_time,
-            real_min_transfer_time: real_min_transfer_time,
+            min_transfer_time,
+            real_min_transfer_time,
             equipment_id: None,
         });
     }
@@ -1974,6 +2026,36 @@ mod tests {
                     desc: None,
                     system: None,
                 }]
+            );
+        });
+    }
+
+    #[test]
+    fn read_shapes() {
+        let shapes_content = "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence\n\
+                              1,47.22101603,-1.52479552,2\n\
+                              1,47.22101603,-1.52479552,1\n\
+                              2,47.25877238,-1.52421546,1";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "shapes.txt", shapes_content);
+
+            let mut geometries = super::manage_shapes(tmp_dir.as_ref()).unwrap().into_vec();
+            geometries.sort_unstable_by_key(|s| s.id.clone());
+
+            assert_eq!(
+                geometries,
+                vec![
+                    Geometry {
+                        id: "1".to_string(),
+                        wkt: "LINESTRING(-1.52479552 47.22101603,-1.52479552 47.22101603)"
+                            .to_string(),
+                    },
+                    Geometry {
+                        id: "2".to_string(),
+                        wkt: "LINESTRING(-1.52421546 47.25877238)".to_string(),
+                    },
+                ]
             );
         });
     }
