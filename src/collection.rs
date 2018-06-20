@@ -167,16 +167,14 @@ impl<T> Collection<T> {
     /// let transit_refs: Vec<&&str> = c.iter_from(&transit_indices).collect();
     /// assert_eq!(transit_refs, &[&"bus", &"metro", &"train"]);
     /// ```
-    pub fn iter_from<'a, I>(&'a self, indexes: I) -> Box<Iterator<Item = &T> + 'a>
+    pub fn iter_from<I>(&self, indexes: I) -> impl Iterator<Item = &T>
     where
-        I: IntoIterator + 'a,
+        I: IntoIterator,
         I::Item: Borrow<Idx<T>>,
     {
-        Box::new(
-            indexes
-                .into_iter()
-                .map(move |item| &self.objects[item.borrow().get()]),
-        )
+        indexes
+            .into_iter()
+            .map(move |item| &self.objects[item.borrow().get()])
     }
 
     /// Push an element in the `Collection` without control.
