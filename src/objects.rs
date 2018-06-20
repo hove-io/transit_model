@@ -20,7 +20,9 @@
 
 use chrono;
 use collection::{Id, Idx};
+use std::cmp::Ordering;
 use std::collections::BTreeSet;
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use utils::*;
 
@@ -282,7 +284,7 @@ impl AddPrefix for CommercialMode {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PhysicalMode {
     #[serde(rename = "physical_mode_id")]
     pub id: String,
@@ -290,11 +292,38 @@ pub struct PhysicalMode {
     pub name: String,
     pub co2_emission: Option<f32>,
 }
+
 impl Id<PhysicalMode> for PhysicalMode {
     fn id(&self) -> &str {
         &self.id
     }
 }
+
+impl Hash for PhysicalMode {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (&self.id, &self.name).hash(state);
+    }
+}
+
+impl Ord for PhysicalMode {
+    fn cmp(&self, other: &PhysicalMode) -> Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
+impl PartialOrd for PhysicalMode {
+    fn partial_cmp(&self, other: &PhysicalMode) -> Option<Ordering> {
+        Some(self.cmp(&other))
+    }
+}
+
+impl PartialEq for PhysicalMode {
+    fn eq(&self, other: &PhysicalMode) -> bool {
+        self.id == other.id && self.name == other.name
+    }
+}
+
+impl Eq for PhysicalMode {}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Network {

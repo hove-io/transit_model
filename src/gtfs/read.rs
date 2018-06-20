@@ -22,7 +22,7 @@ use objects::{
     self, Availability, CommentLinksT, Contributor, Coord, KeysValues, Time, TransportType,
 };
 use read_utils;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs::File;
 use std::path;
 use std::result::Result as StdResult;
@@ -79,15 +79,14 @@ impl From<Agency> for objects::Company {
     }
 }
 
-#[derive(Derivative)]
-#[derivative(Default(bound = ""))]
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derivative(Default)]
+#[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum StopLocationType {
     #[derivative(Default)]
     #[serde(rename = "0")]
-    StopArea,
-    #[serde(rename = "1")]
     StopPoint,
+    #[serde(rename = "1")]
+    StopArea,
     #[serde(rename = "2")]
     StopEntrace,
 }
@@ -110,7 +109,7 @@ struct Stop {
     fare_zone_id: Option<String>,
     #[serde(rename = "stop_url")]
     url: Option<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "de_with_empty_default")]
     location_type: StopLocationType,
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
@@ -293,7 +292,7 @@ struct Trip {
     headsign: Option<String>,
     #[serde(rename = "trip_short_name")]
     short_name: Option<String>,
-    #[serde(deserialize_with = "de_with_empty_default", rename = "direction_id")]
+    #[serde(default, deserialize_with = "de_with_empty_default", rename = "direction_id")]
     direction: DirectionType,
     block_id: Option<String>,
     shape_id: Option<String>,
@@ -523,7 +522,7 @@ pub fn read_stops<P: AsRef<path::Path>>(
         let comment_links = manage_comment_from_stop(comments, &stop);
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
-            StopLocationType::StopArea => {
+            StopLocationType::StopPoint => {
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
                     new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
@@ -536,7 +535,7 @@ pub fn read_stops<P: AsRef<path::Path>>(
                 stop_point.equipment_id = equipment_id;
                 stop_points.push(stop_point);
             }
-            StopLocationType::StopPoint => {
+            StopLocationType::StopArea => {
                 let mut stop_area = objects::StopArea::from(stop);
                 stop_area.comment_links = comment_links;
                 stop_area.equipment_id = equipment_id;
@@ -591,21 +590,23 @@ pub fn read_transfers<P: AsRef<path::Path>>(
     let mut transfers = vec![];
     for transfer in rdr.deserialize() {
         let transfer: Transfer = transfer.with_context(ctx_from_path!(path))?;
-        let from_stop_point = stop_points.get(&transfer.from_stop_id).ok_or_else(|| {
-            format_err!(
+        let from_stop_point = skip_fail!(stop_points.get(&transfer.from_stop_id).ok_or_else(
+            || format_err!(
                 "Problem reading {:?}: from_stop_id={:?} not found",
                 path,
                 transfer.from_stop_id
             )
-        })?;
+        ));
 
-        let to_stop_point = stop_points.get(&transfer.to_stop_id).ok_or_else(|| {
-            format_err!(
-                "Problem reading {:?}: to_stop_id={:?} not found",
-                path,
-                transfer.to_stop_id
-            )
-        })?;
+        let to_stop_point = skip_fail!(stop_points.get(&transfer.to_stop_id).ok_or_else(
+            || {
+                format_err!(
+                    "Problem reading {:?}: to_stop_id={:?} not found",
+                    path,
+                    transfer.to_stop_id
+                )
+            }
+        ));
 
         let (min_transfer_time, real_min_transfer_time) = match transfer.transfer_type {
             TransferType::Recommended => {
@@ -747,6 +748,8 @@ fn get_modes_from_gtfs(
     let physical_modes = gtfs_mode_types
         .iter()
         .map(|mt| get_physical_mode(mt))
+        .collect::<BTreeSet<_>>()
+        .into_iter()
         .collect();
     (commercial_modes, physical_modes)
 }
@@ -756,6 +759,7 @@ fn get_route_with_smallest_name<'a>(routes: &'a [&Route]) -> &'a Route {
 }
 
 type MapLineRoutes<'a> = HashMap<(Option<String>, String), Vec<&'a Route>>;
+
 fn map_line_routes(gtfs_routes: &CollectionWithId<Route>) -> MapLineRoutes {
     let mut map = HashMap::new();
     for r in gtfs_routes.values() {
@@ -1447,6 +1451,41 @@ mod tests {
     }
 
     #[test]
+    fn gtfs_trips_no_direction_id() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF\n\
+                              route_2,agency_2,2,My line 2,3,8F7A32,FFFFFF\n\
+                              route_3,agency_3,3,My line 3,3,8F7A32,FFFFFF";
+        let trips_content = "trip_id,route_id,service_id,wheelchair_accessible,bikes_allowed\n\
+                             1,route_1,service_1,,\n\
+                             2,route_2,service_1,1,2\n\
+                             3,route_3,service_1,1,2";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+
+            let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+
+            super::read_routes(tmp_dir, &mut collections).unwrap();
+            assert_eq!(3, collections.lines.len());
+            assert_eq!(3, collections.routes.len());
+
+            assert_eq!(
+                extract(|r| &r.direction_type, &collections.routes),
+                &[
+                    &Some("forward".to_string()),
+                    &Some("forward".to_string()),
+                    &Some("forward".to_string())
+                ]
+            );
+        });
+    }
+
+    #[test]
     fn gtfs_trips_with_no_accessibility_information() {
         let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
                               route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF";
@@ -1932,6 +1971,59 @@ mod tests {
                     system: None,
                 }]
             );
+        });
+    }
+
+    #[test]
+    fn deduplicate_funicular_physical_mode() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color\n\
+                                 route:1,agency:1,S1,S 1,,5,,ffea00,000000\n\
+                                 route:2,agency:1,L2,L 2,,6,,ffea00,000000\n\
+                                 route:3,agency:1,L3,L 3,,2,,ffea00,000000\n\
+                                 route:4,agency:2,57,57,,7,,ffea00,000000";
+        let trips_content = "route_id,service_id,trip_id,trip_headsign,direction_id,shape_id\n\
+                             route:1,service:1,trip:1,pouet,0,\n\
+                             route:2,service:1,trip:2,pouet,0,\n\
+                             route:3,service:1,trip:3,pouet,0,\n\
+                             route:4,service:1,trip:4,pouet,0,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+
+            let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+
+            super::read_routes(tmp_dir, &mut collections).unwrap();
+            // physical mode file should contain only two modes (5,6,7 => funicular 2 => train)
+            assert_eq!(4, collections.lines.len());
+            assert_eq!(4, collections.commercial_modes.len());
+            assert_eq!(
+                extract_ids(&collections.physical_modes),
+                &["Funicular", "Train"]
+            );
+        });
+    }
+
+    #[test]
+    fn location_type_default_value() {
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type\n\
+                             stop:1,Tornio pouet,65.843294,24.145138,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+            let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let (stop_areas, stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            assert_eq!(1, stop_points.len());
+            assert_eq!(1, stop_areas.len());
+            let stop_area = stop_areas.iter().next().unwrap().1;
+            assert_eq!("Navitia:stop:1", stop_area.id);
+            let stop_point = stop_points.iter().next().unwrap().1;
+            assert_eq!("stop:1", stop_point.id);
         });
     }
 }
