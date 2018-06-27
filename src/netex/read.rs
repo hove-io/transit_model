@@ -30,7 +30,6 @@ use self::minidom::Element;
 // type RoutePointMapping = HashMap<RoutePointId, StopPointId>;
 // type RouteLineMap = HashMap<String, String>;
 
-
 #[derive(Default)]
 struct NetexContext {
     namespace: String,
@@ -47,7 +46,7 @@ pub struct NetexReader {
     pub collections: Collections,
 }
 impl NetexReader {
-    pub fn new()->Self {
+    pub fn new() -> Self {
         NetexReader {
             context: NetexContext::default(),
             collections: Collections::default(),
@@ -114,20 +113,18 @@ impl NetexReader {
     }
 
     fn read_organisations(&mut self, organisations: &Element) -> Result<()> {
-        let companies : Result<Vec<objects::Company>> = organisations
+        let companies: Result<Vec<objects::Company>> = organisations
             .children()
             .filter(|node| node.name() == "Operator")
             .map(|node| match node.attr("id") {
-                Some(id) => Ok(
-                    objects::Company {
-                        id: id.to_string(),
-                        name: node
-                            .get_child("Name", &self.context.namespace)
-                            .map_or("".to_string(), |n| n.text().to_string()),
-                        ..Default::default()
-                    }
-                ),
-                _ => bail!("An 'Operator' node doesn't have an 'id' property.")
+                Some(id) => Ok(objects::Company {
+                    id: id.to_string(),
+                    name: node
+                        .get_child("Name", &self.context.namespace)
+                        .map_or("".to_string(), |n| n.text().to_string()),
+                    ..Default::default()
+                }),
+                _ => bail!("An 'Operator' node doesn't have an 'id' property."),
             })
             .collect();
         let companies = companies?;
@@ -140,7 +137,8 @@ impl NetexReader {
             self.collections.companies.append(&mut companies)?;
         } else {
             self.context.first_operator_id = "default_company".to_string();
-            if self.collections
+            if self
+                .collections
                 .companies
                 .get_idx(&self.context.first_operator_id)
                 .is_none()
@@ -151,14 +149,14 @@ impl NetexReader {
             };
         }
         Ok(())
-    }    
+    }
 }
 
 #[cfg(test)]
 mod tests {
     extern crate minidom;
     use self::minidom::Element;
-    
+
     #[test]
     fn test_read_organisations_empty() {
         let mut netex_reader = super::NetexReader::new();
@@ -172,13 +170,12 @@ mod tests {
     #[test]
     fn test_read_organisations_normal() {
         let mut netex_reader = super::NetexReader::new();
-        let mut organisations = Element::builder("organisations")
-                   .ns("")
-                   .build();
+        let mut organisations = Element::builder("organisations").ns("").build();
         let operator: Element = r#"<Operator version="1" id="RATP_PIVI:Company:100">
 							<CompanyNumber>100</CompanyNumber>
 							<Name>RATP</Name>
-						</Operator>"#.parse().unwrap();
+						</Operator>"#.parse()
+            .unwrap();
         organisations.append_child(operator);
 
         netex_reader.read_organisations(&organisations).unwrap();
@@ -190,14 +187,13 @@ mod tests {
     #[test]
     fn test_read_organisations_no_name() {
         let mut netex_reader = super::NetexReader::new();
-        let mut organisations = Element::builder("organisations")
-                   .ns("")
-                   .build();
+        let mut organisations = Element::builder("organisations").ns("").build();
         let operator: Element = r#"<Operator version="1" id="RATP_PIVI:Company:100">
 							<CompanyNumber>100</CompanyNumber>
-						</Operator>"#.parse().unwrap();
+						</Operator>"#.parse()
+            .unwrap();
         organisations.append_child(operator);
-        
+
         netex_reader.read_organisations(&organisations).unwrap();
         assert_eq!(netex_reader.collections.companies.len(), 1);
         let company = netex_reader.collections.companies.iter().next().unwrap().1;
@@ -208,17 +204,14 @@ mod tests {
     #[test]
     fn test_read_organisations_no_id() {
         let mut netex_reader = super::NetexReader::new();
-        let mut organisations = Element::builder("organisations")
-                   .ns("")
-                   .build();
+        let mut organisations = Element::builder("organisations").ns("").build();
         let operator: Element = r#"<Operator version="1" identifier="RATP_PIVI:Company:100">
 							<CompanyNumber>100</CompanyNumber>
-						</Operator>"#.parse().unwrap();
+						</Operator>"#.parse()
+            .unwrap();
         organisations.append_child(operator);
-        
-        assert!(
-            netex_reader.read_organisations(&organisations).is_err()
-        );
+
+        assert!(netex_reader.read_organisations(&organisations).is_err());
         assert_eq!(netex_reader.collections.companies.len(), 0);
     }
 }

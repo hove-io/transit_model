@@ -18,13 +18,13 @@
 
 mod read;
 
+use self::read::NetexReader;
 use collection::CollectionWithId;
 use model::Model;
 use read_utils;
 use std::fs;
 use std::path::Path;
 use Result;
-use self::read::NetexReader;
 extern crate tempdir;
 extern crate zip;
 
