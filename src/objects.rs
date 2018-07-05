@@ -20,6 +20,7 @@
 
 use chrono;
 use collection::{Id, Idx};
+use geo_types::Geometry as GeoGeometry;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
@@ -1139,8 +1140,12 @@ impl AddPrefix for TripProperty {
 pub struct Geometry {
     #[serde(rename = "geometry_id")]
     pub id: String,
-    #[serde(rename = "geometry_wkt")]
-    pub wkt: String,
+    #[serde(
+        rename = "geometry_wkt",
+        deserialize_with = "de_wkt",
+        serialize_with = "ser_geometry"
+    )]
+    pub geometry: GeoGeometry<f64>,
 }
 
 impl Id<Geometry> for Geometry {
