@@ -19,10 +19,8 @@ use objects;
 use std::io::Read;
 use Result;
 
-extern crate quick_xml;
-extern crate serde_json;
-use self::quick_xml::Reader;
 extern crate minidom;
+extern crate serde_json;
 use self::minidom::Element;
 
 // type RoutePointId = String;
@@ -41,23 +39,16 @@ struct NetexContext {
     // journeypattern_route_map: HashMap<String, String>,
 }
 
+#[derive(Default)]
 pub struct NetexReader {
     context: NetexContext,
     pub collections: Collections,
 }
 impl NetexReader {
-    pub fn new() -> Self {
-        NetexReader {
-            context: NetexContext::default(),
-            collections: Collections::default(),
-        }
-    }
-
     pub fn read_netex_file<R: Read>(&mut self, mut file: R) -> Result<()> {
         let mut file_content = "".to_string();
         file.read_to_string(&mut file_content)?;
-        let mut reader = Reader::from_str(&file_content);
-        let root = Element::from_reader(&mut reader)?;
+        let root: Element = file_content.parse()?;
 
         self.context.namespace = root.ns().unwrap_or("".to_string());
 
@@ -128,7 +119,7 @@ impl NetexReader {
             })
             .collect();
         let companies = companies?;
-        if companies.len() > 0 {
+        if !companies.is_empty() {
             self.context.first_operator_id = companies[0].id.to_string();
             let mut companies: Vec<objects::Company> = companies
                 .into_iter()
@@ -159,7 +150,7 @@ mod tests {
 
     #[test]
     fn test_read_organisations_empty() {
-        let mut netex_reader = super::NetexReader::new();
+        let mut netex_reader = super::NetexReader::default();
         let organisations = Element::bare("organisations");
         netex_reader.read_organisations(&organisations).unwrap();
         assert_eq!(netex_reader.collections.companies.len(), 1);
@@ -169,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_read_organisations_normal() {
-        let mut netex_reader = super::NetexReader::new();
+        let mut netex_reader = super::NetexReader::default();
         let mut organisations = Element::builder("organisations").ns("").build();
         let operator: Element = r#"<Operator version="1" id="RATP_PIVI:Company:100">
 							<CompanyNumber>100</CompanyNumber>
@@ -186,7 +177,7 @@ mod tests {
 
     #[test]
     fn test_read_organisations_no_name() {
-        let mut netex_reader = super::NetexReader::new();
+        let mut netex_reader = super::NetexReader::default();
         let mut organisations = Element::builder("organisations").ns("").build();
         let operator: Element = r#"<Operator version="1" id="RATP_PIVI:Company:100">
 							<CompanyNumber>100</CompanyNumber>
@@ -203,7 +194,7 @@ mod tests {
 
     #[test]
     fn test_read_organisations_no_id() {
-        let mut netex_reader = super::NetexReader::new();
+        let mut netex_reader = super::NetexReader::default();
         let mut organisations = Element::builder("organisations").ns("").build();
         let operator: Element = r#"<Operator version="1" identifier="RATP_PIVI:Company:100">
 							<CompanyNumber>100</CompanyNumber>

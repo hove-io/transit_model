@@ -47,7 +47,7 @@ where
     let path = path.as_ref();
     info!("Reading Netex data from {:?}", path);
     println!("Reading Netex data from {:?}", path);
-    let mut netex_reader = NetexReader::new();
+    let mut netex_reader = NetexReader::default();
     if path.is_file() {
         match path.extension().and_then(|ext| ext.to_str()) {
             Some("zip") => {
