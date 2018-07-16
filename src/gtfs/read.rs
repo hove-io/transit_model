@@ -292,7 +292,11 @@ struct Trip {
     headsign: Option<String>,
     #[serde(rename = "trip_short_name")]
     short_name: Option<String>,
-    #[serde(default, deserialize_with = "de_with_empty_default", rename = "direction_id")]
+    #[serde(
+        default,
+        deserialize_with = "de_with_empty_default",
+        rename = "direction_id"
+    )]
     direction: DirectionType,
     block_id: Option<String>,
     shape_id: Option<String>,
