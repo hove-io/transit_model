@@ -124,11 +124,11 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.companies = make_collection_with_id(path, "companies.txt")?;
     collections.equipments = make_opt_collection_with_id(path, "equipments.txt")?;
     collections.trip_properties = make_opt_collection_with_id(path, "trip_properties.txt")?;
-    collections.geometries = make_opt_collection_with_id(path, "geometries.txt")?;
     collections.comments = make_opt_collection_with_id(path, "comments.txt")?;
     collections.transfers = make_opt_collection(path, "transfers.txt")?;
     collections.admin_stations = make_opt_collection(path, "admin_stations.txt")?;
     common_format::manage_calendars(&mut collections, path)?;
+    read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
     read::manage_stops(&mut collections, path)?;
     read::manage_stop_times(&mut collections, path)?;
@@ -198,6 +198,7 @@ mod tests {
     use collection::*;
     use collection::{Collection, CollectionWithId};
     use common_format;
+    use geo_types::{Geometry as GeoGeometry, LineString, Point};
     use objects::*;
     use serde;
     use std::collections::HashMap;
@@ -1066,11 +1067,17 @@ mod tests {
         test_serialize_deserialize_collection_with_id(vec![
             Geometry {
                 id: "geo-id-1".to_string(),
-                wkt: "LINESTRING(2.541951 49.013402,2.571294 49.004725)".to_string(),
+                geometry: GeoGeometry::LineString(LineString(vec![
+                    Point::new(2.541951, 49.013402),
+                    Point::new(2.571294, 49.004725),
+                ])),
             },
             Geometry {
                 id: "geo-id-2".to_string(),
-                wkt: "LINESTRING(2.548309 49.009182,2.549309 49.009253)".to_string(),
+                geometry: GeoGeometry::LineString(LineString(vec![
+                    Point::new(2.548309, 49.009182),
+                    Point::new(2.549309, 49.009253),
+                ])),
             },
         ]);
     }

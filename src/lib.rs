@@ -35,6 +35,8 @@ extern crate walkdir;
 extern crate zip;
 #[macro_use]
 extern crate serde_derive;
+extern crate geo_types;
+extern crate wkt;
 
 #[macro_use]
 pub(crate) mod utils;

@@ -358,3 +358,25 @@ pub fn manage_object_properties(collections: &mut Collections, path: &path::Path
     }
     Ok(())
 }
+
+pub fn manage_geometries(collections: &mut Collections, path: &path::Path) -> Result<()> {
+    let file = "geometries.txt";
+    let path = path.join(file);
+    if !path.exists() {
+        info!("Skipping {}", file);
+        return Ok(());
+    }
+
+    info!("Reading {}", file);
+
+    let mut geometries: Vec<Geometry> = vec![];
+    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    for geometry in rdr.deserialize() {
+        let geometry: Geometry = skip_fail!(geometry);
+        geometries.push(geometry)
+    }
+
+    collections.geometries = CollectionWithId::new(geometries)?;
+
+    Ok(())
+}

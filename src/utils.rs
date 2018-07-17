@@ -18,11 +18,14 @@ use chrono::NaiveDate;
 use collection::{Collection, CollectionWithId, Id};
 use csv;
 use failure::ResultExt;
+use geo_types;
 use objects::{AddPrefix, Date};
 use std::fs;
 use std::io::{Read, Write};
 use std::path;
 use walkdir::WalkDir;
+use wkt::{self, ToWkt};
+
 use zip;
 
 pub fn zip_to<P, R>(source_path: P, zip_file: R) -> ::Result<()>
@@ -110,6 +113,8 @@ where
     })
 }
 
+use wkt::conversion::try_into_geometry;
+
 pub fn de_with_empty_or_invalid_default<'de, D, T>(de: D) -> Result<T, D::Error>
 where
     D: ::serde::Deserializer<'de>,
@@ -117,6 +122,27 @@ where
     T: Default,
 {
     de_with_invalid_option(de).map(|opt| opt.unwrap_or_else(Default::default))
+}
+
+pub fn de_wkt<'de, D>(deserializer: D) -> Result<geo_types::Geometry<f64>, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let s = String::deserialize(deserializer)?;
+    let wkt = wkt::Wkt::from_str(&s).map_err(::serde::de::Error::custom)?;
+    try_into_geometry(&wkt.items[0]).map_err(::serde::de::Error::custom)
+}
+
+pub fn ser_geometry<S>(
+    geometry: &geo_types::Geometry<f64>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: ::serde::Serializer,
+{
+    let wkt = geometry.to_wkt();
+    serializer.serialize_str(&format!("{}", wkt.items[0]))
 }
 
 macro_rules! ctx_from_path {
@@ -213,7 +239,7 @@ macro_rules! skip_fail {
         match $res {
             Ok(val) => val,
             Err(e) => {
-                warn!("{:?}", e);
+                warn!("{}", e);
                 continue;
             }
         }

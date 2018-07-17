@@ -19,6 +19,8 @@ minidom = "0.9.0"
 zip = "0.3.2"
 tempdir = "0.3.7"
 walkdir = "2.1.4"
+geo-types = "0.1.1"
+wkt = "0.1.2"
 
 [dependencies.get-corresponding-derive]
 path = "get-corresponding-derive"
