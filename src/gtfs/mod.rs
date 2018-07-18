@@ -63,8 +63,7 @@ where
     collections.stop_areas = stop_areas;
     collections.stop_points = stop_points;
 
-    let geometries = read::manage_shapes(path)?;
-    collections.geometries = geometries;
+    read::manage_shapes(&mut collections, path)?;
 
     read::read_routes(path, &mut collections)?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;

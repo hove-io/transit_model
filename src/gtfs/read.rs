@@ -361,9 +361,15 @@ pub struct Shape {
     sequence: u32,
 }
 
-pub fn manage_shapes<P: AsRef<path::Path>>(path: P) -> Result<CollectionWithId<objects::Geometry>> {
-    info!("Reading shapes.txt");
-    let path = path.as_ref().join("shapes.txt");
+pub fn manage_shapes<P: AsRef<path::Path>>(collections: &mut Collections, path: P) -> Result<()> {
+    let file = "shapes.txt";
+    let path = path.as_ref().join(file);
+    if !path.exists() {
+        info!("Skipping {}", file);
+        return Ok(());
+    }
+
+    info!("Reading {}", file);
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
     let mut shapes: Vec<Shape> = rdr
         .deserialize()
@@ -378,7 +384,7 @@ pub fn manage_shapes<P: AsRef<path::Path>>(path: P) -> Result<CollectionWithId<o
             .push((s.lon, s.lat).into());
     }
 
-    Ok(CollectionWithId::new(
+    collections.geometries = CollectionWithId::new(
         map.iter()
             .map(|(id, points)| {
                 let linestring: LineString<f64> = points.to_vec().into();
@@ -388,7 +394,9 @@ pub fn manage_shapes<P: AsRef<path::Path>>(path: P) -> Result<CollectionWithId<o
                 }
             })
             .collect(),
-    )?)
+    )?;
+
+    Ok(())
 }
 
 pub fn manage_stop_times<P: AsRef<path::Path>>(
@@ -2032,7 +2040,9 @@ mod tests {
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "shapes.txt", shapes_content);
 
-            let mut geometries = super::manage_shapes(tmp_dir.as_ref()).unwrap().into_vec();
+            let mut collections = Collections::default();
+            super::manage_shapes(&mut collections, tmp_dir.as_ref()).unwrap();
+            let mut geometries = collections.geometries.into_vec();
             geometries.sort_unstable_by_key(|s| s.id.clone());
 
             assert_eq!(
@@ -2054,6 +2064,16 @@ mod tests {
                     },
                 ]
             );
+        });
+    }
+
+    #[test]
+    fn read_shapes_with_no_shapes_file() {
+        test_in_tmp_dir(|ref tmp_dir| {
+            let mut collections = Collections::default();
+            super::manage_shapes(&mut collections, tmp_dir.as_ref()).unwrap();
+            let geometries = collections.geometries.into_vec();
+            assert_eq!(geometries, vec![]);
         });
     }
 
