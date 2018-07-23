@@ -22,6 +22,7 @@ use Result;
 extern crate minidom;
 extern crate serde_json;
 use self::minidom::Element;
+use failure::ResultExt;
 
 // type RoutePointId = String;
 // type StopPointId = String;
@@ -52,43 +53,38 @@ impl NetexReader {
 
         self.context.namespace = root.ns().unwrap_or("".to_string());
 
-        root.get_child("dataObjects", self.context.namespace.as_str())
-            .map_or_else(
-                || bail!("Netex file does't contain a 'dataObjects' node"),
-                |f| {
-                    f.children()
-                        .filter(|frame| frame.name() == "CompositeFrame")
-                        .map(|frame| {
-                            self.read_composite_data_frame(frame).map_err(|_| {
-                                format_err!(
-                                    "Reading Frame id={:?}",
-                                    frame.attr("id").unwrap_or("undefined")
-                                )
-                            })
-                        })
-                        .collect()
-                },
-            )
+        for frame in root
+            .get_child("dataObjects", self.context.namespace.as_str())
+            .ok_or_else(|| format_err!("Netex file does't contain a 'dataObjects' node"))?
+            .children()
+            .filter(|frame| frame.name() == "CompositeFrame")
+        {
+            self.read_composite_data_frame(frame).with_context(|_| {
+                format!(
+                    "Reading Frame id={:?}",
+                    frame.attr("id").unwrap_or("undefined")
+                )
+            })?
+        }
+        Ok(())
     }
 
     fn read_composite_data_frame(&mut self, composite_frame: &Element) -> Result<()> {
-        composite_frame
-            .get_child("frames", &mut self.context.namespace)
-            .map_or_else(
-                || bail!("CompositeDataFrame does't contain a 'frames' node"),
-                |f| {
-                    f.children()
-                        .map(|frame| match frame.name() {
-                            // "SiteFrame" => self.read_site_frame(&frame),
-                            // "ServiceFrame" => self.read_service_frame(&frame),
-                            // "ServiceCalendarFrame" => self.read_service_calendar_frame(&frame),
-                            // "TimetableFrame" => self.read_time_table_frame(&frame),
-                            "ResourceFrame" => self.read_resource_frame(&frame),
-                            _ => Ok(()),
-                        })
-                        .collect()
-                },
-            )
+        for frame in composite_frame
+            .get_child("frames", self.context.namespace.as_str())
+            .ok_or_else(|| format_err!("CompositeDataFrame does't contain a 'frames' node"))?
+            .children()
+        {
+            match frame.name() {
+                // "SiteFrame" => self.read_site_frame(&frame),
+                // "ServiceFrame" => self.read_service_frame(&frame),
+                // "ServiceCalendarFrame" => self.read_service_calendar_frame(&frame),
+                // "TimetableFrame" => self.read_time_table_frame(&frame),
+                "ResourceFrame" => self.read_resource_frame(&frame),
+                _ => Ok(()),
+            }?
+        }
+        Ok(())
     }
 
     fn read_resource_frame(&mut self, resource_frame: &Element) -> Result<()> {
@@ -104,7 +100,7 @@ impl NetexReader {
     }
 
     fn read_organisations(&mut self, organisations: &Element) -> Result<()> {
-        let companies: Result<Vec<objects::Company>> = organisations
+        let companies = organisations
             .children()
             .filter(|node| node.name() == "Operator")
             .map(|node| match node.attr("id") {
@@ -117,15 +113,14 @@ impl NetexReader {
                 }),
                 _ => bail!("An 'Operator' node doesn't have an 'id' property."),
             })
-            .collect();
-        let companies = companies?;
+            .collect::<Result<Vec<_>>>()?;
         if !companies.is_empty() {
             self.context.first_operator_id = companies[0].id.to_string();
-            let mut companies: Vec<objects::Company> = companies
-                .into_iter()
-                .filter(|c| self.collections.companies.get_idx(&c.id).is_none())
-                .collect();
-            self.collections.companies.append(&mut companies)?;
+            for c in companies {
+                if self.collections.companies.get_idx(&c.id).is_none() {
+                    self.collections.companies.push(c)?;
+                }
+            }
         } else {
             self.context.first_operator_id = "default_company".to_string();
             if self
