@@ -595,6 +595,26 @@ pub struct VehicleJourney {
     #[serde(skip)]
     pub stop_times: Vec<StopTime>,
 }
+impl Default for VehicleJourney {
+    fn default() -> VehicleJourney {
+        VehicleJourney {
+            id: "default_vehiclejourney".to_string(),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            route_id: "default_route".to_string(),
+            physical_mode_id: "default_physical_mode".to_string(),
+            dataset_id: "default_dataset".to_string(),
+            service_id: "".to_string(),
+            headsign: None,
+            block_id: None,
+            company_id: "".to_string(),
+            trip_property_id: None,
+            geometry_id: None,
+            stop_times: vec![],
+        }
+    }
+}
 impl Id<VehicleJourney> for VehicleJourney {
     fn id(&self) -> &str {
         &self.id
@@ -956,6 +976,14 @@ impl Id<Calendar> for Calendar {
         &self.id
     }
 }
+impl Calendar {
+    pub fn new(calendar_id: String) -> Calendar {
+        Calendar {
+            id: calendar_id,
+            dates: BTreeSet::new(),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Company {
@@ -978,7 +1006,18 @@ impl Id<Company> for Company {
         &self.id
     }
 }
-
+impl Default for Company {
+    fn default() -> Company {
+        Company {
+            id: "default_company".to_string(),
+            name: "Default Company".to_string(),
+            address: None,
+            url: None,
+            mail: None,
+            phone: None,
+        }
+    }
+}
 impl AddPrefix for Company {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
