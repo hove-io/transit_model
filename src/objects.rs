@@ -474,17 +474,9 @@ pub struct Line {
     #[serde(rename = "backward_line_name")]
     pub backward_name: Option<String>,
     pub backward_direction: Option<String>,
-    #[serde(
-        rename = "line_color",
-        default,
-        deserialize_with = "de_with_invalid_option"
-    )]
+    #[serde(rename = "line_color", default, deserialize_with = "de_with_invalid_option")]
     pub color: Option<Rgb>,
-    #[serde(
-        rename = "line_text_color",
-        default,
-        deserialize_with = "de_with_invalid_option"
-    )]
+    #[serde(rename = "line_text_color", default, deserialize_with = "de_with_invalid_option")]
     pub text_color: Option<Rgb>,
     #[serde(rename = "line_sort_order")]
     pub sort_order: Option<u32>,
@@ -1038,10 +1030,7 @@ pub enum CommentType {
 pub struct Comment {
     #[serde(rename = "comment_id")]
     pub id: String,
-    #[serde(
-        deserialize_with = "de_with_empty_or_invalid_default",
-        default
-    )]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub comment_type: CommentType,
     #[serde(rename = "comment_label")]
     pub label: Option<String>,
@@ -1179,11 +1168,7 @@ impl AddPrefix for TripProperty {
 pub struct Geometry {
     #[serde(rename = "geometry_id")]
     pub id: String,
-    #[serde(
-        rename = "geometry_wkt",
-        deserialize_with = "de_wkt",
-        serialize_with = "ser_geometry"
-    )]
+    #[serde(rename = "geometry_wkt", deserialize_with = "de_wkt", serialize_with = "ser_geometry")]
     pub geometry: GeoGeometry<f64>,
 }
 
