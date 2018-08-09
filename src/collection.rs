@@ -37,11 +37,7 @@ pub trait Id<T> {
 /// Typed index.
 #[derive(Derivative, Debug)]
 #[derivative(
-    Copy(bound = ""),
-    Clone(bound = ""),
-    PartialEq(bound = ""),
-    Eq(bound = ""),
-    Hash(bound = "")
+    Copy(bound = ""), Clone(bound = ""), PartialEq(bound = ""), Eq(bound = ""), Hash(bound = "")
 )]
 pub struct Idx<T>(u32, PhantomData<T>);
 

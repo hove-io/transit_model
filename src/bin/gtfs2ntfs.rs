@@ -30,12 +30,7 @@ use navitia_model::Result;
 #[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.")]
 struct Opt {
     /// input directory.
-    #[structopt(
-        short = "i",
-        long = "input",
-        parse(from_os_str),
-        default_value = "."
-    )]
+    #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
     /// output directory
