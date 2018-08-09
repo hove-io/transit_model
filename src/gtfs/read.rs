@@ -425,7 +425,7 @@ pub fn manage_stop_times<P: AsRef<path::Path>>(
                 format_err!(
                     "Problem reading {:?}: trip_id={:?} not found",
                     path,
-                    stop_time.stop_id
+                    stop_time.trip_id
                 )
             })?;
         collections
