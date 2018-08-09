@@ -2029,9 +2029,9 @@ mod tests {
     #[test]
     fn read_shapes() {
         let shapes_content = "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence\n\
-                              1,47.22101603,-1.52479552,2\n\
-                              1,47.22101603,-1.52479552,1\n\
-                              2,47.25877238,-1.52421546,1";
+                              1,4.4,3.3,2\n\
+                              1,2.2,1.1,1\n\
+                              2,6.6,5.5,1";
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "shapes.txt", shapes_content);
@@ -2047,16 +2047,13 @@ mod tests {
                     Geometry {
                         id: "1".to_string(),
                         geometry: GeoGeometry::LineString(LineString(vec![
-                            Point::new(-1.52479552, 47.22101603),
-                            Point::new(-1.52479552, 47.22101603),
+                            Point::new(1.1, 2.2),
+                            Point::new(3.3, 4.4),
                         ])),
                     },
                     Geometry {
                         id: "2".to_string(),
-                        geometry: GeoGeometry::LineString(LineString(vec![Point::new(
-                            -1.52421546,
-                            47.25877238,
-                        )])),
+                        geometry: GeoGeometry::LineString(LineString(vec![Point::new(5.5, 6.6)])),
                     },
                 ]
             );
