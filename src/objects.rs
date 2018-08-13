@@ -772,7 +772,7 @@ impl GetObjectType for StopTime {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct Coord {
     pub lon: f64,
     pub lat: f64,
