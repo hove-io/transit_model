@@ -675,7 +675,7 @@ mod tests {
                 timezone: None,
                 geometry_id: None,
                 equipment_id: None,
-                stop_area_id: "sa_2".to_string(),
+                stop_area_id: "Navitia:sa_2".to_string(),
                 fare_zone_id: None,
             },
         ]).unwrap();
