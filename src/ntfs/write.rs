@@ -164,21 +164,19 @@ pub fn write_stops(
     }
 
     for sa in stop_areas.values() {
-        if !sa.id.starts_with("Navitia:") {
-            wtr.serialize(Stop {
-                id: sa.id.clone(),
-                visible: sa.visible,
-                name: sa.name.clone(),
-                lat: sa.coord.lat,
-                lon: sa.coord.lon,
-                fare_zone_id: None,
-                location_type: 1,
-                parent_station: None,
-                timezone: sa.timezone.clone(),
-                equipment_id: sa.equipment_id.clone(),
-                geometry_id: sa.geometry_id.clone(),
-            }).with_context(ctx_from_path!(path))?;
-        }
+        wtr.serialize(Stop {
+            id: sa.id.clone(),
+            visible: sa.visible,
+            name: sa.name.clone(),
+            lat: sa.coord.lat,
+            lon: sa.coord.lon,
+            fare_zone_id: None,
+            location_type: 1,
+            parent_station: None,
+            timezone: sa.timezone.clone(),
+            equipment_id: sa.equipment_id.clone(),
+            geometry_id: sa.geometry_id.clone(),
+        }).with_context(ctx_from_path!(path))?;
     }
     wtr.flush().with_context(ctx_from_path!(path))?;
 
