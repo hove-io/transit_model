@@ -60,7 +60,7 @@ fn run() -> Result<()> {
 fn main() {
     env_logger::init();
     if let Err(err) = run() {
-        for cause in err.causes() {
+        for cause in err.iter_chain() {
             eprintln!("{}", cause);
         }
         std::process::exit(1);
