@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use self::gtfs_structures::{LocationType, Stop};
 use collection::{Collection, CollectionWithId, Id};
 use common_format::Availability;
 use csv;
@@ -27,6 +28,7 @@ use std::fs::File;
 use std::path;
 use std::result::Result as StdResult;
 use Result;
+extern crate gtfs_structures;
 extern crate serde_json;
 use super::{
     Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
@@ -90,8 +92,8 @@ impl From<Stop> for objects::StopArea {
             object_properties: KeysValues::default(),
             comment_links: objects::CommentLinksT::default(),
             coord: Coord {
-                lon: stop.lon,
-                lat: stop.lat,
+                lon: stop.longitude,
+                lat: stop.latitude,
             },
             timezone: stop.timezone,
             visible: true,
@@ -113,8 +115,8 @@ impl From<Stop> for objects::StopPoint {
             object_properties: KeysValues::default(),
             comment_links: objects::CommentLinksT::default(),
             coord: Coord {
-                lon: stop.lon,
-                lat: stop.lat,
+                lon: stop.longitude,
+                lat: stop.latitude,
             },
             stop_area_id: stop.parent_station.unwrap(),
             timezone: stop.timezone,
@@ -364,13 +366,13 @@ fn manage_comment_from_stop(
     stop: &Stop,
 ) -> CommentLinksT {
     let mut comment_links: CommentLinksT = CommentLinksT::default();
-    if !stop.desc.is_empty() {
+    if !stop.description.is_empty() {
         let comment_id = "stop:".to_string() + &stop.id;
         let comment = objects::Comment {
             id: comment_id,
             comment_type: objects::CommentType::Information,
             label: None,
-            name: stop.desc.to_string(),
+            name: stop.description.to_string(),
             url: None,
         };
         let idx = comments.push(comment).unwrap();
@@ -454,7 +456,7 @@ pub fn read_stops<P: AsRef<path::Path>>(
         let comment_links = manage_comment_from_stop(comments, &stop);
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
-            StopLocationType::StopPoint => {
+            LocationType::StopPoint => {
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
                     new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
@@ -467,15 +469,15 @@ pub fn read_stops<P: AsRef<path::Path>>(
                 stop_point.equipment_id = equipment_id;
                 stop_points.push(stop_point);
             }
-            StopLocationType::StopArea => {
+            LocationType::StopArea => {
                 let mut stop_area = objects::StopArea::from(stop);
                 stop_area.comment_links = comment_links;
                 stop_area.equipment_id = equipment_id;
                 stop_areas.push(stop_area);
             }
-            StopLocationType::StopEntrance => warn!(
+            LocationType::StationEntrance => warn!(
                 "stop location type {:?} not handled for the moment, skipping",
-                StopLocationType::StopEntrance
+                LocationType::StationEntrance
             ),
         }
     }
