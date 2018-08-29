@@ -17,14 +17,23 @@
 //! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
 //! format management.
 
-use collection::{Collection, CollectionWithId};
+use collection::{Collection, CollectionWithId, Idx};
 use objects::{StopPoint, Transfer};
+use std::collections::HashSet;
 
-/// Checks if a transfer already exist between 2 stop points
-fn transfer_exists(transfers: &Collection<Transfer>, sp1: &StopPoint, sp2: &StopPoint) -> bool {
+fn make_transfers_set(
+    transfers: &Collection<Transfer>,
+    sp: &CollectionWithId<StopPoint>,
+) -> HashSet<(Idx<StopPoint>, Idx<StopPoint>)> {
     transfers
         .values()
-        .any(|t| t.from_stop_id == sp1.id && t.to_stop_id == sp2.id)
+        .map(|t| {
+            (
+                sp.get_idx(&t.from_stop_id).unwrap(),
+                sp.get_idx(&t.to_stop_id).unwrap(),
+            )
+        })
+        .collect()
 }
 
 /// Generates missing transfers
@@ -39,21 +48,26 @@ pub fn generates_transfers(
     max_distance: f64,
     walking_speed: f64,
 ) {
-    for sp1 in stop_points.values() {
-        for sp2 in stop_points.values() {
-            if !transfer_exists(&transfers, &sp1, &sp2) {
-                let distance = sp1.coord.distance_to(&sp2.coord);
-                let transfer_time = (distance / walking_speed) as u32;
-                if distance <= max_distance {
-                    transfers.push(Transfer {
-                        from_stop_id: sp1.id.clone(),
-                        to_stop_id: sp2.id.clone(),
-                        min_transfer_time: Some(transfer_time),
-                        real_min_transfer_time: Some(transfer_time),
-                        equipment_id: None,
-                    });
-                }
+    let transfers_set = make_transfers_set(&transfers, &stop_points);
+    let sq_max_distance = max_distance * max_distance;
+    for (idx1, sp1) in stop_points {
+        let approx = sp1.coord.approx();
+        for (_, sp2) in stop_points
+            .iter()
+            .filter(|&(idx2, _)| !transfers_set.contains(&(idx1, idx2)))
+        {
+            let sq_distance = approx.sq_distance_to(&sp2.coord);
+            if sq_distance > sq_max_distance {
+                continue;
             }
+            let transfer_time = (sq_distance.sqrt() / walking_speed) as u32;
+            transfers.push(Transfer {
+                from_stop_id: sp1.id.clone(),
+                to_stop_id: sp2.id.clone(),
+                min_transfer_time: Some(transfer_time),
+                real_min_transfer_time: Some(transfer_time),
+                equipment_id: None,
+            });
         }
     }
 }
@@ -146,19 +160,58 @@ mod tests {
         ]).unwrap();
 
         super::generates_transfers(&mut transfers, &stop_points, 100.0, 0.785);
-
         let transfers = transfers.values().collect::<Vec<_>>();
-        println!("{:#?}", transfers);
 
-        //we keep the existing transfers
-        assert_eq!(transfers[0].min_transfer_time, Some(50));
-        assert_eq!(transfers[0].real_min_transfer_time, Some(60));
-        assert_eq!(transfers[1].min_transfer_time, Some(200));
-        assert_eq!(transfers[1].real_min_transfer_time, Some(210));
-
+        //we keep the 2 first existing transfers
         // transfers sp_2 -> sp_3, sp_3 -> sp_2, sp_3 -> sp_1 are not added,
         // because distances between them are > 100m
         // sp_1 -> sp_3 is kept because it is an existing transfer.
-        assert_eq!(6, transfers.len());
+        assert_eq!(
+            transfers,
+            vec![
+                &Transfer {
+                    from_stop_id: "sp_1".to_string(),
+                    to_stop_id: "sp_2".to_string(),
+                    min_transfer_time: Some(50),
+                    real_min_transfer_time: Some(60),
+                    equipment_id: None,
+                },
+                &Transfer {
+                    from_stop_id: "sp_1".to_string(),
+                    to_stop_id: "sp_3".to_string(),
+                    min_transfer_time: Some(200),
+                    real_min_transfer_time: Some(210),
+                    equipment_id: None,
+                },
+                &Transfer {
+                    from_stop_id: "sp_1".to_string(),
+                    to_stop_id: "sp_1".to_string(),
+                    min_transfer_time: Some(0),
+                    real_min_transfer_time: Some(0),
+                    equipment_id: None,
+                },
+                &Transfer {
+                    from_stop_id: "sp_2".to_string(),
+                    to_stop_id: "sp_1".to_string(),
+                    min_transfer_time: Some(83),
+                    real_min_transfer_time: Some(83),
+                    equipment_id: None,
+                },
+                &Transfer {
+                    from_stop_id: "sp_2".to_string(),
+                    to_stop_id: "sp_2".to_string(),
+                    min_transfer_time: Some(0),
+                    real_min_transfer_time: Some(0),
+                    equipment_id: None,
+                },
+                &Transfer {
+                    from_stop_id: "sp_3".to_string(),
+                    to_stop_id: "sp_3".to_string(),
+                    min_transfer_time: Some(0),
+                    real_min_transfer_time: Some(0),
+                    equipment_id: None,
+                },
+            ]
+        );
     }
 }
