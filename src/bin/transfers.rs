@@ -37,9 +37,6 @@ struct Opt {
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: PathBuf,
 
-    // /// config file
-    // #[structopt(short = "c", long = "config", parse(from_os_str))]
-    // config_path: Option<PathBuf>,
     #[structopt(
         long = "max-distance",
         short = "d",
@@ -57,6 +54,14 @@ struct Opt {
                 sqrt(2) to simulate Manhattan distances"
     )]
     walking_speed: f64,
+
+    #[structopt(
+        long = "waiting-time",
+        short = "t",
+        default_value = "60",
+        help = "Waiting time at stop in second"
+    )]
+    waiting_time: u32,
 }
 
 fn run() -> Result<()> {
@@ -73,6 +78,7 @@ fn run() -> Result<()> {
         &collections.stop_points,
         opt.max_distance,
         opt.walking_speed,
+        opt.waiting_time,
     );
 
     let model = navitia_model::Model::new(collections)?;

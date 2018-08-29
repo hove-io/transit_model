@@ -47,6 +47,7 @@ pub fn generates_transfers(
     stop_points: &CollectionWithId<StopPoint>,
     max_distance: f64,
     walking_speed: f64,
+    waiting_time: u32,
 ) {
     let transfers_set = make_transfers_set(&transfers, &stop_points);
     let sq_max_distance = max_distance * max_distance;
@@ -65,7 +66,7 @@ pub fn generates_transfers(
                 from_stop_id: sp1.id.clone(),
                 to_stop_id: sp2.id.clone(),
                 min_transfer_time: Some(transfer_time),
-                real_min_transfer_time: Some(transfer_time),
+                real_min_transfer_time: Some(transfer_time + waiting_time),
                 equipment_id: None,
             });
         }
@@ -159,7 +160,7 @@ mod tests {
             },
         ]).unwrap();
 
-        super::generates_transfers(&mut transfers, &stop_points, 100.0, 0.785);
+        super::generates_transfers(&mut transfers, &stop_points, 100.0, 0.785, 120);
         let transfers = transfers.values().collect::<Vec<_>>();
 
         //we keep the 2 first existing transfers
@@ -187,28 +188,28 @@ mod tests {
                     from_stop_id: "sp_1".to_string(),
                     to_stop_id: "sp_1".to_string(),
                     min_transfer_time: Some(0),
-                    real_min_transfer_time: Some(0),
+                    real_min_transfer_time: Some(120),
                     equipment_id: None,
                 },
                 &Transfer {
                     from_stop_id: "sp_2".to_string(),
                     to_stop_id: "sp_1".to_string(),
                     min_transfer_time: Some(83),
-                    real_min_transfer_time: Some(83),
+                    real_min_transfer_time: Some(203),
                     equipment_id: None,
                 },
                 &Transfer {
                     from_stop_id: "sp_2".to_string(),
                     to_stop_id: "sp_2".to_string(),
                     min_transfer_time: Some(0),
-                    real_min_transfer_time: Some(0),
+                    real_min_transfer_time: Some(120),
                     equipment_id: None,
                 },
                 &Transfer {
                     from_stop_id: "sp_3".to_string(),
                     to_stop_id: "sp_3".to_string(),
                     min_transfer_time: Some(0),
-                    real_min_transfer_time: Some(0),
+                    real_min_transfer_time: Some(120),
                     equipment_id: None,
                 },
             ]
