@@ -205,6 +205,32 @@ impl Model {
             collections: c,
         })
     }
+
+    /// Consumes collections,
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::model::*;
+    /// # use std::collections::HashMap;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// let model: Model = Model::new(Collections::default())?;
+    /// let mut collections = model.into_collections();
+    ///  collections
+    ///    .feed_infos
+    ///    .insert("foo".to_string(), "bar".to_string());
+    /// let feeds: Vec<(_, _)> = collections.feed_infos.into_iter().collect();
+    /// assert_eq!(
+    ///    feeds,
+    ///    vec![("foo".to_string(), "bar".to_string())]
+    /// );
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn into_collections(self) -> Collections {
+        self.collections
+    }
 }
 impl ::serde::Serialize for Model {
     fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>

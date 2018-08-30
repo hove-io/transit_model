@@ -27,7 +27,7 @@ use structopt::StructOpt;
 use navitia_model::Result;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.")]
+#[structopt(name = "transfers", about = "Generate transfers.")]
 struct Opt {
     /// input directory.
     #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
@@ -37,23 +37,52 @@ struct Opt {
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: PathBuf,
 
-    /// config file
-    #[structopt(short = "c", long = "config", parse(from_os_str))]
-    config_path: Option<PathBuf>,
+    #[structopt(
+        long = "max-distance",
+        short = "d",
+        default_value = "500",
+        help = "The max distance in meters to compute the tranfer"
+    )]
+    max_distance: f64,
 
-    /// prefix
-    #[structopt(short = "p", long = "prefix")]
-    prefix: Option<String>,
+    #[structopt(
+        long = "walking-speed",
+        short = "s",
+        default_value = "0.785",
+        help = "The walking speed in meters per second. \
+                You may want to divide your initial speed by \
+                sqrt(2) to simulate Manhattan distances"
+    )]
+    walking_speed: f64,
+
+    #[structopt(
+        long = "waiting-time",
+        short = "t",
+        default_value = "60",
+        help = "Waiting time at stop in second"
+    )]
+    waiting_time: u32,
 }
 
 fn run() -> Result<()> {
-    info!("Launching gtfs2ntfs...");
+    info!("Launching transfers...");
 
     let opt = Opt::from_args();
 
-    let objects = navitia_model::gtfs::read(opt.input, opt.config_path, opt.prefix)?;
+    let model = navitia_model::ntfs::read(opt.input)?;
+    let mut collections = model.into_collections();
 
-    navitia_model::ntfs::write(&objects, opt.output)?;
+    info!("Generating transfers...");
+    navitia_model::transfers::generates_transfers(
+        &mut collections.transfers,
+        &collections.stop_points,
+        opt.max_distance,
+        opt.walking_speed,
+        opt.waiting_time,
+    );
+
+    let model = navitia_model::Model::new(collections)?;
+    navitia_model::ntfs::write(&model, opt.output)?;
     Ok(())
 }
 

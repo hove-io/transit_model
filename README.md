@@ -2,6 +2,7 @@
 
 navitia_model is a rust crate to manage transit data. Its model corresponds to the one used in [navitia](https://github.com/CanalTP/navitia). This repository also provides :
 - (incomplete) [GTFS](http://gtfs.org/) to [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md) and (soon) NTFS to GTFS conversion.
+- (incomplete) Generation of transfers.
 - (incomplete) [Netex](http://netex-cen.eu/) to [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md) and (soon) Netex to GTFS conversion. Conversion fixtures comes from official [Github repository](https://github.com/NeTEx-CEN/NeTEx/).
 
 ## Compile
@@ -46,7 +47,7 @@ target/release/gtfs2ntfs -i path/to/input/directory -c path/to/config.json -p PR
 ### With docker
 
 ```bash
-docker run --rm -v path/to/input:/app/input -v path/to/output:/app/output navitia/navitia_model -c /app/input/config.json -p PREFIX
+docker run --rm -v path/to/input:/app/input -v path/to/output:/app/output navitia/navitia_model gtfs2ntfs -i /app/input -o /app/output -c /app/input/config.json -p PREFIX
 ```
 
 ## Tests
