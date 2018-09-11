@@ -1,0 +1,4 @@
+physical_mode_id,physical_mode_name,co2_emission
+Funicular,"Funiculaire",
+Train,"Train",11.9
+Tramway,"Tramway",4
