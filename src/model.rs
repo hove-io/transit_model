@@ -54,25 +54,46 @@ impl Collections {
     /// Merge the `Collections` parameter into the current `Collections` by consecutively merging
     /// each collections representing the model.  Fails in case of id collision.
     pub fn merge(&mut self, c: Collections) -> Result<()> {
-        self.contributors.merge(c.contributors)?;
-        self.datasets.merge(c.datasets)?;
-        self.networks.merge(c.networks)?;
-        self.commercial_modes.merge(c.commercial_modes)?;
-        self.lines.merge(c.lines)?;
-        self.routes.merge(c.routes)?;
-        self.vehicle_journeys.merge(c.vehicle_journeys)?;
-        self.physical_modes.merge(c.physical_modes)?;
-        self.stop_areas.merge(c.stop_areas)?;
-        self.stop_points.merge(c.stop_points)?;
-        self.feed_infos.extend(c.feed_infos);
-        self.calendars.merge(c.calendars)?;
-        self.companies.merge(c.companies)?;
-        self.comments.merge(c.comments)?;
-        self.equipments.merge(c.equipments)?;
-        self.transfers.merge(c.transfers)?;
-        self.trip_properties.merge(c.trip_properties)?;
-        self.geometries.merge(c.geometries)?;
-        self.admin_stations.merge(c.admin_stations)?;
+        let Collections {
+            contributors,
+            datasets,
+            networks,
+            commercial_modes,
+            lines,
+            routes,
+            vehicle_journeys,
+            physical_modes,
+            stop_areas,
+            stop_points,
+            feed_infos,
+            calendars,
+            companies,
+            comments,
+            equipments,
+            transfers,
+            trip_properties,
+            geometries,
+            admin_stations,
+        } = c;
+        self.contributors.merge(contributors)?;
+        self.datasets.merge(datasets)?;
+        self.networks.merge(networks)?;
+        self.commercial_modes.merge(commercial_modes)?;
+        self.lines.merge(lines)?;
+        self.routes.merge(routes)?;
+        self.vehicle_journeys.merge(vehicle_journeys)?;
+        self.physical_modes.merge(physical_modes)?;
+        self.stop_areas.merge(stop_areas)?;
+        self.stop_points.merge(stop_points)?;
+        self.feed_infos.extend(feed_infos);
+        self.calendars.merge(calendars)?;
+        self.companies.merge(companies)?;
+        self.comments.merge(comments)?;
+        self.equipments.merge(equipments)?;
+        self.transfers.merge(transfers)?;
+        self.trip_properties.merge(trip_properties)?;
+        self.geometries.merge(geometries)?;
+        self.admin_stations.merge(admin_stations)?;
         Ok(())
     }
 }
