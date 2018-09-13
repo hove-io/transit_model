@@ -200,6 +200,30 @@ impl<T> Collection<T> {
         self.objects.push(item);
         Idx::new(next_index)
     }
+
+    /// Merge a `Collection` parameter into the current one.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c1 = Collection::new(vec![Obj("foo")]);
+    /// let c2 = Collection::new(vec![Obj("bar")]);
+    /// c1.merge(c2);
+    /// assert_eq!(c1.len(), 2);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn merge(&mut self, other: Self) -> Result<()> {
+        for item in other {
+            self.push(item);
+        }
+        Ok(())
+    }
 }
 
 /// The type returned by `Collection::iter`.
@@ -212,6 +236,15 @@ impl<'a, T> IntoIterator for &'a Collection<T> {
 
     fn into_iter(self) -> Iter<'a, T> {
         self.iter()
+    }
+}
+
+impl<T> IntoIterator for Collection<T> {
+    type Item = T;
+    type IntoIter = ::std::vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.objects.into_iter()
     }
 }
 
@@ -387,6 +420,33 @@ impl<T: Id<T>> CollectionWithId<T> {
             }
         }
     }
+
+    /// Merge a `CollectionWithId` parameter into the current one. Fails if any identifier into the
+    /// `CollectionWithId` parameter is already in the collection.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
+    /// let mut c3 = CollectionWithId::new(vec![Obj("corge"), Obj("grault")])?;
+    /// assert!(c1.merge(c2).is_err());
+    /// c1.merge(c3);
+    /// assert_eq!(c1.len(), 4);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn merge(&mut self, other: Self) -> Result<()> {
+        for item in other {
+            self.push(item)?;
+        }
+        Ok(())
+    }
 }
 
 impl<T> CollectionWithId<T> {
@@ -525,8 +585,17 @@ impl<'a, T> IntoIterator for &'a CollectionWithId<T> {
     type Item = (Idx<T>, &'a T);
     type IntoIter = Iter<'a, T>;
 
-    fn into_iter(self) -> Iter<'a, T> {
+    fn into_iter(self) -> Self::IntoIter {
         self.iter()
+    }
+}
+
+impl<T> IntoIterator for CollectionWithId<T> {
+    type Item = T;
+    type IntoIter = ::std::vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.collection.into_iter()
     }
 }
 

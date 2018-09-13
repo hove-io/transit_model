@@ -1,0 +1,4 @@
+stop_id,visible,stop_name,stop_lat,stop_lon,zone_id,location_type,parent_station,stop_timezone,equipment_id,contributor_id,geometry_id
+OIF:SP:10:10,1,"Avenue de l'Essonne",48.647208,2.414269,,0,OIF:SA:10:1002,Europe/Paris,,OIF,
+OIF:SP:10:100,1,"Clinique",48.637689,2.426617,,0,OIF:SA:10:1002,Europe/Paris,,OIF,
+OIF:SA:10:1002,1,"Maison de l'Enfance",48.599101,2.429519,,1,,Europe/Paris,,OIF,

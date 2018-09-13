@@ -50,6 +50,54 @@ pub struct Collections {
     pub admin_stations: Collection<AdminStation>,
 }
 
+impl Collections {
+    /// Merge the `Collections` parameter into the current `Collections` by consecutively merging
+    /// each collections representing the model.  Fails in case of id collision.
+    pub fn merge(&mut self, c: Collections) -> Result<()> {
+        let Collections {
+            contributors,
+            datasets,
+            networks,
+            commercial_modes,
+            lines,
+            routes,
+            vehicle_journeys,
+            physical_modes,
+            stop_areas,
+            stop_points,
+            feed_infos,
+            calendars,
+            companies,
+            comments,
+            equipments,
+            transfers,
+            trip_properties,
+            geometries,
+            admin_stations,
+        } = c;
+        self.contributors.merge(contributors)?;
+        self.datasets.merge(datasets)?;
+        self.networks.merge(networks)?;
+        self.commercial_modes.merge(commercial_modes)?;
+        self.lines.merge(lines)?;
+        self.routes.merge(routes)?;
+        self.vehicle_journeys.merge(vehicle_journeys)?;
+        self.physical_modes.merge(physical_modes)?;
+        self.stop_areas.merge(stop_areas)?;
+        self.stop_points.merge(stop_points)?;
+        self.feed_infos.extend(feed_infos);
+        self.calendars.merge(calendars)?;
+        self.companies.merge(companies)?;
+        self.comments.merge(comments)?;
+        self.equipments.merge(equipments)?;
+        self.transfers.merge(transfers)?;
+        self.trip_properties.merge(trip_properties)?;
+        self.geometries.merge(geometries)?;
+        self.admin_stations.merge(admin_stations)?;
+        Ok(())
+    }
+}
+
 /// The navitia transit model.
 #[derive(GetCorresponding)]
 pub struct Model {
