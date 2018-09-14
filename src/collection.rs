@@ -453,6 +453,32 @@ impl<T: Id<T>> CollectionWithId<T> {
     }
 }
 
+impl<T: Id<T>> iter::Extend<T> for CollectionWithId<T> {
+    /// Extend a `CollectionWithId` with the content of an iterator of
+    /// CollectionWithId without duplicated ids.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
+    /// c1.extend(c2);
+    /// assert_eq!(c1.len(), 3);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        for item in iter {
+            skip_fail!(self.push(item));
+        }
+    }
+}
+
 impl<T> CollectionWithId<T> {
     /// Returns the index corresponding to the identifier.
     ///
