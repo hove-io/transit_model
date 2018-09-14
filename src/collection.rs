@@ -451,6 +451,30 @@ impl<T: Id<T>> CollectionWithId<T> {
         }
         Ok(())
     }
+
+    /// Merge a `CollectionWithId` parameter into the current one.
+    /// without duplicating ids.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
+    /// c1.safe_merge(c2);
+    /// assert_eq!(c1.len(), 3);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn safe_merge(&mut self, other: Self) {
+        for item in other {
+            skip_fail!(self.push(item));
+        }
+    }
 }
 
 impl<T> CollectionWithId<T> {
