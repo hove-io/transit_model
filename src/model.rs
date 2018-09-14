@@ -82,7 +82,7 @@ impl Collections {
         self.lines.merge(lines)?;
         self.routes.merge(routes)?;
         self.vehicle_journeys.merge(vehicle_journeys)?;
-        self.physical_modes.safe_merge(physical_modes);
+        self.physical_modes.extend(physical_modes);
         self.stop_areas.merge(stop_areas)?;
         self.stop_points.merge(stop_points)?;
         self.feed_infos.extend(feed_infos);
