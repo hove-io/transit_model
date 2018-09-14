@@ -293,7 +293,11 @@ struct Trip {
     headsign: Option<String>,
     #[serde(rename = "trip_short_name")]
     short_name: Option<String>,
-    #[serde(default, deserialize_with = "de_with_empty_default", rename = "direction_id")]
+    #[serde(
+        default,
+        deserialize_with = "de_with_empty_default",
+        rename = "direction_id"
+    )]
     direction: DirectionType,
     block_id: Option<String>,
     shape_id: Option<String>,
@@ -388,8 +392,7 @@ pub fn manage_shapes<P: AsRef<path::Path>>(collections: &mut Collections, path: 
                     id: id.to_string(),
                     geometry: linestring.into(),
                 }
-            })
-            .collect(),
+            }).collect(),
     )?;
 
     Ok(())
@@ -509,8 +512,7 @@ impl EquipmentList {
             .map(|(mut eq, id)| {
                 eq.id = id;
                 eq
-            })
-            .collect();
+            }).collect();
 
         eqs.sort_by(|l, r| l.id.cmp(&r.id));
         eqs
@@ -533,8 +535,7 @@ fn get_equipment_id_and_populate_equipments(
             "1" => Some(objects::Availability::Available),
             "2" => Some(objects::Availability::NotAvailable),
             _ => None,
-        })
-        .map(|availlability| {
+        }).map(|availlability| {
             equipments.push(objects::Equipment {
                 id: "".to_string(),
                 wheelchair_boarding: availlability,
@@ -650,13 +651,11 @@ pub fn read_transfers<P: AsRef<path::Path>>(
         ));
 
         let to_stop_point = skip_fail!(stop_points.get(&transfer.to_stop_id).ok_or_else(
-            || {
-                format_err!(
-                    "Problem reading {:?}: to_stop_id={:?} not found",
-                    path,
-                    transfer.to_stop_id
-                )
-            }
+            || format_err!(
+                "Problem reading {:?}: to_stop_id={:?} not found",
+                path,
+                transfer.to_stop_id
+            )
         ));
 
         let (min_transfer_time, real_min_transfer_time) = match transfer.transfer_type {

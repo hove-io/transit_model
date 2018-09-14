@@ -32,7 +32,8 @@ pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>)
     wtr.write_record(&["feed_info_param", "feed_info_value"])
         .with_context(ctx_from_path!(path))?;
     for feed_info in feed_infos {
-        wtr.serialize(feed_info).with_context(ctx_from_path!(path))?;
+        wtr.serialize(feed_info)
+            .with_context(ctx_from_path!(path))?;
     }
     wtr.flush().with_context(ctx_from_path!(path))?;
     Ok(())
@@ -69,8 +70,7 @@ pub fn write_vehicle_journeys_and_stop_times(
                     datetime_estimated: st.datetime_estimated,
                     local_zone_id: st.local_zone_id,
                     // TODO: Add headsign and stop_time_ids
-                })
-                .with_context(ctx_from_path!(st_wtr))?;
+                }).with_context(ctx_from_path!(st_wtr))?;
         }
     }
     st_wtr

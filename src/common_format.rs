@@ -29,7 +29,10 @@ use Result;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CalendarDate {
     pub service_id: String,
-    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
     pub date: Date,
     pub exception_type: ExceptionType,
 }
@@ -38,23 +41,50 @@ pub struct CalendarDate {
 pub struct Calendar {
     #[serde(rename = "service_id")]
     id: String,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    #[serde(
+        deserialize_with = "de_from_u8",
+        serialize_with = "ser_from_bool"
+    )]
     monday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    #[serde(
+        deserialize_with = "de_from_u8",
+        serialize_with = "ser_from_bool"
+    )]
     tuesday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    #[serde(
+        deserialize_with = "de_from_u8",
+        serialize_with = "ser_from_bool"
+    )]
     wednesday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    #[serde(
+        deserialize_with = "de_from_u8",
+        serialize_with = "ser_from_bool"
+    )]
     thursday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    #[serde(
+        deserialize_with = "de_from_u8",
+        serialize_with = "ser_from_bool"
+    )]
     friday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    #[serde(
+        deserialize_with = "de_from_u8",
+        serialize_with = "ser_from_bool"
+    )]
     saturday: bool,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    #[serde(
+        deserialize_with = "de_from_u8",
+        serialize_with = "ser_from_bool"
+    )]
     sunday: bool,
-    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
     start_date: Date,
-    #[serde(deserialize_with = "de_from_date_string", serialize_with = "ser_from_naive_date")]
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
     end_date: Date,
 }
 
@@ -129,8 +159,7 @@ fn manage_calendar_dates(
                         .push(objects::Calendar {
                             id: calendar_date.service_id,
                             dates,
-                        })
-                        .unwrap();
+                        }).unwrap();
                 }
             });
         }

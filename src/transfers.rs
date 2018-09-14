@@ -32,8 +32,7 @@ fn make_transfers_set(
                 sp.get_idx(&t.from_stop_id).unwrap(),
                 sp.get_idx(&t.to_stop_id).unwrap(),
             )
-        })
-        .collect()
+        }).collect()
 }
 
 /// Generates missing transfers

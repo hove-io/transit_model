@@ -168,8 +168,7 @@ impl Model {
             .map(|(idx, vj)| {
                 let sps = vj.stop_times.iter().map(|st| st.stop_point_idx).collect();
                 (idx, sps)
-            })
-            .collect();
+            }).collect();
 
         let forward_tr_to_sp = c
             .transfers
@@ -183,8 +182,7 @@ impl Model {
                     format_err!("Invalid id: transfer.to_stop_id={:?}", tr.to_stop_id)
                 })?);
                 Ok((idx, stop_points))
-            })
-            .collect::<StdResult<BTreeMap<_, _>, Error>>()?;
+            }).collect::<StdResult<BTreeMap<_, _>, Error>>()?;
         let vehicle_journeys_to_stop_points = ManyToMany::from_forward(forward_vj_to_sp);
         let routes_to_vehicle_journeys =
             OneToMany::new(&c.routes, &c.vehicle_journeys, "routes_to_vehicle_journeys")?;

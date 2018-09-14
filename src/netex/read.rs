@@ -112,8 +112,7 @@ impl NetexReader {
                     ..Default::default()
                 }),
                 _ => bail!("An 'Operator' node doesn't have an 'id' property."),
-            })
-            .collect::<Result<Vec<_>>>()?;
+            }).collect::<Result<Vec<_>>>()?;
         if !companies.is_empty() {
             self.context.first_operator_id = companies[0].id.to_string();
             for c in companies {
@@ -160,7 +159,8 @@ mod tests {
         let operator: Element = r#"<Operator version="1" id="RATP_PIVI:Company:100">
 							<CompanyNumber>100</CompanyNumber>
 							<Name>RATP</Name>
-						</Operator>"#.parse()
+						</Operator>"#
+            .parse()
             .unwrap();
         organisations.append_child(operator);
 
@@ -176,7 +176,8 @@ mod tests {
         let mut organisations = Element::builder("organisations").ns("").build();
         let operator: Element = r#"<Operator version="1" id="RATP_PIVI:Company:100">
 							<CompanyNumber>100</CompanyNumber>
-						</Operator>"#.parse()
+						</Operator>"#
+            .parse()
             .unwrap();
         organisations.append_child(operator);
 
@@ -193,7 +194,8 @@ mod tests {
         let mut organisations = Element::builder("organisations").ns("").build();
         let operator: Element = r#"<Operator version="1" identifier="RATP_PIVI:Company:100">
 							<CompanyNumber>100</CompanyNumber>
-						</Operator>"#.parse()
+						</Operator>"#
+            .parse()
             .unwrap();
         organisations.append_child(operator);
 
