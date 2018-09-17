@@ -985,6 +985,12 @@ impl Calendar {
     }
 }
 
+impl AddPrefix for Calendar {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Company {
     #[serde(rename = "company_id")]
@@ -1190,6 +1196,12 @@ pub struct Geometry {
 impl Id<Geometry> for Geometry {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl AddPrefix for Geometry {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
     }
 }
 

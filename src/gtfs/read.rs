@@ -1384,10 +1384,10 @@ mod tests {
     #[test]
     fn prefix_on_all_pt_object_id() {
         let stops_content =
-            "stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station\n\
-             sp:01,my stop point name,my first desc,0.1,1.2,0,\n\
-             sp:02,my stop point name child,,0.2,1.5,0,sp:01\n\
-             sa:03,my stop area name,my second desc,0.3,2.2,1,";
+            "stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station,wheelchair_boarding\n\
+             sp:01,my stop point name,my first desc,0.1,1.2,0,,1\n\
+             sp:02,my stop point name child,,0.2,1.5,0,sp:01,2\n\
+             sa:03,my stop area name,my second desc,0.3,2.2,1,,";
         let agency_content = "agency_id,agency_name,agency_url,agency_timezone,agency_lang\n\
                               584,TAM,http://whatever.canaltp.fr/,Europe/Paris,fr\n\
                               285,Phébus,http://plop.kisio.com/,Europe/London,en";
@@ -1401,11 +1401,28 @@ mod tests {
              1,route_1,0,service_1,,\n\
              2,route_2,1,service_2,1,2";
 
+        let transfers_content = "from_stop_id,to_stop_id,transfer_type,min_transfer_time\n\
+                                 sp:01,sp:01,1,\n\
+                                 sp:01,sp:02,0,\n\
+                                 sp:02,sp:01,0,\n\
+                                 sp:02,sp:02,1,";
+
+        let shapes_content = "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence\n\
+                              1,4.4,3.3,2\n\
+                              2,6.6,5.5,1";
+
+        let calendar = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
+                       1,0,0,0,0,0,1,1,20180501,20180508\n\
+                       2,1,0,0,0,0,0,0,20180502,20180506";
+
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "stops.txt", stops_content);
             create_file_with_content(&tmp_dir, "agency.txt", agency_content);
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+            create_file_with_content(&tmp_dir, "transfers.txt", transfers_content);
+            create_file_with_content(&tmp_dir, "shapes.txt", shapes_content);
+            create_file_with_content(&tmp_dir, "calendar.txt", calendar);
 
             let mut collections = Collections::default();
 
@@ -1416,6 +1433,8 @@ mod tests {
             collections.datasets = datasets;
             let (stop_areas, stop_points) =
                 super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            collections.equipments = CollectionWithId::new(equipments.into_equipments()).unwrap();
+            collections.transfers = super::read_transfers(tmp_dir.path(), &stop_points).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
             let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
@@ -1423,6 +1442,8 @@ mod tests {
             collections.companies = companies;
             collections.comments = comments;
             super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::manage_shapes(&mut collections, tmp_dir.as_ref()).unwrap();
+            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
 
             add_prefix("my_prefix".to_string(), &mut collections).unwrap();
 
@@ -1462,13 +1483,50 @@ mod tests {
                 vec!["my_prefix:1"],
                 extract_ids(&collections.trip_properties)
             );
-
-            let comment_vec = collections.comments.into_vec();
-
-            assert_eq!(comment_vec[0].id, "my_prefix:stop:sp:01");
-            assert_eq!(comment_vec[0].name, "my first desc");
-            assert_eq!(comment_vec[1].id, "my_prefix:stop:sa:03");
-            assert_eq!(comment_vec[1].name, "my second desc");
+            assert_eq!(
+                vec!["my_prefix:stop:sa:03", "my_prefix:stop:sp:01"],
+                extract_ids(&collections.comments)
+            );
+            assert_eq!(
+                vec!["my_prefix:3"],
+                extract_ids(&collections.commercial_modes)
+            );
+            assert_eq!(
+                vec![
+                    ("my_prefix:sp:01", "my_prefix:sp:01"),
+                    ("my_prefix:sp:01", "my_prefix:sp:02"),
+                    ("my_prefix:sp:02", "my_prefix:sp:01"),
+                    ("my_prefix:sp:02", "my_prefix:sp:02"),
+                ],
+                extract(
+                    |sp| (sp.from_stop_id.as_str(), sp.to_stop_id.as_str()),
+                    &collections.transfers,
+                )
+            );
+            assert_eq!(
+                vec!["my_prefix:default_contributor"],
+                extract_ids(&collections.contributors)
+            );
+            assert_eq!(
+                vec!["my_prefix:default_dataset"],
+                extract_ids(&collections.datasets)
+            );
+            assert_eq!(
+                vec!["my_prefix:1", "my_prefix:2"],
+                extract_ids(&collections.vehicle_journeys)
+            );
+            assert_eq!(
+                vec!["my_prefix:0", "my_prefix:1"],
+                extract_ids(&collections.equipments)
+            );
+            assert_eq!(
+                vec!["my_prefix:1", "my_prefix:2"],
+                extract_ids(&collections.geometries)
+            );
+            assert_eq!(
+                vec!["my_prefix:1", "my_prefix:2"],
+                extract_ids(&collections.calendars)
+            );
         });
     }
 
