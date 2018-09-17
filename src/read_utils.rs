@@ -71,6 +71,8 @@ pub fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
     add_prefix_to_collection_with_id(&mut collections.trip_properties, &prefix)?;
     add_prefix_to_collection_with_id(&mut collections.equipments, &prefix)?;
     add_prefix_to_collection_with_id(&mut collections.comments, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.geometries, &prefix)?;
+    add_prefix_to_collection_with_id(&mut collections.calendars, &prefix)?;
 
     Ok(())
 }
