@@ -1397,9 +1397,9 @@ mod tests {
                               route_2,agency_1,2,My line 1B,3,8F7A32,FFFFFF";
 
         let trips_content =
-            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
-             1,route_1,0,service_1,,\n\
-             2,route_2,1,service_2,1,2";
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed,shape_id\n\
+             1,route_1,0,service_1,,,1\n\
+             2,route_2,1,service_2,1,2,2";
 
         let transfers_content = "from_stop_id,to_stop_id,transfer_type,min_transfer_time\n\
                                  sp:01,sp:01,1,\n\
@@ -1551,13 +1551,15 @@ mod tests {
                         "my_prefix:1",
                         "my_prefix:route_1",
                         "my_prefix:default_dataset",
-                        "my_prefix:service_1"
+                        "my_prefix:service_1",
+                        Some("my_prefix:1"),
                     ),
                     (
                         "my_prefix:2",
                         "my_prefix:route_2_R",
                         "my_prefix:default_dataset",
-                        "my_prefix:service_2"
+                        "my_prefix:service_2",
+                        Some("my_prefix:2"),
                     ),
                 ],
                 extract(
@@ -1566,6 +1568,7 @@ mod tests {
                         obj.route_id.as_str(),
                         obj.dataset_id.as_str(),
                         obj.service_id.as_str(),
+                        obj.geometry_id.as_ref().map(|e| e.as_str())
                     ),
                     &collections.vehicle_journeys,
                 )
