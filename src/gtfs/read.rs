@@ -1387,7 +1387,7 @@ mod tests {
             "stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station,wheelchair_boarding\n\
              sp:01,my stop point name,my first desc,0.1,1.2,0,,1\n\
              sp:02,my stop point name child,,0.2,1.5,0,sp:01,2\n\
-             sa:03,my stop area name,my second desc,0.3,2.2,1,,";
+             sa:03,my stop area name,my second desc,0.3,2.2,1,,1";
         let agency_content = "agency_id,agency_name,agency_url,agency_timezone,agency_lang\n\
                               584,TAM,http://whatever.canaltp.fr/,Europe/Paris,fr\n\
                               285,Phébus,http://plop.kisio.com/,Europe/London,en";
@@ -1456,28 +1456,59 @@ mod tests {
                 extract_ids(&collections.networks)
             );
             assert_eq!(
-                vec!["my_prefix:Navitia:sp:01", "my_prefix:sa:03"],
-                extract_ids(&collections.stop_areas)
-            );
-
-            assert_eq!(
                 vec![
-                    ("my_prefix:sp:01", "my_prefix:Navitia:sp:01"),
-                    ("my_prefix:sp:02", "my_prefix:sp:01"),
+                    ("my_prefix:Navitia:sp:01", None),
+                    ("my_prefix:sa:03", Some("my_prefix:0")),
                 ],
                 extract(
-                    |sp| (sp.id.as_str(), sp.stop_area_id.as_str()),
+                    |obj| (
+                        obj.id.as_str(),
+                        obj.equipment_id.as_ref().map(|e| e.as_str())
+                    ),
+                    &collections.stop_areas,
+                )
+            );
+            assert_eq!(
+                vec![
+                    (
+                        "my_prefix:sp:01",
+                        "my_prefix:Navitia:sp:01",
+                        Some("my_prefix:0")
+                    ),
+                    ("my_prefix:sp:02", "my_prefix:sp:01", Some("my_prefix:1")),
+                ],
+                extract(
+                    |obj| (
+                        obj.id.as_str(),
+                        obj.stop_area_id.as_str(),
+                        obj.equipment_id.as_ref().map(|e| e.as_str())
+                    ),
                     &collections.stop_points,
                 )
             );
-
             assert_eq!(
-                vec!["my_prefix:route_1", "my_prefix:route_2"],
-                extract_ids(&collections.lines)
+                vec![
+                    ("my_prefix:route_1", "my_prefix:agency_1", "my_prefix:3"),
+                    ("my_prefix:route_2", "my_prefix:agency_1", "my_prefix:3"),
+                ],
+                extract(
+                    |obj| (
+                        obj.id.as_str(),
+                        obj.network_id.as_str(),
+                        obj.commercial_mode_id.as_str(),
+                    ),
+                    &collections.lines,
+                )
             );
             assert_eq!(
-                vec!["my_prefix:route_1", "my_prefix:route_2_R"],
-                extract_ids(&collections.routes)
+                vec![
+                    ("my_prefix:route_1", "my_prefix:route_1"),
+                    ("my_prefix:route_2_R", "my_prefix:route_2"),
+                ],
+                extract(
+                    |obj| (obj.id.as_str(), obj.line_id.as_str(),),
+                    &collections.routes,
+                )
             );
             assert_eq!(
                 vec!["my_prefix:1"],
@@ -1508,12 +1539,36 @@ mod tests {
                 extract_ids(&collections.contributors)
             );
             assert_eq!(
-                vec!["my_prefix:default_dataset"],
-                extract_ids(&collections.datasets)
+                vec![("my_prefix:default_dataset", "my_prefix:default_contributor")],
+                extract(
+                    |obj| (obj.id.as_str(), obj.contributor_id.as_str()),
+                    &collections.datasets,
+                )
             );
             assert_eq!(
-                vec!["my_prefix:1", "my_prefix:2"],
-                extract_ids(&collections.vehicle_journeys)
+                vec![
+                    (
+                        "my_prefix:1",
+                        "my_prefix:route_1",
+                        "my_prefix:default_dataset",
+                        "my_prefix:service_1"
+                    ),
+                    (
+                        "my_prefix:2",
+                        "my_prefix:route_2_R",
+                        "my_prefix:default_dataset",
+                        "my_prefix:service_2"
+                    ),
+                ],
+                extract(
+                    |obj| (
+                        obj.id.as_str(),
+                        obj.route_id.as_str(),
+                        obj.dataset_id.as_str(),
+                        obj.service_id.as_str(),
+                    ),
+                    &collections.vehicle_journeys,
+                )
             );
             assert_eq!(
                 vec!["my_prefix:0", "my_prefix:1"],

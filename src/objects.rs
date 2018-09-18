@@ -560,6 +560,7 @@ impl AddPrefix for Route {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
         self.line_id = prefix.to_string() + &self.line_id;
+        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
     }
 }
 impl_codes!(Route);
@@ -646,6 +647,7 @@ impl AddPrefix for VehicleJourney {
         self.route_id = prefix.to_string() + &self.route_id;
         self.dataset_id = prefix.to_string() + &self.dataset_id;
         self.company_id = prefix.to_string() + &self.company_id;
+        self.service_id = prefix.to_string() + &self.service_id;
         self.trip_property_id = self
             .trip_property_id
             .as_ref()
@@ -889,10 +891,11 @@ impl Id<StopArea> for StopArea {
 impl AddPrefix for StopArea {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
-        let equipment_id_opt = self.equipment_id.clone();
-        if let Some(equipment_id) = equipment_id_opt {
-            self.equipment_id = Some(prefix.to_string() + &equipment_id);
-        }
+        self.equipment_id = self
+            .equipment_id
+            .as_ref()
+            .map(|id| prefix.to_string() + &id);
+        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
     }
 }
 impl_codes!(StopArea);
@@ -938,10 +941,11 @@ impl AddPrefix for StopPoint {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
         self.stop_area_id = prefix.to_string() + &self.stop_area_id;
-        let equipment_id_opt = self.equipment_id.clone();
-        if let Some(equipment_id) = equipment_id_opt {
-            self.equipment_id = Some(prefix.to_string() + &equipment_id);
-        }
+        self.equipment_id = self
+            .equipment_id
+            .as_ref()
+            .map(|id| prefix.to_string() + &id);
+        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
     }
 }
 impl_codes!(StopPoint);
@@ -1132,6 +1136,10 @@ impl AddPrefix for Transfer {
     fn add_prefix(&mut self, prefix: &str) {
         self.from_stop_id = prefix.to_string() + &self.from_stop_id;
         self.to_stop_id = prefix.to_string() + &self.to_stop_id;
+        self.equipment_id = self
+            .equipment_id
+            .as_ref()
+            .map(|id| prefix.to_string() + &id);
     }
 }
 
