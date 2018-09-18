@@ -652,6 +652,7 @@ impl AddPrefix for VehicleJourney {
             .trip_property_id
             .as_ref()
             .map(|id| prefix.to_string() + id);
+        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
     }
 }
 impl_codes!(VehicleJourney);
