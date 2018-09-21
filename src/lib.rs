@@ -18,7 +18,7 @@
 //! It can import and export data from [GTFS](http://gtfs.org/) and
 //! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
 
-#![deny(missing_docs)]
+//#![deny(missing_docs)]
 
 extern crate chrono;
 extern crate csv;
@@ -43,6 +43,7 @@ pub(crate) mod utils;
 pub mod collection;
 pub(crate) mod common_format;
 pub mod gtfs;
+pub mod merge_stop_areas;
 pub mod model;
 pub mod netex;
 pub mod ntfs;
