@@ -24,6 +24,7 @@ extern crate structopt;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
+use navitia_model::transfers;
 use navitia_model::Result;
 
 #[derive(Debug, StructOpt)]
@@ -37,6 +38,10 @@ struct Opt {
         default_value = "."
     )]
     input: PathBuf,
+
+    /// modification rule files.
+    #[structopt(short = "r", long = "rules-file", parse(from_os_str),)]
+    rule_files: Vec<PathBuf>,
 
     /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
@@ -77,14 +82,14 @@ fn run() -> Result<()> {
     let model = navitia_model::ntfs::read(opt.input)?;
     let mut collections = model.into_collections();
 
-    info!("Generating transfers...");
-    navitia_model::transfers::generates_transfers(
+    transfers::generates_transfers(
         &mut collections.transfers,
         &collections.stop_points,
         opt.max_distance,
         opt.walking_speed,
         opt.waiting_time,
-    );
+        opt.rule_files,
+    )?;
 
     let model = navitia_model::Model::new(collections)?;
     navitia_model::ntfs::write(&model, opt.output)?;

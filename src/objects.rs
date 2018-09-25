@@ -1124,7 +1124,7 @@ impl AddPrefix for Equipment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Transfer {
     pub from_stop_id: String,
     pub to_stop_id: String,
