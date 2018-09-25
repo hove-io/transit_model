@@ -117,9 +117,9 @@ struct Stop {
 
 impl From<Stop> for objects::StopArea {
     fn from(stop: Stop) -> objects::StopArea {
-        let mut stop_codes: Vec<(String, String)> = vec![];
+        let mut stop_codes: BTreeSet<(String, String)> = BTreeSet::new();
         if let Some(c) = stop.code {
-            stop_codes.push(("gtfs_stop_code".to_string(), c));
+            stop_codes.insert(("gtfs_stop_code".to_string(), c));
         }
         objects::StopArea {
             id: stop.id,
@@ -140,9 +140,9 @@ impl From<Stop> for objects::StopArea {
 }
 impl From<Stop> for objects::StopPoint {
     fn from(stop: Stop) -> objects::StopPoint {
-        let mut stop_codes: Vec<(String, String)> = vec![];
+        let mut stop_codes: BTreeSet<(String, String)> = BTreeSet::new();
         if let Some(c) = stop.code {
-            stop_codes.push(("gtfs_stop_code".to_string(), c));
+            stop_codes.insert(("gtfs_stop_code".to_string(), c));
         }
         objects::StopPoint {
             id: stop.id,
@@ -493,7 +493,7 @@ fn manage_comment_from_stop(
             url: None,
         };
         let idx = comments.push(comment).unwrap();
-        comment_links.push(idx);
+        comment_links.insert(idx);
     }
     comment_links
 }

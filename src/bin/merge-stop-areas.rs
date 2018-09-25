@@ -24,7 +24,7 @@ extern crate structopt;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-use navitia_model::Result;
+use navitia_model::{Model, Result};
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -58,13 +58,12 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let rules = navitia_model::merge_stop_areas::read_rules(opt.rules);
+    let manual_rules = navitia_model::merge_stop_areas::read_rules(opt.rules);
+    let objects = navitia_model::ntfs::read(opt.input)?;
+    let collections = navitia_model::merge_stop_areas::apply_rules(objects.into_collections(), manual_rules);
+    let new_model = Model::new(collections)?;
 
-    //    let objects = navitia_model::ntfs::read(opt.input)?;
-
-    //    if let Some(output) = opt.output {
-    //        navitia_model::ntfs::write(&objects, output)?;
-    //    }
+    navitia_model::ntfs::write(&new_model, opt.output)?;
     Ok(())
 }
 

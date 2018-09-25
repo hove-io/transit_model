@@ -67,7 +67,7 @@ impl ObjectType {
 // We use a Vec here for memory efficiency.  Other possible types can
 // be something like BTreeSet<(String,String)> or
 // BTreeMap<String,Vec<String>>.  Hash{Map,Set} are memory costy.
-pub type KeysValues = Vec<(String, String)>;
+pub type KeysValues = BTreeSet<(String, String)>;
 
 pub trait Codes {
     fn codes(&self) -> &KeysValues;
@@ -103,7 +103,7 @@ macro_rules! impl_properties {
     };
 }
 
-pub type CommentLinksT = Vec<Idx<Comment>>;
+pub type CommentLinksT = BTreeSet<Idx<Comment>>;
 
 pub trait CommentLinks {
     fn comment_links(&self) -> &CommentLinksT;
