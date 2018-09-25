@@ -21,7 +21,7 @@ use collection::CollectionWithId;
 use csv;
 use failure::ResultExt;
 use model::Collections;
-use objects::{KeysValues, CommentLinksT};
+use objects::{CommentLinksT, KeysValues};
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry::*;
 use std::collections::HashMap;
@@ -120,7 +120,10 @@ pub fn apply_rules(mut collections: Collections, rules: Vec<StopAreaGroupRule>) 
     let mut lines_updated = collections.lines.take();
     let mut stop_areas_to_remove = Vec::new();
     for rule in rules {
-        println!("look for parent {:?} to merge {:?}", rule.master_stop_area_id, rule.to_merge_stop_area_ids);
+        println!(
+            "look for parent {:?} to merge {:?}",
+            rule.master_stop_area_id, rule.to_merge_stop_area_ids
+        );
         for stop_point in stop_points_updated.iter_mut() {
             if rule
                 .to_merge_stop_area_ids
@@ -170,9 +173,9 @@ pub fn apply_rules(mut collections: Collections, rules: Vec<StopAreaGroupRule>) 
     collections.geometries = CollectionWithId::new(geometries_updated).unwrap();
     collections.stop_areas = CollectionWithId::new(stop_areas_updated).unwrap();
     collections.lines = CollectionWithId::new(lines_updated).unwrap();
-//    println!("stop_areas = {:?}", collections.stop_areas);
-//    println!("stop points = {:?}", collections.stop_points);
-//    println!("geometries = {:?}", collections.geometries);
+    //    println!("stop_areas = {:?}", collections.stop_areas);
+    //    println!("stop points = {:?}", collections.stop_points);
+    //    println!("geometries = {:?}", collections.geometries);
     println!("lines = {:?}", collections.lines);
     println!("routes = {:?}", collections.routes);
     collections

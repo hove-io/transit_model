@@ -60,7 +60,8 @@ fn run() -> Result<()> {
 
     let manual_rules = navitia_model::merge_stop_areas::read_rules(opt.rules);
     let objects = navitia_model::ntfs::read(opt.input)?;
-    let collections = navitia_model::merge_stop_areas::apply_rules(objects.into_collections(), manual_rules);
+    let collections =
+        navitia_model::merge_stop_areas::apply_rules(objects.into_collections(), manual_rules);
     let new_model = Model::new(collections)?;
 
     navitia_model::ntfs::write(&new_model, opt.output)?;

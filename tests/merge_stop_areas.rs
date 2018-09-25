@@ -18,11 +18,39 @@
 mod tests {
     extern crate navitia_model;
 
+    use std::fs::File;
+    use std::io::prelude::*;
     use std::path::Path;
     use tests::navitia_model::merge_stop_areas::*;
+    use tests::navitia_model::model::Model;
+
+    fn compare_output_dir_with_expected(output_dir: String) {
+        for file in vec![
+            "comment_links",
+            "comments",
+            "geometries",
+            "lines",
+            "object_codes",
+            "object_properties",
+            "stops",
+        ] {
+            let filename = format!("{}.txt", file);
+            let output_file_path = format!("{}/{}", output_dir, filename);
+            let mut output_file = File::open(output_file_path.clone())
+                .expect(&format!("file {} not found", output_file_path));
+            let mut output_contents = String::new();
+            output_file.read_to_string(&mut output_contents).unwrap();
+            let expected_file_path = format!("./fixtures/merge-stop-areas/output/{}", filename);
+            let mut expected_file = File::open(expected_file_path.clone())
+                .expect(&format!("file {} not found", expected_file_path));
+            let mut expected_contents = String::new();
+            expected_file.read_to_string(&mut expected_contents).unwrap();
+            assert_eq!(output_contents, expected_contents);
+        }
+    }
 
     #[test]
-    fn test_read_rules() {
+    fn test_merge_stop_areas_multi_steps() {
         let paths = vec![
             Path::new("./fixtures/merge-stop-areas/rule1.csv"),
             Path::new("./fixtures/merge-stop-areas/rule2.csv"),
@@ -30,7 +58,6 @@ mod tests {
         let mut rules = read_rules(paths);
         assert_eq!(rules.len(), 4);
         rules.sort();
-        println!("{:?}", rules);
         assert_eq!(
             rules[0],
             StopAreaGroupRule {
@@ -59,5 +86,13 @@ mod tests {
                 to_merge_stop_area_ids: vec![]
             }
         );
+        let objects =
+            navitia_model::ntfs::read(Path::new("./fixtures/merge-stop-areas/ntfs-to-merge"))
+                .unwrap();
+        let collections =
+            navitia_model::merge_stop_areas::apply_rules(objects.into_collections(), rules);
+        let new_model = Model::new(collections).unwrap();
+        navitia_model::ntfs::write(&new_model, "./fixtures/output").unwrap();
+        compare_output_dir_with_expected("./fixtures/output".to_string());
     }
 }

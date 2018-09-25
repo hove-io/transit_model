@@ -1,0 +1,3 @@
+geometry_id,geometry_wkt
+Geometry:1,"LINESTRING(10.1 20.2,30.3 40.4)"
+Geometry:3,"MULTILINESTRING((10.1 20.2,30.3 40.4),(50.5 60.6,70.7 80.8))"
