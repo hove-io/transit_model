@@ -21,12 +21,14 @@ use collection::CollectionWithId;
 use csv;
 use failure::ResultExt;
 use model::Collections;
+use objects::StopArea;
 use objects::{CommentLinksT, KeysValues};
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry::*;
 use std::collections::HashMap;
 use std::path;
 use std::result::Result as StdResult;
+use Result;
 
 #[derive(Deserialize, Debug)]
 pub struct StopAreaMergeRule {
@@ -47,12 +49,18 @@ pub struct StopAreaGroupRule {
 impl PartialEq for StopAreaGroupRule {
     fn eq(&self, other: &StopAreaGroupRule) -> bool {
         self.master_stop_area_id == other.master_stop_area_id
+            && self.to_merge_stop_area_ids == other.to_merge_stop_area_ids
     }
 }
 
 impl Ord for StopAreaGroupRule {
     fn cmp(&self, other: &StopAreaGroupRule) -> Ordering {
-        self.master_stop_area_id.cmp(&other.master_stop_area_id)
+        match self.master_stop_area_id.cmp(&other.master_stop_area_id) {
+            Ordering::Equal => self
+                .to_merge_stop_area_ids
+                .cmp(&other.to_merge_stop_area_ids),
+            strict_order => strict_order,
+        }
     }
 }
 
@@ -75,24 +83,25 @@ fn group_rules_from_file_rules(file_rules: Vec<StopAreaMergeRule>) -> Vec<StopAr
     }
     let group_rules: HashMap<String, StopAreaGroupRule> = rules_with_priority
         .iter()
-        .map(|(k, v)| {
-            let master = &v.iter().min_by_key(|x| x.1).unwrap().0;
-            let others = v
-                .iter()
-                .filter_map(|ref x| {
-                    if x.0 != *master {
-                        Some(x.0.clone())
-                    } else {
-                        None
-                    }
-                }).collect();
-            (
+        .filter_map(|(k, v)| {
+            let mut stops_with_prio = v.clone();
+            stops_with_prio.sort_unstable_by_key(|stop_with_prio| stop_with_prio.1);
+            if stops_with_prio.len() == 1 {
+                warn!("the rule of group {} contains only the stop area {}", k, stops_with_prio[0].0);
+                return None
+            }
+            else if stops_with_prio[0].1 == stops_with_prio[1].1 {
+                warn!("the rule of group {} contains ambiguous priorities for master: stop {} with {} and stop {} with {}", k, stops_with_prio[0].0, stops_with_prio[0].1, stops_with_prio[1].0, stops_with_prio[1].1);
+            }
+            let master = stops_with_prio.remove(0);
+            let others = stops_with_prio.into_iter().map(|stop_with_prio| stop_with_prio.0).collect();
+            Some((
                 k.clone(),
                 StopAreaGroupRule {
-                    master_stop_area_id: master.clone(),
+                    master_stop_area_id: master.0,
                     to_merge_stop_area_ids: others,
                 },
-            )
+            ))
         }).collect();
     group_rules.values().into_iter().cloned().collect()
 }
@@ -114,12 +123,68 @@ pub fn read_rules<P: AsRef<path::Path>>(paths: Vec<P>) -> Vec<StopAreaGroupRule>
     rules
 }
 
+pub fn generate_automatic_rules(
+    stop_areas: &CollectionWithId<StopArea>,
+    distance: u16,
+) -> Vec<StopAreaGroupRule> {
+    let mut stop_area_iter = stop_areas.values();
+    let sq_max_distance: f64 = (distance * distance).into();
+    let mut automatic_rules = vec![];
+    while let Some(top_level_stop_area) = stop_area_iter.next() {
+        for bottom_level_stop_area in stop_area_iter.clone() {
+            if top_level_stop_area.name == bottom_level_stop_area.name {
+                let approx = top_level_stop_area.coord.approx();
+                let sq_distance = approx.sq_distance_to(&bottom_level_stop_area.coord);
+                if sq_distance <= sq_max_distance {
+                    automatic_rules.push(StopAreaGroupRule {
+                        master_stop_area_id: top_level_stop_area.id.clone(),
+                        to_merge_stop_area_ids: vec![bottom_level_stop_area.id.clone()],
+                    });
+                }
+            }
+        }
+    }
+    automatic_rules
+}
+
+fn ensure_rule_valid(
+    rule: StopAreaGroupRule,
+    stop_area_ids: &Vec<String>,
+) -> Result<StopAreaGroupRule> {
+    let mut valid_rule = rule.clone();
+    valid_rule
+        .to_merge_stop_area_ids
+        .retain(|id| stop_area_ids.contains(&id));
+    if valid_rule.to_merge_stop_area_ids.len() == 0 {
+        bail!("rule {:?} is no longer valid because none of the stop areas remaining to merge are existing", rule)
+    } else if !stop_area_ids.contains(&valid_rule.master_stop_area_id) {
+        if valid_rule.to_merge_stop_area_ids.len() == 1 {
+            bail!("rule {:?} is no longer valid because master stop area no longer exists and only one candidate is found", rule)
+        }
+        valid_rule.master_stop_area_id = valid_rule.to_merge_stop_area_ids.remove(0);
+    }
+    Ok(valid_rule)
+}
+
 pub fn apply_rules(mut collections: Collections, rules: Vec<StopAreaGroupRule>) -> Collections {
     let mut stop_points_updated = collections.stop_points.take();
     let mut geometries_updated = collections.geometries.take();
     let mut lines_updated = collections.lines.take();
-    let mut stop_areas_to_remove = Vec::new();
-    for rule in rules {
+    let mut stop_areas_to_remove: Vec<String> = Vec::new();
+    let mut stop_area_ids = collections
+        .stop_areas
+        .values()
+        .map(|stop_area| stop_area.id.clone())
+        .collect::<Vec<String>>();
+    for mut rule in rules {
+        stop_area_ids.retain(|id| !stop_areas_to_remove.contains(&id));
+        match ensure_rule_valid(rule, &stop_area_ids) {
+            Ok(valid_rule) => rule = valid_rule,
+            Err(e) => {
+                warn!("{}", e);
+                continue;
+            }
+        }
         println!(
             "look for parent {:?} to merge {:?}",
             rule.master_stop_area_id, rule.to_merge_stop_area_ids
@@ -173,10 +238,5 @@ pub fn apply_rules(mut collections: Collections, rules: Vec<StopAreaGroupRule>) 
     collections.geometries = CollectionWithId::new(geometries_updated).unwrap();
     collections.stop_areas = CollectionWithId::new(stop_areas_updated).unwrap();
     collections.lines = CollectionWithId::new(lines_updated).unwrap();
-    //    println!("stop_areas = {:?}", collections.stop_areas);
-    //    println!("stop points = {:?}", collections.stop_points);
-    //    println!("geometries = {:?}", collections.geometries);
-    println!("lines = {:?}", collections.lines);
-    println!("routes = {:?}", collections.routes);
     collections
 }

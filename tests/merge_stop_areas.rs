@@ -44,7 +44,9 @@ mod tests {
             let mut expected_file = File::open(expected_file_path.clone())
                 .expect(&format!("file {} not found", expected_file_path));
             let mut expected_contents = String::new();
-            expected_file.read_to_string(&mut expected_contents).unwrap();
+            expected_file
+                .read_to_string(&mut expected_contents)
+                .unwrap();
             assert_eq!(output_contents, expected_contents);
         }
     }
@@ -56,13 +58,14 @@ mod tests {
             Path::new("./fixtures/merge-stop-areas/rule2.csv"),
         ];
         let mut rules = read_rules(paths);
-        assert_eq!(rules.len(), 4);
+        assert_eq!(rules.len(), 3);
         rules.sort();
+        // following assert tests also that to_merge_stop_area_ids are sorted by priority
         assert_eq!(
             rules[0],
             StopAreaGroupRule {
                 master_stop_area_id: "SA:01".to_string(),
-                to_merge_stop_area_ids: vec!["SA:02".to_string(), "SA:04".to_string()]
+                to_merge_stop_area_ids: vec!["SA:04".to_string(), "SA:02".to_string()]
             }
         );
         assert_eq!(
@@ -77,13 +80,6 @@ mod tests {
             StopAreaGroupRule {
                 master_stop_area_id: "SA:11".to_string(),
                 to_merge_stop_area_ids: vec!["SA:10".to_string()]
-            }
-        );
-        assert_eq!(
-            rules[3],
-            StopAreaGroupRule {
-                master_stop_area_id: "SA:12".to_string(),
-                to_merge_stop_area_ids: vec![]
             }
         );
         let objects =

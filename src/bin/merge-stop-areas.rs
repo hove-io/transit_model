@@ -60,8 +60,13 @@ fn run() -> Result<()> {
 
     let manual_rules = navitia_model::merge_stop_areas::read_rules(opt.rules);
     let objects = navitia_model::ntfs::read(opt.input)?;
-    let collections =
-        navitia_model::merge_stop_areas::apply_rules(objects.into_collections(), manual_rules);
+    let mut collections = objects.into_collections();
+    collections = navitia_model::merge_stop_areas::apply_rules(collections, manual_rules);
+    let automatic_rules = navitia_model::merge_stop_areas::generate_automatic_rules(
+        &collections.stop_areas,
+        opt.automatic_max_distance,
+    );
+    collections = navitia_model::merge_stop_areas::apply_rules(collections, automatic_rules);
     let new_model = Model::new(collections)?;
 
     navitia_model::ntfs::write(&new_model, opt.output)?;

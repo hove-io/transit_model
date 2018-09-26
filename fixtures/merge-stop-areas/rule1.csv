@@ -1,6 +1,6 @@
 stop_area_id,stop_area_name,group,priority
 SA:01,Gare de Lyon,1,0
-SA:02,Reuilly Diderot,1,3
-SA:04,Gare de Bercy,1,7
+SA:02,Reuilly Diderot,1,7
+SA:04,Gare de Bercy,1,3
 SA:05,Gare du Nord,2,1
 SA:06,Simplon,2,15
