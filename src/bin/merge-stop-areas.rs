@@ -46,7 +46,7 @@ struct Opt {
 
     /// output report file path
     #[structopt(short = "r", long = "report", parse(from_os_str))]
-    report: Option<PathBuf>,
+    report: PathBuf,
 
     /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
@@ -58,15 +58,14 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let manual_rules = navitia_model::merge_stop_areas::read_rules(opt.rules);
     let objects = navitia_model::ntfs::read(opt.input)?;
     let mut collections = objects.into_collections();
-    collections = navitia_model::merge_stop_areas::apply_rules(collections, manual_rules);
-    let automatic_rules = navitia_model::merge_stop_areas::generate_automatic_rules(
-        &collections.stop_areas,
+    collections = navitia_model::merge_stop_areas::merge_stop_areas(
+        collections,
+        opt.rules,
         opt.automatic_max_distance,
+        opt.report,
     );
-    collections = navitia_model::merge_stop_areas::apply_rules(collections, automatic_rules);
     let new_model = Model::new(collections)?;
 
     navitia_model::ntfs::write(&new_model, opt.output)?;

@@ -25,16 +25,16 @@ mod tests {
     use tests::navitia_model::model::Model;
 
     fn compare_output_dir_with_expected(output_dir: String) {
-        for file in vec![
-            "comment_links",
-            "comments",
-            "geometries",
-            "lines",
-            "object_codes",
-            "object_properties",
-            "stops",
+        for filename in vec![
+            "comment_links.txt",
+            "comments.txt",
+            "geometries.txt",
+            "lines.txt",
+            "object_codes.txt",
+            "object_properties.txt",
+            "stops.txt",
+            "report.json",
         ] {
-            let filename = format!("{}.txt", file);
             let output_file_path = format!("{}/{}", output_dir, filename);
             let mut output_file = File::open(output_file_path.clone())
                 .expect(&format!("file {} not found", output_file_path));
@@ -54,39 +54,18 @@ mod tests {
     #[test]
     fn test_merge_stop_areas_multi_steps() {
         let paths = vec![
-            Path::new("./fixtures/merge-stop-areas/rule1.csv"),
-            Path::new("./fixtures/merge-stop-areas/rule2.csv"),
+            Path::new("./fixtures/merge-stop-areas/rule1.csv").to_path_buf(),
+            Path::new("./fixtures/merge-stop-areas/rule2.csv").to_path_buf(),
         ];
-        let mut rules = read_rules(paths);
-        assert_eq!(rules.len(), 3);
-        rules.sort();
-        // following assert tests also that to_merge_stop_area_ids are sorted by priority
-        assert_eq!(
-            rules[0],
-            StopAreaGroupRule {
-                master_stop_area_id: "SA:01".to_string(),
-                to_merge_stop_area_ids: vec!["SA:04".to_string(), "SA:02".to_string()]
-            }
-        );
-        assert_eq!(
-            rules[1],
-            StopAreaGroupRule {
-                master_stop_area_id: "SA:05".to_string(),
-                to_merge_stop_area_ids: vec!["SA:06".to_string()]
-            }
-        );
-        assert_eq!(
-            rules[2],
-            StopAreaGroupRule {
-                master_stop_area_id: "SA:11".to_string(),
-                to_merge_stop_area_ids: vec!["SA:10".to_string()]
-            }
-        );
         let objects =
             navitia_model::ntfs::read(Path::new("./fixtures/merge-stop-areas/ntfs-to-merge"))
                 .unwrap();
-        let collections =
-            navitia_model::merge_stop_areas::apply_rules(objects.into_collections(), rules);
+        let collections = navitia_model::merge_stop_areas::merge_stop_areas(
+            objects.into_collections(),
+            paths,
+            200,
+            Path::new("./fixtures/output/report.json").to_path_buf(),
+        );
         let new_model = Model::new(collections).unwrap();
         navitia_model::ntfs::write(&new_model, "./fixtures/output").unwrap();
         compare_output_dir_with_expected("./fixtures/output".to_string());

@@ -18,7 +18,7 @@
 //! It can import and export data from [GTFS](http://gtfs.org/) and
 //! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
 
-//#![deny(missing_docs)]
+#![deny(missing_docs)]
 
 extern crate chrono;
 extern crate csv;
