@@ -17,6 +17,7 @@
 //! [GTFS](http://gtfs.org/) format management.
 
 mod read;
+mod write;
 
 use collection::CollectionWithId;
 use common_format::manage_calendars;
@@ -76,4 +77,15 @@ where
     }
 
     Ok(Model::new(collections)?)
+}
+
+/// Exports a `Model` to [GTFS](http://gtfs.org/) files
+/// in the given directory.
+pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
+    let path = path.as_ref();
+    info!("Writing GTFS to {:?}", path);
+
+    // do some things..
+
+    Ok(())
 }
