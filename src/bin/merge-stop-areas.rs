@@ -42,7 +42,7 @@ struct Opt {
 
     /// maximum distance in meters used to merge stop areas
     #[structopt(short = "d", long = "distance")]
-    automatic_max_distance: u16,
+    automatic_max_distance: u32,
 
     /// output report file path
     #[structopt(short = "r", long = "report", parse(from_os_str))]
@@ -65,7 +65,7 @@ fn run() -> Result<()> {
         opt.rules,
         opt.automatic_max_distance,
         opt.report,
-    );
+    )?;
     let new_model = Model::new(collections)?;
 
     navitia_model::ntfs::write(&new_model, opt.output)?;

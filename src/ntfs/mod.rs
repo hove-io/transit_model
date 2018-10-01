@@ -244,11 +244,8 @@ mod tests {
         });
     }
 
-    fn btree_set_from_vec<T>(input: Vec<T>) -> BTreeSet<T>
-    where
-        T: Clone + Ord,
-    {
-        input.iter().cloned().collect::<BTreeSet<T>>()
+    fn btree_set_from_vec<T: Ord>(input: Vec<T>) -> BTreeSet<T> {
+        input.into_iter().collect()
     }
 
     #[test]

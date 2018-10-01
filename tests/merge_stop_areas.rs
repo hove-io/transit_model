@@ -15,59 +15,60 @@
 // <http://www.gnu.org/licenses/>.
 
 #[cfg(test)]
-mod tests {
-    extern crate navitia_model;
+extern crate navitia_model;
 
-    use std::fs::File;
-    use std::io::prelude::*;
-    use std::path::Path;
-    use tests::navitia_model::merge_stop_areas::*;
-    use tests::navitia_model::model::Model;
+use navitia_model::model::Model;
+use std::fs::File;
+use std::io::prelude::*;
+use std::path::Path;
+extern crate tempdir;
+use self::tempdir::TempDir;
 
-    fn compare_output_dir_with_expected(output_dir: String) {
-        for filename in vec![
-            "comment_links.txt",
-            "comments.txt",
-            "geometries.txt",
-            "lines.txt",
-            "object_codes.txt",
-            "object_properties.txt",
-            "stops.txt",
-            "report.json",
-        ] {
-            let output_file_path = format!("{}/{}", output_dir, filename);
-            let mut output_file = File::open(output_file_path.clone())
-                .expect(&format!("file {} not found", output_file_path));
-            let mut output_contents = String::new();
-            output_file.read_to_string(&mut output_contents).unwrap();
-            let expected_file_path = format!("./fixtures/merge-stop-areas/output/{}", filename);
-            let mut expected_file = File::open(expected_file_path.clone())
-                .expect(&format!("file {} not found", expected_file_path));
-            let mut expected_contents = String::new();
-            expected_file
-                .read_to_string(&mut expected_contents)
-                .unwrap();
-            assert_eq!(output_contents, expected_contents);
-        }
+fn compare_output_dir_with_expected(output_dir: &Path) {
+    for filename in vec![
+        "comment_links.txt",
+        "comments.txt",
+        "geometries.txt",
+        "lines.txt",
+        "object_codes.txt",
+        "object_properties.txt",
+        "stops.txt",
+        "report.json",
+    ] {
+        let output_file_path = output_dir.join(filename);
+        let mut output_file = File::open(output_file_path.clone())
+            .expect(&format!("file {:?} not found", output_file_path));
+        let mut output_contents = String::new();
+        output_file.read_to_string(&mut output_contents).unwrap();
+        let expected_file_path = format!("./fixtures/merge-stop-areas/output/{}", filename);
+        let mut expected_file = File::open(expected_file_path.clone())
+            .expect(&format!("file {} not found", expected_file_path));
+        let mut expected_contents = String::new();
+        expected_file
+            .read_to_string(&mut expected_contents)
+            .unwrap();
+        assert_eq!(output_contents, expected_contents);
     }
+}
 
-    #[test]
-    fn test_merge_stop_areas_multi_steps() {
-        let paths = vec![
-            Path::new("./fixtures/merge-stop-areas/rule1.csv").to_path_buf(),
-            Path::new("./fixtures/merge-stop-areas/rule2.csv").to_path_buf(),
-        ];
-        let objects =
-            navitia_model::ntfs::read(Path::new("./fixtures/merge-stop-areas/ntfs-to-merge"))
-                .unwrap();
-        let collections = navitia_model::merge_stop_areas::merge_stop_areas(
-            objects.into_collections(),
-            paths,
-            200,
-            Path::new("./fixtures/output/report.json").to_path_buf(),
-        );
-        let new_model = Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&new_model, "./fixtures/output").unwrap();
-        compare_output_dir_with_expected("./fixtures/output".to_string());
-    }
+#[test]
+fn test_merge_stop_areas_multi_steps() {
+    let paths = vec![
+        Path::new("./fixtures/merge-stop-areas/rule1.csv").to_path_buf(),
+        Path::new("./fixtures/merge-stop-areas/rule2.csv").to_path_buf(),
+    ];
+    let objects =
+        navitia_model::ntfs::read(Path::new("./fixtures/merge-stop-areas/ntfs-to-merge")).unwrap();
+    let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+    let report_path = tmp_dir.path().join("report.json");
+    let collections = navitia_model::merge_stop_areas::merge_stop_areas(
+        objects.into_collections(),
+        paths,
+        200,
+        Path::new(&report_path).to_path_buf(),
+    ).unwrap();
+    let new_model = Model::new(collections).unwrap();
+    navitia_model::ntfs::write(&new_model, tmp_dir.path()).unwrap();
+    compare_output_dir_with_expected(tmp_dir.path());
+    tmp_dir.close().expect("delete temp dir");
 }

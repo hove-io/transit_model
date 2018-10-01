@@ -52,7 +52,7 @@ mod tests {
             phone: Some("0123456789".to_string()),
             address: Some("somewhere".to_string()),
             sort_order: Some(1),
-            codes: vec![],
+            codes: Default::default(),
         });
 
         let expected_agency = Agency {
@@ -79,7 +79,7 @@ mod tests {
             phone: None,
             address: None,
             sort_order: None,
-            codes: vec![],
+            codes: Default::default(),
         });
 
         let expected_agency = Agency {
