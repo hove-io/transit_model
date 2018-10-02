@@ -90,6 +90,9 @@ where
     T: Id<T>,
     T: serde::Serialize,
 {
+    if collection.is_empty() {
+        return Ok(());
+    }
     info!("Writing {}", file);
     let path = path.join(file);
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
@@ -105,6 +108,9 @@ pub fn write_collection<T>(path: &path::Path, file: &str, collection: &Collectio
 where
     T: serde::Serialize,
 {
+    if collection.is_empty() {
+        return Ok(());
+    }
     info!("Writing {}", file);
     let path = path.join(file);
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
@@ -206,6 +212,9 @@ where
 }
 
 pub fn write_comments(path: &path::Path, collections: &Collections) -> Result<()> {
+    if collections.comments.is_empty() {
+        return Ok(());
+    }
     info!("Writing comments.txt and comment_links.txt");
 
     let comments_path = path.join("comments.txt");
@@ -285,6 +294,22 @@ where
 }
 
 pub fn write_codes(path: &path::Path, collections: &Collections) -> Result<()> {
+    fn collection_has_codes<T: Codes>(collection: &CollectionWithId<T>) -> bool {
+        collection.values().all(|c| c.codes().is_empty())
+    }
+    if collection_has_codes(&collections.stop_areas)
+        && collection_has_codes(&collections.stop_points)
+        && collection_has_codes(&collections.networks)
+        && collection_has_codes(&collections.lines)
+        && collection_has_codes(&collections.routes)
+        && collection_has_codes(&collections.vehicle_journeys)
+    {
+        return Ok(());
+    }
+
+    if collections.comments.is_empty() {
+        return Ok(());
+    }
     info!("Writing object_codes.txt");
 
     let path = path.join("object_codes.txt");
@@ -326,6 +351,18 @@ where
 }
 
 pub fn write_object_properties(path: &path::Path, collections: &Collections) -> Result<()> {
+    fn collection_has_object_properties<T: Properties>(collection: &CollectionWithId<T>) -> bool {
+        collection.values().all(|c| c.properties().is_empty())
+    }
+    if collection_has_object_properties(&collections.stop_areas)
+        && collection_has_object_properties(&collections.stop_points)
+        && collection_has_object_properties(&collections.lines)
+        && collection_has_object_properties(&collections.routes)
+        && collection_has_object_properties(&collections.vehicle_journeys)
+    {
+        return Ok(());
+    }
+
     info!("Writing object_properties.txt");
 
     let path = path.join("object_properties.txt");
