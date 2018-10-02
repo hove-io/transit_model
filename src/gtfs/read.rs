@@ -350,7 +350,7 @@ struct StopTime {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Shape {
+struct Shape {
     #[serde(rename = "shape_id")]
     id: String,
     #[serde(rename = "shape_pt_lat")]
@@ -371,21 +371,23 @@ pub fn manage_shapes<P: AsRef<path::Path>>(collections: &mut Collections, path: 
 
     info!("Reading {}", file);
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let mut shapes: Vec<Shape> = rdr
-        .deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
+    let mut shapes = vec![];
+    for shape in rdr.deserialize() {
+        let shape: Shape = skip_fail!(shape.with_context(ctx_from_path!(path)));
+        shapes.push(shape);
+    }
 
     shapes.sort_unstable_by_key(|s| s.sequence);
     let mut map: HashMap<String, Vec<Point<f64>>> = HashMap::new();
     for s in &shapes {
         map.entry(s.id.clone())
             .or_insert_with(|| vec![])
-            .push((s.lon, s.lat).into());
+            .push((s.lon, s.lat).into())
     }
 
     collections.geometries = CollectionWithId::new(
         map.iter()
+            .filter(|(_, points)| !points.is_empty())
             .map(|(id, points)| {
                 let linestring: LineString<f64> = points.to_vec().into();
                 objects::Geometry {
@@ -2146,7 +2148,13 @@ mod tests {
         let shapes_content = "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence\n\
                               1,4.4,3.3,2\n\
                               1,2.2,1.1,1\n\
-                              2,6.6,5.5,1";
+                              2,6.6,5.5,1\n\
+                              2,,7.7,2\n\
+                              2,8.8,,3\n\
+                              2,,,4\n\
+                              2,,,5\n\
+                              3,,,1\n\
+                              3,,,2";
 
         test_in_tmp_dir(|ref tmp_dir| {
             create_file_with_content(&tmp_dir, "shapes.txt", shapes_content);
