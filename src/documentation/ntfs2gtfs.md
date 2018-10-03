@@ -94,13 +94,13 @@ bikes_allowed | no | trip_properties.txt | bike_accepted | The value of `bike_ac
 
 (1) If the value of the `physical_mode_id` for this trip is `LocalTrain`, `LongDistanceTrain`, `Metro`, `RapidTransit` or `Train`,
 - the field `trip_short_name` takes after the value of the `trip_headsing` field in the NTFS
-- the field `trip_headsign` contains the value of the `stop_name` linked to the stoppoint of this trip with the higher order in the trip (i.e. the name of the last stop of the trip).
+- the field `trip_headsign` contains the value of the `stop_name` linked to the stop_point of this trip with the higher order in the trip (i.e. the name of the last stop of the trip).
 
 Otherwise,
 - the field `trip_short_name` is empty
 - the field `trip_headsign` contains
   - the value of the `trip_headsing` field in the NTFS, if present
-  - otherwise, the value of the `stop_name` linked to the stoppoint of this trip with the higher order in the trip (i.e. the name of the last stop of the trip).
+  - otherwise, the value of the `stop_name` linked to the stop_point of this trip with the higher order in the trip (i.e. the name of the last stop of the trip).
 
 ### stop_times.txt
 
