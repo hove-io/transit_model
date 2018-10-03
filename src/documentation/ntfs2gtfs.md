@@ -8,7 +8,7 @@ The resulting GTFS feed is composed of the following objects:
 - [stops](#stopstxt)
 - [trips](#tripstxt)
 - [stop_times](#stop_timestxt)
-- [calendar_dates](#calendar_datestxt): all dates of service are included in this file (no calendar.txt file provided).
+- [calendar_dates](#calendar_datestxt): only this file is provided instead of the calendar.txt file.
 
 The following additional files are generated only if the corresponding objects are present in the NTFS.
 - [transfers](#transferstxt)
@@ -118,7 +118,7 @@ stop_time_desc | no | comments.txt, comment_links.txt | comment_name | The value
 local_zone_id | no | stop_times.txt | local_zone_id |
 
 ### calendar_dates.txt
-This file is the same as the NTFS calendar_dates.txt file.
+This file is the same as the NTFS calendar_dates.txt file. All dates of service are included in this file (no calendar.txt file provided).
 
 ### transfers.txt
 
