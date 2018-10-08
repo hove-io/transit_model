@@ -228,6 +228,27 @@ impl<T> Collection<T> {
         }
         Ok(())
     }
+
+    /// Takes the corresponding vector without clones or allocation,
+    /// leaving `self` empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// let mut c = Collection::new(vec![Obj("foo"), Obj("bar")]);
+    /// let v = c.take();
+    /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);
+    /// assert_eq!(c.len(), 0);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn take(&mut self) -> Vec<T> {
+        ::std::mem::replace(&mut self.objects, Vec::new())
+    }
 }
 
 /// The type returned by `Collection::iter`.
