@@ -294,15 +294,15 @@ where
 }
 
 pub fn write_codes(path: &path::Path, collections: &Collections) -> Result<()> {
-    fn collection_has_codes<T: Codes>(collection: &CollectionWithId<T>) -> bool {
+    fn collection_has_no_codes<T: Codes>(collection: &CollectionWithId<T>) -> bool {
         collection.values().all(|c| c.codes().is_empty())
     }
-    if collection_has_codes(&collections.stop_areas)
-        && collection_has_codes(&collections.stop_points)
-        && collection_has_codes(&collections.networks)
-        && collection_has_codes(&collections.lines)
-        && collection_has_codes(&collections.routes)
-        && collection_has_codes(&collections.vehicle_journeys)
+    if collection_has_no_codes(&collections.stop_areas)
+        && collection_has_no_codes(&collections.stop_points)
+        && collection_has_no_codes(&collections.networks)
+        && collection_has_no_codes(&collections.lines)
+        && collection_has_no_codes(&collections.routes)
+        && collection_has_no_codes(&collections.vehicle_journeys)
     {
         return Ok(());
     }
@@ -351,14 +351,16 @@ where
 }
 
 pub fn write_object_properties(path: &path::Path, collections: &Collections) -> Result<()> {
-    fn collection_has_object_properties<T: Properties>(collection: &CollectionWithId<T>) -> bool {
+    fn collection_has_no_object_properties<T: Properties>(
+        collection: &CollectionWithId<T>,
+    ) -> bool {
         collection.values().all(|c| c.properties().is_empty())
     }
-    if collection_has_object_properties(&collections.stop_areas)
-        && collection_has_object_properties(&collections.stop_points)
-        && collection_has_object_properties(&collections.lines)
-        && collection_has_object_properties(&collections.routes)
-        && collection_has_object_properties(&collections.vehicle_journeys)
+    if collection_has_no_object_properties(&collections.stop_areas)
+        && collection_has_no_object_properties(&collections.stop_points)
+        && collection_has_no_object_properties(&collections.lines)
+        && collection_has_no_object_properties(&collections.routes)
+        && collection_has_no_object_properties(&collections.vehicle_journeys)
     {
         return Ok(());
     }
