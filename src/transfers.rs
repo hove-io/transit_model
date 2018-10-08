@@ -189,7 +189,7 @@ fn do_generates_transfers(
         add_missing_transfers(&mut transfers_map, stop_points, rules, waiting_time);
     }
 
-    let mut transfers: Vec<Transfer> = transfers_map.values().cloned().collect();
+    let mut transfers: Vec<_> = transfers_map.into_iter().map(|(_, v)| v).collect();
     transfers.sort_unstable_by(|t1, t2| {
         (&t1.from_stop_id, &t1.to_stop_id).cmp(&(&t2.from_stop_id, &t2.to_stop_id))
     });
