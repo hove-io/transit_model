@@ -35,6 +35,17 @@ fn default_agency_id() -> String {
     "default_agency_id".to_string()
 }
 
+fn get_agency_id(route: &Route, networks: &CollectionWithId<objects::Network>) -> Result<String> {
+    route
+        .agency_id
+        .as_ref()
+        .map(|id| Ok(id.to_string()))
+        .unwrap_or_else(|| match networks.values().next() {
+            Some(n) => Ok(n.id.clone()),
+            None => bail!("Impossible to get agency id, no network found"),
+        })
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Agency {
     #[serde(rename = "agency_id")]
@@ -313,11 +324,12 @@ impl Trip {
         routes: &CollectionWithId<Route>,
         dataset: &objects::Dataset,
         trip_property_id: &Option<String>,
-    ) -> objects::VehicleJourney {
+        networks: &CollectionWithId<objects::Network>,
+    ) -> Result<objects::VehicleJourney> {
         let route = routes.get(&self.route_id).unwrap();
         let physical_mode = get_physical_mode(&route.route_type);
 
-        objects::VehicleJourney {
+        Ok(objects::VehicleJourney {
             id: self.id.clone(),
             codes: KeysValues::default(),
             object_properties: KeysValues::default(),
@@ -328,11 +340,11 @@ impl Trip {
             service_id: self.service_id.clone(),
             headsign: self.short_name.clone().or_else(|| self.headsign.clone()),
             block_id: self.block_id.clone(),
-            company_id: route.agency_id.clone().unwrap_or_else(default_agency_id),
+            company_id: get_agency_id(route, networks)?,
             trip_property_id: trip_property_id.clone(),
             geometry_id: self.shape_id.clone(),
             stop_times: vec![],
-        }
+        })
     }
 }
 
@@ -822,7 +834,11 @@ fn map_line_routes(gtfs_routes: &CollectionWithId<Route>) -> MapLineRoutes {
     map
 }
 
-fn make_lines(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objects::Line> {
+fn make_lines(
+    gtfs_trips: &[Trip],
+    map_line_routes: &MapLineRoutes,
+    networks: &CollectionWithId<objects::Network>,
+) -> Result<Vec<objects::Line>> {
     let mut lines = vec![];
 
     let line_code = |r: &Route| {
@@ -831,13 +847,6 @@ fn make_lines(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objec
         } else {
             Some(r.short_name.to_string())
         }
-    };
-
-    let line_agency = |r: &Route| {
-        r.agency_id
-            .as_ref()
-            .map(|id| id.to_string())
-            .unwrap_or_else(default_agency_id)
     };
 
     for routes in map_line_routes.values() {
@@ -858,7 +867,7 @@ fn make_lines(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objec
                 color: r.color.clone(),
                 text_color: r.text_color.clone(),
                 sort_order: r.sort_order,
-                network_id: line_agency(r),
+                network_id: get_agency_id(r, networks)?,
                 commercial_mode_id: r.route_type.to_gtfs_value(),
                 geometry_id: None,
                 opening_time: None,
@@ -867,7 +876,7 @@ fn make_lines(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objec
         }
     }
 
-    lines
+    Ok(lines)
 }
 
 fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objects::Route> {
@@ -922,6 +931,7 @@ fn make_ntfs_vehicle_journeys(
     gtfs_trips: &[Trip],
     routes: &CollectionWithId<Route>,
     datasets: &CollectionWithId<objects::Dataset>,
+    networks: &CollectionWithId<objects::Network>,
 ) -> Result<(Vec<objects::VehicleJourney>, Vec<objects::TripProperty>)> {
     // there always is one dataset from config or a default one
     let (_, dataset) = datasets.iter().next().unwrap();
@@ -957,7 +967,12 @@ fn make_ntfs_vehicle_journeys(
             id_incr += 1;
         }
         for t in trips {
-            vehicle_journeys.push(t.to_ntfs_vehicle_journey(routes, dataset, &property_id));
+            vehicle_journeys.push(t.to_ntfs_vehicle_journey(
+                routes,
+                dataset,
+                &property_id,
+                networks,
+            )?);
         }
     }
 
@@ -988,15 +1003,18 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
         .with_context(ctx_from_path!(trips_path))?;
 
     let map_line_routes = map_line_routes(&gtfs_routes_collection);
-    let lines = make_lines(&gtfs_trips, &map_line_routes);
+    let lines = make_lines(&gtfs_trips, &map_line_routes, &collections.networks)?;
     collections.lines = CollectionWithId::new(lines)?;
 
     let routes = make_routes(&gtfs_trips, &map_line_routes);
     collections.routes = CollectionWithId::new(routes)?;
 
-    let (vehicle_journeys, trip_properties) =
-        make_ntfs_vehicle_journeys(&gtfs_trips, &gtfs_routes_collection, &collections.datasets)
-            .with_context(ctx_from_path!(trips_path))?;
+    let (vehicle_journeys, trip_properties) = make_ntfs_vehicle_journeys(
+        &gtfs_trips,
+        &gtfs_routes_collection,
+        &collections.datasets,
+        &collections.networks,
+    ).with_context(ctx_from_path!(trips_path))?;
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     collections.trip_properties = CollectionWithId::new(trip_properties)?;
 
@@ -1219,6 +1237,10 @@ mod tests {
             collections.datasets = datasets;
             super::read_routes(tmp_dir, &mut collections).unwrap();
             assert_eq!(4, collections.lines.len());
+            assert_eq!(
+                extract(|l| &l.network_id, &collections.lines),
+                &["agency_1", "agency_2", "agency_3", "agency_4"]
+            );
             assert_eq!(2, collections.commercial_modes.len());
 
             assert_eq!(
@@ -1251,7 +1273,53 @@ mod tests {
     }
 
     #[test]
+    fn gtfs_routes_without_agency_id_as_line() {
+        let agency_content = "agency_id,agency_name,agency_url,agency_timezone\n\
+                              id_agency,My agency,http://my-agency_url.com,Europe/London";
+
+        let routes_content =
+            "route_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+             route_1,1,My line 1,3,8F7A32,FFFFFF\n\
+             route_2,,My line 2,2,7BC142,000000\n\
+             route_3,3,My line 3,8,,\n\
+             route_4,3,My line 3 for agency 3,8,,";
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,,service_1,,\n\
+             2,route_1,1,service_1,,\n\
+             3,route_2,0,service_2,,\n\
+             4,route_3,0,service_3,,\n\
+             5,route_4,0,service_4,,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+
+            let mut collections = Collections::default();
+            let (networks, _) = super::read_agency(tmp_dir).unwrap();
+            collections.networks = networks;
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+            super::read_routes(tmp_dir, &mut collections).unwrap();
+            assert_eq!(3, collections.lines.len());
+
+            assert_eq!(5, collections.routes.len());
+
+            assert_eq!(
+                extract(|l| &l.network_id, &collections.lines),
+                &["id_agency", "id_agency", "id_agency"]
+            );
+        });
+    }
+
+    #[test]
     fn gtfs_routes_as_route() {
+        let agency_content = "agency_id,agency_name,agency_url,agency_timezone\n\
+                              id_agency,My agency,http://my-agency_url.com,Europe/London";
+
         let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
                               route_1,agency_1,1,My line 1A,3,8F7A32,FFFFFF\n\
                               route_2,agency_1,1,My line 1B,3,8F7A32,FFFFFF\n\
@@ -1268,15 +1336,22 @@ mod tests {
              5,route_5,0,service_3,,";
 
         test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
             create_file_with_content(&tmp_dir, "routes.txt", routes_content);
             create_file_with_content(&tmp_dir, "trips.txt", trips_content);
             let mut collections = Collections::default();
+            let (networks, _) = super::read_agency(tmp_dir).unwrap();
+            collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             super::read_routes(tmp_dir, &mut collections).unwrap();
 
             assert_eq!(3, collections.lines.len());
+            assert_eq!(
+                extract(|l| &l.network_id, &collections.lines),
+                &["agency_1", "agency_2", "id_agency"]
+            );
             assert_eq!(
                 extract_ids(&collections.lines),
                 &["route_1", "route_3", "route_5"]
@@ -1615,6 +1690,50 @@ mod tests {
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
+            assert_eq!(
+                extract(|vj| &vj.company_id, &collections.vehicle_journeys),
+                &["agency_1", "agency_2", "agency_3"]
+            );
+            assert_eq!(1, collections.trip_properties.len());
+        });
+    }
+
+    #[test]
+    fn gtfs_trips_with_routes_without_agency_id() {
+        let agency_content = "agency_id,agency_name,agency_url,agency_timezone\n\
+                              id_agency,My agency,http://my-agency_url.com,Europe/London";
+
+        let routes_content =
+            "route_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+             route_1,1,My line 1,3,8F7A32,FFFFFF\n\
+             route_2,2,My line 2,3,8F7A32,FFFFFF\n\
+             route_3,3,My line 3,3,8F7A32,FFFFFF";
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,\n\
+             2,route_2,0,service_1,1,2\n\
+             3,route_3,0,service_1,1,2";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+
+            let mut collections = Collections::default();
+            let (networks, _) = super::read_agency(tmp_dir).unwrap();
+            collections.networks = networks;
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+
+            super::read_routes(tmp_dir, &mut collections).unwrap();
+            assert_eq!(3, collections.lines.len());
+            assert_eq!(3, collections.routes.len());
+            assert_eq!(3, collections.vehicle_journeys.len());
+            assert_eq!(
+                extract(|vj| &vj.company_id, &collections.vehicle_journeys),
+                &["id_agency", "id_agency", "id_agency"]
+            );
             assert_eq!(1, collections.trip_properties.len());
         });
     }
