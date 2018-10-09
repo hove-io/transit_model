@@ -17,7 +17,7 @@
 use csv;
 use std::path;
 
-use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
+use super::{Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime};
 use crate::collection::*;
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
@@ -81,13 +81,14 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
     for stop in rdr.deserialize() {
         let mut stop: Stop = stop.with_context(ctx_from_path!(path))?;
         match stop.location_type {
-            0 | 2 => {
-                let mut stop_type = StopType::Point;
-                let mut area_visibility = true;
-                if stop.location_type == 2 {
-                    stop_type = StopType::Zone;
-                    area_visibility = false;
-                };
+            StopLocationType::StopPoint | StopLocationType::GeographicArea => {
+                let (stop_type, area_visibility) =
+                    if stop.location_type == StopLocationType::GeographicArea {
+                        (StopType::Zone, false)
+                    } else {
+                        (StopType::Point, true)
+                    };
+
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
                     new_stop_area.visible = area_visibility;
@@ -97,8 +98,16 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
                 }
                 stop_points.push(StopPoint::from_with_type(stop, stop_type));
             }
-            1 => stop_areas.push(StopArea::from(stop)),
-            i => warn!("stop.location_type = {} not yet supported, skipping.", i),
+            StopLocationType::StopArea => stop_areas.push(StopArea::from(stop)),
+            StopLocationType::EntranceExit => {
+                warn!("stop.location_type = 3 not yet supported, skipping.")
+            }
+            StopLocationType::PathwayInterconnectionNode => {
+                warn!("stop.location_type = 4 not yet supported, skipping.")
+            }
+            StopLocationType::BoardingArea => {
+                warn!("stop.location_type = 5 not yet supported, skipping.")
+            }
         }
     }
     collections.stop_areas = CollectionWithId::new(stop_areas)?;
