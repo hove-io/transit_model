@@ -23,10 +23,48 @@ use collection::CollectionWithId;
 use common_format::manage_calendars;
 use gtfs::read::EquipmentList;
 use model::{Collections, Model};
-use objects::Comment;
+use objects;
 use read_utils::add_prefix;
 use std::path::Path;
 use Result;
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+struct Agency {
+    #[serde(rename = "agency_id")]
+    id: Option<String>,
+    #[serde(rename = "agency_name")]
+    name: String,
+    #[serde(rename = "agency_url")]
+    url: String,
+    #[serde(rename = "agency_timezone")]
+    timezone: String,
+    #[serde(rename = "agency_lang")]
+    lang: Option<String>,
+    #[serde(rename = "agency_phone")]
+    phone: Option<String>,
+    #[serde(rename = "agency_email")]
+    email: Option<String>,
+}
+
+impl<'a> From<&'a objects::Network> for Agency {
+    fn from(n: &objects::Network) -> Agency {
+        Agency {
+            id: Some(n.id.clone()),
+            name: n.name.clone(),
+            url: n
+                .url
+                .clone()
+                .unwrap_or_else(|| "http://www.navitia.io/".to_string()),
+            timezone: n
+                .timezone
+                .clone()
+                .unwrap_or_else(|| "Europe/Paris".to_string()),
+            lang: n.lang.clone(),
+            phone: n.phone.clone(),
+            email: None,
+        }
+    }
+}
 
 /// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
 /// `path` directory.
@@ -44,7 +82,7 @@ where
 {
     let mut collections = Collections::default();
     let mut equipments = EquipmentList::default();
-    let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+    let mut comments: CollectionWithId<objects::Comment> = CollectionWithId::default();
 
     let path = path.as_ref();
 
@@ -85,7 +123,7 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
     let path = path.as_ref();
     info!("Writing GTFS to {:?}", path);
 
-    // do some things..
+    write::write_agencies(path, &model.networks)?;
 
     Ok(())
 }

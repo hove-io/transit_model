@@ -20,26 +20,26 @@ The following additional files are generated only if the corresponding objects a
 
 GTFS field | Required | NTFS file | NTFS field | Note
 --- | --- | --- | --- | ---
-agency_id | yes | networks.txt | network_id | 
-agency_name | yes | networks.txt | network_name | 
-agency_url | yes | networks.txt | network_url | 
+agency_id | yes | networks.txt | network_id |
+agency_name | yes | networks.txt | network_name |
+agency_url | yes | networks.txt | network_url | `http://www.navitia.io/` if the value is not provided.
 agency_timezone | yes | networks.txt | network_timezone | `Europe/Paris` if the value is not provided.
-agency_lang | no | networks.txt | network_lang | 
-agency_phone | no | networks.txt | network_phone | 
+agency_lang | no | networks.txt | network_lang |
+agency_phone | no | networks.txt | network_phone |
 
 #### routes.txt
-Each line of this file corresponds to a transit line modeled in the NTFS feed. In case a transit line uses more than one modes of transportation, it should be modeled separately for each different mode, according to the mapping of modes presented below. The priorities follow the [NeTex Specification](http://www.normes-donnees-tc.org/wp-content/uploads/2014/05/NF_Profil_NeTEx_pour_les_arrets-_F-_-_v2.pdf) (cf. chapter 6.2.3). 
+Each line of this file corresponds to a transit line modeled in the NTFS feed. In case a transit line uses more than one modes of transportation, it should be modeled separately for each different mode, according to the mapping of modes presented below. The priorities follow the [NeTex Specification](http://www.normes-donnees-tc.org/wp-content/uploads/2014/05/NF_Profil_NeTEx_pour_les_arrets-_F-_-_v2.pdf) (cf. chapter 6.2.3).
 
 GTFS field | Required | NTFS file | NTFS field | Note
 --- | --- | --- | --- | ---
-route_id | yes | lines.txt | line_id | 
+route_id | yes | lines.txt | line_id |
 agency_id | no | lines.txt | network_id | (link to the [agency.txt](#agencytxt) file)
-route_short_name | yes | lines.txt | line_code |  
-route_long_name | yes | lines.txt | line_name | 
+route_short_name | yes | lines.txt | line_code |
+route_long_name | yes | lines.txt | line_name |
 route_type | yes | | | The corresponding physical mode of the trips of the line. See the table below for the mapping of modes.
-route_color | no | lines.txt | line_color | 
-route_text_color | no | lines.txt | line_text_color | 
-route_sort_order | no | lines.txt | line_sort_order | 
+route_color | no | lines.txt | line_color |
+route_text_color | no | lines.txt | line_text_color |
+route_sort_order | no | lines.txt | line_sort_order |
 
 **Mapping of `route_type` with physical modes**
 - The trips using the physical mode with the lowest priority are modeled by a GTFS line with the field `route_id` matching the value of `line_id`.
@@ -67,27 +67,27 @@ Shuttle | 7 | 6
 Stops and stations (stops having `location_type` = 0 and 1) are the only objects handled in the current version.
 
 GTFS field | Required | NTFS file | NTFS field
---- | --- | --- | --- 
-stop_id | yes | stops.txt | stop_id 
-stop_name | yes | stops.txt | stop_name 
-stop_lat | yes | stops.txt | stop_lat 
-stop_lon | yes | stops.txt | stop_lon 
+--- | --- | --- | ---
+stop_id | yes | stops.txt | stop_id
+stop_name | yes | stops.txt | stop_name
+stop_lat | yes | stops.txt | stop_lat
+stop_lon | yes | stops.txt | stop_lon
 zone_id | no | stops.txt | fare_zone_id
 location_type | no | stops.txt | location_type
-parent_station | no | stops.txt | parent_station 
+parent_station | no | stops.txt | parent_station
 
 ### trips.txt
 
 GTFS field | Required | NTFS file | NTFS field | Note
 --- | --- | --- | --- | ---
-route_id | yes | trips.txt | route_id | 
-service_id | yes | trips.txt | service_id | 
-trip_id | yes | trips.txt | trip_id | 
+route_id | yes | trips.txt | route_id |
+service_id | yes | trips.txt | service_id |
+trip_id | yes | trips.txt | trip_id |
 trip_headsign | no | trips.txt | | (1)
 trip_short_name | no | trips.txt | | (1)
 trip_desc | no | comments.txt, comment_links.txt | comment_name | The value of `comment_name` referenced by the `comment_id` having an `object_type` = `trip` and an `object_id` equal to the corresponding `trip_id`. In case of more than one comments linked to the same trip, the first comment in alphabetical order is taken into account.
 direction_id | no | routes.txt | direction_type | `1` if the corresponding value is `forward`, `clockwise` or `inbound`. `0` otherwise.
-block_id | no | trips.txt | block_id | 
+block_id | no | trips.txt | block_id |
 shape_id | no | trips.txt | geometry_id | (link to the [shapes.txt](#shapestxt) file)
 wheelchair_accessible | no | trip_properties.txt | wheelchair_accessible | The value of `wheelchair_accessible` referenced by the `trip_property_id` of this trip.
 bikes_allowed | no | trip_properties.txt | bike_accepted | The value of `bike_accepted` referenced by the `trip_property_id` of this trip.
@@ -107,11 +107,11 @@ Otherwise,
 GTFS field | Required | NTFS file | NTFS field | Note
 --- | --- | --- | --- | ---
 trip_id | yes | stop_times.txt | trip_id | (link to the [trips.txt](#tripstxt) file)
-arrival_time | yes | stop_times | arrival_time | 
-departure_time | yes | stop_times.txt | departure_time | 
+arrival_time | yes | stop_times | arrival_time |
+departure_time | yes | stop_times.txt | departure_time |
 stop_id | yes | stop_times.txt | stop_id | (link to the [stops.txt](#stopstxt) file)
 stop_sequence | yes | stop_times.txt | stop_sequence |
-stop_headsign | no | stop_times.txt | stop_headsign | 
+stop_headsign | no | stop_times.txt | stop_headsign |
 pickup_type | no | stop_times.txt | pickup_type |
 drop_off_type | no | stop_times.txt | drop_off_type |
 stop_time_desc | no | comments.txt, comment_links.txt | comment_name | The value of `comment_name` referenced by the `comment_id` having an `object_type` = `stop_point`and an `object_id` equal to the corresponding `trip_id`. In case of more than one comments linked to the same stop, the first comment in alphabetical order is taken into account.
@@ -133,7 +133,7 @@ min_transfer_time | no | transfers.txt | min_transfer_time |
 
 GTFS field | Required | NTFS file | NTFS field | Note
 --- | --- | --- | --- | ---
-shape_id | yes | geometries.txt | geometry_id | 
+shape_id | yes | geometries.txt | geometry_id |
 shape_pt_lat | yes | geometries.txt | geometry_wkt | Latitude of the stop in the shape
 shape_pt_lon | yes | geometries.txt | geometry_wkt | Longitude of the stop in the shape
 shape_pt_sequence | yes | | | Integer starting at 0 and increase by an increment of one for every point in the shape
@@ -145,5 +145,5 @@ If N complementary codes are specified for a stop, there will be N separate line
 GTFS field | Required | NTFS file | NTFS field | Note
 --- | --- | --- | --- | ---
 stop_id | yes | object_codes.txt | object_id | `stop_id` of the stop having a complementary code specified (link to the [stops.txt](#stopstxt) file)
-system_name | yes | object_codes.txt | object_system | 
-system_code | yes | object_codes.txt | object_code | 
+system_name | yes | object_codes.txt | object_system |
+system_code | yes | object_codes.txt | object_code |
