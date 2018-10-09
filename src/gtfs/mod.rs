@@ -46,8 +46,8 @@ struct Agency {
     email: Option<String>,
 }
 
-impl From<objects::Network> for Agency {
-    fn from(n: objects::Network) -> Agency {
+impl<'a> From<&'a objects::Network> for Agency {
+    fn from(n: &objects::Network) -> Agency {
         Agency {
             id: Some(n.id.clone()),
             name: n.name.clone(),

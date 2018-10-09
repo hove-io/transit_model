@@ -27,18 +27,8 @@ pub fn write_agencies(path: &path::Path, networks: &CollectionWithId<Network>) -
     let path = path.join("agency.txt");
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for n in networks.values() {
-        wtr.serialize(Agency {
-            id: Some(n.id.clone()),
-            name: n.name.clone(),
-            url: n
-                .url
-                .clone()
-                .unwrap_or("http://www.navitia.io/".to_string()),
-            timezone: n.timezone.clone().or(Some("Europe/Paris".to_string())),
-            lang: n.lang.clone(),
-            phone: n.phone.clone(),
-            email: None,
-        }).with_context(ctx_from_path!(path))?;
+        wtr.serialize(Agency::from(n))
+            .with_context(ctx_from_path!(path))?;
     }
 
     wtr.flush().with_context(ctx_from_path!(path))?;
@@ -53,7 +43,7 @@ mod tests {
 
     #[test]
     fn write_agency() {
-        let agency = Agency::from(Network {
+        let agency = Agency::from(&Network {
             id: "OIF:101".to_string(),
             name: "SAVAC".to_string(),
             url: Some("http://www.vianavigo.com,Europe/Paris".to_string()),
@@ -80,7 +70,7 @@ mod tests {
 
     #[test]
     fn write_agency_with_default_values() {
-        let agency = Agency::from(Network {
+        let agency = Agency::from(&Network {
             id: "OIF:101".to_string(),
             name: "SAVAC".to_string(),
             url: None,
