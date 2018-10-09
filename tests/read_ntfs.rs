@@ -15,10 +15,12 @@
 // <http://www.gnu.org/licenses/>.
 
 extern crate navitia_model;
+extern crate tempdir;
 use navitia_model::collection::{CollectionWithId, Id, Idx};
 use navitia_model::model::{GetCorresponding, Model};
 use navitia_model::objects::*;
 use navitia_model::relations::IdxSet;
+use tempdir::TempDir;
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
 where
@@ -130,4 +132,27 @@ fn ntfs() {
         OnDemandTransport,
     );
     assert_eq!(iter.next(), None);
+}
+
+#[test]
+fn optional_empty_collections_not_created() {
+    let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+
+    let output_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+    navitia_model::ntfs::write(&ntm, &output_dir).unwrap();
+
+    use std::collections::HashSet;
+    let entries: HashSet<String> = ::std::fs::read_dir(&output_dir)
+        .unwrap()
+        .map(|e| e.unwrap().file_name().into_string().unwrap())
+        .collect();
+    assert!(!entries.contains("comments.txt"));
+    assert!(!entries.contains("comment_links.txt"));
+    assert!(!entries.contains("equipments.txt"));
+    assert!(!entries.contains("transfers.txt"));
+    assert!(!entries.contains("trip_properties.txt"));
+    assert!(!entries.contains("geometries.txt"));
+    assert!(!entries.contains("object_properties.txt"));
+    assert!(!entries.contains("object_codes.txt"));
+    assert!(!entries.contains("admin_stations.txt"));
 }

@@ -249,6 +249,24 @@ impl<T> Collection<T> {
     pub fn take(&mut self) -> Vec<T> {
         ::std::mem::replace(&mut self.objects, Vec::new())
     }
+
+    // Return true if the collection has no objects.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj;
+    /// let mut c: Collection<Obj> = Collection::new(vec![]);
+    /// assert!(c.is_empty());
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.objects.is_empty()
+    }
 }
 
 /// The type returned by `Collection::iter`.
@@ -471,6 +489,25 @@ impl<T: Id<T>> CollectionWithId<T> {
             self.push(item)?;
         }
         Ok(())
+    }
+
+    // Return true if the collection has no objects.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c: CollectionWithId<Obj> = CollectionWithId::new(vec![])?;
+    /// assert!(c.is_empty());
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.collection.is_empty()
     }
 }
 
