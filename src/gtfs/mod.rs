@@ -37,7 +37,7 @@ struct Agency {
     #[serde(rename = "agency_url")]
     url: String,
     #[serde(rename = "agency_timezone")]
-    timezone: Option<String>,
+    timezone: String,
     #[serde(rename = "agency_lang")]
     lang: Option<String>,
     #[serde(rename = "agency_phone")]
@@ -54,8 +54,11 @@ impl<'a> From<&'a objects::Network> for Agency {
             url: n
                 .url
                 .clone()
-                .unwrap_or("http://www.navitia.io/".to_string()),
-            timezone: n.timezone.clone().or(Some("Europe/Paris".to_string())),
+                .unwrap_or_else(|| "http://www.navitia.io/".to_string()),
+            timezone: n
+                .timezone
+                .clone()
+                .unwrap_or_else(|| "Europe/Paris".to_string()),
             lang: n.lang.clone(),
             phone: n.phone.clone(),
             email: None,

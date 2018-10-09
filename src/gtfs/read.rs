@@ -54,7 +54,7 @@ impl From<Agency> for objects::Network {
             id: agency.id.unwrap_or_else(default_agency_id),
             name: agency.name,
             codes: KeysValues::default(),
-            timezone: agency.timezone,
+            timezone: Some(agency.timezone),
             url: Some(agency.url),
             lang: agency.lang,
             phone: agency.phone,
