@@ -38,10 +38,11 @@ fn default_agency_id() -> String {
 fn get_agency_id(route: &Route, networks: &CollectionWithId<objects::Network>) -> Result<String> {
     route
         .agency_id
-        .as_ref()
-        .map(|id| Ok(id.to_string()))
-        .unwrap_or_else(|| match networks.values().next() {
-            Some(n) => Ok(n.id.clone()),
+        .clone()
+        .ok_or(())
+        .or_else(|()| match networks.values().next() {
+            Some(n) if networks.len() == 1 => Ok(n.id.clone()),
+            Some(_) => bail!("Impossible to get agency id, several networks found"),
             None => bail!("Impossible to get agency id, no network found"),
         })
 }
@@ -1312,6 +1313,73 @@ mod tests {
                 extract(|l| &l.network_id, &collections.lines),
                 &["id_agency", "id_agency", "id_agency"]
             );
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Impossible to get agency id, several networks found")]
+    fn gtfs_routes_without_agency_id_as_line_and_2_agencies() {
+        let agency_content = "agency_id,agency_name,agency_url,agency_timezone\n\
+                              id_agency1,My agency 1,http://my-agency_url1.com,Europe/London\n\
+                              id_agency2,My agency 2,http://my-agency_url2.com,Europe/London";
+
+        let routes_content =
+            "route_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+             route_1,1,My line 1,3,8F7A32,FFFFFF\n\
+             route_2,,My line 2,2,7BC142,000000\n\
+             route_3,3,My line 3,8,,\n\
+             route_4,3,My line 3 for agency 3,8,,";
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,,service_1,,\n\
+             2,route_1,1,service_1,,\n\
+             3,route_2,0,service_2,,\n\
+             4,route_3,0,service_3,,\n\
+             5,route_4,0,service_4,,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+
+            let mut collections = Collections::default();
+            let (networks, _) = super::read_agency(tmp_dir).unwrap();
+            collections.networks = networks;
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+            super::read_routes(tmp_dir, &mut collections).unwrap();
+        });
+    }
+
+    #[test]
+    #[should_panic(expected = "Impossible to get agency id, no network found")]
+    fn gtfs_routes_without_agency_id_as_line_and_0_agencies() {
+        let routes_content =
+            "route_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+             route_1,1,My line 1,3,8F7A32,FFFFFF\n\
+             route_2,,My line 2,2,7BC142,000000\n\
+             route_3,3,My line 3,8,,\n\
+             route_4,3,My line 3 for agency 3,8,,";
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,,service_1,,\n\
+             2,route_1,1,service_1,,\n\
+             3,route_2,0,service_2,,\n\
+             4,route_3,0,service_3,,\n\
+             5,route_4,0,service_4,,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+
+            let mut collections = Collections::default();
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+            super::read_routes(tmp_dir, &mut collections).unwrap();
         });
     }
 
