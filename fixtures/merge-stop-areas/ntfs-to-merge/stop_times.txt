@@ -1,0 +1,1 @@
+stop_time_id,trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,local_zone_id,date_time_estimated

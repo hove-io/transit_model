@@ -43,6 +43,7 @@ pub(crate) mod utils;
 pub mod collection;
 pub(crate) mod common_format;
 pub mod gtfs;
+pub mod merge_stop_areas;
 pub mod model;
 pub mod netex;
 pub mod ntfs;

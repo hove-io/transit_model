@@ -1,0 +1,7 @@
+object_type,object_id,object_property_name,object_property_value
+stop_area,SA:01,another prop,some value
+stop_area,SA:01,prop,val
+stop_area,SA:01,realtime_system,SIRI_STIF
+stop_area,SA:01,realtime_system,Timeo
+stop_area,SA:11,another prop,some value
+stop_area,SA:11,realtime_system,Timeo

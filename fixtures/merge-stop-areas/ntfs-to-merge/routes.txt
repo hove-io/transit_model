@@ -1,0 +1,3 @@
+route_id,route_name,is_forward,line_id,contributor_id,destination_id,geometry_id
+route:01,"Hôtels - Hôtels",0,line:01,OIF,SA:05,
+route:02,"Hôtels - Hôtels",0,line:01,OIF,SA:02,

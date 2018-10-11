@@ -201,7 +201,7 @@ mod tests {
     use geo_types::{Geometry as GeoGeometry, LineString, Point};
     use objects::*;
     use serde;
-    use std::collections::HashMap;
+    use std::collections::{BTreeSet, HashMap};
     use std::fmt::Debug;
     use std::path;
     use utils::*;
@@ -242,6 +242,10 @@ mod tests {
             let des_collection = make_opt_collection(path, "file.txt").unwrap();
             assert_eq!(des_collection, collection);
         });
+    }
+
+    fn btree_set_from_vec<T: Ord>(input: Vec<T>) -> BTreeSet<T> {
+        input.into_iter().collect()
     }
 
     #[test]
@@ -758,9 +762,15 @@ mod tests {
         let stop_points = CollectionWithId::new(vec![StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
-            codes: vec![("object_system:1".to_string(), "object_code:1".to_string())],
-            object_properties: vec![("prop_name:1".to_string(), "prop_value:1".to_string())],
-            comment_links: vec![comments.get_idx("c:1").unwrap()],
+            codes: btree_set_from_vec(vec![(
+                "object_system:1".to_string(),
+                "object_code:1".to_string(),
+            )]),
+            object_properties: btree_set_from_vec(vec![(
+                "prop_name:1".to_string(),
+                "prop_value:1".to_string(),
+            )]),
+            comment_links: btree_set_from_vec(vec![comments.get_idx("c:1").unwrap()]),
             visible: true,
             coord: Coord {
                 lon: 2.073034,
@@ -776,9 +786,15 @@ mod tests {
         let stop_areas = CollectionWithId::new(vec![StopArea {
             id: "sa_1".to_string(),
             name: "sa_name_1".to_string(),
-            codes: vec![("object_system:2".to_string(), "object_code:2".to_string())],
-            object_properties: vec![("prop_name:2".to_string(), "prop_value:2".to_string())],
-            comment_links: vec![comments.get_idx("c:2").unwrap()],
+            codes: btree_set_from_vec(vec![(
+                "object_system:2".to_string(),
+                "object_code:2".to_string(),
+            )]),
+            object_properties: btree_set_from_vec(vec![(
+                "prop_name:2".to_string(),
+                "prop_value:2".to_string(),
+            )]),
+            comment_links: btree_set_from_vec(vec![comments.get_idx("c:2").unwrap()]),
             visible: true,
             coord: Coord {
                 lon: 2.073034,
@@ -793,12 +809,18 @@ mod tests {
             id: "OIF:002002003:3OIF829".to_string(),
             name: "3".to_string(),
             code: None,
-            codes: vec![("object_system:3".to_string(), "object_code:3".to_string())],
-            object_properties: vec![("prop_name:3".to_string(), "prop_value:3".to_string())],
-            comment_links: vec![
+            codes: btree_set_from_vec(vec![(
+                "object_system:3".to_string(),
+                "object_code:3".to_string(),
+            )]),
+            object_properties: btree_set_from_vec(vec![(
+                "prop_name:3".to_string(),
+                "prop_value:3".to_string(),
+            )]),
+            comment_links: btree_set_from_vec(vec![
                 comments.get_idx("c:1").unwrap(),
                 comments.get_idx("c:2").unwrap(),
-            ],
+            ]),
             forward_name: None,
             forward_direction: None,
             backward_name: None,
@@ -817,12 +839,15 @@ mod tests {
             id: "OIF:002002002:CEN".to_string(),
             name: "Hôtels - Hôtels".to_string(),
             direction_type: None,
-            codes: vec![
+            codes: btree_set_from_vec(vec![
                 ("object_system:4".to_string(), "object_code:4".to_string()),
                 ("object_system:5".to_string(), "object_code:5".to_string()),
-            ],
-            object_properties: vec![("prop_name:4".to_string(), "prop_value:4".to_string())],
-            comment_links: vec![comments.get_idx("c:3").unwrap()],
+            ]),
+            object_properties: btree_set_from_vec(vec![(
+                "prop_name:4".to_string(),
+                "prop_value:4".to_string(),
+            )]),
+            comment_links: btree_set_from_vec(vec![comments.get_idx("c:3").unwrap()]),
             line_id: "OIF:002002002:BDEOIF829".to_string(),
             geometry_id: None,
             destination_id: None,
@@ -830,8 +855,14 @@ mod tests {
 
         let vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
             id: "OIF:90014407-1_425283-1".to_string(),
-            codes: vec![("object_system:6".to_string(), "object_code:6".to_string())],
-            object_properties: vec![("prop_name:6".to_string(), "prop_value:6".to_string())],
+            codes: btree_set_from_vec(vec![(
+                "object_system:6".to_string(),
+                "object_code:6".to_string(),
+            )]),
+            object_properties: btree_set_from_vec(vec![(
+                "prop_name:6".to_string(),
+                "prop_value:6".to_string(),
+            )]),
             comment_links: CommentLinksT::default(),
             route_id: "OIF:800:TER".to_string(),
             physical_mode_id: "Bus".to_string(),

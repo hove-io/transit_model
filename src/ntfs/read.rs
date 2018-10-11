@@ -152,7 +152,7 @@ where
     collection
         .index_mut(idx)
         .codes_mut()
-        .push((code.object_system, code.object_code));
+        .insert((code.object_system, code.object_code));
 }
 fn insert_code<T>(collection: &mut CollectionWithId<T>, code: Code)
 where
@@ -257,7 +257,7 @@ where
     collection
         .index_mut(idx)
         .comment_links_mut()
-        .push(comment_idx);
+        .insert(comment_idx);
     Ok(())
 }
 
@@ -324,7 +324,7 @@ where
             return;
         }
     };
-    collection.index_mut(idx).properties_mut().push((
+    collection.index_mut(idx).properties_mut().insert((
         obj_prop.object_property_name,
         obj_prop.object_property_value,
     ));

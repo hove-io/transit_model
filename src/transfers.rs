@@ -14,8 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-//! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
-//! format management.
+//! See function generates_transfers
 
 use collection::{Collection, CollectionWithId, Idx};
 use csv;

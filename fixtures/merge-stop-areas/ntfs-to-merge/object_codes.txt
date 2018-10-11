@@ -1,0 +1,8 @@
+object_type,object_id,object_system,object_code
+stop_area,SA:01,source,code 1
+stop_area,SA:02,source,code 1
+stop_area,SA:04,source,code 2
+stop_area,SA:06,source,code 1
+stop_area,SA:10,source,code 3
+stop_area,SA:11,source,code 3
+stop_area,SA:12,source,code 3

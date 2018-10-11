@@ -1,0 +1,1 @@
+{"errors":[{"category":"NothingToMerge","message":"rule for master SA:03 does not contain any existing stop areas to merge"}],"warnings":[{"category":"OnlyOneStopArea","message":"the rule of group 15 contains only the stop area SA:12"},{"category":"MissingToMerge","message":"rule for master SA:03 does contains at least one stop area that does not exist anymore"}]}
