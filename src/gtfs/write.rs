@@ -14,15 +14,17 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::{Agency, DirectionType, Shape, Stop, StopLocationType, StopTime, Transfer, Trip};
+use super::{Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer, Trip};
 use collection::{Collection, CollectionWithId, Id};
 use common_format::Availability;
 use csv;
 use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
+use model::{GetCorresponding, Model};
 use objects;
 use objects::Transfer as NtfsTransfer;
 use objects::*;
+use relations::IdxSet;
 use std::path;
 use Result;
 
@@ -278,6 +280,74 @@ pub fn write_stop_extensions(
     Ok(())
 }
 
+fn get_line_physical_modes<'a>(
+    idx: Idx<objects::Line>,
+    collection: &'a CollectionWithId<objects::PhysicalMode>,
+    model: &Model,
+) -> impl Iterator<Item = &'a objects::PhysicalMode>
+where
+    IdxSet<objects::Line>: GetCorresponding<objects::PhysicalMode>,
+{
+    model
+        .get_corresponding_from_idx(idx)
+        .into_iter()
+        .map(move |idx| &collection[idx])
+}
+
+impl<'a> From<&'a objects::PhysicalMode> for RouteType {
+    fn from(obj: &objects::PhysicalMode) -> RouteType {
+        match obj.id.as_str() {
+            "RailShuttle" | "Tramway" => RouteType::Tramway_LightRail,
+            "Metro" => RouteType::Metro,
+            "LocalTrain" | "LongDistanceTrain" | "RapidTransit" | "Train" => RouteType::Rail,
+            "Bus" | "BusRapidTransit" | "Coach" => RouteType::Bus,
+            "Boat" | "Ferry" => RouteType::Ferry,
+            "Funicular" | "Shuttle" => RouteType::Funicular,
+            _ => RouteType::Other(3),
+        }
+    }
+}
+
+fn get_gtfs_route_id_from_ntfs_line_id(line_id: &str, pm: &objects::PhysicalMode) -> String {
+    match pm.id.as_str() {
+        "RailShuttle" | "Tramway" | "Metro" | "LocalTrain" | "LongDistanceTrain"
+        | "RapidTransit" | "Train" | "Other (or unknown)" | "Bus" | "BusRapidTransit" | "Coach"
+        | "Boat" | "Ferry" | "Funicular" | "Shuttle" => line_id.to_string(),
+        _ => line_id.to_string() + ":" + &pm.id,
+    }
+}
+
+fn make_gtfs_route_from_ntfs_line(line: &objects::Line, pm: &objects::PhysicalMode) -> Route {
+    Route {
+        id: get_gtfs_route_id_from_ntfs_line_id(&line.id, pm),
+        agency_id: Some(line.network_id.clone()),
+        short_name: line.code.clone().unwrap_or_else(|| "".to_string()),
+        long_name: line.name.clone(),
+        desc: None,
+        route_type: RouteType::from(pm),
+        url: None,
+        color: line.color.clone(),
+        text_color: line.text_color.clone(),
+        sort_order: line.sort_order,
+    }
+}
+
+pub fn write_routes(path: &path::Path, model: &Model) -> Result<()> {
+    info!("Writing routes.txt");
+    let path = path.join("routes.txt");
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    for (from, l) in &model.lines {
+        for pm in get_line_physical_modes(from, &model.physical_modes, model) {
+            wtr.serialize(make_gtfs_route_from_ntfs_line(l, pm))
+                .with_context(ctx_from_path!(path))?;
+        }
+    }
+
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
+}
+
 pub fn write_stop_times(
     path: &path::Path,
     vehicle_journeys: &CollectionWithId<VehicleJourney>,
@@ -355,7 +425,7 @@ mod tests {
     use collection::CollectionWithId;
     use common_format::write_calendar_dates;
     use geo_types::{Geometry as GeoGeometry, LineString, Point};
-    use gtfs::{StopLocationType, Transfer, TransferType};
+    use gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType};
     use objects::Transfer as NtfsTransfer;
     use objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
     use std::collections::BTreeSet;
@@ -974,5 +1044,130 @@ mod tests {
             output_contents
         );
         tmp_dir.close().expect("delete temp dir");
+    }
+
+    #[test]
+    fn ntfs_physical_mode_to_gtfs_route_type() {
+        let route_type = RouteType::from(&objects::PhysicalMode {
+            id: "Bus".to_string(),
+            name: "Bus".to_string(),
+            co2_emission: Some(6.2),
+        });
+
+        assert_eq!(RouteType::Bus, route_type);
+
+        let route_type = RouteType::from(&objects::PhysicalMode {
+            id: "Other".to_string(),
+            name: "Other".to_string(),
+            co2_emission: None,
+        });
+
+        assert_eq!(RouteType::Other(3), route_type);
+    }
+
+    #[test]
+    fn ntfs_minial_line_to_gtfs_route() {
+        let pm = objects::PhysicalMode {
+            id: "Bus".to_string(),
+            name: "Bus".to_string(),
+            co2_emission: Some(6.2),
+        };
+
+        let line = objects::Line {
+            id: "OIF:002002003:3OIF829".to_string(),
+            name: "3".to_string(),
+            code: None,
+            codes: BTreeSet::default(),
+            object_properties: BTreeSet::default(),
+            comment_links: BTreeSet::default(),
+            forward_name: None,
+            forward_direction: None,
+            backward_name: None,
+            backward_direction: None,
+            color: None,
+            text_color: None,
+            sort_order: None,
+            network_id: "OIF:829".to_string(),
+            commercial_mode_id: "bus".to_string(),
+            geometry_id: None,
+            opening_time: None,
+            closing_time: None,
+        };
+
+        let expected = Route {
+            id: "OIF:002002003:3OIF829".to_string(),
+            agency_id: Some("OIF:829".to_string()),
+            short_name: "".to_string(),
+            long_name: "3".to_string(),
+            desc: None,
+            route_type: RouteType::Bus,
+            url: None,
+            color: None,
+            text_color: None,
+            sort_order: None,
+        };
+
+        assert_eq!(expected, make_gtfs_route_from_ntfs_line(&line, &pm));
+    }
+
+    #[test]
+    fn ntfs_line_with_unknown_mode_to_gtfs_route() {
+        let pm = objects::PhysicalMode {
+            id: "Unknown".to_string(),
+            name: "unknown".to_string(),
+            co2_emission: None,
+        };
+
+        let line = objects::Line {
+            id: "OIF:002002002:BDEOIF829".to_string(),
+            name: "DEF".to_string(),
+            code: Some("DEF".to_string()),
+            codes: BTreeSet::default(),
+            object_properties: BTreeSet::default(),
+            comment_links: BTreeSet::default(),
+            forward_name: Some("Hôtels - Hôtels".to_string()),
+            forward_direction: Some("OIF:SA:4:126".to_string()),
+            backward_name: Some("Hôtels - Hôtels".to_string()),
+            backward_direction: Some("OIF:SA:4:126".to_string()),
+            color: Some(objects::Rgb {
+                red: 155,
+                green: 12,
+                blue: 89,
+            }),
+            text_color: Some(objects::Rgb {
+                red: 10,
+                green: 0,
+                blue: 45,
+            }),
+            sort_order: Some(1342),
+            network_id: "OIF:829".to_string(),
+            commercial_mode_id: "unknown".to_string(),
+            geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
+            opening_time: Some(objects::Time::new(9, 0, 0)),
+            closing_time: Some(objects::Time::new(18, 0, 0)),
+        };
+
+        let expected = Route {
+            id: "OIF:002002002:BDEOIF829:Unknown".to_string(),
+            agency_id: Some("OIF:829".to_string()),
+            short_name: "DEF".to_string(),
+            long_name: "DEF".to_string(),
+            desc: None,
+            route_type: RouteType::Other(3),
+            url: None,
+            color: Some(objects::Rgb {
+                red: 155,
+                green: 12,
+                blue: 89,
+            }),
+            text_color: Some(objects::Rgb {
+                red: 10,
+                green: 0,
+                blue: 45,
+            }),
+            sort_order: Some(1342),
+        };
+
+        assert_eq!(expected, make_gtfs_route_from_ntfs_line(&line, &pm));
     }
 }

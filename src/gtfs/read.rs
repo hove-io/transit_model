@@ -29,7 +29,7 @@ use std::result::Result as StdResult;
 use Result;
 extern crate serde_json;
 use super::{
-    Agency, DirectionType, Shape, Stop, StopLocationType, StopTime, Transfer, TransferType, Trip,
+    Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer, TransferType, Trip,
 };
 
 fn default_agency_id() -> String {
@@ -125,21 +125,6 @@ impl From<Stop> for objects::StopPoint {
     }
 }
 
-#[derive(Serialize, Debug, Clone, Eq, PartialEq, Hash)]
-enum RouteType {
-    #[allow(non_camel_case_types)]
-    Tramway_LightRail,
-    Metro,
-    Rail,
-    Bus,
-    Ferry,
-    CableCar,
-    #[allow(non_camel_case_types)]
-    Gondola_SuspendedCableCar,
-    Funicular,
-    Other(u16),
-}
-
 impl RouteType {
     fn to_gtfs_value(&self) -> String {
         match *self {
@@ -153,6 +138,15 @@ impl RouteType {
             RouteType::Funicular => "7".to_string(),
             RouteType::Other(i) => i.to_string(),
         }
+    }
+}
+
+impl ::serde::Serialize for RouteType {
+    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
+    where
+        S: ::serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_gtfs_value())
     }
 }
 
@@ -179,28 +173,6 @@ impl<'de> ::serde::Deserialize<'de> for RouteType {
         };
         Ok(i)
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct Route {
-    #[serde(rename = "route_id")]
-    id: String,
-    agency_id: Option<String>,
-    #[serde(rename = "route_short_name")]
-    short_name: String,
-    #[serde(rename = "route_long_name")]
-    long_name: String,
-    #[serde(rename = "route_desc")]
-    desc: Option<String>,
-    route_type: RouteType,
-    #[serde(rename = "route_url")]
-    url: Option<String>,
-    #[serde(rename = "route_color", default)]
-    color: Option<objects::Rgb>,
-    #[serde(rename = "route_text_color", default)]
-    text_color: Option<objects::Rgb>,
-    #[serde(rename = "route_sort_order")]
-    sort_order: Option<u32>,
 }
 
 impl Id<Route> for Route {
