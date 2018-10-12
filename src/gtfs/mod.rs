@@ -120,7 +120,7 @@ impl<'a> From<&'a objects::StopPoint> for Stop {
             desc: "".to_string(),
             wheelchair_boarding: None,
             url: None,
-            timezone: None,
+            timezone: obj.timezone.clone(),
         }
     }
 }
@@ -139,7 +139,7 @@ impl<'a> From<&'a objects::StopArea> for Stop {
             desc: "".to_string(),
             wheelchair_boarding: None,
             url: None,
-            timezone: None,
+            timezone: obj.timezone.clone(),
         }
     }
 }

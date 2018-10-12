@@ -62,6 +62,7 @@ pub fn write_stops(
 mod tests {
     use super::*;
     use gtfs::StopLocationType;
+    use std::collections::BTreeSet;
 
     #[test]
     fn write_agency() {
@@ -122,9 +123,9 @@ mod tests {
         let stop = Stop::from(&StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
-            codes: vec![],
-            object_properties: vec![],
-            comment_links: vec![],
+            codes: BTreeSet::default(),
+            object_properties: BTreeSet::default(),
+            comment_links: BTreeSet::default(),
             visible: true,
             coord: Coord {
                 lon: 2.073034,
@@ -149,7 +150,7 @@ mod tests {
             desc: "".to_string(),
             wheelchair_boarding: None,
             url: None,
-            timezone: None,
+            timezone: Some("Europe/Paris".to_string()),
         };
 
         assert_eq!(expected, stop);
@@ -158,9 +159,9 @@ mod tests {
         let stop = Stop::from(&StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
-            codes: vec![],
-            object_properties: vec![],
-            comment_links: vec![],
+            codes: BTreeSet::default(),
+            object_properties: BTreeSet::default(),
+            comment_links: BTreeSet::default(),
             visible: true,
             coord: Coord {
                 lon: 2.073034,
@@ -196,9 +197,9 @@ mod tests {
         let stop = Stop::from(&StopArea {
             id: "sa_1".to_string(),
             name: "sa_name_1".to_string(),
-            codes: vec![],
-            object_properties: vec![],
-            comment_links: vec![],
+            codes: BTreeSet::default(),
+            object_properties: BTreeSet::default(),
+            comment_links: BTreeSet::default(),
             visible: true,
             coord: Coord {
                 lon: 2.073034,
@@ -221,7 +222,7 @@ mod tests {
             desc: "".to_string(),
             wheelchair_boarding: None,
             url: None,
-            timezone: None,
+            timezone: Some("Europe/Paris".to_string()),
         };
 
         assert_eq!(expected, stop);
