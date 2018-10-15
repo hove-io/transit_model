@@ -20,7 +20,7 @@ mod read;
 mod write;
 
 use collection::CollectionWithId;
-use common_format::manage_calendars;
+use common_format::{manage_calendars, Availability};
 use gtfs::read::EquipmentList;
 use model::{Collections, Model};
 use objects;
@@ -144,6 +144,41 @@ impl<'a> From<&'a objects::StopArea> for Stop {
     }
 }
 
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+enum DirectionType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    Forward,
+    #[serde(rename = "1")]
+    Backward,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+struct Trip {
+    route_id: String,
+    service_id: String,
+    #[serde(rename = "trip_id")]
+    id: String,
+    #[serde(rename = "trip_headsign")]
+    headsign: Option<String>,
+    #[serde(rename = "trip_short_name")]
+    short_name: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "de_with_empty_default",
+        rename = "direction_id"
+    )]
+    direction: DirectionType,
+    block_id: Option<String>,
+    shape_id: Option<String>,
+    #[serde(deserialize_with = "de_with_empty_default", default)]
+    wheelchair_accessible: Availability,
+    #[serde(deserialize_with = "de_with_empty_default", default)]
+    bikes_allowed: Availability,
+}
+
 /// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
 /// `path` directory.
 ///
@@ -203,6 +238,13 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
 
     write::write_agencies(path, &model.networks)?;
     write::write_stops(path, &model.stop_points, &model.stop_areas)?;
+    write::write_trips(
+        path,
+        &model.vehicle_journeys,
+        &model.stop_points,
+        &model.routes,
+        &model.trip_properties,
+    )?;
 
     Ok(())
 }

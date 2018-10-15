@@ -20,6 +20,7 @@
 
 use chrono;
 use collection::{Id, Idx};
+use common_format::Availability;
 use geo_types::Geometry as GeoGeometry;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -1072,18 +1073,6 @@ impl AddPrefix for Comment {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash)]
-#[derivative(Default)]
-pub enum Availability {
-    #[derivative(Default)]
-    #[serde(rename = "0")]
-    InformationNotAvailable,
-    #[serde(rename = "1")]
-    Available,
-    #[serde(rename = "2")]
-    NotAvailable,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
