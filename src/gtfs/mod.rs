@@ -26,6 +26,7 @@ use model::{Collections, Model};
 use objects;
 use read_utils::add_prefix;
 use std::path::Path;
+use utils::*;
 use Result;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -47,21 +48,98 @@ struct Agency {
 }
 
 impl<'a> From<&'a objects::Network> for Agency {
-    fn from(n: &objects::Network) -> Agency {
+    fn from(obj: &objects::Network) -> Agency {
         Agency {
-            id: Some(n.id.clone()),
-            name: n.name.clone(),
-            url: n
+            id: Some(obj.id.clone()),
+            name: obj.name.clone(),
+            url: obj
                 .url
                 .clone()
                 .unwrap_or_else(|| "http://www.navitia.io/".to_string()),
-            timezone: n
+            timezone: obj
                 .timezone
                 .clone()
                 .unwrap_or_else(|| "Europe/Paris".to_string()),
-            lang: n.lang.clone(),
-            phone: n.phone.clone(),
+            lang: obj.lang.clone(),
+            phone: obj.phone.clone(),
             email: None,
+        }
+    }
+}
+
+#[derivative(Default)]
+#[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+enum StopLocationType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    StopPoint,
+    #[serde(rename = "1")]
+    StopArea,
+    #[serde(rename = "2")]
+    StopEntrace,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+struct Stop {
+    #[serde(rename = "stop_id")]
+    id: String,
+    #[serde(rename = "stop_code")]
+    code: Option<String>,
+    #[serde(rename = "stop_name")]
+    name: String,
+    #[serde(default, rename = "stop_desc")]
+    desc: String,
+    #[serde(rename = "stop_lon")]
+    lon: f64,
+    #[serde(rename = "stop_lat")]
+    lat: f64,
+    #[serde(rename = "zone_id")]
+    fare_zone_id: Option<String>,
+    #[serde(rename = "stop_url")]
+    url: Option<String>,
+    #[serde(default, deserialize_with = "de_with_empty_default")]
+    location_type: StopLocationType,
+    parent_station: Option<String>,
+    #[serde(rename = "stop_timezone")]
+    timezone: Option<String>,
+    #[serde(default)]
+    wheelchair_boarding: Option<String>,
+}
+
+impl<'a> From<&'a objects::StopPoint> for Stop {
+    fn from(obj: &objects::StopPoint) -> Stop {
+        Stop {
+            id: obj.id.clone(),
+            name: obj.name.clone(),
+            lat: obj.coord.lat,
+            lon: obj.coord.lon,
+            fare_zone_id: obj.fare_zone_id.clone(),
+            location_type: StopLocationType::StopPoint,
+            parent_station: Some(obj.stop_area_id.clone()),
+            code: None,
+            desc: "".to_string(),
+            wheelchair_boarding: None,
+            url: None,
+            timezone: obj.timezone.clone(),
+        }
+    }
+}
+
+impl<'a> From<&'a objects::StopArea> for Stop {
+    fn from(obj: &objects::StopArea) -> Stop {
+        Stop {
+            id: obj.id.clone(),
+            name: obj.name.clone(),
+            lat: obj.coord.lat,
+            lon: obj.coord.lon,
+            fare_zone_id: None,
+            location_type: StopLocationType::StopArea,
+            parent_station: None,
+            code: None,
+            desc: "".to_string(),
+            wheelchair_boarding: None,
+            url: None,
+            timezone: obj.timezone.clone(),
         }
     }
 }
@@ -124,6 +202,7 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
     info!("Writing GTFS to {:?}", path);
 
     write::write_agencies(path, &model.networks)?;
+    write::write_stops(path, &model.stop_points, &model.stop_areas)?;
 
     Ok(())
 }

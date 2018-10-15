@@ -75,6 +75,7 @@ stop_lon | yes | stops.txt | stop_lon
 zone_id | no | stops.txt | fare_zone_id
 location_type | no | stops.txt | location_type
 parent_station | no | stops.txt | parent_station
+timezone | no | stops.txt | timezone
 
 ### trips.txt
 

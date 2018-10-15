@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::Agency;
+use super::{Agency, Stop};
 use collection::CollectionWithId;
 use csv;
 use failure::ResultExt;
@@ -36,10 +36,33 @@ pub fn write_agencies(path: &path::Path, networks: &CollectionWithId<Network>) -
     Ok(())
 }
 
+pub fn write_stops(
+    path: &path::Path,
+    stop_points: &CollectionWithId<StopPoint>,
+    stop_areas: &CollectionWithId<StopArea>,
+) -> Result<()> {
+    info!("Writing stops.txt");
+    let path = path.join("stops.txt");
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    for sp in stop_points.values() {
+        wtr.serialize(Stop::from(sp))
+            .with_context(ctx_from_path!(path))?;
+    }
+    for sa in stop_areas.values() {
+        wtr.serialize(Stop::from(sa))
+            .with_context(ctx_from_path!(path))?;
+    }
+
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::Agency;
-    use objects::Network;
+    use super::*;
+    use gtfs::StopLocationType;
+    use std::collections::BTreeSet;
 
     #[test]
     fn write_agency() {
@@ -93,5 +116,115 @@ mod tests {
         };
 
         assert_eq!(expected_agency, agency);
+    }
+
+    #[test]
+    fn ntfs_stop_point_to_gtfs_stop() {
+        let stop = Stop::from(&StopPoint {
+            id: "sp_1".to_string(),
+            name: "sp_name_1".to_string(),
+            codes: BTreeSet::default(),
+            object_properties: BTreeSet::default(),
+            comment_links: BTreeSet::default(),
+            visible: true,
+            coord: Coord {
+                lon: 2.073034,
+                lat: 48.799115,
+            },
+            stop_area_id: "OIF:SA:8739322".to_string(),
+            timezone: Some("Europe/Paris".to_string()),
+            geometry_id: None,
+            equipment_id: None,
+            fare_zone_id: Some("1".to_string()),
+        });
+
+        let expected = Stop {
+            id: "sp_1".to_string(),
+            name: "sp_name_1".to_string(),
+            lat: 48.799115,
+            lon: 2.073034,
+            fare_zone_id: Some("1".to_string()),
+            location_type: StopLocationType::StopPoint,
+            parent_station: Some("OIF:SA:8739322".to_string()),
+            code: None,
+            desc: "".to_string(),
+            wheelchair_boarding: None,
+            url: None,
+            timezone: Some("Europe/Paris".to_string()),
+        };
+
+        assert_eq!(expected, stop);
+
+        // with no timezone and fare_zone_id
+        let stop = Stop::from(&StopPoint {
+            id: "sp_1".to_string(),
+            name: "sp_name_1".to_string(),
+            codes: BTreeSet::default(),
+            object_properties: BTreeSet::default(),
+            comment_links: BTreeSet::default(),
+            visible: true,
+            coord: Coord {
+                lon: 2.073034,
+                lat: 48.799115,
+            },
+            stop_area_id: "OIF:SA:8739322".to_string(),
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+            fare_zone_id: None,
+        });
+
+        let expected = Stop {
+            id: "sp_1".to_string(),
+            name: "sp_name_1".to_string(),
+            lat: 48.799115,
+            lon: 2.073034,
+            fare_zone_id: None,
+            location_type: StopLocationType::StopPoint,
+            parent_station: Some("OIF:SA:8739322".to_string()),
+            code: None,
+            desc: "".to_string(),
+            wheelchair_boarding: None,
+            url: None,
+            timezone: None,
+        };
+
+        assert_eq!(expected, stop);
+    }
+
+    #[test]
+    fn ntfs_stop_area_to_gtfs_stop() {
+        let stop = Stop::from(&StopArea {
+            id: "sa_1".to_string(),
+            name: "sa_name_1".to_string(),
+            codes: BTreeSet::default(),
+            object_properties: BTreeSet::default(),
+            comment_links: BTreeSet::default(),
+            visible: true,
+            coord: Coord {
+                lon: 2.073034,
+                lat: 48.799115,
+            },
+            timezone: Some("Europe/Paris".to_string()),
+            geometry_id: None,
+            equipment_id: None,
+        });
+
+        let expected = Stop {
+            id: "sa_1".to_string(),
+            name: "sa_name_1".to_string(),
+            lat: 48.799115,
+            lon: 2.073034,
+            fare_zone_id: None,
+            location_type: StopLocationType::StopArea,
+            parent_station: None,
+            code: None,
+            desc: "".to_string(),
+            wheelchair_boarding: None,
+            url: None,
+            timezone: Some("Europe/Paris".to_string()),
+        };
+
+        assert_eq!(expected, stop);
     }
 }

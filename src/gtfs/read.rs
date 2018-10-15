@@ -30,7 +30,7 @@ use std::result::Result as StdResult;
 use utils::*;
 use Result;
 extern crate serde_json;
-use super::Agency;
+use super::{Agency, Stop, StopLocationType};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -74,45 +74,6 @@ impl From<Agency> for objects::Company {
             phone: agency.phone,
         }
     }
-}
-
-#[derivative(Default)]
-#[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-pub enum StopLocationType {
-    #[derivative(Default)]
-    #[serde(rename = "0")]
-    StopPoint,
-    #[serde(rename = "1")]
-    StopArea,
-    #[serde(rename = "2")]
-    StopEntrace,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct Stop {
-    #[serde(rename = "stop_id")]
-    id: String,
-    #[serde(rename = "stop_code")]
-    code: Option<String>,
-    #[serde(rename = "stop_name")]
-    name: String,
-    #[serde(default, rename = "stop_desc")]
-    desc: String,
-    #[serde(rename = "stop_lon")]
-    lon: f64,
-    #[serde(rename = "stop_lat")]
-    lat: f64,
-    #[serde(rename = "zone_id")]
-    fare_zone_id: Option<String>,
-    #[serde(rename = "stop_url")]
-    url: Option<String>,
-    #[serde(default, deserialize_with = "de_with_empty_default")]
-    location_type: StopLocationType,
-    parent_station: Option<String>,
-    #[serde(rename = "stop_timezone")]
-    timezone: Option<String>,
-    #[serde(default)]
-    wheelchair_boarding: Option<String>,
 }
 
 impl From<Stop> for objects::StopArea {
