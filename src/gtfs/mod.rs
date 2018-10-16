@@ -265,6 +265,7 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
         &model.routes,
         &model.trip_properties,
     )?;
+    write::write_stop_extensions(path, &model.stop_points, &model.stop_areas)?;
     write::write_stop_times(path, &model.vehicle_journeys, &model.stop_points)?;
 
     Ok(())
