@@ -29,7 +29,7 @@ use std::result::Result as StdResult;
 use Result;
 extern crate serde_json;
 use super::{
-    Agency, DirectionType, Stop, StopLocationType, StopTime, Transfer, TransferType, Trip,
+    Agency, DirectionType, Shape, Stop, StopLocationType, StopTime, Transfer, TransferType, Trip,
 };
 
 fn default_agency_id() -> String {
@@ -257,6 +257,19 @@ impl Trip {
             stop_times: vec![],
         })
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct StopTime {
+    trip_id: String,
+    arrival_time: Time,
+    departure_time: Time,
+    stop_id: String,
+    stop_sequence: u32,
+    #[serde(deserialize_with = "de_with_empty_default", default)]
+    pickup_type: u8,
+    #[serde(deserialize_with = "de_with_empty_default", default)]
+    drop_off_type: u8,
 }
 
 #[derive(Deserialize, Debug)]
