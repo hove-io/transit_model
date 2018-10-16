@@ -29,7 +29,7 @@ use std::result::Result as StdResult;
 use utils::*;
 use Result;
 extern crate serde_json;
-use super::{Agency, DirectionType, Stop, StopLocationType, Trip};
+use super::{Agency, DirectionType, Stop, StopLocationType, Transfer, TransferType, Trip};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -526,29 +526,6 @@ pub fn read_stops<P: AsRef<path::Path>>(
     let stoppoints = CollectionWithId::new(stop_points)?;
     let stopareas = CollectionWithId::new(stop_areas)?;
     Ok((stopareas, stoppoints))
-}
-
-#[derive(Deserialize, Debug, Derivative)]
-#[derivative(Default)]
-enum TransferType {
-    #[derivative(Default)]
-    #[serde(rename = "0")]
-    Recommended,
-    #[serde(rename = "1")]
-    Timed,
-    #[serde(rename = "2")]
-    WithTransferTime,
-    #[serde(rename = "3")]
-    NotPossible,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Transfer {
-    from_stop_id: String,
-    to_stop_id: String,
-    #[serde(deserialize_with = "de_with_empty_default")]
-    transfer_type: TransferType,
-    min_transfer_time: Option<u32>,
 }
 
 pub fn read_transfers<P: AsRef<path::Path>>(

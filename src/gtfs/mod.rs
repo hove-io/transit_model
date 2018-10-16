@@ -141,6 +141,40 @@ struct Trip {
     bikes_allowed: Availability,
 }
 
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
+#[derivative(Default)]
+enum TransferType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    Recommended,
+    #[serde(rename = "1")]
+    Timed,
+    #[serde(rename = "2")]
+    WithTransferTime,
+    #[serde(rename = "3")]
+    NotPossible,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+struct Transfer {
+    from_stop_id: String,
+    to_stop_id: String,
+    #[serde(deserialize_with = "de_with_empty_default")]
+    transfer_type: TransferType,
+    min_transfer_time: Option<u32>,
+}
+
+impl<'a> From<&'a objects::Transfer> for Transfer {
+    fn from(obj: &objects::Transfer) -> Transfer {
+        Transfer {
+            from_stop_id: obj.from_stop_id.clone(),
+            to_stop_id: obj.to_stop_id.clone(),
+            transfer_type: TransferType::WithTransferTime,
+            min_transfer_time: obj.min_transfer_time,
+        }
+    }
+}
+
 /// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
 /// `path` directory.
 ///
@@ -198,6 +232,7 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
     let path = path.as_ref();
     info!("Writing GTFS to {:?}", path);
 
+    write::write_transfers(path, &model.transfers)?;
     write::write_agencies(path, &model.networks)?;
     write::write_stops(path, &model.stop_points, &model.stop_areas, &model.comments)?;
     write::write_trips(
