@@ -106,44 +106,6 @@ struct Stop {
     wheelchair_boarding: Option<String>,
 }
 
-impl<'a> From<&'a objects::StopPoint> for Stop {
-    fn from(obj: &objects::StopPoint) -> Stop {
-        Stop {
-            id: obj.id.clone(),
-            name: obj.name.clone(),
-            lat: obj.coord.lat,
-            lon: obj.coord.lon,
-            fare_zone_id: obj.fare_zone_id.clone(),
-            location_type: StopLocationType::StopPoint,
-            parent_station: Some(obj.stop_area_id.clone()),
-            code: None,
-            desc: "".to_string(),
-            wheelchair_boarding: None,
-            url: None,
-            timezone: obj.timezone.clone(),
-        }
-    }
-}
-
-impl<'a> From<&'a objects::StopArea> for Stop {
-    fn from(obj: &objects::StopArea) -> Stop {
-        Stop {
-            id: obj.id.clone(),
-            name: obj.name.clone(),
-            lat: obj.coord.lat,
-            lon: obj.coord.lon,
-            fare_zone_id: None,
-            location_type: StopLocationType::StopArea,
-            parent_station: None,
-            code: None,
-            desc: "".to_string(),
-            wheelchair_boarding: None,
-            url: None,
-            timezone: obj.timezone.clone(),
-        }
-    }
-}
-
 #[derive(Derivative)]
 #[derivative(Default)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -237,7 +199,7 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
     info!("Writing GTFS to {:?}", path);
 
     write::write_agencies(path, &model.networks)?;
-    write::write_stops(path, &model.stop_points, &model.stop_areas)?;
+    write::write_stops(path, &model.stop_points, &model.stop_areas, &model.comments)?;
     write::write_trips(
         path,
         &model.vehicle_journeys,

@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::{Agency, DirectionType, Stop, Trip};
+use super::{Agency, DirectionType, Stop, StopLocationType, Trip};
 use collection::CollectionWithId;
 use common_format::Availability;
 use csv;
@@ -40,20 +40,70 @@ pub fn write_agencies(
     Ok(())
 }
 
+/// get the first comment ordered by name
+fn get_first_comment_name<T: CommentLinks>(
+    obj: &T,
+    comments: &CollectionWithId<Comment>,
+) -> String {
+    let mut desc = "".to_string();
+    if !obj.comment_links().is_empty() {
+        let mut obj_comments: Vec<&Comment> = comments.iter_from(obj.comment_links()).collect();
+        obj_comments.sort_unstable_by_key(|c| &c.name);
+        desc = obj_comments.iter().next().unwrap().name.clone();
+    }
+
+    desc
+}
+
+fn ntfs_stop_point_to_gtfs_stop(sp: &StopPoint, comments: &CollectionWithId<Comment>) -> Stop {
+    Stop {
+        id: sp.id.clone(),
+        name: sp.name.clone(),
+        lat: sp.coord.lat,
+        lon: sp.coord.lon,
+        fare_zone_id: sp.fare_zone_id.clone(),
+        location_type: StopLocationType::StopPoint,
+        parent_station: Some(sp.stop_area_id.clone()),
+        code: None,
+        desc: get_first_comment_name(sp, comments),
+        wheelchair_boarding: None,
+        url: None,
+        timezone: sp.timezone.clone(),
+    }
+}
+
+fn ntfs_stop_area_to_gtfs_stop(sa: &StopArea, comments: &CollectionWithId<Comment>) -> Stop {
+    Stop {
+        id: sa.id.clone(),
+        name: sa.name.clone(),
+        lat: sa.coord.lat,
+        lon: sa.coord.lon,
+        fare_zone_id: None,
+        location_type: StopLocationType::StopArea,
+        parent_station: None,
+        code: None,
+        desc: get_first_comment_name(sa, comments),
+        wheelchair_boarding: None,
+        url: None,
+        timezone: sa.timezone.clone(),
+    }
+}
+
 pub fn write_stops(
     path: &path::Path,
     stop_points: &CollectionWithId<objects::StopPoint>,
     stop_areas: &CollectionWithId<objects::StopArea>,
+    comments: &CollectionWithId<Comment>,
 ) -> Result<()> {
     info!("Writing stops.txt");
     let path = path.join("stops.txt");
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for sp in stop_points.values() {
-        wtr.serialize(Stop::from(sp))
+        wtr.serialize(ntfs_stop_point_to_gtfs_stop(sp, comments))
             .with_context(ctx_from_path!(path))?;
     }
     for sa in stop_areas.values() {
-        wtr.serialize(Stop::from(sa))
+        wtr.serialize(ntfs_stop_area_to_gtfs_stop(sa, comments))
             .with_context(ctx_from_path!(path))?;
     }
 
@@ -207,13 +257,34 @@ mod tests {
     }
 
     #[test]
-    fn ntfs_stop_point_to_gtfs_stop() {
-        let stop = Stop::from(&objects::StopPoint {
+    fn test_ntfs_stop_point_to_gtfs_stop() {
+        let comments = CollectionWithId::new(vec![
+            Comment {
+                id: "1".into(),
+                name: "foo".into(),
+                comment_type: CommentType::Information,
+                url: None,
+                label: None,
+            },
+            Comment {
+                id: "2".into(),
+                name: "bar".into(),
+                comment_type: CommentType::Information,
+                url: None,
+                label: None,
+            },
+        ]).unwrap();
+
+        let mut comment_links = BTreeSet::new();
+        comment_links.insert(comments.get_idx("1").unwrap());
+        comment_links.insert(comments.get_idx("2").unwrap());
+
+        let stop = StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
             codes: BTreeSet::default(),
             object_properties: BTreeSet::default(),
-            comment_links: BTreeSet::default(),
+            comment_links: comment_links,
             visible: true,
             coord: objects::Coord {
                 lon: 2.073034,
@@ -224,7 +295,7 @@ mod tests {
             geometry_id: None,
             equipment_id: None,
             fare_zone_id: Some("1".to_string()),
-        });
+        };
 
         let expected = Stop {
             id: "sp_1".to_string(),
@@ -235,59 +306,83 @@ mod tests {
             location_type: StopLocationType::StopPoint,
             parent_station: Some("OIF:SA:8739322".to_string()),
             code: None,
-            desc: "".to_string(),
+            desc: "bar".to_string(),
             wheelchair_boarding: None,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
         };
 
-        assert_eq!(expected, stop);
-
-        // with no timezone and fare_zone_id
-        let stop = Stop::from(&objects::StopPoint {
-            id: "sp_1".to_string(),
-            name: "sp_name_1".to_string(),
-            codes: BTreeSet::default(),
-            object_properties: BTreeSet::default(),
-            comment_links: BTreeSet::default(),
-            visible: true,
-            coord: objects::Coord {
-                lon: 2.073034,
-                lat: 48.799115,
-            },
-            stop_area_id: "OIF:SA:8739322".to_string(),
-            timezone: None,
-            geometry_id: None,
-            equipment_id: None,
-            fare_zone_id: None,
-        });
-
-        let expected = Stop {
-            id: "sp_1".to_string(),
-            name: "sp_name_1".to_string(),
-            lat: 48.799115,
-            lon: 2.073034,
-            fare_zone_id: None,
-            location_type: StopLocationType::StopPoint,
-            parent_station: Some("OIF:SA:8739322".to_string()),
-            code: None,
-            desc: "".to_string(),
-            wheelchair_boarding: None,
-            url: None,
-            timezone: None,
-        };
-
-        assert_eq!(expected, stop);
+        assert_eq!(expected, ntfs_stop_point_to_gtfs_stop(&stop, &comments));
     }
 
     #[test]
-    fn ntfs_stop_area_to_gtfs_stop() {
-        let stop = Stop::from(&objects::StopArea {
+    fn test_ntfs_minimal_stop_point_to_gtfs_stop() {
+        let stop = StopPoint {
+            id: "sp_1".to_string(),
+            name: "sp_name_1".to_string(),
+            codes: BTreeSet::default(),
+            object_properties: BTreeSet::default(),
+            comment_links: BTreeSet::default(),
+            visible: true,
+            coord: objects::Coord {
+                lon: 2.073034,
+                lat: 48.799115,
+            },
+            stop_area_id: "OIF:SA:8739322".to_string(),
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+            fare_zone_id: None,
+        };
+
+        let expected = Stop {
+            id: "sp_1".to_string(),
+            name: "sp_name_1".to_string(),
+            lat: 48.799115,
+            lon: 2.073034,
+            fare_zone_id: None,
+            location_type: StopLocationType::StopPoint,
+            parent_station: Some("OIF:SA:8739322".to_string()),
+            code: None,
+            desc: "".to_string(),
+            wheelchair_boarding: None,
+            url: None,
+            timezone: None,
+        };
+
+        let comments = CollectionWithId::default();
+        assert_eq!(expected, ntfs_stop_point_to_gtfs_stop(&stop, &comments));
+    }
+
+    #[test]
+    fn test_ntfs_stop_area_to_gtfs_stop() {
+        let comments = CollectionWithId::new(vec![
+            Comment {
+                id: "1".into(),
+                name: "foo".into(),
+                comment_type: CommentType::Information,
+                url: None,
+                label: None,
+            },
+            Comment {
+                id: "2".into(),
+                name: "bar".into(),
+                comment_type: CommentType::Information,
+                url: None,
+                label: None,
+            },
+        ]).unwrap();
+
+        let mut comment_links = BTreeSet::new();
+        comment_links.insert(comments.get_idx("1").unwrap());
+        comment_links.insert(comments.get_idx("2").unwrap());
+
+        let stop = StopArea {
             id: "sa_1".to_string(),
             name: "sa_name_1".to_string(),
             codes: BTreeSet::default(),
             object_properties: BTreeSet::default(),
-            comment_links: BTreeSet::default(),
+            comment_links: comment_links,
             visible: true,
             coord: objects::Coord {
                 lon: 2.073034,
@@ -296,7 +391,7 @@ mod tests {
             timezone: Some("Europe/Paris".to_string()),
             geometry_id: None,
             equipment_id: None,
-        });
+        };
 
         let expected = Stop {
             id: "sa_1".to_string(),
@@ -307,13 +402,13 @@ mod tests {
             location_type: StopLocationType::StopArea,
             parent_station: None,
             code: None,
-            desc: "".to_string(),
+            desc: "bar".to_string(),
             wheelchair_boarding: None,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
         };
 
-        assert_eq!(expected, stop);
+        assert_eq!(expected, ntfs_stop_area_to_gtfs_stop(&stop, &comments));
     }
 
     #[test]
