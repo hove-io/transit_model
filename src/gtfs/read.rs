@@ -20,7 +20,7 @@ use csv;
 use failure::ResultExt;
 use geo_types::{LineString, Point};
 use model::Collections;
-use objects::{self, CommentLinksT, Contributor, Coord, KeysValues, Time, TransportType};
+use objects::{self, CommentLinksT, Contributor, Coord, KeysValues, TransportType};
 use read_utils;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs::File;
@@ -29,7 +29,7 @@ use std::result::Result as StdResult;
 use utils::*;
 use Result;
 extern crate serde_json;
-use super::{Agency, DirectionType, Stop, StopLocationType, Transfer, TransferType, Trip};
+use super::{Agency, DirectionType, Stop, StopLocationType, Transfer, TransferType, StopTime, Trip};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -256,19 +256,6 @@ impl Trip {
             stop_times: vec![],
         })
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct StopTime {
-    trip_id: String,
-    arrival_time: Time,
-    departure_time: Time,
-    stop_id: String,
-    stop_sequence: u32,
-    #[serde(deserialize_with = "de_with_empty_default", default)]
-    pickup_type: u8,
-    #[serde(deserialize_with = "de_with_empty_default", default)]
-    drop_off_type: u8,
 }
 
 #[derive(Deserialize, Debug)]
