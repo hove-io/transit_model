@@ -15,13 +15,12 @@
 // <http://www.gnu.org/licenses/>.
 
 use collection::{Collection, CollectionWithId, Id};
+use common_format::Availability;
 use csv;
 use failure::ResultExt;
 use geo_types::{LineString, Point};
 use model::Collections;
-use objects::{
-    self, Availability, CommentLinksT, Contributor, Coord, KeysValues, Time, TransportType,
-};
+use objects::{self, CommentLinksT, Contributor, Coord, KeysValues, Time, TransportType};
 use read_utils;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs::File;
@@ -30,7 +29,7 @@ use std::result::Result as StdResult;
 use utils::*;
 use Result;
 extern crate serde_json;
-use super::{Agency, Stop, StopLocationType};
+use super::{Agency, DirectionType, Stop, StopLocationType, Trip};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -227,41 +226,6 @@ impl Route {
             DirectionType::Backward => id + "_R",
         }
     }
-}
-
-#[derive(Derivative)]
-#[derivative(Default(bound = ""))]
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-enum DirectionType {
-    #[derivative(Default)]
-    #[serde(rename = "0")]
-    Forward,
-    #[serde(rename = "1")]
-    Backward,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct Trip {
-    route_id: String,
-    service_id: String,
-    #[serde(rename = "trip_id")]
-    id: String,
-    #[serde(rename = "trip_headsign")]
-    headsign: Option<String>,
-    #[serde(rename = "trip_short_name")]
-    short_name: Option<String>,
-    #[serde(
-        default,
-        deserialize_with = "de_with_empty_default",
-        rename = "direction_id"
-    )]
-    direction: DirectionType,
-    block_id: Option<String>,
-    shape_id: Option<String>,
-    #[serde(deserialize_with = "de_with_empty_default", default)]
-    wheelchair_accessible: u8,
-    #[serde(deserialize_with = "de_with_empty_default", default)]
-    bikes_allowed: u8,
 }
 
 impl Trip {
@@ -492,22 +456,22 @@ fn get_equipment_id_and_populate_equipments(
     stop.wheelchair_boarding
         .as_ref()
         .and_then(|availability| match availability.as_str() {
-            "1" => Some(objects::Availability::Available),
-            "2" => Some(objects::Availability::NotAvailable),
+            "1" => Some(Availability::Available),
+            "2" => Some(Availability::NotAvailable),
             _ => None,
         }).map(|availlability| {
             equipments.push(objects::Equipment {
                 id: "".to_string(),
                 wheelchair_boarding: availlability,
-                sheltered: objects::Availability::InformationNotAvailable,
-                elevator: objects::Availability::InformationNotAvailable,
-                escalator: objects::Availability::InformationNotAvailable,
-                bike_accepted: objects::Availability::InformationNotAvailable,
-                bike_depot: objects::Availability::InformationNotAvailable,
-                visual_announcement: objects::Availability::InformationNotAvailable,
-                audible_announcement: objects::Availability::InformationNotAvailable,
-                appropriate_escort: objects::Availability::InformationNotAvailable,
-                appropriate_signage: objects::Availability::InformationNotAvailable,
+                sheltered: Availability::InformationNotAvailable,
+                elevator: Availability::InformationNotAvailable,
+                escalator: Availability::InformationNotAvailable,
+                bike_accepted: Availability::InformationNotAvailable,
+                bike_depot: Availability::InformationNotAvailable,
+                visual_announcement: Availability::InformationNotAvailable,
+                audible_announcement: Availability::InformationNotAvailable,
+                appropriate_escort: Availability::InformationNotAvailable,
+                appropriate_signage: Availability::InformationNotAvailable,
             })
         })
 }
@@ -862,17 +826,6 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<obje
     routes
 }
 
-fn get_availability(i: u8) -> Result<Availability> {
-    let availability = match i {
-        0 => Availability::InformationNotAvailable,
-        1 => Availability::Available,
-        2 => Availability::NotAvailable,
-        i => bail!("invalid trip property {}", i,),
-    };
-
-    Ok(availability)
-}
-
 fn make_ntfs_vehicle_journeys(
     gtfs_trips: &[Trip],
     routes: &CollectionWithId<Route>,
@@ -883,7 +836,7 @@ fn make_ntfs_vehicle_journeys(
     let (_, dataset) = datasets.iter().next().unwrap();
     let mut vehicle_journeys: Vec<objects::VehicleJourney> = vec![];
     let mut trip_properties: Vec<objects::TripProperty> = vec![];
-    let mut map_tps_trips: HashMap<(u8, u8), Vec<&Trip>> = HashMap::new();
+    let mut map_tps_trips: HashMap<(Availability, Availability), Vec<&Trip>> = HashMap::new();
     let mut id_incr: u8 = 1;
     let mut property_id: Option<String>;
 
@@ -894,15 +847,17 @@ fn make_ntfs_vehicle_journeys(
             .push(t);
     }
 
-    for (&(wheelchair_id, bike_id), trips) in &map_tps_trips {
-        if wheelchair_id == 0 && bike_id == 0 {
+    for ((wheelchair, bike), trips) in &map_tps_trips {
+        if *wheelchair == Availability::InformationNotAvailable
+            && *bike == Availability::InformationNotAvailable
+        {
             property_id = None;
         } else {
             property_id = Some(id_incr.to_string());
             trip_properties.push(objects::TripProperty {
                 id: id_incr.to_string(),
-                wheelchair_accessible: get_availability(wheelchair_id)?,
-                bike_accepted: get_availability(bike_id)?,
+                wheelchair_accessible: *wheelchair,
+                bike_accepted: *bike,
                 air_conditioned: Availability::InformationNotAvailable,
                 visual_announcement: Availability::InformationNotAvailable,
                 audible_announcement: Availability::InformationNotAvailable,
@@ -1872,29 +1827,29 @@ mod tests {
                 vec![
                     Equipment {
                         id: "0".to_string(),
-                        wheelchair_boarding: Availability::Available,
-                        sheltered: Availability::InformationNotAvailable,
-                        elevator: Availability::InformationNotAvailable,
-                        escalator: Availability::InformationNotAvailable,
-                        bike_accepted: Availability::InformationNotAvailable,
-                        bike_depot: Availability::InformationNotAvailable,
-                        visual_announcement: Availability::InformationNotAvailable,
-                        audible_announcement: Availability::InformationNotAvailable,
-                        appropriate_escort: Availability::InformationNotAvailable,
-                        appropriate_signage: Availability::InformationNotAvailable,
+                        wheelchair_boarding: common_format::Availability::Available,
+                        sheltered: common_format::Availability::InformationNotAvailable,
+                        elevator: common_format::Availability::InformationNotAvailable,
+                        escalator: common_format::Availability::InformationNotAvailable,
+                        bike_accepted: common_format::Availability::InformationNotAvailable,
+                        bike_depot: common_format::Availability::InformationNotAvailable,
+                        visual_announcement: common_format::Availability::InformationNotAvailable,
+                        audible_announcement: common_format::Availability::InformationNotAvailable,
+                        appropriate_escort: common_format::Availability::InformationNotAvailable,
+                        appropriate_signage: common_format::Availability::InformationNotAvailable,
                     },
                     Equipment {
                         id: "1".to_string(),
-                        wheelchair_boarding: Availability::NotAvailable,
-                        sheltered: Availability::InformationNotAvailable,
-                        elevator: Availability::InformationNotAvailable,
-                        escalator: Availability::InformationNotAvailable,
-                        bike_accepted: Availability::InformationNotAvailable,
-                        bike_depot: Availability::InformationNotAvailable,
-                        visual_announcement: Availability::InformationNotAvailable,
-                        audible_announcement: Availability::InformationNotAvailable,
-                        appropriate_escort: Availability::InformationNotAvailable,
-                        appropriate_signage: Availability::InformationNotAvailable,
+                        wheelchair_boarding: common_format::Availability::NotAvailable,
+                        sheltered: common_format::Availability::InformationNotAvailable,
+                        elevator: common_format::Availability::InformationNotAvailable,
+                        escalator: common_format::Availability::InformationNotAvailable,
+                        bike_accepted: common_format::Availability::InformationNotAvailable,
+                        bike_depot: common_format::Availability::InformationNotAvailable,
+                        visual_announcement: common_format::Availability::InformationNotAvailable,
+                        audible_announcement: common_format::Availability::InformationNotAvailable,
+                        appropriate_escort: common_format::Availability::InformationNotAvailable,
+                        appropriate_signage: common_format::Availability::InformationNotAvailable,
                     },
                 ]
             );
@@ -1933,16 +1888,16 @@ mod tests {
                 equipments_collection.into_vec(),
                 vec![Equipment {
                     id: "0".to_string(),
-                    wheelchair_boarding: Availability::Available,
-                    sheltered: Availability::InformationNotAvailable,
-                    elevator: Availability::InformationNotAvailable,
-                    escalator: Availability::InformationNotAvailable,
-                    bike_accepted: Availability::InformationNotAvailable,
-                    bike_depot: Availability::InformationNotAvailable,
-                    visual_announcement: Availability::InformationNotAvailable,
-                    audible_announcement: Availability::InformationNotAvailable,
-                    appropriate_escort: Availability::InformationNotAvailable,
-                    appropriate_signage: Availability::InformationNotAvailable,
+                    wheelchair_boarding: common_format::Availability::Available,
+                    sheltered: common_format::Availability::InformationNotAvailable,
+                    elevator: common_format::Availability::InformationNotAvailable,
+                    escalator: common_format::Availability::InformationNotAvailable,
+                    bike_accepted: common_format::Availability::InformationNotAvailable,
+                    bike_depot: common_format::Availability::InformationNotAvailable,
+                    visual_announcement: common_format::Availability::InformationNotAvailable,
+                    audible_announcement: common_format::Availability::InformationNotAvailable,
+                    appropriate_escort: common_format::Availability::InformationNotAvailable,
+                    appropriate_signage: common_format::Availability::InformationNotAvailable,
                 }]
             );
         });
