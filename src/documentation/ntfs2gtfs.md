@@ -86,7 +86,7 @@ service_id | yes | trips.txt | service_id |
 trip_id | yes | trips.txt | trip_id |
 trip_headsign | no | trips.txt | | (1)
 trip_short_name | no | trips.txt | | (1)
-direction_id | no | routes.txt | direction_type | `1` if the corresponding value is `forward`, `clockwise` or `inbound`. `0` otherwise.
+direction_id | no | routes.txt | direction_type | `0` if the corresponding value is `forward`, `clockwise` or `inbound`. `1` otherwise.
 block_id | no | trips.txt | block_id |
 shape_id | no | trips.txt | geometry_id | (link to the [shapes.txt](#shapestxt) file)
 wheelchair_accessible | no | trip_properties.txt | wheelchair_accessible | The value of `wheelchair_accessible` referenced by the `trip_property_id` of this trip.

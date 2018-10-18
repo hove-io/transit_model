@@ -403,7 +403,7 @@ mod tests {
             Route {
                 id: "IF:002002002:BDE".to_string(),
                 name: "Hôtels - Hôtels".to_string(),
-                direction_type: Some("foward".to_string()),
+                direction_type: Some("forward".to_string()),
                 codes: KeysValues::default(),
                 object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),

@@ -71,8 +71,7 @@ fn get_gtfs_trip_shortname_and_headsign_from_ntfs_vj(
         sps: &CollectionWithId<objects::StopPoint>,
     ) -> Option<String> {
         vj.stop_times
-            .iter()
-            .max_by_key(|st| st.sequence)
+            .last()
             .map(|st| &sps[st.stop_point_idx].name)
             .cloned()
     }
@@ -94,8 +93,8 @@ fn get_gtfs_direction_id_from_ntfs_vj(
 ) -> DirectionType {
     let route = routes.get(&vj.route_id).unwrap();
     match route.direction_type.as_ref().map(|s| s.as_str()) {
-        Some("foward") | Some("clockwise") | Some("inbound") => DirectionType::Backward,
-        _ => DirectionType::Forward,
+        Some("forward") | Some("clockwise") | Some("inbound") => DirectionType::Forward,
+        _ => DirectionType::Backward,
     }
 }
 
@@ -358,7 +357,7 @@ mod tests {
         let routes = CollectionWithId::new(vec![objects::Route {
             id: "OIF:078078001:1".to_string(),
             name: "Hôtels - Hôtels".to_string(),
-            direction_type: Some("foward".to_string()),
+            direction_type: Some("forward".to_string()),
             codes: BTreeSet::default(),
             object_properties: BTreeSet::default(),
             comment_links: BTreeSet::default(),
@@ -426,7 +425,7 @@ mod tests {
             id: "OIF:87604986-1_11595-1".to_string(),
             headsign: Some("2005".to_string()),
             short_name: None,
-            direction: DirectionType::Backward,
+            direction: DirectionType::Forward,
             block_id: Some("PLOI".to_string()),
             shape_id: vj.geometry_id.clone(),
             wheelchair_accessible: Availability::Available,

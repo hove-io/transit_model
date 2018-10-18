@@ -145,7 +145,7 @@ impl<'a> From<&'a objects::StopArea> for Stop {
 }
 
 #[derive(Derivative)]
-#[derivative(Default(bound = ""))]
+#[derivative(Default)]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 enum DirectionType {
     #[derivative(Default)]
