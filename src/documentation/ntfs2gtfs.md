@@ -66,8 +66,8 @@ Shuttle | 7 | 6
 ### stops.txt
 Stops and stations (stops having `location_type` = 0 and 1) are the only objects handled in the current version.
 
-GTFS field | Required | NTFS file | NTFS field
---- | --- | --- | ---
+GTFS field | Required | NTFS file | NTFS field | Note
+--- | --- | --- | --- | ---
 stop_id | yes | stops.txt | stop_id
 stop_name | yes | stops.txt | stop_name
 stop_lat | yes | stops.txt | stop_lat
@@ -76,6 +76,7 @@ zone_id | no | stops.txt | fare_zone_id
 location_type | no | stops.txt | location_type
 parent_station | no | stops.txt | parent_station
 timezone | no | stops.txt | timezone
+stop_desc | no | comments.txt, comment_links.txt | comment_name | The value of `comment_name` referenced by the `comment_id` having an `object_type` = `stop_point` or `object_type` = `stop_area` and an `object_id` equal to the corresponding `stop_id`. In case of more than one comments linked to the same trip, the first comment in alphabetical order is taken into account.
 
 ### trips.txt
 
