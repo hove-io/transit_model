@@ -41,21 +41,22 @@ pub fn write_agencies(
 }
 
 /// get the first comment ordered by name
-fn get_first_comment_name<T: CommentLinks>(
+fn get_first_comment_name<T: objects::CommentLinks>(
     obj: &T,
-    comments: &CollectionWithId<Comment>,
+    comments: &CollectionWithId<objects::Comment>,
 ) -> String {
-    let mut desc = "".to_string();
-    if !obj.comment_links().is_empty() {
-        let mut obj_comments: Vec<&Comment> = comments.iter_from(obj.comment_links()).collect();
-        obj_comments.sort_unstable_by_key(|c| &c.name);
-        desc = obj_comments.iter().next().unwrap().name.clone();
-    }
-
-    desc
+    comments
+        .iter_from(obj.comment_links())
+        .map(|c| &c.name)
+        .min()
+        .cloned()
+        .unwrap_or_else(|| "".into())
 }
 
-fn ntfs_stop_point_to_gtfs_stop(sp: &StopPoint, comments: &CollectionWithId<Comment>) -> Stop {
+fn ntfs_stop_point_to_gtfs_stop(
+    sp: &objects::StopPoint,
+    comments: &CollectionWithId<objects::Comment>,
+) -> Stop {
     Stop {
         id: sp.id.clone(),
         name: sp.name.clone(),
@@ -72,7 +73,10 @@ fn ntfs_stop_point_to_gtfs_stop(sp: &StopPoint, comments: &CollectionWithId<Comm
     }
 }
 
-fn ntfs_stop_area_to_gtfs_stop(sa: &StopArea, comments: &CollectionWithId<Comment>) -> Stop {
+fn ntfs_stop_area_to_gtfs_stop(
+    sa: &objects::StopArea,
+    comments: &CollectionWithId<objects::Comment>,
+) -> Stop {
     Stop {
         id: sa.id.clone(),
         name: sa.name.clone(),
@@ -93,7 +97,7 @@ pub fn write_stops(
     path: &path::Path,
     stop_points: &CollectionWithId<objects::StopPoint>,
     stop_areas: &CollectionWithId<objects::StopArea>,
-    comments: &CollectionWithId<Comment>,
+    comments: &CollectionWithId<objects::Comment>,
 ) -> Result<()> {
     info!("Writing stops.txt");
     let path = path.join("stops.txt");
@@ -259,17 +263,17 @@ mod tests {
     #[test]
     fn test_ntfs_stop_point_to_gtfs_stop() {
         let comments = CollectionWithId::new(vec![
-            Comment {
+            objects::Comment {
                 id: "1".into(),
                 name: "foo".into(),
-                comment_type: CommentType::Information,
+                comment_type: objects::CommentType::Information,
                 url: None,
                 label: None,
             },
-            Comment {
+            objects::Comment {
                 id: "2".into(),
                 name: "bar".into(),
-                comment_type: CommentType::Information,
+                comment_type: objects::CommentType::Information,
                 url: None,
                 label: None,
             },
@@ -279,7 +283,7 @@ mod tests {
         comment_links.insert(comments.get_idx("1").unwrap());
         comment_links.insert(comments.get_idx("2").unwrap());
 
-        let stop = StopPoint {
+        let stop = objects::StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
             codes: BTreeSet::default(),
@@ -317,7 +321,7 @@ mod tests {
 
     #[test]
     fn test_ntfs_minimal_stop_point_to_gtfs_stop() {
-        let stop = StopPoint {
+        let stop = objects::StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
             codes: BTreeSet::default(),
@@ -357,17 +361,17 @@ mod tests {
     #[test]
     fn test_ntfs_stop_area_to_gtfs_stop() {
         let comments = CollectionWithId::new(vec![
-            Comment {
+            objects::Comment {
                 id: "1".into(),
                 name: "foo".into(),
-                comment_type: CommentType::Information,
+                comment_type: objects::CommentType::Information,
                 url: None,
                 label: None,
             },
-            Comment {
+            objects::Comment {
                 id: "2".into(),
                 name: "bar".into(),
-                comment_type: CommentType::Information,
+                comment_type: objects::CommentType::Information,
                 url: None,
                 label: None,
             },
@@ -377,7 +381,7 @@ mod tests {
         comment_links.insert(comments.get_idx("1").unwrap());
         comment_links.insert(comments.get_idx("2").unwrap());
 
-        let stop = StopArea {
+        let stop = objects::StopArea {
             id: "sa_1".to_string(),
             name: "sa_name_1".to_string(),
             codes: BTreeSet::default(),
