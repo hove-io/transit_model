@@ -312,38 +312,34 @@ pub fn write_stop_times(
     Ok(())
 }
 
-fn ntfs_geometry_to_gtfs_shapes(g: &objects::Geometry) -> Vec<Shape> {
-    match g.geometry {
-        GeoGeometry::LineString(ref linestring) => linestring
-            .points()
-            .enumerate()
-            .map(|(i, p)| Shape {
-                id: g.id.clone(),
-                lat: p.y(),
-                lon: p.x(),
-                sequence: i as u32,
-            }).collect(),
+fn ntfs_geometry_to_gtfs_shapes<'a>(g: &'a objects::Geometry) -> impl Iterator<Item = Shape> + 'a {
+    let points = match g.geometry {
+        GeoGeometry::LineString(ref linestring) => &linestring.0[..],
         _ => {
             warn!(
                 "Geometry {} is not exported, only LINESTRING geometries are exported",
                 g.id
             );
-            vec![]
+            &[]
         }
-    }
+    };
+
+    points.iter().enumerate().map(move |(i, p)| Shape {
+        id: g.id.clone(),
+        lat: p.y(),
+        lon: p.x(),
+        sequence: i as u32,
+    })
 }
 
 pub fn write_shapes(
     path: &path::Path,
     geometries: &CollectionWithId<objects::Geometry>,
 ) -> Result<()> {
-    let mut shapes: Vec<Shape> = vec![];
-    for g in geometries.values() {
-        for s in ntfs_geometry_to_gtfs_shapes(g) {
-            shapes.push(s);
-        }
-    }
-
+    let shapes: Vec<_> = geometries
+        .values()
+        .flat_map(ntfs_geometry_to_gtfs_shapes)
+        .collect();
     if !shapes.is_empty() {
         info!("Writing shapes.txt");
         let path = path.join("shapes.txt");
@@ -362,9 +358,9 @@ mod tests {
     use super::*;
     use collection::CollectionWithId;
     use common_format::write_calendar_dates;
+    use geo_types::{Geometry as GeoGeometry, LineString, Point};
     use gtfs::{StopLocationType, Transfer, TransferType};
     use objects::Transfer as NtfsTransfer;
-    use geo_types::{Geometry as GeoGeometry, LineString, Point};
     use objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
     use std::collections::BTreeSet;
     extern crate tempdir;
@@ -838,7 +834,10 @@ mod tests {
             },
         ];
 
-        assert_eq!(expected, ntfs_geometry_to_gtfs_shapes(&geo));
+        assert_eq!(
+            expected,
+            ntfs_geometry_to_gtfs_shapes(&geo).collect::<Vec<Shape>>()
+        );
     }
 
     #[test]
@@ -848,7 +847,7 @@ mod tests {
             geometry: GeoGeometry::Point(Point::new(1.1, 2.2)),
         };
 
-        let shapes = ntfs_geometry_to_gtfs_shapes(&geo);
+        let shapes: Vec<Shape> = ntfs_geometry_to_gtfs_shapes(&geo).collect();
 
         assert!(shapes.is_empty());
     }

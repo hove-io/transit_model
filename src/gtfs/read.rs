@@ -259,31 +259,6 @@ impl Trip {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct StopTime {
-    trip_id: String,
-    arrival_time: Time,
-    departure_time: Time,
-    stop_id: String,
-    stop_sequence: u32,
-    #[serde(deserialize_with = "de_with_empty_default", default)]
-    pickup_type: u8,
-    #[serde(deserialize_with = "de_with_empty_default", default)]
-    drop_off_type: u8,
-}
-
-#[derive(Deserialize, Debug)]
-struct Shape {
-    #[serde(rename = "shape_id")]
-    id: String,
-    #[serde(rename = "shape_pt_lat")]
-    lat: f64,
-    #[serde(rename = "shape_pt_lon")]
-    lon: f64,
-    #[serde(rename = "shape_pt_sequence")]
-    sequence: u32,
-}
-
 pub fn manage_shapes<P: AsRef<path::Path>>(collections: &mut Collections, path: P) -> Result<()> {
     let file = "shapes.txt";
     let path = path.as_ref().join(file);
