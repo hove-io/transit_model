@@ -48,6 +48,8 @@ pub struct Collections {
     pub trip_properties: CollectionWithId<TripProperty>,
     pub geometries: CollectionWithId<Geometry>,
     pub admin_stations: Collection<AdminStation>,
+    #[serde(skip)]
+    pub stop_time_headsigns: HashMap<(Idx<VehicleJourney>, u32), String>,
 }
 
 impl Collections {
@@ -74,6 +76,7 @@ impl Collections {
             trip_properties,
             geometries,
             admin_stations,
+            stop_time_headsigns,
         } = c;
         self.contributors.merge(contributors)?;
         self.datasets.merge(datasets)?;
@@ -81,6 +84,7 @@ impl Collections {
         self.commercial_modes.merge(commercial_modes)?;
         self.lines.merge(lines)?;
         self.routes.merge(routes)?;
+        self.stop_time_headsigns.extend(stop_time_headsigns);
         self.physical_modes.extend(physical_modes);
         self.stop_areas.merge(stop_areas)?;
 

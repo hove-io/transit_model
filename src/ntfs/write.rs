@@ -15,7 +15,8 @@
 // <http://www.gnu.org/licenses/>.
 
 use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
-use collection::{Collection, CollectionWithId, Id};
+use collection::{Collection, CollectionWithId, Id, Idx};
+use common_format::CalendarDate;
 use csv;
 use failure::ResultExt;
 use model::Collections;
@@ -42,6 +43,7 @@ pub fn write_vehicle_journeys_and_stop_times(
     path: &path::Path,
     vehicle_journeys: &CollectionWithId<VehicleJourney>,
     stop_points: &CollectionWithId<StopPoint>,
+    stop_time_headsigns: &HashMap<(Idx<VehicleJourney>, u32), String>,
 ) -> Result<()> {
     info!("Writing trips.txt and stop_times.txt");
     let trip_path = path.join("trips.txt");
@@ -49,7 +51,7 @@ pub fn write_vehicle_journeys_and_stop_times(
     let mut vj_wtr = csv::Writer::from_path(&trip_path).with_context(ctx_from_path!(trip_path))?;
     let mut st_wtr =
         csv::Writer::from_path(&stop_times_path).with_context(ctx_from_path!(stop_times_path))?;
-    for vj in vehicle_journeys.values() {
+    for (vj_idx, vj) in vehicle_journeys.iter() {
         vj_wtr
             .serialize(vj)
             .with_context(ctx_from_path!(trip_path))?;
@@ -68,7 +70,8 @@ pub fn write_vehicle_journeys_and_stop_times(
                     drop_off_type: st.drop_off_type,
                     datetime_estimated: st.datetime_estimated,
                     local_zone_id: st.local_zone_id,
-                    // TODO: Add headsign and stop_time_ids
+                    stop_headsign: stop_time_headsigns.get(&(vj_idx, st.sequence)).cloned(),
+                    // TODO: Add stop_time_ids
                 }).with_context(ctx_from_path!(st_wtr))?;
         }
     }
