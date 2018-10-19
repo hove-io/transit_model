@@ -20,6 +20,7 @@ mod read;
 mod write;
 
 use collection::CollectionWithId;
+use common_format;
 use common_format::{manage_calendars, Availability};
 use gtfs::read::EquipmentList;
 use model::{Collections, Model};
@@ -234,6 +235,7 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
 
     write::write_transfers(path, &model.transfers)?;
     write::write_agencies(path, &model.networks)?;
+    common_format::write_calendar_dates(path, &model.calendars)?;
     write::write_stops(path, &model.stop_points, &model.stop_areas, &model.comments)?;
     write::write_trips(
         path,
