@@ -103,8 +103,8 @@ struct Stop {
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
     timezone: Option<String>,
-    #[serde(default)]
-    wheelchair_boarding: Option<String>,
+    #[serde(deserialize_with = "de_with_empty_default", default)]
+    wheelchair_boarding: Availability,
 }
 
 #[derive(Derivative)]
@@ -236,7 +236,13 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
     write::write_transfers(path, &model.transfers)?;
     write::write_agencies(path, &model.networks)?;
     common_format::write_calendar_dates(path, &model.calendars)?;
-    write::write_stops(path, &model.stop_points, &model.stop_areas, &model.comments)?;
+    write::write_stops(
+        path,
+        &model.stop_points,
+        &model.stop_areas,
+        &model.comments,
+        &model.equipments,
+    )?;
     write::write_trips(
         path,
         &model.vehicle_journeys,

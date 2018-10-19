@@ -453,16 +453,11 @@ fn get_equipment_id_and_populate_equipments(
     equipments: &mut EquipmentList,
     stop: &Stop,
 ) -> Option<String> {
-    stop.wheelchair_boarding
-        .as_ref()
-        .and_then(|availability| match availability.as_str() {
-            "1" => Some(Availability::Available),
-            "2" => Some(Availability::NotAvailable),
-            _ => None,
-        }).map(|availlability| {
-            equipments.push(objects::Equipment {
+    match stop.wheelchair_boarding {
+        Availability::Available | Availability::NotAvailable => {
+            Some(equipments.push(objects::Equipment {
                 id: "".to_string(),
-                wheelchair_boarding: availlability,
+                wheelchair_boarding: stop.wheelchair_boarding,
                 sheltered: Availability::InformationNotAvailable,
                 elevator: Availability::InformationNotAvailable,
                 escalator: Availability::InformationNotAvailable,
@@ -472,8 +467,10 @@ fn get_equipment_id_and_populate_equipments(
                 audible_announcement: Availability::InformationNotAvailable,
                 appropriate_escort: Availability::InformationNotAvailable,
                 appropriate_signage: Availability::InformationNotAvailable,
-            })
-        })
+            }))
+        }
+        _ => None,
+    }
 }
 
 pub fn read_stops<P: AsRef<path::Path>>(
