@@ -154,6 +154,7 @@ struct StopTime {
     pickup_type: u8,
     #[serde(deserialize_with = "de_with_empty_default", default)]
     drop_off_type: u8,
+    local_zone_id: Option<u16>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]

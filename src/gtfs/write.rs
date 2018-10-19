@@ -20,8 +20,8 @@ use common_format::Availability;
 use csv;
 use failure::ResultExt;
 use objects;
-use objects::*;
 use objects::Transfer as NtfsTransfer;
+use objects::*;
 use std::path;
 use Result;
 
@@ -254,6 +254,7 @@ pub fn write_stop_times(
                     departure_time: st.departure_time,
                     pickup_type: st.pickup_type,
                     drop_off_type: st.drop_off_type,
+                    local_zone_id: st.local_zone_id,
                 }).with_context(ctx_from_path!(st_wtr))?;
         }
     }
@@ -739,7 +740,7 @@ mod tests {
                 pickup_type: 2,
                 drop_off_type: 1,
                 datetime_estimated: false,
-                local_zone_id: None,
+                local_zone_id: Some(3),
             },
         ];
         let vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
@@ -766,9 +767,9 @@ mod tests {
         let mut output_contents = String::new();
         output_file.read_to_string(&mut output_contents).unwrap();
         assert_eq!(
-            "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type\n\
-             vj:01,06:00:00,06:00:00,sp:01,1,0,0\n\
-             vj:01,06:06:27,06:06:27,sp:01,2,2,1\n",
+            "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id\n\
+             vj:01,06:00:00,06:00:00,sp:01,1,0,0,\n\
+             vj:01,06:06:27,06:06:27,sp:01,2,2,1,3\n",
             output_contents
         );
         tmp_dir.close().expect("delete temp dir");

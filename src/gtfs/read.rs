@@ -26,10 +26,11 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs::File;
 use std::path;
 use std::result::Result as StdResult;
-use utils::*;
 use Result;
 extern crate serde_json;
-use super::{Agency, DirectionType, Stop, StopLocationType, Transfer, TransferType, StopTime, Trip};
+use super::{
+    Agency, DirectionType, Stop, StopLocationType, StopTime, Transfer, TransferType, Trip,
+};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -352,7 +353,7 @@ pub fn manage_stop_times<P: AsRef<path::Path>>(
                 pickup_type: stop_time.pickup_type,
                 drop_off_type: stop_time.drop_off_type,
                 datetime_estimated: false,
-                local_zone_id: None,
+                local_zone_id: stop_time.local_zone_id,
             });
     }
     let mut vehicle_journeys = collections.vehicle_journeys.take();
