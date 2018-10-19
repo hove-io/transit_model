@@ -509,6 +509,31 @@ impl<T: Id<T>> CollectionWithId<T> {
     pub fn is_empty(&self) -> bool {
         self.collection.is_empty()
     }
+
+    /// Return a map of idx and id
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c: CollectionWithId<Obj> = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let idx_to_id = c.idx_to_id();
+    /// let idx = c.get_idx("foo").unwrap();
+    /// assert_eq!(idx_to_id.get(&idx).unwrap(), "foo");
+    /// let idx = c.get_idx("bar").unwrap();
+    /// assert_eq!(idx_to_id.get(&idx).unwrap(), "bar");
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn idx_to_id(&self) -> HashMap<Idx<T>, String> {
+        self.iter()
+            .map(|(idx, obj)| (idx, obj.id().into()))
+            .collect()
+    }
 }
 
 impl<T: Id<T>> iter::Extend<T> for CollectionWithId<T> {
