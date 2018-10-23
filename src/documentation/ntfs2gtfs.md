@@ -32,7 +32,7 @@ Each line of this file corresponds to a transit line modeled in the NTFS feed. I
 
 GTFS field | Required | NTFS file | NTFS field | Note
 --- | --- | --- | --- | ---
-route_id | yes | lines.txt | line_id |
+route_id | yes | lines.txt | line_id | See below for lines containing trips with different modes
 agency_id | no | lines.txt | network_id | (link to the [agency.txt](#agencytxt) file)
 route_short_name | yes | lines.txt | line_code |
 route_long_name | yes | lines.txt | line_name |
@@ -42,26 +42,34 @@ route_text_color | no | lines.txt | line_text_color |
 route_sort_order | no | lines.txt | line_sort_order |
 
 **Mapping of `route_type` with physical modes**
-- The trips using the physical mode with the lowest priority are modeled by a GTFS line with the field `route_id` matching the value of `line_id`.
-- The trips using other physical modes are modeled by separate GTFS lines, adding the suffix ":<physical_mode_id>" to the value of `route_id` and assigning the corresponding physical mode to the field `route_type`.
 
-physical_mode_id in the NTFS | route_type in the GTFS | Priority w.r.t. NeTex
---- | --- | ---
-RailShuttle | 0 | 3
-Tramway | 0 | 5
-Metro | 1 | 4
-LocalTrain | 2 | 3
-LongDistanceTrain | 2 | 3
-RapidTransit | 2 | 3
-Train | 2 | 3
-Other (or unknown) | 3 | 7
-Bus | 3 | 7
-BusRapidTransit | 3 | 7
-Coach | 3 | 7
-Boat | 4 | 2
-Ferry | 4 | 2
-Funicular | 7 | 6
-Shuttle | 7 | 6
+physical_mode_id in the NTFS | route_type in the GTFS | Priority w.r.t. NeTex | Absolute order
+--- | --- | --- | ---
+Tramway | 0 | 5 | 1
+RailShuttle | 0 | 3 | 2
+Metro | 1 | 4 | 3
+LocalTrain | 2 | 3 | 4
+LongDistanceTrain | 2 | 3 | 5
+RapidTransit | 2 | 3 | 6
+Train | 2 | 3 | 7
+BusRapidTransit | 3 | 7 | 8
+Bus | 3 | 7 | 9
+Coach | 3 | 7 | 10
+Boat | 4 | 2 | 11
+Ferry | 4 | 2 | 12
+Funicular | 7 | 6 | 13
+Shuttle | 7 | 6 | 14
+
+The physical_modes Air and Taxi are not available in standard GTFS `route_type`s and should be considered as unknown for the GTFS (see below).
+If the physical_mode is unknown, trips shloud be considered as Bus (route_type = 3) and with a priority of 15 .
+
+**Export of NTFS lines containing trips with different modes**
+A GTFS `route` can only contains trips with one mode (ie. `route_type`).  
+If a NTFS `line` contains `trip`s that should be associated with different gtfs `route_type`s, 2 different GTFS `route`s must be generated : 
+- The trips using the physical mode with the lowest priority are modeled by a GTFS `route` with the field `route_id` matching the value of the NTFS `line_id`.
+- The trips using other physical modes are modeled by a separate GTFS `route` for each corresponding `route_type`, adding the suffix ":<physical_mode_id>" to the value of `route_id` and assigning the corresponding physical mode to the field `route_type`.
+
+
 
 ### stops.txt
 Stops and stations (stops having `location_type` = 0 and 1) are the only objects handled in the current version.
