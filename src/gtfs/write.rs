@@ -221,10 +221,17 @@ pub fn write_trips(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use common_format::write_calendar_dates;
     use gtfs::StopLocationType;
     use gtfs::{Transfer, TransferType};
+    use objects::Calendar;
     use objects::Transfer as NtfsTransfer;
     use std::collections::BTreeSet;
+    extern crate tempdir;
+    use self::tempdir::TempDir;
+    use chrono;
+    use std::fs::File;
+    use std::io::Read;
 
     #[test]
     fn write_agency() {
@@ -575,5 +582,36 @@ mod tests {
         };
 
         assert_eq!(expected, transfer);
+    }
+
+    #[test]
+    fn write_calendar_dates_from_calendar() {
+        let mut dates = BTreeSet::new();
+        dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
+        dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+        let calendar = CollectionWithId::new(vec![
+            Calendar {
+                id: "1".to_string(),
+                dates,
+            },
+            Calendar {
+                id: "2".to_string(),
+                dates: BTreeSet::new(),
+            },
+        ]).unwrap();
+        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        write_calendar_dates(tmp_dir.path(), &calendar).unwrap();
+        let output_file_path = tmp_dir.path().join("calendar_dates.txt");
+        let mut output_file = File::open(output_file_path.clone())
+            .expect(&format!("file {:?} not found", output_file_path));
+        let mut output_contents = String::new();
+        output_file.read_to_string(&mut output_contents).unwrap();
+        assert_eq!(
+            "service_id,date,exception_type\n\
+             1,20180505,1\n\
+             1,20180506,1\n",
+            output_contents
+        );
+        tmp_dir.close().expect("delete temp dir");
     }
 }

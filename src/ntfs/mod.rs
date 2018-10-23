@@ -167,7 +167,7 @@ pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
         &model.vehicle_journeys,
         &model.stop_points,
     )?;
-    write::write_calendar_dates(path, &model.calendars)?;
+    common_format::write_calendar_dates(path, &model.calendars)?;
     write::write_stops(path, &model.stop_points, &model.stop_areas)?;
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
@@ -639,7 +639,7 @@ mod tests {
         ]).unwrap();
 
         ser_deser_in_tmp_dir(|path| {
-            write::write_calendar_dates(path, &calendars).unwrap();
+            common_format::write_calendar_dates(path, &calendars).unwrap();
 
             let mut collections = Collections::default();
             common_format::manage_calendars(&mut collections, path).unwrap();

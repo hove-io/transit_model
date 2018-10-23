@@ -16,7 +16,6 @@
 
 use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
 use collection::{Collection, CollectionWithId, Id};
-use common_format::CalendarDate;
 use csv;
 use failure::ResultExt;
 use model::Collections;
@@ -118,29 +117,6 @@ where
         wtr.serialize(obj).with_context(ctx_from_path!(path))?;
     }
     wtr.flush().with_context(ctx_from_path!(path))?;
-
-    Ok(())
-}
-
-pub fn write_calendar_dates(
-    path: &path::Path,
-    calendars: &CollectionWithId<Calendar>,
-) -> Result<()> {
-    info!("Writing calendar_dates.txt");
-    let calendar_dates_path = path.join("calendar_dates.txt");
-    let mut wtr = csv::Writer::from_path(&calendar_dates_path)
-        .with_context(ctx_from_path!(calendar_dates_path))?;
-    for c in calendars.values() {
-        for d in &c.dates {
-            wtr.serialize(CalendarDate {
-                service_id: c.id.clone(),
-                date: *d,
-                exception_type: ExceptionType::Add,
-            }).with_context(ctx_from_path!(calendar_dates_path))?;
-        }
-    }
-    wtr.flush()
-        .with_context(ctx_from_path!(calendar_dates_path))?;
 
     Ok(())
 }
