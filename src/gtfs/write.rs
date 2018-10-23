@@ -14,14 +14,32 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::{Agency, DirectionType, Stop, StopLocationType, Trip};
-use collection::CollectionWithId;
+use super::{Agency, DirectionType, Stop, StopLocationType, Transfer, Trip};
+use collection::{Collection, CollectionWithId};
 use common_format::Availability;
 use csv;
 use failure::ResultExt;
 use objects;
+use objects::Transfer as NtfsTransfer;
 use std::path;
 use Result;
+
+pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) -> Result<()> {
+    if transfers.is_empty() {
+        return Ok(());
+    }
+    info!("Writing transfers.txt");
+    let path = path.join("transfers.txt");
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    for t in transfers.values() {
+        wtr.serialize(Transfer::from(t))
+            .with_context(ctx_from_path!(path))?;
+    }
+
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
+}
 
 pub fn write_agencies(
     path: &path::Path,
@@ -204,6 +222,8 @@ pub fn write_trips(
 mod tests {
     use super::*;
     use gtfs::StopLocationType;
+    use gtfs::{Transfer, TransferType};
+    use objects::Transfer as NtfsTransfer;
     use std::collections::BTreeSet;
 
     #[test]
@@ -535,5 +555,25 @@ mod tests {
             expected,
             make_gtfs_trip_from_ntfs_vj(&vj, &sps, &routes, &tps)
         );
+    }
+
+    #[test]
+    fn ntfs_transfers_to_gtfs_transfers() {
+        let transfer = Transfer::from(&NtfsTransfer {
+            from_stop_id: "sp:01".to_string(),
+            to_stop_id: "sp:02".to_string(),
+            min_transfer_time: Some(42),
+            real_min_transfer_time: None,
+            equipment_id: None,
+        });
+
+        let expected = Transfer {
+            from_stop_id: "sp:01".to_string(),
+            to_stop_id: "sp:02".to_string(),
+            transfer_type: TransferType::WithTransferTime,
+            min_transfer_time: Some(42),
+        };
+
+        assert_eq!(expected, transfer);
     }
 }
