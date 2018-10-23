@@ -74,7 +74,14 @@ fn get_first_comment_name<T: objects::CommentLinks>(
 fn ntfs_stop_point_to_gtfs_stop(
     sp: &objects::StopPoint,
     comments: &CollectionWithId<objects::Comment>,
+    equipments: &CollectionWithId<objects::Equipment>,
 ) -> Stop {
+    let wheelchair = sp
+        .equipment_id
+        .clone()
+        .and_then(|eq_id| equipments.get(&eq_id))
+        .map(|eq| eq.wheelchair_boarding)
+        .unwrap_or_else(|| Availability::default());
     Stop {
         id: sp.id.clone(),
         name: sp.name.clone(),
@@ -85,7 +92,7 @@ fn ntfs_stop_point_to_gtfs_stop(
         parent_station: Some(sp.stop_area_id.clone()),
         code: None,
         desc: get_first_comment_name(sp, comments),
-        wheelchair_boarding: None,
+        wheelchair_boarding: wheelchair,
         url: None,
         timezone: sp.timezone.clone(),
     }
@@ -94,7 +101,14 @@ fn ntfs_stop_point_to_gtfs_stop(
 fn ntfs_stop_area_to_gtfs_stop(
     sa: &objects::StopArea,
     comments: &CollectionWithId<objects::Comment>,
+    equipments: &CollectionWithId<objects::Equipment>,
 ) -> Stop {
+    let wheelchair = sa
+        .equipment_id
+        .clone()
+        .and_then(|eq_id| equipments.get(&eq_id))
+        .map(|eq| eq.wheelchair_boarding)
+        .unwrap_or_else(|| Availability::default());
     Stop {
         id: sa.id.clone(),
         name: sa.name.clone(),
@@ -105,7 +119,7 @@ fn ntfs_stop_area_to_gtfs_stop(
         parent_station: None,
         code: None,
         desc: get_first_comment_name(sa, comments),
-        wheelchair_boarding: None,
+        wheelchair_boarding: wheelchair,
         url: None,
         timezone: sa.timezone.clone(),
     }
@@ -116,16 +130,17 @@ pub fn write_stops(
     stop_points: &CollectionWithId<objects::StopPoint>,
     stop_areas: &CollectionWithId<objects::StopArea>,
     comments: &CollectionWithId<objects::Comment>,
+    equipments: &CollectionWithId<objects::Equipment>,
 ) -> Result<()> {
     info!("Writing stops.txt");
     let path = path.join("stops.txt");
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for sp in stop_points.values() {
-        wtr.serialize(ntfs_stop_point_to_gtfs_stop(sp, comments))
+        wtr.serialize(ntfs_stop_point_to_gtfs_stop(sp, comments, equipments))
             .with_context(ctx_from_path!(path))?;
     }
     for sa in stop_areas.values() {
-        wtr.serialize(ntfs_stop_area_to_gtfs_stop(sa, comments))
+        wtr.serialize(ntfs_stop_area_to_gtfs_stop(sa, comments, equipments))
             .with_context(ctx_from_path!(path))?;
     }
 
@@ -306,6 +321,20 @@ mod tests {
             },
         ]).unwrap();
 
+        let equipments = CollectionWithId::new(vec![objects::Equipment {
+            id: "1".to_string(),
+            wheelchair_boarding: Availability::Available,
+            sheltered: Availability::InformationNotAvailable,
+            elevator: Availability::Available,
+            escalator: Availability::Available,
+            bike_accepted: Availability::Available,
+            bike_depot: Availability::Available,
+            visual_announcement: Availability::Available,
+            audible_announcement: Availability::Available,
+            appropriate_escort: Availability::Available,
+            appropriate_signage: Availability::Available,
+        }]).unwrap();
+
         let mut comment_links = BTreeSet::new();
         comment_links.insert(comments.get_idx("1").unwrap());
         comment_links.insert(comments.get_idx("2").unwrap());
@@ -324,7 +353,7 @@ mod tests {
             stop_area_id: "OIF:SA:8739322".to_string(),
             timezone: Some("Europe/Paris".to_string()),
             geometry_id: None,
-            equipment_id: None,
+            equipment_id: Some("1".to_string()),
             fare_zone_id: Some("1".to_string()),
         };
 
@@ -338,12 +367,15 @@ mod tests {
             parent_station: Some("OIF:SA:8739322".to_string()),
             code: None,
             desc: "bar".to_string(),
-            wheelchair_boarding: None,
+            wheelchair_boarding: Availability::Available,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
         };
 
-        assert_eq!(expected, ntfs_stop_point_to_gtfs_stop(&stop, &comments));
+        assert_eq!(
+            expected,
+            ntfs_stop_point_to_gtfs_stop(&stop, &comments, &equipments)
+        );
     }
 
     #[test]
@@ -376,13 +408,17 @@ mod tests {
             parent_station: Some("OIF:SA:8739322".to_string()),
             code: None,
             desc: "".to_string(),
-            wheelchair_boarding: None,
+            wheelchair_boarding: Availability::InformationNotAvailable,
             url: None,
             timezone: None,
         };
 
         let comments = CollectionWithId::default();
-        assert_eq!(expected, ntfs_stop_point_to_gtfs_stop(&stop, &comments));
+        let equipments = CollectionWithId::default();
+        assert_eq!(
+            expected,
+            ntfs_stop_point_to_gtfs_stop(&stop, &comments, &equipments)
+        );
     }
 
     #[test]
@@ -404,6 +440,20 @@ mod tests {
             },
         ]).unwrap();
 
+        let equipments = CollectionWithId::new(vec![objects::Equipment {
+            id: "1".to_string(),
+            wheelchair_boarding: Availability::NotAvailable,
+            sheltered: Availability::InformationNotAvailable,
+            elevator: Availability::Available,
+            escalator: Availability::Available,
+            bike_accepted: Availability::Available,
+            bike_depot: Availability::Available,
+            visual_announcement: Availability::Available,
+            audible_announcement: Availability::Available,
+            appropriate_escort: Availability::Available,
+            appropriate_signage: Availability::Available,
+        }]).unwrap();
+
         let mut comment_links = BTreeSet::new();
         comment_links.insert(comments.get_idx("1").unwrap());
         comment_links.insert(comments.get_idx("2").unwrap());
@@ -421,7 +471,7 @@ mod tests {
             },
             timezone: Some("Europe/Paris".to_string()),
             geometry_id: None,
-            equipment_id: None,
+            equipment_id: Some("1".to_string()),
         };
 
         let expected = Stop {
@@ -434,12 +484,15 @@ mod tests {
             parent_station: None,
             code: None,
             desc: "bar".to_string(),
-            wheelchair_boarding: None,
+            wheelchair_boarding: Availability::NotAvailable,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
         };
 
-        assert_eq!(expected, ntfs_stop_area_to_gtfs_stop(&stop, &comments));
+        assert_eq!(
+            expected,
+            ntfs_stop_area_to_gtfs_stop(&stop, &comments, &equipments)
+        );
     }
 
     #[test]
