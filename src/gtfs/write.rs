@@ -14,13 +14,14 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::{Agency, DirectionType, Stop, StopLocationType, Transfer, Trip};
+use super::{Agency, DirectionType, Stop, StopLocationType, StopTime, Transfer, Trip};
 use collection::{Collection, CollectionWithId};
 use common_format::Availability;
 use csv;
 use failure::ResultExt;
 use objects;
 use objects::Transfer as NtfsTransfer;
+use objects::*;
 use std::path;
 use Result;
 
@@ -233,14 +234,43 @@ pub fn write_trips(
     Ok(())
 }
 
+pub fn write_stop_times(
+    path: &path::Path,
+    vehicle_journeys: &CollectionWithId<VehicleJourney>,
+    stop_points: &CollectionWithId<StopPoint>,
+) -> Result<()> {
+    info!("Writing stop_times.txt");
+    let stop_times_path = path.join("stop_times.txt");
+    let mut st_wtr =
+        csv::Writer::from_path(&stop_times_path).with_context(ctx_from_path!(stop_times_path))?;
+    for vj in vehicle_journeys.values() {
+        for st in &vj.stop_times {
+            st_wtr
+                .serialize(StopTime {
+                    stop_id: stop_points[st.stop_point_idx].id.clone(),
+                    trip_id: vj.id.clone(),
+                    stop_sequence: st.sequence,
+                    arrival_time: st.arrival_time,
+                    departure_time: st.departure_time,
+                    pickup_type: st.pickup_type,
+                    drop_off_type: st.drop_off_type,
+                    local_zone_id: st.local_zone_id,
+                }).with_context(ctx_from_path!(st_wtr))?;
+        }
+    }
+    st_wtr
+        .flush()
+        .with_context(ctx_from_path!(stop_times_path))?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use common_format::write_calendar_dates;
-    use gtfs::StopLocationType;
-    use gtfs::{Transfer, TransferType};
-    use objects::Calendar;
+    use gtfs::{StopLocationType, Transfer, TransferType};
     use objects::Transfer as NtfsTransfer;
+    use objects::{Calendar, StopPoint, StopTime};
     use std::collections::BTreeSet;
     extern crate tempdir;
     use self::tempdir::TempDir;
@@ -663,6 +693,83 @@ mod tests {
             "service_id,date,exception_type\n\
              1,20180505,1\n\
              1,20180506,1\n",
+            output_contents
+        );
+        tmp_dir.close().expect("delete temp dir");
+    }
+
+    #[test]
+    fn ntfs_vehicle_journeys_to_stop_times() {
+        let stop_points = CollectionWithId::new(vec![StopPoint {
+            id: "sp:01".to_string(),
+            name: "sp_name_1".to_string(),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            visible: true,
+            coord: Coord {
+                lon: 2.37,
+                lat: 48.84,
+            },
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+            stop_area_id: "sa_1".to_string(),
+            fare_zone_id: None,
+        }]).unwrap();
+        let stop_times_vec = vec![
+            StopTime {
+                stop_point_idx: stop_points.get_idx("sp:01").unwrap(),
+                sequence: 1,
+                arrival_time: Time::new(6, 0, 0),
+                departure_time: Time::new(6, 0, 0),
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 0,
+                datetime_estimated: false,
+                local_zone_id: None,
+            },
+            StopTime {
+                stop_point_idx: stop_points.get_idx("sp:01").unwrap(),
+                sequence: 2,
+                arrival_time: Time::new(6, 6, 27),
+                departure_time: Time::new(6, 6, 27),
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 2,
+                drop_off_type: 1,
+                datetime_estimated: false,
+                local_zone_id: Some(3),
+            },
+        ];
+        let vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+            id: "vj:01".to_string(),
+            codes: BTreeSet::new(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            route_id: "r:01".to_string(),
+            physical_mode_id: "pm:01".to_string(),
+            dataset_id: "ds:01".to_string(),
+            service_id: "sv:01".to_string(),
+            headsign: None,
+            block_id: None,
+            company_id: "c:01".to_string(),
+            trip_property_id: None,
+            geometry_id: None,
+            stop_times: stop_times_vec,
+        }]).unwrap();
+        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        write_stop_times(tmp_dir.path(), &vehicle_journeys, &stop_points).unwrap();
+        let output_file_path = tmp_dir.path().join("stop_times.txt");
+        let mut output_file = File::open(output_file_path.clone())
+            .expect(&format!("file {:?} not found", output_file_path));
+        let mut output_contents = String::new();
+        output_file.read_to_string(&mut output_contents).unwrap();
+        assert_eq!(
+            "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id\n\
+             vj:01,06:00:00,06:00:00,sp:01,1,0,0,\n\
+             vj:01,06:06:27,06:06:27,sp:01,2,2,1,3\n",
             output_contents
         );
         tmp_dir.close().expect("delete temp dir");

@@ -25,6 +25,7 @@ use common_format::{manage_calendars, Availability};
 use gtfs::read::EquipmentList;
 use model::{Collections, Model};
 use objects;
+use objects::Time;
 use read_utils::add_prefix;
 use std::path::Path;
 use utils::*;
@@ -142,6 +143,20 @@ struct Trip {
     bikes_allowed: Availability,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct StopTime {
+    trip_id: String,
+    arrival_time: Time,
+    departure_time: Time,
+    stop_id: String,
+    stop_sequence: u32,
+    #[serde(deserialize_with = "de_with_empty_default", default)]
+    pickup_type: u8,
+    #[serde(deserialize_with = "de_with_empty_default", default)]
+    drop_off_type: u8,
+    local_zone_id: Option<u16>,
+}
+
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
 #[derivative(Default)]
 enum TransferType {
@@ -250,6 +265,7 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
         &model.routes,
         &model.trip_properties,
     )?;
+    write::write_stop_times(path, &model.vehicle_journeys, &model.stop_points)?;
 
     Ok(())
 }
