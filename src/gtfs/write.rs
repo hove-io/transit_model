@@ -448,8 +448,8 @@ fn ntfs_geometry_to_gtfs_shapes<'a>(g: &'a objects::Geometry) -> impl Iterator<I
 
     points.iter().enumerate().map(move |(i, p)| Shape {
         id: g.id.clone(),
-        lat: p.y(),
-        lon: p.x(),
+        lat: p.y,
+        lon: p.x,
         sequence: i as u32,
     })
 }
@@ -485,7 +485,7 @@ mod tests {
     use crate::objects::Transfer as NtfsTransfer;
     use crate::objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
     use chrono;
-    use geo_types::{Geometry as GeoGeometry, LineString, Point};
+    use geo_types::Geometry as GeoGeometry;
     use std::collections::BTreeSet;
     use std::fs::File;
     use std::io::Read;
@@ -961,10 +961,7 @@ mod tests {
     fn ntfs_geometry_linestring_exported() {
         let geo = objects::Geometry {
             id: "1".to_string(),
-            geometry: GeoGeometry::LineString(LineString(vec![
-                Point::new(1.1, 2.2),
-                Point::new(3.3, 4.4),
-            ])),
+            geometry: GeoGeometry::LineString(vec![(1.1, 2.2), (3.3, 4.4)].into()),
         };
 
         let expected = vec![
@@ -992,7 +989,7 @@ mod tests {
     fn ntfs_geometry_not_linestring_not_exported() {
         let geo = objects::Geometry {
             id: "1".to_string(),
-            geometry: GeoGeometry::Point(Point::new(1.1, 2.2)),
+            geometry: GeoGeometry::Point((1.1, 2.2).into()),
         };
 
         let shapes: Vec<Shape> = ntfs_geometry_to_gtfs_shapes(&geo).collect();
