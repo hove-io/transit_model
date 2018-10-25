@@ -243,24 +243,20 @@ struct StopExtension {
     code: String,
 }
 
-fn stop_extensions_from_collection_with_id<T>(
-    collections: &CollectionWithId<T>,
-) -> Result<Vec<StopExtension>>
+fn stop_extensions_from_collection_with_id<'a, T>(
+    collections: &'a CollectionWithId<T>,
+) -> impl Iterator<Item = StopExtension> + 'a
 where
     T: Id<T> + Codes,
 {
-    let mut stop_extensions = Vec::new();
-    for obj in collections.values() {
-        for c in obj.codes() {
-            stop_extensions.push(StopExtension {
-                id: obj.id().to_string(),
-                name: c.0.clone(),
-                code: c.1.clone(),
-            });
-        }
-    }
-
-    Ok(stop_extensions)
+    collections
+        .values()
+        .flat_map(|obj| obj.codes().iter().map(move |c| (obj.id(), c)))
+        .map(|(id, (name, code))| StopExtension {
+            id: id.to_string(),
+            name: name.to_string(),
+            code: code.to_string(),
+        })
 }
 
 pub fn write_stop_extensions(
@@ -269,8 +265,8 @@ pub fn write_stop_extensions(
     stop_areas: &CollectionWithId<StopArea>,
 ) -> Result<()> {
     let mut stop_extensions = Vec::new();
-    stop_extensions.extend(stop_extensions_from_collection_with_id(&stop_points)?);
-    stop_extensions.extend(stop_extensions_from_collection_with_id(&stop_areas)?);
+    stop_extensions.extend(stop_extensions_from_collection_with_id(&stop_points));
+    stop_extensions.extend(stop_extensions_from_collection_with_id(&stop_areas));
     if stop_extensions.is_empty() {
         return Ok(());
     }
@@ -318,11 +314,11 @@ pub fn write_stop_times(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use common_format::write_calendar_dates;
-    use gtfs::{StopLocationType, Transfer, TransferType, StopLocationType};
-    use objects::Transfer as NtfsTransfer;
-    use objects::{Calendar, StopPoint, StopTime, CommentLinksT, Coord, KeysValues};
     use collection::CollectionWithId;
+    use common_format::write_calendar_dates;
+    use gtfs::{StopLocationType, Transfer, TransferType};
+    use objects::Transfer as NtfsTransfer;
+    use objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
     use std::collections::BTreeSet;
     extern crate tempdir;
     use self::tempdir::TempDir;
