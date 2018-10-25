@@ -30,6 +30,7 @@ use objects::*;
 use relations::IdxSet;
 use std::path;
 use Result;
+use std::collections::HashMap;
 
 pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) -> Result<()> {
     if transfers.is_empty() {
@@ -282,7 +283,6 @@ pub fn write_stop_extensions(
 
     Ok(())
 }
-
 #[derive(Debug)]
 struct PhysicalModeWithOrder<'a> {
     inner: &'a objects::PhysicalMode,
@@ -389,12 +389,13 @@ pub fn write_stop_times(
     path: &path::Path,
     vehicle_journeys: &CollectionWithId<VehicleJourney>,
     stop_points: &CollectionWithId<StopPoint>,
+    stop_times_head_signs: &HashMap<(Idx<VehicleJourney>, u32), String>,
 ) -> Result<()> {
     info!("Writing stop_times.txt");
     let stop_times_path = path.join("stop_times.txt");
     let mut st_wtr =
         csv::Writer::from_path(&stop_times_path).with_context(ctx_from_path!(stop_times_path))?;
-    for vj in vehicle_journeys.values() {
+    for (vj_idx, vj) in vehicle_journeys {
         for st in &vj.stop_times {
             st_wtr
                 .serialize(StopTime {
@@ -406,6 +407,7 @@ pub fn write_stop_times(
                     pickup_type: st.pickup_type,
                     drop_off_type: st.drop_off_type,
                     local_zone_id: st.local_zone_id,
+                    stop_headsign: stop_times_head_signs.get(&(vj_idx, st.sequence)).cloned(),
                 }).with_context(ctx_from_path!(st_wtr))?;
         }
     }
@@ -1067,17 +1069,27 @@ mod tests {
             geometry_id: None,
             stop_times: stop_times_vec,
         }]).unwrap();
+        let mut stop_times_head_signs = HashMap::new();
+        stop_times_head_signs.insert(
+            (vehicle_journeys.get_idx("vj:01").unwrap(), 1),
+            "somewhere".to_string(),
+        );
         let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-        write_stop_times(tmp_dir.path(), &vehicle_journeys, &stop_points).unwrap();
+        write_stop_times(
+            tmp_dir.path(),
+            &vehicle_journeys,
+            &stop_points,
+            &stop_times_head_signs,
+        ).unwrap();
         let output_file_path = tmp_dir.path().join("stop_times.txt");
         let mut output_file = File::open(output_file_path.clone())
             .expect(&format!("file {:?} not found", output_file_path));
         let mut output_contents = String::new();
         output_file.read_to_string(&mut output_contents).unwrap();
         assert_eq!(
-            "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id\n\
-             vj:01,06:00:00,06:00:00,sp:01,1,0,0,\n\
-             vj:01,06:06:27,06:06:27,sp:01,2,2,1,3\n",
+            "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id,stop_headsign\n\
+            vj:01,06:00:00,06:00:00,sp:01,1,0,0,,somewhere\n\
+            vj:01,06:06:27,06:06:27,sp:01,2,2,1,3,\n",
             output_contents
         );
         tmp_dir.close().expect("delete temp dir");

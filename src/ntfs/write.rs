@@ -16,7 +16,6 @@
 
 use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
 use collection::{Collection, CollectionWithId, Id, Idx};
-use common_format::CalendarDate;
 use csv;
 use failure::ResultExt;
 use model::Collections;
