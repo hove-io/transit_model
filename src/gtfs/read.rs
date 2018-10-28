@@ -29,7 +29,8 @@ use std::result::Result as StdResult;
 use Result;
 extern crate serde_json;
 use super::{
-    Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer, TransferType, Trip,
+    Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
+    TransferType, Trip,
 };
 
 fn default_agency_id() -> String {
