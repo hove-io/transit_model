@@ -15,7 +15,7 @@
 // <http://www.gnu.org/licenses/>.
 
 use super::{Agency, DirectionType, Stop, StopLocationType, StopTime, Transfer, Trip};
-use collection::{Collection, CollectionWithId};
+use collection::{Collection, CollectionWithId, Id};
 use common_format::Availability;
 use csv;
 use failure::ResultExt;
@@ -233,6 +233,53 @@ pub fn write_trips(
 
     Ok(())
 }
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+struct StopExtension {
+    #[serde(rename = "stop_id")]
+    id: String,
+    #[serde(rename = "system_name")]
+    name: String,
+    #[serde(rename = "system_code")]
+    code: String,
+}
+
+fn stop_extensions_from_collection_with_id<'a, T>(
+    collections: &'a CollectionWithId<T>,
+) -> impl Iterator<Item = StopExtension> + 'a
+where
+    T: Id<T> + Codes,
+{
+    collections
+        .values()
+        .flat_map(|obj| obj.codes().iter().map(move |c| (obj.id(), c)))
+        .map(|(id, (name, code))| StopExtension {
+            id: id.to_string(),
+            name: name.to_string(),
+            code: code.to_string(),
+        })
+}
+
+pub fn write_stop_extensions(
+    path: &path::Path,
+    stop_points: &CollectionWithId<StopPoint>,
+    stop_areas: &CollectionWithId<StopArea>,
+) -> Result<()> {
+    let mut stop_extensions = Vec::new();
+    stop_extensions.extend(stop_extensions_from_collection_with_id(&stop_points));
+    stop_extensions.extend(stop_extensions_from_collection_with_id(&stop_areas));
+    if stop_extensions.is_empty() {
+        return Ok(());
+    }
+    info!("Writing stop_extensions.txt");
+    let path = path.join("stop_extensions.txt");
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    for se in stop_extensions {
+        wtr.serialize(se).with_context(ctx_from_path!(path))?;
+    }
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
+}
 
 pub fn write_stop_times(
     path: &path::Path,
@@ -267,10 +314,11 @@ pub fn write_stop_times(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use collection::CollectionWithId;
     use common_format::write_calendar_dates;
     use gtfs::{StopLocationType, Transfer, TransferType};
     use objects::Transfer as NtfsTransfer;
-    use objects::{Calendar, StopPoint, StopTime};
+    use objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
     use std::collections::BTreeSet;
     extern crate tempdir;
     use self::tempdir::TempDir;
@@ -645,6 +693,77 @@ mod tests {
             expected,
             make_gtfs_trip_from_ntfs_vj(&vj, &sps, &routes, &tps)
         );
+    }
+
+    #[test]
+    fn ntfs_object_code_to_stop_extensions() {
+        let mut sa_codes: BTreeSet<(String, String)> = BTreeSet::new();
+        sa_codes.insert(("sa name 1".to_string(), "sa_code_1".to_string()));
+        sa_codes.insert(("sa name 2".to_string(), "sa_code_2".to_string()));
+        let stop_areas = CollectionWithId::new(vec![StopArea {
+            id: "sa:01".to_string(),
+            name: "sa:01".to_string(),
+            codes: sa_codes,
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            visible: true,
+            coord: Coord {
+                lon: 2.073,
+                lat: 48.799,
+            },
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+        }]).unwrap();
+        let mut sp_codes: BTreeSet<(String, String)> = BTreeSet::new();
+        sp_codes.insert(("sp name 1".to_string(), "sp_code_1".to_string()));
+        sp_codes.insert(("sp name 2".to_string(), "sp_code_2".to_string()));
+        sp_codes.insert(("sp name 3".to_string(), "sp_code_3".to_string()));
+        let stop_points = CollectionWithId::new(vec![StopPoint {
+            id: "sp:01".to_string(),
+            name: "sp:01".to_string(),
+            codes: sp_codes,
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            visible: true,
+            coord: Coord {
+                lon: 2.073,
+                lat: 48.799,
+            },
+            stop_area_id: "sa:01".to_string(),
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+            fare_zone_id: None,
+        }]).unwrap();
+        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
+        let output_file_path = tmp_dir.path().join("stop_extensions.txt");
+        let mut output_file = File::open(output_file_path.clone())
+            .expect(&format!("file {:?} not found", output_file_path));
+        let mut output_contents = String::new();
+        output_file.read_to_string(&mut output_contents).unwrap();
+        assert_eq!(
+            "stop_id,system_name,system_code\n\
+             sp:01,sp name 1,sp_code_1\n\
+             sp:01,sp name 2,sp_code_2\n\
+             sp:01,sp name 3,sp_code_3\n\
+             sa:01,sa name 1,sa_code_1\n\
+             sa:01,sa name 2,sa_code_2\n",
+            output_contents
+        );
+        tmp_dir.close().expect("delete temp dir");
+    }
+
+    #[test]
+    fn ntfs_object_code_to_stop_extensions_nothing_generated() {
+        let stop_areas = CollectionWithId::new(vec![]).unwrap();
+        let stop_points = CollectionWithId::new(vec![]).unwrap();
+        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
+        let output_file_path = tmp_dir.path().join("stop_extensions.txt");
+        assert!(!output_file_path.exists());
+        tmp_dir.close().expect("delete temp dir");
     }
 
     #[test]
