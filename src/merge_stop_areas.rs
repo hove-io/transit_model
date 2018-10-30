@@ -148,7 +148,7 @@ fn group_rules_from_file_rules(
     for file_rule in file_rules {
         rules_with_priority
             .entry(file_rule.group)
-            .or_insert(vec![])
+            .or_insert_with(|| vec![])
             .push((file_rule.id.clone(), file_rule.priority));
     }
     let group_rules: HashMap<String, StopAreaGroupRule> = rules_with_priority
@@ -176,7 +176,7 @@ fn group_rules_from_file_rules(
                 },
             ))
         }).collect();
-    group_rules.values().into_iter().cloned().collect()
+    group_rules.values().cloned().collect()
 }
 
 fn read_rules<P: AsRef<path::Path>>(

@@ -83,7 +83,7 @@ fn ntfs_stop_point_to_gtfs_stop(
         .clone()
         .and_then(|eq_id| equipments.get(&eq_id))
         .map(|eq| eq.wheelchair_boarding)
-        .unwrap_or_else(|| Availability::default());
+        .unwrap_or_else(Availability::default);
     Stop {
         id: sp.id.clone(),
         name: sp.name.clone(),
@@ -110,7 +110,7 @@ fn ntfs_stop_area_to_gtfs_stop(
         .clone()
         .and_then(|eq_id| equipments.get(&eq_id))
         .map(|eq| eq.wheelchair_boarding)
-        .unwrap_or_else(|| Availability::default());
+        .unwrap_or_else(Availability::default);
     Stop {
         id: sa.id.clone(),
         name: sa.name.clone(),
@@ -465,7 +465,7 @@ mod tests {
             name: "sp_name_1".to_string(),
             codes: BTreeSet::default(),
             object_properties: BTreeSet::default(),
-            comment_links: comment_links,
+            comment_links,
             visible: true,
             coord: objects::Coord {
                 lon: 2.073034,
@@ -584,7 +584,7 @@ mod tests {
             name: "sa_name_1".to_string(),
             codes: BTreeSet::default(),
             object_properties: BTreeSet::default(),
-            comment_links: comment_links,
+            comment_links,
             visible: true,
             coord: objects::Coord {
                 lon: 2.073034,

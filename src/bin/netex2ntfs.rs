@@ -18,7 +18,6 @@ extern crate env_logger;
 #[macro_use]
 extern crate log;
 extern crate navitia_model;
-#[macro_use]
 extern crate structopt;
 
 use std::path::PathBuf;
