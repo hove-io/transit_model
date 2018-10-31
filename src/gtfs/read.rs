@@ -751,8 +751,12 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<obje
         let sr = get_route_with_smallest_name(rs);
         for r in rs {
             let mut route_directions: HashSet<&DirectionType> = HashSet::new();
+            let mut geometry_id = None;
             for t in gtfs_trips.iter().filter(|t| t.route_id == r.id) {
                 route_directions.insert(&t.direction);
+                if t.shape_id.is_some() && geometry_id.is_none() {
+                    geometry_id = t.shape_id.clone();
+                }
             }
             if route_directions.is_empty() {
                 warn!("Coudn't find trips for route_id {}", r.id);
@@ -767,7 +771,7 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<obje
                     object_properties: KeysValues::default(),
                     comment_links: CommentLinksT::default(),
                     line_id: sr.id.clone(),
-                    geometry_id: None,
+                    geometry_id: geometry_id.clone(),
                     destination_id: None,
                 });
             }
@@ -1393,8 +1397,8 @@ mod tests {
 
         let trips_content =
             "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed,shape_id\n\
-             1,route_1,0,service_1,,,1\n\
-             2,route_2,1,service_2,1,2,2";
+             1,route_1,0,service_1,,,geo:1\n\
+             2,route_2,1,service_2,1,2,geo:2";
 
         let transfers_content = "from_stop_id,to_stop_id,transfer_type,min_transfer_time\n\
                                  sp:01,sp:01,1,\n\
@@ -1403,8 +1407,8 @@ mod tests {
                                  sp:02,sp:02,1,";
 
         let shapes_content = "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence\n\
-                              1,4.4,3.3,2\n\
-                              2,6.6,5.5,1";
+                              geo:1,4.4,3.3,2\n\
+                              geo:2,6.6,5.5,1";
 
         let calendar = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
                        1,0,0,0,0,0,1,1,20180501,20180508\n\
@@ -1497,11 +1501,23 @@ mod tests {
             );
             assert_eq!(
                 vec![
-                    ("my_prefix:route_1", "my_prefix:route_1"),
-                    ("my_prefix:route_2_R", "my_prefix:route_2"),
+                    (
+                        "my_prefix:route_1",
+                        "my_prefix:route_1",
+                        Some("my_prefix:geo:1".to_string())
+                    ),
+                    (
+                        "my_prefix:route_2_R",
+                        "my_prefix:route_2",
+                        Some("my_prefix:geo:2".to_string())
+                    ),
                 ],
                 extract(
-                    |obj| (obj.id.as_str(), obj.line_id.as_str(),),
+                    |obj| (
+                        obj.id.as_str(),
+                        obj.line_id.as_str(),
+                        obj.geometry_id.clone()
+                    ),
                     &collections.routes,
                 )
             );
@@ -1547,14 +1563,14 @@ mod tests {
                         "my_prefix:route_1",
                         "my_prefix:default_dataset",
                         "my_prefix:service_1",
-                        Some("my_prefix:1"),
+                        Some("my_prefix:geo:1"),
                     ),
                     (
                         "my_prefix:2",
                         "my_prefix:route_2_R",
                         "my_prefix:default_dataset",
                         "my_prefix:service_2",
-                        Some("my_prefix:2"),
+                        Some("my_prefix:geo:2"),
                     ),
                 ],
                 extract(
@@ -1573,7 +1589,7 @@ mod tests {
                 extract_ids(&collections.equipments)
             );
             assert_eq!(
-                vec!["my_prefix:1", "my_prefix:2"],
+                vec!["my_prefix:geo:1", "my_prefix:geo:2"],
                 extract_ids(&collections.geometries)
             );
             assert_eq!(
