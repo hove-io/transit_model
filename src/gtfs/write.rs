@@ -176,11 +176,7 @@ fn get_gtfs_trip_shortname_and_headsign_from_ntfs_vj(
     }
 }
 
-fn get_gtfs_direction_id_from_ntfs_vj(
-    vj: &objects::VehicleJourney,
-    routes: &CollectionWithId<objects::Route>,
-) -> DirectionType {
-    let route = routes.get(&vj.route_id).unwrap();
+fn get_gtfs_direction_id_from_ntfs_route(route: &objects::Route) -> DirectionType {
     match route.direction_type.as_ref().map(|s| s.as_str()) {
         Some("forward") | Some("clockwise") | Some("inbound") => DirectionType::Forward,
         _ => DirectionType::Backward,
@@ -200,14 +196,14 @@ fn make_gtfs_trip_from_ntfs_vj(
             wheelchair_and_bike = (tp.wheelchair_accessible, tp.bike_accepted);
         };
     }
-
+    let route = routes.get(&vj.route_id).unwrap();
     Trip {
-        route_id: vj.route_id.clone(),
+        route_id: route.line_id.clone(),
         service_id: vj.service_id.clone(),
         id: vj.id.clone(),
         headsign,
         short_name,
-        direction: get_gtfs_direction_id_from_ntfs_vj(vj, routes),
+        direction: get_gtfs_direction_id_from_ntfs_route(&route),
         block_id: vj.block_id.clone(),
         shape_id: vj.geometry_id.clone(),
         wheelchair_accessible: wheelchair_and_bike.0,
@@ -720,7 +716,7 @@ mod tests {
         };
 
         let expected = Trip {
-            route_id: "OIF:078078001:1".to_string(),
+            route_id: "OIF:002002002:BDEOIF829".to_string(),
             service_id: vj.service_id.clone(),
             id: "OIF:87604986-1_11595-1".to_string(),
             headsign: Some("2005".to_string()),
