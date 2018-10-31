@@ -29,7 +29,7 @@ use std::result::Result as StdResult;
 use Result;
 extern crate serde_json;
 use super::{
-    Agency, DirectionType, Stop, StopLocationType, StopTime, Transfer, TransferType, Trip,
+    Agency, DirectionType, Shape, Stop, StopLocationType, StopTime, Transfer, TransferType, Trip,
 };
 
 fn default_agency_id() -> String {
@@ -257,18 +257,6 @@ impl Trip {
             stop_times: vec![],
         })
     }
-}
-
-#[derive(Deserialize, Debug)]
-struct Shape {
-    #[serde(rename = "shape_id")]
-    id: String,
-    #[serde(rename = "shape_pt_lat")]
-    lat: f64,
-    #[serde(rename = "shape_pt_lon")]
-    lon: f64,
-    #[serde(rename = "shape_pt_sequence")]
-    sequence: u32,
 }
 
 pub fn manage_shapes<P: AsRef<path::Path>>(collections: &mut Collections, path: P) -> Result<()> {

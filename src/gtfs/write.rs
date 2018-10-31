@@ -14,11 +14,12 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::{Agency, DirectionType, Stop, StopLocationType, StopTime, Transfer, Trip};
+use super::{Agency, DirectionType, Shape, Stop, StopLocationType, StopTime, Transfer, Trip};
 use collection::{Collection, CollectionWithId, Id};
 use common_format::Availability;
 use csv;
 use failure::ResultExt;
+use geo_types::Geometry as GeoGeometry;
 use objects;
 use objects::Transfer as NtfsTransfer;
 use objects::*;
@@ -311,11 +312,53 @@ pub fn write_stop_times(
     Ok(())
 }
 
+fn ntfs_geometry_to_gtfs_shapes<'a>(g: &'a objects::Geometry) -> impl Iterator<Item = Shape> + 'a {
+    let points = match g.geometry {
+        GeoGeometry::LineString(ref linestring) => &linestring.0[..],
+        _ => {
+            warn!(
+                "Geometry {} is not exported, only LINESTRING geometries are exported",
+                g.id
+            );
+            &[]
+        }
+    };
+
+    points.iter().enumerate().map(move |(i, p)| Shape {
+        id: g.id.clone(),
+        lat: p.y(),
+        lon: p.x(),
+        sequence: i as u32,
+    })
+}
+
+pub fn write_shapes(
+    path: &path::Path,
+    geometries: &CollectionWithId<objects::Geometry>,
+) -> Result<()> {
+    let shapes: Vec<_> = geometries
+        .values()
+        .flat_map(ntfs_geometry_to_gtfs_shapes)
+        .collect();
+    if !shapes.is_empty() {
+        info!("Writing shapes.txt");
+        let path = path.join("shapes.txt");
+        let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+        wtr.flush().with_context(ctx_from_path!(path))?;
+        for shape in shapes {
+            wtr.serialize(shape).with_context(ctx_from_path!(path))?;
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use collection::CollectionWithId;
     use common_format::write_calendar_dates;
+    use geo_types::{Geometry as GeoGeometry, LineString, Point};
     use gtfs::{StopLocationType, Transfer, TransferType};
     use objects::Transfer as NtfsTransfer;
     use objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
@@ -764,6 +807,49 @@ mod tests {
         let output_file_path = tmp_dir.path().join("stop_extensions.txt");
         assert!(!output_file_path.exists());
         tmp_dir.close().expect("delete temp dir");
+    }
+
+    #[test]
+    fn ntfs_geometry_linestring_exported() {
+        let geo = objects::Geometry {
+            id: "1".to_string(),
+            geometry: GeoGeometry::LineString(LineString(vec![
+                Point::new(1.1, 2.2),
+                Point::new(3.3, 4.4),
+            ])),
+        };
+
+        let expected = vec![
+            Shape {
+                id: "1".to_string(),
+                lon: 1.1,
+                lat: 2.2,
+                sequence: 0,
+            },
+            Shape {
+                id: "1".to_string(),
+                lon: 3.3,
+                lat: 4.4,
+                sequence: 1,
+            },
+        ];
+
+        assert_eq!(
+            expected,
+            ntfs_geometry_to_gtfs_shapes(&geo).collect::<Vec<Shape>>()
+        );
+    }
+
+    #[test]
+    fn ntfs_geometry_not_linestring_not_exported() {
+        let geo = objects::Geometry {
+            id: "1".to_string(),
+            geometry: GeoGeometry::Point(Point::new(1.1, 2.2)),
+        };
+
+        let shapes: Vec<Shape> = ntfs_geometry_to_gtfs_shapes(&geo).collect();
+
+        assert!(shapes.is_empty());
     }
 
     #[test]

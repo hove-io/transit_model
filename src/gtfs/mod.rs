@@ -191,6 +191,18 @@ impl<'a> From<&'a objects::Transfer> for Transfer {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+struct Shape {
+    #[serde(rename = "shape_id")]
+    id: String,
+    #[serde(rename = "shape_pt_lat")]
+    lat: f64,
+    #[serde(rename = "shape_pt_lon")]
+    lon: f64,
+    #[serde(rename = "shape_pt_sequence")]
+    sequence: u32,
+}
+
 /// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
 /// `path` directory.
 ///
@@ -267,6 +279,7 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
     )?;
     write::write_stop_extensions(path, &model.stop_points, &model.stop_areas)?;
     write::write_stop_times(path, &model.vehicle_journeys, &model.stop_points)?;
+    write::write_shapes(path, &model.geometries)?;
 
     Ok(())
 }
