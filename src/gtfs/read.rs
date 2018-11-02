@@ -2282,4 +2282,31 @@ mod tests {
             assert_eq!("stop:1", stop_point.id);
         });
     }
+
+    #[test]
+    fn location_with_space_proof() {
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type\n\
+                             stop:1,plop, 65.444,24.156 ,0\n\
+                             stop:2,plop 2, 66.666 , 26.123,0\n\
+                             stop:3,invalid loc, ,25.558,0";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+            let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let (_, stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            assert_eq!(3, stop_points.len());
+            let longitudes: Vec<f64> = stop_points.values().map(|sp| &sp.coord.lon).cloned().collect();
+            assert_eq!(
+                longitudes,
+                &[24.156, 26.123, 25.558]
+            );
+            let latitudes: Vec<f64> = stop_points.values().map(|sp| &sp.coord.lat).cloned().collect();
+            assert_eq!(
+                latitudes,
+                &[65.444, 66.666, 0.00]
+            );
+        });
+    }
 }
