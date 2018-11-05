@@ -103,11 +103,10 @@ impl Collections {
                 .collect()
         }
 
-        let sp_idx_to_id = stop_points.idx_to_id();
-        let vj_idx_to_id = vehicle_journeys.idx_to_id();
+        let sp_idx_to_id = idx_to_id(&stop_points);
+        let vj_idx_to_id = idx_to_id(&vehicle_journeys);
 
         self.stop_points.merge(stop_points)?;
-        self.vehicle_journeys.merge(vehicle_journeys)?;
 
         // Update stop point idx in new stop times
         let mut vjs = vehicle_journeys.take();
@@ -125,10 +124,10 @@ impl Collections {
 
         // Update vehicle journey idx
         let mut new_stop_time_headsigns = HashMap::new();
-        for ((old_vj_idx, sequence), headsing) in &stop_time_headsigns {
+        for ((old_vj_idx, sequence), headsign) in &stop_time_headsigns {
             let new_vj_idx =
                 get_new_idx(*old_vj_idx, &vj_idx_to_id, &self.vehicle_journeys).unwrap();
-            new_stop_time_headsigns.insert((new_vj_idx, *sequence), headsing.clone());
+            new_stop_time_headsigns.insert((new_vj_idx, *sequence), headsign.clone());
         }
 
         self.stop_time_headsigns.extend(new_stop_time_headsigns);

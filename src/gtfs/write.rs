@@ -28,9 +28,9 @@ use objects;
 use objects::Transfer as NtfsTransfer;
 use objects::*;
 use relations::IdxSet;
+use std::collections::HashMap;
 use std::path;
 use Result;
-use std::collections::HashMap;
 
 pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) -> Result<()> {
     if transfers.is_empty() {
@@ -389,7 +389,7 @@ pub fn write_stop_times(
     path: &path::Path,
     vehicle_journeys: &CollectionWithId<VehicleJourney>,
     stop_points: &CollectionWithId<StopPoint>,
-    stop_times_head_signs: &HashMap<(Idx<VehicleJourney>, u32), String>,
+    stop_times_headsigns: &HashMap<(Idx<VehicleJourney>, u32), String>,
 ) -> Result<()> {
     info!("Writing stop_times.txt");
     let stop_times_path = path.join("stop_times.txt");
@@ -407,7 +407,7 @@ pub fn write_stop_times(
                     pickup_type: st.pickup_type,
                     drop_off_type: st.drop_off_type,
                     local_zone_id: st.local_zone_id,
-                    stop_headsign: stop_times_head_signs.get(&(vj_idx, st.sequence)).cloned(),
+                    stop_headsign: stop_times_headsigns.get(&(vj_idx, st.sequence)).cloned(),
                 }).with_context(ctx_from_path!(st_wtr))?;
         }
     }
@@ -1069,8 +1069,8 @@ mod tests {
             geometry_id: None,
             stop_times: stop_times_vec,
         }]).unwrap();
-        let mut stop_times_head_signs = HashMap::new();
-        stop_times_head_signs.insert(
+        let mut stop_times_headsigns = HashMap::new();
+        stop_times_headsigns.insert(
             (vehicle_journeys.get_idx("vj:01").unwrap(), 1),
             "somewhere".to_string(),
         );
@@ -1079,7 +1079,7 @@ mod tests {
             tmp_dir.path(),
             &vehicle_journeys,
             &stop_points,
-            &stop_times_head_signs,
+            &stop_times_headsigns,
         ).unwrap();
         let output_file_path = tmp_dir.path().join("stop_times.txt");
         let mut output_file = File::open(output_file_path.clone())
