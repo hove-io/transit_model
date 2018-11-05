@@ -91,9 +91,15 @@ struct Stop {
     name: String,
     #[serde(default, rename = "stop_desc")]
     desc: String,
-    #[serde(rename = "stop_lon", deserialize_with = "de_location_trim_with_default")]
+    #[serde(
+        rename = "stop_lon",
+        deserialize_with = "de_location_trim_with_default"
+    )]
     lon: f64,
-    #[serde(rename = "stop_lat", deserialize_with = "de_location_trim_with_default")]
+    #[serde(
+        rename = "stop_lat",
+        deserialize_with = "de_location_trim_with_default"
+    )]
     lat: f64,
     #[serde(rename = "zone_id")]
     fare_zone_id: Option<String>,

@@ -459,7 +459,10 @@ pub fn read_stops<P: AsRef<path::Path>>(
 )> {
     info!("Reading stops.txt");
     let path = path.as_ref().join("stops.txt");
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr = csv::ReaderBuilder::new()
+        .trim(csv::Trim::All)
+        .from_path(&path)
+        .with_context(ctx_from_path!(path))?;
     let gtfs_stops: Vec<Stop> = rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
@@ -2297,16 +2300,18 @@ mod tests {
             let (_, stop_points) =
                 super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
             assert_eq!(3, stop_points.len());
-            let longitudes: Vec<f64> = stop_points.values().map(|sp| &sp.coord.lon).cloned().collect();
-            assert_eq!(
-                longitudes,
-                &[24.156, 26.123, 25.558]
-            );
-            let latitudes: Vec<f64> = stop_points.values().map(|sp| &sp.coord.lat).cloned().collect();
-            assert_eq!(
-                latitudes,
-                &[65.444, 66.666, 0.00]
-            );
+            let longitudes: Vec<f64> = stop_points
+                .values()
+                .map(|sp| &sp.coord.lon)
+                .cloned()
+                .collect();
+            assert_eq!(longitudes, &[24.156, 26.123, 25.558]);
+            let latitudes: Vec<f64> = stop_points
+                .values()
+                .map(|sp| &sp.coord.lat)
+                .cloned()
+                .collect();
+            assert_eq!(latitudes, &[65.444, 66.666, 0.00]);
         });
     }
 }
