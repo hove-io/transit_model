@@ -51,7 +51,7 @@ impl NetexReader {
         file.read_to_string(&mut file_content)?;
         let root: Element = file_content.parse()?;
 
-        self.context.namespace = root.ns().unwrap_or("".to_string());
+        self.context.namespace = root.ns().unwrap_or_else(|| "".to_string());
 
         for frame in root
             .get_child("dataObjects", self.context.namespace.as_str())

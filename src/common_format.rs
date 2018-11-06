@@ -131,7 +131,7 @@ impl Calendar {
     fn get_valid_dates(&self) -> BTreeSet<Date> {
         let valid_days = self.get_valid_days();
         let duration = self.end_date - self.start_date;
-        (0..duration.num_days() + 1)
+        (0..=duration.num_days())
             .map(|i| self.start_date + chrono::Duration::days(i))
             .filter(|d| valid_days.contains(&d.weekday()))
             .collect()
