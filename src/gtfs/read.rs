@@ -432,7 +432,10 @@ pub fn read_stops<P: AsRef<path::Path>>(
 )> {
     info!("Reading stops.txt");
     let path = path.as_ref().join("stops.txt");
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr = csv::ReaderBuilder::new()
+        .trim(csv::Trim::All)
+        .from_path(&path)
+        .with_context(ctx_from_path!(path))?;
     let gtfs_stops: Vec<Stop> = rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
@@ -2253,6 +2256,35 @@ mod tests {
             assert_eq!("Navitia:stop:1", stop_area.id);
             let stop_point = stop_points.iter().next().unwrap().1;
             assert_eq!("stop:1", stop_point.id);
+        });
+    }
+
+    #[test]
+    fn location_with_space_proof() {
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type\n\
+                             stop:1,plop, 65.444,24.156 ,0\n\
+                             stop:2,plop 2, 66.666 , 26.123,0\n\
+                             stop:3,invalid loc, ,25.558,0";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+            let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let (_, stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            assert_eq!(3, stop_points.len());
+            let longitudes: Vec<f64> = stop_points
+                .values()
+                .map(|sp| &sp.coord.lon)
+                .cloned()
+                .collect();
+            assert_eq!(longitudes, &[24.156, 26.123, 25.558]);
+            let latitudes: Vec<f64> = stop_points
+                .values()
+                .map(|sp| &sp.coord.lat)
+                .cloned()
+                .collect();
+            assert_eq!(latitudes, &[65.444, 66.666, 0.00]);
         });
     }
 }

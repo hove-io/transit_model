@@ -113,6 +113,18 @@ where
     })
 }
 
+pub fn de_location_trim_with_default<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let s = String::deserialize(deserializer)?;
+    Ok(s.parse::<f64>().unwrap_or_else(|e| {
+        error!("{}", e);
+        0.00
+    }))
+}
+
 use wkt::conversion::try_into_geometry;
 
 pub fn de_with_empty_or_invalid_default<'de, D, T>(de: D) -> Result<T, D::Error>
