@@ -15,7 +15,11 @@
 // <http://www.gnu.org/licenses/>.
 
 extern crate navitia_model;
+use navitia_model::collection::CollectionWithId;
+use navitia_model::collection::Idx;
 use navitia_model::model::Collections;
+use navitia_model::objects::StopPoint;
+use navitia_model::objects::VehicleJourney;
 
 #[test]
 #[should_panic(expected = "TGC already found")] // first collision is on contributor id
@@ -36,6 +40,7 @@ fn merge_collections_ok() {
     let input_collisions = ["fixtures/ntfs", "fixtures/merge-ntfs"];
     for input_directory in input_collisions.iter() {
         let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
+
         collections
             .merge(to_append_model.into_collections())
             .unwrap();
@@ -47,6 +52,35 @@ fn merge_collections_ok() {
     assert_eq!(collections.lines.len(), 6);
     assert_eq!(collections.routes.len(), 8);
     assert_eq!(collections.vehicle_journeys.len(), 8);
+
+    fn get_stop_point_idxs(
+        col: &CollectionWithId<VehicleJourney>,
+        id: &str,
+    ) -> Vec<Idx<StopPoint>> {
+        col.get(id)
+            .unwrap()
+            .stop_times
+            .iter()
+            .map(|st| st.stop_point_idx)
+            .collect()
+    }
+
+    assert_eq!(
+        get_stop_point_idxs(&collections.vehicle_journeys, "RERAB1"),
+        vec![
+            collections.stop_points.get_idx("DEFR").unwrap(),
+            collections.stop_points.get_idx("CDGR").unwrap(),
+            collections.stop_points.get_idx("GDLR").unwrap(),
+            collections.stop_points.get_idx("NATR").unwrap(),
+        ]
+    );
+    assert_eq!(
+        get_stop_point_idxs(&collections.vehicle_journeys, "OIF:77100911-1_1420-1"),
+        vec![
+            collections.stop_points.get_idx("OIF:SP:10:10").unwrap(),
+            collections.stop_points.get_idx("OIF:SP:10:100").unwrap()
+        ]
+    );
     assert_eq!(collections.physical_modes.len(), 6);
     assert_eq!(collections.stop_areas.len(), 7);
     assert_eq!(collections.stop_points.len(), 12);

@@ -16,7 +16,7 @@
 
 //! Definition of the navitia transit model.
 
-use collection::{Collection, CollectionWithId, Idx};
+use collection::{Collection, CollectionWithId, Id, Idx};
 use objects::*;
 use relations::{IdxSet, ManyToMany, OneToMany, Relation};
 use std::collections::{BTreeMap, HashMap};
@@ -61,7 +61,7 @@ impl Collections {
             commercial_modes,
             lines,
             routes,
-            vehicle_journeys,
+            mut vehicle_journeys,
             physical_modes,
             stop_areas,
             stop_points,
@@ -81,10 +81,43 @@ impl Collections {
         self.commercial_modes.merge(commercial_modes)?;
         self.lines.merge(lines)?;
         self.routes.merge(routes)?;
-        self.vehicle_journeys.merge(vehicle_journeys)?;
         self.physical_modes.extend(physical_modes);
         self.stop_areas.merge(stop_areas)?;
+
+        fn get_new_idx<T>(
+            old_idx: Idx<T>,
+            old_idx_to_id: &HashMap<Idx<T>, String>,
+            merge_collection: &CollectionWithId<T>,
+        ) -> Option<Idx<T>> {
+            old_idx_to_id
+                .get(&old_idx)
+                .and_then(|id| merge_collection.get_idx(id))
+        }
+        fn idx_to_id<T: Id<T>>(collection: &CollectionWithId<T>) -> HashMap<Idx<T>, String> {
+            collection
+                .iter()
+                .map(|(idx, obj)| (idx, obj.id().into()))
+                .collect()
+        }
+
+        let sp_idx_to_id = idx_to_id(&stop_points);
+
         self.stop_points.merge(stop_points)?;
+
+        // Update stop point idx in new stop times
+        let mut vjs = vehicle_journeys.take();
+        for vj in &mut vjs {
+            for st in &mut vj.stop_times.iter_mut() {
+                if let Some(new_idx) =
+                    get_new_idx(st.stop_point_idx, &sp_idx_to_id, &self.stop_points)
+                {
+                    st.stop_point_idx = new_idx;
+                }
+            }
+        }
+        vehicle_journeys = CollectionWithId::new(vjs)?;
+        self.vehicle_journeys.merge(vehicle_journeys)?;
+
         self.feed_infos.extend(feed_infos);
         self.calendars.merge(calendars)?;
         self.companies.merge(companies)?;
