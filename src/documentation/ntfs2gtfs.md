@@ -34,7 +34,7 @@ GTFS field | Required | NTFS file | NTFS field | Note
 --- | --- | --- | --- | ---
 route_id | yes | lines.txt | line_id | See below for lines containing trips with different modes
 agency_id | no | lines.txt | network_id | (link to the [agency.txt](#agencytxt) file)
-route_short_name | yes | lines.txt | line_code |
+route_short_name | yes | lines.txt | line_code | empty string "" if the value is not provided
 route_long_name | yes | lines.txt | line_name |
 route_type | yes | | | The corresponding physical mode of the trips of the line. See the table below for the mapping of modes.
 route_color | no | lines.txt | line_color |

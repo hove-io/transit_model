@@ -254,6 +254,43 @@ where
     Ok(Model::new(collections)?)
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+enum RouteType {
+    #[allow(non_camel_case_types)]
+    Tramway_LightRail,
+    Metro,
+    Rail,
+    Bus,
+    Ferry,
+    CableCar,
+    #[allow(non_camel_case_types)]
+    Gondola_SuspendedCableCar,
+    Funicular,
+    Other(u16),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+struct Route {
+    #[serde(rename = "route_id")]
+    id: String,
+    agency_id: Option<String>,
+    #[serde(rename = "route_short_name")]
+    short_name: String,
+    #[serde(rename = "route_long_name")]
+    long_name: String,
+    #[serde(rename = "route_desc")]
+    desc: Option<String>,
+    route_type: RouteType,
+    #[serde(rename = "route_url")]
+    url: Option<String>,
+    #[serde(rename = "route_color", default)]
+    color: Option<objects::Rgb>,
+    #[serde(rename = "route_text_color", default)]
+    text_color: Option<objects::Rgb>,
+    #[serde(rename = "route_sort_order")]
+    sort_order: Option<u32>,
+}
+
 /// Exports a `Model` to [GTFS](http://gtfs.org/) files
 /// in the given directory.
 pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
@@ -277,6 +314,7 @@ pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
         &model.routes,
         &model.trip_properties,
     )?;
+    write::write_routes(path, &model)?;
     write::write_stop_extensions(path, &model.stop_points, &model.stop_areas)?;
     write::write_stop_times(path, &model.vehicle_journeys, &model.stop_points)?;
     write::write_shapes(path, &model.geometries)?;
