@@ -293,6 +293,7 @@ struct Route {
 
 /// Exports a `Model` to [GTFS](http://gtfs.org/) files
 /// in the given directory.
+/// see [NTFS to GTFS conversion](https://github.com/CanalTP/navitia_model/blob/master/src/documentation/ntfs2gtfs.md)
 pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
     let path = path.as_ref();
     info!("Writing GTFS to {:?}", path);
