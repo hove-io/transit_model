@@ -83,6 +83,7 @@ fn ntfs_stop_point_to_gtfs_stop(
     comments: &CollectionWithId<objects::Comment>,
     equipments: &CollectionWithId<objects::Equipment>,
 ) -> Stop {
+    println!("{:#?}", sp);
     let wheelchair = sp
         .equipment_id
         .clone()
@@ -97,7 +98,7 @@ fn ntfs_stop_point_to_gtfs_stop(
         fare_zone_id: sp.fare_zone_id.clone(),
         location_type: StopLocationType::StopPoint,
         parent_station: Some(sp.stop_area_id.clone()),
-        code: None,
+        code: sp.codes.iter().next().cloned().map(|c| c.1),
         desc: get_first_comment_name(sp, comments),
         wheelchair_boarding: wheelchair,
         url: None,
@@ -124,7 +125,7 @@ fn ntfs_stop_area_to_gtfs_stop(
         fare_zone_id: None,
         location_type: StopLocationType::StopArea,
         parent_station: None,
-        code: None,
+        code: sa.codes.iter().next().cloned().map(|c| c.1),
         desc: get_first_comment_name(sa, comments),
         wheelchair_boarding: wheelchair,
         url: None,
@@ -566,7 +567,11 @@ mod tests {
         let stop = objects::StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
-            codes: BTreeSet::default(),
+            codes: vec![
+                ("gtfs_stop_code".to_string(), "1234".to_string()),
+                ("gtfs_stop_code".to_string(), "5678".to_string()),
+            ].into_iter()
+            .collect(),
             object_properties: BTreeSet::default(),
             comment_links,
             visible: true,
@@ -589,7 +594,7 @@ mod tests {
             fare_zone_id: Some("1".to_string()),
             location_type: StopLocationType::StopPoint,
             parent_station: Some("OIF:SA:8739322".to_string()),
-            code: None,
+            code: Some("1234".to_string()),
             desc: "bar".to_string(),
             wheelchair_boarding: Availability::Available,
             url: None,
@@ -685,7 +690,11 @@ mod tests {
         let stop = objects::StopArea {
             id: "sa_1".to_string(),
             name: "sa_name_1".to_string(),
-            codes: BTreeSet::default(),
+            codes: vec![
+                ("gtfs_stop_code".to_string(), "1234".to_string()),
+                ("gtfs_stop_code".to_string(), "5678".to_string()),
+            ].into_iter()
+            .collect(),
             object_properties: BTreeSet::default(),
             comment_links,
             visible: true,
@@ -706,7 +715,7 @@ mod tests {
             fare_zone_id: None,
             location_type: StopLocationType::StopArea,
             parent_station: None,
-            code: None,
+            code: Some("1234".to_string()),
             desc: "bar".to_string(),
             wheelchair_boarding: Availability::NotAvailable,
             url: None,

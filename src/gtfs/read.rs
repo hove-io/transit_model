@@ -79,7 +79,7 @@ impl From<Agency> for objects::Company {
 
 impl From<Stop> for objects::StopArea {
     fn from(stop: Stop) -> objects::StopArea {
-        let mut stop_codes: BTreeSet<(String, String)> = BTreeSet::new();
+        let mut stop_codes: KeysValues = BTreeSet::new();
         if let Some(c) = stop.code {
             stop_codes.insert(("gtfs_stop_code".to_string(), c));
         }
@@ -102,7 +102,7 @@ impl From<Stop> for objects::StopArea {
 }
 impl From<Stop> for objects::StopPoint {
     fn from(stop: Stop) -> objects::StopPoint {
-        let mut stop_codes: BTreeSet<(String, String)> = BTreeSet::new();
+        let mut stop_codes: KeysValues = BTreeSet::new();
         if let Some(c) = stop.code {
             stop_codes.insert(("gtfs_stop_code".to_string(), c));
         }
