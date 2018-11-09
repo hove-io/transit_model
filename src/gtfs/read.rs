@@ -990,6 +990,45 @@ mod tests {
     }
 
     #[test]
+    fn load_without_slashes() {
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
+                             stoparea/01,my stop name 1,0.1,1.2,1,\n\
+                             stoppoint/01,my stop name 2,0.1,1.2,0,stoparea/01\n\
+                             stoppoint/02,my stop name 3,0.1,1.2,0,stoparea/01";
+        let shapes_content =
+            "shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence,shape_dist_traveled\n\
+             relation/1,12.1280176,-86.214164,1,\n\
+             relation/1,12.1279272,-86.2132786,2,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+            create_file_with_content(&tmp_dir, "shapes.txt", shapes_content);
+            let mut collections = Collections::default();
+            let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let (stop_areas, stop_points) =
+                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            collections.stop_areas = stop_areas;
+            collections.stop_points = stop_points;
+            super::manage_shapes(&mut collections, &tmp_dir).unwrap();
+            let stop_area = collections.stop_areas.iter().next().unwrap().1;
+            assert_eq!("stoparea01", stop_area.id);
+            assert_eq!(
+                vec![("stoppoint01", "stoparea01"), ("stoppoint02", "stoparea01"),],
+                extract(
+                    |sp| (sp.id.as_str(), sp.stop_area_id.as_str()),
+                    &collections.stop_points
+                )
+            );
+
+            assert_eq!(
+                vec!["relation1"],
+                extract(|geo| geo.id.as_str(), &collections.geometries)
+            );
+        });
+    }
+
+    #[test]
     fn stop_code_on_stops() {
         let stops_content =
             "stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type,parent_station\n\

@@ -125,6 +125,24 @@ where
     }))
 }
 
+pub fn de_without_slashes<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let s = String::deserialize(deserializer)?;
+    Ok(s.replace("/", ""))
+}
+
+pub fn de_option_without_slashes<'de, D>(de: D) -> Result<Option<String>, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    let option = Option::<String>::deserialize(de)?;
+    Ok(option.and_then(|s| Some(s.replace("/", ""))))
+}
+
 use wkt::conversion::try_into_geometry;
 
 pub fn de_with_empty_or_invalid_default<'de, D, T>(de: D) -> Result<T, D::Error>
