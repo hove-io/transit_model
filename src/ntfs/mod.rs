@@ -51,6 +51,7 @@ struct StopTime {
     )]
     datetime_estimated: bool,
     local_zone_id: Option<u16>,
+    stop_headsign: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -166,6 +167,7 @@ pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
         path,
         &model.vehicle_journeys,
         &model.stop_points,
+        &model.stop_time_headsigns,
     )?;
     common_format::write_calendar_dates(path, &model.calendars)?;
     write::write_stops(path, &model.stop_points, &model.stop_areas)?;
@@ -523,9 +525,22 @@ mod tests {
             },
         ]).unwrap();
 
+        let mut headsigns = HashMap::new();
+        headsigns.insert(
+            (
+                vehicle_journeys.get_idx("OIF:87604986-1_11595-1").unwrap(),
+                1,
+            ),
+            "somewhere".to_string(),
+        );
+
         ser_deser_in_tmp_dir(|path| {
-            write::write_vehicle_journeys_and_stop_times(path, &vehicle_journeys, &stop_points)
-                .unwrap();
+            write::write_vehicle_journeys_and_stop_times(
+                path,
+                &vehicle_journeys,
+                &stop_points,
+                &headsigns,
+            ).unwrap();
 
             let mut collections = Collections::default();
             collections.vehicle_journeys =
@@ -534,6 +549,7 @@ mod tests {
 
             read::manage_stop_times(&mut collections, path).unwrap();
             assert_eq!(collections.vehicle_journeys, vehicle_journeys);
+            assert_eq!(headsigns, collections.stop_time_headsigns);
         });
     }
 

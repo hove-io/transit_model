@@ -22,6 +22,7 @@ use collection::*;
 use failure::ResultExt;
 use model::Collections;
 use objects::*;
+use std::collections::HashMap;
 use utils::make_collection_with_id;
 use Result;
 
@@ -98,6 +99,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
     info!("Reading stop_times.txt");
     let path = path.join("stop_times.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut headsigns = HashMap::new();
     for stop_time in rdr.deserialize() {
         let stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
         let stop_point_idx = collections
@@ -120,6 +122,11 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
                     stop_time.stop_id
                 )
             })?;
+
+        if let Some(headsign) = stop_time.stop_headsign {
+            headsigns.insert((vj_idx, stop_time.stop_sequence), headsign);
+        }
+
         collections
             .vehicle_journeys
             .index_mut(vj_idx)
@@ -137,6 +144,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
                 local_zone_id: stop_time.local_zone_id,
             });
     }
+    collections.stop_time_headsigns = headsigns;
     let mut vehicle_journeys = collections.vehicle_journeys.take();
     for vj in &mut vehicle_journeys {
         vj.stop_times.sort_unstable_by_key(|st| st.sequence);

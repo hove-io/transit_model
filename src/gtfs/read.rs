@@ -278,6 +278,7 @@ pub fn manage_stop_times<P: AsRef<path::Path>>(
     info!("Reading stop_times.txt");
     let path = path.as_ref().join("stop_times.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut headsigns = HashMap::new();
     for stop_time in rdr.deserialize() {
         let stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
         let stop_point_idx = collections
@@ -300,6 +301,10 @@ pub fn manage_stop_times<P: AsRef<path::Path>>(
                     stop_time.trip_id
                 )
             })?;
+
+        if let Some(headsign) = stop_time.stop_headsign {
+            headsigns.insert((vj_idx, stop_time.stop_sequence), headsign);
+        }
         collections
             .vehicle_journeys
             .index_mut(vj_idx)
@@ -317,6 +322,7 @@ pub fn manage_stop_times<P: AsRef<path::Path>>(
                 local_zone_id: stop_time.local_zone_id,
             });
     }
+    collections.stop_time_headsigns = headsigns;
     let mut vehicle_journeys = collections.vehicle_journeys.take();
     for vj in &mut vehicle_journeys {
         vj.stop_times.sort_unstable_by_key(|st| st.sequence);
@@ -1844,7 +1850,7 @@ mod tests {
              1,route_1,0,service_1,,";
 
         let stop_times_content = "trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled\n\
-                                  1,06:00:00,06:00:00,sp:01,1,,,,\n\
+                                  1,06:00:00,06:00:00,sp:01,1,over there,,,\n\
                                   1,06:06:27,06:06:27,sp:02,2,,2,1,";
 
         test_in_tmp_dir(|ref tmp_dir| {
@@ -1896,6 +1902,9 @@ mod tests {
                     },
                 ]
             );
+            let headsigns: Vec<String> =
+                collections.stop_time_headsigns.values().cloned().collect();
+            assert_eq!(vec!["over there".to_string()], headsigns);
         });
     }
 

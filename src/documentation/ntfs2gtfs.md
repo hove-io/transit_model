@@ -64,8 +64,8 @@ The physical_modes Air and Taxi are not available in standard GTFS `route_type`s
 If the physical_mode is unknown, trips shloud be considered as Bus (route_type = 3) and with a priority of 15 .
 
 **Export of NTFS lines containing trips with different modes**
-A GTFS `route` can only contains trips with one mode (ie. `route_type`).  
-If a NTFS `line` contains `trip`s that should be associated with different gtfs `route_type`s, 2 different GTFS `route`s must be generated : 
+A GTFS `route` can only contains trips with one mode (ie. `route_type`).
+If a NTFS `line` contains `trip`s that should be associated with different gtfs `route_type`s, 2 different GTFS `route`s must be generated :
 - The trips using the physical mode with the lowest priority are modeled by a GTFS `route` with the field `route_id` matching the value of the NTFS `line_id`.
 - The trips using other physical modes are modeled by a separate GTFS `route` for each corresponding `route_type`, adding the suffix ":<physical_mode_id>" to the value of `route_id` and assigning the corresponding physical mode to the field `route_type`.
 
@@ -102,13 +102,13 @@ wheelchair_accessible | no | trip_properties.txt | wheelchair_accessible | The v
 bikes_allowed | no | trip_properties.txt | bike_accepted | The value of `bike_accepted` referenced by the `trip_property_id` of this trip.
 
 (1) If the value of the `physical_mode_id` for this trip is `LocalTrain`, `LongDistanceTrain`, `Metro`, `RapidTransit` or `Train`,
-- the field `trip_short_name` takes after the value of the `trip_headsing` field in the NTFS
+- the field `trip_short_name` takes after the value of the `trip_headsign` field in the NTFS
 - the field `trip_headsign` contains the value of the `stop_name` linked to the stop_point of this trip with the higher order in the trip (i.e. the name of the last stop of the trip).
 
 Otherwise,
 - the field `trip_short_name` is empty
 - the field `trip_headsign` contains
-  - the value of the `trip_headsing` field in the NTFS, if present
+  - the value of the `trip_headsign` field in the NTFS, if present
   - otherwise, the value of the `stop_name` linked to the stop_point of this trip with the higher order in the trip (i.e. the name of the last stop of the trip).
 
 ### stop_times.txt
