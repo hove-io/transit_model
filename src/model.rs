@@ -87,11 +87,11 @@ impl Collections {
         fn get_new_idx<T>(
             old_idx: Idx<T>,
             old_idx_to_id: &HashMap<Idx<T>, String>,
-            merge_collection: &CollectionWithId<T>,
+            merged_collection: &CollectionWithId<T>,
         ) -> Option<Idx<T>> {
             old_idx_to_id
                 .get(&old_idx)
-                .and_then(|id| merge_collection.get_idx(id))
+                .and_then(|id| merged_collection.get_idx(id))
         }
         fn idx_to_id<T: Id<T>>(collection: &CollectionWithId<T>) -> HashMap<Idx<T>, String> {
             collection

@@ -78,6 +78,17 @@ fn get_first_comment_name<T: objects::CommentLinks>(
         .unwrap_or_else(|| "".into())
 }
 
+/// Get the first code where object_system="gtfs_stop_code"
+/// Ntfs codes are ordered by object_system and object_code
+fn ntfs_codes_to_gtfs_code<T: Codes>(obj: &T) -> Option<String> {
+    obj.codes()
+        .iter()
+        .filter(|c| c.0 == "gtfs_stop_code")
+        .next()
+        .cloned()
+        .map(|c| c.1)
+}
+
 fn ntfs_stop_point_to_gtfs_stop(
     sp: &objects::StopPoint,
     comments: &CollectionWithId<objects::Comment>,
@@ -97,7 +108,7 @@ fn ntfs_stop_point_to_gtfs_stop(
         fare_zone_id: sp.fare_zone_id.clone(),
         location_type: StopLocationType::StopPoint,
         parent_station: Some(sp.stop_area_id.clone()),
-        code: None,
+        code: ntfs_codes_to_gtfs_code(sp),
         desc: get_first_comment_name(sp, comments),
         wheelchair_boarding: wheelchair,
         url: None,
@@ -124,7 +135,7 @@ fn ntfs_stop_area_to_gtfs_stop(
         fare_zone_id: None,
         location_type: StopLocationType::StopArea,
         parent_station: None,
-        code: None,
+        code: ntfs_codes_to_gtfs_code(sa),
         desc: get_first_comment_name(sa, comments),
         wheelchair_boarding: wheelchair,
         url: None,
@@ -566,7 +577,12 @@ mod tests {
         let stop = objects::StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
-            codes: BTreeSet::default(),
+            codes: vec![
+                ("object_system:2".to_string(), "object_code:2".to_string()),
+                ("gtfs_stop_code".to_string(), "1234".to_string()),
+                ("gtfs_stop_code".to_string(), "5678".to_string()),
+            ].into_iter()
+            .collect(),
             object_properties: BTreeSet::default(),
             comment_links,
             visible: true,
@@ -589,7 +605,7 @@ mod tests {
             fare_zone_id: Some("1".to_string()),
             location_type: StopLocationType::StopPoint,
             parent_station: Some("OIF:SA:8739322".to_string()),
-            code: None,
+            code: Some("1234".to_string()),
             desc: "bar".to_string(),
             wheelchair_boarding: Availability::Available,
             url: None,
@@ -685,7 +701,12 @@ mod tests {
         let stop = objects::StopArea {
             id: "sa_1".to_string(),
             name: "sa_name_1".to_string(),
-            codes: BTreeSet::default(),
+            codes: vec![
+                ("object_system:2".to_string(), "object_code:2".to_string()),
+                ("gtfs_stop_code".to_string(), "5678".to_string()),
+                ("gtfs_stop_code".to_string(), "1234".to_string()),
+            ].into_iter()
+            .collect(),
             object_properties: BTreeSet::default(),
             comment_links,
             visible: true,
@@ -706,7 +727,7 @@ mod tests {
             fare_zone_id: None,
             location_type: StopLocationType::StopArea,
             parent_station: None,
-            code: None,
+            code: Some("1234".to_string()),
             desc: "bar".to_string(),
             wheelchair_boarding: Availability::NotAvailable,
             url: None,
