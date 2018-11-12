@@ -83,7 +83,7 @@ enum StopLocationType {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Stop {
-    #[serde(rename = "stop_id")]
+    #[serde(rename = "stop_id", deserialize_with = "de_without_slashes")]
     id: String,
     #[serde(rename = "stop_code")]
     code: Option<String>,
@@ -107,6 +107,7 @@ struct Stop {
     url: Option<String>,
     #[serde(default, deserialize_with = "de_with_empty_default")]
     location_type: StopLocationType,
+    #[serde(default, deserialize_with = "de_option_without_slashes")]
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
     timezone: Option<String>,
@@ -142,6 +143,7 @@ struct Trip {
     )]
     direction: DirectionType,
     block_id: Option<String>,
+    #[serde(default, deserialize_with = "de_option_without_slashes")]
     shape_id: Option<String>,
     #[serde(deserialize_with = "de_with_empty_default", default)]
     wheelchair_accessible: Availability,
@@ -154,6 +156,7 @@ struct StopTime {
     trip_id: String,
     arrival_time: Time,
     departure_time: Time,
+    #[serde(deserialize_with = "de_without_slashes")]
     stop_id: String,
     stop_sequence: u32,
     #[serde(deserialize_with = "de_with_empty_default", default)]
@@ -180,7 +183,9 @@ enum TransferType {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct Transfer {
+    #[serde(deserialize_with = "de_without_slashes")]
     from_stop_id: String,
+    #[serde(deserialize_with = "de_without_slashes")]
     to_stop_id: String,
     #[serde(deserialize_with = "de_with_empty_default")]
     transfer_type: TransferType,
@@ -200,7 +205,7 @@ impl<'a> From<&'a objects::Transfer> for Transfer {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct Shape {
-    #[serde(rename = "shape_id")]
+    #[serde(rename = "shape_id", deserialize_with = "de_without_slashes")]
     id: String,
     #[serde(rename = "shape_pt_lat")]
     lat: f64,
