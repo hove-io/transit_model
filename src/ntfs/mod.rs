@@ -203,7 +203,7 @@ mod tests {
     use geo_types::{Geometry as GeoGeometry, LineString, Point};
     use objects::*;
     use serde;
-    use std::collections::{BTreeSet, HashMap};
+    use std::collections::{BTreeMap, BTreeSet, HashMap};
     use std::fmt::Debug;
     use std::path;
     use utils::*;
@@ -252,16 +252,23 @@ mod tests {
 
     #[test]
     fn feed_infos_serialization_deserialization() {
-        let mut feed_infos = HashMap::default();
-        feed_infos.insert("ntfs_version".to_string(), "0.3".to_string());
+        let mut feed_infos = BTreeMap::default();
         feed_infos.insert("feed_license".to_string(), "".to_string());
+        feed_infos.insert("ntfs_version".to_string(), "0.3".to_string());
+        feed_infos.insert("feed_creation_date".to_string(), "20181004".to_string());
         let mut collections = Collections::default();
 
         ser_deser_in_tmp_dir(|path| {
             write::write_feed_infos(path, &feed_infos).unwrap();
             read::manage_feed_infos(&mut collections, path).unwrap();
+            let info_params: Vec<_> = collections.feed_infos.keys().collect();
+            // test that feed infos are ordered by info_param
+            assert_eq!(
+                info_params,
+                ["feed_creation_date", "feed_license", "ntfs_version"]
+            );
         });
-        assert_eq!(collections.feed_infos.len(), 2);
+        assert_eq!(collections.feed_infos.len(), 3);
         assert_eq!(collections.feed_infos, feed_infos);
     }
 

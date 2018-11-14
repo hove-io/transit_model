@@ -21,10 +21,10 @@ use failure::ResultExt;
 use model::Collections;
 use objects::*;
 use serde;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path;
 
-pub fn write_feed_infos(path: &path::Path, feed_infos: &HashMap<String, String>) -> Result<()> {
+pub fn write_feed_infos(path: &path::Path, feed_infos: &BTreeMap<String, String>) -> Result<()> {
     info!("Writing feed_infos.txt");
     let path = path.join("feed_infos.txt");
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
