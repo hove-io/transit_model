@@ -39,7 +39,7 @@ pub struct Collections {
     pub physical_modes: CollectionWithId<PhysicalMode>,
     pub stop_areas: CollectionWithId<StopArea>,
     pub stop_points: CollectionWithId<StopPoint>,
-    pub feed_infos: HashMap<String, String>,
+    pub feed_infos: BTreeMap<String, String>,
     pub calendars: CollectionWithId<Calendar>,
     pub companies: CollectionWithId<Company>,
     pub comments: CollectionWithId<Comment>,
