@@ -49,14 +49,41 @@ pub enum TransfersMode {
 
 type TransferMap = HashMap<(Idx<StopPoint>, Idx<StopPoint>), Transfer>;
 
-fn stop_points_on_same_contributor(
+fn stop_points_need_transfer(
     model: &Model,
     from_idx: Idx<StopPoint>,
     to_idx: Idx<StopPoint>,
+    transfers_mode: &TransfersMode,
+    report_opt: Option<&mut Report>,
 ) -> bool {
     let from_contributor: BTreeSet<Idx<Contributor>> = model.get_corresponding_from_idx(from_idx);
     let to_contributor: BTreeSet<Idx<Contributor>> = model.get_corresponding_from_idx(to_idx);
-    from_contributor == to_contributor
+    println!("{:?}, {:?}, {:?}", from_contributor, to_contributor, transfers_mode);
+    if from_contributor.is_empty() {
+        if let Some(report) = report_opt {
+            report.add_warning(
+                format!(
+                "stop point {} belongs to none of the trips and should not generate any transfer",
+                model.stop_points[from_idx].id),
+                ReportType::TransferOnUnreferencedStop,
+            );
+        }
+        return false;
+    }
+    if to_contributor.is_empty() {
+        if let Some(report) = report_opt {
+            report.add_warning(
+                format!(
+                "stop point {} belongs to none of the trips and should not generate any transfer",
+                model.stop_points[to_idx].id),
+                ReportType::TransferOnUnreferencedStop,
+            );
+        }
+        return false;
+    }
+    let same_contributor = from_contributor == to_contributor;
+    same_contributor && transfers_mode == &TransfersMode::IntraContributor
+        || !same_contributor && transfers_mode == &TransfersMode::InterContributor
 }
 
 fn read_rules<P: AsRef<Path>>(
@@ -78,47 +105,38 @@ fn read_rules<P: AsRef<Path>>(
                 model.stop_points.get_idx(&rule.to_stop_id),
             ) {
                 (Some(from), Some(to)) => {
-                    let on_same_contributor = stop_points_on_same_contributor(&model, from, to);
-                    match (on_same_contributor, transfers_mode) {
-                        (true, &TransfersMode::IntraContributor)
-                        | (false, &TransfersMode::InterContributor) => {
-                            match rules.entry((from, to)) {
-                                Occupied(_) => report.add_warning(
-                                    format!(
-                                        "transfer between stops {} and {} is already declared",
-                                        rule.from_stop_id, rule.to_stop_id
-                                    ),
-                                    ReportType::TransferAlreadyDeclared,
+                    if stop_points_need_transfer(model, from, to, transfers_mode, Some(report)) {
+                        match rules.entry((from, to)) {
+                            Occupied(_) => report.add_warning(
+                                format!(
+                                    "transfer between stops {} and {} is already declared",
+                                    rule.from_stop_id, rule.to_stop_id
                                 ),
-                                Vacant(v) => {
-                                    v.insert(rule);
-                                }
+                                ReportType::TransferAlreadyDeclared,
+                            ),
+                            Vacant(v) => {
+                                v.insert(rule);
                             }
                         }
-                        _ => {
-                            let category = match transfers_mode {
-                                &TransfersMode::IntraContributor => {
-                                    ReportType::TransferIntraIgnored
-                                }
-                                &TransfersMode::InterContributor => {
-                                    ReportType::TransferInterIgnored
-                                }
-                            };
-                            report.add_warning(
-                                format!(
-                                    "transfer between stops {} and {} is ignored ({:?})",
-                                    rule.from_stop_id, rule.to_stop_id, transfers_mode
-                                ),
-                                category,
-                            );
-                        }
+                    } else {
+                        let category = match transfers_mode {
+                            &TransfersMode::IntraContributor => ReportType::TransferIntraIgnored,
+                            &TransfersMode::InterContributor => ReportType::TransferInterIgnored,
+                        };
+                        report.add_warning(
+                            format!(
+                                "transfer between stops {} and {} is ignored ({:?})",
+                                rule.from_stop_id, rule.to_stop_id, transfers_mode
+                            ),
+                            category,
+                        );
                     }
                 }
                 (Some(_), None) => {
                     report.add_warning(
                         format!(
                             "manual transfer references an unexisting stop point ({})",
-                            rule.from_stop_id
+                            rule.to_stop_id
                         ),
                         ReportType::TransferOnUnexistingStop,
                     );
@@ -127,7 +145,7 @@ fn read_rules<P: AsRef<Path>>(
                     report.add_warning(
                         format!(
                             "manual transfer references an unexisting stop point ({})",
-                            rule.to_stop_id
+                            rule.from_stop_id
                         ),
                         ReportType::TransferOnUnexistingStop,
                     );
@@ -170,18 +188,22 @@ fn generate_transfers_from_sp(
     transfers_mode: &TransfersMode,
 ) {
     info!("Adding missing transfers from stop points.");
+    println!("Adding missing transfers from stop points.");
     let sq_max_distance = max_distance * max_distance;
+    info!("nb stops = {}", model.stop_points.len());
+    println!("nb stops = {}", model.stop_points.len());
     for (idx1, sp1) in model.stop_points.iter() {
         let approx = sp1.coord.approx();
         for (idx2, sp2) in model.stop_points.iter() {
             if transfers_map.contains_key(&(idx1, idx2)) {
                 continue;
             }
-            let on_same_contributor = stop_points_on_same_contributor(&model, idx1, idx2);
-            if on_same_contributor && transfers_mode == &TransfersMode::IntraContributor
-                || !on_same_contributor && transfers_mode == &TransfersMode::InterContributor
-            {
+            info!("{:?} <=> {:?}", sp1.id, sp2.id);
+            println!("{:?} <=> {:?}", sp1.id, sp2.id);
+            if stop_points_need_transfer(model, idx1, idx2, transfers_mode, None) {
                 let sq_distance = approx.sq_distance_to(&sp2.coord);
+                info!("sq_distance = {} <> {}", sq_distance, sq_max_distance);
+                println!("sq_distance = {} <> {}", sq_distance, sq_max_distance);
                 if sq_distance > sq_max_distance {
                     continue;
                 }
@@ -364,22 +386,21 @@ mod tests {
             },
         ]);
 
-        let stop_areas = CollectionWithId::new(vec![
-            StopArea {
-                id: "sa_1".to_string(),
-                name: "sa_name_1".to_string(),
-                codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
-                comment_links: CommentLinksT::default(),
-                visible: true,
-                coord: Coord {
-                    lon: 2.372075915336609,
-                    lat: 48.84608210211328,
-                },
-                timezone: None,
-                geometry_id: None,
-                equipment_id: None,
-            }]).unwrap();
+        let stop_areas = CollectionWithId::new(vec![StopArea {
+            id: "sa_1".to_string(),
+            name: "sa_name_1".to_string(),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            visible: true,
+            coord: Coord {
+                lon: 2.372075915336609,
+                lat: 48.84608210211328,
+            },
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+        }]).unwrap();
 
         let stop_points = CollectionWithId::new(vec![
             StopPoint {
@@ -507,22 +528,21 @@ mod tests {
 
     #[test]
     fn test_generates_transfers_with_modification_rules() {
-        let stop_areas = CollectionWithId::new(vec![
-            StopArea {
-                id: "sa_1".to_string(),
-                name: "sa_name_1".to_string(),
-                codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
-                comment_links: CommentLinksT::default(),
-                visible: true,
-                coord: Coord {
-                    lon: 2.372075915336609,
-                    lat: 48.84608210211328,
-                },
-                timezone: None,
-                geometry_id: None,
-                equipment_id: None,
-            }]).unwrap();
+        let stop_areas = CollectionWithId::new(vec![StopArea {
+            id: "sa_1".to_string(),
+            name: "sa_name_1".to_string(),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            visible: true,
+            coord: Coord {
+                lon: 2.372075915336609,
+                lat: 48.84608210211328,
+            },
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+        }]).unwrap();
         let transfers = Collection::new(vec![
             Transfer {
                 from_stop_id: "sp_1".to_string(),
