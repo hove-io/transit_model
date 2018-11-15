@@ -287,6 +287,7 @@ pub enum ReportType {
     TransferIntraIgnored,
     TransferInterIgnored,
     TransferOnUnexistingStop,
+    TransferOnUnreferencedStop,
     TransferAlreadyDeclared,
     // apply-rules types
     ComplementaryCodeRulesRead,
