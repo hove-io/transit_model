@@ -108,7 +108,7 @@ Only `route_type` existing in the GTFS feed are created. The priority is used to
 
 | GTFS route_type | NTFS physical_mode ID (1) | NTFS commercial_mode ID | NTFS commercial_mode name | Priority |
 | --- | --- | --- | --- | --- |
-| 0 | RailShuttle | 0 | Tram, Streetcar, Light rail | 3 |
+| 0 | Tramway | 0 | Tram, Streetcar, Light rail | 3 |
 | 1 | Metro | 1 | Subway, Metro | 4 |
 | 2 | Train | 2 | Rail | 2 |
 | 3 | Bus | 3 | Bus | 8 |

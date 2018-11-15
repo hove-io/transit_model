@@ -609,8 +609,8 @@ fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
     use self::RouteType::*;
     match *route_type {
         Tramway_LightRail => objects::PhysicalMode {
-            id: "RailShuttle".to_string(),
-            name: "Rail Shuttle".to_string(),
+            id: "Tramway".to_string(),
+            name: "Tramway".to_string(),
             co2_emission: None,
         },
         Metro => objects::PhysicalMode {
