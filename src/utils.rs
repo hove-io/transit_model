@@ -276,6 +276,18 @@ macro_rules! skip_fail {
 
 #[derive(Debug, Serialize)]
 pub enum ReportType {
+    // merge stop areas types
+    OnlyOneStopArea,
+    AmbiguousPriorities,
+    NothingToMerge,
+    MissingToMerge,
+    NoMasterPossible,
+    MasterReplaced,
+    // transfers types
+    TransferIntraIgnored,
+    TransferInterIgnored,
+    TransferOnUnexistingStop,
+    TransferAlreadyDeclared,
     // apply-rules types
     ComplementaryCodeRulesRead,
     ComplementaryObjectNotFound,
@@ -294,10 +306,22 @@ pub struct Report {
 }
 
 impl Report {
+    pub fn new() -> Self {
+        Self {
+            errors: vec![],
+            warnings: vec![],
+        }
+    }
     pub fn add_warning(&mut self, warning: String, warning_type: ReportType) {
         self.warnings.push(ReportRow {
             category: warning_type,
             message: warning,
+        });
+    }
+    pub fn add_error(&mut self, error: String, error_type: ReportType) {
+        self.errors.push(ReportRow {
+            category: error_type,
+            message: error,
         });
     }
 }

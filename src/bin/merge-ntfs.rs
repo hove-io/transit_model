@@ -24,6 +24,8 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use navitia_model::model::Collections;
+use navitia_model::transfers;
+use navitia_model::transfers::TransfersMode;
 use navitia_model::Result;
 #[macro_use]
 extern crate failure;
@@ -38,6 +40,40 @@ struct Opt {
     /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: PathBuf,
+
+    /// config csv rule files.
+    #[structopt(short = "c", long = "config", parse(from_os_str),)]
+    rule_files: Vec<PathBuf>,
+
+    /// output report file path
+    #[structopt(short = "r", long = "report", parse(from_os_str))]
+    report: Option<PathBuf>,
+
+    #[structopt(
+        long = "max-distance",
+        short = "d",
+        default_value = "500",
+        help = "The max distance in meters to compute the tranfer"
+    )]
+    max_distance: f64,
+
+    #[structopt(
+        long = "walking-speed",
+        short = "s",
+        default_value = "0.785",
+        help = "The walking speed in meters per second. \
+                You may want to divide your initial speed by \
+                sqrt(2) to simulate Manhattan distances"
+    )]
+    walking_speed: f64,
+
+    #[structopt(
+        long = "waiting-time",
+        short = "t",
+        default_value = "60",
+        help = "Waiting time at stop in second"
+    )]
+    waiting_time: u32,
 }
 
 fn run() -> Result<()> {
@@ -52,7 +88,16 @@ fn run() -> Result<()> {
             let to_append_model = navitia_model::ntfs::read(input_directory)?;
             collections.merge(to_append_model.into_collections())?;
         }
-        let model = navitia_model::Model::new(collections)?;
+        let mut model = navitia_model::Model::new(collections)?;
+        transfers::generates_transfers(
+            &mut model,
+            opt.max_distance,
+            opt.walking_speed,
+            opt.waiting_time,
+            opt.rule_files,
+            TransfersMode::InterContributor,
+            opt.report,
+        )?;
         navitia_model::ntfs::write(&model, opt.output)?;
         Ok(())
     }

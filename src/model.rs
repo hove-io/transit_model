@@ -348,3 +348,8 @@ impl ops::Deref for Model {
         &self.collections
     }
 }
+impl ops::DerefMut for Model {
+    fn deref_mut(&mut self) -> &mut Collections {
+        &mut self.collections
+    }
+}
