@@ -24,6 +24,7 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use navitia_model::transfers;
+use navitia_model::transfers::TransfersMode;
 use navitia_model::Result;
 
 #[derive(Debug, StructOpt)]
@@ -41,6 +42,10 @@ struct Opt {
     /// modification rule files.
     #[structopt(short = "r", long = "rules-file", parse(from_os_str),)]
     rule_files: Vec<PathBuf>,
+
+    /// output report file path
+    #[structopt(short = "l", long = "report", parse(from_os_str))]
+    report: Option<PathBuf>,
 
     /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
@@ -78,19 +83,19 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let model = navitia_model::ntfs::read(opt.input)?;
-    let mut collections = model.into_collections();
+    let mut model = navitia_model::ntfs::read(opt.input)?;
 
     transfers::generates_transfers(
-        &mut collections.transfers,
-        &collections.stop_points,
+        &mut model,
         opt.max_distance,
         opt.walking_speed,
         opt.waiting_time,
         opt.rule_files,
+        TransfersMode::IntraContributor,
+        opt.report,
     )?;
 
-    let model = navitia_model::Model::new(collections)?;
+    let model = navitia_model::Model::new(model.into_collections())?;
     navitia_model::ntfs::write(&model, opt.output)?;
     Ok(())
 }
