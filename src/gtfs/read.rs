@@ -628,9 +628,14 @@ fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
             name: "Ferry".to_string(),
             co2_emission: None,
         },
-        CableCar | Gondola_SuspendedCableCar | Funicular => objects::PhysicalMode {
+        CableCar | Funicular => objects::PhysicalMode {
             id: "Funicular".to_string(),
             name: "Funicular".to_string(),
+            co2_emission: None,
+        },
+        Gondola_SuspendedCableCar => objects::PhysicalMode {
+            id: "SuspendedCableCar".to_string(),
+            name: "Suspended Cable Car".to_string(),
             co2_emission: None,
         },
         Bus | Other(_) => objects::PhysicalMode {
@@ -2277,12 +2282,13 @@ mod tests {
             collections.datasets = datasets;
 
             super::read_routes(tmp_dir, &mut collections).unwrap();
-            // physical mode file should contain only two modes (5,6,7 => funicular 2 => train)
+            // physical mode file should contain only three modes
+            // (5,7 => funicular; 2 => train; 6 => suspended cable car)
             assert_eq!(4, collections.lines.len());
             assert_eq!(4, collections.commercial_modes.len());
             assert_eq!(
                 extract_ids(&collections.physical_modes),
-                &["Funicular", "Train"]
+                &["Funicular", "SuspendedCableCar", "Train"]
             );
         });
     }

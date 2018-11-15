@@ -332,6 +332,7 @@ impl<'a> From<&'a objects::PhysicalMode> for RouteType {
             "Bus" | "BusRapidTransit" | "Coach" => RouteType::Bus,
             "Boat" | "Ferry" => RouteType::Ferry,
             "Funicular" | "Shuttle" => RouteType::Funicular,
+            "SuspendedCableCar" => RouteType::Gondola_SuspendedCableCar,
             _ => RouteType::Other(3),
         }
     }
@@ -361,7 +362,8 @@ fn get_physical_mode_order(pm: &objects::PhysicalMode) -> u8 {
         "Ferry" => 12,
         "Funicular" => 13,
         "Shuttle" => 14,
-        _ => 15,
+        "SuspendedCableCar" => 15,
+        _ => 16,
     }
 }
 
