@@ -307,12 +307,6 @@ pub struct Report {
 }
 
 impl Report {
-    pub fn new() -> Self {
-        Self {
-            errors: vec![],
-            warnings: vec![],
-        }
-    }
     pub fn add_warning(&mut self, warning: String, warning_type: ReportType) {
         self.warnings.push(ReportRow {
             category: warning_type,

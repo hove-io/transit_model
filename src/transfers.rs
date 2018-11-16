@@ -62,8 +62,9 @@ fn stop_points_need_transfer(
         if let Some(report) = report_opt {
             report.add_warning(
                 format!(
-                "stop point {} belongs to none of the trips and should not generate any transfer",
-                model.stop_points[from_idx].id),
+                    "stop point {} belongs to none of the trips and will not generate any transfer",
+                    model.stop_points[from_idx].id
+                ),
                 ReportType::TransferOnUnreferencedStop,
             );
         }
@@ -73,8 +74,9 @@ fn stop_points_need_transfer(
         if let Some(report) = report_opt {
             report.add_warning(
                 format!(
-                "stop point {} belongs to none of the trips and should not generate any transfer",
-                model.stop_points[to_idx].id),
+                    "stop point {} belongs to none of the trips and will not generate any transfer",
+                    model.stop_points[to_idx].id
+                ),
                 ReportType::TransferOnUnreferencedStop,
             );
         }
@@ -118,9 +120,9 @@ fn read_rules<P: AsRef<Path>>(
                             }
                         }
                     } else {
-                        let category = match transfers_mode {
-                            &TransfersMode::IntraContributor => ReportType::TransferIntraIgnored,
-                            &TransfersMode::InterContributor => ReportType::TransferInterIgnored,
+                        let category = match *transfers_mode {
+                            TransfersMode::IntraContributor => ReportType::TransferIntraIgnored,
+                            TransfersMode::InterContributor => ReportType::TransferInterIgnored,
                         };
                         report.add_warning(
                             format!(
@@ -320,19 +322,19 @@ pub fn generates_transfers<P: AsRef<Path>>(
     walking_speed: f64,
     waiting_time: u32,
     rule_files: Vec<P>,
-    transfers_mode: TransfersMode,
+    transfers_mode: &TransfersMode,
     report_path: Option<PathBuf>,
 ) -> Result<()> {
     info!("Generating transfers...");
-    let mut report = Report::new();
-    let rules = read_rules(rule_files, model, &transfers_mode, &mut report)?;
+    let mut report = Report::default();
+    let rules = read_rules(rule_files, model, transfers_mode, &mut report)?;
     let new_transfers = do_generates_transfers(
         model,
         max_distance,
         walking_speed,
         waiting_time,
         &rules,
-        &transfers_mode,
+        transfers_mode,
     )?;
 
     model.transfers = Collection::new(new_transfers);

@@ -144,7 +144,7 @@ fn merge_collections_with_transfers_ok() {
         0.785,
         60,
         rule_paths,
-        TransfersMode::InterContributor,
+        &TransfersMode::InterContributor,
         Some(Path::new(&report_path).to_path_buf()),
     ).unwrap();
     navitia_model::ntfs::write(&model, tmp_dir.path()).unwrap();

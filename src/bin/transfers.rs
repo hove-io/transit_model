@@ -91,7 +91,7 @@ fn run() -> Result<()> {
         opt.walking_speed,
         opt.waiting_time,
         opt.rule_files,
-        TransfersMode::IntraContributor,
+        &TransfersMode::IntraContributor,
         opt.report,
     )?;
 
