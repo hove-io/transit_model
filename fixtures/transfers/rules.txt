@@ -1,0 +1,3 @@
+from_stop_id,to_stop_id,transfer_time
+sp_3,sp_3,
+sp_2,sp_3,100

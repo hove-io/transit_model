@@ -1,0 +1,4 @@
+stop_time_id,trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,local_zone_id,date_time_estimated
+st:1,trip:1,15:45:00,15:45:00,sp_1,0,"",0,1,,0
+st:2,trip:2,15:45:00,15:45:00,sp_2,0,"",0,1,,0
+st:3,trip:3,15:45:00,15:45:00,sp_3,0,"",0,1,,0
