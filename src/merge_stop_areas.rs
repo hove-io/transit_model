@@ -260,7 +260,7 @@ pub fn merge_stop_areas(
     automatic_max_distance: u32,
     report_path: PathBuf,
 ) -> Result<Collections> {
-    let mut report = Report::new();
+    let mut report = Report::default();
     let manual_rules = read_rules(rule_paths, &mut report)?;
     collections = apply_rules(collections, manual_rules, &mut report)?;
     let automatic_rules = generate_automatic_rules(&collections.stop_areas, automatic_max_distance);

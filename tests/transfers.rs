@@ -15,7 +15,6 @@
 // <http://www.gnu.org/licenses/>.
 
 extern crate navitia_model;
-use navitia_model::model::Collections;
 use navitia_model::transfers;
 use navitia_model::transfers::TransfersMode;
 use std::path::Path;
@@ -47,7 +46,7 @@ fn test_generates_transfers() {
         0.785,
         120,
         rules,
-        TransfersMode::IntraContributor,
+        &TransfersMode::IntraContributor,
         None,
     ).unwrap();
     navitia_model::ntfs::write(&model, tmp_dir.path()).unwrap();
@@ -70,7 +69,7 @@ fn test_generates_transfers_with_modification_rules() {
         0.785,
         120,
         rules,
-        TransfersMode::IntraContributor,
+        &TransfersMode::IntraContributor,
         None,
     ).unwrap();
     navitia_model::ntfs::write(&model, tmp_dir.path()).unwrap();

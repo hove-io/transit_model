@@ -95,7 +95,7 @@ fn run() -> Result<()> {
             opt.walking_speed,
             opt.waiting_time,
             opt.rule_files,
-            TransfersMode::InterContributor,
+            &TransfersMode::InterContributor,
             opt.report,
         )?;
         navitia_model::ntfs::write(&model, opt.output)?;
