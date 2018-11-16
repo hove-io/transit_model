@@ -59,9 +59,10 @@ Boat | 4 | 2 | 11
 Ferry | 4 | 2 | 12
 Funicular | 7 | 6 | 13
 Shuttle | 7 | 6 | 14
+SuspendedCableCar | 6 | 7 | 15
 
 The physical_modes Air and Taxi are not available in standard GTFS `route_type`s and should be considered as unknown for the GTFS (see below).
-If the physical_mode is unknown, trips shloud be considered as Bus (route_type = 3) and with a priority of 15 .
+If the physical_mode is unknown, trips should be considered as Bus (route_type = 3) and with a priority of 16 .
 
 **Export of NTFS lines containing trips with different modes**
 A GTFS `route` can only contains trips with one mode (ie. `route_type`).

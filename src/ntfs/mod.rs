@@ -403,6 +403,11 @@ mod tests {
                 name: "Funicular".to_string(),
                 co2_emission: None,
             },
+            PhysicalMode {
+                id: "SuspendedCableCar".to_string(),
+                name: "Suspended Cable Car".to_string(),
+                co2_emission: None,
+            },
         ]);
     }
 

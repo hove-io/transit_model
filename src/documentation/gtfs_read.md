@@ -108,13 +108,13 @@ Only `route_type` existing in the GTFS feed are created. The priority is used to
 
 | GTFS route_type | NTFS physical_mode ID (1) | NTFS commercial_mode ID | NTFS commercial_mode name | Priority |
 | --- | --- | --- | --- | --- |
-| 0 | RailShuttle | 0 | Tram, Streetcar, Light rail | 3 |
+| 0 | Tramway | 0 | Tram, Streetcar, Light rail | 3 |
 | 1 | Metro | 1 | Subway, Metro | 4 |
 | 2 | Train | 2 | Rail | 2 |
 | 3 | Bus | 3 | Bus | 8 |
 | 4 | Ferry | 4 | Ferry | 1 |
 | 5 | Funicular | 5 | Cable car | 6 |
-| 6 | Funicular | 6 | Gondola, Suspended cable car | 7 |
+| 6 | SuspendedCableCar | 6 | Gondola, Suspended cable car | 7 |
 | 7 | Funicular | 7 | Funicular | 5 |
 
 (1) The physical_mode ID is a mapping with a specific value as described in the NTFS format specification. This value must not be prefixed.
@@ -210,7 +210,7 @@ For exemple :
 | - | 10:00 |
 | 10:30 | 10:30 |
 
-(2) The GTFS `timepoint` conversion tules for NTFS `date_time_estimated` are :
+(2) The GTFS `timepoint` conversion rules for NTFS `date_time_estimated` are :
 * if `timepoint` is unspecified => `date_time_estimated` equals 0
 * if `timepoint` equals 1 => `date_time_estimated` equals 0
 * if `timepoint` equals 0 => `date_time_estimated` equals 1
