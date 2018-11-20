@@ -50,6 +50,8 @@ pub mod ntfs;
 pub mod objects;
 mod read_utils;
 pub mod relations;
+#[doc(hidden)]
+pub mod test_utils;
 pub mod transfers;
 /// The error type used by the crate.
 pub type Error = failure::Error;
