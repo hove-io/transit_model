@@ -367,7 +367,7 @@ impl AddPrefix for Network {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Ord, PartialOrd, Eq)]
 pub struct Rgb {
     pub red: u8,
     pub green: u8,
