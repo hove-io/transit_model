@@ -1193,6 +1193,74 @@ mod tests {
     }
 
     #[test]
+    fn gtfs_routes_with_wrong_colors() {
+        let agency_content = "agency_id,agency_name,agency_url,agency_timezone\n\
+                              id_agency1,My agency 1,http://my-agency_url1.com,Europe/London";
+        let routes_content =
+            "route_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+             route_1,1,My line 1,3,0,FFFFFF\n\
+             route_2,,My line 2,2,7BC142,0\n\
+             route_3,3,My line 3,8,FFFFFF,000000\n\
+             route_4,3,My line 3 for agency 3,8,FFFFAF,FAFFFF";
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,,service_1,,\n\
+             2,route_1,1,service_1,,\n\
+             3,route_2,0,service_2,,\n\
+             4,route_3,0,service_3,,\n\
+             5,route_4,0,service_4,,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
+            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
+            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+
+            let mut collections = Collections::default();
+            let (networks, _) = super::read_agency(tmp_dir).unwrap();
+            collections.networks = networks;
+            let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+            super::read_routes(tmp_dir, &mut collections).unwrap();
+            assert_eq!(3, collections.lines.len());
+            assert_eq!(
+                extract(|l| (&l.color, &l.text_color), &collections.lines),
+                &[
+                    (
+                        &None,
+                        &Some(Rgb {
+                            red: 255,
+                            green: 255,
+                            blue: 255
+                        })
+                    ),
+                    (
+                        &Some(Rgb {
+                            red: 123,
+                            green: 193,
+                            blue: 66
+                        }),
+                        &None
+                    ),
+                    (
+                        &Some(Rgb {
+                            red: 255,
+                            green: 255,
+                            blue: 255
+                        }),
+                        &Some(Rgb {
+                            red: 0,
+                            green: 0,
+                            blue: 0
+                        })
+                    )
+                ]
+            );
+        });
+    }
+
+    #[test]
     #[should_panic(expected = "Impossible to get agency id, several networks found")]
     fn gtfs_routes_without_agency_id_as_line_and_2_agencies() {
         let agency_content = "agency_id,agency_name,agency_url,agency_timezone\n\

@@ -295,9 +295,17 @@ struct Route {
     route_type: RouteType,
     #[serde(rename = "route_url")]
     url: Option<String>,
-    #[serde(rename = "route_color", default)]
+    #[serde(
+        rename = "route_color",
+        default,
+        deserialize_with = "de_with_empty_or_invalid_default"
+    )]
     color: Option<objects::Rgb>,
-    #[serde(rename = "route_text_color", default)]
+    #[serde(
+        rename = "route_text_color",
+        default,
+        deserialize_with = "de_with_empty_or_invalid_default"
+    )]
     text_color: Option<objects::Rgb>,
     #[serde(rename = "route_sort_order")]
     sort_order: Option<u32>,
