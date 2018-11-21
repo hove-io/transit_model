@@ -193,7 +193,6 @@ pub fn write_to_zip<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> 
 #[cfg(test)]
 mod tests {
     extern crate tempdir;
-    use self::tempdir::TempDir;
     use super::Collections;
     use super::{read, write};
     use chrono;
@@ -205,20 +204,8 @@ mod tests {
     use serde;
     use std::collections::{BTreeMap, BTreeSet, HashMap};
     use std::fmt::Debug;
-    use std::path;
+    use test_utils::*;
     use utils::*;
-
-    fn ser_deser_in_tmp_dir<F>(func: F)
-    where
-        F: FnOnce(&path::Path),
-    {
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-        {
-            let path = tmp_dir.as_ref();
-            func(path);
-        }
-        tmp_dir.close().expect("delete temp dir");
-    }
 
     fn test_serialize_deserialize_collection_with_id<T>(objects: Vec<T>)
     where
@@ -226,7 +213,7 @@ mod tests {
         for<'de> T: serde::Deserialize<'de>,
     {
         let collection = CollectionWithId::new(objects).unwrap();
-        ser_deser_in_tmp_dir(|path| {
+        test_in_tmp_dir(|path| {
             write::write_collection_with_id(path, "file.txt", &collection).unwrap();
             let des_collection = make_collection_with_id(path, "file.txt").unwrap();
             assert_eq!(des_collection, collection);
@@ -239,7 +226,7 @@ mod tests {
         for<'de> T: serde::Deserialize<'de>,
     {
         let collection = Collection::new(objects);
-        ser_deser_in_tmp_dir(|path| {
+        test_in_tmp_dir(|path| {
             write::write_collection(path, "file.txt", &collection).unwrap();
             let des_collection = make_opt_collection(path, "file.txt").unwrap();
             assert_eq!(des_collection, collection);
@@ -258,7 +245,7 @@ mod tests {
         feed_infos.insert("feed_creation_date".to_string(), "20181004".to_string());
         let mut collections = Collections::default();
 
-        ser_deser_in_tmp_dir(|path| {
+        test_in_tmp_dir(|path| {
             write::write_feed_infos(path, &feed_infos).unwrap();
             read::manage_feed_infos(&mut collections, path).unwrap();
             let info_params: Vec<_> = collections.feed_infos.keys().collect();
@@ -546,7 +533,7 @@ mod tests {
             "somewhere".to_string(),
         );
 
-        ser_deser_in_tmp_dir(|path| {
+        test_in_tmp_dir(|path| {
             write::write_vehicle_journeys_and_stop_times(
                 path,
                 &vehicle_journeys,
@@ -666,7 +653,7 @@ mod tests {
             },
         ]).unwrap();
 
-        ser_deser_in_tmp_dir(|path| {
+        test_in_tmp_dir(|path| {
             common_format::write_calendar_dates(path, &calendars).unwrap();
 
             let mut collections = Collections::default();
@@ -749,7 +736,7 @@ mod tests {
             },
         ]).unwrap();
 
-        ser_deser_in_tmp_dir(|path| {
+        test_in_tmp_dir(|path| {
             write::write_stops(path, &stop_points, &stop_areas).unwrap();
 
             let mut collections = Collections::default();
@@ -924,7 +911,7 @@ mod tests {
         ser_collections.vehicle_journeys = vehicle_journeys;
         ser_collections.networks = networks;
 
-        ser_deser_in_tmp_dir(|path| {
+        test_in_tmp_dir(|path| {
             write::write_collection_with_id(path, "lines.txt", &ser_collections.lines).unwrap();
             write::write_stops(
                 path,
