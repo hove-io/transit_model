@@ -102,11 +102,7 @@ fn ntfs_stops_output() {
     let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
     test_in_tmp_dir(|output_dir| {
         navitia_model::ntfs::write(&ntm, output_dir).unwrap();
-        compare_output_dir_with_expected(
-            output_dir,
-            &["stops.txt".to_string()],
-            "fixtures/ntfs2ntfs".to_string(),
-        );
+        compare_output_dir_with_expected(&output_dir, vec!["stops.txt"], "fixtures/ntfs2ntfs");
     });
 }
 

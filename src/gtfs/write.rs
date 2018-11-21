@@ -84,8 +84,7 @@ fn get_first_comment_name<T: objects::CommentLinks>(
 fn ntfs_codes_to_gtfs_code<T: Codes>(obj: &T) -> Option<String> {
     obj.codes()
         .iter()
-        .filter(|c| c.0 == "gtfs_stop_code")
-        .next()
+        .find(|c| c.0 == "gtfs_stop_code")
         .cloned()
         .map(|c| c.1)
 }

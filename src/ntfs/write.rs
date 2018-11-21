@@ -289,9 +289,6 @@ pub fn write_codes(path: &path::Path, collections: &Collections) -> Result<()> {
         return Ok(());
     }
 
-    if collections.comments.is_empty() {
-        return Ok(());
-    }
     info!("Writing object_codes.txt");
 
     let path = path.join("object_codes.txt");
