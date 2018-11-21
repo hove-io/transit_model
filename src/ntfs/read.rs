@@ -48,7 +48,6 @@ impl From<Stop> for StopArea {
 impl From<Stop> for StopPoint {
     fn from(stop: Stop) -> StopPoint {
         let id = stop.id;
-        let stop_area_id = stop.parent_station.unwrap_or_else(|| id.clone());
         StopPoint {
             id,
             name: stop.name,
@@ -60,7 +59,7 @@ impl From<Stop> for StopPoint {
                 lon: stop.lon,
                 lat: stop.lat,
             },
-            stop_area_id,
+            stop_area_id: stop.parent_station.unwrap(),
             timezone: stop.timezone,
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
@@ -76,12 +75,13 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
     for stop in rdr.deserialize() {
-        let stop: Stop = stop.with_context(ctx_from_path!(path))?;
+        let mut stop: Stop = stop.with_context(ctx_from_path!(path))?;
         match stop.location_type {
             0 => {
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
                     new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
+                    stop.parent_station = Some(new_stop_area.id.clone());
                     stop_areas.push(StopArea::from(new_stop_area));
                 }
                 stop_points.push(StopPoint::from(stop));
@@ -387,4 +387,29 @@ pub fn manage_geometries(collections: &mut Collections, path: &path::Path) -> Re
     collections.geometries = CollectionWithId::new(geometries)?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use model::Collections;
+    use ntfs::read;
+    use test_utils::*;
+    #[test]
+    fn read_stop_points_with_no_parent() {
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
+                             sp:01,my stop name 1,0.1,1.2,0,";
+
+        test_in_tmp_dir(|ref tmp_dir| {
+            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+            let mut collections = Collections::default();
+            read::manage_stops(&mut collections, tmp_dir.path()).unwrap();
+            assert_eq!(collections.stop_points.len(), 1);
+            let stop_point = collections.stop_points.values().next().unwrap();
+            assert_eq!(stop_point.id, "sp:01");
+            assert_eq!(stop_point.stop_area_id, "Navitia:sp:01");
+            assert_eq!(collections.stop_areas.len(), 1);
+            let stop_area = collections.stop_areas.values().next().unwrap();
+            assert_eq!(stop_area.id, "Navitia:sp:01");
+        });
+    }
 }

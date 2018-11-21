@@ -880,8 +880,6 @@ pub fn set_dataset_validity_period(
 
 #[cfg(test)]
 mod tests {
-    extern crate tempdir;
-    use self::tempdir::TempDir;
     use chrono;
     use collection::{Collection, CollectionWithId, Id};
     use common_format;
@@ -891,23 +889,7 @@ mod tests {
     use model::Collections;
     use objects::*;
     use std::collections::BTreeSet;
-    use std::fs::File;
-    use std::io::prelude::*;
-
-    fn create_file_with_content(temp_dir: &TempDir, file_name: &str, content: &str) {
-        let file_path = temp_dir.path().join(file_name);
-        let mut f = File::create(&file_path).unwrap();
-        f.write_all(content.as_bytes()).unwrap();
-    }
-
-    fn test_in_tmp_dir<F>(func: F)
-    where
-        F: FnOnce(&TempDir),
-    {
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-        func(&tmp_dir);
-        tmp_dir.close().expect("delete temp dir");
-    }
+    use test_utils::*;
 
     fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
         let mut extracted_props: Vec<S> = c.values().map(|l| f(l)).collect();
