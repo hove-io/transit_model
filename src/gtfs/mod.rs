@@ -78,7 +78,7 @@ enum StopLocationType {
     #[serde(rename = "1")]
     StopArea,
     #[serde(rename = "2")]
-    StopEntrace,
+    StopEntrance,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]

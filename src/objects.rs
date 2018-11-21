@@ -909,6 +909,13 @@ impl GetObjectType for StopArea {
         ObjectType::StopArea
     }
 }
+#[derivative(Default)]
+#[derive(Derivative, Debug, PartialEq)]
+pub enum StopType {
+    #[derivative(Default)]
+    Point,
+    Zone,
+}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct StopPoint {
@@ -927,6 +934,8 @@ pub struct StopPoint {
     pub geometry_id: Option<String>,
     pub equipment_id: Option<String>,
     pub fare_zone_id: Option<String>,
+    #[serde(skip)]
+    pub stop_type: StopType,
 }
 
 impl Id<StopPoint> for StopPoint {

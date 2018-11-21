@@ -15,3 +15,5 @@ CHA,Châtelet,48.858137,2.348145,1,
 CHAM,Châtelet (Metro),48.858137,2.348145,0,CHA
 MTP,Montparnasse,48.842481,2.321783,1,
 MTPB,Montparnasse (Bus),48.842481,2.321783,0,MTP
+MTPZ,Montparnasse Zone,48.842481,2.321783,2,
+CDGZ,Charles de Gaulle Zone,48.842481,2.321783,2,

@@ -20,7 +20,7 @@ use csv;
 use failure::ResultExt;
 use geo_types::{LineString, Point};
 use model::Collections;
-use objects::{self, CommentLinksT, Contributor, Coord, KeysValues, TransportType};
+use objects::{self, CommentLinksT, Contributor, Coord, KeysValues, StopType, TransportType};
 use read_utils;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::fs::File;
@@ -122,6 +122,7 @@ impl From<Stop> for objects::StopPoint {
             geometry_id: None,
             equipment_id: None,
             fare_zone_id: None,
+            stop_type: StopType::Point,
         }
     }
 }
@@ -461,7 +462,7 @@ pub fn read_stops<P: AsRef<path::Path>>(
                     stop.parent_station = Some(new_stop_area.id.clone());
                     stop_areas.push(objects::StopArea::from(new_stop_area));
                 }
-                let mut stop_point = objects::StopPoint::from(stop);
+                let mut stop_point = <objects::StopPoint>::from(stop);
                 stop_point.comment_links = comment_links;
                 stop_point.equipment_id = equipment_id;
                 stop_points.push(stop_point);
@@ -472,9 +473,9 @@ pub fn read_stops<P: AsRef<path::Path>>(
                 stop_area.equipment_id = equipment_id;
                 stop_areas.push(stop_area);
             }
-            StopLocationType::StopEntrace => warn!(
+            StopLocationType::StopEntrance => warn!(
                 "stop location type {:?} not handled for the moment, skipping",
-                StopLocationType::StopEntrace
+                StopLocationType::StopEntrance
             ),
         }
     }

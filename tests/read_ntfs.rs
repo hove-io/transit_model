@@ -20,6 +20,7 @@ use navitia_model::collection::{CollectionWithId, Id, Idx};
 use navitia_model::model::{GetCorresponding, Model};
 use navitia_model::objects::*;
 use navitia_model::relations::IdxSet;
+use navitia_model::test_utils::*;
 use tempdir::TempDir;
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
@@ -38,8 +39,8 @@ where
 fn minimal() {
     let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
 
-    assert_eq!(6, ntm.stop_areas.len());
-    assert_eq!(10, ntm.stop_points.len());
+    assert_eq!(8, ntm.stop_areas.len());
+    assert_eq!(12, ntm.stop_points.len());
     assert_eq!(3, ntm.commercial_modes.len());
     assert_eq!(3, ntm.lines.len());
     assert_eq!(6, ntm.routes.len());
@@ -85,6 +86,28 @@ fn minimal() {
         get(rera, &ntm.stop_areas, &ntm),
         &["GDL", "NAT", "CDG", "DEF"]
     );
+}
+
+#[test]
+fn ntfs_stop_zones() {
+    let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+    let stop_zone_1 = ntm.stop_points.get("MTPZ").unwrap();
+    assert_eq!(stop_zone_1.stop_type, StopType::Zone);
+    let stop_zone_2 = ntm.stop_points.get("CDGZ").unwrap();
+    assert_eq!(stop_zone_2.stop_type, StopType::Zone);
+}
+
+#[test]
+fn ntfs_stops_output() {
+    let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+    test_in_tmp_dir(|output_dir| {
+        navitia_model::ntfs::write(&ntm, output_dir).unwrap();
+        compare_output_dir_with_expected(
+            output_dir,
+            &["stops.txt".to_string()],
+            "fixtures/ntfs2ntfs".to_string(),
+        );
+    });
 }
 
 #[test]

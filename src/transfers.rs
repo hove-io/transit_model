@@ -289,6 +289,7 @@ mod tests {
                 equipment_id: None,
                 stop_area_id: "sa_1".to_string(),
                 fare_zone_id: None,
+                stop_type: StopType::Point,
             },
             StopPoint {
                 id: "sp_2".to_string(),
@@ -306,6 +307,7 @@ mod tests {
                 equipment_id: None,
                 stop_area_id: "sa_1".to_string(),
                 fare_zone_id: None,
+                stop_type: StopType::Point,
             },
             StopPoint {
                 id: "sp_3".to_string(),
@@ -323,6 +325,7 @@ mod tests {
                 equipment_id: None,
                 stop_area_id: "sa_1".to_string(),
                 fare_zone_id: None,
+                stop_type: StopType::Point,
             },
         ]).unwrap();
 
@@ -418,6 +421,7 @@ mod tests {
                 equipment_id: None,
                 stop_area_id: "sa_1".to_string(),
                 fare_zone_id: None,
+                stop_type: StopType::Point,
             },
             StopPoint {
                 id: "sp_2".to_string(),
@@ -435,6 +439,7 @@ mod tests {
                 equipment_id: None,
                 stop_area_id: "sa_1".to_string(),
                 fare_zone_id: None,
+                stop_type: StopType::Point,
             },
             StopPoint {
                 id: "sp_3".to_string(),
@@ -452,6 +457,7 @@ mod tests {
                 equipment_id: None,
                 stop_area_id: "sa_1".to_string(),
                 fare_zone_id: None,
+                stop_type: StopType::Point,
             },
         ]).unwrap();
 
