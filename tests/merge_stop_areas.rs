@@ -18,9 +18,8 @@
 extern crate navitia_model;
 
 use navitia_model::model::Model;
-use std::path::Path;
-extern crate tempdir;
 use navitia_model::test_utils::*;
+use std::path::Path;
 
 #[test]
 fn test_merge_stop_areas_multi_steps() {
