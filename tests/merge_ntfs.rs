@@ -21,16 +21,11 @@ use navitia_model::model::Collections;
 use navitia_model::model::Model;
 use navitia_model::objects::StopPoint;
 use navitia_model::objects::VehicleJourney;
+use navitia_model::test_utils::*;
 use navitia_model::transfers;
 use navitia_model::transfers::TransfersMode;
-use std::path::Path;
-extern crate tempdir;
-use self::tempdir::TempDir;
-#[path = "utils.rs"]
-mod utils;
-
 use std::collections::HashMap;
-use utils::compare_output_dir_with_expected;
+use std::path::Path;
 
 #[test]
 #[should_panic(expected = "TGC already found")] // first collision is on contributor id
@@ -126,31 +121,32 @@ fn merge_collections_ok() {
 #[test]
 fn merge_collections_with_transfers_ok() {
     let mut collections = Collections::default();
-    let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-    let report_path = tmp_dir.path().join("report.json");
-    let input_dirs = ["fixtures/minimal_ntfs", "fixtures/merge-ntfs/input"];
-    let rule_paths = vec![Path::new("./fixtures/merge-ntfs/transfer_rules.csv").to_path_buf()];
-    for input_directory in input_dirs.iter() {
-        let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
+    test_in_tmp_dir(|path| {
+        let report_path = path.join("report.json");
+        let input_dirs = ["fixtures/minimal_ntfs", "fixtures/merge-ntfs/input"];
+        let rule_paths = vec![Path::new("./fixtures/merge-ntfs/transfer_rules.csv").to_path_buf()];
+        for input_directory in input_dirs.iter() {
+            let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
 
-        collections
-            .merge(to_append_model.into_collections())
-            .unwrap();
-    }
-    let mut model = Model::new(collections).unwrap();
-    transfers::generates_transfers(
-        &mut model,
-        100.0,
-        0.785,
-        60,
-        rule_paths,
-        &TransfersMode::InterContributor,
-        Some(Path::new(&report_path).to_path_buf()),
-    ).unwrap();
-    navitia_model::ntfs::write(&model, tmp_dir.path()).unwrap();
-    compare_output_dir_with_expected(
-        tmp_dir.path(),
-        &vec!["transfers.txt".to_string(), "report.json".to_string()],
-        "./fixtures/merge-ntfs/output".to_string(),
-    );
+            collections
+                .merge(to_append_model.into_collections())
+                .unwrap();
+        }
+        let mut model = Model::new(collections).unwrap();
+        transfers::generates_transfers(
+            &mut model,
+            100.0,
+            0.785,
+            60,
+            rule_paths,
+            &TransfersMode::InterContributor,
+            Some(Path::new(&report_path).to_path_buf()),
+        ).unwrap();
+        navitia_model::ntfs::write(&model, path).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            vec!["transfers.txt", "report.json"],
+            "./fixtures/merge-ntfs/output",
+        );
+    });
 }

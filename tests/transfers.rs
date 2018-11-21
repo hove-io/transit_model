@@ -15,15 +15,10 @@
 // <http://www.gnu.org/licenses/>.
 
 extern crate navitia_model;
+use navitia_model::test_utils::*;
 use navitia_model::transfers;
 use navitia_model::transfers::TransfersMode;
 use std::path::Path;
-extern crate tempdir;
-use self::tempdir::TempDir;
-#[path = "utils.rs"]
-mod utils;
-
-use utils::compare_output_dir_with_expected;
 
 #[test]
 //                    206m
@@ -36,46 +31,48 @@ use utils::compare_output_dir_with_expected;
 //           sp_2
 //
 fn test_generates_transfers() {
-    let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-    let input_dir = "fixtures/transfers/input";
-    let mut model = navitia_model::ntfs::read(input_dir).unwrap();
-    let rules: Vec<Box<Path>> = vec![];
-    transfers::generates_transfers(
-        &mut model,
-        100.0,
-        0.785,
-        120,
-        rules,
-        &TransfersMode::IntraContributor,
-        None,
-    ).unwrap();
-    navitia_model::ntfs::write(&model, tmp_dir.path()).unwrap();
-    compare_output_dir_with_expected(
-        tmp_dir.path(),
-        &vec!["transfers.txt".to_string()],
-        "./fixtures/transfers/output".to_string(),
-    );
+    test_in_tmp_dir(|path| {
+        let input_dir = "fixtures/transfers/input";
+        let mut model = navitia_model::ntfs::read(input_dir).unwrap();
+        let rules: Vec<Box<Path>> = vec![];
+        transfers::generates_transfers(
+            &mut model,
+            100.0,
+            0.785,
+            120,
+            rules,
+            &TransfersMode::IntraContributor,
+            None,
+        ).unwrap();
+        navitia_model::ntfs::write(&model, path).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            vec!["transfers.txt"],
+            "./fixtures/transfers/output",
+        );
+    });
 }
 
 #[test]
 fn test_generates_transfers_with_modification_rules() {
-    let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-    let input_dir = "fixtures/transfers/input";
-    let mut model = navitia_model::ntfs::read(input_dir).unwrap();
-    let rules = vec![Path::new("./fixtures/transfers/rules.txt").to_path_buf()];
-    transfers::generates_transfers(
-        &mut model,
-        100.0,
-        0.785,
-        120,
-        rules,
-        &TransfersMode::IntraContributor,
-        None,
-    ).unwrap();
-    navitia_model::ntfs::write(&model, tmp_dir.path()).unwrap();
-    compare_output_dir_with_expected(
-        tmp_dir.path(),
-        &vec!["transfers.txt".to_string()],
-        "./fixtures/transfers/output_rules".to_string(),
-    );
+    test_in_tmp_dir(|path| {
+        let input_dir = "fixtures/transfers/input";
+        let mut model = navitia_model::ntfs::read(input_dir).unwrap();
+        let rules = vec![Path::new("./fixtures/transfers/rules.txt").to_path_buf()];
+        transfers::generates_transfers(
+            &mut model,
+            100.0,
+            0.785,
+            120,
+            rules,
+            &TransfersMode::IntraContributor,
+            None,
+        ).unwrap();
+        navitia_model::ntfs::write(&model, path).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            vec!["transfers.txt"],
+            "./fixtures/transfers/output_rules",
+        );
+    });
 }
