@@ -399,10 +399,10 @@ mod tests {
         let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
                              sp:01,my stop name 1,0.1,1.2,0,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
             let mut collections = Collections::default();
-            read::manage_stops(&mut collections, tmp_dir.path()).unwrap();
+            read::manage_stops(&mut collections, path).unwrap();
             assert_eq!(collections.stop_points.len(), 1);
             let stop_point = collections.stop_points.values().next().unwrap();
             assert_eq!(stop_point.id, "sp:01");

@@ -906,9 +906,9 @@ mod tests {
         let agency_content = "agency_name,agency_url,agency_timezone\n\
                               My agency,http://my-agency_url.com,Europe/London";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "agency.txt", agency_content);
+            let (networks, companies) = super::read_agency(path).unwrap();
             assert_eq!(1, networks.len());
             let agency = networks.iter().next().unwrap().1;
             assert_eq!("default_agency_id", agency.id);
@@ -921,9 +921,9 @@ mod tests {
         let agency_content = "agency_id,agency_name,agency_url,agency_timezone\n\
                               id_1,My agency,http://my-agency_url.com,Europe/London";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "agency.txt", agency_content);
+            let (networks, companies) = super::read_agency(path).unwrap();
             assert_eq!(1, networks.len());
             assert_eq!(1, companies.len());
         });
@@ -937,9 +937,9 @@ mod tests {
              id_1,My agency,http://my-agency_url.com,Europe/London,EN,0123456789,\
              http://my-agency_fare_url.com,my-mail@example.com";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "agency.txt", agency_content);
+            let (networks, companies) = super::read_agency(path).unwrap();
             assert_eq!(1, networks.len());
             let network = networks.iter().next().unwrap().1;
             assert_eq!("id_1", network.id);
@@ -954,9 +954,9 @@ mod tests {
                               My agency 1,http://my-agency_url.com,Europe/London\
                               My agency 2,http://my-agency_url.com,Europe/London";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            super::read_agency(tmp_dir.path()).unwrap();
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "agency.txt", agency_content);
+            super::read_agency(path).unwrap();
         });
     }
 
@@ -965,12 +965,12 @@ mod tests {
         let stops_content = "stop_id,stop_name,stop_lat,stop_lon\n\
                              id1,my stop name,0.1,1.2";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+                super::read_stops(path, &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_areas.len());
             assert_eq!(1, stop_points.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -993,17 +993,17 @@ mod tests {
              relation/1,12.1280176,-86.214164,1,\n\
              relation/1,12.1279272,-86.2132786,2,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            create_file_with_content(&tmp_dir, "shapes.txt", shapes_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
+            create_file_with_content(path, "shapes.txt", shapes_content);
             let mut collections = Collections::default();
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+                super::read_stops(path, &mut comments, &mut equipments).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
-            super::manage_shapes(&mut collections, &tmp_dir).unwrap();
+            super::manage_shapes(&mut collections, path).unwrap();
             let stop_area = collections.stop_areas.iter().next().unwrap().1;
             assert_eq!("stoparea01", stop_area.id);
             assert_eq!(
@@ -1028,12 +1028,12 @@ mod tests {
              stoppoint_id,1234,my stop name,0.1,1.2,0,stop_area_id\n\
              stoparea_id,5678,stop area name,0.1,1.2,1,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+                super::read_stops(path, &mut comments, &mut equipments).unwrap();
             //validate stop_point code
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
@@ -1058,12 +1058,11 @@ mod tests {
             "stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
              stoppoint_id,1234,my stop name,0.1,1.2,0,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
-            let (stop_areas, _) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            let (stop_areas, _) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -1087,14 +1086,14 @@ mod tests {
              4,route_3,0,service_3,,\n\
              5,route_4,0,service_4,,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
             assert_eq!(4, collections.lines.len());
             assert_eq!(
                 extract(|l| &l.network_id, &collections.lines),
@@ -1151,18 +1150,18 @@ mod tests {
              4,route_3,0,service_3,,\n\
              5,route_4,0,service_4,,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "agency.txt", agency_content);
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (networks, _) = super::read_agency(tmp_dir).unwrap();
+            let (networks, _) = super::read_agency(path).unwrap();
             collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
 
             assert_eq!(5, collections.routes.len());
@@ -1193,18 +1192,18 @@ mod tests {
              4,route_3,0,service_3,,\n\
              5,route_4,0,service_4,,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "agency.txt", agency_content);
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (networks, _) = super::read_agency(tmp_dir).unwrap();
+            let (networks, _) = super::read_agency(path).unwrap();
             collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(
                 extract(|l| (&l.color, &l.text_color), &collections.lines),
@@ -1264,18 +1263,18 @@ mod tests {
              4,route_3,0,service_3,,\n\
              5,route_4,0,service_4,,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "agency.txt", agency_content);
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (networks, _) = super::read_agency(tmp_dir).unwrap();
+            let (networks, _) = super::read_agency(path).unwrap();
             collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
         });
     }
 
@@ -1297,15 +1296,15 @@ mod tests {
              4,route_3,0,service_3,,\n\
              5,route_4,0,service_4,,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
         });
     }
 
@@ -1329,17 +1328,17 @@ mod tests {
              4,route_4,0,service_2,,\n\
              5,route_5,0,service_3,,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "agency.txt", agency_content);
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            let (networks, _) = super::read_agency(tmp_dir).unwrap();
+            let (networks, _) = super::read_agency(path).unwrap();
             collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
 
             assert_eq!(3, collections.lines.len());
             assert_eq!(
@@ -1374,14 +1373,14 @@ mod tests {
              4,route_3,0,service_3,,\n\
              5,route_3,1,service_3,,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
 
@@ -1406,14 +1405,14 @@ mod tests {
              2,route_2,0,service_2,,\n
              3,route_3,0,service_3,,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
             assert_eq!(extract_ids(&collections.lines), &["route_1", "route_3"]);
@@ -1438,15 +1437,15 @@ mod tests {
             "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
              1,route_1,0,service_1,,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
             assert_eq!(1, collections.lines.len());
             assert_eq!(1, collections.routes.len());
         });
@@ -1486,14 +1485,14 @@ mod tests {
                        1,0,0,0,0,0,1,1,20180501,20180508\n\
                        2,1,0,0,0,0,0,0,20180502,20180506";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
-            create_file_with_content(&tmp_dir, "transfers.txt", transfers_content);
-            create_file_with_content(&tmp_dir, "shapes.txt", shapes_content);
-            create_file_with_content(&tmp_dir, "calendar.txt", calendar);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
+            create_file_with_content(path, "agency.txt", agency_content);
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
+            create_file_with_content(path, "transfers.txt", transfers_content);
+            create_file_with_content(path, "shapes.txt", shapes_content);
+            create_file_with_content(path, "calendar.txt", calendar);
 
             let mut collections = Collections::default();
 
@@ -1503,18 +1502,18 @@ mod tests {
             collections.contributors = contributors;
             collections.datasets = datasets;
             let (stop_areas, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+                super::read_stops(path, &mut comments, &mut equipments).unwrap();
             collections.equipments = CollectionWithId::new(equipments.into_equipments()).unwrap();
-            collections.transfers = super::read_transfers(tmp_dir.path(), &stop_points).unwrap();
+            collections.transfers = super::read_transfers(path, &stop_points).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
-            let (networks, companies) = super::read_agency(tmp_dir.path()).unwrap();
+            let (networks, companies) = super::read_agency(path).unwrap();
             collections.networks = networks;
             collections.companies = companies;
             collections.comments = comments;
-            super::read_routes(tmp_dir, &mut collections).unwrap();
-            super::manage_shapes(&mut collections, tmp_dir.as_ref()).unwrap();
-            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
+            super::manage_shapes(&mut collections, path).unwrap();
+            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
 
             add_prefix("my_prefix".to_string(), &mut collections).unwrap();
 
@@ -1671,16 +1670,16 @@ mod tests {
              2,route_2,0,service_1,1,2\n\
              3,route_3,0,service_1,1,2";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
@@ -1708,19 +1707,19 @@ mod tests {
              2,route_2,0,service_1,1,2\n\
              3,route_3,0,service_1,1,2";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "agency.txt", agency_content);
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "agency.txt", agency_content);
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (networks, _) = super::read_agency(tmp_dir).unwrap();
+            let (networks, _) = super::read_agency(path).unwrap();
             collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
@@ -1743,16 +1742,16 @@ mod tests {
                              2,route_2,service_1,1,2\n\
                              3,route_3,service_1,1,2";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
 
@@ -1776,16 +1775,16 @@ mod tests {
              1,route_1,0,service_1,,\n\
              2,route_1,0,service_2,,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
             assert_eq!(2, collections.vehicle_journeys.len());
             assert_eq!(0, collections.trip_properties.len());
             for vj in collections.vehicle_journeys.values() {
@@ -1824,13 +1823,13 @@ mod tests {
                              sp:02,my stop point name child,0.2,1.5,0,sp:01,\n\
                              sa:03,my stop area name,0.3,2.2,1,,2";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (stop_areas, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+                super::read_stops(path, &mut comments, &mut equipments).unwrap();
             let equipments_collection =
                 CollectionWithId::new(equipments.into_equipments()).unwrap();
             assert_eq!(2, stop_areas.len());
@@ -1888,13 +1887,12 @@ mod tests {
                              sp:01,my stop point name 1,0.1,1.2,0,,1\n\
                              sp:02,my stop point name 2,0.2,1.5,0,,1";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            let (_, stop_points) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
             let equipments_collection =
                 CollectionWithId::new(equipments.into_equipments()).unwrap();
             assert_eq!(2, stop_points.len());
@@ -1947,11 +1945,11 @@ mod tests {
                                   1,06:00:00,06:00:00,sp:01,1,over there,,,\n\
                                   1,06:06:27,06:06:27,sp:02,2,,2,1,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
-            create_file_with_content(&tmp_dir, "stop_times.txt", stop_times_content);
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
+            create_file_with_content(path, "stop_times.txt", stop_times_content);
+            create_file_with_content(path, "stops.txt", stops_content);
 
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
@@ -1960,12 +1958,11 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) =
-                super::read_stops(&tmp_dir, &mut comments, &mut equipments).unwrap();
+            let (_, stop_points) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&tmp_dir, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &tmp_dir).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
+            super::manage_stop_times(&mut collections, path).unwrap();
 
             assert_eq!(
                 collections.vehicle_journeys.into_vec()[0].stop_times,
@@ -2020,16 +2017,15 @@ mod tests {
                                  sp:03,sp:02,2,\n\
                                  sp:03,sp:03,0,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
-            create_file_with_content(&tmp_dir, "transfers.txt", transfers_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
+            create_file_with_content(path, "transfers.txt", transfers_content);
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            let (_, stop_points) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
 
-            let transfers = super::read_transfers(tmp_dir.path(), &stop_points).unwrap();
+            let transfers = super::read_transfers(path, &stop_points).unwrap();
             assert_eq!(
                 transfers.values().collect::<Vec<_>>(),
                 vec![
@@ -2107,11 +2103,11 @@ mod tests {
                        1,0,0,0,0,0,1,1,20180501,20180508\n\
                        2,1,0,0,0,0,0,0,20180502,20180506";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "calendar.txt", content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "calendar.txt", content);
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
@@ -2139,11 +2135,11 @@ mod tests {
                        1,20180211,2\n\
                        2,20180211,2";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "calendar_dates.txt", content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "calendar_dates.txt", content);
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 2, 12));
@@ -2168,12 +2164,12 @@ mod tests {
                                       1,20180505,2\n\
                                       2,20180506,2";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "calendar.txt", calendars_content);
-            create_file_with_content(&tmp_dir, "calendar_dates.txt", calendar_dates_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "calendar.txt", calendars_content);
+            create_file_with_content(path, "calendar_dates.txt", calendar_dates_content);
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
@@ -2203,14 +2199,14 @@ mod tests {
         let calendar_dates_content = "service_id,date,exception_type\n\
                                       2,20180520,2";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "calendar.txt", calendars_content);
-            create_file_with_content(&tmp_dir, "calendar_dates.txt", calendar_dates_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "calendar.txt", calendars_content);
+            create_file_with_content(path, "calendar_dates.txt", calendar_dates_content);
 
             let mut collections = Collections::default();
             let (_, mut datasets) = super::read_config(None::<&str>).unwrap();
 
-            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
             super::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
 
             assert_eq!(
@@ -2234,13 +2230,13 @@ mod tests {
         let calendars_content = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
                                  1,1,1,1,1,1,0,0,20180501,20180501";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "calendar.txt", calendars_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "calendar.txt", calendars_content);
 
             let mut collections = Collections::default();
             let (_, mut datasets) = super::read_config(None::<&str>).unwrap();
 
-            common_format::manage_calendars(&mut collections, tmp_dir.as_ref()).unwrap();
+            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
             super::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
 
             assert_eq!(
@@ -2272,11 +2268,11 @@ mod tests {
                               3,,,1\n\
                               3,,,2";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "shapes.txt", shapes_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "shapes.txt", shapes_content);
 
             let mut collections = Collections::default();
-            super::manage_shapes(&mut collections, tmp_dir.as_ref()).unwrap();
+            super::manage_shapes(&mut collections, path).unwrap();
             let mut geometries = collections.geometries.into_vec();
             geometries.sort_unstable_by_key(|s| s.id.clone());
 
@@ -2301,9 +2297,9 @@ mod tests {
 
     #[test]
     fn read_shapes_with_no_shapes_file() {
-        test_in_tmp_dir(|ref tmp_dir| {
+        test_in_tmp_dir(|path| {
             let mut collections = Collections::default();
-            super::manage_shapes(&mut collections, tmp_dir.as_ref()).unwrap();
+            super::manage_shapes(&mut collections, path).unwrap();
             let geometries = collections.geometries.into_vec();
             assert_eq!(geometries, vec![]);
         });
@@ -2322,16 +2318,16 @@ mod tests {
                              route:3,service:1,trip:3,pouet,0,\n\
                              route:4,service:1,trip:4,pouet,0,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "routes.txt", routes_content);
-            create_file_with_content(&tmp_dir, "trips.txt", trips_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
-            super::read_routes(tmp_dir, &mut collections).unwrap();
+            super::read_routes(path, &mut collections).unwrap();
             // physical mode file should contain only three modes
             // (5,7 => funicular; 2 => train; 6 => suspended cable car)
             assert_eq!(4, collections.lines.len());
@@ -2348,12 +2344,12 @@ mod tests {
         let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type\n\
                              stop:1,Tornio pouet,65.843294,24.145138,";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+                super::read_stops(path, &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_points.len());
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -2370,12 +2366,11 @@ mod tests {
                              stop:2,plop 2, 66.666 , 26.123,0\n\
                              stop:3,invalid loc, ,25.558,0";
 
-        test_in_tmp_dir(|ref tmp_dir| {
-            create_file_with_content(&tmp_dir, "stops.txt", stops_content);
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
-            let (_, stop_points) =
-                super::read_stops(tmp_dir.path(), &mut comments, &mut equipments).unwrap();
+            let (_, stop_points) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
             assert_eq!(3, stop_points.len());
             let longitudes: Vec<f64> = stop_points
                 .values()

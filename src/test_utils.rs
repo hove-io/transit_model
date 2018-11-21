@@ -18,6 +18,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 extern crate tempdir;
+use std::path;
 
 use self::tempdir::TempDir;
 
@@ -43,17 +44,20 @@ pub fn compare_output_dir_with_expected(
     }
 }
 
-pub fn create_file_with_content(temp_dir: &TempDir, file_name: &str, content: &str) {
-    let file_path = temp_dir.path().join(file_name);
+pub fn create_file_with_content(path: &path::Path, file_name: &str, content: &str) {
+    let file_path = path.join(file_name);
     let mut f = File::create(&file_path).unwrap();
     f.write_all(content.as_bytes()).unwrap();
 }
 
 pub fn test_in_tmp_dir<F>(func: F)
 where
-    F: FnOnce(&TempDir),
+    F: FnOnce(&path::Path),
 {
     let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
-    func(&tmp_dir);
+    {
+        let path = tmp_dir.as_ref();
+        func(path);
+    }
     tmp_dir.close().expect("delete temp dir");
 }
