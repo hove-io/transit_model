@@ -45,8 +45,8 @@ impl From<Stop> for StopArea {
         }
     }
 }
-impl From<Stop> for StopPoint {
-    fn from(stop: Stop) -> StopPoint {
+impl StopPoint {
+    fn from_with_type(stop: Stop, stop_type: StopType) -> StopPoint {
         let id = stop.id;
         StopPoint {
             id,
@@ -64,6 +64,7 @@ impl From<Stop> for StopPoint {
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
             fare_zone_id: stop.fare_zone_id,
+            stop_type,
         }
     }
 }
@@ -77,14 +78,19 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
     for stop in rdr.deserialize() {
         let mut stop: Stop = stop.with_context(ctx_from_path!(path))?;
         match stop.location_type {
-            0 => {
+            0 | 2 => {
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
                     new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
                     stop.parent_station = Some(new_stop_area.id.clone());
                     stop_areas.push(StopArea::from(new_stop_area));
                 }
-                stop_points.push(StopPoint::from(stop));
+                let stop_type = if stop.location_type == 0 {
+                    StopType::Point
+                } else {
+                    StopType::Zone
+                };
+                stop_points.push(StopPoint::from_with_type(stop, stop_type));
             }
             1 => stop_areas.push(StopArea::from(stop)),
             i => warn!("stop.location_type = {} not yet supported, skipping.", i),

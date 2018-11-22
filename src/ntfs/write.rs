@@ -132,6 +132,10 @@ pub fn write_stops(
     let path = path.join("stops.txt");
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for st in stop_points.values() {
+        let location_type = match st.stop_type {
+            StopType::Point => 0,
+            StopType::Zone => 2,
+        };
         wtr.serialize(Stop {
             id: st.id.clone(),
             visible: st.visible,
@@ -139,7 +143,7 @@ pub fn write_stops(
             lat: st.coord.lat,
             lon: st.coord.lon,
             fare_zone_id: st.fare_zone_id.clone(),
-            location_type: 0,
+            location_type: location_type,
             parent_station: stop_areas.get(&st.stop_area_id).map(|sa| sa.id.clone()),
             timezone: st.timezone.clone(),
             equipment_id: st.equipment_id.clone(),

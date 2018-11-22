@@ -599,6 +599,7 @@ mod tests {
             geometry_id: None,
             equipment_id: Some("1".to_string()),
             fare_zone_id: Some("1".to_string()),
+            stop_type: StopType::Point,
         };
 
         let expected = Stop {
@@ -640,6 +641,7 @@ mod tests {
             geometry_id: None,
             equipment_id: None,
             fare_zone_id: None,
+            stop_type: StopType::Point,
         };
 
         let expected = Stop {
@@ -763,6 +765,7 @@ mod tests {
                 geometry_id: None,
                 equipment_id: None,
                 fare_zone_id: Some("1".to_string()),
+                stop_type: StopType::Point,
             },
             objects::StopPoint {
                 id: "OIF:SP:36:2127".to_string(),
@@ -780,6 +783,7 @@ mod tests {
                 geometry_id: None,
                 equipment_id: None,
                 fare_zone_id: None,
+                stop_type: StopType::Point,
             },
         ]).unwrap();
         let routes = CollectionWithId::new(vec![objects::Route {
@@ -906,6 +910,7 @@ mod tests {
             geometry_id: None,
             equipment_id: None,
             fare_zone_id: None,
+            stop_type: StopType::Point,
         }]).unwrap();
         let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
         write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
@@ -1049,6 +1054,7 @@ mod tests {
             equipment_id: None,
             stop_area_id: "sa_1".to_string(),
             fare_zone_id: None,
+            stop_type: StopType::Point,
         }]).unwrap();
         let stop_times_vec = vec![
             StopTime {

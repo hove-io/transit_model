@@ -445,6 +445,7 @@ mod tests {
                 geometry_id: None,
                 equipment_id: None,
                 fare_zone_id: Some("1".to_string()),
+                stop_type: StopType::Point,
             },
             StopPoint {
                 id: "OIF:SP:36:2127".to_string(),
@@ -462,6 +463,7 @@ mod tests {
                 geometry_id: None,
                 equipment_id: None,
                 fare_zone_id: None,
+                stop_type: StopType::Point,
             },
         ]).unwrap();
         let vehicle_journeys = CollectionWithId::new(vec![
@@ -682,6 +684,7 @@ mod tests {
                 equipment_id: Some("equipment_1".to_string()),
                 stop_area_id: "sa_1".to_string(),
                 fare_zone_id: Some("1".to_string()),
+                stop_type: StopType::Point,
             },
             // stop point with no parent station
             StopPoint {
@@ -700,6 +703,7 @@ mod tests {
                 equipment_id: None,
                 stop_area_id: "Navitia:sa_2".to_string(),
                 fare_zone_id: None,
+                stop_type: StopType::Point,
             },
         ]).unwrap();
 
@@ -796,6 +800,7 @@ mod tests {
             equipment_id: None,
             stop_area_id: "sa_1".to_string(),
             fare_zone_id: None,
+            stop_type: StopType::Point,
         }]).unwrap();
 
         let stop_areas = CollectionWithId::new(vec![StopArea {
