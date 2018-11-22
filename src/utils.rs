@@ -273,3 +273,31 @@ macro_rules! skip_fail {
         }
     };
 }
+
+#[derive(Debug, Serialize)]
+pub enum ReportType {
+    // apply-rules types
+    ComplementaryCodeRulesRead,
+    ComplementaryObjectNotFound,
+}
+
+#[derive(Debug, Serialize)]
+struct ReportRow {
+    category: ReportType,
+    message: String,
+}
+
+#[derive(Debug, Default, Serialize)]
+pub struct Report {
+    errors: Vec<ReportRow>,
+    warnings: Vec<ReportRow>,
+}
+
+impl Report {
+    pub fn add_warning(&mut self, warning: String, warning_type: ReportType) {
+        self.warnings.push(ReportRow {
+            category: warning_type,
+            message: warning,
+        });
+    }
+}

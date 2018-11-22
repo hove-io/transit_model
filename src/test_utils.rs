@@ -22,24 +22,28 @@ use std::path;
 
 use self::tempdir::TempDir;
 
-pub fn compare_output_dir_with_expected(
-    output_dir: &Path,
-    files_to_check: &[String],
-    work_dir_expected: String,
+fn get_file_content<P: AsRef<Path>>(path: P) -> String {
+    let path = path.as_ref();
+    let mut output_file = File::open(path).unwrap_or_else(|_| panic!("file {:?} not found", path));
+    let mut output_contents = String::new();
+    output_file.read_to_string(&mut output_contents).unwrap();
+
+    output_contents
+}
+
+pub fn compare_output_dir_with_expected<P: AsRef<Path>>(
+    output_dir: &P,
+    files_to_check: Vec<&str>,
+    work_dir_expected: &str,
 ) {
+    let output_dir = output_dir.as_ref();
     for filename in files_to_check {
         let output_file_path = output_dir.join(filename);
-        let mut output_file = File::open(output_file_path.clone())
-            .expect(&format!("file {:?} not found", output_file_path));
-        let mut output_contents = String::new();
-        output_file.read_to_string(&mut output_contents).unwrap();
+        let output_contents = get_file_content(output_file_path);
+
         let expected_file_path = format!("{}/{}", work_dir_expected, filename);
-        let mut expected_file = File::open(expected_file_path.clone())
-            .expect(&format!("file {} not found", expected_file_path));
-        let mut expected_contents = String::new();
-        expected_file
-            .read_to_string(&mut expected_contents)
-            .unwrap();
+        let expected_contents = get_file_content(expected_file_path);
+
         assert_eq!(output_contents, expected_contents);
     }
 }

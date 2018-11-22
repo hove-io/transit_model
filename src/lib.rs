@@ -40,6 +40,7 @@ extern crate wkt;
 
 #[macro_use]
 pub(crate) mod utils;
+pub mod apply_rules;
 pub mod collection;
 pub(crate) mod common_format;
 pub mod gtfs;
