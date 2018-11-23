@@ -79,17 +79,19 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
         let mut stop: Stop = stop.with_context(ctx_from_path!(path))?;
         match stop.location_type {
             0 | 2 => {
+                let mut stop_type = StopType::Point;
+                let mut area_visibility = true;
+                if stop.location_type == 2 {
+                    stop_type = StopType::Zone;
+                    area_visibility = false;
+                };
                 if stop.parent_station.is_none() {
                     let mut new_stop_area = stop.clone();
+                    new_stop_area.visible = area_visibility;
                     new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
                     stop.parent_station = Some(new_stop_area.id.clone());
                     stop_areas.push(StopArea::from(new_stop_area));
                 }
-                let stop_type = if stop.location_type == 0 {
-                    StopType::Point
-                } else {
-                    StopType::Zone
-                };
                 stop_points.push(StopPoint::from_with_type(stop, stop_type));
             }
             1 => stop_areas.push(StopArea::from(stop)),
