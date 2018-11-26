@@ -83,19 +83,18 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let mut model = navitia_model::ntfs::read(opt.input)?;
+    let model = navitia_model::ntfs::read(opt.input)?;
 
-    transfers::generates_transfers(
-        &mut model,
+    let model = transfers::generates_transfers(
+        model,
         opt.max_distance,
         opt.walking_speed,
         opt.waiting_time,
         opt.rule_files,
-        &TransfersMode::IntraContributor,
+        &TransfersMode::All,
         opt.report,
     )?;
 
-    let model = navitia_model::Model::new(model.into_collections())?;
     navitia_model::ntfs::write(&model, opt.output)?;
     Ok(())
 }

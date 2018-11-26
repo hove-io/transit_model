@@ -132,9 +132,9 @@ fn merge_collections_with_transfers_ok() {
                 .merge(to_append_model.into_collections())
                 .unwrap();
         }
-        let mut model = Model::new(collections).unwrap();
-        transfers::generates_transfers(
-            &mut model,
+        let model = Model::new(collections).unwrap();
+        let model = transfers::generates_transfers(
+            model,
             100.0,
             0.785,
             60,

@@ -39,6 +39,8 @@ struct Rule {
 /// Represents the type of transfers to generate
 #[derive(PartialEq, Debug)]
 pub enum TransfersMode {
+    /// `All` will generate all transfers
+    All,
     /// `IntraContributor` will generate transfers between stop points belonging to the
     /// same contributor
     IntraContributor,
@@ -56,6 +58,9 @@ fn stop_points_need_transfer(
     transfers_mode: &TransfersMode,
     report_opt: Option<&mut Report>,
 ) -> bool {
+    if *transfers_mode == TransfersMode::All {
+        return true;
+    }
     let from_contributor: BTreeSet<Idx<Contributor>> = model.get_corresponding_from_idx(from_idx);
     let to_contributor: BTreeSet<Idx<Contributor>> = model.get_corresponding_from_idx(to_idx);
     if from_contributor.is_empty() {
@@ -82,9 +87,11 @@ fn stop_points_need_transfer(
         }
         return false;
     }
-    let same_contributor = from_contributor == to_contributor;
-    same_contributor && transfers_mode == &TransfersMode::IntraContributor
-        || !same_contributor && transfers_mode == &TransfersMode::InterContributor
+    match *transfers_mode {
+        TransfersMode::All => true,
+        TransfersMode::IntraContributor => from_contributor == to_contributor,
+        TransfersMode::InterContributor => from_contributor != to_contributor,
+    }
 }
 
 fn read_rules<P: AsRef<Path>>(
@@ -123,6 +130,7 @@ fn read_rules<P: AsRef<Path>>(
                         let category = match *transfers_mode {
                             TransfersMode::IntraContributor => ReportType::TransferIntraIgnored,
                             TransfersMode::InterContributor => ReportType::TransferInterIgnored,
+                            TransfersMode::All => ReportType::TransferInterIgnored, // not reachable
                         };
                         report.add_warning(
                             format!(
@@ -166,7 +174,10 @@ fn read_rules<P: AsRef<Path>>(
     Ok(rules.into_iter().map(|(_, rule)| rule).collect())
 }
 
-fn make_transfers_map(transfers: Vec<Transfer>, sp: &CollectionWithId<StopPoint>) -> TransferMap {
+fn make_transfers_map(
+    transfers: Collection<Transfer>,
+    sp: &CollectionWithId<StopPoint>,
+) -> TransferMap {
     transfers
         .into_iter()
         .map(|t| {
@@ -196,23 +207,24 @@ fn generate_transfers_from_sp(
             if transfers_map.contains_key(&(idx1, idx2)) {
                 continue;
             }
-            if stop_points_need_transfer(model, idx1, idx2, transfers_mode, None) {
-                let sq_distance = approx.sq_distance_to(&sp2.coord);
-                if sq_distance > sq_max_distance {
-                    continue;
-                }
-                let transfer_time = (sq_distance.sqrt() / walking_speed) as u32;
-                transfers_map.insert(
-                    (idx1, idx2),
-                    Transfer {
-                        from_stop_id: sp1.id.clone(),
-                        to_stop_id: sp2.id.clone(),
-                        min_transfer_time: Some(transfer_time),
-                        real_min_transfer_time: Some(transfer_time + waiting_time),
-                        equipment_id: None,
-                    },
-                );
+            if !stop_points_need_transfer(model, idx1, idx2, transfers_mode, None) {
+                continue;
             }
+            let sq_distance = approx.sq_distance_to(&sp2.coord);
+            if sq_distance > sq_max_distance {
+                continue;
+            }
+            let transfer_time = (sq_distance.sqrt() / walking_speed) as u32;
+            transfers_map.insert(
+                (idx1, idx2),
+                Transfer {
+                    from_stop_id: sp1.id.clone(),
+                    to_stop_id: sp2.id.clone(),
+                    min_transfer_time: Some(transfer_time),
+                    real_min_transfer_time: Some(transfer_time + waiting_time),
+                    equipment_id: None,
+                },
+            );
         }
     }
 }
@@ -265,14 +277,14 @@ fn add_missing_transfers(
 }
 
 fn do_generates_transfers(
-    model: &mut Model,
+    model: &Model,
     max_distance: f64,
     walking_speed: f64,
     waiting_time: u32,
     rules: &[Rule],
     transfers_mode: &TransfersMode,
 ) -> Result<Vec<Transfer>> {
-    let mut transfers_map = make_transfers_map(model.transfers.take(), &model.stop_points);
+    let mut transfers_map = make_transfers_map(model.transfers.clone(), &model.stop_points);
     generate_transfers_from_sp(
         &mut transfers_map,
         &model,
@@ -317,19 +329,19 @@ fn do_generates_transfers(
 /// UNKNOWN|SP2|180 | stop `UNKNOWN` is not found, transfer will be ignored
 /// UNKNOWN|SP2| | stop `UNKNOWN` is not found, transfer will be ignored
 pub fn generates_transfers<P: AsRef<Path>>(
-    model: &mut Model,
+    model: Model,
     max_distance: f64,
     walking_speed: f64,
     waiting_time: u32,
     rule_files: Vec<P>,
     transfers_mode: &TransfersMode,
     report_path: Option<PathBuf>,
-) -> Result<()> {
+) -> Result<Model> {
     info!("Generating transfers...");
     let mut report = Report::default();
-    let rules = read_rules(rule_files, model, transfers_mode, &mut report)?;
+    let rules = read_rules(rule_files, &model, transfers_mode, &mut report)?;
     let new_transfers = do_generates_transfers(
-        model,
+        &model,
         max_distance,
         walking_speed,
         waiting_time,
@@ -337,10 +349,11 @@ pub fn generates_transfers<P: AsRef<Path>>(
         transfers_mode,
     )?;
 
-    model.transfers = Collection::new(new_transfers);
+    let mut collections = model.into_collections();
+    collections.transfers = Collection::new(new_transfers);
     if let Some(report_path) = report_path {
         let serialized_report = serde_json::to_string(&report)?;
         fs::write(report_path, serialized_report)?;
     }
-    Ok(())
+    Ok(Model::new(collections)?)
 }

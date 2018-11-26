@@ -31,14 +31,18 @@ use navitia_model::Result;
 extern crate failure;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "merge-ntfs", about = "Merge several ntfs into one")]
+#[structopt(
+    name = "merge-ntfs",
+    about = "Merge several ntfs into one",
+    rename_all = "kebab-case"
+)]
 struct Opt {
     /// Input directories to process
     #[structopt(name = "INPUTS", parse(from_os_str))]
     input_directories: Vec<PathBuf>,
 
     /// output directory
-    #[structopt(short = "o", long = "output", parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
 
     /// config csv rule files.
@@ -46,33 +50,20 @@ struct Opt {
     rule_files: Vec<PathBuf>,
 
     /// output report file path
-    #[structopt(short = "r", long = "report", parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     report: Option<PathBuf>,
 
-    #[structopt(
-        long = "max-distance",
-        short = "d",
-        default_value = "500",
-        help = "The max distance in meters to compute the tranfer"
-    )]
+    // The max distance in meters to compute the tranfer
+    #[structopt(long, short = "d", default_value = "500",)]
     max_distance: f64,
 
-    #[structopt(
-        long = "walking-speed",
-        short = "s",
-        default_value = "0.785",
-        help = "The walking speed in meters per second. \
-                You may want to divide your initial speed by \
-                sqrt(2) to simulate Manhattan distances"
-    )]
+    // The walking speed in meters per second.
+    // You may want to divide your initial speed by sqrt(2) to simulate Manhattan distances
+    #[structopt(long, short = "s", default_value = "0.785",)]
     walking_speed: f64,
 
-    #[structopt(
-        long = "waiting-time",
-        short = "t",
-        default_value = "60",
-        help = "Waiting time at stop in second"
-    )]
+    // Waiting time at stop in second
+    #[structopt(long, short = "t", default_value = "60",)]
     waiting_time: u32,
 }
 
@@ -88,9 +79,9 @@ fn run() -> Result<()> {
             let to_append_model = navitia_model::ntfs::read(input_directory)?;
             collections.merge(to_append_model.into_collections())?;
         }
-        let mut model = navitia_model::Model::new(collections)?;
-        transfers::generates_transfers(
-            &mut model,
+        let model = navitia_model::Model::new(collections)?;
+        let model = transfers::generates_transfers(
+            model,
             opt.max_distance,
             opt.walking_speed,
             opt.waiting_time,
