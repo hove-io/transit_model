@@ -33,10 +33,10 @@ use std::path::Path;
 fn test_generates_transfers() {
     test_in_tmp_dir(|path| {
         let input_dir = "fixtures/transfers/input";
-        let mut model = navitia_model::ntfs::read(input_dir).unwrap();
+        let model = navitia_model::ntfs::read(input_dir).unwrap();
         let rules: Vec<Box<Path>> = vec![];
-        transfers::generates_transfers(
-            &mut model,
+        let model = transfers::generates_transfers(
+            model,
             100.0,
             0.785,
             120,
@@ -57,10 +57,10 @@ fn test_generates_transfers() {
 fn test_generates_transfers_with_modification_rules() {
     test_in_tmp_dir(|path| {
         let input_dir = "fixtures/transfers/input";
-        let mut model = navitia_model::ntfs::read(input_dir).unwrap();
+        let model = navitia_model::ntfs::read(input_dir).unwrap();
         let rules = vec![Path::new("./fixtures/transfers/rules.txt").to_path_buf()];
-        transfers::generates_transfers(
-            &mut model,
+        let model = transfers::generates_transfers(
+            model,
             100.0,
             0.785,
             120,
