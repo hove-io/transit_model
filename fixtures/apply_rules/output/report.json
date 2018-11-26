@@ -3,7 +3,7 @@
   "warnings": [
     {
       "category": "ComplementaryCodeRulesRead",
-      "message": "Error reading \"./fixtures/apply_rules/complementary_codes_rules.txt\": CSV deserialize error: record 8 (line: 9, byte: 271): unknown variant `object_not_allowed`, expected one of `line`, `route`, `stop_point`, `stop_area`"
+      "message": "Error reading \"complementary_codes_rules.txt\": CSV deserialize error: record 8 (line: 9, byte: 271): unknown variant `object_not_allowed`, expected one of `line`, `route`, `stop_point`, `stop_area`"
     }
   ]
 }

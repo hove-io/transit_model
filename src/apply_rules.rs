@@ -68,7 +68,7 @@ fn read_complementary_code_rules_files<P: AsRef<Path>>(
                 Ok(val) => val,
                 Err(e) => {
                     report.add_warning(
-                        format!("Error reading {:?}: {}", path, e),
+                        format!("Error reading {:?}: {}", path.file_name().unwrap(), e),
                         ReportType::ComplementaryCodeRulesRead,
                     );
                     continue;
