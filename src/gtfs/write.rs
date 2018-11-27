@@ -248,11 +248,11 @@ pub fn write_trips(
 }
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct StopExtension {
-    #[serde(rename = "stop_id")]
+    #[serde(rename = "object_id")]
     id: String,
-    #[serde(rename = "system_name")]
+    #[serde(rename = "object_system")]
     name: String,
-    #[serde(rename = "system_code")]
+    #[serde(rename = "object_code")]
     code: String,
 }
 
@@ -919,7 +919,7 @@ mod tests {
         let mut output_contents = String::new();
         output_file.read_to_string(&mut output_contents).unwrap();
         assert_eq!(
-            "stop_id,system_name,system_code\n\
+            "object_id,object_system,object_code\n\
              sp:01,sp name 1,sp_code_1\n\
              sp:01,sp name 2,sp_code_2\n\
              sp:01,sp name 3,sp_code_3\n\
