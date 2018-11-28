@@ -30,6 +30,7 @@ use std::fs;
 use std::path;
 use std::path::PathBuf;
 use std::result::Result as StdResult;
+use utils::{Report, ReportType};
 use Result;
 
 #[derive(Deserialize, Debug)]
@@ -49,11 +50,7 @@ struct StopAreaGroupRule {
 }
 
 impl StopAreaGroupRule {
-    fn ensure_rule_valid(
-        self,
-        stop_area_ids: &[String],
-        report: &mut MergeStopAreasReport,
-    ) -> Result<Self> {
+    fn ensure_rule_valid(self, stop_area_ids: &[String], report: &mut Report) -> Result<Self> {
         let mut valid_rule = self.clone();
         let message = format!(
             "rule for master {} contains unexisting stop areas and is no longer valid",
@@ -66,7 +63,7 @@ impl StopAreaGroupRule {
         let number_existing_sa_to_merge = valid_rule.to_merge_stop_area_ids.len();
         if number_sa_to_merge != number_existing_sa_to_merge {
             report.add_warning(format!("rule for master {} does contains at least one stop area that does not exist anymore", self.master_stop_area_id),
-                               MergeStopAreasReportType::MissingToMerge);
+                               ReportType::MissingToMerge);
         }
         if number_existing_sa_to_merge == 0 {
             report.add_error(
@@ -74,14 +71,14 @@ impl StopAreaGroupRule {
                     "rule for master {} does not contain any existing stop areas to merge",
                     self.master_stop_area_id
                 ),
-                MergeStopAreasReportType::NothingToMerge,
+                ReportType::NothingToMerge,
             );
             bail!(message);
         } else if !stop_area_ids.contains(&valid_rule.master_stop_area_id) {
             if valid_rule.to_merge_stop_area_ids.len() == 1 {
                 report.add_error(
                     format!("master {} of rule does not exist anymore and cannot be replaced by an other one", self.master_stop_area_id),
-                     MergeStopAreasReportType::NoMasterPossible);
+                    ReportType::NoMasterPossible);
                 bail!(message);
             }
             report.add_warning(
@@ -89,7 +86,7 @@ impl StopAreaGroupRule {
                     "master {} of rule does not exist and has been replaced by an other one",
                     self.master_stop_area_id
                 ),
-                MergeStopAreasReportType::MasterReplaced,
+                ReportType::MasterReplaced,
             );
             valid_rule.master_stop_area_id = valid_rule.to_merge_stop_area_ids.remove(0);
         }
@@ -97,52 +94,9 @@ impl StopAreaGroupRule {
     }
 }
 
-#[derive(Debug, Serialize)]
-enum MergeStopAreasReportType {
-    OnlyOneStopArea,
-    AmbiguousPriorities,
-    NothingToMerge,
-    MissingToMerge,
-    NoMasterPossible,
-    MasterReplaced,
-}
-
-#[derive(Debug, Serialize)]
-struct MergeStopAreasReportRow {
-    category: MergeStopAreasReportType,
-    message: String,
-}
-
-#[derive(Debug, Serialize)]
-struct MergeStopAreasReport {
-    errors: Vec<MergeStopAreasReportRow>,
-    warnings: Vec<MergeStopAreasReportRow>,
-}
-
-impl MergeStopAreasReport {
-    pub fn new() -> Self {
-        Self {
-            errors: vec![],
-            warnings: vec![],
-        }
-    }
-    pub fn add_warning(&mut self, warning: String, warning_type: MergeStopAreasReportType) {
-        self.warnings.push(MergeStopAreasReportRow {
-            category: warning_type,
-            message: warning,
-        });
-    }
-    pub fn add_error(&mut self, error: String, error_type: MergeStopAreasReportType) {
-        self.errors.push(MergeStopAreasReportRow {
-            category: error_type,
-            message: error,
-        });
-    }
-}
-
 fn group_rules_from_file_rules(
     file_rules: Vec<StopAreaMergeRule>,
-    report: &mut MergeStopAreasReport,
+    report: &mut Report,
 ) -> Vec<StopAreaGroupRule> {
     let mut rules_with_priority: HashMap<String, Vec<(String, u32)>> = HashMap::new();
     for file_rule in file_rules {
@@ -158,13 +112,13 @@ fn group_rules_from_file_rules(
             if stops_with_prio.len() == 1 {
                 report.add_warning(
                     format!("the rule of group {} contains only the stop area {}", k, stops_with_prio[0].0),
-                    MergeStopAreasReportType::OnlyOneStopArea);
+                    ReportType::OnlyOneStopArea);
                 return None
             }
             else if stops_with_prio[0].1 == stops_with_prio[1].1 {
                 report.add_warning(
                     format!("the rule of group {} contains ambiguous priorities for master: stop {} with {} and stop {} with {}", k, stops_with_prio[0].0, stops_with_prio[0].1, stops_with_prio[1].0, stops_with_prio[1].1),
-                    MergeStopAreasReportType::AmbiguousPriorities);
+                    ReportType::AmbiguousPriorities);
             }
             let master = stops_with_prio.remove(0);
             let others = stops_with_prio.into_iter().map(|stop_with_prio| stop_with_prio.0).collect();
@@ -181,7 +135,7 @@ fn group_rules_from_file_rules(
 
 fn read_rules<P: AsRef<path::Path>>(
     paths: Vec<P>,
-    report: &mut MergeStopAreasReport,
+    report: &mut Report,
 ) -> Result<Vec<StopAreaGroupRule>> {
     let mut rules: Vec<StopAreaGroupRule> = vec![];
     for rule_path in paths {
@@ -223,7 +177,7 @@ fn generate_automatic_rules(
 fn apply_rules(
     mut collections: Collections,
     rules: Vec<StopAreaGroupRule>,
-    report: &mut MergeStopAreasReport,
+    report: &mut Report,
 ) -> Result<Collections> {
     let mut stop_points_updated = collections.stop_points.take();
     let mut geometries_updated = collections.geometries.take();
@@ -306,12 +260,12 @@ pub fn merge_stop_areas(
     automatic_max_distance: u32,
     report_path: PathBuf,
 ) -> Result<Collections> {
-    let mut report = MergeStopAreasReport::new();
+    let mut report = Report::default();
     let manual_rules = read_rules(rule_paths, &mut report)?;
     collections = apply_rules(collections, manual_rules, &mut report)?;
     let automatic_rules = generate_automatic_rules(&collections.stop_areas, automatic_max_distance);
     collections = apply_rules(collections, automatic_rules, &mut report)?;
     let serialized_report = serde_json::to_string(&report)?;
-    fs::write(report_path, serialized_report).expect("Unable to write report file");
+    fs::write(report_path, serialized_report)?;
     Ok(collections)
 }

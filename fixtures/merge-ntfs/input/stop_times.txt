@@ -1,3 +1,4 @@
 stop_time_id,trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,local_zone_id,date_time_estimated
 StopTime:OIF:77100911-1_1420-1:0,OIF:77100911-1_1420-1,15:45:00,15:45:00,OIF:SP:10:10,0,"",0,1,,0
 StopTime:OIF:77100911-1_1420-1:1,OIF:77100911-1_1420-1,15:46:00,15:46:00,OIF:SP:10:100,3,"somewhere",0,0,,0
+StopTime:OIF:77100911-1_1420-1:2,OIF:77100911-1_1420-1,15:47:00,15:46:00,OIF:SP:10:200,3,"",0,0,,0

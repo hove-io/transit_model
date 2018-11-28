@@ -18,9 +18,14 @@ extern crate navitia_model;
 use navitia_model::collection::CollectionWithId;
 use navitia_model::collection::Idx;
 use navitia_model::model::Collections;
+use navitia_model::model::Model;
 use navitia_model::objects::StopPoint;
 use navitia_model::objects::VehicleJourney;
+use navitia_model::test_utils::*;
+use navitia_model::transfers;
+use navitia_model::transfers::TransfersMode;
 use std::collections::HashMap;
+use std::path::Path;
 
 #[test]
 #[should_panic(expected = "TGC already found")] // first collision is on contributor id
@@ -38,8 +43,8 @@ fn merge_collections_with_collisions() {
 #[test]
 fn merge_collections_ok() {
     let mut collections = Collections::default();
-    let input_collisions = ["fixtures/ntfs", "fixtures/merge-ntfs"];
-    for input_directory in input_collisions.iter() {
+    let input_dirs = ["fixtures/ntfs", "fixtures/merge-ntfs/input"];
+    for input_directory in input_dirs.iter() {
         let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
 
         collections
@@ -93,12 +98,13 @@ fn merge_collections_ok() {
         get_stop_point_idxs(&collections.vehicle_journeys, "OIF:77100911-1_1420-1"),
         vec![
             collections.stop_points.get_idx("OIF:SP:10:10").unwrap(),
-            collections.stop_points.get_idx("OIF:SP:10:100").unwrap()
+            collections.stop_points.get_idx("OIF:SP:10:100").unwrap(),
+            collections.stop_points.get_idx("OIF:SP:10:200").unwrap(),
         ]
     );
     assert_eq!(collections.physical_modes.len(), 6);
     assert_eq!(collections.stop_areas.len(), 7);
-    assert_eq!(collections.stop_points.len(), 12);
+    assert_eq!(collections.stop_points.len(), 14);
     assert_eq!(collections.feed_infos.len(), 10);
     let calendar_vec = collections.calendars.into_vec();
     assert_eq!(calendar_vec[0].dates.len(), 261);
@@ -110,4 +116,37 @@ fn merge_collections_ok() {
     assert_eq!(collections.trip_properties.len(), 0);
     assert_eq!(collections.geometries.len(), 0);
     assert_eq!(collections.admin_stations.len(), 0);
+}
+
+#[test]
+fn merge_collections_with_transfers_ok() {
+    let mut collections = Collections::default();
+    test_in_tmp_dir(|path| {
+        let report_path = path.join("report.json");
+        let input_dirs = ["fixtures/minimal_ntfs", "fixtures/merge-ntfs/input"];
+        let rule_paths = vec![Path::new("./fixtures/merge-ntfs/transfer_rules.csv").to_path_buf()];
+        for input_directory in input_dirs.iter() {
+            let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
+
+            collections
+                .merge(to_append_model.into_collections())
+                .unwrap();
+        }
+        let model = Model::new(collections).unwrap();
+        let model = transfers::generates_transfers(
+            model,
+            100.0,
+            0.785,
+            60,
+            rule_paths,
+            &TransfersMode::InterContributor,
+            Some(Path::new(&report_path).to_path_buf()),
+        ).unwrap();
+        navitia_model::ntfs::write(&model, path).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            vec!["transfers.txt", "report.json"],
+            "./fixtures/merge-ntfs/output",
+        );
+    });
 }

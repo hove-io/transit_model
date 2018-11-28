@@ -276,6 +276,19 @@ macro_rules! skip_fail {
 
 #[derive(Debug, Serialize)]
 pub enum ReportType {
+    // merge stop areas types
+    OnlyOneStopArea,
+    AmbiguousPriorities,
+    NothingToMerge,
+    MissingToMerge,
+    NoMasterPossible,
+    MasterReplaced,
+    // transfers types
+    TransferIntraIgnored,
+    TransferInterIgnored,
+    TransferOnUnexistingStop,
+    TransferOnUnreferencedStop,
+    TransferAlreadyDeclared,
     // apply-rules types
     ComplementaryCodeRulesRead,
     ComplementaryObjectNotFound,
@@ -298,6 +311,12 @@ impl Report {
         self.warnings.push(ReportRow {
             category: warning_type,
             message: warning,
+        });
+    }
+    pub fn add_error(&mut self, error: String, error_type: ReportType) {
+        self.errors.push(ReportRow {
+            category: error_type,
+            message: error,
         });
     }
 }

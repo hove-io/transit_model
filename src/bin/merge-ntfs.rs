@@ -24,20 +24,47 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use navitia_model::model::Collections;
+use navitia_model::transfers;
+use navitia_model::transfers::TransfersMode;
 use navitia_model::Result;
 #[macro_use]
 extern crate failure;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "merge-ntfs", about = "Merge several ntfs into one")]
+#[structopt(
+    name = "merge-ntfs",
+    about = "Merge several ntfs into one",
+    rename_all = "kebab-case"
+)]
 struct Opt {
     /// Input directories to process
     #[structopt(name = "INPUTS", parse(from_os_str))]
     input_directories: Vec<PathBuf>,
 
     /// output directory
-    #[structopt(short = "o", long = "output", parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
+
+    /// config csv rule files.
+    #[structopt(short = "c", long = "config", parse(from_os_str),)]
+    rule_files: Vec<PathBuf>,
+
+    /// output report file path
+    #[structopt(short, long, parse(from_os_str))]
+    report: Option<PathBuf>,
+
+    // The max distance in meters to compute the tranfer
+    #[structopt(long, short = "d", default_value = "500",)]
+    max_distance: f64,
+
+    // The walking speed in meters per second.
+    // You may want to divide your initial speed by sqrt(2) to simulate Manhattan distances
+    #[structopt(long, short = "s", default_value = "0.785",)]
+    walking_speed: f64,
+
+    // Waiting time at stop in second
+    #[structopt(long, short = "t", default_value = "60",)]
+    waiting_time: u32,
 }
 
 fn run() -> Result<()> {
@@ -53,6 +80,15 @@ fn run() -> Result<()> {
             collections.merge(to_append_model.into_collections())?;
         }
         let model = navitia_model::Model::new(collections)?;
+        let model = transfers::generates_transfers(
+            model,
+            opt.max_distance,
+            opt.walking_speed,
+            opt.waiting_time,
+            opt.rule_files,
+            &TransfersMode::InterContributor,
+            opt.report,
+        )?;
         navitia_model::ntfs::write(&model, opt.output)?;
         Ok(())
     }

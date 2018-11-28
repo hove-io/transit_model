@@ -67,7 +67,7 @@ impl<T> PartialOrd for Idx<T> {
 /// The `Collection` object looks like a `Map<Idx<T>, T>`, with opaque
 /// keys.  Then, you can easily store indices and don't mess up
 /// between different types of indices.
-#[derive(Debug, Derivative)]
+#[derive(Debug, Derivative, Clone)]
 #[derivative(Default(bound = ""))]
 pub struct Collection<T> {
     objects: Vec<T>,

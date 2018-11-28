@@ -1,0 +1,4 @@
+route_id,service_id,trip_id,trip_headsign,block_id,company_id,physical_mode_id,trip_property_id,contributor_id,geometry_id,dataset_id
+route:1,3,trip:1,"",,comp:1,Train,0,OIF,,OIF:0
+route:1,3,trip:2,"",,comp:1,Train,0,OIF,,OIF:0
+route:1,3,trip:3,"",,comp:1,Train,0,OIF,,OIF:0
