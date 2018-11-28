@@ -52,6 +52,7 @@ struct StopTime {
     datetime_estimated: bool,
     local_zone_id: Option<u16>,
     stop_headsign: Option<String>,
+    stop_time_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -125,7 +126,6 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.companies = make_collection_with_id(path, "companies.txt")?;
     collections.equipments = make_opt_collection_with_id(path, "equipments.txt")?;
     collections.trip_properties = make_opt_collection_with_id(path, "trip_properties.txt")?;
-    collections.comments = make_opt_collection_with_id(path, "comments.txt")?;
     collections.transfers = make_opt_collection(path, "transfers.txt")?;
     collections.admin_stations = make_opt_collection(path, "admin_stations.txt")?;
     common_format::manage_calendars(&mut collections, path)?;
@@ -168,6 +168,7 @@ pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
         &model.vehicle_journeys,
         &model.stop_points,
         &model.stop_time_headsigns,
+        &model.stop_time_ids,
     )?;
     common_format::write_calendar_dates(path, &model.calendars)?;
     write::write_stops(path, &model.stop_points, &model.stop_areas)?;
@@ -534,6 +535,14 @@ mod tests {
             ),
             "somewhere".to_string(),
         );
+        let mut stop_time_ids = HashMap::new();
+        stop_time_ids.insert(
+            (
+                vehicle_journeys.get_idx("OIF:87604986-1_11595-1").unwrap(),
+                0,
+            ),
+            "StopTime:OIF:87604986-1_11595-1:0".to_string(),
+        );
 
         test_in_tmp_dir(|path| {
             write::write_vehicle_journeys_and_stop_times(
@@ -541,6 +550,7 @@ mod tests {
                 &vehicle_journeys,
                 &stop_points,
                 &headsigns,
+                &stop_time_ids,
             ).unwrap();
 
             let mut collections = Collections::default();
@@ -551,6 +561,7 @@ mod tests {
             read::manage_stop_times(&mut collections, path).unwrap();
             assert_eq!(collections.vehicle_journeys, vehicle_journeys);
             assert_eq!(headsigns, collections.stop_time_headsigns);
+            assert_eq!(stop_time_ids, collections.stop_time_ids);
         });
     }
 
@@ -874,7 +885,7 @@ mod tests {
         }]).unwrap();
 
         let vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
-            id: "OIF:90014407-1_425283-1".to_string(),
+            id: "VJ:1".to_string(),
             codes: btree_set_from_vec(vec![(
                 "object_system:6".to_string(),
                 "object_code:6".to_string(),
@@ -893,7 +904,18 @@ mod tests {
             company_id: "OIF:743".to_string(),
             trip_property_id: None,
             geometry_id: None,
-            stop_times: vec![],
+            stop_times: vec![StopTime {
+                stop_point_idx: stop_points.get_idx("sp_1").unwrap(),
+                sequence: 0,
+                arrival_time: Time::new(9, 0, 0),
+                departure_time: Time::new(9, 2, 0),
+                boarding_duration: 2,
+                alighting_duration: 3,
+                pickup_type: 1,
+                drop_off_type: 2,
+                datetime_estimated: false,
+                local_zone_id: None,
+            }],
         }]).unwrap();
 
         let networks = CollectionWithId::new(vec![Network {
@@ -908,6 +930,17 @@ mod tests {
             codes: KeysValues::default(),
         }]).unwrap();
 
+        let mut stop_time_ids = HashMap::new();
+        stop_time_ids.insert(
+            (vehicle_journeys.get_idx("VJ:1").unwrap(), 0),
+            "StopTime:VJ:1:0".to_string(),
+        );
+        let mut stop_time_comments = HashMap::new();
+        stop_time_comments.insert(
+            (vehicle_journeys.get_idx("VJ:1").unwrap(), 0),
+            comments.get_idx("c:2").unwrap(),
+        );
+
         ser_collections.comments = comments;
         ser_collections.stop_areas = stop_areas;
         ser_collections.stop_points = stop_points;
@@ -915,6 +948,8 @@ mod tests {
         ser_collections.routes = routes;
         ser_collections.vehicle_journeys = vehicle_journeys;
         ser_collections.networks = networks;
+        ser_collections.stop_time_ids = stop_time_ids;
+        ser_collections.stop_time_comments = stop_time_comments;
 
         test_in_tmp_dir(|path| {
             write::write_collection_with_id(path, "lines.txt", &ser_collections.lines).unwrap();
@@ -924,10 +959,15 @@ mod tests {
                 &ser_collections.stop_areas,
             ).unwrap();
             write::write_collection_with_id(path, "routes.txt", &ser_collections.routes).unwrap();
-            write::write_collection_with_id(path, "trips.txt", &ser_collections.vehicle_journeys)
-                .unwrap();
             write::write_collection_with_id(path, "networks.txt", &ser_collections.networks)
                 .unwrap();
+            write::write_vehicle_journeys_and_stop_times(
+                path,
+                &ser_collections.vehicle_journeys,
+                &ser_collections.stop_points,
+                &ser_collections.stop_time_headsigns,
+                &ser_collections.stop_time_ids,
+            ).unwrap();
             write::write_comments(path, &ser_collections).unwrap();
             write::write_codes(path, &ser_collections).unwrap();
             write::write_object_properties(path, &ser_collections).unwrap();
@@ -938,6 +978,7 @@ mod tests {
             des_collections.vehicle_journeys = make_collection_with_id(path, "trips.txt").unwrap();
             des_collections.networks = make_collection_with_id(path, "networks.txt").unwrap();
             read::manage_stops(&mut des_collections, path).unwrap();
+            read::manage_stop_times(&mut des_collections, path).unwrap();
             read::manage_comments(&mut des_collections, path).unwrap();
             read::manage_codes(&mut des_collections, path).unwrap();
             read::manage_object_properties(&mut des_collections, path).unwrap();
@@ -1013,14 +1054,19 @@ mod tests {
             assert_eq!(
                 ser_collections
                     .vehicle_journeys
-                    .get("OIF:90014407-1_425283-1")
+                    .get("VJ:1")
                     .unwrap()
                     .comment_links,
                 des_collections
                     .vehicle_journeys
-                    .get("OIF:90014407-1_425283-1")
+                    .get("VJ:1")
                     .unwrap()
                     .comment_links
+            );
+
+            assert_eq!(
+                ser_collections.stop_time_comments,
+                des_collections.stop_time_comments
             );
 
             // test codes
@@ -1066,16 +1112,8 @@ mod tests {
             );
 
             assert_eq!(
-                ser_collections
-                    .vehicle_journeys
-                    .get("OIF:90014407-1_425283-1")
-                    .unwrap()
-                    .codes,
-                des_collections
-                    .vehicle_journeys
-                    .get("OIF:90014407-1_425283-1")
-                    .unwrap()
-                    .codes
+                ser_collections.vehicle_journeys.get("VJ:1").unwrap().codes,
+                des_collections.vehicle_journeys.get("VJ:1").unwrap().codes
             );
 
             assert_eq!(

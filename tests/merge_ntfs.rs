@@ -19,8 +19,7 @@ use navitia_model::collection::CollectionWithId;
 use navitia_model::collection::Idx;
 use navitia_model::model::Collections;
 use navitia_model::model::Model;
-use navitia_model::objects::StopPoint;
-use navitia_model::objects::VehicleJourney;
+use navitia_model::objects::{Comment, StopPoint, VehicleJourney};
 use navitia_model::test_utils::*;
 use navitia_model::transfers;
 use navitia_model::transfers::TransfersMode;
@@ -59,6 +58,7 @@ fn merge_collections_ok() {
     assert_eq!(collections.routes.len(), 8);
     assert_eq!(collections.vehicle_journeys.len(), 8);
     assert_eq!(collections.stop_time_headsigns.len(), 1);
+    assert_eq!(collections.stop_time_ids.len(), 5);
 
     let mut headsigns = HashMap::<(Idx<VehicleJourney>, u32), String>::new();
     headsigns.insert(
@@ -71,7 +71,76 @@ fn merge_collections_ok() {
         ),
         "somewhere".into(),
     );
+    headsigns.insert(
+        (
+            collections
+                .vehicle_journeys
+                .get_idx("OIF:77100911-1_1420-1")
+                .unwrap(),
+            3,
+        ),
+        "somewhere".into(),
+    );
     assert_eq!(headsigns, collections.stop_time_headsigns);
+
+    let mut stop_times_ids = HashMap::<(Idx<VehicleJourney>, u32), String>::new();
+    stop_times_ids.insert(
+        (
+            collections
+                .vehicle_journeys
+                .get_idx("OIF:77100911-1_1420-1")
+                .unwrap(),
+            3,
+        ),
+        "StopTime:OIF:77100911-1_1420-1:1".into(),
+    );
+    stop_times_ids.insert(
+        (
+            collections
+                .vehicle_journeys
+                .get_idx("OIF:77100911-1_1420-1")
+                .unwrap(),
+            0,
+        ),
+        "StopTime:OIF:77100911-1_1420-1:0".into(),
+    );
+    stop_times_ids.insert(
+        (
+            collections
+                .vehicle_journeys
+                .get_idx("OIF:77100911-1_1420-1")
+                .unwrap(),
+            4,
+        ),
+        "StopTime:OIF:77100911-1_1420-1:2".into(),
+    );
+    stop_times_ids.insert(
+        (collections.vehicle_journeys.get_idx("RERAB1").unwrap(), 5),
+        "StopTime:RERAB1-5:1".into(),
+    );
+    stop_times_ids.insert(
+        (collections.vehicle_journeys.get_idx("RERAB1").unwrap(), 8),
+        "StopTime:RERAB1-8:0".into(),
+    );
+
+    assert_eq!(stop_times_ids, collections.stop_time_ids);
+
+    let mut stop_time_comments = HashMap::<(Idx<VehicleJourney>, u32), Idx<Comment>>::new();
+    stop_time_comments.insert(
+        (collections.vehicle_journeys.get_idx("RERAB1").unwrap(), 5),
+        collections.comments.get_idx("RERACOM1").unwrap(),
+    );
+    stop_time_comments.insert(
+        (
+            collections
+                .vehicle_journeys
+                .get_idx("OIF:77100911-1_1420-1")
+                .unwrap(),
+            4,
+        ),
+        collections.comments.get_idx("OIFCOM1").unwrap(),
+    );
+    assert_eq!(stop_time_comments, collections.stop_time_comments);
 
     fn get_stop_point_idxs(
         col: &CollectionWithId<VehicleJourney>,

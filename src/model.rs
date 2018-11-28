@@ -50,6 +50,10 @@ pub struct Collections {
     pub admin_stations: Collection<AdminStation>,
     #[serde(skip)]
     pub stop_time_headsigns: HashMap<(Idx<VehicleJourney>, u32), String>,
+    #[serde(skip)]
+    pub stop_time_ids: HashMap<(Idx<VehicleJourney>, u32), String>,
+    #[serde(skip)]
+    pub stop_time_comments: HashMap<(Idx<VehicleJourney>, u32), Idx<Comment>>,
 }
 
 impl Collections {
@@ -77,6 +81,8 @@ impl Collections {
             geometries,
             admin_stations,
             stop_time_headsigns,
+            stop_time_ids,
+            stop_time_comments,
         } = c;
         self.contributors.merge(contributors)?;
         self.datasets.merge(datasets)?;
@@ -105,6 +111,7 @@ impl Collections {
 
         let sp_idx_to_id = idx_to_id(&stop_points);
         let vj_idx_to_id = idx_to_id(&vehicle_journeys);
+        let c_idx_to_id = idx_to_id(&comments);
 
         self.stop_points.merge(stop_points)?;
 
@@ -122,19 +129,43 @@ impl Collections {
         vehicle_journeys = CollectionWithId::new(vjs)?;
         self.vehicle_journeys.merge(vehicle_journeys)?;
 
-        // Update vehicle journey idx
-        let mut new_stop_time_headsigns = HashMap::new();
-        for ((old_vj_idx, sequence), headsign) in &stop_time_headsigns {
-            let new_vj_idx =
-                get_new_idx(*old_vj_idx, &vj_idx_to_id, &self.vehicle_journeys).unwrap();
-            new_stop_time_headsigns.insert((new_vj_idx, *sequence), headsign.clone());
+        fn update_vj_idx<'a, T: Clone>(
+            map: &'a HashMap<(Idx<VehicleJourney>, u32), T>,
+            vjs: &'a CollectionWithId<VehicleJourney>,
+            vj_idx_to_id: &'a HashMap<Idx<VehicleJourney>, String>,
+        ) -> impl Iterator<Item = ((Idx<VehicleJourney>, u32), T)> + 'a {
+            map.iter()
+                .filter_map(move |((old_vj_idx, sequence), value)| {
+                    get_new_idx(*old_vj_idx, vj_idx_to_id, vjs)
+                        .map(|new_vj_idx| ((new_vj_idx, *sequence), value.clone()))
+                })
         }
 
-        self.stop_time_headsigns.extend(new_stop_time_headsigns);
+        // Update vehicle journey idx
+        self.stop_time_headsigns.extend(update_vj_idx(
+            &stop_time_headsigns,
+            &self.vehicle_journeys,
+            &vj_idx_to_id,
+        ));
+
+        self.stop_time_ids.extend(update_vj_idx(
+            &stop_time_ids,
+            &self.vehicle_journeys,
+            &vj_idx_to_id,
+        ));
+
+        self.comments.merge(comments)?;
+        let mut new_stop_time_comments = HashMap::new();
+        for ((old_vj_idx, sequence), value) in &stop_time_comments {
+            let new_vj_idx =
+                get_new_idx(*old_vj_idx, &vj_idx_to_id, &self.vehicle_journeys).unwrap();
+            let new_c_idx = get_new_idx(*value, &c_idx_to_id, &self.comments).unwrap();
+            new_stop_time_comments.insert((new_vj_idx, *sequence), new_c_idx);
+        }
+        self.stop_time_comments.extend(new_stop_time_comments);
         self.feed_infos.extend(feed_infos);
         self.calendars.merge(calendars)?;
         self.companies.merge(companies)?;
-        self.comments.merge(comments)?;
         self.equipments.merge(equipments)?;
         self.transfers.merge(transfers)?;
         self.trip_properties.merge(trip_properties)?;
