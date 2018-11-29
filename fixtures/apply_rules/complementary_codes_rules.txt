@@ -1,4 +1,4 @@
-object,object_id,system_name,system_code
+object_type,object_id,object_system,object_code
 line,RERA,OSM,Relation:3195542
 line,RERA,OSM,Relation:3224933
 route,B42F,OSM,Relation:3187722

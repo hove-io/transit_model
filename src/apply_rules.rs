@@ -29,29 +29,29 @@ use Result;
 
 #[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone)]
 #[serde(rename_all = "snake_case")]
-enum Object {
+enum ObjectType {
     Line,
     Route,
     StopPoint,
     StopArea,
 }
-impl Object {
+impl ObjectType {
     pub fn as_str(&self) -> &'static str {
         match *self {
-            Object::Line => "line",
-            Object::Route => "route",
-            Object::StopPoint => "stop_point",
-            Object::StopArea => "stop_area",
+            ObjectType::Line => "line",
+            ObjectType::Route => "route",
+            ObjectType::StopPoint => "stop_point",
+            ObjectType::StopArea => "stop_area",
         }
     }
 }
 
 #[derive(Deserialize, Debug, Ord, Eq, PartialOrd, PartialEq, Clone)]
 struct ComplementaryCode {
-    object: Object,
+    object_type: ObjectType,
     object_id: String,
-    system_name: String,
-    system_code: String,
+    object_system: String,
+    object_code: String,
 }
 
 fn read_complementary_code_rules_files<P: AsRef<Path>>(
@@ -93,7 +93,7 @@ fn insert_code<T>(
             report.add_warning(
                 format!(
                     "Error inserting code: object_codes.txt: object={},  object_id={} not found",
-                    code.object.as_str(),
+                    code.object_type.as_str(),
                     code.object_id
                 ),
                 ReportType::ComplementaryObjectNotFound,
@@ -105,7 +105,7 @@ fn insert_code<T>(
     collection
         .index_mut(idx)
         .codes_mut()
-        .insert((code.system_name, code.system_code));
+        .insert((code.object_system, code.object_code));
 }
 
 /// Applying rules
@@ -121,11 +121,11 @@ pub fn apply_rules(
     let codes = read_complementary_code_rules_files(complementary_code_rules_files, &mut report)?;
 
     for code in codes {
-        match code.object {
-            Object::Line => insert_code(&mut collections.lines, code, &mut report),
-            Object::Route => insert_code(&mut collections.routes, code, &mut report),
-            Object::StopPoint => insert_code(&mut collections.stop_points, code, &mut report),
-            Object::StopArea => insert_code(&mut collections.stop_areas, code, &mut report),
+        match code.object_type {
+            ObjectType::Line => insert_code(&mut collections.lines, code, &mut report),
+            ObjectType::Route => insert_code(&mut collections.routes, code, &mut report),
+            ObjectType::StopPoint => insert_code(&mut collections.stop_points, code, &mut report),
+            ObjectType::StopArea => insert_code(&mut collections.stop_areas, code, &mut report),
         }
     }
 
