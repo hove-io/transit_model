@@ -165,6 +165,8 @@ struct StopTime {
     drop_off_type: u8,
     local_zone_id: Option<u16>,
     stop_headsign: Option<String>,
+    #[serde(default,deserialize_with = "de_from_u8",serialize_with = "ser_from_bool")]
+    timepoint: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
@@ -257,6 +259,7 @@ where
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
     collections.comments = comments;
     read::manage_stop_times(&mut collections, path)?;
+    read::manage_frequencies(&mut collections, path)?;
 
     //add prefixes
     if let Some(prefix) = prefix {

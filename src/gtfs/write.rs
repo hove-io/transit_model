@@ -420,6 +420,7 @@ pub fn write_stop_times(
                     drop_off_type: st.drop_off_type,
                     local_zone_id: st.local_zone_id,
                     stop_headsign: stop_times_headsigns.get(&(vj_idx, st.sequence)).cloned(),
+                    timepoint: st.datetime_estimated,
                 }).with_context(ctx_from_path!(st_wtr))?;
         }
     }
@@ -1077,7 +1078,7 @@ mod tests {
                 alighting_duration: 0,
                 pickup_type: 2,
                 drop_off_type: 1,
-                datetime_estimated: false,
+                datetime_estimated: true,
                 local_zone_id: Some(3),
             },
         ];
@@ -1115,9 +1116,9 @@ mod tests {
         let mut output_contents = String::new();
         output_file.read_to_string(&mut output_contents).unwrap();
         assert_eq!(
-            "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id,stop_headsign\n\
-            vj:01,06:00:00,06:00:00,sp:01,1,0,0,,somewhere\n\
-            vj:01,06:06:27,06:06:27,sp:01,2,2,1,3,\n",
+            "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id,stop_headsign,timepoint\n\
+            vj:01,06:00:00,06:00:00,sp:01,1,0,0,,somewhere,0\n\
+            vj:01,06:06:27,06:06:27,sp:01,2,2,1,3,,1\n",
             output_contents
         );
         tmp_dir.close().expect("delete temp dir");
