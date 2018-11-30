@@ -44,12 +44,7 @@ struct StopTime {
     pickup_type: u8,
     #[serde(default)]
     drop_off_type: u8,
-    #[serde(
-        default,
-        deserialize_with = "de_from_u8",
-        serialize_with = "ser_from_bool"
-    )]
-    datetime_estimated: bool,
+    datetime_estimated: Option<u8>,
     local_zone_id: Option<u16>,
     stop_headsign: Option<String>,
     stop_time_id: Option<String>,

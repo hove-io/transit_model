@@ -68,7 +68,7 @@ pub fn write_vehicle_journeys_and_stop_times(
                     alighting_duration: st.alighting_duration,
                     pickup_type: st.pickup_type,
                     drop_off_type: st.drop_off_type,
-                    datetime_estimated: st.datetime_estimated,
+                    datetime_estimated: Some(st.datetime_estimated as u8),
                     local_zone_id: st.local_zone_id,
                     stop_headsign: stop_time_headsigns.get(&(vj_idx, st.sequence)).cloned(),
                     stop_time_id: stop_time_ids.get(&(vj_idx, st.sequence)).cloned(),

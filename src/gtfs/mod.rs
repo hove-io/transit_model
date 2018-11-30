@@ -165,7 +165,11 @@ struct StopTime {
     drop_off_type: u8,
     local_zone_id: Option<u16>,
     stop_headsign: Option<String>,
-    #[serde(default,deserialize_with = "de_from_u8",serialize_with = "ser_from_bool")]
+    #[serde(
+        default,
+        deserialize_with = "de_from_u8",
+        serialize_with = "ser_from_bool"
+    )]
     timepoint: bool,
 }
 

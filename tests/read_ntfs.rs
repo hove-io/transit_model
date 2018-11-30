@@ -79,11 +79,11 @@ fn minimal() {
     );
     assert_eq!(
         get(rera, &ntm.stop_points, &ntm),
-        &["GDLR", "NATR", "CDGR", "DEFR"]
+        &["GDLR", "NATR", "CDGR", "DEFR", "MTPZ", "CDGZ"]
     );
     assert_eq!(
         get(rera, &ntm.stop_areas, &ntm),
-        &["GDL", "NAT", "CDG", "DEF"]
+        &["GDL", "NAT", "CDG", "DEF", "Navitia:MTPZ", "Navitia:CDGZ"]
     );
 }
 
@@ -101,7 +101,11 @@ fn ntfs_stops_output() {
     let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
     test_in_tmp_dir(|output_dir| {
         navitia_model::ntfs::write(&ntm, output_dir).unwrap();
-        compare_output_dir_with_expected(&output_dir, vec!["stops.txt"], "fixtures/ntfs2ntfs");
+        compare_output_dir_with_expected(
+            &output_dir,
+            vec!["stops.txt", "stop_times.txt"],
+            "fixtures/ntfs2ntfs",
+        );
     });
 }
 
