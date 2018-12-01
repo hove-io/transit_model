@@ -20,8 +20,8 @@
 
 use chrono;
 use collection::{Id, Idx};
-use common_format::Availability;
 use geo_types::Geometry as GeoGeometry;
+use gtfs_structures::Availability;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};

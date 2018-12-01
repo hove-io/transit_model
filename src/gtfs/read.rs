@@ -14,9 +14,8 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use self::gtfs_structures::{LocationType, Stop};
+use self::gtfs_structures::{Availability, LocationType, Stop};
 use collection::{Collection, CollectionWithId, Id};
-use common_format::Availability;
 use csv;
 use failure::ResultExt;
 use geo_types::{LineString, Point};
@@ -31,8 +30,7 @@ use Result;
 extern crate gtfs_structures;
 extern crate serde_json;
 use super::{
-    Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
-    TransferType, Trip,
+    Agency, DirectionType, Route, RouteType, Shape, StopTime, Transfer, TransferType, Trip,
 };
 
 fn default_agency_id() -> String {
@@ -416,8 +414,8 @@ fn get_equipment_id_and_populate_equipments(
             Some(equipments.push(objects::Equipment {
                 id: "".to_string(),
                 wheelchair_boarding: stop.wheelchair_boarding,
-                sheltered: Availability::InformationNotAvailable,
                 elevator: Availability::InformationNotAvailable,
+                sheltered: Availability::InformationNotAvailable,
                 escalator: Availability::InformationNotAvailable,
                 bike_accepted: Availability::InformationNotAvailable,
                 bike_depot: Availability::InformationNotAvailable,
@@ -1855,29 +1853,31 @@ mod tests {
                 vec![
                     Equipment {
                         id: "0".to_string(),
-                        wheelchair_boarding: common_format::Availability::Available,
-                        sheltered: common_format::Availability::InformationNotAvailable,
-                        elevator: common_format::Availability::InformationNotAvailable,
-                        escalator: common_format::Availability::InformationNotAvailable,
-                        bike_accepted: common_format::Availability::InformationNotAvailable,
-                        bike_depot: common_format::Availability::InformationNotAvailable,
-                        visual_announcement: common_format::Availability::InformationNotAvailable,
-                        audible_announcement: common_format::Availability::InformationNotAvailable,
-                        appropriate_escort: common_format::Availability::InformationNotAvailable,
-                        appropriate_signage: common_format::Availability::InformationNotAvailable,
+                        wheelchair_boarding: gtfs_structures::Availability::Available,
+                        sheltered: gtfs_structures::Availability::InformationNotAvailable,
+                        elevator: gtfs_structures::Availability::InformationNotAvailable,
+                        escalator: gtfs_structures::Availability::InformationNotAvailable,
+                        bike_accepted: gtfs_structures::Availability::InformationNotAvailable,
+                        bike_depot: gtfs_structures::Availability::InformationNotAvailable,
+                        visual_announcement: gtfs_structures::Availability::InformationNotAvailable,
+                        audible_announcement:
+                            gtfs_structures::Availability::InformationNotAvailable,
+                        appropriate_escort: gtfs_structures::Availability::InformationNotAvailable,
+                        appropriate_signage: gtfs_structures::Availability::InformationNotAvailable,
                     },
                     Equipment {
                         id: "1".to_string(),
-                        wheelchair_boarding: common_format::Availability::NotAvailable,
-                        sheltered: common_format::Availability::InformationNotAvailable,
-                        elevator: common_format::Availability::InformationNotAvailable,
-                        escalator: common_format::Availability::InformationNotAvailable,
-                        bike_accepted: common_format::Availability::InformationNotAvailable,
-                        bike_depot: common_format::Availability::InformationNotAvailable,
-                        visual_announcement: common_format::Availability::InformationNotAvailable,
-                        audible_announcement: common_format::Availability::InformationNotAvailable,
-                        appropriate_escort: common_format::Availability::InformationNotAvailable,
-                        appropriate_signage: common_format::Availability::InformationNotAvailable,
+                        wheelchair_boarding: gtfs_structures::Availability::NotAvailable,
+                        sheltered: gtfs_structures::Availability::InformationNotAvailable,
+                        elevator: gtfs_structures::Availability::InformationNotAvailable,
+                        escalator: gtfs_structures::Availability::InformationNotAvailable,
+                        bike_accepted: gtfs_structures::Availability::InformationNotAvailable,
+                        bike_depot: gtfs_structures::Availability::InformationNotAvailable,
+                        visual_announcement: gtfs_structures::Availability::InformationNotAvailable,
+                        audible_announcement:
+                            gtfs_structures::Availability::InformationNotAvailable,
+                        appropriate_escort: gtfs_structures::Availability::InformationNotAvailable,
+                        appropriate_signage: gtfs_structures::Availability::InformationNotAvailable,
                     },
                 ]
             );
@@ -1915,16 +1915,16 @@ mod tests {
                 equipments_collection.into_vec(),
                 vec![Equipment {
                     id: "0".to_string(),
-                    wheelchair_boarding: common_format::Availability::Available,
-                    sheltered: common_format::Availability::InformationNotAvailable,
-                    elevator: common_format::Availability::InformationNotAvailable,
-                    escalator: common_format::Availability::InformationNotAvailable,
-                    bike_accepted: common_format::Availability::InformationNotAvailable,
-                    bike_depot: common_format::Availability::InformationNotAvailable,
-                    visual_announcement: common_format::Availability::InformationNotAvailable,
-                    audible_announcement: common_format::Availability::InformationNotAvailable,
-                    appropriate_escort: common_format::Availability::InformationNotAvailable,
-                    appropriate_signage: common_format::Availability::InformationNotAvailable,
+                    wheelchair_boarding: gtfs_structures::Availability::Available,
+                    sheltered: gtfs_structures::Availability::InformationNotAvailable,
+                    elevator: gtfs_structures::Availability::InformationNotAvailable,
+                    escalator: gtfs_structures::Availability::InformationNotAvailable,
+                    bike_accepted: gtfs_structures::Availability::InformationNotAvailable,
+                    bike_depot: gtfs_structures::Availability::InformationNotAvailable,
+                    visual_announcement: gtfs_structures::Availability::InformationNotAvailable,
+                    audible_announcement: gtfs_structures::Availability::InformationNotAvailable,
+                    appropriate_escort: gtfs_structures::Availability::InformationNotAvailable,
+                    appropriate_signage: gtfs_structures::Availability::InformationNotAvailable,
                 }]
             );
         });

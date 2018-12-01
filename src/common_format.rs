@@ -26,18 +26,6 @@ use utils::*;
 use utils::{de_from_date_string, ser_from_naive_date};
 use Result;
 
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
-#[derivative(Default)]
-pub enum Availability {
-    #[derivative(Default)]
-    #[serde(rename = "0")]
-    InformationNotAvailable,
-    #[serde(rename = "1")]
-    Available,
-    #[serde(rename = "2")]
-    NotAvailable,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CalendarDate {
     pub service_id: String,

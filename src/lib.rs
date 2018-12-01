@@ -36,6 +36,7 @@ extern crate zip;
 #[macro_use]
 extern crate serde_derive;
 extern crate geo_types;
+extern crate gtfs_structures;
 extern crate wkt;
 
 #[macro_use]

@@ -21,8 +21,9 @@ mod write;
 
 use collection::CollectionWithId;
 use common_format;
-use common_format::{manage_calendars, Availability};
+use common_format::manage_calendars;
 use gtfs::read::EquipmentList;
+use gtfs_structures::Availability;
 use model::{Collections, Model};
 use objects;
 use objects::Time;

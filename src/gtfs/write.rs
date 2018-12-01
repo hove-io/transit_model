@@ -19,10 +19,10 @@ use super::{
     Trip,
 };
 use collection::{Collection, CollectionWithId, Id, Idx};
-use common_format::Availability;
 use csv;
 use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
+use gtfs_structures::Availability;
 use model::{GetCorresponding, Model};
 use objects;
 use objects::Transfer as NtfsTransfer;
