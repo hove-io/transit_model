@@ -14,3 +14,5 @@ stop:52,pouet,48.844746,2.372987,0,stoparea:1
 stop:53,pouet,48.844746,2.372987,0,stoparea:1
 stop:61,pouet,48.844746,2.372987,0,stoparea:1
 stop:62,pouet,48.844746,2.372987,0,stoparea:1
+stop:71,pouet,48.844746,2.372987,0,stoparea:1
+stop:72,pouet,48.844746,2.372987,0,stoparea:1

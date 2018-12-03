@@ -188,7 +188,8 @@ fn make_transfers_map(
                 ),
                 t,
             )
-        }).collect()
+        })
+        .collect()
 }
 
 fn generate_transfers_from_sp(
@@ -242,7 +243,8 @@ fn remove_unwanted_transfers(
                 stop_points.get_idx(&r.from_stop_id).unwrap(),
                 stop_points.get_idx(&r.to_stop_id).unwrap(),
             )
-        }).collect();
+        })
+        .collect();
     transfers_map.retain(|_, t| {
         !rules_to_remove.contains(&(
             stop_points.get_idx(&t.from_stop_id).unwrap(),
@@ -263,10 +265,12 @@ fn add_missing_transfers(
             .entry((
                 stop_points.get_idx(&r.from_stop_id).unwrap(),
                 stop_points.get_idx(&r.to_stop_id).unwrap(),
-            )).and_modify(|t| {
+            ))
+            .and_modify(|t| {
                 t.min_transfer_time = r.transfer_time;
                 t.real_min_transfer_time = r.transfer_time;
-            }).or_insert_with(|| Transfer {
+            })
+            .or_insert_with(|| Transfer {
                 from_stop_id: r.from_stop_id.clone(),
                 to_stop_id: r.to_stop_id.clone(),
                 min_transfer_time: r.transfer_time,

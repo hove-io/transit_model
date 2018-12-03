@@ -461,7 +461,8 @@ mod tests {
                 fare_zone_id: None,
                 stop_type: StopType::Point,
             },
-        ]).unwrap();
+        ])
+        .unwrap();
         let vehicle_journeys = CollectionWithId::new(vec![
             VehicleJourney {
                 id: "OIF:87604986-1_11595-1".to_string(),
@@ -520,7 +521,8 @@ mod tests {
                 geometry_id: None,
                 stop_times: vec![],
             },
-        ]).unwrap();
+        ])
+        .unwrap();
 
         let mut headsigns = HashMap::new();
         headsigns.insert(
@@ -546,7 +548,8 @@ mod tests {
                 &stop_points,
                 &headsigns,
                 &stop_time_ids,
-            ).unwrap();
+            )
+            .unwrap();
 
             let mut collections = Collections::default();
             collections.vehicle_journeys =
@@ -659,7 +662,8 @@ mod tests {
                 id: "1".to_string(),
                 dates: dates2,
             },
-        ]).unwrap();
+        ])
+        .unwrap();
 
         test_in_tmp_dir(|path| {
             common_format::write_calendar_dates(path, &calendars).unwrap();
@@ -711,7 +715,8 @@ mod tests {
                 fare_zone_id: None,
                 stop_type: StopType::Point,
             },
-        ]).unwrap();
+        ])
+        .unwrap();
 
         let stop_areas = CollectionWithId::new(vec![
             StopArea {
@@ -744,7 +749,8 @@ mod tests {
                 geometry_id: Some("geometry_3".to_string()),
                 equipment_id: Some("equipment_1".to_string()),
             },
-        ]).unwrap();
+        ])
+        .unwrap();
 
         test_in_tmp_dir(|path| {
             write::write_stops(path, &stop_points, &stop_areas).unwrap();
@@ -782,7 +788,8 @@ mod tests {
                 name: "value:1".to_string(),
                 url: None,
             },
-        ]).unwrap();
+        ])
+        .unwrap();
 
         let stop_points = CollectionWithId::new(vec![StopPoint {
             id: "sp_1".to_string(),
@@ -807,7 +814,8 @@ mod tests {
             stop_area_id: "sa_1".to_string(),
             fare_zone_id: None,
             stop_type: StopType::Point,
-        }]).unwrap();
+        }])
+        .unwrap();
 
         let stop_areas = CollectionWithId::new(vec![StopArea {
             id: "sa_1".to_string(),
@@ -829,7 +837,8 @@ mod tests {
             timezone: None,
             geometry_id: None,
             equipment_id: None,
-        }]).unwrap();
+        }])
+        .unwrap();
 
         let lines = CollectionWithId::new(vec![Line {
             id: "OIF:002002003:3OIF829".to_string(),
@@ -859,7 +868,8 @@ mod tests {
             geometry_id: None,
             opening_time: None,
             closing_time: None,
-        }]).unwrap();
+        }])
+        .unwrap();
 
         let routes = CollectionWithId::new(vec![Route {
             id: "OIF:002002002:CEN".to_string(),
@@ -877,7 +887,8 @@ mod tests {
             line_id: "OIF:002002002:BDEOIF829".to_string(),
             geometry_id: None,
             destination_id: None,
-        }]).unwrap();
+        }])
+        .unwrap();
 
         let vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
             id: "VJ:1".to_string(),
@@ -911,7 +922,8 @@ mod tests {
                 datetime_estimated: false,
                 local_zone_id: None,
             }],
-        }]).unwrap();
+        }])
+        .unwrap();
 
         let networks = CollectionWithId::new(vec![Network {
             id: "OIF:102".to_string(),
@@ -923,7 +935,8 @@ mod tests {
             address: None,
             sort_order: None,
             codes: KeysValues::default(),
-        }]).unwrap();
+        }])
+        .unwrap();
 
         let mut stop_time_ids = HashMap::new();
         stop_time_ids.insert(
@@ -952,7 +965,8 @@ mod tests {
                 path,
                 &ser_collections.stop_points,
                 &ser_collections.stop_areas,
-            ).unwrap();
+            )
+            .unwrap();
             write::write_collection_with_id(path, "routes.txt", &ser_collections.routes).unwrap();
             write::write_collection_with_id(path, "networks.txt", &ser_collections.networks)
                 .unwrap();
@@ -962,7 +976,8 @@ mod tests {
                 &ser_collections.stop_points,
                 &ser_collections.stop_time_headsigns,
                 &ser_collections.stop_time_ids,
-            ).unwrap();
+            )
+            .unwrap();
             write::write_comments(path, &ser_collections).unwrap();
             write::write_codes(path, &ser_collections).unwrap();
             write::write_object_properties(path, &ser_collections).unwrap();

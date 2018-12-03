@@ -319,7 +319,8 @@ where
         .map(|(i, pm)| PhysicalModeWithOrder {
             inner: pm,
             is_lowest: i == 0,
-        }).collect()
+        })
+        .collect()
 }
 
 impl<'a> From<&'a objects::PhysicalMode> for RouteType {
@@ -420,8 +421,9 @@ pub fn write_stop_times(
                     drop_off_type: st.drop_off_type,
                     local_zone_id: st.local_zone_id,
                     stop_headsign: stop_times_headsigns.get(&(vj_idx, st.sequence)).cloned(),
-                    timepoint: st.datetime_estimated,
-                }).with_context(ctx_from_path!(st_wtr))?;
+                    timepoint: !st.datetime_estimated,
+                })
+                .with_context(ctx_from_path!(st_wtr))?;
         }
     }
     st_wtr
@@ -558,7 +560,8 @@ mod tests {
                 url: None,
                 label: None,
             },
-        ]).unwrap();
+        ])
+        .unwrap();
 
         let equipments = CollectionWithId::new(vec![objects::Equipment {
             id: "1".to_string(),
@@ -572,7 +575,8 @@ mod tests {
             audible_announcement: Availability::Available,
             appropriate_escort: Availability::Available,
             appropriate_signage: Availability::Available,
-        }]).unwrap();
+        }])
+        .unwrap();
 
         let mut comment_links = BTreeSet::new();
         comment_links.insert(comments.get_idx("1").unwrap());
@@ -585,7 +589,8 @@ mod tests {
                 ("object_system:2".to_string(), "object_code:2".to_string()),
                 ("gtfs_stop_code".to_string(), "1234".to_string()),
                 ("gtfs_stop_code".to_string(), "5678".to_string()),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect(),
             object_properties: BTreeSet::default(),
             comment_links,
@@ -684,7 +689,8 @@ mod tests {
                 url: None,
                 label: None,
             },
-        ]).unwrap();
+        ])
+        .unwrap();
 
         let equipments = CollectionWithId::new(vec![objects::Equipment {
             id: "1".to_string(),
@@ -698,7 +704,8 @@ mod tests {
             audible_announcement: Availability::Available,
             appropriate_escort: Availability::Available,
             appropriate_signage: Availability::Available,
-        }]).unwrap();
+        }])
+        .unwrap();
 
         let mut comment_links = BTreeSet::new();
         comment_links.insert(comments.get_idx("1").unwrap());
@@ -711,7 +718,8 @@ mod tests {
                 ("object_system:2".to_string(), "object_code:2".to_string()),
                 ("gtfs_stop_code".to_string(), "5678".to_string()),
                 ("gtfs_stop_code".to_string(), "1234".to_string()),
-            ].into_iter()
+            ]
+            .into_iter()
             .collect(),
             object_properties: BTreeSet::default(),
             comment_links,
@@ -785,7 +793,8 @@ mod tests {
                 fare_zone_id: None,
                 stop_type: StopType::Point,
             },
-        ]).unwrap();
+        ])
+        .unwrap();
         let routes = CollectionWithId::new(vec![objects::Route {
             id: "OIF:078078001:1".to_string(),
             name: "Hôtels - Hôtels".to_string(),
@@ -796,7 +805,8 @@ mod tests {
             line_id: "OIF:002002002:BDEOIF829".to_string(),
             geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
             destination_id: Some("OIF,OIF:SA:4:126".to_string()),
-        }]).unwrap();
+        }])
+        .unwrap();
 
         let tps = CollectionWithId::new(vec![objects::TripProperty {
             id: "1".to_string(),
@@ -808,7 +818,8 @@ mod tests {
             appropriate_escort: Availability::Available,
             appropriate_signage: Availability::Available,
             school_vehicle_type: objects::TransportType::Regular,
-        }]).unwrap();
+        }])
+        .unwrap();
         let vj = objects::VehicleJourney {
             id: "OIF:87604986-1_11595-1".to_string(),
             codes: BTreeSet::default(),
@@ -889,7 +900,8 @@ mod tests {
             timezone: None,
             geometry_id: None,
             equipment_id: None,
-        }]).unwrap();
+        }])
+        .unwrap();
         let mut sp_codes: BTreeSet<(String, String)> = BTreeSet::new();
         sp_codes.insert(("sp name 1".to_string(), "sp_code_1".to_string()));
         sp_codes.insert(("sp name 2".to_string(), "sp_code_2".to_string()));
@@ -911,7 +923,8 @@ mod tests {
             equipment_id: None,
             fare_zone_id: None,
             stop_type: StopType::Point,
-        }]).unwrap();
+        }])
+        .unwrap();
         let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
         write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
         let output_file_path = tmp_dir.path().join("stop_extensions.txt");
@@ -1019,7 +1032,8 @@ mod tests {
                 id: "2".to_string(),
                 dates: BTreeSet::new(),
             },
-        ]).unwrap();
+        ])
+        .unwrap();
         let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
         write_calendar_dates(tmp_dir.path(), &calendar).unwrap();
         let output_file_path = tmp_dir.path().join("calendar_dates.txt");
@@ -1055,7 +1069,8 @@ mod tests {
             stop_area_id: "sa_1".to_string(),
             fare_zone_id: None,
             stop_type: StopType::Point,
-        }]).unwrap();
+        }])
+        .unwrap();
         let stop_times_vec = vec![
             StopTime {
                 stop_point_idx: stop_points.get_idx("sp:01").unwrap(),
@@ -1097,7 +1112,8 @@ mod tests {
             trip_property_id: None,
             geometry_id: None,
             stop_times: stop_times_vec,
-        }]).unwrap();
+        }])
+        .unwrap();
         let mut stop_times_headsigns = HashMap::new();
         stop_times_headsigns.insert(
             (vehicle_journeys.get_idx("vj:01").unwrap(), 1),
@@ -1109,7 +1125,8 @@ mod tests {
             &vehicle_journeys,
             &stop_points,
             &stop_times_headsigns,
-        ).unwrap();
+        )
+        .unwrap();
         let output_file_path = tmp_dir.path().join("stop_times.txt");
         let mut output_file = File::open(output_file_path.clone())
             .expect(&format!("file {:?} not found", output_file_path));
@@ -1117,8 +1134,8 @@ mod tests {
         output_file.read_to_string(&mut output_contents).unwrap();
         assert_eq!(
             "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id,stop_headsign,timepoint\n\
-            vj:01,06:00:00,06:00:00,sp:01,1,0,0,,somewhere,0\n\
-            vj:01,06:06:27,06:06:27,sp:01,2,2,1,3,,1\n",
+            vj:01,06:00:00,06:00:00,sp:01,1,0,0,,somewhere,1\n\
+            vj:01,06:06:27,06:06:27,sp:01,2,2,1,3,,0\n",
             output_contents
         );
         tmp_dir.close().expect("delete temp dir");

@@ -33,8 +33,9 @@ fn test_frequencies_generate_trips() {
             ],
             "./fixtures/gtfs2ntfs/frequencies/output",
         );
-    }
+    });
 }
+#[test]
 fn test_minimal_gtfs() {
     test_in_tmp_dir(|path| {
         let input_dir = "./fixtures/gtfs2ntfs/minimal/input";

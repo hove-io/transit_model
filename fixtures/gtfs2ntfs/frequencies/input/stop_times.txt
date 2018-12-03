@@ -14,5 +14,7 @@ trip:4,2,stop:33,07:40:00,07:42:00
 trip:5,0,stop:51,13:23:00,13:23:00
 trip:5,1,stop:52,14:10:00,14:10:00
 trip:5,2,stop:53,14:40:00,14:40:00
-trip:6,0,stop:61,14:40:00,14:40:00
-trip:6,1,stop:61,15:20:00,15:20:00
+trip:russian,0,stop:71,14:00:00,14:00:00
+trip:russian,1,stop:72,16:00:00,16:00:00
+trip:after_midnight,0,stop:61,14:40:00,14:40:00
+trip:after_midnight,1,stop:61,15:20:00,15:20:00

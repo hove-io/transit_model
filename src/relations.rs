@@ -294,7 +294,8 @@ impl<T, U> ManyToMany<T, U> {
                 let from = Some(idx).into_iter().collect();
                 let tmp = r1.get_corresponding_forward(&from);
                 (idx, r2.get_corresponding_forward(&tmp))
-            }).collect();
+            })
+            .collect();
         Self::from_forward(forward)
     }
 
@@ -312,7 +313,8 @@ impl<T, U> ManyToMany<T, U> {
                 let from = Some(idx).into_iter().collect();
                 let tmp = r1.get_corresponding_forward(&from);
                 (idx, r2.get_corresponding_backward(&tmp))
-            }).collect();
+            })
+            .collect();
         Self::from_forward(forward)
     }
 
@@ -331,7 +333,8 @@ impl<T, U> ManyToMany<T, U> {
                 let from = Some(idx).into_iter().collect();
                 let tmp = r1.get_corresponding_backward(&from);
                 (idx, r2.get_corresponding_forward(&tmp))
-            }).collect();
+            })
+            .collect();
         Self::from_forward(forward)
     }
 }

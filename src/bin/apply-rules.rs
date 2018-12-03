@@ -31,20 +31,11 @@ use navitia_model::apply_rules;
 #[structopt(name = "apply_rules", about = " Enrich the data of an NTFS.")]
 struct Opt {
     /// input directory.
-    #[structopt(
-        short = "i",
-        long = "input",
-        parse(from_os_str),
-        default_value = "."
-    )]
+    #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
     /// complementary code rules files.
-    #[structopt(
-        short = "c",
-        long = "complementary-code-rules",
-        parse(from_os_str),
-    )]
+    #[structopt(short = "c", long = "complementary-code-rules", parse(from_os_str))]
     complementary_code_rules_files: Vec<PathBuf>,
 
     /// output report file path

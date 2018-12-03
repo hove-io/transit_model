@@ -1085,10 +1085,7 @@ pub enum CommentType {
 pub struct Comment {
     #[serde(rename = "comment_id")]
     pub id: String,
-    #[serde(
-        deserialize_with = "de_with_empty_or_invalid_default",
-        default
-    )]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub comment_type: CommentType,
     #[serde(rename = "comment_label")]
     pub label: Option<String>,

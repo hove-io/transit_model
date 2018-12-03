@@ -37,7 +37,8 @@ fn test_merge_stop_areas_multi_steps() {
             paths,
             200,
             Path::new(&report_path).to_path_buf(),
-        ).unwrap();
+        )
+        .unwrap();
         let new_model = Model::new(collections).unwrap();
         navitia_model::ntfs::write(&new_model, path).unwrap();
         compare_output_dir_with_expected(

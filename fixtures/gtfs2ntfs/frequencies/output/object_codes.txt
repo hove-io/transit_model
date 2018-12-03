@@ -33,3 +33,7 @@ trip,trip:4-3,source,trip:4
 trip,trip:5-0,source,trip:5
 trip,trip:5-1,source,trip:5
 trip,trip:5-2,source,trip:5
+trip,trip:russian-0,source,trip:russian
+trip,trip:russian-1,source,trip:russian
+trip,trip:russian-2,source,trip:russian
+trip,trip:russian-3,source,trip:russian
