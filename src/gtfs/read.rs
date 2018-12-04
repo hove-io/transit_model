@@ -672,9 +672,15 @@ fn get_route_with_smallest_name<'a>(routes: &'a [&Route]) -> &'a Route {
 
 type MapLineRoutes<'a> = HashMap<(Option<String>, String), Vec<&'a Route>>;
 
-fn map_line_routes(gtfs_routes: &CollectionWithId<Route>) -> MapLineRoutes {
+fn map_line_routes<'a>(
+    gtfs_routes: &'a CollectionWithId<Route>,
+    gtfs_trips: &[Trip],
+) -> MapLineRoutes<'a> {
     let mut map = HashMap::new();
-    for r in gtfs_routes.values() {
+    for r in gtfs_routes
+        .values()
+        .filter(|r| gtfs_trips.iter().any(|t| t.route_id == r.id))
+    {
         map.entry(r.get_line_key())
             .or_insert_with(|| vec![])
             .push(r);
@@ -683,7 +689,6 @@ fn map_line_routes(gtfs_routes: &CollectionWithId<Route>) -> MapLineRoutes {
 }
 
 fn make_lines(
-    gtfs_trips: &[Trip],
     map_line_routes: &MapLineRoutes,
     networks: &CollectionWithId<objects::Network>,
 ) -> Result<Vec<objects::Line>> {
@@ -700,28 +705,26 @@ fn make_lines(
     for routes in map_line_routes.values() {
         let r = get_route_with_smallest_name(routes);
 
-        if gtfs_trips.iter().any(|t| t.route_id == r.id) {
-            lines.push(objects::Line {
-                id: r.id.clone(),
-                code: line_code(r),
-                codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
-                comment_links: CommentLinksT::default(),
-                name: r.long_name.to_string(),
-                forward_name: None,
-                forward_direction: None,
-                backward_name: None,
-                backward_direction: None,
-                color: r.color.clone(),
-                text_color: r.text_color.clone(),
-                sort_order: r.sort_order,
-                network_id: get_agency_id(r, networks)?,
-                commercial_mode_id: r.route_type.to_gtfs_value(),
-                geometry_id: None,
-                opening_time: None,
-                closing_time: None,
-            });
-        }
+        lines.push(objects::Line {
+            id: r.id.clone(),
+            code: line_code(r),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            name: r.long_name.to_string(),
+            forward_name: None,
+            forward_direction: None,
+            backward_name: None,
+            backward_direction: None,
+            color: r.color.clone(),
+            text_color: r.text_color.clone(),
+            sort_order: r.sort_order,
+            network_id: get_agency_id(r, networks)?,
+            commercial_mode_id: r.route_type.to_gtfs_value(),
+            geometry_id: None,
+            opening_time: None,
+            closing_time: None,
+        });
     }
 
     Ok(lines)
@@ -841,8 +844,8 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(trips_path))?;
 
-    let map_line_routes = map_line_routes(&gtfs_routes_collection);
-    let lines = make_lines(&gtfs_trips, &map_line_routes, &collections.networks)?;
+    let map_line_routes = map_line_routes(&gtfs_routes_collection, &gtfs_trips);
+    let lines = make_lines(&map_line_routes, &collections.networks)?;
     collections.lines = CollectionWithId::new(lines)?;
 
     let routes = make_routes(&gtfs_trips, &map_line_routes);
