@@ -20,6 +20,7 @@ use navitia_model::model::{GetCorresponding, Model};
 use navitia_model::objects::*;
 use navitia_model::relations::IdxSet;
 use navitia_model::test_utils::*;
+use std::collections::HashMap;
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
 where
@@ -121,8 +122,7 @@ fn ntfs() {
         assert_eq!(comment, &expect);
     }
     assert_eq!(4, pt_objects.comments.len());
-    let rera_lines_idx = pt_objects.lines.get_idx("RERA").unwrap();
-    let rera_comment_indexes = &pt_objects.lines[rera_lines_idx].comment_links;
+    let rera_comment_indexes = &pt_objects.lines.get("RERA").unwrap().comment_links;
     let mut iter = pt_objects.comments.iter_from(rera_comment_indexes);
     assert_eq_comment(
         iter.next().unwrap(),
@@ -149,6 +149,14 @@ fn ntfs() {
         OnDemandTransport,
     );
     assert_eq!(iter.next(), None);
+
+    let mut stop_time_comments = HashMap::<(Idx<VehicleJourney>, u32), Idx<Comment>>::new();
+    stop_time_comments.insert(
+        (pt_objects.vehicle_journeys.get_idx("RERAB1").unwrap(), 5),
+        pt_objects.comments.get_idx("RERACOM1").unwrap(),
+    );
+
+    assert_eq!(stop_time_comments, pt_objects.stop_time_comments);
 }
 
 #[test]

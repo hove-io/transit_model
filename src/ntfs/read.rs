@@ -108,6 +108,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
     let path = path.join("stop_times.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
     let mut headsigns = HashMap::new();
+    let mut stop_time_ids = HashMap::new();
     for stop_time in rdr.deserialize() {
         let stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
         let stop_point_idx = collections
@@ -135,6 +136,10 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             headsigns.insert((vj_idx, stop_time.stop_sequence), headsign);
         }
 
+        if let Some(stop_time_id) = stop_time.stop_time_id {
+            stop_time_ids.insert((vj_idx, stop_time.stop_sequence), stop_time_id);
+        }
+
         collections
             .vehicle_journeys
             .index_mut(vj_idx)
@@ -153,6 +158,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             });
     }
     collections.stop_time_headsigns = headsigns;
+    collections.stop_time_ids = stop_time_ids;
     let mut vehicle_journeys = collections.vehicle_journeys.take();
     for vj in &mut vehicle_journeys {
         vj.stop_times.sort_unstable_by_key(|st| st.sequence);
@@ -277,6 +283,37 @@ where
     Ok(())
 }
 
+fn insert_stop_time_comment_link(
+    stop_time_comments: &mut HashMap<(Idx<VehicleJourney>, u32), Idx<Comment>>,
+    stop_time_ids: &HashMap<(Idx<VehicleJourney>, u32), String>,
+    comments: &CollectionWithId<Comment>,
+    comment_link: &CommentLink,
+) -> Result<()> {
+    let stop_time_ids: HashMap<String, (Idx<VehicleJourney>, u32)> =
+        stop_time_ids.iter().map(|(k, v)| (v.clone(), *k)).collect();
+
+    let idx_sequence = match stop_time_ids.get(&comment_link.object_id) {
+        Some(idx_sequence) => idx_sequence,
+        None => {
+            error!(
+                "comment_links.txt: object_type={} object_id={} not found",
+                comment_link.object_type.as_str(),
+                comment_link.object_id
+            );
+            return Ok(());
+        }
+    };
+    let comment_idx = match comments.get_idx(&comment_link.comment_id) {
+        Some(comment_idx) => comment_idx,
+        None => bail!(
+            "comment.txt: comment_id={} not found",
+            comment_link.comment_id
+        ),
+    };
+    stop_time_comments.insert(*idx_sequence, comment_idx);
+    Ok(())
+}
+
 pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Result<()> {
     if path.join("comments.txt").exists() {
         collections.comments = make_collection_with_id(path, "comments.txt")?;
@@ -312,7 +349,12 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Resu
                         &collections.comments,
                         &comment_link,
                     )?,
-                    ObjectType::StopTime => warn!("comments are not added to StopTime yet"),
+                    ObjectType::StopTime => insert_stop_time_comment_link(
+                        &mut collections.stop_time_comments,
+                        &collections.stop_time_ids,
+                        &collections.comments,
+                        &comment_link,
+                    )?,
                     ObjectType::LineGroup => warn!("line_groups.txt is not parsed yet"),
                     _ => bail!(
                         "comment does not support {}",

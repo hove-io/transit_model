@@ -43,6 +43,7 @@ pub fn write_vehicle_journeys_and_stop_times(
     vehicle_journeys: &CollectionWithId<VehicleJourney>,
     stop_points: &CollectionWithId<StopPoint>,
     stop_time_headsigns: &HashMap<(Idx<VehicleJourney>, u32), String>,
+    stop_time_ids: &HashMap<(Idx<VehicleJourney>, u32), String>,
 ) -> Result<()> {
     info!("Writing trips.txt and stop_times.txt");
     let trip_path = path.join("trips.txt");
@@ -70,7 +71,7 @@ pub fn write_vehicle_journeys_and_stop_times(
                     datetime_estimated: st.datetime_estimated,
                     local_zone_id: st.local_zone_id,
                     stop_headsign: stop_time_headsigns.get(&(vj_idx, st.sequence)).cloned(),
-                    // TODO: Add stop_time_ids
+                    stop_time_id: stop_time_ids.get(&(vj_idx, st.sequence)).cloned(),
                 }).with_context(ctx_from_path!(st_wtr))?;
         }
     }
@@ -193,6 +194,30 @@ where
     Ok(())
 }
 
+fn write_stop_time_comment_links<W>(
+    wtr: &mut csv::Writer<W>,
+    stop_time_ids: &HashMap<(Idx<VehicleJourney>, u32), String>,
+    stop_time_comments: &HashMap<(Idx<VehicleJourney>, u32), Idx<Comment>>,
+    comments: &CollectionWithId<Comment>,
+    path: &path::Path,
+) -> Result<()>
+where
+    W: ::std::io::Write,
+{
+    for (idx_sequence, idx_comment) in stop_time_comments {
+        let comment = &comments[*idx_comment];
+        let st_id = &stop_time_ids[idx_sequence];
+
+        wtr.serialize(CommentLink {
+            object_id: st_id.to_string(),
+            object_type: ObjectType::StopTime,
+            comment_id: comment.id.to_string(),
+        }).with_context(ctx_from_path!(path))?;
+    }
+
+    Ok(())
+}
+
 pub fn write_comments(path: &path::Path, collections: &Collections) -> Result<()> {
     if collections.comments.is_empty() {
         return Ok(());
@@ -242,7 +267,16 @@ pub fn write_comments(path: &path::Path, collections: &Collections) -> Result<()
         &collections.comments,
         &comment_links_path,
     )?;
-    // TODO: add stop_times and line_groups
+
+    write_stop_time_comment_links(
+        &mut cl_wtr,
+        &collections.stop_time_ids,
+        &collections.stop_time_comments,
+        &collections.comments,
+        &comment_links_path,
+    )?;
+
+    // TODO: add line_groups
 
     cl_wtr
         .flush()
