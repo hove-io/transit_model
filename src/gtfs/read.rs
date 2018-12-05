@@ -677,10 +677,13 @@ fn map_line_routes<'a>(
     gtfs_trips: &[Trip],
 ) -> MapLineRoutes<'a> {
     let mut map = HashMap::new();
-    for r in gtfs_routes
-        .values()
-        .filter(|r| gtfs_trips.iter().any(|t| t.route_id == r.id))
-    {
+    for r in gtfs_routes.values().filter(|r| {
+        if !gtfs_trips.iter().any(|t| t.route_id == r.id) {
+            warn!("Coudn't find trips for route_id {}", r.id);
+            return false;
+        }
+        true
+    }) {
         map.entry(r.get_line_key())
             .or_insert_with(|| vec![])
             .push(r);
@@ -744,9 +747,6 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<obje
             let mut route_directions: HashSet<&DirectionType> = HashSet::new();
             for t in gtfs_trips.iter().filter(|t| t.route_id == r.id) {
                 route_directions.insert(&t.direction);
-            }
-            if route_directions.is_empty() {
-                warn!("Coudn't find trips for route_id {}", r.id);
             }
 
             for d in route_directions {
