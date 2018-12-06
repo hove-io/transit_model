@@ -128,14 +128,14 @@ fn read_rules<P: AsRef<Path>>(
                         }
                     } else {
                         let category = match *transfers_mode {
-                            TransfersMode::IntraContributor => ReportType::TransferIntraIgnored,
-                            TransfersMode::InterContributor => ReportType::TransferInterIgnored,
+                            TransfersMode::IntraContributor => ReportType::TransferInterIgnored,
+                            TransfersMode::InterContributor => ReportType::TransferIntraIgnored,
                             TransfersMode::All => ReportType::TransferInterIgnored, // not reachable
                         };
                         report.add_warning(
                             format!(
-                                "transfer between stops {} and {} is ignored ({:?})",
-                                rule.from_stop_id, rule.to_stop_id, transfers_mode
+                                "transfer between stops {} and {} is ignored",
+                                rule.from_stop_id, rule.to_stop_id
                             ),
                             category,
                         );
@@ -144,28 +144,28 @@ fn read_rules<P: AsRef<Path>>(
                 (Some(_), None) => {
                     report.add_warning(
                         format!(
-                            "manual transfer references an unexisting stop point ({})",
+                            "manual transfer references an non-existent stop point ({})",
                             rule.to_stop_id
                         ),
-                        ReportType::TransferOnUnexistingStop,
+                        ReportType::TransferOnNonExistentStop,
                     );
                 }
                 (None, Some(_)) => {
                     report.add_warning(
                         format!(
-                            "manual transfer references an unexisting stop point ({})",
+                            "manual transfer references an non-existent stop point ({})",
                             rule.from_stop_id
                         ),
-                        ReportType::TransferOnUnexistingStop,
+                        ReportType::TransferOnNonExistentStop,
                     );
                 }
                 _ => {
                     report.add_warning(
                         format!(
-                            "manual transfer references unexisting stop points ({} and {})",
+                            "manual transfer references non-existent stop points ({} and {})",
                             rule.from_stop_id, rule.to_stop_id
                         ),
-                        ReportType::TransferOnUnexistingStop,
+                        ReportType::TransferOnNonExistentStop,
                     );
                 }
             }

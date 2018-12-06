@@ -297,7 +297,7 @@ pub enum ReportType {
     // transfers types
     TransferIntraIgnored,
     TransferInterIgnored,
-    TransferOnUnexistingStop,
+    TransferOnNonExistentStop,
     TransferOnUnreferencedStop,
     TransferAlreadyDeclared,
     // apply-rules types
