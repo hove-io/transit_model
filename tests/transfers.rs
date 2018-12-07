@@ -43,7 +43,8 @@ fn test_generates_transfers() {
             rules,
             &TransfersMode::IntraContributor,
             None,
-        ).unwrap();
+        )
+        .unwrap();
         navitia_model::ntfs::write(&model, path).unwrap();
         compare_output_dir_with_expected(
             &path,
@@ -67,7 +68,8 @@ fn test_generates_transfers_with_modification_rules() {
             rules,
             &TransfersMode::IntraContributor,
             None,
-        ).unwrap();
+        )
+        .unwrap();
         navitia_model::ntfs::write(&model, path).unwrap();
         compare_output_dir_with_expected(
             &path,

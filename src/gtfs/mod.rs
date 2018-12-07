@@ -151,6 +151,10 @@ struct Trip {
     bikes_allowed: Availability,
 }
 
+fn default_true_bool() -> bool {
+    true
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
     trip_id: String,
@@ -165,6 +169,12 @@ struct StopTime {
     drop_off_type: u8,
     local_zone_id: Option<u16>,
     stop_headsign: Option<String>,
+    #[serde(
+        deserialize_with = "de_from_u8_with_true_default",
+        serialize_with = "ser_from_bool",
+        default = "default_true_bool"
+    )]
+    timepoint: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
@@ -257,6 +267,7 @@ where
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
     collections.comments = comments;
     read::manage_stop_times(&mut collections, path)?;
+    read::manage_frequencies(&mut collections, path)?;
 
     //add prefixes
     if let Some(prefix) = prefix {

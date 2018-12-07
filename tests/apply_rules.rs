@@ -33,7 +33,8 @@ fn test_apply_complementary_codes() {
             &mut collections,
             rules,
             Path::new(&report_path).to_path_buf(),
-        ).unwrap();
+        )
+        .unwrap();
         let model = navitia_model::Model::new(collections).unwrap();
         navitia_model::ntfs::write(&model, path).unwrap();
         compare_output_dir_with_expected(

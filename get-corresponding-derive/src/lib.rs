@@ -126,14 +126,16 @@ fn to_edge(field: &syn::Field) -> Option<Edge> {
         .flat_map(|attr| match attr.value {
             List(ref i, ref v) if i == "get_corresponding" => v.as_slice(),
             _ => &[],
-        }).map(|mi| match *mi {
+        })
+        .map(|mi| match *mi {
             MetaItem(NameValue(ref i, syn::Lit::Str(ref l, _))) => {
                 assert_eq!(i, "weight", "{} is not a valid attribute", i);
                 l.parse::<f64>()
                     .expect("`weight` attribute must be convertible to f64")
             }
             _ => panic!("Only `key = \"value\"` attributes supported."),
-        }).last()
+        })
+        .last()
         .unwrap_or(1.);
 
     Edge {
@@ -141,7 +143,8 @@ fn to_edge(field: &syn::Field) -> Option<Edge> {
         from: from_ty.clone(),
         to: to_ty.clone(),
         weight: weight,
-    }.into()
+    }
+    .into()
 }
 
 fn make_edge_to_get_corresponding<'a>(

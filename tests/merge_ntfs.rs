@@ -210,7 +210,8 @@ fn merge_collections_with_transfers_ok() {
             rule_paths,
             &TransfersMode::InterContributor,
             Some(Path::new(&report_path).to_path_buf()),
-        ).unwrap();
+        )
+        .unwrap();
         navitia_model::ntfs::write(&model, path).unwrap();
         compare_output_dir_with_expected(
             &path,

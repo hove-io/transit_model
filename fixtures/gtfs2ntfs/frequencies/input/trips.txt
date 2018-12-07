@@ -1,0 +1,9 @@
+route_id,service_id,trip_id
+route:1,service:1,trip:1
+route:1,service:1,trip:2
+route:2,service:1,trip:3
+route:2,service:1,trip:4
+route:3,service:2,trip:5
+route:3,service:2,trip:after_midnight
+route:3,service:2,trip:with_no_stop_times
+route:3,service:3,trip:russian

@@ -112,7 +112,8 @@ impl NetexReader {
                     ..Default::default()
                 }),
                 _ => bail!("An 'Operator' node doesn't have an 'id' property."),
-            }).collect::<Result<Vec<_>>>()?;
+            })
+            .collect::<Result<Vec<_>>>()?;
         if !companies.is_empty() {
             self.context.first_operator_id = companies[0].id.to_string();
             for c in companies {

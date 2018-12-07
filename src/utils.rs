@@ -67,6 +67,17 @@ where
     Ok(i != 0)
 }
 
+pub fn de_from_u8_with_true_default<'de, D>(deserializer: D) -> Result<bool, D::Error>
+where
+    D: ::serde::Deserializer<'de>,
+{
+    use serde::Deserialize;
+    match u8::deserialize(deserializer) {
+        Ok(val) => Ok(val != 0),
+        Err(_) => Ok(true),
+    }
+}
+
 pub fn ser_from_bool<S>(v: &bool, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: ::serde::Serializer,

@@ -68,11 +68,12 @@ pub fn write_vehicle_journeys_and_stop_times(
                     alighting_duration: st.alighting_duration,
                     pickup_type: st.pickup_type,
                     drop_off_type: st.drop_off_type,
-                    datetime_estimated: st.datetime_estimated,
+                    datetime_estimated: Some(st.datetime_estimated as u8),
                     local_zone_id: st.local_zone_id,
                     stop_headsign: stop_time_headsigns.get(&(vj_idx, st.sequence)).cloned(),
                     stop_time_id: stop_time_ids.get(&(vj_idx, st.sequence)).cloned(),
-                }).with_context(ctx_from_path!(st_wtr))?;
+                })
+                .with_context(ctx_from_path!(st_wtr))?;
         }
     }
     st_wtr
@@ -149,7 +150,8 @@ pub fn write_stops(
             timezone: st.timezone.clone(),
             equipment_id: st.equipment_id.clone(),
             geometry_id: st.geometry_id.clone(),
-        }).with_context(ctx_from_path!(path))?;
+        })
+        .with_context(ctx_from_path!(path))?;
     }
 
     for sa in stop_areas.values() {
@@ -165,7 +167,8 @@ pub fn write_stops(
             timezone: sa.timezone.clone(),
             equipment_id: sa.equipment_id.clone(),
             geometry_id: sa.geometry_id.clone(),
-        }).with_context(ctx_from_path!(path))?;
+        })
+        .with_context(ctx_from_path!(path))?;
     }
     wtr.flush().with_context(ctx_from_path!(path))?;
 
@@ -188,7 +191,8 @@ where
                 object_id: obj.id().to_string(),
                 object_type: T::get_object_type(),
                 comment_id: comment.id.to_string(),
-            }).with_context(ctx_from_path!(path))?;
+            })
+            .with_context(ctx_from_path!(path))?;
         }
     }
     Ok(())
@@ -212,7 +216,8 @@ where
             object_id: st_id.to_string(),
             object_type: ObjectType::StopTime,
             comment_id: comment.id.to_string(),
-        }).with_context(ctx_from_path!(path))?;
+        })
+        .with_context(ctx_from_path!(path))?;
     }
 
     Ok(())
@@ -302,7 +307,8 @@ where
                 object_type: T::get_object_type(),
                 object_system: c.0.clone(),
                 object_code: c.1.clone(),
-            }).with_context(ctx_from_path!(path))?;
+            })
+            .with_context(ctx_from_path!(path))?;
         }
     }
 
@@ -356,7 +362,8 @@ where
                 object_type: T::get_object_type(),
                 object_property_name: c.0.clone(),
                 object_property_value: c.1.clone(),
-            }).with_context(ctx_from_path!(path))?;
+            })
+            .with_context(ctx_from_path!(path))?;
         }
     }
 

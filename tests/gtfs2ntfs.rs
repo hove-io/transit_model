@@ -18,6 +18,24 @@ extern crate navitia_model;
 use navitia_model::test_utils::*;
 
 #[test]
+fn test_frequencies_generate_trips() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./fixtures/gtfs2ntfs/frequencies/input";
+        let model = navitia_model::gtfs::read(input_dir, None, None).unwrap();
+        navitia_model::ntfs::write(&model, path).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            vec![
+                "calendar_dates.txt",
+                "trips.txt",
+                "stop_times.txt",
+                "object_codes.txt",
+            ],
+            "./fixtures/gtfs2ntfs/frequencies/output",
+        );
+    });
+}
+#[test]
 fn test_minimal_gtfs() {
     test_in_tmp_dir(|path| {
         let input_dir = "./fixtures/gtfs2ntfs/minimal/input";

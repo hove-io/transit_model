@@ -53,40 +53,19 @@ pub struct CalendarDate {
 pub struct Calendar {
     #[serde(rename = "service_id")]
     id: String,
-    #[serde(
-        deserialize_with = "de_from_u8",
-        serialize_with = "ser_from_bool"
-    )]
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     monday: bool,
-    #[serde(
-        deserialize_with = "de_from_u8",
-        serialize_with = "ser_from_bool"
-    )]
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     tuesday: bool,
-    #[serde(
-        deserialize_with = "de_from_u8",
-        serialize_with = "ser_from_bool"
-    )]
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     wednesday: bool,
-    #[serde(
-        deserialize_with = "de_from_u8",
-        serialize_with = "ser_from_bool"
-    )]
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     thursday: bool,
-    #[serde(
-        deserialize_with = "de_from_u8",
-        serialize_with = "ser_from_bool"
-    )]
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     friday: bool,
-    #[serde(
-        deserialize_with = "de_from_u8",
-        serialize_with = "ser_from_bool"
-    )]
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     saturday: bool,
-    #[serde(
-        deserialize_with = "de_from_u8",
-        serialize_with = "ser_from_bool"
-    )]
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     sunday: bool,
     #[serde(
         deserialize_with = "de_from_date_string",
@@ -171,7 +150,8 @@ fn manage_calendar_dates(
                         .push(objects::Calendar {
                             id: calendar_date.service_id,
                             dates,
-                        }).unwrap();
+                        })
+                        .unwrap();
                 }
             });
         }
@@ -221,7 +201,8 @@ pub fn write_calendar_dates(
                 service_id: c.id.clone(),
                 date: *d,
                 exception_type: ExceptionType::Add,
-            }).with_context(ctx_from_path!(calendar_dates_path))?;
+            })
+            .with_context(ctx_from_path!(calendar_dates_path))?;
         }
     }
     wtr.flush()

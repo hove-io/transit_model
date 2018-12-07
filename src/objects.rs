@@ -25,6 +25,7 @@ use geo_types::Geometry as GeoGeometry;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
+use std::ops::{Add, Sub};
 use std::str::FromStr;
 use utils::*;
 
@@ -65,9 +66,7 @@ impl ObjectType {
     }
 }
 
-// We use a Vec here for memory efficiency.  Other possible types can
-// be something like BTreeSet<(String,String)> or
-// BTreeMap<String,Vec<String>>.  Hash{Map,Set} are memory costy.
+// We use a BTreeSet<(String,String)> because Hash{Map,Set} are memory costy.
 pub type KeysValues = BTreeSet<(String, String)>;
 
 pub trait Codes {
@@ -574,7 +573,7 @@ impl GetObjectType for Route {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct VehicleJourney {
     #[serde(rename = "trip_id")]
     pub id: String,
@@ -708,6 +707,21 @@ impl Time {
     pub fn seconds(&self) -> u32 {
         self.0 % 60
     }
+    fn total_seconds(&self) -> u32 {
+        self.0
+    }
+}
+impl Add for Time {
+    type Output = Time;
+    fn add(self, other: Time) -> Time {
+        Time(self.total_seconds() + other.total_seconds())
+    }
+}
+impl Sub for Time {
+    type Output = Time;
+    fn sub(self, other: Time) -> Time {
+        Time(self.total_seconds() - other.total_seconds())
+    }
 }
 impl FromStr for Time {
     type Err = TimeError;
@@ -764,7 +778,7 @@ impl<'de> ::serde::Deserialize<'de> for Time {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct StopTime {
     pub stop_point_idx: Idx<StopPoint>,
     pub sequence: u32,
@@ -776,6 +790,18 @@ pub struct StopTime {
     pub drop_off_type: u8,
     pub datetime_estimated: bool,
     pub local_zone_id: Option<u16>,
+}
+
+impl Ord for StopTime {
+    fn cmp(&self, other: &StopTime) -> Ordering {
+        self.sequence.cmp(&other.sequence)
+    }
+}
+
+impl PartialOrd for StopTime {
+    fn partial_cmp(&self, other: &StopTime) -> Option<Ordering> {
+        Some(self.cmp(&other))
+    }
 }
 
 impl GetObjectType for StopTime {
@@ -979,7 +1005,7 @@ pub enum ExceptionType {
     Remove,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Calendar {
     pub id: String,
     #[serde(skip)]
@@ -1059,10 +1085,7 @@ pub enum CommentType {
 pub struct Comment {
     #[serde(rename = "comment_id")]
     pub id: String,
-    #[serde(
-        deserialize_with = "de_with_empty_or_invalid_default",
-        default
-    )]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub comment_type: CommentType,
     #[serde(rename = "comment_label")]
     pub label: Option<String>,

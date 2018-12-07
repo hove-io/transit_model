@@ -128,13 +128,20 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
                 format_err!(
                     "Problem reading {:?}: trip_id={:?} not found",
                     path,
-                    stop_time.stop_id
+                    stop_time.trip_id
                 )
             })?;
 
         if let Some(headsign) = stop_time.stop_headsign {
             headsigns.insert((vj_idx, stop_time.stop_sequence), headsign);
         }
+        let datetime_estimated = stop_time.datetime_estimated.map_or_else(
+            || match collections.stop_points[stop_point_idx].stop_type {
+                StopType::Zone => true,
+                _ => false,
+            },
+            |v| v != 0,
+        );
 
         if let Some(stop_time_id) = stop_time.stop_time_id {
             stop_time_ids.insert((vj_idx, stop_time.stop_sequence), stop_time_id);
@@ -153,7 +160,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
                 alighting_duration: stop_time.alighting_duration,
                 pickup_type: stop_time.pickup_type,
                 drop_off_type: stop_time.drop_off_type,
-                datetime_estimated: stop_time.datetime_estimated,
+                datetime_estimated,
                 local_zone_id: stop_time.local_zone_id,
             });
     }
