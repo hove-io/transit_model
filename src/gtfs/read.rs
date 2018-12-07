@@ -927,7 +927,7 @@ pub fn manage_frequencies<P: AsRef<path::Path>>(
         .deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(frequencies_path))?;
-    let mut trip_id_sequence: HashMap<String, u8> = HashMap::new();
+    let mut trip_id_sequence: HashMap<String, u32> = HashMap::new();
     let mut new_vehicle_journeys: Vec<VehicleJourney> = vec![];
     for frequency in &gtfs_frequencies {
         if frequency.start_time == frequency.end_time {
