@@ -292,13 +292,10 @@ where
 
 fn insert_stop_time_comment_link(
     stop_time_comments: &mut HashMap<(Idx<VehicleJourney>, u32), Idx<Comment>>,
-    stop_time_ids: &HashMap<(Idx<VehicleJourney>, u32), String>,
+    stop_time_ids: &HashMap<&String, (Idx<VehicleJourney>, u32)>,
     comments: &CollectionWithId<Comment>,
     comment_link: &CommentLink,
 ) -> Result<()> {
-    let stop_time_ids: HashMap<String, (Idx<VehicleJourney>, u32)> =
-        stop_time_ids.iter().map(|(k, v)| (v.clone(), *k)).collect();
-
     let idx_sequence = match stop_time_ids.get(&comment_link.object_id) {
         Some(idx_sequence) => idx_sequence,
         None => {
@@ -327,6 +324,12 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Resu
 
         let path = path.join("comment_links.txt");
         if let Ok(mut rdr) = csv::Reader::from_path(&path) {
+            // invert the stop_time_ids map to search a stop_time by it's id
+            let stop_time_ids = collections
+                .stop_time_ids
+                .iter()
+                .map(|(k, v)| (v, *k))
+                .collect();
             info!("Reading comment_links.txt");
             for comment_link in rdr.deserialize() {
                 let comment_link: CommentLink = comment_link.with_context(ctx_from_path!(path))?;
@@ -358,7 +361,7 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Resu
                     )?,
                     ObjectType::StopTime => insert_stop_time_comment_link(
                         &mut collections.stop_time_comments,
-                        &collections.stop_time_ids,
+                        &stop_time_ids,
                         &collections.comments,
                         &comment_link,
                     )?,
