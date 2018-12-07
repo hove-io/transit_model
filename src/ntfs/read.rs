@@ -325,7 +325,7 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Resu
         let path = path.join("comment_links.txt");
         if let Ok(mut rdr) = csv::Reader::from_path(&path) {
             // invert the stop_time_ids map to search a stop_time by it's id
-            let stop_time_ids: HashMap<&String, (Idx<VehicleJourney>, u32)> = collections
+            let stop_time_ids = collections
                 .stop_time_ids
                 .iter()
                 .map(|(k, v)| (v, *k))
