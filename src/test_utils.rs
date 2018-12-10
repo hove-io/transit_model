@@ -48,10 +48,11 @@ pub fn compare_output_dir_with_expected<P: AsRef<Path>>(
     }
 }
 
-pub fn create_file_with_content(path: &path::Path, file_name: &str, content: &str) {
+pub fn create_file_with_content(path: &path::Path, file_name: &str, content: &str) -> File {
     let file_path = path.join(file_name);
     let mut f = File::create(&file_path).unwrap();
     f.write_all(content.as_bytes()).unwrap();
+    File::open(file_path).unwrap()
 }
 
 pub fn test_in_tmp_dir<F>(func: F)

@@ -28,6 +28,7 @@ use utils::*;
 use Result;
 extern crate tempdir;
 use self::tempdir::TempDir;
+use read_utils::open_file;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
@@ -123,7 +124,12 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.trip_properties = make_opt_collection_with_id(path, "trip_properties.txt")?;
     collections.transfers = make_opt_collection(path, "transfers.txt")?;
     collections.admin_stations = make_opt_collection(path, "admin_stations.txt")?;
-    common_format::manage_calendars(&mut collections, path)?;
+    //TODO
+    // common_format::manage_calendars(
+    //     open_file(path, "calendar.txt").ok(),
+    //     open_file(path, "calendar_dates.txt").ok(),
+    //     &mut collections,
+    // )?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
     read::manage_stops(&mut collections, path)?;
@@ -200,6 +206,7 @@ mod tests {
     use serde;
     use std::collections::{BTreeMap, BTreeSet, HashMap};
     use std::fmt::Debug;
+    use std::fs::File;
     use test_utils::*;
     use utils::*;
 
@@ -668,8 +675,10 @@ mod tests {
         test_in_tmp_dir(|path| {
             common_format::write_calendar_dates(path, &calendars).unwrap();
 
+            let calendar_file = File::open(path.join("calendar_dates.txt")).unwrap();
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut collections, path).unwrap();
+            common_format::manage_calendars(None::<File>, Some(calendar_file), &mut collections)
+                .unwrap();
 
             assert_eq!(collections.calendars, calendars);
         });

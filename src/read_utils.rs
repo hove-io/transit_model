@@ -17,12 +17,14 @@
 use collection::CollectionWithId;
 use model::Collections;
 use objects::{self, Contributor};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
 use std::path;
 use utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
 use Result;
 extern crate serde_json;
+use failure::ResultExt;
+use std::path::{Path, PathBuf};
 
 #[derive(Deserialize, Debug)]
 struct ConfigDataset {
@@ -92,4 +94,86 @@ pub fn get_validity_period(
         start_date: *dates.iter().next().unwrap(),
         end_date: *dates.iter().next_back().unwrap(),
     })
+}
+
+pub trait FileHandler<'a, R: 'a>
+where
+    R: std::io::Read,
+{
+    fn get_file(&'a mut self, name: &str) -> Result<R>;
+}
+
+pub fn open_file<P: AsRef<path::Path>>(
+    path: P,
+    name: &str,
+) -> std::result::Result<File, failure::Context<String>> {
+    let f = path.as_ref().join(name);
+    File::open(&f).with_context(ctx_from_path!(&f))
+}
+
+pub struct PathFileHandler {
+    base_path: PathBuf,
+}
+
+impl PathFileHandler {
+    pub fn new(path: PathBuf) -> Self {
+        PathFileHandler { base_path: path }
+    }
+}
+
+impl<'a> FileHandler<'a, File> for PathFileHandler {
+    fn get_file(&'a mut self, name: &str) -> Result<File> {
+        let f = self.base_path.join(name);
+        Ok(File::open(&f).with_context(ctx_from_path!(&f))?)
+    }
+}
+
+/// ZipHandler is a wrapper around a ZipArchive
+/// It provides a way to access the archive's file by their names
+///
+/// Unlike ZipArchive, it gives access to a file by it's name not regarding it's path in the ZipArchive
+pub struct ZipHandler<R: std::io::Seek + std::io::Read> {
+    archive: zip::ZipArchive<R>,
+    index_by_name: BTreeMap<String, usize>,
+}
+
+impl<R> ZipHandler<R>
+where
+    R: std::io::Seek + std::io::Read,
+{
+    pub fn new(r: R) -> Result<Self> {
+        let mut archive = zip::ZipArchive::new(r)?;
+        Ok(ZipHandler {
+            index_by_name: Self::files_by_name(&mut archive),
+            archive: archive,
+        })
+    }
+
+    fn files_by_name(archive: &mut zip::ZipArchive<R>) -> BTreeMap<String, usize> {
+        let mut res = BTreeMap::new();
+        for i in 0..archive.len() {
+            let file = archive.by_index(i).unwrap();
+            // we get the name of the file, not regarding it's patch in the ZipArchive
+            let real_name = Path::new(file.name()).file_name().unwrap();
+            let real_name: String = real_name.to_str().unwrap().into();
+            res.insert(real_name, i);
+        }
+        res
+    }
+}
+
+impl<'a, R> FileHandler<'a, zip::read::ZipFile<'a>> for ZipHandler<R>
+where
+    R: std::io::Seek + std::io::Read,
+{
+    fn get_file(&'a mut self, name: &str) -> Result<zip::read::ZipFile<'a>> {
+        // self.index_by_name
+        //     .get(name)
+        //     .map(|i| self.archive.by_index(i.clone()).unwrap())
+        //     .ok_or(format_err!("impossible to find file {}", name))
+        match self.index_by_name.get(name) {
+            None => Err(format_err!("impossible to find file {}", name)),
+            Some(i) => Ok(self.archive.by_index(*i).unwrap()),
+        }
+    }
 }

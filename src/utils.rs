@@ -190,6 +190,12 @@ macro_rules! ctx_from_path {
     };
 }
 
+macro_rules! ctx_from_filename {
+    ($name:expr) => {
+        |_| format!("Error reading file {:?}", $name)
+    };
+}
+
 pub fn make_opt_collection_with_id<T>(
     path: &path::Path,
     file: &str,
