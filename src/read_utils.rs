@@ -96,11 +96,8 @@ pub fn get_validity_period(
     })
 }
 
-pub trait FileHandler<'a, R: 'a>
-where
-    R: std::io::Read,
-{
-    fn get_file(&'a mut self, name: &str) -> Result<R>;
+pub trait FileHandler {
+    fn get_file<'a>(&'a mut self, name: &str) -> Result<Box<std::io::Read + 'a>>;
 }
 
 pub fn open_file<P: AsRef<path::Path>>(
@@ -121,10 +118,10 @@ impl PathFileHandler {
     }
 }
 
-impl<'a> FileHandler<'a, File> for PathFileHandler {
-    fn get_file(&'a mut self, name: &str) -> Result<File> {
+impl FileHandler for PathFileHandler {
+    fn get_file<'a>(&'a mut self, name: &str) -> Result<Box<std::io::Read + 'a>> {
         let f = self.base_path.join(name);
-        Ok(File::open(&f).with_context(ctx_from_path!(&f))?)
+        Ok(Box::new(File::open(&f).with_context(ctx_from_path!(&f))?))
     }
 }
 
@@ -162,18 +159,19 @@ where
     }
 }
 
-impl<'a, R> FileHandler<'a, zip::read::ZipFile<'a>> for ZipHandler<R>
+impl<R> FileHandler for ZipHandler<R>
 where
     R: std::io::Seek + std::io::Read,
 {
-    fn get_file(&'a mut self, name: &str) -> Result<zip::read::ZipFile<'a>> {
+    fn get_file<'a>(&'a mut self, name: &str) -> Result<Box<std::io::Read + 'a>>
+    {
         // self.index_by_name
         //     .get(name)
         //     .map(|i| self.archive.by_index(i.clone()).unwrap())
         //     .ok_or(format_err!("impossible to find file {}", name))
         match self.index_by_name.get(name) {
             None => Err(format_err!("impossible to find file {}", name)),
-            Some(i) => Ok(self.archive.by_index(*i).unwrap()),
+            Some(i) => Ok(Box::new(self.archive.by_index(*i).unwrap())),
         }
     }
 }

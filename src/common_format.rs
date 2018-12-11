@@ -118,9 +118,9 @@ impl Calendar {
     }
 }
 
-fn manage_calendar_dates<'a, H: FileHandler<'a, R>, R: 'a + std::io::Read>(
+fn manage_calendar_dates<H: FileHandler>(
     calendars: &mut CollectionWithId<objects::Calendar>,
-    file_handler: &'a mut H,
+    file_handler: &mut H,
 ) -> Result<()> {
     let file = "calendar_dates.txt";
 
@@ -164,8 +164,8 @@ fn manage_calendar_dates<'a, H: FileHandler<'a, R>, R: 'a + std::io::Read>(
     Ok(())
 }
 
-pub fn manage_calendars<'a, H: FileHandler<'a, R>, R: 'a + std::io::Read>(
-    file_handler: &'a mut H,
+pub fn manage_calendars<H: FileHandler>(
+    file_handler: &mut H,
     // calendar_reader: Option<R>,
     // calendar_date_reader: Option<R>,
     collections: &mut Collections,

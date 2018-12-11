@@ -291,14 +291,14 @@ where
     Ok(Model::new(collections)?)
 }
 
-pub fn read2<'a, H, R>(
-    file_handler: &'a mut H,
+/// TODO
+pub fn read2<H>(
+    file_handler: &mut H,
     config_path: Option<impl AsRef<Path>>,
     prefix: Option<String>,
 ) -> Result<Model>
 where
-    H: 'a + read_utils::FileHandler<'a, R>,
-    R: 'a + std::io::Read,
+    H: read_utils::FileHandler,
 {
     let mut collections = Collections::default();
     let mut equipments = EquipmentList::default();
