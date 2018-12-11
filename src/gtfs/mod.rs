@@ -290,7 +290,6 @@ pub fn read_from_path<P: AsRef<Path>>(
     read(&mut file_handle, config_path, prefix)
 }
 
-/// read a gtfs from a zip file
 /// Imports a `Model` from a zip file containing the [GTFS](http://gtfs.org/).
 ///
 /// The `config_path` argument allows you to give a path to a file
@@ -310,7 +309,15 @@ pub fn read_from_zip<P: AsRef<Path>>(
     read(&mut file_handle, config_path, prefix)
 }
 
-/// pouet
+/// Imports a `Model` from a url hosting a zip file containing the [GTFS](http://gtfs.org/).
+///
+/// The `config_path` argument allows you to give a path to a file
+/// containing a json representing the contributor and dataset used
+/// for this GTFS. If not given, default values will be created.
+///
+/// The `prefix` argument is a string that will be prepended to every
+/// identifiers, allowing to namespace the dataset. By default, no
+/// prefix will be added to the identifiers.
 pub fn read_from_url<P: AsRef<Path>>(
     url: String,
     config_path: Option<P>,
