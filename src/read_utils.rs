@@ -24,6 +24,7 @@ use utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
 use Result;
 extern crate serde_json;
 use failure::ResultExt;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::result::Result as StdResult;
 
@@ -102,6 +103,7 @@ pub trait FileHandler {
     fn get_file(self, name: &str) -> Result<Self::Reader>;
 }
 
+/// PathFileHandler is used to read files for a directory
 pub struct PathFileHandler {
     base_path: PathBuf,
 }
@@ -195,4 +197,12 @@ where
 {
     let vec = read_objects(file_handler, file_name)?;
     CollectionWithId::new(vec)
+}
+
+/// Read an URL and get a cursor on the hosted file
+pub fn read_url(url: &str) -> Result<std::io::Cursor<Vec<u8>>> {
+    let mut res = reqwest::get(url)?;
+    let mut body = Vec::new();
+    res.read_to_end(&mut body)?;
+    Ok(std::io::Cursor::new(body))
 }

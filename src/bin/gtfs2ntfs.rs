@@ -32,6 +32,11 @@ struct Opt {
     #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
+    /// input url.
+    /// If both input and url are set, the url is used.
+    #[structopt(short = "u", long = "url")]
+    url: Option<String>,
+
     /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: PathBuf,
@@ -58,10 +63,14 @@ fn run() -> Result<()> {
             .map(|e| e == "zip")
             .unwrap_or(false);
 
-    let objects = if is_zip {
-        navitia_model::gtfs::read_from_zip(opt.input, opt.config_path, opt.prefix)?
+    let objects = if let Some(url) = opt.url {
+        navitia_model::gtfs::read_from_url(url, opt.config_path, opt.prefix)?
     } else {
-        navitia_model::gtfs::read_from_path(opt.input, opt.config_path, opt.prefix)?
+        if is_zip {
+            navitia_model::gtfs::read_from_zip(opt.input, opt.config_path, opt.prefix)?
+        } else {
+            navitia_model::gtfs::read_from_path(opt.input, opt.config_path, opt.prefix)?
+        }
     };
 
     navitia_model::ntfs::write(&objects, opt.output)?;

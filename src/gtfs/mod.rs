@@ -310,6 +310,17 @@ pub fn read_from_zip<P: AsRef<Path>>(
     read(&mut file_handle, config_path, prefix)
 }
 
+/// pouet
+pub fn read_from_url<P: AsRef<Path>>(
+    url: String,
+    config_path: Option<P>,
+    prefix: Option<String>,
+) -> Result<Model> {
+    let reader = read_utils::read_url(&url)?;
+    let mut file_handle = read_utils::ZipHandler::new(reader)?;
+    read(&mut file_handle, config_path, prefix)
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 enum RouteType {
     #[allow(non_camel_case_types)]

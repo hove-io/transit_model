@@ -34,7 +34,7 @@ use super::{
     Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
     TransferType, Trip,
 };
-use read_utils::{FileHandler, read_objects, read_collection};
+use read_utils::{read_collection, read_objects, FileHandler};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
