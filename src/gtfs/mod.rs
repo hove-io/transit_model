@@ -298,7 +298,7 @@ pub fn read2<H>(
     prefix: Option<String>,
 ) -> Result<Model>
 where
-    H: read_utils::FileHandler,
+    for<'a> &'a mut H: read_utils::FileHandler,
 {
     let mut collections = Collections::default();
     let mut equipments = EquipmentList::default();

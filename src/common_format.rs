@@ -118,10 +118,13 @@ impl Calendar {
     }
 }
 
-fn manage_calendar_dates<H: FileHandler>(
+fn manage_calendar_dates<'a, H>(
     calendars: &mut CollectionWithId<objects::Calendar>,
-    file_handler: &mut H,
-) -> Result<()> {
+    file_handler: &'a mut H,
+) -> Result<()>
+where
+    &'a mut H: FileHandler
+{
     let file = "calendar_dates.txt";
 
     let reader = file_handler.get_file(file);
@@ -164,12 +167,15 @@ fn manage_calendar_dates<H: FileHandler>(
     Ok(())
 }
 
-pub fn manage_calendars<H: FileHandler>(
+pub fn manage_calendars<H>(
     file_handler: &mut H,
     // calendar_reader: Option<R>,
     // calendar_date_reader: Option<R>,
     collections: &mut Collections,
-) -> Result<()> {
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler
+{
     let file = "calendar.txt";
     let mut calendars: Vec<objects::Calendar> = vec![];
     {
