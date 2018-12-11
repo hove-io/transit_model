@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use collection::CollectionWithId;
+use collection::{CollectionWithId, Id};
 use model::Collections;
 use objects::{self, Contributor};
 use std::collections::{BTreeMap, BTreeSet};
@@ -25,6 +25,7 @@ use Result;
 extern crate serde_json;
 use failure::ResultExt;
 use std::path::{Path, PathBuf};
+use std::result::Result as StdResult;
 
 #[derive(Deserialize, Debug)]
 struct ConfigDataset {
@@ -101,14 +102,6 @@ pub trait FileHandler {
     fn get_file(self, name: &str) -> Result<Self::Reader>;
 }
 
-pub fn open_file<P: AsRef<path::Path>>(
-    path: P,
-    name: &str,
-) -> std::result::Result<File, failure::Context<String>> {
-    let f = path.as_ref().join(name);
-    File::open(&f).with_context(ctx_from_path!(&f))
-}
-
 pub struct PathFileHandler {
     base_path: PathBuf,
 }
@@ -131,6 +124,8 @@ impl<'a> FileHandler for &'a mut PathFileHandler {
 /// It provides a way to access the archive's file by their names
 ///
 /// Unlike ZipArchive, it gives access to a file by it's name not regarding it's path in the ZipArchive
+/// It thus cannot be correct if there are 2 files with the same name in the archive,
+/// but for transport data if will make it possible to handle a zip with a sub directory
 pub struct ZipHandler<R: std::io::Seek + std::io::Read> {
     archive: zip::ZipArchive<R>,
     index_by_name: BTreeMap<String, usize>,
@@ -166,8 +161,7 @@ where
     R: std::io::Seek + std::io::Read,
 {
     type Reader = zip::read::ZipFile<'a>;
-    fn get_file(self, name: &str) -> Result<Self::Reader>
-    {
+    fn get_file(self, name: &str) -> Result<Self::Reader> {
         // self.index_by_name
         //     .get(name)
         //     .map(|i| self.archive.by_index(i.clone()).unwrap())
@@ -177,4 +171,28 @@ where
             Some(i) => Ok(self.archive.by_index(*i).unwrap()),
         }
     }
+}
+
+/// Read a vector of objects from a zip in a file_handler
+pub fn read_objects<H, O>(file_handler: &mut H, file_name: &str) -> Result<Vec<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de>,
+{
+    let reader = file_handler.get_file(file_name)?;
+    let mut rdr = csv::Reader::from_reader(reader);
+    Ok(rdr
+        .deserialize()
+        .collect::<StdResult<_, _>>()
+        .with_context(ctx_from_filename!(file_name))?)
+}
+
+/// Read a CollectionId from a zip in a file_handler
+pub fn read_collection<H, O>(file_handler: &mut H, file_name: &str) -> Result<CollectionWithId<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de> + Id<O>,
+{
+    let vec = read_objects(file_handler, file_name)?;
+    CollectionWithId::new(vec)
 }

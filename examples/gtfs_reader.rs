@@ -22,7 +22,7 @@ extern crate serde_json;
 use navitia_model::Result;
 
 fn run() -> Result<()> {
-    let objects = navitia_model::gtfs::read(".", None, None)?;
+    let objects = navitia_model::gtfs::read_from_path(".", None, None)?;
     let json_objs = json!(objects);
     println!("{:?}", json_objs.to_string());
     Ok(())

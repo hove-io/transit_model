@@ -27,7 +27,7 @@ use model::{Collections, Model};
 use objects;
 use objects::Time;
 use read_utils;
-use read_utils::{add_prefix, open_file, ZipHandler};
+use read_utils::add_prefix;
 use std::fs::File;
 use std::path::Path;
 use utils::*;
@@ -227,72 +227,7 @@ struct Shape {
     sequence: u32,
 }
 
-/// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
-/// `path` directory.
-///
-/// The `config_path` argument allows you to give a path to a file
-/// containing a json representing the contributor and dataset used
-/// for this GTFS. If not given, default values will be created.
-///
-/// The `prefix` argument is a string that will be prepended to every
-/// identifiers, allowing to namespace the dataset. By default, no
-/// prefix will be added to the identifiers.
-pub fn read<P>(path: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
-where
-    P: AsRef<Path>,
-{
-    let mut collections = Collections::default();
-    let mut equipments = EquipmentList::default();
-    let mut comments: CollectionWithId<objects::Comment> = CollectionWithId::default();
-
-    //TODO
-    // manage_calendars(
-    //     open_file(&path, "calendar.txt").ok(),
-    //     open_file(&path, "calendar_dates.txt").ok(),
-    //     &mut collections,
-    // )?;
-
-    let (contributors, mut datasets) = read::read_config(config_path)?;
-    read::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
-
-    collections.contributors = contributors;
-    collections.datasets = datasets;
-
-    let (networks, companies) = read::read_agency(open_file(&path, "agency.txt")?)?;
-    collections.networks = networks;
-    collections.companies = companies;
-    let (stop_areas, stop_points) = read::read_stops(
-        open_file(&path, "stops.txt")?,
-        &mut comments,
-        &mut equipments,
-    )?;
-    collections.transfers =
-        read::read_transfers(open_file(&path, "transfers.txt").ok(), &stop_points)?;
-    collections.stop_areas = stop_areas;
-    collections.stop_points = stop_points;
-
-    read::manage_shapes(&mut collections, open_file(&path, "shapes.txt").ok())?;
-
-    read::read_routes(
-        open_file(&path, "routes.txt")?,
-        open_file(&path, "trips.txt")?,
-        &mut collections,
-    )?;
-    collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
-    collections.comments = comments;
-    read::manage_stop_times(&mut collections, open_file(&path, "stop_times.txt")?)?;
-    read::manage_frequencies(&mut collections, open_file(&path, "frequencies.txt").ok())?;
-
-    //add prefixes
-    if let Some(prefix) = prefix {
-        add_prefix(prefix, &mut collections)?;
-    }
-
-    Ok(Model::new(collections)?)
-}
-
-/// TODO
-pub fn read2<H>(
+fn read<H>(
     file_handler: &mut H,
     config_path: Option<impl AsRef<Path>>,
     prefix: Option<String>,
@@ -306,65 +241,74 @@ where
 
     manage_calendars(file_handler, &mut collections)?;
 
-    // let (contributors, mut datasets) = read::read_config(config_path)?;
-    // read::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
+    let (contributors, mut datasets) = read::read_config(config_path)?;
+    read::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
 
-    // collections.contributors = contributors;
-    // collections.datasets = datasets;
+    collections.contributors = contributors;
+    collections.datasets = datasets;
 
-    // let (networks, companies) = read::read_agency(file_handler.get_file("agency.txt")?)?;
-    // collections.networks = networks;
-    // collections.companies = companies;
-    // let (stop_areas, stop_points) = read::read_stops(
-    //     file_handler.get_file("stops.txt")?,
-    //     &mut comments,
-    //     &mut equipments,
-    // )?;
-    // collections.transfers =
-    //     read::read_transfers(file_handler.get_file("transfers.txt").ok(), &stop_points)?;
-    // collections.stop_areas = stop_areas;
-    // collections.stop_points = stop_points;
+    let (networks, companies) = read::read_agency(file_handler)?;
+    collections.networks = networks;
+    collections.companies = companies;
+    let (stop_areas, stop_points) = read::read_stops(file_handler, &mut comments, &mut equipments)?;
+    collections.transfers = read::read_transfers(file_handler, &stop_points)?;
+    collections.stop_areas = stop_areas;
+    collections.stop_points = stop_points;
 
-    // read::manage_shapes(&mut collections, file_handler.get_file("shapes.txt").ok())?;
+    read::manage_shapes(&mut collections, file_handler)?;
 
-    // read::read_routes(
-    //     file_handler.get_file("routes.txt")?,
-    //     file_handler.get_file("trips.txt")?,
-    //     &mut collections,
-    // )?;
-    // collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
-    // collections.comments = comments;
-    // read::manage_stop_times(&mut collections, file_handler.get_file("stop_times.txt")?)?;
-    // read::manage_frequencies(&mut collections, file_handler.get_file("frequencies.txt").ok())?;
+    read::read_routes(file_handler, &mut collections)?;
+    collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
+    collections.comments = comments;
+    read::manage_stop_times(&mut collections, file_handler)?;
+    read::manage_frequencies(&mut collections, file_handler)?;
 
-    // //add prefixes
-    // if let Some(prefix) = prefix {
-    //     add_prefix(prefix, &mut collections)?;
-    // }
+    //add prefixes
+    if let Some(prefix) = prefix {
+        add_prefix(prefix, &mut collections)?;
+    }
 
     Ok(Model::new(collections)?)
 }
 
-
-///TODO
+/// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
+/// `path` directory.
+///
+/// The `config_path` argument allows you to give a path to a file
+/// containing a json representing the contributor and dataset used
+/// for this GTFS. If not given, default values will be created.
+///
+/// The `prefix` argument is a string that will be prepended to every
+/// identifiers, allowing to namespace the dataset. By default, no
+/// prefix will be added to the identifiers.
 pub fn read_from_path<P: AsRef<Path>>(
     p: P,
     config_path: Option<P>,
     prefix: Option<String>,
 ) -> Result<Model> {
     let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
-    // let reader = File::open(p)?;
-    read2(&mut file_handle, config_path, prefix)
+    read(&mut file_handle, config_path, prefix)
 }
 
-// pub fn from_zip<P: AsRef<Path>>(
-//     p: P,
-//     config_path: Option<P>,
-//     prefix: Option<String>,
-// ) -> Result<Model> {
-//     let reader = File::open(p)?;
-//     read_from_reader(reader, config_path, prefix)
-// }
+/// read a gtfs from a zip file
+/// Imports a `Model` from a zip file containing the [GTFS](http://gtfs.org/).
+///
+/// The `config_path` argument allows you to give a path to a file
+/// containing a json representing the contributor and dataset used
+/// for this GTFS. If not given, default values will be created.
+///
+/// The `prefix` argument is a string that will be prepended to every
+/// identifiers, allowing to namespace the dataset. By default, no
+/// prefix will be added to the identifiers.
+pub fn read_from_zip<P: AsRef<Path>>(
+    p: P,
+    config_path: Option<P>,
+    prefix: Option<String>,
+) -> Result<Model> {
+    let reader = File::open(p.as_ref())?;
+    let mut file_handle = read_utils::ZipHandler::new(reader)?;
+    read(&mut file_handle, config_path, prefix)
+}
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 enum RouteType {

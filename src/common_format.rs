@@ -123,7 +123,7 @@ fn manage_calendar_dates<'a, H>(
     file_handler: &'a mut H,
 ) -> Result<()>
 where
-    &'a mut H: FileHandler
+    &'a mut H: FileHandler,
 {
     let file = "calendar_dates.txt";
 
@@ -167,14 +167,9 @@ where
     Ok(())
 }
 
-pub fn manage_calendars<H>(
-    file_handler: &mut H,
-    // calendar_reader: Option<R>,
-    // calendar_date_reader: Option<R>,
-    collections: &mut Collections,
-) -> Result<()>
+pub fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
-    for<'a> &'a mut H: FileHandler
+    for<'a> &'a mut H: FileHandler,
 {
     let file = "calendar.txt";
     let mut calendars: Vec<objects::Calendar> = vec![];
