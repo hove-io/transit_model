@@ -164,10 +164,6 @@ where
 {
     type Reader = zip::read::ZipFile<'a>;
     fn get_file(self, name: &str) -> Result<Self::Reader> {
-        // self.index_by_name
-        //     .get(name)
-        //     .map(|i| self.archive.by_index(i.clone()).unwrap())
-        //     .ok_or(format_err!("impossible to find file {}", name))
         match self.index_by_name.get(name) {
             None => Err(format_err!("impossible to find file {}", name)),
             Some(i) => Ok(self.archive.by_index(*i).unwrap()),

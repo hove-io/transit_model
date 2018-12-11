@@ -319,7 +319,7 @@ pub fn read_from_zip<P: AsRef<Path>>(
 /// identifiers, allowing to namespace the dataset. By default, no
 /// prefix will be added to the identifiers.
 pub fn read_from_url<P: AsRef<Path>>(
-    url: String,
+    url: &str,
     config_path: Option<P>,
     prefix: Option<String>,
 ) -> Result<Model> {

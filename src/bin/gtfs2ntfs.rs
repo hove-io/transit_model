@@ -64,7 +64,7 @@ fn run() -> Result<()> {
             .unwrap_or(false);
 
     let objects = if let Some(url) = opt.url {
-        navitia_model::gtfs::read_from_url(url, opt.config_path, opt.prefix)?
+        navitia_model::gtfs::read_from_url(&url, opt.config_path, opt.prefix)?
     } else {
         if is_zip {
             navitia_model::gtfs::read_from_zip(opt.input, opt.config_path, opt.prefix)?
