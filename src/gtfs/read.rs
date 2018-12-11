@@ -346,23 +346,18 @@ where
     Ok(())
 }
 
-pub fn read_agency<'a, H>(
-    file_handler: &'a mut H,
+pub fn read_agency<H>(
+    file_handler: &mut H,
 ) -> Result<(
     CollectionWithId<objects::Network>,
     CollectionWithId<objects::Company>,
 )>
 where
-    &'a mut H: FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     info!("Reading agency.txt");
     let filename = "agency.txt";
-    let reader = file_handler.get_file(filename)?;
-    let mut rdr = csv::Reader::from_reader(reader);
-    let gtfs_agencies: Vec<Agency> = rdr
-        .deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_filename!(filename))?;
+    let gtfs_agencies = read_objects::<_, Agency>(file_handler, filename)?;
     let networks = gtfs_agencies
         .iter()
         .cloned()
