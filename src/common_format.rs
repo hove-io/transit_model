@@ -118,25 +118,24 @@ impl Calendar {
     }
 }
 
-fn manage_calendar_dates<'a, H>(
+fn manage_calendar_dates<H>(
     calendars: &mut CollectionWithId<objects::Calendar>,
-    file_handler: &'a mut H,
+    file_handler: &mut H,
 ) -> Result<()>
 where
-    &'a mut H: FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     let file = "calendar_dates.txt";
-
-    let reader = file_handler.get_file(file);
+    let (reader, path) = file_handler.get_file(file)?;
     match reader {
-        Err(_) => info!("Skipping {}", file),
-        Ok(reader) => {
+        None => info!("Skipping {}", file),
+        Some(reader) => {
             info!("Reading {}", file);
 
             let mut rdr = csv::Reader::from_reader(reader);
             for calendar_date in rdr.deserialize() {
                 let calendar_date: CalendarDate =
-                    calendar_date.with_context(ctx_from_filename!(file))?;
+                    calendar_date.with_context(ctx_from_path!(path))?;
 
                 let is_inserted =
                     calendars
@@ -174,16 +173,16 @@ where
     let file = "calendar.txt";
     let mut calendars: Vec<objects::Calendar> = vec![];
     {
-        let calendar_reader = file_handler.get_file(file);
+        let (calendar_reader, path) = file_handler.get_file(file)?;
         match calendar_reader {
-            Err(_) => {
+            None => {
                 info!("Skipping {}", file);
             }
-            Ok(calendar_reader) => {
+            Some(calendar_reader) => {
                 info!("Reading {}", file);
                 let mut rdr = csv::Reader::from_reader(calendar_reader);
                 for calendar in rdr.deserialize() {
-                    let calendar: Calendar = calendar.with_context(ctx_from_filename!(file))?;
+                    let calendar: Calendar = calendar.with_context(ctx_from_path!(path))?;
                     calendars.push(objects::Calendar {
                         id: calendar.id.clone(),
                         dates: calendar.get_valid_dates(),

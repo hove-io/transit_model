@@ -305,7 +305,7 @@ pub fn read_from_zip<P: AsRef<Path>>(
     prefix: Option<String>,
 ) -> Result<Model> {
     let reader = File::open(p.as_ref())?;
-    let mut file_handle = read_utils::ZipHandler::new(reader)?;
+    let mut file_handle = read_utils::ZipHandler::new(reader, p)?;
     read(&mut file_handle, config_path, prefix)
 }
 
@@ -324,7 +324,7 @@ pub fn read_from_url<P: AsRef<Path>>(
     prefix: Option<String>,
 ) -> Result<Model> {
     let reader = read_utils::read_url(&url)?;
-    let mut file_handle = read_utils::ZipHandler::new(reader)?;
+    let mut file_handle = read_utils::ZipHandler::new(reader, &url)?;
     read(&mut file_handle, config_path, prefix)
 }
 

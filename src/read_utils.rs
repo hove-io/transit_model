@@ -100,7 +100,8 @@ pub fn get_validity_period(
 
 pub trait FileHandler {
     type Reader: std::io::Read;
-    fn get_file(self, name: &str) -> Result<Self::Reader>;
+
+    fn get_file(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)>;
 }
 
 /// PathFileHandler is used to read files for a directory
@@ -116,9 +117,13 @@ impl PathFileHandler {
 
 impl<'a> FileHandler for &'a mut PathFileHandler {
     type Reader = File;
-    fn get_file(self, name: &str) -> Result<Self::Reader> {
+    fn get_file(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
         let f = self.base_path.join(name);
-        Ok(File::open(&f).with_context(ctx_from_path!(&f))?)
+        if f.exists() {
+            Ok((Some(File::open(&f).with_context(ctx_from_path!(&f))?), f))
+        } else {
+            Ok((None, f))
+        }
     }
 }
 
@@ -130,6 +135,7 @@ impl<'a> FileHandler for &'a mut PathFileHandler {
 /// but for transport data if will make it possible to handle a zip with a sub directory
 pub struct ZipHandler<R: std::io::Seek + std::io::Read> {
     archive: zip::ZipArchive<R>,
+    archive_path: PathBuf,
     index_by_name: BTreeMap<String, usize>,
 }
 
@@ -137,24 +143,25 @@ impl<R> ZipHandler<R>
 where
     R: std::io::Seek + std::io::Read,
 {
-    pub fn new(r: R) -> Result<Self> {
+    pub fn new<P: AsRef<Path>>(r: R, path: P) -> Result<Self> {
         let mut archive = zip::ZipArchive::new(r)?;
         Ok(ZipHandler {
             index_by_name: Self::files_by_name(&mut archive),
             archive: archive,
+            archive_path: path.as_ref().to_path_buf(),
         })
     }
 
     fn files_by_name(archive: &mut zip::ZipArchive<R>) -> BTreeMap<String, usize> {
-        let mut res = BTreeMap::new();
-        for i in 0..archive.len() {
-            let file = archive.by_index(i).unwrap();
-            // we get the name of the file, not regarding it's patch in the ZipArchive
-            let real_name = Path::new(file.name()).file_name().unwrap();
-            let real_name: String = real_name.to_str().unwrap().into();
-            res.insert(real_name, i);
-        }
-        res
+        (0..archive.len())
+            .filter_map(|i| {
+                let file = archive.by_index(i).ok()?;
+                // we get the name of the file, not regarding it's patch in the ZipArchive
+                let real_name = Path::new(file.name()).file_name()?;
+                let real_name: String = real_name.to_str()?.into();
+                Some((real_name, i))
+            })
+            .collect()
     }
 }
 
@@ -163,10 +170,11 @@ where
     R: std::io::Seek + std::io::Read,
 {
     type Reader = zip::read::ZipFile<'a>;
-    fn get_file(self, name: &str) -> Result<Self::Reader> {
+    fn get_file(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
+        let p = self.archive_path.join(name);
         match self.index_by_name.get(name) {
-            None => Err(format_err!("impossible to find file {}", name)),
-            Some(i) => Ok(self.archive.by_index(*i).unwrap()),
+            None => Ok((None, p)),
+            Some(i) => Ok((Some(self.archive.by_index(*i)?), p)),
         }
     }
 }
@@ -177,12 +185,17 @@ where
     for<'a> &'a mut H: FileHandler,
     O: for<'de> serde::Deserialize<'de>,
 {
-    let reader = file_handler.get_file(file_name)?;
-    let mut rdr = csv::Reader::from_reader(reader);
-    Ok(rdr
-        .deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_filename!(file_name))?)
+    let (reader, path) = file_handler.get_file(file_name)?;
+    match reader {
+        None => Err(format_err!("file {:?} not found", path)),
+        Some(reader) => {
+            let mut rdr = csv::Reader::from_reader(reader);
+            Ok(rdr
+                .deserialize()
+                .collect::<StdResult<_, _>>()
+                .with_context(ctx_from_path!(path))?)
+        }
+    }
 }
 
 /// Read a CollectionId from a zip in a file_handler

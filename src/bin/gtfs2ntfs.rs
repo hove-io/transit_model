@@ -55,22 +55,12 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let is_zip = opt.input.is_file()
-        && opt
-            .input
-            .extension()
-            .and_then(|ext| ext.to_str())
-            .map(|e| e == "zip")
-            .unwrap_or(false);
-
     let objects = if let Some(url) = opt.url {
         navitia_model::gtfs::read_from_url(&url, opt.config_path, opt.prefix)?
+    } else if opt.input.is_file() {
+        navitia_model::gtfs::read_from_zip(opt.input, opt.config_path, opt.prefix)?
     } else {
-        if is_zip {
-            navitia_model::gtfs::read_from_zip(opt.input, opt.config_path, opt.prefix)?
-        } else {
-            navitia_model::gtfs::read_from_path(opt.input, opt.config_path, opt.prefix)?
-        }
+        navitia_model::gtfs::read_from_path(opt.input, opt.config_path, opt.prefix)?
     };
 
     navitia_model::ntfs::write(&objects, opt.output)?;

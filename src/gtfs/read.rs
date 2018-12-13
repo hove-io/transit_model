@@ -236,12 +236,12 @@ impl Trip {
     }
 }
 
-pub fn manage_shapes<'a, H>(collections: &mut Collections, file_handler: &'a mut H) -> Result<()>
+pub fn manage_shapes<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
-    &'a mut H: FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     let file = "shapes.txt";
-    let reader = file_handler.get_file(file).ok();
+    let (reader, path) = file_handler.get_file(file)?;
     match reader {
         None => {
             info!("Skipping {}", file);
@@ -252,7 +252,7 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             let mut shapes = vec![];
             for shape in rdr.deserialize() {
-                let shape: Shape = skip_fail!(shape.with_context(ctx_from_filename!(file)));
+                let shape: Shape = skip_fail!(shape.with_context(ctx_from_path!(path)));
                 shapes.push(shape);
             }
 
@@ -282,20 +282,17 @@ where
     }
 }
 
-pub fn manage_stop_times<'a, H>(
-    collections: &mut Collections,
-    file_handler: &'a mut H,
-) -> Result<()>
+pub fn manage_stop_times<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
-    &'a mut H: FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     let file_name = "stop_times.txt";
-    let reader = file_handler.get_file(file_name)?;
+    let (reader, path) = file_handler.get_file(file_name)?;
     info!("Reading stop_times.txt");
-    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rdr = csv::Reader::from_reader(reader.ok_or(format_err!("file {:?} not found", path))?);
     let mut headsigns = HashMap::new();
     for stop_time in rdr.deserialize() {
-        let stop_time: StopTime = stop_time.with_context(ctx_from_filename!(file_name))?;
+        let stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
         let stop_point_idx = collections
             .stop_points
             .get_idx(&stop_time.stop_id)
@@ -443,8 +440,8 @@ fn get_equipment_id_and_populate_equipments(
     }
 }
 
-pub fn read_stops<'a, H>(
-    file_handler: &'a mut H,
+pub fn read_stops<H>(
+    file_handler: &mut H,
     comments: &mut CollectionWithId<objects::Comment>,
     equipments: &mut EquipmentList,
 ) -> Result<(
@@ -452,19 +449,21 @@ pub fn read_stops<'a, H>(
     CollectionWithId<objects::StopPoint>,
 )>
 where
-    &'a mut H: FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     info!("Reading stops.txt");
     let file = "stops.txt";
 
-    let reader = file_handler.get_file(file)?;
+    let (reader, path) = file_handler.get_file(file)?;
+
+    let reader = reader.ok_or(format_err!("file {:?} not found", path))?;
     let mut rdr = csv::ReaderBuilder::new()
         .trim(csv::Trim::All)
         .from_reader(reader);
     let gtfs_stops: Vec<Stop> = rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_filename!(file))?;
+        .with_context(ctx_from_path!(path))?;
 
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
@@ -502,15 +501,15 @@ where
     Ok((stopareas, stoppoints))
 }
 
-pub fn read_transfers<'a, H>(
-    file_handler: &'a mut H,
+pub fn read_transfers<H>(
+    file_handler: &mut H,
     stop_points: &CollectionWithId<objects::StopPoint>,
 ) -> Result<Collection<objects::Transfer>>
 where
-    &'a mut H: FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     let file = "transfers.txt";
-    let reader = file_handler.get_file(file).ok();
+    let (reader, path) = file_handler.get_file(file)?;
     match reader {
         None => {
             info!("Skipping {}", file);
@@ -521,7 +520,7 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             let mut transfers = vec![];
             for transfer in rdr.deserialize() {
-                let transfer: Transfer = transfer.with_context(ctx_from_filename!(file))?;
+                let transfer: Transfer = transfer.with_context(ctx_from_path!(path))?;
                 let from_stop_point = skip_fail!(stop_points
                     .get(&transfer.from_stop_id)
                     .ok_or_else(|| format_err!(
@@ -871,7 +870,7 @@ where
         &collections.datasets,
         &collections.networks,
     )
-    .with_context(ctx_from_filename!("trips.txt"))?;
+    .with_context(ctx_from_path!("trips.txt"))?;
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     collections.trip_properties = CollectionWithId::new(trip_properties)?;
 
@@ -917,15 +916,12 @@ struct Frequency {
     exact_times: FrequencyPrecision,
 }
 
-pub fn manage_frequencies<'a, H>(
-    collections: &mut Collections,
-    file_handler: &'a mut H,
-) -> Result<()>
+pub fn manage_frequencies<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
-    &'a mut H: FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     let file = "frequencies.txt";
-    let reader = file_handler.get_file(file).ok();
+    let (reader, path) = file_handler.get_file(file)?;
     info!("Reading {}", file);
     match reader {
         None => {
@@ -937,7 +933,7 @@ where
             let gtfs_frequencies: Vec<Frequency> = rdr
                 .deserialize()
                 .collect::<StdResult<_, _>>()
-                .with_context(ctx_from_filename!(file))?;
+                .with_context(ctx_from_path!(path))?;
             let mut trip_id_sequence: HashMap<String, u32> = HashMap::new();
             let mut new_vehicle_journeys: Vec<VehicleJourney> = vec![];
             for frequency in &gtfs_frequencies {
