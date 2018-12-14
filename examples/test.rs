@@ -14,11 +14,6 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-extern crate env_logger;
-extern crate failure;
-extern crate navitia_model;
-extern crate serde_json;
-
 use navitia_model::collection::{CollectionWithId, Id, Idx};
 use navitia_model::model::GetCorresponding;
 use navitia_model::relations::IdxSet;

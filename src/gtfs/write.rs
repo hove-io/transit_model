@@ -18,19 +18,19 @@ use super::{
     Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
     Trip,
 };
-use collection::{Collection, CollectionWithId, Id, Idx};
-use common_format::Availability;
+use crate::collection::{Collection, CollectionWithId, Id, Idx};
+use crate::common_format::Availability;
 use csv;
 use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
-use model::{GetCorresponding, Model};
-use objects;
-use objects::Transfer as NtfsTransfer;
-use objects::*;
-use relations::IdxSet;
+use crate::model::{GetCorresponding, Model};
+use crate::objects;
+use crate::objects::Transfer as NtfsTransfer;
+use crate::objects::*;
+use crate::relations::IdxSet;
 use std::collections::HashMap;
 use std::path;
-use Result;
+use crate::Result;
 
 pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) -> Result<()> {
     if transfers.is_empty() {
@@ -476,12 +476,12 @@ pub fn write_shapes(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use collection::CollectionWithId;
-    use common_format::write_calendar_dates;
+    use crate::collection::CollectionWithId;
+    use crate::common_format::write_calendar_dates;
     use geo_types::{Geometry as GeoGeometry, LineString, Point};
-    use gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType};
-    use objects::Transfer as NtfsTransfer;
-    use objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
+    use crate::gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType};
+    use crate::objects::Transfer as NtfsTransfer;
+    use crate::objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
     use std::collections::BTreeSet;
     extern crate tempdir;
     use self::tempdir::TempDir;

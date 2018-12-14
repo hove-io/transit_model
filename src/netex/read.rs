@@ -14,10 +14,10 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use model::Collections;
-use objects;
+use crate::model::Collections;
+use crate::objects;
 use std::io::Read;
-use Result;
+use crate::Result;
 
 extern crate minidom;
 extern crate serde_json;

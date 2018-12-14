@@ -19,19 +19,19 @@
 extern crate serde;
 extern crate serde_json;
 
-use collection::CollectionWithId;
+use crate::collection::CollectionWithId;
 use csv;
 use failure::ResultExt;
-use model::Collections;
-use objects::StopArea;
-use objects::{CommentLinksT, KeysValues};
+use crate::model::Collections;
+use crate::objects::StopArea;
+use crate::objects::{CommentLinksT, KeysValues};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path;
 use std::path::PathBuf;
 use std::result::Result as StdResult;
-use utils::{Report, ReportType};
-use Result;
+use crate::utils::{Report, ReportType};
+use crate::Result;
 
 #[derive(Deserialize, Debug)]
 struct StopAreaMergeRule {

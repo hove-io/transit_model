@@ -19,19 +19,19 @@
 mod read;
 mod write;
 
-use collection::CollectionWithId;
-use common_format;
-use common_format::{manage_calendars, Availability};
-use gtfs::read::EquipmentList;
-use model::{Collections, Model};
-use objects;
-use objects::Time;
-use read_utils;
-use read_utils::add_prefix;
+use crate::collection::CollectionWithId;
+use crate::common_format;
+use crate::common_format::{manage_calendars, Availability};
+use crate::gtfs::read::EquipmentList;
+use crate::model::{Collections, Model};
+use crate::objects;
+use crate::objects::Time;
+use crate::read_utils;
+use crate::read_utils::add_prefix;
 use std::fs::File;
 use std::path::Path;
-use utils::*;
-use Result;
+use crate::utils::*;
+use crate::Result;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Agency {

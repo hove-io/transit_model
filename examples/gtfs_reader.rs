@@ -14,9 +14,6 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-extern crate csv;
-extern crate env_logger;
-extern crate navitia_model;
 #[macro_use]
 extern crate serde_json;
 use navitia_model::Result;

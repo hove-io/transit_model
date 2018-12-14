@@ -19,15 +19,15 @@
 #![allow(missing_docs)]
 
 use chrono;
-use collection::{Id, Idx};
-use common_format::Availability;
+use crate::collection::{Id, Idx};
+use crate::common_format::Availability;
 use geo_types::Geometry as GeoGeometry;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Sub};
 use std::str::FromStr;
-use utils::*;
+use crate::utils::*;
 
 pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);

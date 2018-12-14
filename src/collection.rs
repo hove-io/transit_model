@@ -26,7 +26,7 @@ use std::marker::PhantomData;
 use std::ops;
 use std::result::Result as StdResult;
 use std::slice;
-use Result;
+use crate::Result;
 
 /// An object that has a unique identifier.
 pub trait Id<T> {

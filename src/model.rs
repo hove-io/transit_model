@@ -16,13 +16,13 @@
 
 //! Definition of the navitia transit model.
 
-use collection::{Collection, CollectionWithId, Id, Idx};
-use objects::*;
-use relations::{IdxSet, ManyToMany, OneToMany, Relation};
+use crate::collection::{Collection, CollectionWithId, Id, Idx};
+use crate::objects::*;
+use crate::relations::{IdxSet, ManyToMany, OneToMany, Relation};
 use std::collections::{BTreeMap, HashMap};
 use std::ops;
 use std::result::Result as StdResult;
-use {Error, Result};
+use crate::{Error, Result};
 
 /// The set of collections representing the model.
 #[derive(Derivative, Serialize, Deserialize, Debug)]

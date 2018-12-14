@@ -15,11 +15,11 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::NaiveDate;
-use collection::{Collection, CollectionWithId, Id};
+use crate::collection::{Collection, CollectionWithId, Id};
 use csv;
 use failure::ResultExt;
 use geo_types;
-use objects::{AddPrefix, Date};
+use crate::objects::{AddPrefix, Date};
 use std::fs;
 use std::io::{Read, Write};
 use std::path;
@@ -28,7 +28,7 @@ use wkt::{self, ToWkt};
 
 use zip;
 
-pub fn zip_to<P, R>(source_path: P, zip_file: R) -> ::Result<()>
+pub fn zip_to<P, R>(source_path: P, zip_file: R) -> crate::Result<()>
 where
     P: AsRef<path::Path>,
     R: AsRef<path::Path>,
@@ -193,7 +193,7 @@ macro_rules! ctx_from_path {
 pub fn make_opt_collection_with_id<T>(
     path: &path::Path,
     file: &str,
-) -> ::Result<CollectionWithId<T>>
+) -> crate::Result<CollectionWithId<T>>
 where
     T: Id<T>,
     for<'de> T: ::serde::Deserialize<'de>,
@@ -206,7 +206,7 @@ where
     }
 }
 
-pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> ::Result<CollectionWithId<T>>
+pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> crate::Result<CollectionWithId<T>>
 where
     T: Id<T>,
     for<'de> T: ::serde::Deserialize<'de>,
@@ -221,7 +221,7 @@ where
     CollectionWithId::new(vec)
 }
 
-pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> ::Result<Collection<T>>
+pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> crate::Result<Collection<T>>
 where
     for<'de> T: ::serde::Deserialize<'de>,
 {
@@ -233,7 +233,7 @@ where
     }
 }
 
-pub fn make_collection<T>(path: &path::Path, file: &str) -> ::Result<Collection<T>>
+pub fn make_collection<T>(path: &path::Path, file: &str) -> crate::Result<Collection<T>>
 where
     for<'de> T: ::serde::Deserialize<'de>,
 {
@@ -250,7 +250,7 @@ where
 pub fn add_prefix_to_collection_with_id<T>(
     collection: &mut CollectionWithId<T>,
     prefix: &str,
-) -> ::Result<()>
+) -> crate::Result<()>
 where
     T: AddPrefix + Id<T>,
 {

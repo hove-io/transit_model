@@ -70,7 +70,7 @@ fn impl_get_corresponding(ast: &syn::DeriveInput) -> quote::Tokens {
             pub trait GetCorresponding<T: Sized> {
                 /// For the given self, returns the set of
                 /// corresponding `T` indices.
-                fn get_corresponding(&self, &#name) -> IdxSet<T>;
+                fn get_corresponding(&self, name: &#name) -> IdxSet<T>;
             }
             impl #name {
                 /// Returns the set of `U` indices corresponding to the `from` set.

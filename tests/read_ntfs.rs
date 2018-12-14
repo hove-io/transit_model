@@ -114,7 +114,7 @@ fn ntfs() {
     let pt_objects = navitia_model::ntfs::read("fixtures/ntfs/").unwrap();
 
     // comments
-    use CommentType::*;
+    use crate::CommentType::*;
     fn assert_eq_comment(comment: &Comment, id: &str, name: &str, comment_type: CommentType) {
         let expect = Comment {
             id: id.to_string(),

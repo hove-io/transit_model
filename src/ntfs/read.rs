@@ -18,13 +18,13 @@ use csv;
 use std::path;
 
 use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
-use collection::*;
+use crate::collection::*;
 use failure::ResultExt;
-use model::Collections;
-use objects::*;
+use crate::model::Collections;
+use crate::objects::*;
 use std::collections::HashMap;
-use utils::make_collection_with_id;
-use Result;
+use crate::utils::make_collection_with_id;
+use crate::Result;
 
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {
@@ -151,7 +151,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             .vehicle_journeys
             .index_mut(vj_idx)
             .stop_times
-            .push(::objects::StopTime {
+            .push(crate::objects::StopTime {
                 stop_point_idx,
                 sequence: stop_time.stop_sequence,
                 arrival_time: stop_time.arrival_time,
@@ -451,9 +451,9 @@ pub fn manage_geometries(collections: &mut Collections, path: &path::Path) -> Re
 
 #[cfg(test)]
 mod tests {
-    use model::Collections;
-    use ntfs::read;
-    use test_utils::*;
+    use crate::model::Collections;
+    use crate::ntfs::read;
+    use crate::test_utils::*;
     #[test]
     fn read_stop_points_with_no_parent() {
         let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
