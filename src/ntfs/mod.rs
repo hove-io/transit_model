@@ -20,15 +20,15 @@
 mod read;
 mod write;
 
-use common_format;
-use model::{Collections, Model};
-use objects::*;
-use std::path;
-use utils::*;
-use Result;
-extern crate tempdir;
 use self::tempdir::TempDir;
-use read_utils;
+use crate::common_format;
+use crate::model::{Collections, Model};
+use crate::objects::*;
+use crate::read_utils;
+use crate::utils::*;
+use crate::Result;
+use std::path;
+use tempdir;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
@@ -191,21 +191,21 @@ pub fn write_to_zip<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> 
 
 #[cfg(test)]
 mod tests {
-    extern crate tempdir;
+
     use super::Collections;
     use super::{read, write};
+    use crate::collection::*;
+    use crate::collection::{Collection, CollectionWithId};
+    use crate::common_format;
+    use crate::objects::*;
+    use crate::read_utils::PathFileHandler;
+    use crate::test_utils::*;
+    use crate::utils::*;
     use chrono;
-    use collection::*;
-    use collection::{Collection, CollectionWithId};
-    use common_format;
     use geo_types::{Geometry as GeoGeometry, LineString, Point};
-    use objects::*;
-    use read_utils::PathFileHandler;
     use serde;
     use std::collections::{BTreeMap, BTreeSet, HashMap};
     use std::fmt::Debug;
-    use test_utils::*;
-    use utils::*;
 
     fn test_serialize_deserialize_collection_with_id<T>(objects: Vec<T>)
     where

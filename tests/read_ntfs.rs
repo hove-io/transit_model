@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-extern crate navitia_model;
+use navitia_model;
 use navitia_model::collection::{CollectionWithId, Id, Idx};
 use navitia_model::model::{GetCorresponding, Model};
 use navitia_model::objects::*;
@@ -114,7 +114,7 @@ fn ntfs() {
     let pt_objects = navitia_model::ntfs::read("fixtures/ntfs/").unwrap();
 
     // comments
-    use CommentType::*;
+    use crate::CommentType::*;
     fn assert_eq_comment(comment: &Comment, id: &str, name: &str, comment_type: CommentType) {
         let expect = Comment {
             id: id.to_string(),

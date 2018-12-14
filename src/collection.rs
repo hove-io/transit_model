@@ -17,6 +17,7 @@
 //! Collections of objects with typed indices and buildin identifier
 //! support.
 
+use crate::Result;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry::*;
@@ -26,7 +27,6 @@ use std::marker::PhantomData;
 use std::ops;
 use std::result::Result as StdResult;
 use std::slice;
-use Result;
 
 /// An object that has a unique identifier.
 pub trait Id<T> {
@@ -116,7 +116,7 @@ impl<T> Collection<T> {
     /// assert_eq!(v, &5);
     /// assert_eq!(&c[k], &5);
     /// ```
-    pub fn iter(&self) -> Iter<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
         self.objects
             .iter()
             .enumerate()
@@ -133,7 +133,7 @@ impl<T> Collection<T> {
     /// let values: Vec<&i32> = c.values().collect();
     /// assert_eq!(values, &[&1, &1, &2, &3, &5, &8]);
     /// ```
-    pub fn values(&self) -> slice::Iter<T> {
+    pub fn values(&self) -> slice::Iter<'_, T> {
         self.objects.iter()
     }
 
@@ -149,7 +149,7 @@ impl<T> Collection<T> {
     /// }
     /// assert_eq!(c, Collection::new(vec![2, 2, 4, 6, 10, 16]));
     /// ```
-    pub fn values_mut(&mut self) -> slice::IterMut<T> {
+    pub fn values_mut(&mut self) -> slice::IterMut<'_, T> {
         self.objects.iter_mut()
     }
 
@@ -401,7 +401,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # }
     /// # fn main() { run().unwrap() }
     /// ```
-    pub fn index_mut(&mut self, idx: Idx<T>) -> RefMut<T> {
+    pub fn index_mut(&mut self, idx: Idx<T>) -> RefMut<'_, T> {
         RefMut {
             idx,
             old_id: self.objects[idx.get()].id().to_string(),
@@ -426,7 +426,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # }
     /// # fn main() { run().unwrap() }
     /// ```
-    pub fn get_mut(&mut self, id: &str) -> Option<RefMut<T>> {
+    pub fn get_mut(&mut self, id: &str) -> Option<RefMut<'_, T>> {
         self.get_idx(id).map(move |idx| self.index_mut(idx))
     }
 
@@ -625,7 +625,7 @@ impl<T> CollectionWithId<T> {
 }
 
 /// The structure returned by `CollectionWithId::index_mut`.
-pub struct RefMut<'a, T: 'a + Id<T>> {
+pub struct RefMut<'a, T: Id<T>> {
     idx: Idx<T>,
     collection: &'a mut CollectionWithId<T>,
     old_id: String,

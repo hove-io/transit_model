@@ -20,8 +20,6 @@
 
 #![deny(missing_docs)]
 
-extern crate chrono;
-extern crate csv;
 #[macro_use]
 extern crate derivative;
 #[macro_use]
@@ -29,15 +27,9 @@ extern crate failure;
 #[macro_use]
 extern crate get_corresponding_derive;
 #[macro_use]
-extern crate log;
-extern crate serde;
-extern crate walkdir;
-extern crate zip;
-#[macro_use]
 extern crate serde_derive;
-extern crate geo_types;
-extern crate reqwest;
-extern crate wkt;
+#[macro_use]
+extern crate log;
 
 #[macro_use]
 pub(crate) mod utils;
@@ -61,4 +53,4 @@ pub type Error = failure::Error;
 /// The corresponding result type used by the crate.
 pub type Result<T> = std::result::Result<T, Error>;
 
-pub use model::Model;
+pub use crate::model::Model;

@@ -14,17 +14,17 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use collection::{CollectionWithId, Id};
-use model::Collections;
-use objects::{self, Contributor};
+use crate::collection::{CollectionWithId, Id};
+use crate::model::Collections;
+use crate::objects::{self, Contributor};
+use crate::utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
+use crate::Result;
+use failure::ResultExt;
+use serde_json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
-use std::path;
-use utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
-use Result;
-extern crate serde_json;
-use failure::ResultExt;
 use std::io::Read;
+use std::path;
 use std::path::{Path, PathBuf};
 use std::result::Result as StdResult;
 

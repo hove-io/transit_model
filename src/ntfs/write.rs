@@ -15,11 +15,11 @@
 // <http://www.gnu.org/licenses/>.
 
 use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
-use collection::{Collection, CollectionWithId, Id, Idx};
+use crate::collection::{Collection, CollectionWithId, Id, Idx};
+use crate::model::Collections;
+use crate::objects::*;
 use csv;
 use failure::ResultExt;
-use model::Collections;
-use objects::*;
 use serde;
 use std::collections::{BTreeMap, HashMap};
 use std::path;

@@ -14,11 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-extern crate env_logger;
+use env_logger;
 #[macro_use]
 extern crate log;
-extern crate navitia_model;
-extern crate structopt;
+use navitia_model;
+use structopt;
 
 use std::path::PathBuf;
 use structopt::StructOpt;

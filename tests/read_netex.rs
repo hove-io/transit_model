@@ -14,10 +14,9 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-extern crate failure;
-extern crate navitia_model;
-extern crate tempdir;
-extern crate zip;
+use navitia_model;
+
+use zip;
 
 use navitia_model::Result;
 use std::fs;

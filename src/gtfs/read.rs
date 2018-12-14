@@ -14,27 +14,29 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use collection::{Collection, CollectionWithId, Id};
-use common_format::Availability;
-use csv;
-use failure::ResultExt;
-use geo_types::{LineString, Point};
-use model::Collections;
-use objects::{self, CommentLinksT, Contributor, Coord, KeysValues, StopType, TransportType};
-use objects::{StopTime as NtfsStopTime, Time, VehicleJourney};
-use read_utils;
-use std::collections::{BTreeSet, HashMap, HashSet};
-use std::fs::File;
-use std::path;
-use std::result::Result as StdResult;
-use utils::*;
-use Result;
-extern crate serde_json;
 use super::{
     Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
     TransferType, Trip,
 };
-use read_utils::{read_collection, read_objects, FileHandler};
+use crate::collection::{Collection, CollectionWithId, Id};
+use crate::common_format::Availability;
+use crate::model::Collections;
+use crate::objects::{
+    self, CommentLinksT, Contributor, Coord, KeysValues, StopType, TransportType,
+};
+use crate::objects::{StopTime as NtfsStopTime, Time, VehicleJourney};
+use crate::read_utils;
+use crate::read_utils::{read_collection, read_objects, FileHandler};
+use crate::utils::*;
+use crate::Result;
+use csv;
+use failure::ResultExt;
+use geo_types::{LineString, Point};
+use serde_json;
+use std::collections::{BTreeSet, HashMap, HashSet};
+use std::fs::File;
+use std::path;
+use std::result::Result as StdResult;
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -715,7 +717,7 @@ fn map_line_routes<'a>(
 }
 
 fn make_lines(
-    map_line_routes: &MapLineRoutes,
+    map_line_routes: &MapLineRoutes<'_>,
     networks: &CollectionWithId<objects::Network>,
 ) -> Result<Vec<objects::Line>> {
     let mut lines = vec![];
@@ -756,7 +758,7 @@ fn make_lines(
     Ok(lines)
 }
 
-fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes) -> Vec<objects::Route> {
+fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<objects::Route> {
     let mut routes = vec![];
 
     let get_direction_name = |d: &DirectionType| match *d {
@@ -1005,7 +1007,7 @@ where
                     } else {
                         corresponding_vj.service_id.clone()
                     };
-                    let mut stop_times: Vec<NtfsStopTime> = corresponding_vj
+                    let stop_times: Vec<NtfsStopTime> = corresponding_vj
                         .stop_times
                         .iter()
                         .map(|stop_time| NtfsStopTime {
@@ -1044,17 +1046,17 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::collection::{Collection, CollectionWithId, Id};
+    use crate::common_format;
+    use crate::gtfs::add_prefix;
+    use crate::gtfs::read::EquipmentList;
+    use crate::model::Collections;
+    use crate::objects::*;
+    use crate::read_utils::PathFileHandler;
+    use crate::test_utils::*;
     use chrono;
-    use collection::{Collection, CollectionWithId, Id};
-    use common_format;
     use geo_types::{Geometry as GeoGeometry, LineString, Point};
-    use gtfs::add_prefix;
-    use gtfs::read::EquipmentList;
-    use model::Collections;
-    use objects::*;
-    use read_utils::PathFileHandler;
     use std::collections::BTreeSet;
-    use test_utils::*;
 
     fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
         let mut extracted_props: Vec<S> = c.values().map(|l| f(l)).collect();

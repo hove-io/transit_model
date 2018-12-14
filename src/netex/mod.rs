@@ -19,14 +19,14 @@
 mod read;
 
 use self::read::NetexReader;
-use collection::CollectionWithId;
-use model::Model;
-use read_utils;
+use crate::collection::CollectionWithId;
+use crate::model::Model;
+use crate::read_utils;
+use crate::Result;
 use std::fs;
 use std::path::Path;
-use Result;
-extern crate tempdir;
-extern crate zip;
+
+use zip;
 
 /// Imports a `Model` from one or several [Netex](http://netex-cen.eu/) files.
 /// The `path` can be a single file, a directory or a zip file.
@@ -54,7 +54,7 @@ where
                 let zip_file = fs::File::open(path)?;
                 let mut zip = zip::ZipArchive::new(zip_file)?;
                 for i in 0..zip.len() {
-                    let mut file = zip.by_index(i)?;
+                    let file = zip.by_index(i)?;
                     match file.sanitized_name().extension() {
                         Some(ext) if ext == "xml" => {
                             netex_reader.read_netex_file(file)?;

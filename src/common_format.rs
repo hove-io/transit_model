@@ -14,18 +14,18 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use crate::collection::*;
+use crate::model::Collections;
+use crate::objects::{self, Date, ExceptionType};
+use crate::read_utils::FileHandler;
+use crate::utils::*;
+use crate::utils::{de_from_date_string, ser_from_naive_date};
+use crate::Result;
 use chrono::{self, Datelike};
-use collection::*;
 use csv;
 use failure::ResultExt;
-use model::Collections;
-use objects::{self, Date, ExceptionType};
-use read_utils::FileHandler;
 use std::collections::BTreeSet;
 use std::path;
-use utils::*;
-use utils::{de_from_date_string, ser_from_naive_date};
-use Result;
 
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
 #[derivative(Default)]
