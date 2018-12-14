@@ -16,22 +16,21 @@
 
 //! See function merge_stop_areas
 
-extern crate serde;
-extern crate serde_json;
+use serde_json;
 
 use crate::collection::CollectionWithId;
-use csv;
-use failure::ResultExt;
 use crate::model::Collections;
 use crate::objects::StopArea;
 use crate::objects::{CommentLinksT, KeysValues};
+use crate::utils::{Report, ReportType};
+use crate::Result;
+use csv;
+use failure::ResultExt;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path;
 use std::path::PathBuf;
 use std::result::Result as StdResult;
-use crate::utils::{Report, ReportType};
-use crate::Result;
 
 #[derive(Deserialize, Debug)]
 struct StopAreaMergeRule {

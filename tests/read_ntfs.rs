@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-extern crate navitia_model;
+use navitia_model;
 use navitia_model::collection::{CollectionWithId, Id, Idx};
 use navitia_model::model::{GetCorresponding, Model};
 use navitia_model::objects::*;

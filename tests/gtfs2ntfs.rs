@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-extern crate navitia_model;
+use navitia_model;
 use navitia_model::test_utils::*;
 
 #[test]

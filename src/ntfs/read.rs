@@ -19,12 +19,12 @@ use std::path;
 
 use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
 use crate::collection::*;
-use failure::ResultExt;
 use crate::model::Collections;
 use crate::objects::*;
-use std::collections::HashMap;
 use crate::utils::make_collection_with_id;
 use crate::Result;
+use failure::ResultExt;
+use std::collections::HashMap;
 
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {

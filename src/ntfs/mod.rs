@@ -20,15 +20,15 @@
 mod read;
 mod write;
 
+use self::tempdir::TempDir;
 use crate::common_format;
 use crate::model::{Collections, Model};
 use crate::objects::*;
-use std::path;
+use crate::read_utils;
 use crate::utils::*;
 use crate::Result;
-extern crate tempdir;
-use self::tempdir::TempDir;
-use crate::read_utils;
+use std::path;
+use tempdir;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
@@ -191,21 +191,21 @@ pub fn write_to_zip<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> 
 
 #[cfg(test)]
 mod tests {
-    extern crate tempdir;
+
     use super::Collections;
     use super::{read, write};
-    use chrono;
     use crate::collection::*;
     use crate::collection::{Collection, CollectionWithId};
     use crate::common_format;
-    use geo_types::{Geometry as GeoGeometry, LineString, Point};
     use crate::objects::*;
     use crate::read_utils::PathFileHandler;
+    use crate::test_utils::*;
+    use crate::utils::*;
+    use chrono;
+    use geo_types::{Geometry as GeoGeometry, LineString, Point};
     use serde;
     use std::collections::{BTreeMap, BTreeSet, HashMap};
     use std::fmt::Debug;
-    use crate::test_utils::*;
-    use crate::utils::*;
 
     fn test_serialize_deserialize_collection_with_id<T>(objects: Vec<T>)
     where

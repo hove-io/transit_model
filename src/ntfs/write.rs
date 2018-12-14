@@ -16,10 +16,10 @@
 
 use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
 use crate::collection::{Collection, CollectionWithId, Id, Idx};
-use csv;
-use failure::ResultExt;
 use crate::model::Collections;
 use crate::objects::*;
+use csv;
+use failure::ResultExt;
 use serde;
 use std::collections::{BTreeMap, HashMap};
 use std::path;

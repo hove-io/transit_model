@@ -14,12 +14,12 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use chrono::NaiveDate;
 use crate::collection::{Collection, CollectionWithId, Id};
+use crate::objects::{AddPrefix, Date};
+use chrono::NaiveDate;
 use csv;
 use failure::ResultExt;
 use geo_types;
-use crate::objects::{AddPrefix, Date};
 use std::fs;
 use std::io::{Read, Write};
 use std::path;
@@ -206,7 +206,10 @@ where
     }
 }
 
-pub fn make_collection_with_id<T>(path: &path::Path, file: &str) -> crate::Result<CollectionWithId<T>>
+pub fn make_collection_with_id<T>(
+    path: &path::Path,
+    file: &str,
+) -> crate::Result<CollectionWithId<T>>
 where
     T: Id<T>,
     for<'de> T: ::serde::Deserialize<'de>,

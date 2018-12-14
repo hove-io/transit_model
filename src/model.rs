@@ -19,10 +19,10 @@
 use crate::collection::{Collection, CollectionWithId, Id, Idx};
 use crate::objects::*;
 use crate::relations::{IdxSet, ManyToMany, OneToMany, Relation};
+use crate::{Error, Result};
 use std::collections::{BTreeMap, HashMap};
 use std::ops;
 use std::result::Result as StdResult;
-use crate::{Error, Result};
 
 /// The set of collections representing the model.
 #[derive(Derivative, Serialize, Deserialize, Debug)]

@@ -18,16 +18,16 @@
 
 #![allow(missing_docs)]
 
-use chrono;
 use crate::collection::{Id, Idx};
 use crate::common_format::Availability;
+use crate::utils::*;
+use chrono;
 use geo_types::Geometry as GeoGeometry;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Sub};
 use std::str::FromStr;
-use crate::utils::*;
 
 pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);
@@ -374,7 +374,7 @@ pub struct Rgb {
 }
 
 impl std::fmt::Display for Rgb {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let color = format!("{:02X}{:02X}{:02X}", self.red, self.green, self.blue);
         f.write_str(color.as_ref())
     }
@@ -391,7 +391,7 @@ use std;
 use std::error::Error;
 
 impl std::fmt::Display for RgbError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
             RgbError::NotHexa => f.write_str("RgbError_NotHexa"),
             RgbError::TooLongHexa => f.write_str("RgbError_TooLongHexa"),
@@ -676,7 +676,7 @@ impl From<std::num::ParseIntError> for TimeError {
     }
 }
 impl std::fmt::Display for TimeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
             TimeError::WrongFormat => f.write_str("wrong format"),
             TimeError::WrongValue => f.write_str("wrong value"),
@@ -766,7 +766,7 @@ impl<'de> ::serde::Deserialize<'de> for Time {
         struct TimeVisitor;
         impl<'de> Visitor<'de> for TimeVisitor {
             type Value = Time;
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a time in the format HH:MM:SS")
             }
             fn visit_str<E: de::Error>(self, time: &str) -> Result<Time, E> {
@@ -1245,7 +1245,7 @@ pub struct AdminStation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    extern crate serde_json;
+    use serde_json;
 
     #[test]
     fn rgb_serialization() {

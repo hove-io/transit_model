@@ -162,9 +162,9 @@
 //! ```
 
 use crate::collection::{CollectionWithId, Id, Idx};
+use crate::Result;
 use failure::ResultExt;
 use std::collections::{BTreeMap, BTreeSet};
-use crate::Result;
 
 /// A set of `Idx<T>`
 pub type IdxSet<T> = BTreeSet<Idx<T>>;

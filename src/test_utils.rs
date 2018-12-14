@@ -16,9 +16,9 @@
 
 use std::fs::File;
 use std::io::prelude::*;
-use std::path::Path;
-extern crate tempdir;
 use std::path;
+use std::path::Path;
+use tempdir;
 
 use self::tempdir::TempDir;
 

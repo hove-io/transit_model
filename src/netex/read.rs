@@ -16,11 +16,11 @@
 
 use crate::model::Collections;
 use crate::objects;
-use std::io::Read;
 use crate::Result;
+use std::io::Read;
 
-extern crate minidom;
-extern crate serde_json;
+use minidom;
+
 use self::minidom::Element;
 use failure::ResultExt;
 
@@ -140,8 +140,8 @@ impl NetexReader {
 
 #[cfg(test)]
 mod tests {
-    extern crate minidom;
     use self::minidom::Element;
+    use minidom;
 
     #[test]
     fn test_read_organisations_empty() {

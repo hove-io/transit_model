@@ -20,17 +20,17 @@ use super::{
 };
 use crate::collection::{Collection, CollectionWithId, Id, Idx};
 use crate::common_format::Availability;
-use csv;
-use failure::ResultExt;
-use geo_types::Geometry as GeoGeometry;
 use crate::model::{GetCorresponding, Model};
 use crate::objects;
 use crate::objects::Transfer as NtfsTransfer;
 use crate::objects::*;
 use crate::relations::IdxSet;
+use crate::Result;
+use csv;
+use failure::ResultExt;
+use geo_types::Geometry as GeoGeometry;
 use std::collections::HashMap;
 use std::path;
-use crate::Result;
 
 pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) -> Result<()> {
     if transfers.is_empty() {
@@ -338,7 +338,7 @@ impl<'a> From<&'a objects::PhysicalMode> for RouteType {
     }
 }
 
-fn get_gtfs_route_id_from_ntfs_line_id(line_id: &str, pm: &PhysicalModeWithOrder) -> String {
+fn get_gtfs_route_id_from_ntfs_line_id(line_id: &str, pm: &PhysicalModeWithOrder<'_>) -> String {
     if pm.is_lowest {
         line_id.to_string()
     } else {
@@ -367,7 +367,7 @@ fn get_physical_mode_order(pm: &objects::PhysicalMode) -> u8 {
     }
 }
 
-fn make_gtfs_route_from_ntfs_line(line: &objects::Line, pm: &PhysicalModeWithOrder) -> Route {
+fn make_gtfs_route_from_ntfs_line(line: &objects::Line, pm: &PhysicalModeWithOrder<'_>) -> Route {
     Route {
         id: get_gtfs_route_id_from_ntfs_line_id(&line.id, pm),
         agency_id: Some(line.network_id.clone()),
@@ -475,19 +475,19 @@ pub fn write_shapes(
 
 #[cfg(test)]
 mod tests {
+    use self::tempdir::TempDir;
     use super::*;
     use crate::collection::CollectionWithId;
     use crate::common_format::write_calendar_dates;
-    use geo_types::{Geometry as GeoGeometry, LineString, Point};
     use crate::gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType};
     use crate::objects::Transfer as NtfsTransfer;
     use crate::objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
-    use std::collections::BTreeSet;
-    extern crate tempdir;
-    use self::tempdir::TempDir;
     use chrono;
+    use geo_types::{Geometry as GeoGeometry, LineString, Point};
+    use std::collections::BTreeSet;
     use std::fs::File;
     use std::io::Read;
+    use tempdir;
 
     #[test]
     fn write_agency() {

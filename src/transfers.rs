@@ -17,18 +17,18 @@
 //! See function generates_transfers
 
 use crate::collection::{Collection, CollectionWithId, Idx};
-use csv;
-use failure::ResultExt;
 use crate::model::Model;
 use crate::objects::{Contributor, StopPoint, Transfer};
+use crate::utils::{Report, ReportType};
+use crate::Result;
+use csv;
+use failure::ResultExt;
 use std::collections::hash_map::Entry::*;
 use std::collections::BTreeSet;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
-use crate::utils::{Report, ReportType};
-use crate::Result;
 
 #[derive(Deserialize, Debug)]
 struct Rule {

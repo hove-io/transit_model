@@ -22,11 +22,11 @@ use self::read::NetexReader;
 use crate::collection::CollectionWithId;
 use crate::model::Model;
 use crate::read_utils;
+use crate::Result;
 use std::fs;
 use std::path::Path;
-use crate::Result;
-extern crate tempdir;
-extern crate zip;
+
+use zip;
 
 /// Imports a `Model` from one or several [Netex](http://netex-cen.eu/) files.
 /// The `path` can be a single file, a directory or a zip file.

@@ -17,15 +17,15 @@
 //! See function apply_rules
 
 use crate::collection::{CollectionWithId, Id};
-use csv;
-use failure::ResultExt;
 use crate::model::Collections;
 use crate::objects::Codes;
+use crate::utils::{Report, ReportType};
+use crate::Result;
+use csv;
+use failure::ResultExt;
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::utils::{Report, ReportType};
-use crate::Result;
 
 #[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone)]
 #[serde(rename_all = "snake_case")]

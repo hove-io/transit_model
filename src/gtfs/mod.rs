@@ -28,10 +28,10 @@ use crate::objects;
 use crate::objects::Time;
 use crate::read_utils;
 use crate::read_utils::add_prefix;
-use std::fs::File;
-use std::path::Path;
 use crate::utils::*;
 use crate::Result;
+use std::fs::File;
+use std::path::Path;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Agency {
