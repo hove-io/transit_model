@@ -98,10 +98,21 @@ pub fn get_validity_period(
     })
 }
 
-pub trait FileHandler {
+pub trait FileHandler
+where
+    Self: std::marker::Sized,
+{
     type Reader: std::io::Read;
 
-    fn get_file(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)>;
+    fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)>;
+
+    fn get_file(self, name: &str) -> Result<(Self::Reader, PathBuf)> {
+        let (reader, path) = self.get_file_if_exists(name)?;
+        Ok((
+            reader.ok_or_else(|| format_err!("file {:?} not found", path))?,
+            path,
+        ))
+    }
 }
 
 /// PathFileHandler is used to read files for a directory
@@ -117,7 +128,7 @@ impl PathFileHandler {
 
 impl<'a> FileHandler for &'a mut PathFileHandler {
     type Reader = File;
-    fn get_file(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
+    fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
         let f = self.base_path.join(name);
         if f.exists() {
             Ok((Some(File::open(&f).with_context(ctx_from_path!(&f))?), f))
@@ -170,7 +181,7 @@ where
     R: std::io::Seek + std::io::Read,
 {
     type Reader = zip::read::ZipFile<'a>;
-    fn get_file(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
+    fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
         let p = self.archive_path.join(name);
         match self.index_by_name.get(name) {
             None => Ok((None, p)),
@@ -186,16 +197,12 @@ where
     O: for<'de> serde::Deserialize<'de>,
 {
     let (reader, path) = file_handler.get_file(file_name)?;
-    match reader {
-        None => Err(format_err!("file {:?} not found", path)),
-        Some(reader) => {
-            let mut rdr = csv::Reader::from_reader(reader);
-            Ok(rdr
-                .deserialize()
-                .collect::<StdResult<_, _>>()
-                .with_context(ctx_from_path!(path))?)
-        }
-    }
+
+    let mut rdr = csv::Reader::from_reader(reader);
+    Ok(rdr
+        .deserialize()
+        .collect::<StdResult<_, _>>()
+        .with_context(ctx_from_path!(path))?)
 }
 
 /// Read a CollectionId from a zip in a file_handler

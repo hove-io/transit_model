@@ -241,7 +241,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "shapes.txt";
-    let (reader, path) = file_handler.get_file(file)?;
+    let (reader, path) = file_handler.get_file_if_exists(file)?;
     match reader {
         None => {
             info!("Skipping {}", file);
@@ -289,7 +289,7 @@ where
     let file_name = "stop_times.txt";
     let (reader, path) = file_handler.get_file(file_name)?;
     info!("Reading stop_times.txt");
-    let mut rdr = csv::Reader::from_reader(reader.ok_or(format_err!("file {:?} not found", path))?);
+    let mut rdr = csv::Reader::from_reader(reader);
     let mut headsigns = HashMap::new();
     for stop_time in rdr.deserialize() {
         let stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
@@ -455,8 +455,6 @@ where
     let file = "stops.txt";
 
     let (reader, path) = file_handler.get_file(file)?;
-
-    let reader = reader.ok_or(format_err!("file {:?} not found", path))?;
     let mut rdr = csv::ReaderBuilder::new()
         .trim(csv::Trim::All)
         .from_reader(reader);
@@ -509,7 +507,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "transfers.txt";
-    let (reader, path) = file_handler.get_file(file)?;
+    let (reader, path) = file_handler.get_file_if_exists(file)?;
     match reader {
         None => {
             info!("Skipping {}", file);
@@ -921,7 +919,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "frequencies.txt";
-    let (reader, path) = file_handler.get_file(file)?;
+    let (reader, path) = file_handler.get_file_if_exists(file)?;
     info!("Reading {}", file);
     match reader {
         None => {

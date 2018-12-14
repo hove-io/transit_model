@@ -126,7 +126,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "calendar_dates.txt";
-    let (reader, path) = file_handler.get_file(file)?;
+    let (reader, path) = file_handler.get_file_if_exists(file)?;
     match reader {
         None => info!("Skipping {}", file),
         Some(reader) => {
@@ -170,10 +170,10 @@ pub fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) 
 where
     for<'a> &'a mut H: FileHandler,
 {
-    let file = "calendar.txt";
     let mut calendars: Vec<objects::Calendar> = vec![];
     {
-        let (calendar_reader, path) = file_handler.get_file(file)?;
+        let file = "calendar.txt";
+        let (calendar_reader, path) = file_handler.get_file_if_exists(file)?;
         match calendar_reader {
             None => {
                 info!("Skipping {}", file);
