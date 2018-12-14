@@ -26,7 +26,9 @@ use gtfs::read::EquipmentList;
 use model::{Collections, Model};
 use objects;
 use objects::Time;
+use read_utils;
 use read_utils::add_prefix;
+use std::fs::File;
 use std::path::Path;
 use utils::*;
 use Result;
@@ -225,6 +227,50 @@ struct Shape {
     sequence: u32,
 }
 
+fn read<H>(
+    file_handler: &mut H,
+    config_path: Option<impl AsRef<Path>>,
+    prefix: Option<String>,
+) -> Result<Model>
+where
+    for<'a> &'a mut H: read_utils::FileHandler,
+{
+    let mut collections = Collections::default();
+    let mut equipments = EquipmentList::default();
+    let mut comments: CollectionWithId<objects::Comment> = CollectionWithId::default();
+
+    manage_calendars(file_handler, &mut collections)?;
+
+    let (contributors, mut datasets) = read::read_config(config_path)?;
+    read::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
+
+    collections.contributors = contributors;
+    collections.datasets = datasets;
+
+    let (networks, companies) = read::read_agency(file_handler)?;
+    collections.networks = networks;
+    collections.companies = companies;
+    let (stop_areas, stop_points) = read::read_stops(file_handler, &mut comments, &mut equipments)?;
+    collections.transfers = read::read_transfers(file_handler, &stop_points)?;
+    collections.stop_areas = stop_areas;
+    collections.stop_points = stop_points;
+
+    read::manage_shapes(&mut collections, file_handler)?;
+
+    read::read_routes(file_handler, &mut collections)?;
+    collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
+    collections.comments = comments;
+    read::manage_stop_times(&mut collections, file_handler)?;
+    read::manage_frequencies(&mut collections, file_handler)?;
+
+    //add prefixes
+    if let Some(prefix) = prefix {
+        add_prefix(prefix, &mut collections)?;
+    }
+
+    Ok(Model::new(collections)?)
+}
+
 /// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
 /// `path` directory.
 ///
@@ -235,46 +281,51 @@ struct Shape {
 /// The `prefix` argument is a string that will be prepended to every
 /// identifiers, allowing to namespace the dataset. By default, no
 /// prefix will be added to the identifiers.
-pub fn read<P>(path: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
-where
-    P: AsRef<Path>,
-{
-    let mut collections = Collections::default();
-    let mut equipments = EquipmentList::default();
-    let mut comments: CollectionWithId<objects::Comment> = CollectionWithId::default();
+pub fn read_from_path<P: AsRef<Path>>(
+    p: P,
+    config_path: Option<P>,
+    prefix: Option<String>,
+) -> Result<Model> {
+    let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
+    read(&mut file_handle, config_path, prefix)
+}
 
-    let path = path.as_ref();
+/// Imports a `Model` from a zip file containing the [GTFS](http://gtfs.org/).
+///
+/// The `config_path` argument allows you to give a path to a file
+/// containing a json representing the contributor and dataset used
+/// for this GTFS. If not given, default values will be created.
+///
+/// The `prefix` argument is a string that will be prepended to every
+/// identifiers, allowing to namespace the dataset. By default, no
+/// prefix will be added to the identifiers.
+pub fn read_from_zip<P: AsRef<Path>>(
+    p: P,
+    config_path: Option<P>,
+    prefix: Option<String>,
+) -> Result<Model> {
+    let reader = File::open(p.as_ref())?;
+    let mut file_handle = read_utils::ZipHandler::new(reader, p)?;
+    read(&mut file_handle, config_path, prefix)
+}
 
-    manage_calendars(&mut collections, path)?;
-
-    let (contributors, mut datasets) = read::read_config(config_path)?;
-    read::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
-
-    collections.contributors = contributors;
-    collections.datasets = datasets;
-
-    let (networks, companies) = read::read_agency(path)?;
-    collections.networks = networks;
-    collections.companies = companies;
-    let (stop_areas, stop_points) = read::read_stops(path, &mut comments, &mut equipments)?;
-    collections.transfers = read::read_transfers(path, &stop_points)?;
-    collections.stop_areas = stop_areas;
-    collections.stop_points = stop_points;
-
-    read::manage_shapes(&mut collections, path)?;
-
-    read::read_routes(path, &mut collections)?;
-    collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
-    collections.comments = comments;
-    read::manage_stop_times(&mut collections, path)?;
-    read::manage_frequencies(&mut collections, path)?;
-
-    //add prefixes
-    if let Some(prefix) = prefix {
-        add_prefix(prefix, &mut collections)?;
-    }
-
-    Ok(Model::new(collections)?)
+/// Imports a `Model` from a url hosting a zip file containing the [GTFS](http://gtfs.org/).
+///
+/// The `config_path` argument allows you to give a path to a file
+/// containing a json representing the contributor and dataset used
+/// for this GTFS. If not given, default values will be created.
+///
+/// The `prefix` argument is a string that will be prepended to every
+/// identifiers, allowing to namespace the dataset. By default, no
+/// prefix will be added to the identifiers.
+pub fn read_from_url<P: AsRef<Path>>(
+    url: &str,
+    config_path: Option<P>,
+    prefix: Option<String>,
+) -> Result<Model> {
+    let reader = read_utils::read_url(&url)?;
+    let mut file_handle = read_utils::ZipHandler::new(reader, &url)?;
+    read(&mut file_handle, config_path, prefix)
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

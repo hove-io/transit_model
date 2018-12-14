@@ -34,6 +34,7 @@ use super::{
     Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
     TransferType, Trip,
 };
+use read_utils::{read_collection, read_objects, FileHandler};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -235,53 +236,60 @@ impl Trip {
     }
 }
 
-pub fn manage_shapes<P: AsRef<path::Path>>(collections: &mut Collections, path: P) -> Result<()> {
+pub fn manage_shapes<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     let file = "shapes.txt";
-    let path = path.as_ref().join(file);
-    if !path.exists() {
-        info!("Skipping {}", file);
-        return Ok(());
+    let (reader, path) = file_handler.get_file_if_exists(file)?;
+    match reader {
+        None => {
+            info!("Skipping {}", file);
+            Ok(())
+        }
+        Some(reader) => {
+            info!("Reading {}", file);
+            let mut rdr = csv::Reader::from_reader(reader);
+            let mut shapes = vec![];
+            for shape in rdr.deserialize() {
+                let shape: Shape = skip_fail!(shape.with_context(ctx_from_path!(path)));
+                shapes.push(shape);
+            }
+
+            shapes.sort_unstable_by_key(|s| s.sequence);
+            let mut map: HashMap<String, Vec<Point<f64>>> = HashMap::new();
+            for s in &shapes {
+                map.entry(s.id.clone())
+                    .or_insert_with(|| vec![])
+                    .push((s.lon, s.lat).into())
+            }
+
+            collections.geometries = CollectionWithId::new(
+                map.iter()
+                    .filter(|(_, points)| !points.is_empty())
+                    .map(|(id, points)| {
+                        let linestring: LineString<f64> = points.to_vec().into();
+                        objects::Geometry {
+                            id: id.to_string(),
+                            geometry: linestring.into(),
+                        }
+                    })
+                    .collect(),
+            )?;
+
+            Ok(())
+        }
     }
-
-    info!("Reading {}", file);
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let mut shapes = vec![];
-    for shape in rdr.deserialize() {
-        let shape: Shape = skip_fail!(shape.with_context(ctx_from_path!(path)));
-        shapes.push(shape);
-    }
-
-    shapes.sort_unstable_by_key(|s| s.sequence);
-    let mut map: HashMap<String, Vec<Point<f64>>> = HashMap::new();
-    for s in &shapes {
-        map.entry(s.id.clone())
-            .or_insert_with(|| vec![])
-            .push((s.lon, s.lat).into())
-    }
-
-    collections.geometries = CollectionWithId::new(
-        map.iter()
-            .filter(|(_, points)| !points.is_empty())
-            .map(|(id, points)| {
-                let linestring: LineString<f64> = points.to_vec().into();
-                objects::Geometry {
-                    id: id.to_string(),
-                    geometry: linestring.into(),
-                }
-            })
-            .collect(),
-    )?;
-
-    Ok(())
 }
 
-pub fn manage_stop_times<P: AsRef<path::Path>>(
-    collections: &mut Collections,
-    path: P,
-) -> Result<()> {
+pub fn manage_stop_times<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let file_name = "stop_times.txt";
+    let (reader, path) = file_handler.get_file(file_name)?;
     info!("Reading stop_times.txt");
-    let path = path.as_ref().join("stop_times.txt");
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr = csv::Reader::from_reader(reader);
     let mut headsigns = HashMap::new();
     for stop_time in rdr.deserialize() {
         let stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
@@ -291,7 +299,7 @@ pub fn manage_stop_times<P: AsRef<path::Path>>(
             .ok_or_else(|| {
                 format_err!(
                     "Problem reading {:?}: stop_id={:?} not found",
-                    path,
+                    file_name,
                     stop_time.stop_id
                 )
             })?;
@@ -301,7 +309,7 @@ pub fn manage_stop_times<P: AsRef<path::Path>>(
             .ok_or_else(|| {
                 format_err!(
                     "Problem reading {:?}: trip_id={:?} not found",
-                    path,
+                    file_name,
                     stop_time.trip_id
                 )
             })?;
@@ -335,19 +343,18 @@ pub fn manage_stop_times<P: AsRef<path::Path>>(
     Ok(())
 }
 
-pub fn read_agency<P: AsRef<path::Path>>(
-    path: P,
+pub fn read_agency<H>(
+    file_handler: &mut H,
 ) -> Result<(
     CollectionWithId<objects::Network>,
     CollectionWithId<objects::Company>,
-)> {
+)>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     info!("Reading agency.txt");
-    let path = path.as_ref().join("agency.txt");
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let gtfs_agencies: Vec<Agency> = rdr
-        .deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
+    let filename = "agency.txt";
+    let gtfs_agencies = read_objects::<_, Agency>(file_handler, filename)?;
     let networks = gtfs_agencies
         .iter()
         .cloned()
@@ -433,20 +440,24 @@ fn get_equipment_id_and_populate_equipments(
     }
 }
 
-pub fn read_stops<P: AsRef<path::Path>>(
-    path: P,
+pub fn read_stops<H>(
+    file_handler: &mut H,
     comments: &mut CollectionWithId<objects::Comment>,
     equipments: &mut EquipmentList,
 ) -> Result<(
     CollectionWithId<objects::StopArea>,
     CollectionWithId<objects::StopPoint>,
-)> {
+)>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     info!("Reading stops.txt");
-    let path = path.as_ref().join("stops.txt");
+    let file = "stops.txt";
+
+    let (reader, path) = file_handler.get_file(file)?;
     let mut rdr = csv::ReaderBuilder::new()
         .trim(csv::Trim::All)
-        .from_path(&path)
-        .with_context(ctx_from_path!(path))?;
+        .from_reader(reader);
     let gtfs_stops: Vec<Stop> = rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
@@ -488,69 +499,75 @@ pub fn read_stops<P: AsRef<path::Path>>(
     Ok((stopareas, stoppoints))
 }
 
-pub fn read_transfers<P: AsRef<path::Path>>(
-    path: P,
+pub fn read_transfers<H>(
+    file_handler: &mut H,
     stop_points: &CollectionWithId<objects::StopPoint>,
-) -> Result<Collection<objects::Transfer>> {
+) -> Result<Collection<objects::Transfer>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     let file = "transfers.txt";
-    let path = path.as_ref().join(file);
-    if !path.exists() {
-        info!("Skipping {}", file);
-        return Ok(Collection::new(vec![]));
-    }
-    info!("Reading {}", file);
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
-    let mut transfers = vec![];
-    for transfer in rdr.deserialize() {
-        let transfer: Transfer = transfer.with_context(ctx_from_path!(path))?;
-        let from_stop_point =
-            skip_fail!(stop_points
-                .get(&transfer.from_stop_id)
-                .ok_or_else(|| format_err!(
-                    "Problem reading {:?}: from_stop_id={:?} not found",
-                    path,
-                    transfer.from_stop_id
-                )));
+    let (reader, path) = file_handler.get_file_if_exists(file)?;
+    match reader {
+        None => {
+            info!("Skipping {}", file);
+            Ok(Collection::new(vec![]))
+        }
+        Some(reader) => {
+            info!("Reading {}", file);
+            let mut rdr = csv::Reader::from_reader(reader);
+            let mut transfers = vec![];
+            for transfer in rdr.deserialize() {
+                let transfer: Transfer = transfer.with_context(ctx_from_path!(path))?;
+                let from_stop_point = skip_fail!(stop_points
+                    .get(&transfer.from_stop_id)
+                    .ok_or_else(|| format_err!(
+                        "Problem reading {:?}: from_stop_id={:?} not found",
+                        file,
+                        transfer.from_stop_id
+                    )));
 
-        let to_stop_point =
-            skip_fail!(stop_points
-                .get(&transfer.to_stop_id)
-                .ok_or_else(|| format_err!(
-                    "Problem reading {:?}: to_stop_id={:?} not found",
-                    path,
-                    transfer.to_stop_id
-                )));
+                let to_stop_point =
+                    skip_fail!(stop_points
+                        .get(&transfer.to_stop_id)
+                        .ok_or_else(|| format_err!(
+                            "Problem reading {:?}: to_stop_id={:?} not found",
+                            file,
+                            transfer.to_stop_id
+                        )));
 
-        let (min_transfer_time, real_min_transfer_time) = match transfer.transfer_type {
-            TransferType::Recommended => {
-                let distance = from_stop_point.coord.distance_to(&to_stop_point.coord);
-                let transfer_time = (distance / 0.785) as u32;
+                let (min_transfer_time, real_min_transfer_time) = match transfer.transfer_type {
+                    TransferType::Recommended => {
+                        let distance = from_stop_point.coord.distance_to(&to_stop_point.coord);
+                        let transfer_time = (distance / 0.785) as u32;
 
-                (Some(transfer_time), Some(transfer_time + 2 * 60))
-            }
-            TransferType::Timed => (Some(0), Some(0)),
-            TransferType::WithTransferTime => {
-                if transfer.min_transfer_time.is_none() {
-                    warn!(
+                        (Some(transfer_time), Some(transfer_time + 2 * 60))
+                    }
+                    TransferType::Timed => (Some(0), Some(0)),
+                    TransferType::WithTransferTime => {
+                        if transfer.min_transfer_time.is_none() {
+                            warn!(
                         "The min_transfer_time between from_stop_id {} and to_stop_id {} is empty",
                         from_stop_point.id, to_stop_point.id
                     );
-                }
-                (transfer.min_transfer_time, transfer.min_transfer_time)
+                        }
+                        (transfer.min_transfer_time, transfer.min_transfer_time)
+                    }
+                    TransferType::NotPossible => (Some(86400), Some(86400)),
+                };
+
+                transfers.push(objects::Transfer {
+                    from_stop_id: from_stop_point.id.clone(),
+                    to_stop_id: to_stop_point.id.clone(),
+                    min_transfer_time,
+                    real_min_transfer_time,
+                    equipment_id: None,
+                });
             }
-            TransferType::NotPossible => (Some(86400), Some(86400)),
-        };
 
-        transfers.push(objects::Transfer {
-            from_stop_id: from_stop_point.id.clone(),
-            to_stop_id: to_stop_point.id.clone(),
-            min_transfer_time,
-            real_min_transfer_time,
-            equipment_id: None,
-        });
+            Ok(Collection::new(transfers))
+        }
     }
-
-    Ok(Collection::new(transfers))
 }
 
 #[derive(Deserialize, Debug)]
@@ -827,29 +844,17 @@ fn make_ntfs_vehicle_journeys(
     Ok((vehicle_journeys, trip_properties))
 }
 
-pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections) -> Result<()> {
+pub fn read_routes<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     info!("Reading routes.txt");
-    let path = path.as_ref();
-    let routes_path = path.join("routes.txt");
-    let mut rdr = csv::Reader::from_path(&routes_path).with_context(ctx_from_path!(routes_path))?;
-    let gtfs_routes: Vec<Route> = rdr
-        .deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(routes_path))?;
-
-    let gtfs_routes_collection = CollectionWithId::new(gtfs_routes)?;
-
+    let gtfs_routes_collection = read_collection(file_handler, "routes.txt")?;
     let (commercial_modes, physical_modes) = get_modes_from_gtfs(&gtfs_routes_collection);
     collections.commercial_modes = CollectionWithId::new(commercial_modes)?;
     collections.physical_modes = CollectionWithId::new(physical_modes)?;
 
-    let trips_path = path.join("trips.txt");
-    let mut rdr = csv::Reader::from_path(&trips_path).with_context(ctx_from_path!(trips_path))?;
-    let gtfs_trips: Vec<Trip> = rdr
-        .deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(trips_path))?;
-
+    let gtfs_trips = read_objects(file_handler, "trips.txt")?;
     let map_line_routes = map_line_routes(&gtfs_routes_collection, &gtfs_trips);
     let lines = make_lines(&map_line_routes, &collections.networks)?;
     collections.lines = CollectionWithId::new(lines)?;
@@ -863,7 +868,7 @@ pub fn read_routes<P: AsRef<path::Path>>(path: P, collections: &mut Collections)
         &collections.datasets,
         &collections.networks,
     )
-    .with_context(ctx_from_path!(trips_path))?;
+    .with_context(ctx_from_path!("trips.txt"))?;
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     collections.trip_properties = CollectionWithId::new(trip_properties)?;
 
@@ -909,129 +914,132 @@ struct Frequency {
     exact_times: FrequencyPrecision,
 }
 
-pub fn manage_frequencies<P: AsRef<path::Path>>(
-    collections: &mut Collections,
-    path: P,
-) -> Result<()> {
+pub fn manage_frequencies<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     let file = "frequencies.txt";
+    let (reader, path) = file_handler.get_file_if_exists(file)?;
     info!("Reading {}", file);
-    let path = path.as_ref();
-    let frequencies_path = path.join(file);
-    if !frequencies_path.exists() {
-        info!("Skipping {}", file);
-        return Ok(());
-    }
-    let mut rdr =
-        csv::Reader::from_path(&frequencies_path).with_context(ctx_from_path!(frequencies_path))?;
-    let gtfs_frequencies: Vec<Frequency> = rdr
-        .deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(frequencies_path))?;
-    let mut trip_id_sequence: HashMap<String, u32> = HashMap::new();
-    let mut new_vehicle_journeys: Vec<VehicleJourney> = vec![];
-    for frequency in &gtfs_frequencies {
-        if frequency.start_time == frequency.end_time {
-            warn!(
-                "frequency for trip {:?} has same start and end time",
-                frequency.trip_id
-            );
-            continue;
+    match reader {
+        None => {
+            info!("Skipping {}", file);
+            Ok(())
         }
-        let datetime_estimated = match frequency.exact_times {
-            FrequencyPrecision::Exact => false,
-            FrequencyPrecision::Inexact => true,
-        };
-        let mut corresponding_vj = skip_fail!(collections
-            .vehicle_journeys
-            .get(&frequency.trip_id)
-            .cloned()
-            .ok_or_else(|| format_err!(
-                "frequency mapped to an unexisting trip {:?}",
-                frequency.trip_id
-            )));
-        corresponding_vj
-            .codes
-            .insert(("source".to_string(), frequency.trip_id.clone()));
-        let mut start_time = frequency.start_time;
-        let mut arrival_time_delta = match corresponding_vj.stop_times.iter().min() {
-            None => {
-                warn!(
-                    "frequency mapped to trip {:?} with no stop_times",
-                    frequency.trip_id
-                );
-                continue;
-            }
-            Some(st) => st.arrival_time,
-        };
-        while start_time < frequency.end_time {
-            trip_id_sequence
-                .entry(frequency.trip_id.clone())
-                .and_modify(|counter| *counter += 1)
-                .or_insert(0);
-            let generated_trip_id = format!(
-                "{}-{}",
-                frequency.trip_id, trip_id_sequence[&frequency.trip_id]
-            );
-            // the following handles generated trip starting after midnight, we need to generate a
-            // new service in case the next day is not covered
-            let service_id = if start_time.hours() >= 24 {
-                let nb_days = start_time.hours() / 24;
-                let service = collections
-                    .calendars
-                    .get(&corresponding_vj.service_id)
-                    .cloned()
-                    .unwrap();
-                let new_service_id = format!("{}:+{}days", service.id, nb_days);
-                if collections.calendars.get(&new_service_id).is_none() {
-                    arrival_time_delta = arrival_time_delta + Time::new(24, 0, 0);
-                    let new_dates: BTreeSet<_> = service
-                        .dates
-                        .iter()
-                        .map(|d| *d + chrono::Duration::days(nb_days as i64))
-                        .collect();
-
-                    let new_service = objects::Calendar {
-                        id: new_service_id.clone(),
-                        dates: new_dates,
-                    };
-                    collections.calendars.push(new_service)?;
+        Some(reader) => {
+            let mut rdr = csv::Reader::from_reader(reader);
+            let gtfs_frequencies: Vec<Frequency> = rdr
+                .deserialize()
+                .collect::<StdResult<_, _>>()
+                .with_context(ctx_from_path!(path))?;
+            let mut trip_id_sequence: HashMap<String, u32> = HashMap::new();
+            let mut new_vehicle_journeys: Vec<VehicleJourney> = vec![];
+            for frequency in &gtfs_frequencies {
+                if frequency.start_time == frequency.end_time {
+                    warn!(
+                        "frequency for trip {:?} has same start and end time",
+                        frequency.trip_id
+                    );
+                    continue;
                 }
-                new_service_id
-            } else {
-                corresponding_vj.service_id.clone()
-            };
-            let mut stop_times: Vec<NtfsStopTime> = corresponding_vj
-                .stop_times
-                .iter()
-                .map(|stop_time| NtfsStopTime {
-                    stop_point_idx: stop_time.stop_point_idx,
-                    sequence: stop_time.sequence,
-                    arrival_time: stop_time.arrival_time + start_time - arrival_time_delta,
-                    departure_time: stop_time.departure_time + start_time - arrival_time_delta,
-                    boarding_duration: stop_time.boarding_duration,
-                    alighting_duration: stop_time.alighting_duration,
-                    pickup_type: stop_time.pickup_type,
-                    drop_off_type: stop_time.drop_off_type,
-                    datetime_estimated,
-                    local_zone_id: stop_time.local_zone_id,
-                })
-                .collect();
-            start_time = start_time + Time::new(0, 0, frequency.headway_secs);
-            let generated_vj = VehicleJourney {
-                id: generated_trip_id,
-                service_id,
-                stop_times,
-                ..corresponding_vj.clone()
-            };
-            new_vehicle_journeys.push(generated_vj);
+                let datetime_estimated = match frequency.exact_times {
+                    FrequencyPrecision::Exact => false,
+                    FrequencyPrecision::Inexact => true,
+                };
+                let mut corresponding_vj = skip_fail!(collections
+                    .vehicle_journeys
+                    .get(&frequency.trip_id)
+                    .cloned()
+                    .ok_or_else(|| format_err!(
+                        "frequency mapped to an unexisting trip {:?}",
+                        frequency.trip_id
+                    )));
+                corresponding_vj
+                    .codes
+                    .insert(("source".to_string(), frequency.trip_id.clone()));
+                let mut start_time = frequency.start_time;
+                let mut arrival_time_delta = match corresponding_vj.stop_times.iter().min() {
+                    None => {
+                        warn!(
+                            "frequency mapped to trip {:?} with no stop_times",
+                            frequency.trip_id
+                        );
+                        continue;
+                    }
+                    Some(st) => st.arrival_time,
+                };
+                while start_time < frequency.end_time {
+                    trip_id_sequence
+                        .entry(frequency.trip_id.clone())
+                        .and_modify(|counter| *counter += 1)
+                        .or_insert(0);
+                    let generated_trip_id = format!(
+                        "{}-{}",
+                        frequency.trip_id, trip_id_sequence[&frequency.trip_id]
+                    );
+                    // the following handles generated trip starting after midnight, we need to generate a
+                    // new service in case the next day is not covered
+                    let service_id = if start_time.hours() >= 24 {
+                        let nb_days = start_time.hours() / 24;
+                        let service = collections
+                            .calendars
+                            .get(&corresponding_vj.service_id)
+                            .cloned()
+                            .unwrap();
+                        let new_service_id = format!("{}:+{}days", service.id, nb_days);
+                        if collections.calendars.get(&new_service_id).is_none() {
+                            arrival_time_delta = arrival_time_delta + Time::new(24, 0, 0);
+                            let new_dates: BTreeSet<_> = service
+                                .dates
+                                .iter()
+                                .map(|d| *d + chrono::Duration::days(nb_days as i64))
+                                .collect();
+
+                            let new_service = objects::Calendar {
+                                id: new_service_id.clone(),
+                                dates: new_dates,
+                            };
+                            collections.calendars.push(new_service)?;
+                        }
+                        new_service_id
+                    } else {
+                        corresponding_vj.service_id.clone()
+                    };
+                    let mut stop_times: Vec<NtfsStopTime> = corresponding_vj
+                        .stop_times
+                        .iter()
+                        .map(|stop_time| NtfsStopTime {
+                            stop_point_idx: stop_time.stop_point_idx,
+                            sequence: stop_time.sequence,
+                            arrival_time: stop_time.arrival_time + start_time - arrival_time_delta,
+                            departure_time: stop_time.departure_time + start_time
+                                - arrival_time_delta,
+                            boarding_duration: stop_time.boarding_duration,
+                            alighting_duration: stop_time.alighting_duration,
+                            pickup_type: stop_time.pickup_type,
+                            drop_off_type: stop_time.drop_off_type,
+                            datetime_estimated,
+                            local_zone_id: stop_time.local_zone_id,
+                        })
+                        .collect();
+                    start_time = start_time + Time::new(0, 0, frequency.headway_secs);
+                    let generated_vj = VehicleJourney {
+                        id: generated_trip_id,
+                        service_id,
+                        stop_times,
+                        ..corresponding_vj.clone()
+                    };
+                    new_vehicle_journeys.push(generated_vj);
+                }
+            }
+            let mut vehicle_journeys = collections.vehicle_journeys.take();
+            let trip_ids_to_remove: Vec<_> = gtfs_frequencies.iter().map(|f| &f.trip_id).collect();
+            vehicle_journeys.retain(|vj| !trip_ids_to_remove.contains(&&vj.id));
+            vehicle_journeys.append(&mut new_vehicle_journeys);
+            collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
+            Ok(())
         }
     }
-    let mut vehicle_journeys = collections.vehicle_journeys.take();
-    let trip_ids_to_remove: Vec<_> = gtfs_frequencies.iter().map(|f| &f.trip_id).collect();
-    vehicle_journeys.retain(|vj| !trip_ids_to_remove.contains(&&vj.id));
-    vehicle_journeys.append(&mut new_vehicle_journeys);
-    collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
-    Ok(())
 }
 
 #[cfg(test)]
@@ -1044,6 +1052,7 @@ mod tests {
     use gtfs::read::EquipmentList;
     use model::Collections;
     use objects::*;
+    use read_utils::PathFileHandler;
     use std::collections::BTreeSet;
     use test_utils::*;
 
@@ -1063,8 +1072,9 @@ mod tests {
                               My agency,http://my-agency_url.com,Europe/London";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "agency.txt", agency_content);
-            let (networks, companies) = super::read_agency(path).unwrap();
+            let (networks, companies) = super::read_agency(&mut handler).unwrap();
             assert_eq!(1, networks.len());
             let agency = networks.iter().next().unwrap().1;
             assert_eq!("default_agency_id", agency.id);
@@ -1078,8 +1088,9 @@ mod tests {
                               id_1,My agency,http://my-agency_url.com,Europe/London";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "agency.txt", agency_content);
-            let (networks, companies) = super::read_agency(path).unwrap();
+            let (networks, companies) = super::read_agency(&mut handler).unwrap();
             assert_eq!(1, networks.len());
             assert_eq!(1, companies.len());
         });
@@ -1094,8 +1105,9 @@ mod tests {
              http://my-agency_fare_url.com,my-mail@example.com";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "agency.txt", agency_content);
-            let (networks, companies) = super::read_agency(path).unwrap();
+            let (networks, companies) = super::read_agency(&mut handler).unwrap();
             assert_eq!(1, networks.len());
             let network = networks.iter().next().unwrap().1;
             assert_eq!("id_1", network.id);
@@ -1111,8 +1123,9 @@ mod tests {
                               My agency 2,http://my-agency_url.com,Europe/London";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "agency.txt", agency_content);
-            super::read_agency(path).unwrap();
+            super::read_agency(&mut handler).unwrap();
         });
     }
 
@@ -1122,11 +1135,13 @@ mod tests {
                              id1,my stop name,0.1,1.2";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+
             let (stop_areas, stop_points) =
-                super::read_stops(path, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_areas.len());
             assert_eq!(1, stop_points.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -1150,16 +1165,18 @@ mod tests {
              relation/1,12.1279272,-86.2132786,2,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
             create_file_with_content(path, "shapes.txt", shapes_content);
             let mut collections = Collections::default();
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            // let stop_file = File::open(path.join("stops.txt")).unwrap();
             let (stop_areas, stop_points) =
-                super::read_stops(path, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
-            super::manage_shapes(&mut collections, path).unwrap();
+            super::manage_shapes(&mut collections, &mut handler).unwrap();
             let stop_area = collections.stop_areas.iter().next().unwrap().1;
             assert_eq!("stoparea01", stop_area.id);
             assert_eq!(
@@ -1185,11 +1202,12 @@ mod tests {
              stoparea_id,5678,stop area name,0.1,1.2,1,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points) =
-                super::read_stops(path, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             //validate stop_point code
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
@@ -1215,10 +1233,12 @@ mod tests {
              stoppoint_id,1234,my stop name,0.1,1.2,0,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
-            let (stop_areas, _) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
+            let (stop_areas, _) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -1243,13 +1263,14 @@ mod tests {
              5,route_4,0,service_4,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(4, collections.lines.len());
             assert_eq!(
                 extract(|l| &l.network_id, &collections.lines),
@@ -1307,17 +1328,18 @@ mod tests {
              5,route_4,0,service_4,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "agency.txt", agency_content);
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (networks, _) = super::read_agency(path).unwrap();
+            let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
 
             assert_eq!(5, collections.routes.len());
@@ -1349,17 +1371,18 @@ mod tests {
              5,route_4,0,service_4,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "agency.txt", agency_content);
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (networks, _) = super::read_agency(path).unwrap();
+            let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(
                 extract(|l| (&l.color, &l.text_color), &collections.lines),
@@ -1420,17 +1443,18 @@ mod tests {
              5,route_4,0,service_4,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "agency.txt", agency_content);
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (networks, _) = super::read_agency(path).unwrap();
+            let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
         });
     }
 
@@ -1453,6 +1477,7 @@ mod tests {
              5,route_4,0,service_4,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
 
@@ -1460,7 +1485,7 @@ mod tests {
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
         });
     }
 
@@ -1485,16 +1510,17 @@ mod tests {
              5,route_5,0,service_3,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "agency.txt", agency_content);
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            let (networks, _) = super::read_agency(path).unwrap();
+            let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
 
             assert_eq!(3, collections.lines.len());
             assert_eq!(
@@ -1530,13 +1556,14 @@ mod tests {
              5,route_3,1,service_3,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
 
@@ -1562,13 +1589,14 @@ mod tests {
              3,route_3,0,service_3,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
             assert_eq!(extract_ids(&collections.lines), &["route_1", "route_3"]);
@@ -1594,6 +1622,7 @@ mod tests {
              1,route_1,0,service_1,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
 
@@ -1601,7 +1630,7 @@ mod tests {
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(1, collections.lines.len());
             assert_eq!(1, collections.routes.len());
         });
@@ -1642,6 +1671,7 @@ mod tests {
                        2,1,0,0,0,0,0,0,20180502,20180506";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
             create_file_with_content(path, "agency.txt", agency_content);
             create_file_with_content(path, "routes.txt", routes_content);
@@ -1658,18 +1688,19 @@ mod tests {
             collections.contributors = contributors;
             collections.datasets = datasets;
             let (stop_areas, stop_points) =
-                super::read_stops(path, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.equipments = CollectionWithId::new(equipments.into_equipments()).unwrap();
-            collections.transfers = super::read_transfers(path, &stop_points).unwrap();
+            collections.transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
-            let (networks, companies) = super::read_agency(path).unwrap();
+
+            let (networks, companies) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
             collections.companies = companies;
             collections.comments = comments;
-            super::read_routes(path, &mut collections).unwrap();
-            super::manage_shapes(&mut collections, path).unwrap();
-            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::manage_shapes(&mut collections, &mut handler).unwrap();
+            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
 
             add_prefix("my_prefix".to_string(), &mut collections).unwrap();
 
@@ -1827,6 +1858,7 @@ mod tests {
              3,route_3,0,service_1,1,2";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
 
@@ -1835,7 +1867,7 @@ mod tests {
             collections.contributors = contributors;
             collections.datasets = datasets;
 
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
@@ -1864,18 +1896,19 @@ mod tests {
              3,route_3,0,service_1,1,2";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "agency.txt", agency_content);
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (networks, _) = super::read_agency(path).unwrap();
+            let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
             let (contributors, datasets) = super::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
@@ -1899,6 +1932,7 @@ mod tests {
                              3,route_3,service_1,1,2";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
 
@@ -1907,7 +1941,7 @@ mod tests {
             collections.contributors = contributors;
             collections.datasets = datasets;
 
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
 
@@ -1932,6 +1966,7 @@ mod tests {
              2,route_1,0,service_2,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
 
@@ -1940,7 +1975,7 @@ mod tests {
             collections.contributors = contributors;
             collections.datasets = datasets;
 
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(2, collections.vehicle_journeys.len());
             assert_eq!(0, collections.trip_properties.len());
             for vj in collections.vehicle_journeys.values() {
@@ -1981,12 +2016,13 @@ mod tests {
                              sa:03,my stop area name,0.3,2.2,1,,2";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (stop_areas, stop_points) =
-                super::read_stops(path, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             let equipments_collection =
                 CollectionWithId::new(equipments.into_equipments()).unwrap();
             assert_eq!(2, stop_areas.len());
@@ -2045,11 +2081,13 @@ mod tests {
                              sp:02,my stop point name 2,0.2,1.5,0,,1";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
+            let (_, stop_points) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             let equipments_collection =
                 CollectionWithId::new(equipments.into_equipments()).unwrap();
             assert_eq!(2, stop_points.len());
@@ -2105,6 +2143,7 @@ mod tests {
                                   1,06:06:27,06:06:27,sp:03,3,,2,1,,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             create_file_with_content(path, "stop_times.txt", stop_times_content);
@@ -2117,11 +2156,12 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
+            let (_, stop_points) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(path, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, path).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler).unwrap();
 
             assert_eq!(
                 collections.vehicle_journeys.into_vec()[0].stop_times,
@@ -2186,6 +2226,7 @@ mod tests {
                                   1,06:06:27,06:06:27,sp:02,2,,2,1,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             create_file_with_content(path, "stop_times.txt", stop_times_content);
@@ -2198,11 +2239,12 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
+            let (_, stop_points) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(path, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, path).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler).unwrap();
 
             assert_eq!(
                 collections.vehicle_journeys.into_vec()[0].stop_times,
@@ -2258,14 +2300,16 @@ mod tests {
                                  sp:03,sp:03,0,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
             create_file_with_content(path, "transfers.txt", transfers_content);
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
+            let (_, stop_points) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
 
-            let transfers = super::read_transfers(path, &stop_points).unwrap();
+            let transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
             assert_eq!(
                 transfers.values().collect::<Vec<_>>(),
                 vec![
@@ -2344,10 +2388,11 @@ mod tests {
                        2,1,0,0,0,0,0,0,20180502,20180506";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "calendar.txt", content);
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
+            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
@@ -2376,10 +2421,11 @@ mod tests {
                        2,20180211,2";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "calendar_dates.txt", content);
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
+            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 2, 12));
@@ -2405,11 +2451,13 @@ mod tests {
                                       2,20180506,2";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "calendar.txt", calendars_content);
+
             create_file_with_content(path, "calendar_dates.txt", calendar_dates_content);
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
+            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
@@ -2440,13 +2488,14 @@ mod tests {
                                       2,20180520,2";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "calendar.txt", calendars_content);
             create_file_with_content(path, "calendar_dates.txt", calendar_dates_content);
 
             let mut collections = Collections::default();
             let (_, mut datasets) = super::read_config(None::<&str>).unwrap();
 
-            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
+            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
             super::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
 
             assert_eq!(
@@ -2471,12 +2520,13 @@ mod tests {
                                  1,1,1,1,1,1,0,0,20180501,20180501";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "calendar.txt", calendars_content);
 
             let mut collections = Collections::default();
             let (_, mut datasets) = super::read_config(None::<&str>).unwrap();
 
-            common_format::manage_calendars(&mut collections, path.as_ref()).unwrap();
+            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
             super::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
 
             assert_eq!(
@@ -2509,10 +2559,11 @@ mod tests {
                               3,,,2";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "shapes.txt", shapes_content);
 
             let mut collections = Collections::default();
-            super::manage_shapes(&mut collections, path).unwrap();
+            super::manage_shapes(&mut collections, &mut handler).unwrap();
             let mut geometries = collections.geometries.into_vec();
             geometries.sort_unstable_by_key(|s| s.id.clone());
 
@@ -2538,8 +2589,9 @@ mod tests {
     #[test]
     fn read_shapes_with_no_shapes_file() {
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             let mut collections = Collections::default();
-            super::manage_shapes(&mut collections, path).unwrap();
+            super::manage_shapes(&mut collections, &mut handler).unwrap();
             let geometries = collections.geometries.into_vec();
             assert_eq!(geometries, vec![]);
         });
@@ -2559,6 +2611,7 @@ mod tests {
                              route:4,service:1,trip:4,pouet,0,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
 
@@ -2567,7 +2620,7 @@ mod tests {
             collections.contributors = contributors;
             collections.datasets = datasets;
 
-            super::read_routes(path, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections).unwrap();
             // physical mode file should contain only three modes
             // (5,7 => funicular; 2 => train; 6 => suspended cable car)
             assert_eq!(4, collections.lines.len());
@@ -2585,11 +2638,12 @@ mod tests {
                              stop:1,Tornio pouet,65.843294,24.145138,";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points) =
-                super::read_stops(path, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_points.len());
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -2607,10 +2661,12 @@ mod tests {
                              stop:3,invalid loc, ,25.558,0";
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
-            let (_, stop_points) = super::read_stops(path, &mut comments, &mut equipments).unwrap();
+            let (_, stop_points) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(3, stop_points.len());
             let longitudes: Vec<f64> = stop_points
                 .values()

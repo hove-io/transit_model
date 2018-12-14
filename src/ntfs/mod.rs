@@ -28,6 +28,7 @@ use utils::*;
 use Result;
 extern crate tempdir;
 use self::tempdir::TempDir;
+use read_utils;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
@@ -108,6 +109,8 @@ fn default_visible() -> bool {
 /// files in the given directory.
 pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let path = path.as_ref();
+    let mut file_handle = read_utils::PathFileHandler::new(path.to_path_buf());
+
     info!("Loading NTFS from {:?}", path);
     let mut collections = Collections::default();
     collections.contributors = make_collection_with_id(path, "contributors.txt")?;
@@ -123,7 +126,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.trip_properties = make_opt_collection_with_id(path, "trip_properties.txt")?;
     collections.transfers = make_opt_collection(path, "transfers.txt")?;
     collections.admin_stations = make_opt_collection(path, "admin_stations.txt")?;
-    common_format::manage_calendars(&mut collections, path)?;
+    common_format::manage_calendars(&mut file_handle, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
     read::manage_stops(&mut collections, path)?;
@@ -197,6 +200,7 @@ mod tests {
     use common_format;
     use geo_types::{Geometry as GeoGeometry, LineString, Point};
     use objects::*;
+    use read_utils::PathFileHandler;
     use serde;
     use std::collections::{BTreeMap, BTreeSet, HashMap};
     use std::fmt::Debug;
@@ -666,10 +670,11 @@ mod tests {
         .unwrap();
 
         test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             common_format::write_calendar_dates(path, &calendars).unwrap();
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut collections, path).unwrap();
+            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
 
             assert_eq!(collections.calendars, calendars);
         });
