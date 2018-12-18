@@ -707,7 +707,7 @@ impl Time {
     pub fn seconds(&self) -> u32 {
         self.0 % 60
     }
-    fn total_seconds(&self) -> u32 {
+    pub fn total_seconds(&self) -> u32 {
         self.0
     }
 }
