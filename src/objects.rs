@@ -311,11 +311,6 @@ impl Id<CommercialMode> for CommercialMode {
         &self.id
     }
 }
-impl AddPrefix for CommercialMode {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
-    }
-}
 
 impl_with_id!(CommercialMode);
 
@@ -562,9 +557,9 @@ impl AddPrefix for Line {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
         self.network_id = prefix.to_string() + &self.network_id;
-        self.commercial_mode_id = prefix.to_string() + &self.commercial_mode_id;
     }
 }
+
 impl_codes!(Line);
 impl_properties!(Line);
 impl_comment_links!(Line);

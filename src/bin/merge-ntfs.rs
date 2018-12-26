@@ -72,7 +72,7 @@ fn run() -> Result<()> {
         let mut collections = Collections::default();
         for input_directory in opt.input_directories {
             let to_append_model = navitia_model::ntfs::read(input_directory)?;
-            collections.merge(to_append_model.into_collections())?;
+            collections.try_merge(to_append_model.into_collections())?;
         }
         let model = navitia_model::Model::new(collections)?;
         let model = transfers::generates_transfers(
