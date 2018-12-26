@@ -267,10 +267,13 @@ impl AddPrefix for Dataset {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derivative(Default)]
+#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq)]
 pub struct CommercialMode {
+    #[derivative(Default(value = "\"default_commercial_mode\".into()"))]
     #[serde(rename = "commercial_mode_id")]
     pub id: String,
+    #[derivative(Default(value = "\"default commercial mode\".into()"))]
     #[serde(rename = "commercial_mode_name")]
     pub name: String,
 }
@@ -285,10 +288,13 @@ impl AddPrefix for CommercialMode {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Derivative, Serialize, Deserialize, Debug)]
+#[derivative(Default)]
 pub struct PhysicalMode {
+    #[derivative(Default(value = "\"default_physical_mode\".into()"))]
     #[serde(rename = "physical_mode_id")]
     pub id: String,
+    #[derivative(Default(value = "\"default_physical_mode\".into()"))]
     #[serde(rename = "physical_mode_name")]
     pub name: String,
     pub co2_emission: Option<f32>,
@@ -326,10 +332,13 @@ impl PartialEq for PhysicalMode {
 
 impl Eq for PhysicalMode {}
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq)]
+#[derivative(Default)]
 pub struct Network {
+    #[derivative(Default(value = "\"default_network\".into()"))]
     #[serde(rename = "network_id")]
     pub id: String,
+    #[derivative(Default(value = "\"default network\".into()"))]
     #[serde(rename = "network_name")]
     pub name: String,
     #[serde(rename = "network_url")]
@@ -453,10 +462,11 @@ impl<'de> ::serde::Deserialize<'de> for Rgb {
         Rgb::from_str(&color_hex).map_err(Error::custom)
     }
 }
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq)]
+#[derivative(Default)]
 pub struct Line {
     #[serde(rename = "line_id")]
+    #[derivative(Default(value = "\"default_line\".into()"))]
     pub id: String,
     #[serde(rename = "line_code")]
     pub code: Option<String>,
@@ -488,7 +498,9 @@ pub struct Line {
     pub text_color: Option<Rgb>,
     #[serde(rename = "line_sort_order")]
     pub sort_order: Option<u32>,
+    #[derivative(Default(value = "\"default_network\".into()"))]
     pub network_id: String,
+    #[derivative(Default(value = "\"default_commercial_mode\".into()"))]
     pub commercial_mode_id: String,
     pub geometry_id: Option<String>,
     #[serde(rename = "line_opening_time")]
@@ -529,11 +541,14 @@ impl GetObjectType for Line {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Derivative)]
+#[derivative(Default)]
 pub struct Route {
     #[serde(rename = "route_id")]
+    #[derivative(Default(value = "\"default_route\".into()"))]
     pub id: String,
     #[serde(rename = "route_name")]
+    #[derivative(Default(value = "\"default route\".into()"))]
     pub name: String,
     pub direction_type: Option<String>,
     #[serde(skip)]
@@ -542,6 +557,7 @@ pub struct Route {
     pub object_properties: KeysValues,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
+    #[derivative(Default(value = "\"default_line\".into()"))]
     pub line_id: String,
     pub geometry_id: Option<String>,
     pub destination_id: Option<String>,
@@ -606,10 +622,10 @@ impl Default for VehicleJourney {
             route_id: "default_route".to_string(),
             physical_mode_id: "default_physical_mode".to_string(),
             dataset_id: "default_dataset".to_string(),
-            service_id: "".to_string(),
+            service_id: "default_service".to_string(),
             headsign: None,
             block_id: None,
-            company_id: "".to_string(),
+            company_id: "default_company".to_string(),
             trip_property_id: None,
             geometry_id: None,
             stop_times: vec![],
