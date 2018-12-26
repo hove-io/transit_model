@@ -740,6 +740,16 @@ impl FromStr for Time {
         Ok(Time::new(hours, minutes, seconds))
     }
 }
+
+// non failing conversion from String to Time
+// if the result has to be checked, it's better to use `parse()`
+// mainly used for the ModelBuilder
+impl From<&str> for Time {
+    fn from(s: &str) -> Time {
+        s.parse().unwrap()
+    }
+}
+
 impl ::serde::Serialize for Time {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -810,7 +820,7 @@ impl GetObjectType for StopTime {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Default)]
 pub struct Coord {
     pub lon: f64,
     pub lat: f64,
@@ -895,7 +905,7 @@ impl Approx {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct StopArea {
     pub id: String,
     pub name: String,
@@ -943,7 +953,7 @@ pub enum StopType {
     Zone,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct StopPoint {
     pub id: String,
     pub name: String,

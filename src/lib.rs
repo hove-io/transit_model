@@ -39,6 +39,7 @@ pub(crate) mod common_format;
 pub mod gtfs;
 pub mod merge_stop_areas;
 pub mod model;
+pub mod model_builder;
 pub mod netex;
 pub mod ntfs;
 pub mod objects;
