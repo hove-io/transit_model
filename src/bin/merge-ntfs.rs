@@ -14,21 +14,16 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use env_logger;
-#[macro_use]
-extern crate log;
+use failure::bail;
+use log::info;
 use navitia_model;
-use structopt;
-
-use std::path::PathBuf;
-use structopt::StructOpt;
-
 use navitia_model::model::Collections;
 use navitia_model::transfers;
 use navitia_model::transfers::TransfersMode;
 use navitia_model::Result;
-#[macro_use]
-extern crate failure;
+use std::path::PathBuf;
+use structopt;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(

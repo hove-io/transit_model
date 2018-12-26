@@ -2,6 +2,7 @@
 name = "get-corresponding-derive"
 version = "0.1.0"
 authors = ["Guillaume Pinot <texitoi@texitoi.eu>"]
+edition = "2018"
 
 [lib]
 proc-macro = true

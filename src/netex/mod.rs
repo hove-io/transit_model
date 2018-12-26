@@ -23,9 +23,10 @@ use crate::collection::CollectionWithId;
 use crate::model::Model;
 use crate::read_utils;
 use crate::Result;
+use failure::bail;
+use log::info;
 use std::fs;
 use std::path::Path;
-
 use zip;
 
 /// Imports a `Model` from one or several [Netex](http://netex-cen.eu/) files.

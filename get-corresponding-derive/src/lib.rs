@@ -20,9 +20,8 @@
 #![recursion_limit = "128"]
 
 extern crate proc_macro;
-#[macro_use]
-extern crate quote;
-extern crate syn;
+use quote::*;
+use syn;
 
 use proc_macro::TokenStream;
 use std::collections::{HashMap, HashSet};

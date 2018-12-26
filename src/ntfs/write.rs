@@ -20,6 +20,7 @@ use crate::model::Collections;
 use crate::objects::*;
 use csv;
 use failure::ResultExt;
+use log::info;
 use serde;
 use std::collections::{BTreeMap, HashMap};
 use std::path;

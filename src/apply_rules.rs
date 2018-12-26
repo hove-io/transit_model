@@ -23,6 +23,8 @@ use crate::utils::{Report, ReportType};
 use crate::Result;
 use csv;
 use failure::ResultExt;
+use log::info;
+use serde_derive::Deserialize;
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};

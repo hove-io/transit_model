@@ -33,8 +33,7 @@
 //! Let's defines these relations and use them a bit:
 //!
 //! ```no_run
-//! # #[macro_use] extern crate get_corresponding_derive;
-//! # extern crate navitia_model;
+//! # use get_corresponding_derive::*;
 //! # use navitia_model::relations::*;
 //! # use navitia_model::collection::Idx;
 //! # struct Bike;
@@ -109,8 +108,7 @@
 //! Let's implement that:
 //!
 //! ```
-//! # #[macro_use] extern crate get_corresponding_derive;
-//! # extern crate navitia_model;
+//! # use get_corresponding_derive::*;
 //! # use navitia_model::relations::*;
 //! # use navitia_model::collection::Idx;
 //! # struct Bike;
@@ -163,7 +161,8 @@
 
 use crate::collection::{CollectionWithId, Id, Idx};
 use crate::Result;
-use failure::ResultExt;
+use derivative::Derivative;
+use failure::{format_err, ResultExt};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// A set of `Idx<T>`
