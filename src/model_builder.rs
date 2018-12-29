@@ -10,9 +10,15 @@ pub struct ModelBuilder {
     collections: Collections,
 }
 
+struct ObjectModifier<T> {
+    pub id: String,
+    modifier: Box<Fn(&mut T)>,
+}
+
 pub struct VehicleJourneyBuilder<'a> {
     model: &'a mut ModelBuilder,
     vj_idx: Idx<VehicleJourney>,
+    route_modifier: Option<ObjectModifier<Route>>,
 }
 
 trait WithId {
@@ -95,25 +101,25 @@ fn get_or_create<'a, T: Id<T> + WithId>(
     col: &'a mut CollectionWithId<T>,
     id: &str,
 ) -> RefMut<'a, T> {
-    let elt = col.get_idx(id).unwrap_or_else(|| {
-        println!("creating new {}", id);
-        col.push(T::with_id(id)).unwrap()
-    });
+    let elt = col
+        .get_idx(id)
+        .unwrap_or_else(|| col.push(T::with_id(id)).unwrap());
     col.index_mut(elt)
 }
 
 fn get_or_create_with<'a, T: Id<T> + WithId, F>(
     col: &'a mut CollectionWithId<T>,
     id: &str,
-    mut f: F,
+    f: Option<F>,
 ) -> RefMut<'a, T>
 where
     F: FnMut(&mut T),
 {
     let elt = col.get_idx(id).unwrap_or_else(|| {
-        println!("creating new {}", id);
         let mut o = T::with_id(id);
-        f(&mut o);
+        if let Some(mut f) = f {
+            f(&mut o);
+        }
         col.push(o).unwrap()
     });
     col.index_mut(elt)
@@ -134,30 +140,11 @@ impl<'a> ModelBuilder {
         let vj_builder = VehicleJourneyBuilder {
             model: &mut self,
             vj_idx,
+            route_modifier: None,
         };
 
         vj_initer(vj_builder);
-        self.add_missing_parts(vj_idx);
         self
-    }
-
-    // add the missing objects to the model (routes, lines, ...)
-    fn add_missing_parts(&mut self, vj_idx: Idx<VehicleJourney>) {
-        let new_vj = self.collections.vehicle_journeys.index_mut(vj_idx);
-        let route = get_or_create(&mut self.collections.routes, &new_vj.route_id);
-        let dataset = get_or_create(&mut self.collections.datasets, &new_vj.dataset_id);
-        get_or_create(&mut self.collections.contributors, &dataset.contributor_id);
-        get_or_create(&mut self.collections.companies, &new_vj.company_id);
-        let line = get_or_create(&mut self.collections.lines, &route.line_id);
-        get_or_create(
-            &mut self.collections.commercial_modes,
-            &line.commercial_mode_id,
-        );
-        get_or_create(&mut self.collections.networks, &line.network_id);
-        get_or_create(
-            &mut self.collections.physical_modes,
-            &new_vj.physical_mode_id,
-        );
     }
 
     pub fn build(self) -> Model {
@@ -166,10 +153,12 @@ impl<'a> ModelBuilder {
 }
 
 impl<'a> VehicleJourneyBuilder<'a> {
-    pub fn find_or_create_sp(&mut self, sp: &str) -> Idx<StopPoint> {
-        match self.model.collections.stop_points.get_idx(sp) {
-            Some(e) => e,
-            None => {
+    fn find_or_create_sp(&mut self, sp: &str) -> Idx<StopPoint> {
+        self.model
+            .collections
+            .stop_points
+            .get_idx(sp)
+            .unwrap_or_else(|| {
                 let sa_id = format!("sa:{}", sp);
                 let new_sp = StopPoint {
                     id: sp.to_owned(),
@@ -178,17 +167,18 @@ impl<'a> VehicleJourneyBuilder<'a> {
                     ..Default::default()
                 };
 
-                get_or_create_with(&mut self.model.collections.stop_areas, &sa_id, |mut sa| {
-                    sa.name = format!("sa {}", sp)
-                });
+                get_or_create_with(
+                    &mut self.model.collections.stop_areas,
+                    &sa_id,
+                    Some(|mut sa: &mut crate::objects::StopArea| sa.name = format!("sa {}", sp)),
+                );
 
                 self.model
                     .collections
                     .stop_points
                     .push(new_sp)
                     .expect(&format!("stoppoint {} already exists", sp))
-            }
-        }
+            })
     }
 
     pub fn st(mut self, name: &str, arrival: impl Into<Time>, departure: impl Into<Time>) -> Self {
@@ -217,6 +207,43 @@ impl<'a> VehicleJourneyBuilder<'a> {
         }
 
         self
+    }
+
+    pub fn route<F>(mut self, name: &str, f: F) -> Self
+    where
+        F: Fn(&mut Route) + 'static,
+    {
+        self.route_modifier = Some(ObjectModifier {
+            id: name.to_owned(),
+            modifier: Box::new(f),
+        });
+
+        self
+    }
+}
+
+impl<'a> Drop for VehicleJourneyBuilder<'a> {
+    fn drop(&mut self) {
+        let collections = &mut self.model.collections;
+        // add the missing objects to the model (routes, lines, ...)
+        let mut new_vj = collections.vehicle_journeys.index_mut(self.vj_idx);
+        let dataset = get_or_create(&mut collections.datasets, &new_vj.dataset_id);
+        get_or_create(&mut collections.contributors, &dataset.contributor_id);
+
+        get_or_create(&mut collections.companies, &new_vj.company_id);
+        get_or_create(&mut collections.physical_modes, &new_vj.physical_mode_id);
+
+        if let Some(route_modifier) = &self.route_modifier {
+            new_vj.route_id = route_modifier.id.clone();
+        }
+        let route = get_or_create_with(
+            &mut collections.routes,
+            &new_vj.route_id,
+            self.route_modifier.as_ref().map(|m| &*m.modifier),
+        );
+        let line = get_or_create(&mut collections.lines, &route.line_id);
+        get_or_create(&mut collections.commercial_modes, &line.commercial_mode_id);
+        get_or_create(&mut collections.networks, &line.network_id);
     }
 }
 
@@ -286,4 +313,64 @@ mod test {
         assert_eq!(model.stop_points.len(), 3);
         assert_eq!(model.stop_areas.len(), 3);
     }
+
+    #[test]
+    fn model_creation_with_lines() {
+        let model = ModelBuilder::default()
+            .vj("toto", |vj_builder| {
+                vj_builder
+                    .route("1", |r| {
+                        r.name = "bob".into();
+                    })
+                    .st("A", "10:00:00", "10:01:00")
+                    .st("B", "11:00:00", "11:01:00");
+            })
+            .vj("tata", |vj_builder| {
+                vj_builder
+                    .route("1", |r| {
+                        r.name = "bobette".into(); //useless, the route will be changed only at its creation
+                    })
+                    .st("C", "10:00:00", "10:01:00")
+                    .st("D", "11:00:00", "11:01:00");
+            })
+            .vj("tutu", |vj_builder| {
+                vj_builder
+                    .st("C", "10:00:00", "10:01:00")
+                    .st("E", "11:00:00", "11:01:00");
+            })
+            .build();
+
+        assert_eq!(
+            model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
+            ["A", "B"]
+                .into_iter()
+                .map(|s| model.stop_points.get_idx(s).unwrap())
+                .collect()
+        );
+        assert_eq!(
+            model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("tata").unwrap()),
+            ["C", "D"]
+                .into_iter()
+                .map(|s| model.stop_points.get_idx(s).unwrap())
+                .collect()
+        );
+        // there should be only 2 routes, the route '1' and the default one for 'tutu'
+        assert_eq!(model.routes.len(), 2);
+        assert_eq!(
+            model.get_corresponding_from_idx(model.routes.get_idx("1").unwrap()),
+            ["toto", "tata"]
+                .into_iter()
+                .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
+                .collect()
+        );
+        assert_eq!(model.routes.get("1").unwrap().name, "bob");
+        assert_eq!(
+            model.get_corresponding_from_idx(model.routes.get_idx("default_route").unwrap()),
+            ["tutu"]
+                .into_iter()
+                .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
+                .collect()
+        );
+    }
+
 }
