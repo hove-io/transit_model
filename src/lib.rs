@@ -21,17 +21,6 @@
 #![deny(missing_docs)]
 
 #[macro_use]
-extern crate derivative;
-#[macro_use]
-extern crate failure;
-#[macro_use]
-extern crate get_corresponding_derive;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate log;
-
-#[macro_use]
 pub(crate) mod utils;
 pub mod apply_rules;
 pub mod collection;

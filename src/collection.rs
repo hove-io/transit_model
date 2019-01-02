@@ -18,6 +18,8 @@
 //! support.
 
 use crate::Result;
+use derivative::Derivative;
+use failure::{bail, ensure};
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry::*;

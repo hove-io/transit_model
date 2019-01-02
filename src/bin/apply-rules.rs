@@ -14,15 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#[macro_use]
-extern crate log;
-
-use structopt::StructOpt;
-
+use log::info;
+use navitia_model::apply_rules;
 use navitia_model::Result;
 use std::path::PathBuf;
-
-use navitia_model::apply_rules;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "apply_rules", about = " Enrich the data of an NTFS.")]

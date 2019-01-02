@@ -14,9 +14,8 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#[macro_use]
-extern crate serde_json;
 use navitia_model::Result;
+use serde_json::json;
 
 fn run() -> Result<()> {
     let objects = navitia_model::gtfs::read_from_path(".", None, None)?;

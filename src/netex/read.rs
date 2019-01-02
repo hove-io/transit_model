@@ -14,15 +14,13 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use self::minidom::Element;
 use crate::model::Collections;
 use crate::objects;
 use crate::Result;
-use std::io::Read;
-
+use failure::{bail, format_err, ResultExt};
 use minidom;
-
-use self::minidom::Element;
-use failure::ResultExt;
+use std::io::Read;
 
 // type RoutePointId = String;
 // type StopPointId = String;

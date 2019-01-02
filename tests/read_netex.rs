@@ -15,14 +15,12 @@
 // <http://www.gnu.org/licenses/>.
 
 use navitia_model;
-
-use zip;
-
 use navitia_model::Result;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
 use tempdir::TempDir;
+use zip;
 
 fn compare_ntfs_zips<P, T>(ntfs_zipfile1: P, ntfs_zipfile2: T) -> Result<()>
 where

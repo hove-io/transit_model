@@ -14,16 +14,12 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use env_logger;
-#[macro_use]
-extern crate log;
+use log::info;
 use navitia_model;
-use structopt;
-
-use std::path::PathBuf;
-use structopt::StructOpt;
-
 use navitia_model::{Model, Result};
+use std::path::PathBuf;
+use structopt;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(

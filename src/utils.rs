@@ -20,12 +20,13 @@ use chrono::NaiveDate;
 use csv;
 use failure::ResultExt;
 use geo_types;
+use log::{debug, error, info};
+use serde_derive::Serialize;
 use std::fs;
 use std::io::{Read, Write};
 use std::path;
 use walkdir::WalkDir;
 use wkt::{self, ToWkt};
-
 use zip;
 
 pub fn zip_to<P, R>(source_path: P, zip_file: R) -> crate::Result<()>
@@ -60,7 +61,7 @@ where
 
 pub fn de_from_u8<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
+    D: serde::Deserializer<'de>,
 {
     use serde::Deserialize;
     let i = u8::deserialize(deserializer)?;
@@ -69,7 +70,7 @@ where
 
 pub fn de_from_u8_with_true_default<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
+    D: serde::Deserializer<'de>,
 {
     use serde::Deserialize;
     match u8::deserialize(deserializer) {
@@ -80,24 +81,24 @@ where
 
 pub fn ser_from_bool<S>(v: &bool, serializer: S) -> Result<S::Ok, S::Error>
 where
-    S: ::serde::Serializer,
+    S: serde::Serializer,
 {
     serializer.serialize_u8(*v as u8)
 }
 
 pub fn de_from_date_string<'de, D>(deserializer: D) -> Result<Date, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
+    D: serde::Deserializer<'de>,
 {
     use serde::Deserialize;
     let s = String::deserialize(deserializer)?;
 
-    NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(::serde::de::Error::custom)
+    NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom)
 }
 
 pub fn ser_from_naive_date<S>(date: &Date, serializer: S) -> Result<S::Ok, S::Error>
 where
-    S: ::serde::Serializer,
+    S: serde::Serializer,
 {
     let s = format!("{}", date.format("%Y%m%d"));
     serializer.serialize_str(&s)
@@ -105,8 +106,8 @@ where
 
 pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
-    T: ::serde::Deserialize<'de>,
+    D: serde::Deserializer<'de>,
+    T: serde::Deserialize<'de>,
 {
     use serde::Deserialize;
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
@@ -114,8 +115,8 @@ where
 
 pub fn de_with_invalid_option<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
-    Option<T>: ::serde::Deserialize<'de>,
+    D: serde::Deserializer<'de>,
+    Option<T>: serde::Deserialize<'de>,
 {
     use serde::Deserialize;
     Option::<T>::deserialize(de).or_else(|e| {
@@ -126,7 +127,7 @@ where
 
 pub fn de_location_trim_with_default<'de, D>(deserializer: D) -> Result<f64, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
+    D: serde::Deserializer<'de>,
 {
     use serde::Deserialize;
     let s = String::deserialize(deserializer)?;
@@ -138,14 +139,14 @@ where
 
 pub fn de_without_slashes<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
+    D: serde::Deserializer<'de>,
 {
     de_option_without_slashes(deserializer).map(|opt| opt.unwrap_or_else(Default::default))
 }
 
 pub fn de_option_without_slashes<'de, D>(de: D) -> Result<Option<String>, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
+    D: serde::Deserializer<'de>,
 {
     use serde::Deserialize;
     let option = Option::<String>::deserialize(de)?;
@@ -156,8 +157,8 @@ use wkt::conversion::try_into_geometry;
 
 pub fn de_with_empty_or_invalid_default<'de, D, T>(de: D) -> Result<T, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
-    Option<T>: ::serde::Deserialize<'de>,
+    D: serde::Deserializer<'de>,
+    Option<T>: serde::Deserialize<'de>,
     T: Default,
 {
     de_with_invalid_option(de).map(|opt| opt.unwrap_or_else(Default::default))
@@ -165,12 +166,12 @@ where
 
 pub fn de_wkt<'de, D>(deserializer: D) -> Result<geo_types::Geometry<f64>, D::Error>
 where
-    D: ::serde::Deserializer<'de>,
+    D: serde::Deserializer<'de>,
 {
     use serde::Deserialize;
     let s = String::deserialize(deserializer)?;
-    let wkt = wkt::Wkt::from_str(&s).map_err(::serde::de::Error::custom)?;
-    try_into_geometry(&wkt.items[0]).map_err(::serde::de::Error::custom)
+    let wkt = wkt::Wkt::from_str(&s).map_err(serde::de::Error::custom)?;
+    try_into_geometry(&wkt.items[0]).map_err(serde::de::Error::custom)
 }
 
 pub fn ser_geometry<S>(
@@ -178,7 +179,7 @@ pub fn ser_geometry<S>(
     serializer: S,
 ) -> Result<S::Ok, S::Error>
 where
-    S: ::serde::Serializer,
+    S: serde::Serializer,
 {
     let wkt = geometry.to_wkt();
     serializer.serialize_str(&format!("{}", wkt.items[0]))
@@ -196,7 +197,7 @@ pub fn make_opt_collection_with_id<T>(
 ) -> crate::Result<CollectionWithId<T>>
 where
     T: Id<T>,
-    for<'de> T: ::serde::Deserialize<'de>,
+    for<'de> T: serde::Deserialize<'de>,
 {
     if !path.join(file).exists() {
         info!("Skipping {}", file);
@@ -212,7 +213,7 @@ pub fn make_collection_with_id<T>(
 ) -> crate::Result<CollectionWithId<T>>
 where
     T: Id<T>,
-    for<'de> T: ::serde::Deserialize<'de>,
+    for<'de> T: serde::Deserialize<'de>,
 {
     info!("Reading {}", file);
     let path = path.join(file);
@@ -226,7 +227,7 @@ where
 
 pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> crate::Result<Collection<T>>
 where
-    for<'de> T: ::serde::Deserialize<'de>,
+    for<'de> T: serde::Deserialize<'de>,
 {
     if !path.join(file).exists() {
         info!("Skipping {}", file);
@@ -238,7 +239,7 @@ where
 
 pub fn make_collection<T>(path: &path::Path, file: &str) -> crate::Result<Collection<T>>
 where
-    for<'de> T: ::serde::Deserialize<'de>,
+    for<'de> T: serde::Deserialize<'de>,
 {
     info!("Reading {}", file);
     let path = path.join(file);
@@ -277,7 +278,8 @@ where
 }
 
 macro_rules! skip_fail {
-    ($res:expr) => {
+    ($res:expr) => {{
+        use log::warn;
         match $res {
             Ok(val) => val,
             Err(e) => {
@@ -285,7 +287,7 @@ macro_rules! skip_fail {
                 continue;
             }
         }
-    };
+    }};
 }
 
 #[derive(Debug, Serialize)]
