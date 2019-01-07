@@ -110,19 +110,16 @@ The standard values of the `route_type` field are directly mapped to the NTFS mo
 | --- | --- | --- | --- | --- |
 | 0, 9XX | Tramway | 0 | Tram, Streetcar, Light rail | 3 |
 | 1, 4XX, 5XX, 6XX | Metro | 1 | Subway, Metro | 4 |
-| 2 | Train | 2 | Rail | 2 |
-| 3, 8XX, 17XX | Bus | 3 | Bus | 8 |
+| 2, 1XX, 3XX | Train | 2 | Rail | 2 |
+| 3, 7XX, 8XX | Bus | 3 | Bus | 8 |
 | 4, 10XX, 12XX | Ferry | 4 | Ferry | 1 |
 | 5 | Funicular | 5 | Cable car | 6 |
 | 6, 13XX | SuspendedCableCar | 6 | Gondola, Suspended cable car | 7 |
 | 7, 14XX | Funicular | 7 | Funicular | 5 |
-| 1XX | Train | 2 | Rail | 2 |
 | 2XX | Coach | 2XX | Coach | 8 |
-| 3XX | RapidTransit | 3XX | Suburban Railway | 2 |
-| 7XX | Shuttle | 7XX | Bus | 8 |
 | 11XX | Air | 11XX | Airplane | 0 |
 | 15XX | Taxi | 15XX | Taxi | 8 |
-| 16XX | Unknown | 16XX | Bus | 8 |
+| 16XX, 17XX | Bus | 17XX | Unknown Mode | 8 |
 
 (1) The physical_mode ID is a mapping with a specific value as described in the NTFS format specification. This value must not be prefixed.
 
