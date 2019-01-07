@@ -1,10 +1,43 @@
-#![allow(missing_docs)]
+// Copyright 2017-2019 Kisio Digital and/or its affiliates.
+//
+// This program is free software: you can redistribute it and/or
+// modify it under the terms of the GNU General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see
+// <http://www.gnu.org/licenses/>.
+
+//! Provides an easy way to create a `navitia_model::Model`
+//!
+//! ```
+//! # fn main() {
+//!  let model = navitia_model::model_builder::ModelBuilder::default()
+//!      .vj("toto", |vj| {
+//!          vj.route("1", |_| {})
+//!            .st("A", "10:00:00", "10:01:00")
+//!            .st("B", "11:00:00", "11:01:00");
+//!      })
+//!      .vj("tata", |vj| {
+//!          vj.st("A", "10:00:00", "10:01:00")
+//!            .st("D", "11:00:00", "11:01:00");
+//!      })
+//!      .build();
+//! # }
+//! ```
 use crate::collection::{CollectionWithId, Id, Idx, RefMut};
 use crate::model::{Collections, Model};
 use crate::objects::{
     CommercialMode, Line, PhysicalMode, Route, StopPoint, StopTime, Time, VehicleJourney,
 };
 
+/// Builder used to easily create a `Model`
 #[derive(Default)]
 pub struct ModelBuilder {
     collections: Collections,
@@ -15,6 +48,7 @@ struct ObjectModifier<T> {
     modifier: Box<Fn(&mut T)>,
 }
 
+/// Builder used to create and modify a new VehicleJourney
 pub struct VehicleJourneyBuilder<'a> {
     model: &'a mut ModelBuilder,
     vj_idx: Idx<VehicleJourney>,
@@ -126,6 +160,24 @@ where
 }
 
 impl<'a> ModelBuilder {
+    /// Add a new VehicleJourney to the model
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = navitia_model::model_builder::ModelBuilder::default()
+    ///        .vj("toto", |vj_builder| {
+    ///            vj_builder
+    ///                .st("A", "10:00:00", "10:01:00")
+    ///                .st("B", "11:00:00", "11:01:00");
+    ///        })
+    ///        .vj("tata", |vj_builder| {
+    ///            vj_builder
+    ///                .st("C", "08:00:00", "08:01:00")
+    ///                .st("B", "09:00:00", "09:01:00");
+    ///        })
+    ///        .build();
+    /// # }
+    /// ```
     pub fn vj<F>(mut self, name: &str, mut vj_initer: F) -> Self
     where
         F: FnMut(VehicleJourneyBuilder),
@@ -147,6 +199,7 @@ impl<'a> ModelBuilder {
         self
     }
 
+    /// Consume the bulder to create a navitia model
     pub fn build(self) -> Model {
         Model::new(self.collections).unwrap()
     }
@@ -181,6 +234,19 @@ impl<'a> VehicleJourneyBuilder<'a> {
             })
     }
 
+    /// add a StopTime to the vehicle journey
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = navitia_model::model_builder::ModelBuilder::default()
+    ///        .vj("toto", |vj_builder| {
+    ///            vj_builder
+    ///                .st("A", "10:00:00", "10:01:00")
+    ///                .st("B", "11:00:00", "11:01:00");
+    ///        })
+    ///        .build();
+    /// # }
+    /// ```
     pub fn st(mut self, name: &str, arrival: impl Into<Time>, departure: impl Into<Time>) -> Self {
         let stop_point_idx = self.find_or_create_sp(name);
         {
@@ -209,6 +275,20 @@ impl<'a> VehicleJourneyBuilder<'a> {
         self
     }
 
+    /// Set the route of the vj, and apply a lamba if the route had to be created
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = navitia_model::model_builder::ModelBuilder::default()
+    ///        .vj("toto", |vj_builder| {
+    ///            vj_builder
+    ///                .route("1", |r| {
+    ///                    r.name = "bob".into();
+    ///                });
+    ///        })
+    ///        .build();
+    /// # }
+    /// ```
     pub fn route<F>(mut self, name: &str, f: F) -> Self
     where
         F: Fn(&mut Route) + 'static,
