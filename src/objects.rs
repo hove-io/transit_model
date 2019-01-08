@@ -122,6 +122,22 @@ macro_rules! impl_comment_links {
     };
 }
 
+pub trait WithId {
+    fn with_id(id: &str) -> Self;
+}
+
+macro_rules! impl_with_id {
+    ($ty:ty) => {
+        impl WithId for $ty {
+            fn with_id(id: &str) -> Self {
+                let mut r = Self::default();
+                r.id = id.to_owned();
+                r
+            }
+        }
+    };
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Contributor {
     #[serde(rename = "contributor_id")]
@@ -154,6 +170,8 @@ impl Default for Contributor {
         }
     }
 }
+
+impl_with_id!(Contributor);
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum DatasetType {
@@ -267,6 +285,8 @@ impl AddPrefix for Dataset {
     }
 }
 
+impl_with_id!(Dataset);
+
 #[derivative(Default)]
 #[derive(Derivative, Serialize, Deserialize, Debug, PartialEq)]
 pub struct CommercialMode {
@@ -287,6 +307,8 @@ impl AddPrefix for CommercialMode {
         self.id = prefix.to_string() + &self.id;
     }
 }
+
+impl_with_id!(CommercialMode);
 
 #[derive(Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
@@ -332,6 +354,8 @@ impl PartialEq for PhysicalMode {
 
 impl Eq for PhysicalMode {}
 
+impl_with_id!(PhysicalMode);
+
 #[derive(Derivative, Serialize, Deserialize, Debug, PartialEq)]
 #[derivative(Default)]
 pub struct Network {
@@ -362,6 +386,7 @@ impl Id<Network> for Network {
     }
 }
 impl_codes!(Network);
+impl_with_id!(Network);
 
 impl GetObjectType for Network {
     fn get_object_type() -> ObjectType {
@@ -534,6 +559,7 @@ impl AddPrefix for Line {
 impl_codes!(Line);
 impl_properties!(Line);
 impl_comment_links!(Line);
+impl_with_id!(Line);
 
 impl GetObjectType for Line {
     fn get_object_type() -> ObjectType {
@@ -582,6 +608,7 @@ impl AddPrefix for Route {
 impl_codes!(Route);
 impl_properties!(Route);
 impl_comment_links!(Route);
+impl_with_id!(Route);
 
 impl GetObjectType for Route {
     fn get_object_type() -> ObjectType {
@@ -674,6 +701,7 @@ impl AddPrefix for VehicleJourney {
 impl_codes!(VehicleJourney);
 impl_properties!(VehicleJourney);
 impl_comment_links!(VehicleJourney);
+impl_with_id!(VehicleJourney);
 
 impl GetObjectType for VehicleJourney {
     fn get_object_type() -> ObjectType {
@@ -955,6 +983,7 @@ impl AddPrefix for StopArea {
 impl_codes!(StopArea);
 impl_properties!(StopArea);
 impl_comment_links!(StopArea);
+impl_with_id!(StopArea);
 
 impl GetObjectType for StopArea {
     fn get_object_type() -> ObjectType {
@@ -1014,6 +1043,7 @@ impl AddPrefix for StopPoint {
 impl_codes!(StopPoint);
 impl_properties!(StopPoint);
 impl_comment_links!(StopPoint);
+impl_with_id!(StopPoint);
 
 impl GetObjectType for StopPoint {
     fn get_object_type() -> ObjectType {
@@ -1096,6 +1126,8 @@ impl AddPrefix for Company {
         self.id = prefix.to_string() + &self.id;
     }
 }
+
+impl_with_id!(Company);
 
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]

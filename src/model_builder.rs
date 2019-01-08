@@ -33,9 +33,7 @@
 //! ```
 use crate::collection::{CollectionWithId, Id, Idx, RefMut};
 use crate::model::{Collections, Model};
-use crate::objects::{
-    CommercialMode, Line, PhysicalMode, Route, StopPoint, StopTime, Time, VehicleJourney,
-};
+use crate::objects::{Route, StopPoint, StopTime, Time, VehicleJourney, WithId};
 
 /// Builder used to easily create a `Model`
 #[derive(Default)]
@@ -53,82 +51,6 @@ pub struct VehicleJourneyBuilder<'a> {
     model: &'a mut ModelBuilder,
     vj_idx: Idx<VehicleJourney>,
     route_modifier: Option<ObjectModifier<Route>>,
-}
-
-trait WithId {
-    fn with_id(id: &str) -> Self;
-}
-
-impl WithId for Route {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
-}
-
-impl WithId for Line {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
-}
-impl WithId for CommercialMode {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
-}
-impl WithId for PhysicalMode {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
-}
-impl WithId for crate::objects::Dataset {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
-}
-impl WithId for crate::objects::Contributor {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
-}
-impl WithId for crate::objects::Network {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
-}
-impl WithId for crate::objects::StopArea {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
-}
-impl WithId for crate::objects::StopPoint {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
-}
-impl WithId for crate::objects::Company {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
 }
 
 fn get_or_create<'a, T: Id<T> + WithId>(
@@ -199,7 +121,7 @@ impl<'a> ModelBuilder {
         self
     }
 
-    /// Consume the bulder to create a navitia model
+    /// Consume the builder to create a navitia model
     pub fn build(self) -> Model {
         Model::new(self.collections).unwrap()
     }
