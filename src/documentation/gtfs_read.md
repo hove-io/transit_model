@@ -104,18 +104,22 @@ A complementary object_code should be added to each stop with the following prop
 
 ### Reading routes.txt
 ##### Mapping of route_type with modes
-Only `route_type` existing in the GTFS feed are created. The priority is used to priorize the use of a commercial mode when creating Line grouping routes with different `route_type`s. This priorization follow the [Netex Specification](http://www.normes-donnees-tc.org/wp-content/uploads/2014/05/NF_Profil_NeTEx_pour_les_arrets-_F-_-_v2.pdf) in chapter 6.2.3 (and also indicated in the NTFS Specification).
+The standard values of the `route_type` field are directly mapped to the NTFS modes. [Extended GTFS modes](https://developers.google.com/transit/gtfs/reference/extended-route-types) are read by categories mapping the most prominent mode. A more detailed mapping of the extended modes might be considered in a later version. The priority is used to prioritize the use of a commercial mode when creating a Line grouping routes with different `route_type`s. This priorization follow the [Netex Specification](http://www.normes-donnees-tc.org/wp-content/uploads/2014/05/NF_Profil_NeTEx_pour_les_arrets-_F-_-_v2.pdf) in chapter 6.2.3 (and also indicated in the NTFS Specification).
 
 | GTFS route_type | NTFS physical_mode ID (1) | NTFS commercial_mode ID | NTFS commercial_mode name | Priority |
 | --- | --- | --- | --- | --- |
-| 0 | Tramway | 0 | Tram, Streetcar, Light rail | 3 |
-| 1 | Metro | 1 | Subway, Metro | 4 |
-| 2 | Train | 2 | Rail | 2 |
-| 3 | Bus | 3 | Bus | 8 |
-| 4 | Ferry | 4 | Ferry | 1 |
+| 0, 9XX | Tramway | 0 | Tram, Streetcar, Light rail | 3 |
+| 1, 4XX, 5XX, 6XX | Metro | 1 | Subway, Metro | 4 |
+| 2, 1XX, 3XX | Train | 2 | Rail | 2 |
+| 3, 7XX, 8XX | Bus | 3 | Bus | 8 |
+| 4, 10XX, 12XX | Ferry | 4 | Ferry | 1 |
 | 5 | Funicular | 5 | Cable car | 6 |
-| 6 | SuspendedCableCar | 6 | Gondola, Suspended cable car | 7 |
-| 7 | Funicular | 7 | Funicular | 5 |
+| 6, 13XX | SuspendedCableCar | 6 | Gondola, Suspended cable car | 7 |
+| 7, 14XX | Funicular | 7 | Funicular | 5 |
+| 2XX | Coach | 2XX | Coach | 8 |
+| 11XX | Air | 11XX | Airplane | 0 |
+| 15XX | Taxi | 15XX | Taxi | 8 |
+| 16XX, 17XX | Bus | 17XX | Unknown Mode | 8 |
 
 (1) The physical_mode ID is a mapping with a specific value as described in the NTFS format specification. This value must not be prefixed.
 
