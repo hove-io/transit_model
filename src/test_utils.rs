@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path;
@@ -33,12 +34,19 @@ fn get_file_content<P: AsRef<Path>>(path: P) -> String {
 
 pub fn compare_output_dir_with_expected<P: AsRef<Path>>(
     output_dir: &P,
-    files_to_check: Vec<&str>,
+    files_to_check: Option<Vec<&str>>,
     work_dir_expected: &str,
 ) {
     let output_dir = output_dir.as_ref();
-    for filename in files_to_check {
-        let output_file_path = output_dir.join(filename);
+    let files: Vec<String> = match files_to_check {
+        None => fs::read_dir(output_dir)
+            .unwrap()
+            .map(|f| f.unwrap().file_name().into_string().unwrap())
+            .collect(),
+        Some(v) => v.iter().map(|f| f.to_string()).collect(),
+    };
+    for filename in files {
+        let output_file_path = output_dir.join(filename.clone());
         let output_contents = get_file_content(output_file_path);
 
         let expected_file_path = format!("{}/{}", work_dir_expected, filename);

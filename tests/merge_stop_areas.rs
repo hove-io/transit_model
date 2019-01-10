@@ -40,7 +40,7 @@ fn test_merge_stop_areas_multi_steps() {
         navitia_model::ntfs::write(&new_model, path).unwrap();
         compare_output_dir_with_expected(
             &path,
-            vec![
+            Some(vec![
                 "comment_links.txt",
                 "comments.txt",
                 "geometries.txt",
@@ -49,7 +49,7 @@ fn test_merge_stop_areas_multi_steps() {
                 "object_properties.txt",
                 "stops.txt",
                 "report.json",
-            ],
+            ]),
             "./fixtures/merge-stop-areas/output/",
         );
     });
