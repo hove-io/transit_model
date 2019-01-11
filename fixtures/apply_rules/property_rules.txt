@@ -1,0 +1,25 @@
+object_type,object_id,property_name,property_old_value,property_value
+route,RERAB,route_name,La Défense - Nation,My new route name
+route,RERAB,route_name,La Défense - Nation,My new route name
+route,RERAB,route_name,Truc muche,My new route name
+route,RERAB,route_name,Truc muche,Another new route name
+route,RERAB,unknown_property,La Défense - Nation,My new route name
+route,RERAB,unknown_property,La Défense - Nation,Another new route name
+route,RERAF,route_name,Nation - La Défense,Tartare - Paradise
+stop_point,RERAB,unknown_property,La Défense - Nation,Another new route name
+route,RERAB,direction_type,old direction_type,new direction_type
+route,M1F,direction_type,,new direction_type
+route,RERAB,destination_id,*,new destination_id
+route,M1F,route_geometry,*,"POINT(2 2)"
+route,M1F:2,route_geometry,*,"POINT(3 3)"
+route,M1F:3,route_geometry,*,"POINT(23 23)"
+route,M1F:4,route_geometry,*,"POINT(23 23)"
+route,M1B,route_geometry,,"POINT(5 5)"
+route,M1B:2,route_geometry,,"POINT(6 6)"
+route,M1B:3,route_geometry,,"POINT(23 23)"
+route,B42F,route_geometry,POINT(10 10),"POINT(50 50)"
+route,B42F:2,route_geometry,POINT(52 68),"POINT(70 70)"
+route,B42F:3,route_geometry,POINT(40 40),"POINT(23 23)"
+route,B42F:4,route_geometry,pouet,"POINT(50 50)"
+route,B42B,route_geometry,,bad_geometry
+route,RERAF,route_geometry,POINT(40 40),POINT(40 40)

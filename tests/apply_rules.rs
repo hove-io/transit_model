@@ -22,16 +22,18 @@ use std::path::Path;
 #[test]
 fn test_apply_complementary_codes() {
     test_in_tmp_dir(|path| {
-        let input_dir = "fixtures/minimal_ntfs";
-        let rules =
+        let input_dir = "fixtures/apply_rules/input";
+        let cc_rules =
             vec![Path::new("./fixtures/apply_rules/complementary_codes_rules.txt").to_path_buf()];
+        let p_rules = vec![Path::new("./fixtures/apply_rules/property_rules.txt").to_path_buf()];
         let report_path = path.join("report.json");
 
         let model = navitia_model::ntfs::read(input_dir).unwrap();
         let mut collections = model.into_collections();
         apply_rules::apply_rules(
             &mut collections,
-            rules,
+            cc_rules,
+            p_rules,
             Path::new(&report_path).to_path_buf(),
         )
         .unwrap();
@@ -39,7 +41,12 @@ fn test_apply_complementary_codes() {
         navitia_model::ntfs::write(&model, path).unwrap();
         compare_output_dir_with_expected(
             &path,
-            Some(vec!["object_codes.txt", "report.json"]),
+            Some(vec![
+                "object_codes.txt",
+                "geometries.txt",
+                "routes.txt",
+                "report.json",
+            ]),
             "./fixtures/apply_rules/output",
         );
     });

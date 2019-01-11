@@ -31,6 +31,10 @@ struct Opt {
     #[structopt(short = "c", long = "complementary-code-rules", parse(from_os_str))]
     complementary_code_rules_files: Vec<PathBuf>,
 
+    /// property rules files.
+    #[structopt(short = "p", long = "property-rules", parse(from_os_str))]
+    property_rules_files: Vec<PathBuf>,
+
     /// output report file path
     #[structopt(short = "r", long = "report", parse(from_os_str))]
     report: PathBuf,
@@ -48,6 +52,7 @@ fn run() -> Result<()> {
     apply_rules::apply_rules(
         &mut collections,
         opt.complementary_code_rules_files,
+        opt.property_rules_files,
         opt.report,
     )?;
     let model = navitia_model::Model::new(collections)?;

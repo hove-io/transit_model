@@ -26,7 +26,7 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path;
 use walkdir::WalkDir;
-use wkt::{self, ToWkt};
+use wkt::{self, conversion::try_into_geometry, ToWkt};
 use zip;
 
 pub fn zip_to<P, R>(source_path: P, zip_file: R) -> crate::Result<()>
@@ -152,8 +152,6 @@ where
     let option = Option::<String>::deserialize(de)?;
     Ok(option.map(|s| s.replace("/", "")))
 }
-
-use wkt::conversion::try_into_geometry;
 
 pub fn de_with_empty_or_invalid_default<'de, D, T>(de: D) -> Result<T, D::Error>
 where
@@ -306,8 +304,12 @@ pub enum ReportType {
     TransferOnUnreferencedStop,
     TransferAlreadyDeclared,
     // apply-rules types
-    ComplementaryCodeRulesRead,
-    ComplementaryObjectNotFound,
+    ObjectNotFound,
+    InvalidFile,
+    UnknownPropertyName,
+    MultipleValue,
+    OldPropertyValueDoesNotMatch,
+    GeometryNotValid,
 }
 
 #[derive(Debug, Serialize)]

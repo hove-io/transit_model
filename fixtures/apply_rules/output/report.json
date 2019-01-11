@@ -2,8 +2,40 @@
   "errors": [],
   "warnings": [
     {
-      "category": "ComplementaryCodeRulesRead",
-      "message": "Error reading \"complementary_codes_rules.txt\": CSV deserialize error: record 8 (line: 9, byte: 278): unknown variant `object_not_allowed`, expected one of `line`, `route`, `stop_point`, `stop_area`"
+      "category": "InvalidFile",
+      "message": "Error reading \"complementary_codes_rules.txt\": CSV deserialize error: unknown variant `object_not_allowed`, expected one of `line`, `route`, `stop_point`, `stop_area`"
+    },
+    {
+      "category": "MultipleValue",
+      "message": "object_type=route, object_id=RERAB: multiple values specified for the property route_name"
+    },
+    {
+      "category": "UnknownPropertyName",
+      "message": "object_type=route, object_id=RERAB: unknown property_name unknown_property defined"
+    },
+    {
+      "category": "GeometryNotValid",
+      "message": "object_type=route, object_id=B42B: invalid geometry"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=route, object_id=B42F:2, property_name=route_geometry: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "GeometryNotValid",
+      "message": "object_type=route, object_id=B42F:4: invalid geometry"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=route, object_id=M1B, property_name=route_geometry: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=route, object_id=RERAB, property_name=direction_type: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=route, object_id=RERAF: geometry unknown not found"
     }
   ]
 }
