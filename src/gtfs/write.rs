@@ -328,14 +328,14 @@ where
 impl<'a> From<&'a objects::PhysicalMode> for RouteType {
     fn from(obj: &objects::PhysicalMode) -> RouteType {
         match obj.id.as_str() {
-            "RailShuttle" | "Tramway" => RouteType::Tramway_LightRail,
+            "RailShuttle" | "Tramway" => RouteType::Tramway,
             "Metro" => RouteType::Metro,
-            "LocalTrain" | "LongDistanceTrain" | "RapidTransit" | "Train" => RouteType::Rail,
+            "LocalTrain" | "LongDistanceTrain" | "RapidTransit" | "Train" => RouteType::Train,
             "Bus" | "BusRapidTransit" | "Coach" => RouteType::Bus,
             "Boat" | "Ferry" => RouteType::Ferry,
             "Funicular" | "Shuttle" => RouteType::Funicular,
-            "SuspendedCableCar" => RouteType::Gondola_SuspendedCableCar,
-            _ => RouteType::Other(3),
+            "SuspendedCableCar" => RouteType::SuspendedCableCar,
+            _ => RouteType::UnknownMode,
         }
     }
 }
@@ -1159,7 +1159,7 @@ mod tests {
             co2_emission: None,
         });
 
-        assert_eq!(RouteType::Other(3), route_type);
+        assert_eq!(RouteType::UnknownMode, route_type);
     }
 
     #[test]
@@ -1256,7 +1256,7 @@ mod tests {
             short_name: "DEF".to_string(),
             long_name: "DEF".to_string(),
             desc: None,
-            route_type: RouteType::Other(3),
+            route_type: RouteType::UnknownMode,
             url: None,
             color: Some(objects::Rgb {
                 red: 155,

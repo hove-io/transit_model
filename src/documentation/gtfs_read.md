@@ -119,7 +119,7 @@ The standard values of the `route_type` field are directly mapped to the NTFS mo
 | 2XX | Coach | Coach | Coach | 8 |
 | 11XX | Air | Air | Airplane | 0 |
 | 15XX | Taxi | Taxi | Taxi | 8 |
-| 16XX, 17XX | Bus | UnknownMode | Unknown Mode | 8 |
+| 16XX, 17XX | Bus | UnknownMode | Unknown mode | 8 |
 
 (1) The physical_mode ID is a mapping with a specific value as described in the NTFS format specification. This value must not be prefixed.
 (2) The commercial_mode ID are standardized when converting from GTFS. This value must not be prefixed.

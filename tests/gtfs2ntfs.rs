@@ -52,7 +52,16 @@ fn test_gtfs_physical_modes() {
         let input_dir = "./fixtures/gtfs2ntfs/physical_modes/input";
         let model = navitia_model::gtfs::read_from_path(input_dir, None, None).unwrap();
         navitia_model::ntfs::write(&model, path).unwrap();
-        compare_output_dir_with_expected(&path, Some(vec!["trips.txt"]), "./fixtures/gtfs2ntfs/physical_modes/output");
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec![
+                "commercial_modes.txt",
+                "lines.txt",
+                "physical_modes.txt",
+                "trips.txt",
+            ]),
+            "./fixtures/gtfs2ntfs/physical_modes/output",
+        );
     });
 }
 

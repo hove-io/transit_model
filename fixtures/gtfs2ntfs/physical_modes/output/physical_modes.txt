@@ -1,0 +1,11 @@
+physical_mode_id,physical_mode_name,co2_emission
+Air,Air,
+Bus,Bus,
+Coach,Coach,
+Ferry,Ferry,
+Funicular,Funicular,
+Metro,Metro,
+SuspendedCableCar,SuspendedCableCar,
+Taxi,Taxi,
+Train,Train,
+Tramway,Tramway,
