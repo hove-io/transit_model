@@ -114,12 +114,12 @@ impl<'a> ModelBuilder {
         self
     }
 
-    /// Add a new VehicleJourney to the model
+    /// Add a new Route to the model
     ///
     /// ```
     /// # fn main() {
     /// let model = model_builder::ModelBuilder::default()
-    ///        .route("l1", |r| {
+    ///      .route("l1", |r| {
     ///             r.name = "ligne 1".to_owned();
     ///         })
     ///      .vj("toto", |vj| {
@@ -127,7 +127,7 @@ impl<'a> ModelBuilder {
     ///            .st("A", "10:00:00", "10:01:00")
     ///            .st("B", "11:00:00", "11:01:00");
     ///      })
-    ///        .build();
+    ///      .build();
     /// # }
     /// ```
     pub fn route<F>(mut self, id: &str, route_initer: F) -> Self
@@ -182,11 +182,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
                     ..Default::default()
                 };
 
-                get_or_create_with(
-                    &mut self.model.collections.stop_areas,
-                    &sa_id,
-                    |mut sa: &mut crate::objects::StopArea| sa.name = format!("sa {}", sp),
-                );
+                get_or_create(&mut self.model.collections.stop_areas, &sa_id);
 
                 self.model
                     .collections
@@ -269,7 +265,7 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
     fn drop(&mut self) {
         let collections = &mut self.model.collections;
         // add the missing objects to the model (routes, lines, ...)
-        let new_vj = collections.vehicle_journeys.index_mut(self.vj_idx);
+        let new_vj = &collections.vehicle_journeys[self.vj_idx];
         let dataset = get_or_create(&mut collections.datasets, &new_vj.dataset_id);
         get_or_create(&mut collections.contributors, &dataset.contributor_id);
 
