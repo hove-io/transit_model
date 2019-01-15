@@ -27,3 +27,4 @@ reqwest = "0.9"
 path = "get-corresponding-derive"
 
 [workspace]
+members = ["model-builder"]

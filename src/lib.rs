@@ -39,7 +39,6 @@ pub(crate) mod common_format;
 pub mod gtfs;
 pub mod merge_stop_areas;
 pub mod model;
-pub mod model_builder;
 pub mod netex;
 pub mod ntfs;
 pub mod objects;
@@ -48,6 +47,11 @@ pub mod relations;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
+
+#[cfg(test)]
+#[path = "../model-builder/src/lib.rs"]
+pub mod model_builder;
+
 /// The error type used by the crate.
 pub type Error = failure::Error;
 

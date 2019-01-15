@@ -14,11 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-//! Provides an easy way to create a `navitia_model::Model`
+//! Provides an easy way to create a `crate::Model`
 //!
 //! ```
 //! # fn main() {
-//!  let model = navitia_model::model_builder::ModelBuilder::default()
+//!  let model = model_builder::ModelBuilder::default()
 //!      .vj("toto", |vj| {
 //!          vj.route("1", |_| {})
 //!            .st("A", "10:00:00", "10:01:00")
@@ -31,6 +31,7 @@
 //!      .build();
 //! # }
 //! ```
+
 use crate::collection::{CollectionWithId, Id, Idx, RefMut};
 use crate::model::{Collections, Model};
 use crate::objects::{Route, StopPoint, StopTime, Time, VehicleJourney, WithId};
@@ -86,7 +87,7 @@ impl<'a> ModelBuilder {
     ///
     /// ```
     /// # fn main() {
-    /// let model = navitia_model::model_builder::ModelBuilder::default()
+    /// let model = model_builder::ModelBuilder::default()
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder
     ///                .st("A", "10:00:00", "10:01:00")
@@ -160,7 +161,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///
     /// ```
     /// # fn main() {
-    /// let model = navitia_model::model_builder::ModelBuilder::default()
+    /// let model = model_builder::ModelBuilder::default()
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder
     ///                .st("A", "10:00:00", "10:01:00")
@@ -201,7 +202,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///
     /// ```
     /// # fn main() {
-    /// let model = navitia_model::model_builder::ModelBuilder::default()
+    /// let model = model_builder::ModelBuilder::default()
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder
     ///                .route("1", |r| {
@@ -251,7 +252,7 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
 
 #[cfg(test)]
 mod test {
-    use crate::model_builder::ModelBuilder;
+    use super::ModelBuilder;
 
     #[test]
     fn simple_model_creation() {
