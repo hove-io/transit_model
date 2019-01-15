@@ -132,6 +132,7 @@ macro_rules! impl_with_id {
             fn with_id(id: &str) -> Self {
                 let mut r = Self::default();
                 r.id = id.to_owned();
+                r.name = id.to_owned();
                 r
             }
         }
@@ -285,7 +286,13 @@ impl AddPrefix for Dataset {
     }
 }
 
-impl_with_id!(Dataset);
+impl WithId for Dataset {
+    fn with_id(id: &str) -> Self {
+        let mut r = Self::default();
+        r.id = id.to_owned();
+        r
+    }
+}
 
 #[derivative(Default)]
 #[derive(Derivative, Serialize, Deserialize, Debug, PartialEq)]
@@ -701,7 +708,14 @@ impl AddPrefix for VehicleJourney {
 impl_codes!(VehicleJourney);
 impl_properties!(VehicleJourney);
 impl_comment_links!(VehicleJourney);
-impl_with_id!(VehicleJourney);
+
+impl WithId for VehicleJourney {
+    fn with_id(id: &str) -> Self {
+        let mut r = Self::default();
+        r.id = id.to_owned();
+        r
+    }
+}
 
 impl GetObjectType for VehicleJourney {
     fn get_object_type() -> ObjectType {
