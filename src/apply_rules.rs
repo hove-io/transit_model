@@ -133,32 +133,3 @@ pub fn apply_rules(
     fs::write(report_path, serialized_report)?;
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-#[test]
-fn bob() {
-    // test to check if it's possible to import the builder
-    let model = crate::model_builder::ModelBuilder::default()
-        .vj("toto", |vj_builder| {
-            vj_builder
-                .st("A", "10:00:00", "10:01:00")
-                .st("B", "11:00:00", "11:01:00");
-        })
-        .vj("tata", |vj_builder| {
-            vj_builder
-                .st("C", "10:00:00", "10:01:00")
-                .st("D", "11:00:00", "11:01:00");
-        })
-        .build();
-
-    assert_eq!(
-        model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
-        ["A", "B"]
-            .into_iter()
-            .map(|s| model.stop_points.get_idx(s).unwrap())
-            .collect()
-    );
-    assert!(false);
-}
-}
