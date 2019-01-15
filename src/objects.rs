@@ -785,15 +785,6 @@ impl FromStr for Time {
     }
 }
 
-// non failing conversion from String to Time
-// if the result has to be checked, it's better to use `parse()`
-// mainly used for the ModelBuilder
-impl From<&str> for Time {
-    fn from(s: &str) -> Time {
-        s.parse().unwrap()
-    }
-}
-
 impl ::serde::Serialize for Time {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

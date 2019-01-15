@@ -128,6 +128,29 @@ impl<'a> ModelBuilder {
     }
 }
 
+pub trait IntoTime {
+    fn into_time(self) -> Time;
+}
+
+impl IntoTime for Time {
+    fn into_time(self) -> Time {
+        self
+    }
+}
+
+impl IntoTime for &Time {
+    fn into_time(self) -> Time {
+        *self
+    }
+}
+
+impl IntoTime for &str {
+    // Note: if the string is not in the right format, this conversion will fail
+    fn into_time(self) -> Time {
+        self.parse().unwrap()
+    }
+}
+
 impl<'a> VehicleJourneyBuilder<'a> {
     fn find_or_create_sp(&mut self, sp: &str) -> Idx<StopPoint> {
         self.model
@@ -170,7 +193,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///        .build();
     /// # }
     /// ```
-    pub fn st(mut self, name: &str, arrival: impl Into<Time>, departure: impl Into<Time>) -> Self {
+    pub fn st(mut self, name: &str, arrival: impl IntoTime, departure: impl IntoTime) -> Self {
         let stop_point_idx = self.find_or_create_sp(name);
         {
             let vj = &mut self
@@ -182,8 +205,8 @@ impl<'a> VehicleJourneyBuilder<'a> {
             let stop_time = StopTime {
                 stop_point_idx,
                 sequence,
-                arrival_time: arrival.into(),
-                departure_time: departure.into(),
+                arrival_time: arrival.into_time(),
+                departure_time: departure.into_time(),
                 boarding_duration: 0u16,
                 alighting_duration: 0u16,
                 pickup_type: 0u8,
