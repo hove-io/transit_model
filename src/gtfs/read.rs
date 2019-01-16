@@ -33,10 +33,10 @@ use csv;
 use derivative::Derivative;
 use failure::{bail, format_err, ResultExt};
 use geo_types::{LineString, Point};
-use log::{error, info, warn};
+use log::{info, warn};
 use serde_derive::Deserialize;
 use serde_json;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs::File;
 use std::path;
 use std::result::Result as StdResult;
@@ -138,15 +138,18 @@ impl From<Stop> for objects::StopPoint {
 impl RouteType {
     fn to_gtfs_value(&self) -> String {
         match *self {
-            RouteType::Tramway_LightRail => "0".to_string(),
+            RouteType::Tramway => "0".to_string(),
             RouteType::Metro => "1".to_string(),
-            RouteType::Rail => "2".to_string(),
-            RouteType::Bus => "3".to_string(),
+            RouteType::Train => "2".to_string(),
+            RouteType::Bus
+            | RouteType::UnknownMode
+            | RouteType::Coach
+            | RouteType::Air
+            | RouteType::Taxi => "3".to_string(),
             RouteType::Ferry => "4".to_string(),
             RouteType::CableCar => "5".to_string(),
-            RouteType::Gondola_SuspendedCableCar => "6".to_string(),
+            RouteType::SuspendedCableCar => "6".to_string(),
             RouteType::Funicular => "7".to_string(),
-            RouteType::Other(i) => i.to_string(),
         }
     }
 }
@@ -165,23 +168,22 @@ impl<'de> ::serde::Deserialize<'de> for RouteType {
     where
         D: ::serde::Deserializer<'de>,
     {
-        let mut i = u16::deserialize(deserializer)?;
-        if i > 7 && i < 99 {
-            i = 3;
-            error!("illegal route_type: '{}', using '3' as fallback", i);
-        }
-        let i = match i {
-            0 => RouteType::Tramway_LightRail,
-            1 => RouteType::Metro,
-            2 => RouteType::Rail,
-            3 => RouteType::Bus,
-            4 => RouteType::Ferry,
-            5 => RouteType::CableCar,
-            6 => RouteType::Gondola_SuspendedCableCar,
-            7 => RouteType::Funicular,
-            _ => RouteType::Other(i),
-        };
-        Ok(i)
+        let i = u16::deserialize(deserializer)?;
+        let hundreds = i / 100;
+        Ok(match (i, hundreds) {
+            (0, _) | (_, 9) => RouteType::Tramway,
+            (1, _) | (_, 4) | (_, 5) | (_, 6) => RouteType::Metro,
+            (2, _) | (_, 1) | (_, 3) => RouteType::Train,
+            (3, _) | (_, 7) | (_, 8) => RouteType::Bus,
+            (4, _) | (_, 10) | (_, 12) => RouteType::Ferry,
+            (5, _) => RouteType::CableCar,
+            (6, _) | (_, 13) => RouteType::SuspendedCableCar,
+            (7, _) | (_, 14) => RouteType::Funicular,
+            (_, 2) => RouteType::Coach,
+            (_, 11) => RouteType::Air,
+            (_, 15) => RouteType::Taxi,
+            _ => RouteType::UnknownMode,
+        })
     }
 }
 
@@ -611,74 +613,36 @@ pub fn read_config<P: AsRef<path::Path>>(
     Ok((contributors, datasets))
 }
 
-fn get_commercial_mode_label(route_type: &RouteType) -> String {
-    use self::RouteType::*;
-    let result = match *route_type {
-        Tramway_LightRail => "Tram, Streetcar, Light rail",
-        Metro => "Subway, Metro",
-        Rail => "Rail",
-        Bus => "Bus",
-        Ferry => "Ferry",
-        CableCar => "Cable car",
-        Gondola_SuspendedCableCar => "Gondola, Suspended cable car",
-        Funicular => "Funicular",
-        Other(_) => "Unknown Mode",
-    };
-    result.to_string()
-}
-
 fn get_commercial_mode(route_type: &RouteType) -> objects::CommercialMode {
     objects::CommercialMode {
-        id: route_type.to_gtfs_value(),
-        name: get_commercial_mode_label(route_type),
+        id: route_type.to_string(),
+        name: match route_type {
+            RouteType::CableCar => "Cable car".to_string(),
+            RouteType::SuspendedCableCar => "Suspended cable car".to_string(),
+            RouteType::UnknownMode => "Unknown mode".to_string(),
+            RouteType::Air => "Airplane".to_string(),
+            _ => route_type.to_string(),
+        },
     }
 }
 
 fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
-    use self::RouteType::*;
-    match *route_type {
-        Tramway_LightRail => objects::PhysicalMode {
-            id: "Tramway".to_string(),
-            name: "Tramway".to_string(),
-            co2_emission: None,
-        },
-        Metro => objects::PhysicalMode {
-            id: "Metro".to_string(),
-            name: "Metro".to_string(),
-            co2_emission: None,
-        },
-        Rail => objects::PhysicalMode {
-            id: "Train".to_string(),
-            name: "Train".to_string(),
-            co2_emission: None,
-        },
-        Ferry => objects::PhysicalMode {
-            id: "Ferry".to_string(),
-            name: "Ferry".to_string(),
-            co2_emission: None,
-        },
-        CableCar | Funicular => objects::PhysicalMode {
-            id: "Funicular".to_string(),
-            name: "Funicular".to_string(),
-            co2_emission: None,
-        },
-        Gondola_SuspendedCableCar => objects::PhysicalMode {
-            id: "SuspendedCableCar".to_string(),
-            name: "Suspended Cable Car".to_string(),
-            co2_emission: None,
-        },
-        Bus | Other(_) => objects::PhysicalMode {
-            id: "Bus".to_string(),
-            name: "Bus".to_string(),
-            co2_emission: None,
-        },
+    let repres = match route_type {
+        RouteType::UnknownMode => "Bus".into(),
+        RouteType::CableCar => "Funicular".into(),
+        _ => route_type.to_string(),
+    };
+    objects::PhysicalMode {
+        id: repres.clone(),
+        name: repres.clone(),
+        co2_emission: None,
     }
 }
 
 fn get_modes_from_gtfs(
     gtfs_routes: &CollectionWithId<Route>,
 ) -> (Vec<objects::CommercialMode>, Vec<objects::PhysicalMode>) {
-    let gtfs_mode_types: HashSet<RouteType> =
+    let gtfs_mode_types: BTreeSet<RouteType> =
         gtfs_routes.values().map(|r| r.route_type.clone()).collect();
 
     let commercial_modes = gtfs_mode_types
@@ -698,13 +662,13 @@ fn get_route_with_smallest_name<'a>(routes: &'a [&Route]) -> &'a Route {
     routes.iter().min_by_key(|r| &r.id).unwrap()
 }
 
-type MapLineRoutes<'a> = HashMap<(Option<String>, String), Vec<&'a Route>>;
+type MapLineRoutes<'a> = BTreeMap<(Option<String>, String), Vec<&'a Route>>;
 
 fn map_line_routes<'a>(
     gtfs_routes: &'a CollectionWithId<Route>,
     gtfs_trips: &[Trip],
 ) -> MapLineRoutes<'a> {
-    let mut map = HashMap::new();
+    let mut map = BTreeMap::new();
     for r in gtfs_routes.values().filter(|r| {
         if !gtfs_trips.iter().any(|t| t.route_id == r.id) {
             warn!("Coudn't find trips for route_id {}", r.id);
@@ -751,7 +715,7 @@ fn make_lines(
             text_color: r.text_color.clone(),
             sort_order: r.sort_order,
             network_id: get_agency_id(r, networks)?,
-            commercial_mode_id: r.route_type.to_gtfs_value(),
+            commercial_mode_id: r.route_type.to_string(),
             geometry_id: None,
             opening_time: None,
             closing_time: None,
@@ -1281,11 +1245,11 @@ mod tests {
                 extract(|l| &l.network_id, &collections.lines),
                 &["agency_1", "agency_2", "agency_3", "agency_4"]
             );
-            assert_eq!(2, collections.commercial_modes.len());
+            assert_eq!(3, collections.commercial_modes.len());
 
             assert_eq!(
                 extract(|cm| &cm.name, &collections.commercial_modes),
-                &["Bus", "Rail"]
+                &["Bus", "Train", "Unknown mode"]
             );
 
             let lines_commercial_modes_id: Vec<String> = collections
@@ -1293,9 +1257,9 @@ mod tests {
                 .values()
                 .map(|l| l.commercial_mode_id.clone())
                 .collect();
-            assert!(lines_commercial_modes_id.contains(&"2".to_string()));
-            assert!(lines_commercial_modes_id.contains(&"3".to_string()));
-            assert!(!lines_commercial_modes_id.contains(&"8".to_string()));
+            assert!(lines_commercial_modes_id.contains(&"Train".to_string()));
+            assert!(lines_commercial_modes_id.contains(&"Bus".to_string()));
+            assert!(lines_commercial_modes_id.contains(&"UnknownMode".to_string()));
 
             assert_eq!(2, collections.physical_modes.len());
             assert_eq!(
@@ -1750,8 +1714,8 @@ mod tests {
             );
             assert_eq!(
                 vec![
-                    ("my_prefix:route_1", "my_prefix:agency_1", "my_prefix:3"),
-                    ("my_prefix:route_2", "my_prefix:agency_1", "my_prefix:3"),
+                    ("my_prefix:route_1", "my_prefix:agency_1", "my_prefix:Bus"),
+                    ("my_prefix:route_2", "my_prefix:agency_1", "my_prefix:Bus"),
                 ],
                 extract(
                     |obj| (
@@ -1781,7 +1745,7 @@ mod tests {
                 extract_ids(&collections.comments)
             );
             assert_eq!(
-                vec!["my_prefix:3"],
+                vec!["my_prefix:Bus"],
                 extract_ids(&collections.commercial_modes)
             );
             assert_eq!(

@@ -331,19 +331,25 @@ pub fn read_from_url<P: AsRef<Path>>(
     read(&mut file_handle, config_path, prefix)
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(PartialOrd, Ord, Debug, Clone, Eq, PartialEq, Hash)]
 enum RouteType {
-    #[allow(non_camel_case_types)]
-    Tramway_LightRail,
+    Tramway,
     Metro,
-    Rail,
+    Train,
     Bus,
     Ferry,
     CableCar,
-    #[allow(non_camel_case_types)]
-    Gondola_SuspendedCableCar,
+    SuspendedCableCar,
     Funicular,
-    Other(u16),
+    Coach,
+    Air,
+    Taxi,
+    UnknownMode,
+}
+impl ToString for RouteType {
+    fn to_string(&self) -> String {
+        format!("{:?}", self)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]

@@ -103,7 +103,7 @@ fn ntfs_stops_output() {
         navitia_model::ntfs::write(&ntm, output_dir).unwrap();
         compare_output_dir_with_expected(
             &output_dir,
-            vec!["stops.txt", "stop_times.txt"],
+            Some(vec!["stops.txt", "stop_times.txt"]),
             "fixtures/ntfs2ntfs",
         );
     });

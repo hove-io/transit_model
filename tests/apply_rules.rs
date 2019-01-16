@@ -39,7 +39,7 @@ fn test_apply_complementary_codes() {
         navitia_model::ntfs::write(&model, path).unwrap();
         compare_output_dir_with_expected(
             &path,
-            vec!["object_codes.txt", "report.json"],
+            Some(vec!["object_codes.txt", "report.json"]),
             "./fixtures/apply_rules/output",
         );
     });

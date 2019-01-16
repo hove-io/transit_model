@@ -215,7 +215,7 @@ fn merge_collections_with_transfers_ok() {
         navitia_model::ntfs::write(&model, path).unwrap();
         compare_output_dir_with_expected(
             &path,
-            vec!["transfers.txt", "report.json"],
+            Some(vec!["transfers.txt", "report.json"]),
             "./fixtures/merge-ntfs/output",
         );
     });

@@ -48,7 +48,7 @@ fn test_generates_transfers() {
         navitia_model::ntfs::write(&model, path).unwrap();
         compare_output_dir_with_expected(
             &path,
-            vec!["transfers.txt"],
+            Some(vec!["transfers.txt"]),
             "./fixtures/transfers/output",
         );
     });
@@ -73,7 +73,7 @@ fn test_generates_transfers_with_modification_rules() {
         navitia_model::ntfs::write(&model, path).unwrap();
         compare_output_dir_with_expected(
             &path,
-            vec!["transfers.txt"],
+            Some(vec!["transfers.txt"]),
             "./fixtures/transfers/output_rules",
         );
     });

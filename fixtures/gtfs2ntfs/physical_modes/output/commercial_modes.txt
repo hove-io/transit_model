@@ -1,0 +1,13 @@
+commercial_mode_id,commercial_mode_name
+Tramway,Tramway
+Metro,Metro
+Train,Train
+Bus,Bus
+Ferry,Ferry
+CableCar,Cable car
+SuspendedCableCar,Suspended cable car
+Funicular,Funicular
+Coach,Coach
+Air,Airplane
+Taxi,Taxi
+UnknownMode,Unknown mode
