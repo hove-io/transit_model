@@ -36,6 +36,11 @@ pub mod relations;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
+
+#[cfg(test)]
+#[path = "../model-builder/src/builder.rs"]
+pub mod model_builder;
+
 /// The error type used by the crate.
 pub type Error = failure::Error;
 
