@@ -33,6 +33,7 @@ use crate::Result;
 use derivative::Derivative;
 use log::info;
 use serde_derive::{Deserialize, Serialize};
+use std::fmt;
 use std::fs::File;
 use std::path::Path;
 
@@ -346,9 +347,9 @@ enum RouteType {
     Taxi,
     UnknownMode,
 }
-impl ToString for RouteType {
-    fn to_string(&self) -> String {
-        format!("{:?}", self)
+impl fmt::Display for RouteType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 
