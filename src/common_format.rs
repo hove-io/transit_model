@@ -24,7 +24,7 @@ use crate::Result;
 use chrono::{self, Datelike};
 use csv;
 use derivative::Derivative;
-use failure::ResultExt;
+use failure::{bail, ResultExt};
 use log::info;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -173,6 +173,11 @@ pub fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) 
 where
     for<'a> &'a mut H: FileHandler,
 {
+    let calendar_exists = file_handler.is_file("calendar_dates.txt") | file_handler.is_file("calendar.txt");
+    if !calendar_exists {
+        bail!("no calendar file found")
+    }
+
     let mut calendars: Vec<objects::Calendar> = vec![];
     {
         let file = "calendar.txt";

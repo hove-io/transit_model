@@ -106,6 +106,7 @@ where
 {
     type Reader: std::io::Read;
 
+    fn is_file(self, name: &str) -> bool;
     fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)>;
 
     fn get_file(self, name: &str) -> Result<(Self::Reader, PathBuf)> {
@@ -137,6 +138,9 @@ impl<'a> FileHandler for &'a mut PathFileHandler {
         } else {
             Ok((None, f))
         }
+    }
+    fn is_file(self, name: &str) -> bool {
+        self.base_path.join(name).is_file()
     }
 }
 
@@ -189,6 +193,9 @@ where
             None => Ok((None, p)),
             Some(i) => Ok((Some(self.archive.by_index(*i)?), p)),
         }
+    }
+    fn is_file(self, name: &str) -> bool {
+        self.index_by_name.get(name).is_some()
     }
 }
 
