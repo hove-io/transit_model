@@ -173,10 +173,8 @@ pub fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) 
 where
     for<'a> &'a mut H: FileHandler,
 {
-    let calendar_exists =
-        file_handler.is_file("calendar_dates.txt") | file_handler.is_file("calendar.txt");
-    if !calendar_exists {
-        bail!("no calendar file found")
+    if !file_handler.is_file("calendar_dates.txt") && !file_handler.is_file("calendar.txt") {
+        bail!("calendar_dates.txt or calendar.txt not found")
     }
 
     let mut calendars: Vec<objects::Calendar> = vec![];
