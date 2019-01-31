@@ -2409,6 +2409,16 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "calendar_dates.txt or calendar.txt not found")]
+    fn gtfs_without_calendar_dates_or_calendar() {
+        test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            let mut collections = Collections::default();
+            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
+        });
+    }
+
+    #[test]
     fn gtfs_with_calendars_and_calendar_dates() {
         let calendars_content = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
                                  1,0,0,0,0,0,1,1,20180501,20180508\n\
