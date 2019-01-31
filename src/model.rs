@@ -20,11 +20,12 @@ use crate::collection::{Collection, CollectionWithId, Id, Idx};
 use crate::objects::*;
 use crate::relations::{IdxSet, ManyToMany, OneToMany, Relation};
 use crate::{Error, Result};
+use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::format_err;
 use get_corresponding_derive::*;
 use serde_derive::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops;
 use std::result::Result as StdResult;
 
@@ -175,6 +176,139 @@ impl Collections {
         self.trip_properties.try_merge(trip_properties)?;
         self.geometries.try_merge(geometries)?;
         self.admin_stations.merge(admin_stations);
+        Ok(())
+    }
+
+    /// Restrict the validity period of the current `Collections` with the start_date and end_date
+    /// parameters and keep the collections consistent for the new model
+    pub fn restrict_period(&mut self, start_date: &NaiveDate, end_date: &NaiveDate) -> Result<()> {
+        let mut calendars = self.calendars.take();
+        for calendar in calendars.iter_mut() {
+            calendar.dates = calendar
+                .dates
+                .iter()
+                .cloned()
+                .filter(|date| date >= start_date && date <= end_date)
+                .collect();
+        }
+        let services_used: Vec<String> = calendars
+            .iter()
+            .filter_map(|elt| match elt.dates.is_empty() {
+                false => Some(elt.id.clone()),
+                true => None,
+            })
+            .collect();
+        let mut geometries_used: HashSet<String> = HashSet::new();
+        let mut companies_used: HashSet<String> = HashSet::new();
+        let mut trip_properties_used: HashSet<String> = HashSet::new();
+        calendars.retain(|cal| services_used.contains(&cal.id));
+        self.calendars = CollectionWithId::new(calendars)?;
+        let mut route_ids_used: HashSet<String> = HashSet::new();
+        let mut vj_stop_time_points: HashMap<(String, u32), String> = HashMap::new();
+        let mut vjs: Vec<VehicleJourney> = self
+            .vehicle_journeys
+            .take()
+            .into_iter()
+            .filter(|vj| {
+                if services_used.contains(&vj.service_id) {
+                    if let Some(geo_id) = &vj.geometry_id {
+                        geometries_used.insert(geo_id.clone());
+                    }
+                    if let Some(prop_id) = &vj.trip_property_id {
+                        trip_properties_used.insert(prop_id.clone());
+                    }
+                    companies_used.insert(vj.company_id.clone());
+                    route_ids_used.insert(vj.route_id.clone());
+                    for stop_time in &vj.stop_times {
+                        vj_stop_time_points.insert(
+                            (vj.id.clone(), stop_time.sequence.clone()),
+                            self.stop_points[stop_time.stop_point_idx].id.clone(),
+                        );
+                    }
+                    return true;
+                }
+                false
+            })
+            .collect();
+        let mut line_ids_used: HashSet<String> = HashSet::new();
+        self.routes = CollectionWithId::new(
+            self.routes
+                .take()
+                .into_iter()
+                .filter(|r| {
+                    if route_ids_used.contains(&r.id) {
+                        if let Some(geo_id) = &r.geometry_id {
+                            geometries_used.insert(geo_id.clone());
+                        }
+                        line_ids_used.insert(r.line_id.clone());
+                        return true;
+                    }
+                    false
+                })
+                .collect(),
+        )?;
+        let mut stop_area_ids_used: HashSet<String> = HashSet::new();
+        let mut equipments_used: HashSet<String> = HashSet::new();
+        let stop_point_used: Vec<String> =
+            vj_stop_time_points.values().map(|sp| sp.clone()).collect();
+        self.stop_points = CollectionWithId::new(
+            self.stop_points
+                .take()
+                .into_iter()
+                .filter(|sp| {
+                    if stop_point_used.contains(&sp.id) {
+                        stop_area_ids_used.insert(sp.stop_area_id.clone());
+                        if let Some(equipment_id) = &sp.equipment_id {
+                            equipments_used.insert(equipment_id.clone());
+                        }
+                        return true;
+                    }
+                    false
+                })
+                .collect(),
+        )?;
+        for vj in vjs.iter_mut() {
+            for st in vj.stop_times.iter_mut() {
+                st.stop_point_idx = self
+                    .stop_points
+                    .get_idx(
+                        vj_stop_time_points
+                            .get(&(vj.id.clone(), st.sequence.clone()))
+                            .unwrap(),
+                    )
+                    .unwrap();
+            }
+        }
+        self.vehicle_journeys = CollectionWithId::new(vjs)?;
+        let mut networks_used: HashSet<String> = HashSet::new();
+        self.lines = CollectionWithId::new(
+            self.lines
+                .take()
+                .into_iter()
+                .filter(|l| {
+                    if line_ids_used.contains(&l.id) {
+                        if let Some(geo_id) = &l.geometry_id {
+                            geometries_used.insert(geo_id.clone());
+                        }
+                        networks_used.insert(l.network_id.clone());
+                        return true;
+                    }
+                    false
+                })
+                .collect(),
+        )?;
+        let mut data_sets = self.datasets.take();
+        for data_set in data_sets.iter_mut() {
+            data_set.start_date = start_date.clone();
+            data_set.end_date = end_date.clone();
+        }
+        self.datasets = CollectionWithId::new(data_sets)?;
+        self.stop_areas = self.stop_areas.keep_with_ids(stop_area_ids_used)?;
+        self.networks = self.networks.keep_with_ids(networks_used)?;
+        self.trip_properties = self.trip_properties.keep_with_ids(trip_properties_used)?;
+        self.geometries = self.geometries.keep_with_ids(geometries_used)?;
+        self.companies = self.companies.keep_with_ids(companies_used)?;
+        self.equipments = self.equipments.keep_with_ids(equipments_used)?;
         Ok(())
     }
 }

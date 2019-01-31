@@ -1179,25 +1179,25 @@ impl AddPrefix for Comment {
 pub struct Equipment {
     #[serde(rename = "equipment_id")]
     pub id: String,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub wheelchair_boarding: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub sheltered: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub elevator: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub escalator: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub bike_accepted: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub bike_depot: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub visual_announcement: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub audible_announcement: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub appropriate_escort: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub appropriate_signage: Availability,
 }
 
@@ -1249,21 +1249,21 @@ pub enum TransportType {
 pub struct TripProperty {
     #[serde(rename = "trip_property_id")]
     pub id: String,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub wheelchair_accessible: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub bike_accepted: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub air_conditioned: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub visual_announcement: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub audible_announcement: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub appropriate_escort: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub appropriate_signage: Availability,
-    #[serde(deserialize_with = "de_with_empty_default")]
+    #[serde(deserialize_with = "de_with_empty_or_invalid_default", default)]
     pub school_vehicle_type: TransportType,
 }
 

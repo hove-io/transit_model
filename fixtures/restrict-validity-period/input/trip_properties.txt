@@ -1,0 +1,3 @@
+trip_property_id,wheelchair_accessible,bike_accepted
+prop:kept,1,
+prop:removed,,1
