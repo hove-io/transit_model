@@ -1,0 +1,7 @@
+object_type,object_id,object_system,object_code
+stop_area,GDL,source,code_stop_area_kept
+stop_point,CHAM,source,code_stop_point_kept
+network,network:kept,source,code_network:kept
+line,B42,source,code_line_kept
+route,M1F,source,code_route_kept
+trip,M1B1_R,source,code_trip_kept

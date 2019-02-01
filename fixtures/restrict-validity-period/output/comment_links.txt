@@ -1,0 +1,7 @@
+object_id,object_type,comment_id
+GDL,stop_area,comment:kept:1
+CHAM,stop_point,comment:kept:2
+B42,line,comment:kept:1
+M1F,route,comment:kept:1
+M1B1_R,trip,comment:kept:2
+stoptime:5,stop_time,comment:kept:1

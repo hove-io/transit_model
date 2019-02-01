@@ -32,6 +32,7 @@ fn test_restrict_global() {
                 &NaiveDate::from_ymd(2018, 8, 5),
             )
             .unwrap();
+        collections.sanitize().unwrap();
         let new_model = Model::new(collections).unwrap();
         navitia_model::ntfs::write(&new_model, path).unwrap();
         compare_output_dir_with_expected(
@@ -49,6 +50,8 @@ fn test_restrict_global() {
                 "stops.txt",
                 "trip_properties.txt",
                 "trips.txt",
+                "object_codes.txt",
+                "object_properties.txt",
             ]),
             "./fixtures/restrict-validity-period/output/",
         );

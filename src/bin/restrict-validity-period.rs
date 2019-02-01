@@ -55,6 +55,7 @@ fn run() -> Result<()> {
     let model = navitia_model::ntfs::read(opt.input)?;
     let mut collections = model.into_collections();
     collections.restrict_period(&opt.begin_validity_date, &opt.end_validity_date)?;
+    collections.sanitize()?;
     let model = Model::new(collections)?;
     navitia_model::ntfs::write(&model, opt.output)?;
     Ok(())

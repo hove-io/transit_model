@@ -1,0 +1,11 @@
+object_type,object_id,object_property_name,object_property_value
+stop_area,DEF,prop_whatever,value_stop_area_removed
+stop_area,GDL,prop_whatever,value_stop_area_kept
+stop_point,CHAM,prop_whatever,value_stop_point_kept
+stop_point,DEFR,prop_whatever,value_stop_point_removed
+line,B42,prop_whatever,value_line_kept
+line,RERA,prop_whatever,value_line_removed
+route,RERAB_R,prop_whatever,value_route_removed
+route,M1F,prop_whatever,value_route_kept
+trip,M1B1,prop_whatever,value_trip_kept
+trip,RERAB1_R,prop_whatever,value_trip_removed

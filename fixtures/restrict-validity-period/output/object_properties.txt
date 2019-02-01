@@ -1,0 +1,6 @@
+object_type,object_id,object_property_name,object_property_value
+stop_area,GDL,prop_whatever,value_stop_area_kept
+stop_point,CHAM,prop_whatever,value_stop_point_kept
+line,B42,prop_whatever,value_line_kept
+route,M1F,prop_whatever,value_route_kept
+trip,M1B1,prop_whatever,value_trip_kept

@@ -368,6 +368,28 @@ impl<T: Id<T>> CollectionWithId<T> {
         })
     }
 
+    /// Get a reference to the `String` to `Idx<T>` internal mapping.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # use std::collections::HashMap;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    /// }
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// assert_eq!(c.len(), 2);
+    /// assert_eq!(c.get_id_to_idx().len(), 2);
+    /// # Ok(())
+    /// # }
+    pub fn get_id_to_idx(&self) -> &HashMap<String, Idx<T>> {
+        &self.id_to_idx
+    }
+
     /// Access to a mutable reference of the corresponding object.
     ///
     /// The `drop` of the proxy object panic if the identifier is
@@ -489,12 +511,9 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # fn main() { run().unwrap() }
     /// ```
     pub fn keep_with_ids(&mut self, ids_to_keep: HashSet<String>) -> Result<Self> {
-        Self::new(
-            self.take()
-                .into_iter()
-                .filter(|item| ids_to_keep.contains(&item.id().to_string()))
-                .collect(),
-        )
+        let mut purged = self.take();
+        purged.retain(|item| ids_to_keep.contains(&item.id().to_string()));
+        Self::new(purged)
     }
 
     /// Merge a `CollectionWithId` parameter into the current one. Fails if any identifier into the
