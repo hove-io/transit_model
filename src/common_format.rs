@@ -24,7 +24,7 @@ use crate::Result;
 use chrono::{self, Datelike};
 use csv;
 use derivative::Derivative;
-use failure::ResultExt;
+use failure::{bail, ResultExt};
 use log::info;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -124,6 +124,7 @@ impl Calendar {
 fn manage_calendar_dates<H>(
     calendars: &mut CollectionWithId<objects::Calendar>,
     file_handler: &mut H,
+    calendar_exists: bool,
 ) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -131,7 +132,12 @@ where
     let file = "calendar_dates.txt";
     let (reader, path) = file_handler.get_file_if_exists(file)?;
     match reader {
-        None => info!("Skipping {}", file),
+        None => {
+            info!("Skipping {}", file);
+            if !calendar_exists {
+                bail!("calendar_dates.txt or calendar.txt not found");
+            }
+        }
         Some(reader) => {
             info!("Reading {}", file);
 
@@ -174,12 +180,13 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let mut calendars: Vec<objects::Calendar> = vec![];
-    {
+    let calendar_exists = {
         let file = "calendar.txt";
         let (calendar_reader, path) = file_handler.get_file_if_exists(file)?;
         match calendar_reader {
             None => {
                 info!("Skipping {}", file);
+                false
             }
             Some(calendar_reader) => {
                 info!("Reading {}", file);
@@ -192,11 +199,12 @@ where
                     });
                 }
                 collections.calendars = CollectionWithId::new(calendars)?;
+                true
             }
         }
-    }
+    };
 
-    manage_calendar_dates(&mut collections.calendars, file_handler)?;
+    manage_calendar_dates(&mut collections.calendars, file_handler, calendar_exists)?;
 
     Ok(())
 }
