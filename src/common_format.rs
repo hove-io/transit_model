@@ -133,10 +133,10 @@ where
     let (reader, path) = file_handler.get_file_if_exists(file)?;
     match reader {
         None => {
-            info!("Skipping {}", file);
             if !calendar_exists {
                 bail!("calendar_dates.txt or calendar.txt not found");
             }
+            info!("Skipping {}", file);
         }
         Some(reader) => {
             info!("Reading {}", file);
