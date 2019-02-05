@@ -25,7 +25,7 @@ use derivative::Derivative;
 use failure::format_err;
 use get_corresponding_derive::*;
 use serde_derive::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops;
 use std::result::Result as StdResult;
 
@@ -215,6 +215,20 @@ impl Collections {
                     .collect::<HashSet<_>>(),
             );
         }
+        fn update_comments_idx<T>(
+            container: &mut Vec<T>,
+            comment_old_idx_to_new_idx: &HashMap<Idx<Comment>, Idx<Comment>>,
+        ) where
+            T: CommentLinks,
+        {
+            for elt in container.iter_mut() {
+                let links = elt.comment_links_mut();
+                *links = links
+                    .iter()
+                    .map(|l| comment_old_idx_to_new_idx[l])
+                    .collect::<BTreeSet<_>>();
+            }
+        }
 
         let mut calendars = self.calendars.take();
         let services_used: Vec<String> = calendars
@@ -230,13 +244,14 @@ impl Collections {
         let mut companies_used: HashSet<String> = HashSet::new();
         let mut trip_properties_used: HashSet<String> = HashSet::new();
         let mut route_ids_used: HashSet<String> = HashSet::new();
-        let mut vj_stop_time_points: HashMap<Idx<StopPoint>, String> = HashMap::new();
+        let mut stop_points_used: HashSet<String> = HashSet::new();
         let mut data_sets_used: HashSet<String> = HashSet::new();
         let mut physical_modes_used: HashSet<String> = HashSet::new();
         let mut comments_used: HashSet<String> = HashSet::new();
 
         let vj_id_to_old_idx = self.vehicle_journeys.get_id_to_idx().clone();
         let comment_id_to_old_idx = self.comments.get_id_to_idx().clone();
+        let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
 
         let mut vjs: Vec<VehicleJourney> = self
             .vehicle_journeys
@@ -253,10 +268,8 @@ impl Collections {
                     companies_used.insert(vj.company_id.clone());
                     route_ids_used.insert(vj.route_id.clone());
                     for stop_time in &vj.stop_times {
-                        vj_stop_time_points.insert(
-                            stop_time.stop_point_idx.clone(),
-                            self.stop_points[stop_time.stop_point_idx].id.clone(),
-                        );
+                        stop_points_used
+                            .insert(self.stop_points[stop_time.stop_point_idx].id.clone());
                     }
                     data_sets_used.insert(vj.dataset_id.clone());
                     physical_modes_used.insert(vj.physical_mode_id.clone());
@@ -267,57 +280,133 @@ impl Collections {
             })
             .collect();
         let mut line_ids_used: HashSet<String> = HashSet::new();
-        self.routes = CollectionWithId::new(
-            self.routes
-                .take()
-                .into_iter()
-                .filter(|r| {
-                    if route_ids_used.contains(&r.id) {
-                        if let Some(geo_id) = &r.geometry_id {
-                            geometries_used.insert(geo_id.clone());
-                        }
-                        line_ids_used.insert(r.line_id.clone());
-                        update_comments_used(&mut comments_used, &r.comment_links, &self.comments);
-                        return true;
+        let mut routes = self
+            .routes
+            .take()
+            .into_iter()
+            .filter(|r| {
+                if route_ids_used.contains(&r.id) {
+                    if let Some(geo_id) = &r.geometry_id {
+                        geometries_used.insert(geo_id.clone());
                     }
-                    false
-                })
-                .collect(),
-        )?;
+                    line_ids_used.insert(r.line_id.clone());
+                    update_comments_used(&mut comments_used, &r.comment_links, &self.comments);
+                    return true;
+                }
+                false
+            })
+            .collect::<Vec<_>>();
         let mut stop_area_ids_used: HashSet<String> = HashSet::new();
         let mut equipments_used: HashSet<String> = HashSet::new();
-        let stop_point_used: Vec<String> =
-            vj_stop_time_points.values().map(|sp| sp.clone()).collect();
-        self.stop_points = CollectionWithId::new(
-            self.stop_points
+        let mut stop_points = self
+            .stop_points
+            .take()
+            .into_iter()
+            .filter(|sp| {
+                if stop_points_used.contains(&sp.id) {
+                    stop_area_ids_used.insert(sp.stop_area_id.clone());
+                    if let Some(equipment_id) = &sp.equipment_id {
+                        equipments_used.insert(equipment_id.clone());
+                    }
+                    update_comments_used(&mut comments_used, &sp.comment_links, &self.comments);
+                    return true;
+                }
+                false
+            })
+            .collect::<Vec<_>>();
+        let mut networks_used: HashSet<String> = HashSet::new();
+        let mut commercial_modes_used: HashSet<String> = HashSet::new();
+        let mut lines = self
+            .lines
+            .take()
+            .into_iter()
+            .filter(|l| {
+                if line_ids_used.contains(&l.id) {
+                    if let Some(geo_id) = &l.geometry_id {
+                        geometries_used.insert(geo_id.clone());
+                    }
+                    networks_used.insert(l.network_id.clone());
+                    commercial_modes_used.insert(l.commercial_mode_id.clone());
+                    update_comments_used(&mut comments_used, &l.comment_links, &self.comments);
+                    return true;
+                }
+                false
+            })
+            .collect::<Vec<_>>();
+        let mut contributors_used: HashSet<String> = HashSet::new();
+        self.datasets = CollectionWithId::new(
+            self.datasets
                 .take()
                 .into_iter()
-                .filter(|sp| {
-                    if stop_point_used.contains(&sp.id) {
-                        stop_area_ids_used.insert(sp.stop_area_id.clone());
-                        if let Some(equipment_id) = &sp.equipment_id {
-                            equipments_used.insert(equipment_id.clone());
-                        }
-                        update_comments_used(&mut comments_used, &sp.comment_links, &self.comments);
+                .filter(|d| {
+                    if data_sets_used.contains(&d.id) {
+                        contributors_used.insert(d.contributor_id.clone());
                         return true;
                     }
                     false
                 })
                 .collect(),
         )?;
+        let mut stop_areas = self
+            .stop_areas
+            .take()
+            .into_iter()
+            .filter(|sp| {
+                if stop_area_ids_used.contains(&sp.id) {
+                    update_comments_used(&mut comments_used, &sp.comment_links, &self.comments);
+                    return true;
+                }
+                false
+            })
+            .collect::<Vec<_>>();
+
+        self.comments = self.comments.keep_with_ids(comments_used)?;
+        let comment_old_idx_to_new_idx: HashMap<Idx<Comment>, Idx<Comment>> = self
+            .comments
+            .iter()
+            .map(|(new_idx, comment)| (comment_id_to_old_idx[&comment.id], new_idx))
+            .collect();
+
+        update_comments_idx(&mut lines, &comment_old_idx_to_new_idx);
+        self.lines = CollectionWithId::new(lines)?;
+        update_comments_idx(&mut stop_points, &comment_old_idx_to_new_idx);
+        self.stop_points = CollectionWithId::new(stop_points)?;
+        let stop_point_old_idx_to_new_idx: HashMap<Idx<StopPoint>, Idx<StopPoint>> = self
+            .stop_points
+            .iter()
+            .map(|(new_idx, stop_point)| (stop_point_id_to_old_idx[&stop_point.id], new_idx))
+            .collect();
         for vj in vjs.iter_mut() {
             for st in vj.stop_times.iter_mut() {
-                st.stop_point_idx = self
-                    .stop_points
-                    .get_idx(vj_stop_time_points.get(&st.stop_point_idx).unwrap())
-                    .unwrap();
+                st.stop_point_idx = stop_point_old_idx_to_new_idx[&st.stop_point_idx];
             }
         }
+        update_comments_idx(&mut stop_areas, &comment_old_idx_to_new_idx);
+        self.stop_areas = CollectionWithId::new(stop_areas)?;
+        update_comments_idx(&mut routes, &comment_old_idx_to_new_idx);
+        self.routes = CollectionWithId::new(routes)?;
+        update_comments_idx(&mut vjs, &comment_old_idx_to_new_idx);
         self.vehicle_journeys = CollectionWithId::new(vjs)?;
+
         let vj_old_idx_to_new_idx: HashMap<Idx<VehicleJourney>, Idx<VehicleJourney>> = self
             .vehicle_journeys
             .iter()
             .map(|(new_idx, vj)| (vj_id_to_old_idx[&vj.id], new_idx))
+            .collect();
+        self.stop_time_comments = self
+            .stop_time_comments
+            .iter()
+            .filter_map(|((old_vj_id, seq), comment_old_idx)| {
+                match (
+                    vj_old_idx_to_new_idx.get(&old_vj_id),
+                    comment_old_idx_to_new_idx.get(&comment_old_idx),
+                ) {
+                    (Some(new_vj_idx), Some(new_comment_idx)) => {
+                        Some(((new_vj_idx.clone(), seq.clone()), new_comment_idx.clone()))
+                    }
+                    _ => None,
+                }
+            })
             .collect();
         self.stop_time_ids = self
             .stop_time_ids
@@ -335,75 +424,6 @@ impl Collections {
                 vj_old_idx_to_new_idx
                     .get(&old_vj_id)
                     .map(|new_vj_id| ((new_vj_id.clone(), seq.clone()), headsign.clone()))
-            })
-            .collect();
-        let mut networks_used: HashSet<String> = HashSet::new();
-        let mut commercial_modes_used: HashSet<String> = HashSet::new();
-        self.lines = CollectionWithId::new(
-            self.lines
-                .take()
-                .into_iter()
-                .filter(|l| {
-                    if line_ids_used.contains(&l.id) {
-                        if let Some(geo_id) = &l.geometry_id {
-                            geometries_used.insert(geo_id.clone());
-                        }
-                        networks_used.insert(l.network_id.clone());
-                        commercial_modes_used.insert(l.commercial_mode_id.clone());
-                        update_comments_used(&mut comments_used, &l.comment_links, &self.comments);
-                        return true;
-                    }
-                    false
-                })
-                .collect(),
-        )?;
-        let mut contributors_used: HashSet<String> = HashSet::new();
-        self.datasets = CollectionWithId::new(
-            self.datasets
-                .take()
-                .into_iter()
-                .filter(|d| {
-                    if data_sets_used.contains(&d.id) {
-                        contributors_used.insert(d.contributor_id.clone());
-                        return true;
-                    }
-                    false
-                })
-                .collect(),
-        )?;
-        self.stop_areas = CollectionWithId::new(
-            self.stop_areas
-                .take()
-                .into_iter()
-                .filter(|sp| {
-                    if stop_area_ids_used.contains(&sp.id) {
-                        update_comments_used(&mut comments_used, &sp.comment_links, &self.comments);
-                        return true;
-                    }
-                    false
-                })
-                .collect(),
-        )?;
-
-        self.comments = self.comments.keep_with_ids(comments_used)?;
-        let comment_old_idx_to_new_idx: HashMap<Idx<Comment>, Idx<Comment>> = self
-            .comments
-            .iter()
-            .map(|(new_idx, comment)| (comment_id_to_old_idx[&comment.id], new_idx))
-            .collect();
-        self.stop_time_comments = self
-            .stop_time_comments
-            .iter()
-            .filter_map(|((old_vj_id, seq), comment_old_idx)| {
-                match (
-                    vj_old_idx_to_new_idx.get(&old_vj_id),
-                    comment_old_idx_to_new_idx.get(&comment_old_idx),
-                ) {
-                    (Some(new_vj_idx), Some(new_comment_idx)) => {
-                        Some(((new_vj_idx.clone(), seq.clone()), new_comment_idx.clone()))
-                    }
-                    _ => None,
-                }
             })
             .collect();
 

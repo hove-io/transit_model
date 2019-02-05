@@ -57,3 +57,22 @@ fn test_restrict_global() {
         );
     });
 }
+
+#[test]
+fn test_restrict_no_panic() {
+    test_in_tmp_dir(|path| {
+        let objects =
+            navitia_model::ntfs::read(Path::new("./fixtures/restrict-validity-period/input"))
+                .unwrap();
+        let mut collections = objects.into_collections();
+        collections
+            .restrict_period(
+                &NaiveDate::from_ymd(2018, 8, 2),
+                &NaiveDate::from_ymd(2019, 7, 31),
+            )
+            .unwrap();
+        collections.sanitize().unwrap();
+        let new_model = Model::new(collections).unwrap();
+        navitia_model::ntfs::write(&new_model, path).unwrap();
+    });
+}
