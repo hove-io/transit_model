@@ -63,7 +63,6 @@ pub fn read_config<P: AsRef<path::Path>>(
 pub fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
     let prefix = prefix + ":";
     info!("Adding prefix: \"{}\"", &prefix);
-    add_prefix_to_collection_with_id(&mut collections.commercial_modes, &prefix)?;
     add_prefix_to_collection_with_id(&mut collections.networks, &prefix)?;
     add_prefix_to_collection_with_id(&mut collections.companies, &prefix)?;
     add_prefix_to_collection_with_id(&mut collections.stop_points, &prefix)?;

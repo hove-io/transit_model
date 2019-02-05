@@ -34,7 +34,7 @@ fn merge_collections_with_collisions() {
     for input_directory in input_collisions.iter() {
         let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
         collections
-            .merge(to_append_model.into_collections())
+            .try_merge(to_append_model.into_collections())
             .unwrap();
     }
 }
@@ -47,12 +47,19 @@ fn merge_collections_ok() {
         let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
 
         collections
-            .merge(to_append_model.into_collections())
+            .try_merge(to_append_model.into_collections())
             .unwrap();
     }
     assert_eq!(collections.contributors.len(), 2);
     assert_eq!(collections.datasets.len(), 2);
     assert_eq!(collections.networks.len(), 3);
+    // check that commercial mode Bus appears once.
+    let cm_bus: Vec<_> = collections
+        .commercial_modes
+        .values()
+        .filter(|cm| cm.id == "Bus" && cm.name == "Bus")
+        .collect();
+    assert_eq!(cm_bus.len(), 1);
     assert_eq!(collections.commercial_modes.len(), 6);
     assert_eq!(collections.lines.len(), 6);
     assert_eq!(collections.routes.len(), 8);
@@ -198,7 +205,7 @@ fn merge_collections_with_transfers_ok() {
             let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
 
             collections
-                .merge(to_append_model.into_collections())
+                .try_merge(to_append_model.into_collections())
                 .unwrap();
         }
         let model = Model::new(collections).unwrap();

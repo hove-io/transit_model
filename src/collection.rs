@@ -224,11 +224,10 @@ impl<T> Collection<T> {
     /// # }
     /// # fn main() { run().unwrap() }
     /// ```
-    pub fn merge(&mut self, other: Self) -> Result<()> {
+    pub fn merge(&mut self, other: Self) {
         for item in other {
             self.push(item);
         }
-        Ok(())
     }
 
     /// Takes the corresponding vector without clones or allocation,
@@ -479,18 +478,44 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
     /// let mut c3 = CollectionWithId::new(vec![Obj("corge"), Obj("grault")])?;
-    /// assert!(c1.merge(c2).is_err());
-    /// c1.merge(c3);
+    /// assert!(c1.try_merge(c2).is_err());
+    /// c1.try_merge(c3);
     /// assert_eq!(c1.len(), 4);
     /// # Ok(())
     /// # }
     /// # fn main() { run().unwrap() }
     /// ```
-    pub fn merge(&mut self, other: Self) -> Result<()> {
+    pub fn try_merge(&mut self, other: Self) -> Result<()> {
         for item in other {
             self.push(item)?;
         }
         Ok(())
+    }
+
+    /// Merge a `CollectionWithId` parameter into the current one. If any identifier into the
+    /// `CollectionWithId` parameter is already in the collection, `CollectionWithId` is not added.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
+    /// c1.merge(c2);
+    /// assert_eq!(c1.len(), 3);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn merge(&mut self, other: Self) {
+        for item in other {
+            match self.push(item) {
+                _ => continue,
+            }
+        }
     }
 
     // Return true if the collection has no objects.

@@ -63,7 +63,7 @@ pub struct Collections {
 impl Collections {
     /// Merge the `Collections` parameter into the current `Collections` by consecutively merging
     /// each collections representing the model.  Fails in case of id collision.
-    pub fn merge(&mut self, c: Collections) -> Result<()> {
+    pub fn try_merge(&mut self, c: Collections) -> Result<()> {
         let Collections {
             contributors,
             datasets,
@@ -88,14 +88,14 @@ impl Collections {
             stop_time_ids,
             stop_time_comments,
         } = c;
-        self.contributors.merge(contributors)?;
-        self.datasets.merge(datasets)?;
-        self.networks.merge(networks)?;
-        self.commercial_modes.merge(commercial_modes)?;
-        self.lines.merge(lines)?;
-        self.routes.merge(routes)?;
+        self.contributors.try_merge(contributors)?;
+        self.datasets.try_merge(datasets)?;
+        self.networks.try_merge(networks)?;
+        self.commercial_modes.merge(commercial_modes);
+        self.lines.try_merge(lines)?;
+        self.routes.try_merge(routes)?;
         self.physical_modes.extend(physical_modes);
-        self.stop_areas.merge(stop_areas)?;
+        self.stop_areas.try_merge(stop_areas)?;
 
         fn get_new_idx<T>(
             old_idx: Idx<T>,
@@ -117,7 +117,7 @@ impl Collections {
         let vj_idx_to_id = idx_to_id(&vehicle_journeys);
         let c_idx_to_id = idx_to_id(&comments);
 
-        self.stop_points.merge(stop_points)?;
+        self.stop_points.try_merge(stop_points)?;
 
         // Update stop point idx in new stop times
         let mut vjs = vehicle_journeys.take();
@@ -131,7 +131,7 @@ impl Collections {
             }
         }
         vehicle_journeys = CollectionWithId::new(vjs)?;
-        self.vehicle_journeys.merge(vehicle_journeys)?;
+        self.vehicle_journeys.try_merge(vehicle_journeys)?;
 
         fn update_vj_idx<'a, T: Clone>(
             map: &'a HashMap<(Idx<VehicleJourney>, u32), T>,
@@ -158,7 +158,7 @@ impl Collections {
             &vj_idx_to_id,
         ));
 
-        self.comments.merge(comments)?;
+        self.comments.try_merge(comments)?;
         let mut new_stop_time_comments = HashMap::new();
         for ((old_vj_idx, sequence), value) in &stop_time_comments {
             let new_vj_idx =
@@ -168,13 +168,13 @@ impl Collections {
         }
         self.stop_time_comments.extend(new_stop_time_comments);
         self.feed_infos.extend(feed_infos);
-        self.calendars.merge(calendars)?;
-        self.companies.merge(companies)?;
-        self.equipments.merge(equipments)?;
-        self.transfers.merge(transfers)?;
-        self.trip_properties.merge(trip_properties)?;
-        self.geometries.merge(geometries)?;
-        self.admin_stations.merge(admin_stations)?;
+        self.calendars.try_merge(calendars)?;
+        self.companies.try_merge(companies)?;
+        self.equipments.try_merge(equipments)?;
+        self.transfers.merge(transfers);
+        self.trip_properties.try_merge(trip_properties)?;
+        self.geometries.try_merge(geometries)?;
+        self.admin_stations.merge(admin_stations);
         Ok(())
     }
 }

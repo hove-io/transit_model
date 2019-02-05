@@ -1714,8 +1714,8 @@ mod tests {
             );
             assert_eq!(
                 vec![
-                    ("my_prefix:route_1", "my_prefix:agency_1", "my_prefix:Bus"),
-                    ("my_prefix:route_2", "my_prefix:agency_1", "my_prefix:Bus"),
+                    ("my_prefix:route_1", "my_prefix:agency_1", "Bus"),
+                    ("my_prefix:route_2", "my_prefix:agency_1", "Bus"),
                 ],
                 extract(
                     |obj| (
@@ -1744,10 +1744,7 @@ mod tests {
                 vec!["my_prefix:stop:sa:03", "my_prefix:stop:sp:01"],
                 extract_ids(&collections.comments)
             );
-            assert_eq!(
-                vec!["my_prefix:Bus"],
-                extract_ids(&collections.commercial_modes)
-            );
+            assert_eq!(vec!["Bus"], extract_ids(&collections.commercial_modes));
             assert_eq!(
                 vec![
                     ("my_prefix:sp:01", "my_prefix:sp:01"),
