@@ -1068,7 +1068,7 @@ pub enum ExceptionType {
     Remove,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Clone)]
 pub struct Calendar {
     pub id: String,
     #[serde(skip)]
@@ -1092,6 +1092,14 @@ impl Calendar {
 impl AddPrefix for Calendar {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
+    }
+}
+
+impl WithId for Calendar {
+    fn with_id(id: &str) -> Self {
+        let mut r = Self::default();
+        r.id = id.to_owned();
+        r
     }
 }
 

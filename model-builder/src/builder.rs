@@ -34,7 +34,7 @@
 
 use crate::collection::{CollectionWithId, Id, Idx, RefMut};
 use crate::model::{Collections, Model};
-use crate::objects::{Route, StopPoint, StopTime, Time, VehicleJourney, WithId};
+use crate::objects::{Calendar, Route, StopPoint, StopTime, Time, VehicleJourney, WithId};
 
 /// Builder used to easily create a `Model`
 #[derive(Default)]
@@ -138,6 +138,30 @@ impl<'a> ModelBuilder {
         self
     }
 
+    /// Add a new Calendar to the model
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = model_builder::ModelBuilder::default()
+    ///      .calendar("c1", |c| {
+    ///             c.dates.insert(Date::from_ymd(2019, 2, 6));
+    ///         })
+    ///      .vj("toto", |vj| {
+    ///          vj.calendar("c1")
+    ///            .st("A", "10:00:00", "10:01:00")
+    ///            .st("B", "11:00:00", "11:01:00");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn calendar<F>(mut self, id: &str, calendar_initer: F) -> Self
+    where
+        F: FnMut(&mut Calendar),
+    {
+        get_or_create_with(&mut self.collections.calendars, id, calendar_initer);
+        self
+    }
+
     /// Consume the builder to create a navitia model
     pub fn build(self) -> Model {
         Model::new(self.collections).unwrap()
@@ -233,7 +257,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
         self
     }
 
-    /// Set the route of the vj, and apply a lamba if the route had to be created
+    /// Set the route of the vj
     ///
     /// ```
     /// # fn main() {
@@ -259,6 +283,33 @@ impl<'a> VehicleJourneyBuilder<'a> {
 
         self
     }
+
+    /// Set the calendar (service_id) of the vj
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = model_builder::ModelBuilder::default()
+    ///        .calendar("c1", |c| {
+    ///             c.dates.insert(Date::from_ymd(2019, 2, 6));
+    ///         })
+    ///        .vj("toto", |vj_builder| {
+    ///            vj_builder.calendar("c1");
+    ///        })
+    ///        .build();
+    /// # }
+    /// ```
+    pub fn calendar(self, id: &str) -> Self {
+        {
+            let vj = &mut self
+                .model
+                .collections
+                .vehicle_journeys
+                .index_mut(self.vj_idx);
+            vj.service_id = id.to_owned();
+        }
+
+        self
+    }
 }
 
 impl<'a> Drop for VehicleJourneyBuilder<'a> {
@@ -270,6 +321,7 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
         get_or_create(&mut collections.contributors, &dataset.contributor_id);
 
         get_or_create(&mut collections.companies, &new_vj.company_id);
+        get_or_create(&mut collections.calendars, &new_vj.service_id);
         get_or_create(&mut collections.physical_modes, &new_vj.physical_mode_id);
 
         let route = get_or_create(&mut collections.routes, &new_vj.route_id);
