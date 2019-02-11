@@ -25,6 +25,7 @@ use derivative::Derivative;
 use failure::format_err;
 use get_corresponding_derive::*;
 use serde_derive::{Deserialize, Serialize};
+use std::cmp;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops;
 use std::result::Result as StdResult;
@@ -192,8 +193,8 @@ impl Collections {
         }
         let mut data_sets = self.datasets.take();
         for data_set in data_sets.iter_mut() {
-            data_set.start_date = start_date.clone();
-            data_set.end_date = end_date.clone();
+            data_set.start_date = cmp::max(*start_date, data_set.start_date);
+            data_set.end_date = cmp::min(*end_date, data_set.end_date);
         }
         self.datasets = CollectionWithId::new(data_sets)?;
         self.calendars = CollectionWithId::new(calendars)?;
@@ -208,12 +209,7 @@ impl Collections {
             comment_links: &CommentLinksT,
             comments: &CollectionWithId<Comment>,
         ) {
-            comments_used.extend(
-                comment_links
-                    .iter()
-                    .map(|cl| comments[*cl].id.clone())
-                    .collect::<HashSet<_>>(),
-            );
+            comments_used.extend(comment_links.iter().map(|cl| comments[*cl].id.clone()));
         }
         fn update_comments_idx<T>(
             container: &mut Vec<T>,
@@ -233,9 +229,12 @@ impl Collections {
         let mut calendars = self.calendars.take();
         let services_used: Vec<String> = calendars
             .iter()
-            .filter_map(|elt| match elt.dates.is_empty() {
-                false => Some(elt.id.clone()),
-                true => None,
+            .filter_map(|elt| {
+                if elt.dates.is_empty() {
+                    None
+                } else {
+                    Some(elt.id.clone())
+                }
             })
             .collect();
         calendars.retain(|cal| services_used.contains(&cal.id));
@@ -360,7 +359,8 @@ impl Collections {
             })
             .collect::<Vec<_>>();
 
-        self.comments = self.comments.keep_with_ids(comments_used)?;
+        self.comments
+            .retain(|comment| comments_used.contains(&comment.id));
         let comment_old_idx_to_new_idx: HashMap<Idx<Comment>, Idx<Comment>> = self
             .comments
             .iter()
@@ -402,7 +402,7 @@ impl Collections {
                     comment_old_idx_to_new_idx.get(&comment_old_idx),
                 ) {
                     (Some(new_vj_idx), Some(new_comment_idx)) => {
-                        Some(((new_vj_idx.clone(), seq.clone()), new_comment_idx.clone()))
+                        Some(((*new_vj_idx, *seq), *new_comment_idx))
                     }
                     _ => None,
                 }
@@ -414,7 +414,7 @@ impl Collections {
             .filter_map(|((old_vj_id, seq), stop_time_id)| {
                 vj_old_idx_to_new_idx
                     .get(&old_vj_id)
-                    .map(|new_vj_id| ((new_vj_id.clone(), seq.clone()), stop_time_id.clone()))
+                    .map(|new_vj_id| ((*new_vj_id, *seq), stop_time_id.clone()))
             })
             .collect();
         self.stop_time_headsigns = self
@@ -423,18 +423,26 @@ impl Collections {
             .filter_map(|((old_vj_id, seq), headsign)| {
                 vj_old_idx_to_new_idx
                     .get(&old_vj_id)
-                    .map(|new_vj_id| ((new_vj_id.clone(), seq.clone()), headsign.clone()))
+                    .map(|new_vj_id| ((*new_vj_id, *seq), headsign.clone()))
             })
             .collect();
 
-        self.networks = self.networks.keep_with_ids(networks_used)?;
-        self.trip_properties = self.trip_properties.keep_with_ids(trip_properties_used)?;
-        self.geometries = self.geometries.keep_with_ids(geometries_used)?;
-        self.companies = self.companies.keep_with_ids(companies_used)?;
-        self.equipments = self.equipments.keep_with_ids(equipments_used)?;
-        self.contributors = self.contributors.keep_with_ids(contributors_used)?;
-        self.commercial_modes = self.commercial_modes.keep_with_ids(commercial_modes_used)?;
-        self.physical_modes = self.physical_modes.keep_with_ids(physical_modes_used)?;
+        self.networks
+            .retain(|network| networks_used.contains(&network.id));
+        self.trip_properties
+            .retain(|trip_property| trip_properties_used.contains(&trip_property.id));
+        self.geometries
+            .retain(|geometry| geometries_used.contains(&geometry.id));
+        self.companies
+            .retain(|company| companies_used.contains(&company.id));
+        self.equipments
+            .retain(|equipment| equipments_used.contains(&equipment.id));
+        self.contributors
+            .retain(|contributor| contributors_used.contains(&contributor.id));
+        self.commercial_modes
+            .retain(|commercial_mode| commercial_modes_used.contains(&commercial_mode.id));
+        self.physical_modes
+            .retain(|physical_mode| physical_modes_used.contains(&physical_mode.id));
         Ok(())
     }
 }

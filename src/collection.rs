@@ -23,7 +23,7 @@ use failure::{bail, ensure};
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry::*;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::iter;
 use std::marker::PhantomData;
 use std::ops;
@@ -487,8 +487,7 @@ impl<T: Id<T>> CollectionWithId<T> {
         }
     }
 
-    /// Returns a CollectionWithId with elements having ids included in the `ids_to_keep` parameter
-    /// and taken from the current `CollectionWithId` object.
+    /// Retains the elements matching predicate parameter from the current `CollectionWithId` object
     ///
     /// # Examples
     ///
@@ -502,18 +501,18 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// let mut ids_to_keep: HashSet<String> = HashSet::new();
     /// ids_to_keep.insert("foo".to_string());
     /// ids_to_keep.insert("qux".to_string());
-    /// let filtered = c.keep_with_ids(ids_to_keep).unwrap();
-    /// assert_eq!(filtered.len(), 2);
-    /// assert_eq!(filtered.get("foo"), Some(&Obj("foo")));
-    /// assert_eq!(filtered.get("qux"), Some(&Obj("qux")));
+    /// c.retain(|item| ids_to_keep.contains(item.id()));
+    /// assert_eq!(c.len(), 2);
+    /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
+    /// assert_eq!(c.get("qux"), Some(&Obj("qux")));
     /// # Ok(())
     /// # }
     /// # fn main() { run().unwrap() }
     /// ```
-    pub fn keep_with_ids(&mut self, ids_to_keep: HashSet<String>) -> Result<Self> {
+    pub fn retain<F: FnMut(&T) -> bool>(&mut self, f: F) {
         let mut purged = self.take();
-        purged.retain(|item| ids_to_keep.contains(&item.id().to_string()));
-        Self::new(purged)
+        purged.retain(f);
+        *self = Self::new(purged).unwrap(); // can't fail as we have a subset of a valid Collection
     }
 
     /// Merge a `CollectionWithId` parameter into the current one. Fails if any identifier into the

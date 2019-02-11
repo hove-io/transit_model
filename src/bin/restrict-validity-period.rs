@@ -34,9 +34,9 @@ struct Opt {
     #[structopt(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// begin of the validity period
+    /// start of the validity period
     #[structopt(short, long)]
-    begin_validity_date: NaiveDate,
+    start_validity_date: NaiveDate,
 
     /// end of the validity period
     #[structopt(short, long)]
@@ -54,7 +54,7 @@ fn run() -> Result<()> {
 
     let model = navitia_model::ntfs::read(opt.input)?;
     let mut collections = model.into_collections();
-    collections.restrict_period(&opt.begin_validity_date, &opt.end_validity_date)?;
+    collections.restrict_period(&opt.start_validity_date, &opt.end_validity_date)?;
     collections.sanitize()?;
     let model = Model::new(collections)?;
     navitia_model::ntfs::write(&model, opt.output)?;
