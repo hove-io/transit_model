@@ -12,11 +12,11 @@ Property | Type | Required | Description
 --- | --- | --- | ---
 id | UUID | Yes | Unique identifier
 input_data_format | Enum | Yes | Source of the fare data, fixed value `netex_fares_nl`.
-start_date | YYYYMMDD | Yes | Start date for the validity period of the ticket
-end_date | YYYYMMDD | Yes | End date for the validity period of the ticket. This date is included in the validity period interval.
-currency_type | String | Yes | The currency used to pay the ticket.
-boarding_fee | Float | No | The price of the boarding fee, if any, in the currency specified by `currency_type`.
-price | Float | Yes | The price of the ticket in the currency specified by `currency_type`. If a boarding fee is also specified, it is not included in the ticket price.
+input_ticket_id | String | No | Id of the ticket found in the source data.
+start_date | Date | Yes | Start date for the validity period of the ticket price.
+end_date | Date | Yes | End date for the validity period of the ticket price. This date is included in the validity period interval.
+currency_type | String | Yes | The currency used to pay the ticket. The [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217#Active_codes) currency codes are used.
+price | Float | Yes | The total price of the ticket in the currency specified by `currency_type`, including any additional fee, if any (e.g. boarding fee).
 validity_duration | Integer | No | Validity duration of the ticket in seconds.
 transfers | Integer | No | Number of transfers allowed for the ticket.
 
