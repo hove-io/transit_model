@@ -491,7 +491,7 @@ impl<'de> ::serde::Deserialize<'de> for Rgb {
         Rgb::from_str(&color_hex).map_err(Error::custom)
     }
 }
-#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[derivative(Default)]
 pub struct Line {
     #[serde(rename = "line_id")]
@@ -571,7 +571,7 @@ impl GetObjectType for Line {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Derivative)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Derivative, Clone)]
 #[derivative(Default)]
 pub struct Route {
     #[serde(rename = "route_id")]
@@ -993,14 +993,14 @@ impl GetObjectType for StopArea {
     }
 }
 #[derivative(Default)]
-#[derive(Derivative, Debug, PartialEq)]
+#[derive(Derivative, Debug, PartialEq, Clone)]
 pub enum StopType {
     #[derivative(Default)]
     Point,
     Zone,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
 pub struct StopPoint {
     pub id: String,
     pub name: String,
