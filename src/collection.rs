@@ -323,7 +323,7 @@ where
 }
 
 /// A `Collection` with identifier support.
-#[derive(Debug, Derivative)]
+#[derive(Debug, Derivative, Clone)]
 #[derivative(Default(bound = ""))]
 pub struct CollectionWithId<T> {
     collection: Collection<T>,
