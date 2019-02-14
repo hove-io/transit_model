@@ -6,7 +6,6 @@ route,RERAB,route_name,Truc muche,Another new route name
 route,RERAB,unknown_property,La Défense - Nation,My new route name
 route,RERAB,unknown_property,La Défense - Nation,Another new route name
 route,RERAF,route_name,Nation - La Défense,Tartare - Paradise
-stop_point,RERAB,unknown_property,La Défense - Nation,Another new route name
 route,RERAB,direction_type,old direction_type,new direction_type
 route,M1F,direction_type,,new direction_type
 route,RERAB,destination_id,*,new destination_id

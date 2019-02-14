@@ -24,14 +24,15 @@ use crate::Result;
 use csv;
 use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
+use lazy_static::lazy_static;
 use log::{info, warn};
 use serde_derive::Deserialize;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 use wkt::{self, conversion::try_into_geometry};
 
-#[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Copy)]
+#[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Hash)]
 #[serde(rename_all = "snake_case")]
 enum ObjectType {
     Line,
@@ -131,45 +132,25 @@ fn read_property_rules_files<P: AsRef<Path>>(
     let properties = properties
         .into_iter()
         .filter(|((object_type, object_id, property_name), property)| {
-            match object_type {
-                ObjectType::Route
-                    if ![
-                        "route_name",
-                        "direction_type",
-                        "route_geometry",
-                        "destination_id",
-                    ]
-                    .contains(&property_name.as_ref()) =>
-                {
-                    report.add_warning(
-                        format!(
-                            "object_type={}, object_id={}: unknown property_name {} defined",
-                            object_type.as_str(), object_id, property_name,
-                        ),
-                        ReportType::UnknownPropertyName,
-                    );
-                    return false;
-                }
-                ObjectType::Line | ObjectType::StopPoint | ObjectType::StopArea => {
-                    warn!(
-                        "Changing properties for {:?} is not yet possible.",
-                        object_type.as_str()
-                    );
-                    return false;
-                }
-                _ => {}
+            if !PROPERTY_UPDATER.contains_key(&(*object_type, property_name)) {
+                report.add_warning(
+                    format!(
+                        "object_type={}, object_id={}: unknown property_name {} defined",
+                        object_type.as_str(), object_id, property_name,
+                    ),
+                    ReportType::UnknownPropertyName,
+                );
+                return false;
             }
 
             if property.len() > 1 {
-                {
-                    report.add_warning(
-                        format!(
-                            "object_type={}, object_id={}: multiple values specified for the property {}",
-                            object_type.as_str(), object_id, property_name
-                        ),
-                        ReportType::MultipleValue,
-                    );
-                }
+                report.add_warning(
+                    format!(
+                        "object_type={}, object_id={}: multiple values specified for the property {}",
+                        object_type.as_str(), object_id, property_name
+                    ),
+                    ReportType::MultipleValue,
+                );
                 return false;
             }
             true
@@ -280,8 +261,8 @@ fn get_geometry_id(
 fn update_geometry(
     p: &mut PropertyRule,
     geo_id: &mut Option<String>,
-    report: &mut Report,
     geometries: &mut CollectionWithId<Geometry>,
+    report: &mut Report,
 ) {
     match (p.property_old_value.as_ref(), geo_id.as_ref()) {
         (None, None) => {}
@@ -327,6 +308,55 @@ fn update_geometry(
     }
 }
 
+type FnUpdater = Box<Fn(&mut Collections, &mut PropertyRule, &mut Report) -> bool + Send + Sync>;
+
+lazy_static! {
+    static ref PROPERTY_UPDATER: HashMap<(ObjectType, &'static str), FnUpdater> = {
+        let mut m: HashMap<(ObjectType, &'static str), FnUpdater> = HashMap::new();
+        m.insert(
+            (ObjectType::Route, "route_name"),
+            Box::new(|c, p, r| {
+                if let Some(mut route) = c.routes.get_mut(&p.object_id) {
+                    update_prop(p, &mut route.name, r);
+                    return true;
+                }
+                false
+            }),
+        );
+        m.insert(
+            (ObjectType::Route, "direction_type"),
+            Box::new(|c, p, r| {
+                if let Some(mut route) = c.routes.get_mut(&p.object_id) {
+                    update_prop(p, &mut route.direction_type, r);
+                    return true;
+                }
+                false
+            }),
+        );
+        m.insert(
+            (ObjectType::Route, "destination_id"),
+            Box::new(|c, p, r| {
+                if let Some(mut route) = c.routes.get_mut(&p.object_id) {
+                    update_prop(p, &mut route.destination_id, r);
+                    return true;
+                }
+                false
+            }),
+        );
+        m.insert(
+            (ObjectType::Route, "route_geometry"),
+            Box::new(|c, p, r| {
+                if let Some(mut route) = c.routes.get_mut(&p.object_id) {
+                    update_geometry(p, &mut route.geometry_id, &mut c.geometries, r);
+                    return true;
+                }
+                false
+            }),
+        );
+        m
+    };
+}
+
 /// Applying rules
 ///
 /// `complementary_code_rules_files` Csv files containing codes to add for certain objects
@@ -350,33 +380,17 @@ pub fn apply_rules(
 
     let properties = read_property_rules_files(property_rules_files, &mut report)?;
     for mut p in properties {
-        match p.object_type {
-            ObjectType::Route => {
-                if let Some(mut route) = collections.routes.get_mut(&p.object_id) {
-                    match p.property_name.as_str() {
-                        "route_name" => update_prop(&p, &mut route.name, &mut report),
-                        "direction_type" => update_prop(&p, &mut route.direction_type, &mut report),
-                        "destination_id" => update_prop(&p, &mut route.destination_id, &mut report),
-                        "route_geometry" => update_geometry(
-                            &mut p,
-                            &mut route.geometry_id,
-                            &mut report,
-                            &mut collections.geometries,
-                        ),
-                        _ => {}
-                    }
-                } else {
-                    report.add_warning(
-                        format!(
-                            "{} {} not found in the data",
-                            p.object_type.as_str(),
-                            p.object_id
-                        ),
-                        ReportType::ObjectNotFound,
-                    );
-                }
+        if let Some(func) = PROPERTY_UPDATER.get(&(p.object_type, &p.property_name.clone())) {
+            if !func(collections, &mut p, &mut report) {
+                report.add_warning(
+                    format!(
+                        "{} {} not found in the data",
+                        p.object_type.as_str(),
+                        p.object_id
+                    ),
+                    ReportType::ObjectNotFound,
+                );
             }
-            _ => info!("not covered"),
         }
     }
 
