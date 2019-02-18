@@ -17,7 +17,7 @@
 //! Collections of objects with typed indices and buildin identifier
 //! support.
 
-use crate::Result;
+use crate::{objects::WithId, Result};
 use derivative::Derivative;
 use failure::{bail, ensure};
 use std::borrow::Borrow;
@@ -585,6 +585,75 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// ```
     pub fn is_empty(&self) -> bool {
         self.collection.is_empty()
+    }
+}
+
+impl<T: Id<T> + WithId> CollectionWithId<T> {
+    /// Get a mutable reference of the corresponding object or create it
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # use navitia_model::objects::WithId;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(String);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { &self.0 } }
+    /// # impl WithId for Obj {
+    /// #     fn with_id(id: &str) -> Self {
+    /// #         let mut r = Obj("id".into());
+    /// #         r.0 = id.to_owned();
+    /// #         r
+    /// #     }
+    /// # }
+    /// let mut c = CollectionWithId::new(vec![Obj("1".into())])?;
+    /// let obj = c.get_or_create("2");
+    /// assert_eq!(obj.0, "2");
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn get_or_create<'a>(&'a mut self, id: &str) -> RefMut<'a, T> {
+        self.get_or_create_with(id, |_| {})
+    }
+
+    /// Get a mutable reference of the corresponding object or create it
+    /// and apply a function on it.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # use navitia_model::objects::WithId;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(String, String);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { &self.0 } }
+    /// # impl WithId for Obj {
+    /// #     fn with_id(id: &str) -> Self {
+    /// #         let mut r = Obj("id".into(), "name".into());
+    /// #         r.0 = id.to_owned();
+    /// #         r
+    /// #     }
+    /// # }
+    /// let mut c = CollectionWithId::new(vec![Obj("1".into(), "foo".into())])?;
+    /// let obj = c.get_or_create_with("2", |mut o| o.1 = "bar".into());
+    /// assert_eq!(obj.0, "2");
+    /// assert_eq!(obj.1, "bar");
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn get_or_create_with<'a, F>(&'a mut self, id: &str, mut f: F) -> RefMut<'a, T>
+    where
+        F: FnMut(&mut T),
+    {
+        let elt = self.get_idx(id).unwrap_or_else(|| {
+            let mut o = T::with_id(id);
+
+            f(&mut o);
+            self.push(o).unwrap()
+        });
+        self.index_mut(elt)
     }
 }
 

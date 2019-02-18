@@ -239,19 +239,8 @@ fn get_geometry_id(
 ) -> Option<String> {
     if let Some(geo) = wkt_to_geo(wkt, report, p) {
         let id = p.object_type.as_str().to_owned() + ":" + &p.object_id;
-        collection
-            .get_mut(&id)
-            .map(|mut g| {
-                g.geometry = geo.clone();
-            })
-            .unwrap_or_else(|| {
-                collection
-                    .push(Geometry {
-                        id: id.clone(),
-                        geometry: geo,
-                    })
-                    .unwrap();
-            });
+        let mut obj = collection.get_or_create(&id);
+        obj.geometry = geo.clone();
         return Some(id);
     }
 
@@ -316,41 +305,38 @@ lazy_static! {
         m.insert(
             (ObjectType::Route, "route_name"),
             Box::new(|c, p, r| {
-                if let Some(mut route) = c.routes.get_mut(&p.object_id) {
+                c.routes.get_mut(&p.object_id).map_or(false, |mut route| {
                     update_prop(p, &mut route.name, r);
-                    return true;
-                }
-                false
+                    true
+                })
             }),
         );
         m.insert(
             (ObjectType::Route, "direction_type"),
             Box::new(|c, p, r| {
-                if let Some(mut route) = c.routes.get_mut(&p.object_id) {
+                c.routes.get_mut(&p.object_id).map_or(false, |mut route| {
                     update_prop(p, &mut route.direction_type, r);
-                    return true;
-                }
-                false
+                    true
+                })
             }),
         );
         m.insert(
             (ObjectType::Route, "destination_id"),
             Box::new(|c, p, r| {
-                if let Some(mut route) = c.routes.get_mut(&p.object_id) {
+                c.routes.get_mut(&p.object_id).map_or(false, |mut route| {
                     update_prop(p, &mut route.destination_id, r);
-                    return true;
-                }
-                false
+                    true
+                })
             }),
         );
         m.insert(
             (ObjectType::Route, "route_geometry"),
             Box::new(|c, p, r| {
-                if let Some(mut route) = c.routes.get_mut(&p.object_id) {
-                    update_geometry(p, &mut route.geometry_id, &mut c.geometries, r);
-                    return true;
-                }
-                false
+                let geometries = &mut c.geometries;
+                c.routes.get_mut(&p.object_id).map_or(false, |mut route| {
+                    update_geometry(p, &mut route.geometry_id, geometries, r);
+                    true
+                })
             }),
         );
         m

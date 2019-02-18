@@ -1291,9 +1291,28 @@ pub struct Geometry {
     pub geometry: GeoGeometry<f64>,
 }
 
+impl Default for Geometry {
+    fn default() -> Geometry {
+        use geo_types::Point;
+        let point: Point<f64> = (0.0, 0.0).into();
+        Geometry {
+            id: "default_geometry".to_string(),
+            geometry: point.into(),
+        }
+    }
+}
+
 impl Id<Geometry> for Geometry {
     fn id(&self) -> &str {
         &self.id
+    }
+}
+
+impl WithId for Geometry {
+    fn with_id(id: &str) -> Self {
+        let mut r = Self::default();
+        r.id = id.to_owned();
+        r
     }
 }
 
