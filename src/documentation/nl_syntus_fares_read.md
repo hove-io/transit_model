@@ -35,7 +35,9 @@ The ticket price is calculated by adding the boarding fee to the price specified
 - the boarding fee is equal to the value of *FareFrame/EntranceRateWrtCurrency*.
 - the OD price is calculated by multiplying the value of *DistanceMatrixElementPrice/Amount* by the value of *DistanceMatrixElementPrice/Units*.
 
-RoundingRule/Capping??
+If *FareFrame/RoundingWrtCurrencyRule* is specified, a rounding rule for the specified `currency_type` is applied to the computed ticket price. For example, if the value is set to `0.01` for the currency `EUR`, then the ticket price is rounded to the nearest euro cent.
+
+If the computed ticket price exceeds the value of *FareFrame/CappingWrtCurrencyRule*, then the latter is taken into account.
 
 ### OD Rules
 NTM property | Source frame | Source element | Notes/Mapping rule
