@@ -368,6 +368,28 @@ impl<T: Id<T>> CollectionWithId<T> {
         })
     }
 
+    /// Get a reference to the `String` to `Idx<T>` internal mapping.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # use std::collections::HashMap;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    /// }
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// assert_eq!(c.len(), 2);
+    /// assert_eq!(c.get_id_to_idx().len(), 2);
+    /// # Ok(())
+    /// # }
+    pub fn get_id_to_idx(&self) -> &HashMap<String, Idx<T>> {
+        &self.id_to_idx
+    }
+
     /// Access to a mutable reference of the corresponding object.
     ///
     /// The `drop` of the proxy object panic if the identifier is
@@ -463,6 +485,34 @@ impl<T: Id<T>> CollectionWithId<T> {
                 Ok(idx)
             }
         }
+    }
+
+    /// Retains the elements matching predicate parameter from the current `CollectionWithId` object
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # use std::collections::HashSet;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar"), Obj("qux")])?;
+    /// let mut ids_to_keep: HashSet<String> = HashSet::new();
+    /// ids_to_keep.insert("foo".to_string());
+    /// ids_to_keep.insert("qux".to_string());
+    /// c.retain(|item| ids_to_keep.contains(item.id()));
+    /// assert_eq!(c.len(), 2);
+    /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
+    /// assert_eq!(c.get("qux"), Some(&Obj("qux")));
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn retain<F: FnMut(&T) -> bool>(&mut self, f: F) {
+        let mut purged = self.take();
+        purged.retain(f);
+        *self = Self::new(purged).unwrap(); // can't fail as we have a subset of a valid Collection
     }
 
     /// Merge a `CollectionWithId` parameter into the current one. Fails if any identifier into the

@@ -1,0 +1,13 @@
+object_type,object_id,object_system,object_code
+stop_area,DEF,source,code_stop_area_removed
+stop_area,GDL,source,code_stop_area_kept
+stop_point,CHAM,source,code_stop_point_kept
+stop_point,DEFR,source,code_stop_point_removed
+network,network:kept,source,code_network:kept
+network,network:removed,source,code_network:removed
+line,B42,source,code_line_kept
+line,RERA,source,code_line_removed
+route,RERAB_R,source,code_route_removed
+route,M1F,source,code_route_kept
+trip,M1B1_R,source,code_trip_kept
+trip,RERAF1_R,source,code_trip_removed

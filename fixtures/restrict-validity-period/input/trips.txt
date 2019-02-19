@@ -1,0 +1,14 @@
+route_id,service_id,trip_id,company_id,physical_mode_id,dataset_id,trip_property_id,geometry_id
+M1F,service:1,M1F1,company:removed,Metro,dataset:kept,,
+M1B,service:2,M1B1,company:kept,Metro,dataset:kept,,geo:3:kept
+B42F,service:3,B42F1,company:kept,Bus,dataset:kept,,
+B42B,service:4,B42B1,company:kept,Bus,dataset:kept,,
+RERAF,service:5,RERAF1,company:kept,Metro,dataset:kept,,
+RERAB,service:6,RERAB1,company:kept,Bus,dataset:kept,,
+M1F,service:4,M1F1-2,company:kept,Metro,dataset:kept,,
+M1F_R,service:1,M1F1_R,company:kept,Metro,dataset:kept,,
+M1B_R,service:2,M1B1_R,company:kept,Metro,dataset:kept,prop:kept,
+B42F_R,service:3,B42F1_R,company:kept,Bus,dataset:kept,,
+B42B_R,service:4,B42B1_R,company:kept,Bus,dataset:kept,,
+RERAF_R,service:5,RERAF1_R,company:kept,RapidTransit,dataset:removed,,geo:6:removed
+RERAB_R,service:6,RERAB1_R,company:kept,RapidTransit,dataset:removed,prop:removed,

@@ -1,0 +1,8 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+M1F,Nation - Charles de Gaulle,,M1,geo:2:kept,
+M1B,Charles de Gaulle - Nation,,M1,,
+B42F,Gare de Lyon - Montparnasse,,B42,,
+B42B,Montparnasse - Gare de Lyon,,B42,,
+M1B_R,Charles de Gaulle - Nation retour,,M1,,
+B42F_R,Gare de Lyon - Montparnasse retour,,B42,,
+B42B_R,Montparnasse - Gare de Lyon retour,,B42,,

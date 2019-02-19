@@ -1,0 +1,8 @@
+trip_id,route_id,physical_mode_id,dataset_id,service_id,trip_headsign,block_id,company_id,trip_property_id,geometry_id
+M1B1,M1B,Metro,dataset:kept,service:2,,,company:kept,,geo:3:kept
+B42F1,B42F,Bus,dataset:kept,service:3,,,company:kept,,
+B42B1,B42B,Bus,dataset:kept,service:4,,,company:kept,,
+M1F1-2,M1F,Metro,dataset:kept,service:4,,,company:kept,,
+M1B1_R,M1B_R,Metro,dataset:kept,service:2,,,company:kept,prop:kept,
+B42F1_R,B42F_R,Bus,dataset:kept,service:3,,,company:kept,,
+B42B1_R,B42B_R,Bus,dataset:kept,service:4,,,company:kept,,
