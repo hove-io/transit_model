@@ -141,6 +141,23 @@ macro_rules! impl_with_id {
     };
 }
 
+macro_rules! impl_id {
+    ($ty:ty, $gen:ty, $id: ident) => {
+        impl Id<$gen> for $ty {
+            fn id(&self) -> &str {
+                &self.$id
+            }
+
+            fn set_id(&mut self, id: String) {
+                self.$id = id;
+            }
+        }
+    };
+    ($ty:ty) => {
+        impl_id!($ty, $ty, id);
+    };
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Contributor {
     #[serde(rename = "contributor_id")]
@@ -152,11 +169,7 @@ pub struct Contributor {
     #[serde(rename = "contributor_website")]
     pub website: Option<String>,
 }
-impl Id<Contributor> for Contributor {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+
 impl AddPrefix for Contributor {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
@@ -175,6 +188,7 @@ impl Default for Contributor {
 }
 
 impl_with_id!(Contributor);
+impl_id!(Contributor);
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum DatasetType {
@@ -271,16 +285,8 @@ impl Default for Dataset {
         }
     }
 }
-impl Id<Dataset> for Dataset {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-impl Id<Contributor> for Dataset {
-    fn id(&self) -> &str {
-        &self.contributor_id
-    }
-}
+impl_id!(Dataset);
+impl_id!(Dataset, Contributor, contributor_id);
 impl AddPrefix for Dataset {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
@@ -306,11 +312,7 @@ pub struct CommercialMode {
     #[serde(rename = "commercial_mode_name")]
     pub name: String,
 }
-impl Id<CommercialMode> for CommercialMode {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+impl_id!(CommercialMode);
 
 impl_with_id!(CommercialMode);
 
@@ -326,11 +328,7 @@ pub struct PhysicalMode {
     pub co2_emission: Option<f32>,
 }
 
-impl Id<PhysicalMode> for PhysicalMode {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+impl_id!(PhysicalMode);
 
 impl Hash for PhysicalMode {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -384,11 +382,7 @@ pub struct Network {
     #[serde(rename = "network_sort_order")]
     pub sort_order: Option<u32>,
 }
-impl Id<Network> for Network {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+impl_id!(Network);
 impl_codes!(Network);
 impl_with_id!(Network);
 
@@ -538,21 +532,9 @@ pub struct Line {
     pub closing_time: Option<Time>,
 }
 
-impl Id<Line> for Line {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-impl Id<Network> for Line {
-    fn id(&self) -> &str {
-        &self.network_id
-    }
-}
-impl Id<CommercialMode> for Line {
-    fn id(&self) -> &str {
-        &self.commercial_mode_id
-    }
-}
+impl_id!(Line);
+impl_id!(Line, Network, network_id);
+impl_id!(Line, CommercialMode, commercial_mode_id);
 impl AddPrefix for Line {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
@@ -592,16 +574,8 @@ pub struct Route {
     pub geometry_id: Option<String>,
     pub destination_id: Option<String>,
 }
-impl Id<Route> for Route {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-impl Id<Line> for Route {
-    fn id(&self) -> &str {
-        &self.line_id
-    }
-}
+impl_id!(Route);
+impl_id!(Route, Line, line_id);
 impl AddPrefix for Route {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
@@ -663,31 +637,12 @@ impl Default for VehicleJourney {
         }
     }
 }
-impl Id<VehicleJourney> for VehicleJourney {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-impl Id<Route> for VehicleJourney {
-    fn id(&self) -> &str {
-        &self.route_id
-    }
-}
-impl Id<PhysicalMode> for VehicleJourney {
-    fn id(&self) -> &str {
-        &self.physical_mode_id
-    }
-}
-impl Id<Dataset> for VehicleJourney {
-    fn id(&self) -> &str {
-        &self.dataset_id
-    }
-}
-impl Id<Company> for VehicleJourney {
-    fn id(&self) -> &str {
-        &self.company_id
-    }
-}
+impl_id!(VehicleJourney);
+impl_id!(VehicleJourney, Route, route_id);
+impl_id!(VehicleJourney, PhysicalMode, physical_mode_id);
+impl_id!(VehicleJourney, Dataset, dataset_id);
+impl_id!(VehicleJourney, Company, company_id);
+
 impl AddPrefix for VehicleJourney {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
@@ -967,11 +922,7 @@ pub struct StopArea {
     pub geometry_id: Option<String>,
     pub equipment_id: Option<String>,
 }
-impl Id<StopArea> for StopArea {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+impl_id!(StopArea);
 impl AddPrefix for StopArea {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
@@ -1021,16 +972,9 @@ pub struct StopPoint {
     pub stop_type: StopType,
 }
 
-impl Id<StopPoint> for StopPoint {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-impl Id<StopArea> for StopPoint {
-    fn id(&self) -> &str {
-        &self.stop_area_id
-    }
-}
+impl_id!(StopPoint);
+impl_id!(StopPoint, StopArea, stop_area_id);
+
 impl AddPrefix for StopPoint {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
@@ -1070,11 +1014,7 @@ pub struct Calendar {
     pub dates: BTreeSet<Date>,
 }
 
-impl Id<Calendar> for Calendar {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+impl_id!(Calendar);
 impl Calendar {
     pub fn new(calendar_id: String) -> Calendar {
         Calendar {
@@ -1114,11 +1054,7 @@ pub struct Company {
     pub phone: Option<String>,
 }
 
-impl Id<Company> for Company {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+impl_id!(Company);
 impl Default for Company {
     fn default() -> Company {
         Company {
@@ -1163,11 +1099,7 @@ pub struct Comment {
     pub url: Option<String>,
 }
 
-impl Id<Comment> for Comment {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+impl_id!(Comment);
 
 impl AddPrefix for Comment {
     fn add_prefix(&mut self, prefix: &str) {
@@ -1201,11 +1133,7 @@ pub struct Equipment {
     pub appropriate_signage: Availability,
 }
 
-impl Id<Equipment> for Equipment {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+impl_id!(Equipment);
 
 impl AddPrefix for Equipment {
     fn add_prefix(&mut self, prefix: &str) {
@@ -1267,11 +1195,7 @@ pub struct TripProperty {
     pub school_vehicle_type: TransportType,
 }
 
-impl Id<TripProperty> for TripProperty {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+impl_id!(TripProperty);
 
 impl AddPrefix for TripProperty {
     fn add_prefix(&mut self, prefix: &str) {
@@ -1291,30 +1215,7 @@ pub struct Geometry {
     pub geometry: GeoGeometry<f64>,
 }
 
-impl Default for Geometry {
-    fn default() -> Geometry {
-        use geo_types::Point;
-        let point: Point<f64> = (0.0, 0.0).into();
-        Geometry {
-            id: "default_geometry".to_string(),
-            geometry: point.into(),
-        }
-    }
-}
-
-impl Id<Geometry> for Geometry {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-
-impl WithId for Geometry {
-    fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
-    }
-}
+impl_id!(Geometry);
 
 impl AddPrefix for Geometry {
     fn add_prefix(&mut self, prefix: &str) {

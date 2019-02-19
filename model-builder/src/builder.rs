@@ -103,11 +103,15 @@ impl<'a> ModelBuilder {
     ///      .build();
     /// # }
     /// ```
-    pub fn route<F>(mut self, id: &str, route_initer: F) -> Self
+    pub fn route<F>(mut self, id: &str, mut route_initer: F) -> Self
     where
         F: FnMut(&mut Route),
     {
-        self.collections.routes.get_or_create_with(id, route_initer);
+        self.collections.routes.get_or_create_with(id, || {
+            let mut r = Route::default();
+            route_initer(&mut r);
+            r
+        });
         self
     }
 
@@ -129,13 +133,15 @@ impl<'a> ModelBuilder {
     ///      .build();
     /// # }
     /// ```
-    pub fn calendar<F>(mut self, id: &str, calendar_initer: F) -> Self
+    pub fn calendar<F>(mut self, id: &str, mut calendar_initer: F) -> Self
     where
         F: FnMut(&mut Calendar),
     {
-        self.collections
-            .calendars
-            .get_or_create_with(id, calendar_initer);
+        self.collections.calendars.get_or_create_with(id, || {
+            let mut c = Calendar::default();
+            calendar_initer(&mut c);
+            c
+        });
         self
     }
 

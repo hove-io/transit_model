@@ -239,8 +239,13 @@ fn get_geometry_id(
 ) -> Option<String> {
     if let Some(geo) = wkt_to_geo(wkt, report, p) {
         let id = p.object_type.as_str().to_owned() + ":" + &p.object_id;
-        let mut obj = collection.get_or_create(&id);
-        obj.geometry = geo.clone();
+        let mut obj = collection.get_or_create_with(&id, || Geometry {
+            id: id.to_string(),
+            geometry: geo.clone(),
+        });
+        if obj.geometry != geo {
+            obj.geometry = geo.clone();
+        }
         return Some(id);
     }
 

@@ -25,12 +25,13 @@ pub(crate) mod utils;
 pub mod apply_rules;
 pub mod collection;
 pub(crate) mod common_format;
+#[macro_use]
+pub mod objects;
 pub mod gtfs;
 pub mod merge_stop_areas;
 pub mod model;
 pub mod netex;
 pub mod ntfs;
-pub mod objects;
 mod read_utils;
 pub mod relations;
 #[doc(hidden)]
