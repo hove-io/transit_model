@@ -17,7 +17,7 @@
 //! Collections of objects with typed indices and buildin identifier
 //! support.
 
-use crate::Result;
+use crate::{objects::WithId, Result};
 use derivative::Derivative;
 use failure::{bail, ensure};
 use std::borrow::Borrow;
@@ -34,6 +34,9 @@ use std::slice;
 pub trait Id<T> {
     /// Returns the unique identifier.
     fn id(&self) -> &str;
+
+    /// Set the identifier
+    fn set_id(&mut self, id: String);
 }
 
 /// Typed index.
@@ -191,7 +194,8 @@ impl<T> Collection<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c = Collection::new(vec![]);
     /// let foo_idx = c.push(Obj("foo"));
     /// let bar_idx = c.push(Obj("bar"));
@@ -215,7 +219,8 @@ impl<T> Collection<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c1 = Collection::new(vec![Obj("foo")]);
     /// let c2 = Collection::new(vec![Obj("bar")]);
     /// c1.merge(c2);
@@ -343,6 +348,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// struct Obj(&'static str);
     /// impl Id<Obj> for Obj {
     ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
     /// }
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// assert_eq!(c.len(), 2);
@@ -380,6 +386,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// struct Obj(&'static str);
     /// impl Id<Obj> for Obj {
     ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
     /// }
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// assert_eq!(c.len(), 2);
@@ -401,7 +408,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let idx = c.get_idx("foo").unwrap();
     /// c.index_mut(idx).0 = "baz";
@@ -416,7 +424,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let idx = c.get_idx("foo").unwrap();
     /// c.index_mut(idx).0 = "bar"; // panic
@@ -440,7 +449,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// c.get_mut("foo").unwrap().0 = "baz";
     /// assert!(c.get("foo").is_none());
@@ -462,7 +472,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let baz_idx = c.push(Obj("baz"))?;
     /// assert_eq!(&c[baz_idx], &Obj("baz"));
@@ -496,7 +507,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # use std::collections::HashSet;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar"), Obj("qux")])?;
     /// let mut ids_to_keep: HashSet<String> = HashSet::new();
     /// ids_to_keep.insert("foo".to_string());
@@ -524,7 +536,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
     /// let mut c3 = CollectionWithId::new(vec![Obj("corge"), Obj("grault")])?;
@@ -551,7 +564,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
     /// c1.merge(c2);
@@ -576,7 +590,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c: CollectionWithId<Obj> = CollectionWithId::new(vec![])?;
     /// assert!(c.is_empty());
     /// # Ok(())
@@ -585,6 +600,79 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// ```
     pub fn is_empty(&self) -> bool {
         self.collection.is_empty()
+    }
+}
+
+impl<T: Id<T> + WithId> CollectionWithId<T> {
+    /// Get a mutable reference of the corresponding object or create it
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # use navitia_model::objects::WithId;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(String);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { &self.0 }
+    /// # fn set_id(&mut self, id: String) { self.0 = id; }}
+    /// # impl WithId for Obj {
+    /// #     fn with_id(id: &str) -> Self {
+    /// #         let mut r = Obj("id".into());
+    /// #         r.0 = id.to_owned();
+    /// #         r
+    /// #     }
+    /// # }
+    /// let mut c = CollectionWithId::new(vec![Obj("1".into())])?;
+    /// let obj = c.get_or_create("2");
+    /// assert_eq!(obj.0, "2");
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn get_or_create<'a>(&'a mut self, id: &str) -> RefMut<'a, T> {
+        self.get_or_create_with(id, || T::with_id(id))
+    }
+}
+
+impl<T: Id<T>> CollectionWithId<T> {
+    /// Get a mutable reference of the corresponding object or create it
+    /// and apply a function on it.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # use navitia_model::objects::WithId;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(String, String);
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { &self.0 }
+    /// # fn set_id(&mut self, id: String) { self.0 = id; }}
+    /// # impl WithId for Obj {
+    /// #     fn with_id(id: &str) -> Self {
+    /// #         let mut r = Obj("id".into(), "name".into());
+    /// #         r.0 = id.to_owned();
+    /// #         r
+    /// #     }
+    /// # }
+    /// let mut c = CollectionWithId::new(vec![Obj("1".into(), "foo".into())])?;
+    /// let obj = c.get_or_create_with("2", || Obj("bob".into(), "bar".into()));
+    /// assert_eq!(obj.0, "2");
+    /// assert_eq!(obj.1, "bar");
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn get_or_create_with<'a, F>(&'a mut self, id: &str, mut f: F) -> RefMut<'a, T>
+    where
+        F: FnMut() -> T,
+    {
+        let elt = self.get_idx(id).unwrap_or_else(|| {
+            let mut o = f();
+
+            o.set_id(id.to_string());
+            self.push(o).unwrap()
+        });
+        self.index_mut(elt)
     }
 }
 
@@ -598,7 +686,8 @@ impl<T: Id<T>> iter::Extend<T> for CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
     /// c1.extend(c2);
@@ -623,7 +712,8 @@ impl<T> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let idx = c.get_idx("foo").unwrap();
     /// assert_eq!(&c[idx], &Obj("foo"));
@@ -645,7 +735,8 @@ impl<T> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
     /// assert!(c.get("baz").is_none());
@@ -665,7 +756,8 @@ impl<T> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let v = c.into_vec();
     /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);
@@ -686,7 +778,8 @@ impl<T> CollectionWithId<T> {
     /// # use navitia_model::collection::*;
     /// # fn run() -> navitia_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 } }
+    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
+    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
     /// let v = c.take();
     /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);

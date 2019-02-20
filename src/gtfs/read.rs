@@ -187,11 +187,7 @@ impl<'de> ::serde::Deserialize<'de> for RouteType {
     }
 }
 
-impl Id<Route> for Route {
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
+impl_id!(Route);
 
 impl Route {
     fn get_line_key(&self) -> (Option<String>, String) {

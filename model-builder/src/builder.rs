@@ -32,9 +32,9 @@
 //! # }
 //! ```
 
-use crate::collection::{CollectionWithId, Id, Idx, RefMut};
+use crate::collection::Idx;
 use crate::model::{Collections, Model};
-use crate::objects::{Calendar, Route, StopPoint, StopTime, Time, VehicleJourney, WithId};
+use crate::objects::{Calendar, Route, StopPoint, StopTime, Time, VehicleJourney};
 
 /// Builder used to easily create a `Model`
 #[derive(Default)]
@@ -46,33 +46,6 @@ pub struct ModelBuilder {
 pub struct VehicleJourneyBuilder<'a> {
     model: &'a mut ModelBuilder,
     vj_idx: Idx<VehicleJourney>,
-}
-
-fn get_or_create<'a, T: Id<T> + WithId>(
-    col: &'a mut CollectionWithId<T>,
-    id: &str,
-) -> RefMut<'a, T> {
-    let elt = col
-        .get_idx(id)
-        .unwrap_or_else(|| col.push(T::with_id(id)).unwrap());
-    col.index_mut(elt)
-}
-
-fn get_or_create_with<'a, T: Id<T> + WithId, F>(
-    col: &'a mut CollectionWithId<T>,
-    id: &str,
-    mut f: F,
-) -> RefMut<'a, T>
-where
-    F: FnMut(&mut T),
-{
-    let elt = col.get_idx(id).unwrap_or_else(|| {
-        let mut o = T::with_id(id);
-
-        f(&mut o);
-        col.push(o).unwrap()
-    });
-    col.index_mut(elt)
 }
 
 impl<'a> ModelBuilder {
@@ -130,17 +103,23 @@ impl<'a> ModelBuilder {
     ///      .build();
     /// # }
     /// ```
-    pub fn route<F>(mut self, id: &str, route_initer: F) -> Self
+    pub fn route<F>(mut self, id: &str, mut route_initer: F) -> Self
     where
         F: FnMut(&mut Route),
     {
-        get_or_create_with(&mut self.collections.routes, id, route_initer);
+        self.collections.routes.get_or_create_with(id, || {
+            let mut r = Route::default();
+            route_initer(&mut r);
+            r
+        });
         self
     }
 
     /// Add a new Calendar to the model
     ///
     /// ```
+    /// # use navitia_model::objects::Date;
+    ///
     /// # fn main() {
     /// let model = model_builder::ModelBuilder::default()
     ///      .calendar("c1", |c| {
@@ -154,11 +133,15 @@ impl<'a> ModelBuilder {
     ///      .build();
     /// # }
     /// ```
-    pub fn calendar<F>(mut self, id: &str, calendar_initer: F) -> Self
+    pub fn calendar<F>(mut self, id: &str, mut calendar_initer: F) -> Self
     where
         F: FnMut(&mut Calendar),
     {
-        get_or_create_with(&mut self.collections.calendars, id, calendar_initer);
+        self.collections.calendars.get_or_create_with(id, || {
+            let mut c = Calendar::default();
+            calendar_initer(&mut c);
+            c
+        });
         self
     }
 
@@ -206,7 +189,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
                     ..Default::default()
                 };
 
-                get_or_create(&mut self.model.collections.stop_areas, &sa_id);
+                self.model.collections.stop_areas.get_or_create(&sa_id);
 
                 self.model
                     .collections
@@ -287,6 +270,8 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// Set the calendar (service_id) of the vj
     ///
     /// ```
+    /// # use navitia_model::objects::Date;
+    ///
     /// # fn main() {
     /// let model = model_builder::ModelBuilder::default()
     ///        .calendar("c1", |c| {
@@ -317,17 +302,23 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
         let collections = &mut self.model.collections;
         // add the missing objects to the model (routes, lines, ...)
         let new_vj = &collections.vehicle_journeys[self.vj_idx];
-        let dataset = get_or_create(&mut collections.datasets, &new_vj.dataset_id);
-        get_or_create(&mut collections.contributors, &dataset.contributor_id);
+        let dataset = collections.datasets.get_or_create(&new_vj.dataset_id);
+        collections
+            .contributors
+            .get_or_create(&dataset.contributor_id);
 
-        get_or_create(&mut collections.companies, &new_vj.company_id);
-        get_or_create(&mut collections.calendars, &new_vj.service_id);
-        get_or_create(&mut collections.physical_modes, &new_vj.physical_mode_id);
+        collections.companies.get_or_create(&new_vj.company_id);
+        collections.calendars.get_or_create(&new_vj.service_id);
+        collections
+            .physical_modes
+            .get_or_create(&new_vj.physical_mode_id);
 
-        let route = get_or_create(&mut collections.routes, &new_vj.route_id);
-        let line = get_or_create(&mut collections.lines, &route.line_id);
-        get_or_create(&mut collections.commercial_modes, &line.commercial_mode_id);
-        get_or_create(&mut collections.networks, &line.network_id);
+        let route = collections.routes.get_or_create(&new_vj.route_id);
+        let line = collections.lines.get_or_create(&route.line_id);
+        collections
+            .commercial_modes
+            .get_or_create(&line.commercial_mode_id);
+        collections.networks.get_or_create(&line.network_id);
     }
 }
 
