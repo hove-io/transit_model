@@ -9,13 +9,13 @@ The fare data expected at the input of the connector comes in the form of XML fi
 - one or more *FareFrame*s specifying the fare structures and the underlying conditions.
 
 The supported fare structures depend on origin-destination (OD) stop pairs in two ways:
-- the ticket price beteween an origin and a destination is directly specified (*DirectPriceMatrix*)
-- the price for a fare distance unit is specified, as well as the fare distance between an origin and destination (*UnitPrice* & *DirectMatrix*). The ticket price between the origin and destination stops is computed by multiplying the fare distance by the fare distance unit.
+- the ticket price between an origin and a destination is directly specified (*DirectPriceMatrix*)
+- the price for a fare distance unit is specified, as well as the fare distance between an origin and a destination (*UnitPrice* & *DirectMatrix*). The ticket price between the origin and destination stops is computed by multiplying the fare distance by the fare distance unit.
 
-The current version of the connector handles the first type of fare structure. Only the *FareStructue*s of type *DirectPriceMatrix* are read. More types will be handled in a later version.
+The current version of the connector handles the first type of fare structure. Only the *FareStructure*s of type *DirectPriceMatrix* are read. More types will be handled in a later version.
 
 ## Connector description
-Each *FareFrame* specified in the input fare data corresponds to several `Tickets` in NTM (as many as the elements of the *DistanceMatrix*). For each *DistanceMatrixElement*, one `Ticket` object with the corresponding `OD Rules` object are created, unless the origin/destination stops cannot be identified in the NTFS (see the mapping rule below).
+Each *FareFrame* specified in the input fare data corresponds to several `Tickets` in NTM (as many as the elements of the *DistanceMatrix*). For each *DistanceMatrixElement*, one `Ticket` object with the corresponding `OD Rules` object is created, unless the origin/destination stops cannot be identified in the NTFS (see the mapping rule below).
 
 The current version of the connector does not describe the NTM properties that are not specified in the source data (e.g. the validity duration of a ticket).
 
@@ -55,5 +55,5 @@ The *origin_stoparea_id* should have an associated stop_point with a complementa
 
 The *dest_stoparea_id* should have an associated stop_point with a complementary code of type `gtfs_stop_code` that matches the value of *ProjectedPointRef{ref}* (without the network prefixe, if any) of the *ScheduledStopPoint* in the *ServiceFrame* whose *id* is referenced by *EndStopPointRef{ref}* in the *DistanceMatrixElement*.
 
-If no matching is found for the origin or the destination stop, then the stop is ignored and no rule is created and the corresponding `Ticket` is discarded.
+If no matching is found for the origin or the destination stop, then the stop is ignored and no rule is created. In this case, the corresponding `Ticket` is discarded.
 
