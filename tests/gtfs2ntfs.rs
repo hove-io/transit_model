@@ -22,7 +22,7 @@ fn test_frequencies_generate_trips() {
     test_in_tmp_dir(|path| {
         let input_dir = "./fixtures/gtfs2ntfs/frequencies/input";
         let model = navitia_model::gtfs::read_from_path(input_dir, None, None).unwrap();
-        navitia_model::ntfs::write(&model, path).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec![
@@ -41,8 +41,28 @@ fn test_minimal_gtfs() {
     test_in_tmp_dir(|path| {
         let input_dir = "./fixtures/gtfs2ntfs/minimal/input";
         let model = navitia_model::gtfs::read_from_path(input_dir, None, None).unwrap();
-        navitia_model::ntfs::write(&model, path).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./fixtures/gtfs2ntfs/minimal/output");
+    });
+}
+
+#[test]
+fn test_minimal_gtfs_with_feed_infos() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./fixtures/gtfs2ntfs/minimal_with_config/input";
+        let config = "./fixtures/gtfs2ntfs/minimal_with_config/config.json";
+        let model = navitia_model::gtfs::read_from_path(input_dir, Some(config), None).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec![
+                "contributors.txt",
+                "trips.txt",
+                "datasets.txt",
+                "feed_infos.txt",
+            ]),
+            "./fixtures/gtfs2ntfs/minimal_with_config/output",
+        );
     });
 }
 
@@ -51,7 +71,7 @@ fn test_gtfs_physical_modes() {
     test_in_tmp_dir(|path| {
         let input_dir = "./fixtures/gtfs2ntfs/physical_modes/input";
         let model = navitia_model::gtfs::read_from_path(input_dir, None, None).unwrap();
-        navitia_model::ntfs::write(&model, path).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec![
@@ -70,7 +90,7 @@ fn test_minimal_ziped_gtfs() {
     test_in_tmp_dir(|path| {
         let input = "./fixtures/ziped_gtfs/gtfs.zip";
         let model = navitia_model::gtfs::read_from_zip(input, None, None).unwrap();
-        navitia_model::ntfs::write(&model, path).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./fixtures/gtfs2ntfs/minimal/output");
     });
 }
@@ -80,7 +100,7 @@ fn test_minimal_ziped_sub_dir_gtfs() {
     test_in_tmp_dir(|path| {
         let input = "./fixtures/ziped_gtfs/sub_dir_gtfs.zip";
         let model = navitia_model::gtfs::read_from_zip(input, None, None).unwrap();
-        navitia_model::ntfs::write(&model, path).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./fixtures/gtfs2ntfs/minimal/output");
     });
 }

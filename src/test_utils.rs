@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use chrono::{NaiveDate, NaiveDateTime};
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
@@ -72,4 +73,8 @@ where
         func(path);
     }
     tmp_dir.close().expect("delete temp dir");
+}
+
+pub fn get_test_datetime() -> NaiveDateTime {
+    NaiveDate::from_ymd(2019, 4, 3).and_hms(17, 19, 0)
 }

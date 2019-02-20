@@ -38,7 +38,7 @@ fn test_apply_complementary_codes() {
         )
         .unwrap();
         let model = navitia_model::Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&model, path).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec![

@@ -34,7 +34,7 @@ fn test_restrict_global() {
             .unwrap();
         collections.sanitize().unwrap();
         let new_model = Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&new_model, path).unwrap();
+        navitia_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec![
@@ -42,6 +42,7 @@ fn test_restrict_global() {
                 "companies.txt",
                 "datasets.txt",
                 "equipments.txt",
+                "feed_infos.txt",
                 "geometries.txt",
                 "lines.txt",
                 "networks.txt",
@@ -73,6 +74,6 @@ fn test_restrict_no_panic() {
             .unwrap();
         collections.sanitize().unwrap();
         let new_model = Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&new_model, path).unwrap();
+        navitia_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
     });
 }

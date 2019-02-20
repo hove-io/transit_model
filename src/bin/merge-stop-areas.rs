@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use chrono::NaiveDateTime;
 use log::info;
 use navitia_model;
 use navitia_model::{Model, Result};
@@ -46,6 +47,15 @@ struct Opt {
     /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: PathBuf,
+
+    /// current datetime
+    #[structopt(
+        short = "x",
+        long,
+        parse(try_from_str),
+        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+    )]
+    current_datetime: NaiveDateTime,
 }
 
 fn run() -> Result<()> {
@@ -63,7 +73,7 @@ fn run() -> Result<()> {
     )?;
     let new_model = Model::new(collections)?;
 
-    navitia_model::ntfs::write(&new_model, opt.output)?;
+    navitia_model::ntfs::write(&new_model, opt.output, opt.current_datetime)?;
     Ok(())
 }
 

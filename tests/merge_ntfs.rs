@@ -23,7 +23,8 @@ use navitia_model::objects::{Comment, StopPoint, VehicleJourney};
 use navitia_model::test_utils::*;
 use navitia_model::transfers;
 use navitia_model::transfers::TransfersMode;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
+use std::fs::File;
 use std::path::Path;
 
 #[test]
@@ -181,7 +182,7 @@ fn merge_collections_ok() {
     assert_eq!(collections.physical_modes.len(), 6);
     assert_eq!(collections.stop_areas.len(), 7);
     assert_eq!(collections.stop_points.len(), 14);
-    assert_eq!(collections.feed_infos.len(), 10);
+    assert_eq!(collections.feed_infos.len(), 0);
     let calendar_vec = collections.calendars.into_vec();
     assert_eq!(calendar_vec[0].dates.len(), 261);
     assert_eq!(calendar_vec[1].dates.len(), 6);
@@ -219,11 +220,35 @@ fn merge_collections_with_transfers_ok() {
             Some(Path::new(&report_path).to_path_buf()),
         )
         .unwrap();
-        navitia_model::ntfs::write(&model, path).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt", "report.json"]),
             "./fixtures/merge-ntfs/output",
+        );
+    });
+}
+
+#[test]
+fn merge_collections_with_feed_infos() {
+    let mut collections = Collections::default();
+    test_in_tmp_dir(|path| {
+        let feed_infos_file = File::open("fixtures/merge-ntfs/feed_infos.json").unwrap();
+        let mut feed_infos: BTreeMap<String, String> =
+            serde_json::from_reader(feed_infos_file).unwrap();
+        for input_directory in &["fixtures/minimal_ntfs", "fixtures/merge-ntfs/input"] {
+            let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
+            collections
+                .try_merge(to_append_model.into_collections())
+                .unwrap();
+        }
+        collections.feed_infos.append(&mut feed_infos);
+        let model = Model::new(collections).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec!["feed_infos.txt"]),
+            "./fixtures/merge-ntfs/output_feedinfos",
         );
     });
 }

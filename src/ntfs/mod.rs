@@ -27,6 +27,7 @@ use crate::objects::*;
 use crate::read_utils;
 use crate::utils::*;
 use crate::Result;
+use chrono::NaiveDateTime;
 use log::info;
 use serde_derive::{Deserialize, Serialize};
 use std::path;
@@ -145,11 +146,15 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
 /// Exports a `Model` to the
 /// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
 /// files in the given directory.
-pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
+pub fn write<P: AsRef<path::Path>>(
+    model: &Model,
+    path: P,
+    current_datetime: NaiveDateTime,
+) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to {:?}", path);
 
-    write::write_feed_infos(path, &model.feed_infos)?;
+    write::write_feed_infos(path, &model.feed_infos, &model.datasets, current_datetime)?;
     write::write_collection_with_id(path, "contributors.txt", &model.contributors)?;
     write::write_collection_with_id(path, "datasets.txt", &model.datasets)?;
     write::write_collection_with_id(path, "networks.txt", &model.networks)?;
@@ -182,11 +187,15 @@ pub fn write<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
 /// Exports a `Model` to a
 /// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
 /// ZIP archive at the given full path.
-pub fn write_to_zip<P: AsRef<path::Path>>(model: &Model, path: P) -> Result<()> {
+pub fn write_to_zip<P: AsRef<path::Path>>(
+    model: &Model,
+    path: P,
+    current_datetime: NaiveDateTime,
+) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to ZIP File {:?}", path);
     let input_tmp_dir = TempDir::new("write_ntfs_for_zip")?;
-    write(model, input_tmp_dir.path())?;
+    write(model, input_tmp_dir.path(), current_datetime)?;
     zip_to(input_tmp_dir.path(), path)?;
     Ok(())
 }
@@ -242,23 +251,49 @@ mod tests {
     #[test]
     fn feed_infos_serialization_deserialization() {
         let mut feed_infos = BTreeMap::default();
-        feed_infos.insert("feed_license".to_string(), "".to_string());
-        feed_infos.insert("ntfs_version".to_string(), "0.3".to_string());
-        feed_infos.insert("feed_creation_date".to_string(), "20181004".to_string());
+        feed_infos.insert("tartare_platform".to_string(), "dev".to_string());
+        feed_infos.insert("feed_publisher_name".to_string(), "Nicaragua".to_string());
+
+        let dataset = Dataset {
+            id: "Foo:0".to_string(),
+            contributor_id: "Foo".to_string(),
+            start_date: chrono::NaiveDate::from_ymd(2018, 01, 30),
+            end_date: chrono::NaiveDate::from_ymd(2018, 01, 31),
+            dataset_type: Some(DatasetType::Theorical),
+            extrapolation: false,
+            desc: Some("description".to_string()),
+            system: Some("GTFS V2".to_string()),
+        };
+
         let mut collections = Collections::default();
+        collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
         test_in_tmp_dir(|path| {
-            write::write_feed_infos(path, &feed_infos).unwrap();
+            write::write_feed_infos(
+                path,
+                &feed_infos,
+                &collections.datasets,
+                get_test_datetime(),
+            )
+            .unwrap();
             read::manage_feed_infos(&mut collections, path).unwrap();
-            let info_params: Vec<_> = collections.feed_infos.keys().collect();
-            // test that feed infos are ordered by info_param
             assert_eq!(
-                info_params,
-                ["feed_creation_date", "feed_license", "ntfs_version"]
+                vec![
+                    ("feed_creation_date".to_string(), "20190403".to_string()),
+                    ("feed_creation_time".to_string(), "17:19:00".to_string()),
+                    ("feed_end_date".to_string(), "20180131".to_string()),
+                    ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
+                    ("feed_start_date".to_string(), "20180130".to_string()),
+                    ("ntfs_version".to_string(), "0.7".to_string()),
+                    ("tartare_platform".to_string(), "dev".to_string()),
+                ],
+                collections
+                    .feed_infos
+                    .into_iter()
+                    .map(|(k, v)| (k, v))
+                    .collect::<Vec<(String, String)>>()
             );
         });
-        assert_eq!(collections.feed_infos.len(), 3);
-        assert_eq!(collections.feed_infos, feed_infos);
     }
 
     #[test]

@@ -100,7 +100,7 @@ fn ntfs_stop_zones() {
 fn ntfs_stops_output() {
     let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
     test_in_tmp_dir(|output_dir| {
-        navitia_model::ntfs::write(&ntm, output_dir).unwrap();
+        navitia_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec!["stops.txt", "stop_times.txt"]),
@@ -167,7 +167,7 @@ fn ntfs() {
 fn optional_empty_collections_not_created() {
     let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
     test_in_tmp_dir(|path| {
-        navitia_model::ntfs::write(&ntm, path).unwrap();
+        navitia_model::ntfs::write(&ntm, path, get_test_datetime()).unwrap();
 
         use std::collections::HashSet;
         let entries: HashSet<String> = ::std::fs::read_dir(path)

@@ -245,11 +245,12 @@ where
 
     manage_calendars(file_handler, &mut collections)?;
 
-    let (contributors, mut datasets) = read::read_config(config_path)?;
+    let (contributors, mut datasets, feed_infos) = read::read_config(config_path)?;
     read::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
 
     collections.contributors = contributors;
     collections.datasets = datasets;
+    collections.feed_infos = feed_infos;
 
     let (networks, companies) = read::read_agency(file_handler)?;
     collections.networks = networks;

@@ -38,6 +38,14 @@ pub mod relations;
 pub mod test_utils;
 pub mod transfers;
 
+/// Current version of the NTFS format
+pub const NTFS_VERSION: &str = "0.7";
+
+lazy_static::lazy_static! {
+    /// Current datetime
+    pub static ref CURRENT_DATETIME: String = chrono::Local::now().format("%FT%T").to_string();
+}
+
 #[cfg(test)]
 #[path = "../model-builder/src/builder.rs"]
 pub mod model_builder;

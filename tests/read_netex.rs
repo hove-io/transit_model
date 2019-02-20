@@ -15,6 +15,7 @@
 // <http://www.gnu.org/licenses/>.
 
 use navitia_model;
+use navitia_model::test_utils::*;
 use navitia_model::Result;
 use std::fs;
 use std::io::Read;
@@ -68,7 +69,12 @@ fn ratp_line7bis() {
     assert!(read_result.is_ok(), "{:?}", read_result.err().unwrap());
     let tmp_dir = TempDir::new("netex_computed_result").unwrap();
     let file_path = tmp_dir.path().join("netex_computed_result_ratp.zip");
-    navitia_model::ntfs::write_to_zip(&read_result.unwrap(), file_path.clone()).unwrap();
+    navitia_model::ntfs::write_to_zip(
+        &read_result.unwrap(),
+        file_path.clone(),
+        get_test_datetime(),
+    )
+    .unwrap();
     compare_ntfs_zips(expected_result_file, file_path.as_path()).unwrap();
 }
 
@@ -82,6 +88,11 @@ fn read_netex_oslo() {
     assert!(read_result.is_ok(), "{:?}", read_result.err().unwrap());
     let tmp_dir = TempDir::new("netex_computed_result").unwrap();
     let file_path = tmp_dir.path().join("netex_computed_result_oslo.zip");
-    navitia_model::ntfs::write_to_zip(&read_result.unwrap(), file_path.clone()).unwrap();
+    navitia_model::ntfs::write_to_zip(
+        &read_result.unwrap(),
+        file_path.clone(),
+        get_test_datetime(),
+    )
+    .unwrap();
     compare_ntfs_zips(expected_result_file, file_path.as_path()).unwrap();
 }

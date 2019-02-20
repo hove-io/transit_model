@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use chrono::NaiveDateTime;
 use log::info;
 use navitia_model;
 use navitia_model::transfers;
@@ -67,6 +68,15 @@ struct Opt {
         help = "Waiting time at stop in second"
     )]
     waiting_time: u32,
+
+    /// current datetime
+    #[structopt(
+        short = "x",
+        long,
+        parse(try_from_str),
+        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+    )]
+    current_datetime: NaiveDateTime,
 }
 
 fn run() -> Result<()> {
@@ -86,7 +96,7 @@ fn run() -> Result<()> {
         opt.report,
     )?;
 
-    navitia_model::ntfs::write(&model, opt.output)?;
+    navitia_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
     Ok(())
 }
 

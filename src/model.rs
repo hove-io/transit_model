@@ -77,7 +77,6 @@ impl Collections {
             physical_modes,
             stop_areas,
             stop_points,
-            feed_infos,
             calendars,
             companies,
             comments,
@@ -89,6 +88,7 @@ impl Collections {
             stop_time_headsigns,
             stop_time_ids,
             stop_time_comments,
+            ..
         } = c;
         self.contributors.try_merge(contributors)?;
         self.datasets.try_merge(datasets)?;
@@ -169,7 +169,6 @@ impl Collections {
             new_stop_time_comments.insert((new_vj_idx, *sequence), new_c_idx);
         }
         self.stop_time_comments.extend(new_stop_time_comments);
-        self.feed_infos.extend(feed_infos);
         self.calendars.try_merge(calendars)?;
         self.companies.try_merge(companies)?;
         self.equipments.try_merge(equipments)?;
