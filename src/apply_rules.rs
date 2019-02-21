@@ -254,13 +254,12 @@ fn get_geometry_id(
 
 fn update_geometry(
     p: &mut PropertyRule,
-    geo_id: &mut Option<String>,
+    field: &mut Option<String>,
     geometries: &mut CollectionWithId<Geometry>,
     report: &mut Report,
 ) {
-    match (p.property_old_value.as_ref(), geo_id.as_ref()) {
+    match (p.property_old_value.as_ref(), field.as_ref()) {
         (Some(pov), Some(geo_id)) if *pov != "*" => {
-            // if *pov != "*" {
             let pov_geo = match wkt_to_geo(&pov, report, &p) {
                 Some(pov_geo) => pov_geo,
                 None => return,
@@ -282,26 +281,26 @@ fn update_geometry(
                 }
             };
 
-            p.property_old_value = if &pov_geo != route_geo {
-                None
-            } else {
-                Some(geo_id.to_string())
+            if &pov_geo != route_geo {
+                update_prop(&p, field, report);
+                return;
             }
-            // }
+            p.property_old_value = Some(geo_id.to_string())
         }
         (Some(pov), None) if *pov != "*" => {
-            update_prop(&p, geo_id, report);
+            update_prop(&p, field, report);
             return;
         }
-        // (None, Some(_)) => {
-
-        // }
+        (None, Some(_)) => {
+            update_prop(&p, field, report);
+            return;
+        }
         (_, _) => {}
     }
 
     if let Some(id) = get_geometry_id(&p.property_value, geometries, &p, report) {
         p.property_value = id;
-        update_prop(&p, geo_id, report);
+        update_prop(&p, field, report);
     }
 }
 
