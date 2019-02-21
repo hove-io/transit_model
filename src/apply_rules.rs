@@ -259,11 +259,8 @@ fn update_geometry(
     report: &mut Report,
 ) {
     match (p.property_old_value.as_ref(), geo_id.as_ref()) {
-        (None, None) => {}
-        (Some(pov), Some(geo_id)) => {
-            if *pov == "*" {
-                return;
-            }
+        (Some(pov), Some(geo_id)) if *pov != "*" => {
+            // if *pov != "*" {
             let pov_geo = match wkt_to_geo(&pov, report, &p) {
                 Some(pov_geo) => pov_geo,
                 None => return,
@@ -290,10 +287,16 @@ fn update_geometry(
             } else {
                 Some(geo_id.to_string())
             }
+            // }
         }
-        (_, _) => {
-            p.property_old_value = None;
+        (Some(pov), None) if *pov != "*" => {
+            update_prop(&p, geo_id, report);
+            return;
         }
+        // (None, Some(_)) => {
+
+        // }
+        (_, _) => {}
     }
 
     if let Some(id) = get_geometry_id(&p.property_value, geometries, &p, report) {

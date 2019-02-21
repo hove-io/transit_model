@@ -34,6 +34,10 @@
       "message": "object_type=route, object_id=RERAB, property_name=direction_type: property_old_value does not match the value found in the data"
     },
     {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=route, object_id=RERAB:2, property_name=route_geometry: property_old_value does not match the value found in the data"
+    },
+    {
       "category": "ObjectNotFound",
       "message": "object_type=route, object_id=RERAF: geometry unknown not found"
     }
