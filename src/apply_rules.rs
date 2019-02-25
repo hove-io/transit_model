@@ -30,6 +30,7 @@ use serde_derive::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use wkt::{self, conversion::try_into_geometry};
 
 #[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Hash)]
@@ -189,6 +190,18 @@ fn insert_code<T>(
         .insert((code.object_system, code.object_code));
 }
 
+fn property_old_value_do_not_match(report: &mut Report, p: &PropertyRule) {
+    report.add_warning(
+        format!(
+            "object_type={}, object_id={}, property_name={}: property_old_value does not match the value found in the data",
+            p.object_type.as_str(),
+            p.object_id,
+            p.property_name
+        ),
+        ReportType::OldPropertyValueDoesNotMatch,
+    )
+}
+
 fn update_prop<T: Clone + From<String> + Into<Option<String>>>(
     p: &PropertyRule,
     field: &mut T,
@@ -198,15 +211,63 @@ fn update_prop<T: Clone + From<String> + Into<Option<String>>>(
     if p.property_old_value == any_prop || p.property_old_value == field.clone().into() {
         *field = T::from(p.property_value.clone());
     } else {
-        report.add_warning(
-            format!(
-                "object_type={}, object_id={}, property_name={}: property_old_value does not match the value found in the data",
-                p.object_type.as_str(),
-                p.object_id,
-                p.property_name
-            ),
-            ReportType::OldPropertyValueDoesNotMatch,
-        );
+        property_old_value_do_not_match(report, p);
+    }
+}
+
+fn update_stringable_option<T: FromStr + ToString + Clone>(
+    p: &PropertyRule,
+    field: &mut Option<T>,
+    report: &mut Report,
+    err_msg: &str,
+) {
+    let any_prop = Some("*".to_string());
+    let field_cmp = field.clone().map(|f| f.to_string());
+
+    if p.property_old_value == any_prop || p.property_old_value == field_cmp {
+        if let Ok(i) = T::from_str(&p.property_value) {
+            *field = Some(i);
+        } else {
+            report.add_warning(
+                format!(
+                    "object_type={}, object_id={}, property_name={}: {}",
+                    p.object_type.as_str(),
+                    p.object_id,
+                    p.property_name,
+                    err_msg
+                ),
+                ReportType::OldPropertyValueDoesNotMatch,
+            );
+        }
+    } else {
+        property_old_value_do_not_match(report, p);
+    }
+}
+
+fn update_object_id<T>(
+    p: &PropertyRule,
+    field: &mut String,
+    report: &mut Report,
+    collection: &CollectionWithId<T>,
+) {
+    let any_prop = Some("*".to_string());
+    if p.property_old_value == any_prop || p.property_old_value.as_ref() == Some(&field) {
+        if collection.get(&p.property_value).is_some() {
+            *field = p.property_value.clone();
+        } else {
+            report.add_warning(
+                format!(
+                    "object_type={}, object_id={}, property_name={}, property_value={}: object not found",
+                    p.object_type.as_str(),
+                    p.object_id,
+                    p.property_name,
+                    p.property_value,
+                ),
+                ReportType::ObjectNotFound,
+            );
+        }
+    } else {
+        property_old_value_do_not_match(report, p);
     }
 }
 
@@ -346,6 +407,139 @@ lazy_static! {
                 })
             }),
         );
+        m.insert(
+            (ObjectType::Line, "line_name"),
+            Box::new(|c, p, r| {
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_prop(p, &mut obj.name, r);
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "line_code"),
+            Box::new(|c, p, r| {
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_prop(p, &mut obj.code, r);
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "forward_line_name"),
+            Box::new(|c, p, r| {
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_prop(p, &mut obj.forward_name, r);
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "backward_line_name"),
+            Box::new(|c, p, r| {
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_prop(p, &mut obj.backward_name, r);
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "forward_direction"),
+            Box::new(|c, p, r| {
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_prop(p, &mut obj.forward_direction, r);
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "backward_direction"),
+            Box::new(|c, p, r| {
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_prop(p, &mut obj.backward_direction, r);
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "line_geometry"),
+            Box::new(|c, p, r| {
+                let geometries = &mut c.geometries;
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_geometry(p, &mut obj.geometry_id, geometries, r);
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "line_sort_order"),
+            Box::new(|c, p, r| {
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_stringable_option(
+                        p,
+                        &mut obj.sort_order,
+                        r,
+                        "property_value should be an integer",
+                    );
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "line_color"),
+            Box::new(|c, p, r| {
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_stringable_option(p, &mut obj.color, r, "property_value is an invalid RGB");
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "line_text_color"),
+            Box::new(|c, p, r| {
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_stringable_option(
+                        p,
+                        &mut obj.text_color,
+                        r,
+                        "property_value is an invalid RGB",
+                    );
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "commercial_mode_id"),
+            Box::new(|c, p, r| {
+                let cms = &c.commercial_modes;
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_object_id(
+                        p,
+                        &mut obj.commercial_mode_id,
+                        r,
+                        cms,
+                    );
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::Line, "network_id"),
+            Box::new(|c, p, r| {
+                let cms = &c.networks;
+                c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_object_id(
+                        p,
+                        &mut obj.network_id,
+                        r,
+                        cms,
+                    );
+                    true
+                })
+            }),
+        );
+        // physical_mode_id
+        //
         m
     };
 }

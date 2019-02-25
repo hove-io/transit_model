@@ -7,6 +7,7 @@ route:B42F,POINT(50 50)
 route:B42F:2,POINT(30 30)
 route:B42F:3,POINT(23 23)
 route:B42F:4,POINT(69 69)
+line:M1,"LINESTRING(3 4,10 50,20 25)"
 route:M1B:2,POINT(6 6)
 route:M1B:3,POINT(23 23)
 route:M1F:2,POINT(3 3)

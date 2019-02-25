@@ -14,6 +14,26 @@
       "message": "object_type=route, object_id=RERAB: unknown property_name unknown_property defined"
     },
     {
+      "category": "ObjectNotFound",
+      "message": "object_type=line, object_id=B42, property_name=commercial_mode_id, property_value=unknown: object not found"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=line, object_id=B42, property_name=line_sort_order: property_value should be an integer"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=line, object_id=B42, property_name=network_id, property_value=unknown: object not found"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=line, object_id=M1, property_name=line_color: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=line, object_id=M1, property_name=line_text_color: property_value is an invalid RGB"
+    },
+    {
       "category": "GeometryNotValid",
       "message": "object_type=route, object_id=B42B: invalid geometry"
     },

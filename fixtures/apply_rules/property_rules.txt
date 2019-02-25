@@ -23,3 +23,20 @@ route,B42F:4,route_geometry,pouet,"POINT(50 50)"
 route,B42B,route_geometry,,bad_geometry
 route,RERAF,route_geometry,POINT(40 40),POINT(40 40)
 route,RERAB:2,route_geometry,POINT(69 69),POINT(51 51)
+line,M1,line_name,Metro 1,Metro A
+line,B42,line_code,,1234
+line,RERA,forward_line_name,,forward_name
+line,RERA,backward_line_name,,backward_line_name
+line,RERA,forward_direction,,forward_direction
+line,RERA,backward_direction,,backward_direction
+line,M1,line_geometry,,"LINESTRING(3 4,10 50,20 25)"
+line,M1,line_sort_order,,8
+line,B42,line_sort_order,,not_integer
+line,M1,line_color,,FFFF45
+line,RERA,line_color,FF0000,0000FF
+line,RERA,line_text_color,,CC00FF
+line,M1,line_text_color,,invalid
+line,M1,commercial_mode_id,Metro,Bus
+line,B42,commercial_mode_id,Bus,unknown
+line,M1,network_id,TGN,AN
+line,B42,network_id,TGN,unknown

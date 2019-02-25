@@ -44,6 +44,7 @@ fn test_apply_complementary_codes() {
             Some(vec![
                 "object_codes.txt",
                 "geometries.txt",
+                "lines.txt",
                 "routes.txt",
                 "report.json",
             ]),

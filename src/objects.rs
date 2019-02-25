@@ -470,8 +470,7 @@ impl ::serde::Serialize for Rgb {
     where
         S: ::serde::Serializer,
     {
-        let color = format!("{:02X}{:02X}{:02X}", self.red, self.green, self.blue);
-        serializer.serialize_str(&color)
+        serializer.serialize_str(&self.to_string())
     }
 }
 
