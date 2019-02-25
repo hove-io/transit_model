@@ -22,3 +22,4 @@ route,B42F:3,route_geometry,POINT(40 40),"POINT(23 23)"
 route,B42F:4,route_geometry,pouet,"POINT(50 50)"
 route,B42B,route_geometry,,bad_geometry
 route,RERAF,route_geometry,POINT(40 40),POINT(40 40)
+route,RERAB:2,route_geometry,POINT(69 69),POINT(51 51)
