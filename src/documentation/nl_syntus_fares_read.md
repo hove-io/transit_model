@@ -12,8 +12,6 @@ The supported fare structures depend on origin-destination (OD) stop pairs in tw
 - the ticket price between an origin and a destination is directly specified (*DirectPriceMatrix*)
 - the price for a fare distance unit is specified, as well as the fare distance between an origin and a destination (*UnitPrice* & *DirectMatrix*). The ticket price between the origin and destination stops is computed by multiplying the fare distance by the fare distance unit.
 
-The current version of the connector handles the first type of fare structure. Only the *FareStructure*s of type *DirectPriceMatrix* are read. More types will be handled in a later version.
-
 ## Connector description
 Each *FareFrame* specified in the input fare data corresponds to several `Tickets` in NTM (as many as the elements of the *DistanceMatrix*). For each *DistanceMatrixElement*, one `Ticket` object with the corresponding `OD Rules` object is created, unless the origin/destination stops cannot be identified in the NTFS (see the mapping rule below).
 
@@ -23,7 +21,6 @@ The current version of the connector does not describe the NTM properties that a
 NTM Property | Source frame | Source element | Notes/Mapping rule
 --- | --- | --- | ---
 id | *FareFrame* | *DistanceMatrixElement{id}* | 
-input_data_format | | | Fixed value `nl_syntus_fares`.
 start_date | *ResourceFrame* | *versions/Version/StartDate* | 
 end_date | *ResourceFrame* | *versions/Version/EndDate* | 
 currency_type | *FareFrame* | *FrameDefaults/DefaultCurrency* | 
@@ -32,8 +29,10 @@ price | | | See the mapping rule below.
 **Computing the ticket price**
 
 The ticket price is calculated by adding the boarding fee to the price specified for the origin-destination pair:
-- the boarding fee is equal to the value of *FareFrame/EntranceRateWrtCurrency*.
-- the OD price is calculated by multiplying the value of *DistanceMatrixElementPrice/Amount* by the value of *DistanceMatrixElementPrice/Units*.
+- The boarding fee is equal to the value of *FareFrame/EntranceRateWrtCurrency*.
+- The OD price is calculated differently based on the *FareStructure* type:
+  - if the *FareStructure* type is a *DirectPriceMatrix*, the value of *DistanceMatrixElementPrice/Amount* is multiplied by the value of *DistanceMatrixElementPrice/Units*.
+  - if the *FareStructure* type is a *UnitPrice*, the value of *DistanceMatrixElementPrice/Distance* is multiplied by the value of *GeographicalIntervalPrice/Amount* and then by the value of *GeographicalIntervalPrice/Units*.
 
 If *FareFrame/RoundingWrtCurrencyRule* is specified, a rounding rule for the specified `currency_type` is applied to the computed ticket price. For example, if the value is set to `0.01` for the currency `EUR`, then the ticket price is rounded to the nearest euro cent.
 

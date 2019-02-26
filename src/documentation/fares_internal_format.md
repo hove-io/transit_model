@@ -11,7 +11,6 @@ This object contains the necessary information to specify a ticket.
 Property | Type | Required | Description
 --- | --- | --- | ---
 id | String | Yes | Ticket identifier
-input_data_format | Enum | Yes | Source of the fare data, fixed value `nl_syntus_fares`.
 start_date | Date | Yes | Start date for the validity period of the ticket price.
 end_date | Date | Yes | End date for the validity period of the ticket price. This date is included in the validity period interval.
 currency_type | String | Yes | The currency used to pay the ticket. The [ISO 4217](https://en.wikipedia.org/wiki/ISO_4217#Active_codes) currency codes are used.
