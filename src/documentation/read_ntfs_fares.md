@@ -10,6 +10,8 @@ In this initial version:
 
 These limitations will be covered in later version, following the updates of the NTM fares model.
 
+In the following, the NTM properties that are not specified are ignored and not detailed.
+
 ### Loading Tickets
 
 NTM property | NTFS file | NTFS field | Note/mapping rule
@@ -19,8 +21,6 @@ start_date | prices.csv | \*date de début de validité\* |
 end_date | prices.csv | \*date de fin de validité\* | The previous date of the specified date in the input.
 currency_type | prices.csv | \*devise\* | The currency is set to `EUR` when the input value is `centime`. Otherwise, the ticket is ignored.
 price | prices.csv | \*prix\* | The specified input value is converted into EUR.
-validity_duration | | | This field is ignored.
-transfers | | | This field is ignored.
 
 ### Loading OD Rules
 
@@ -30,5 +30,3 @@ id | prices.csv | \*clef de ticket\* | Id of the `OD Rule`. The id is prefixed w
 ticket_id | | | Id of the `Ticket` to which this `OD Rule` is applied.
 origin_stoparea_id | od_fares.csv | Origin ID | Id of the origin stop_area in Navitia when the value of Origin mode is set to `stop`. Otherwise, the rule and the corresponding ticket is ignored.
 dest_stoparea_id | od_fares.csv | Destination ID | Id of the destination stop_area in Navitia when the value of Destination mode is set to `stop`. Otherwise, the rule and the corresponding ticket is ignored.
-line_id | | | This field is ignored.
-network_id | | | This field is ignored.
