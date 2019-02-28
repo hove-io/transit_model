@@ -10,6 +10,8 @@ In this initial version:
 
 These limitations will be adressed in a later version.
 
+In the following, the NTFS fields that are not specified are ignored and not detailed.
+
 ### prices.csv
 As a reminder, this file has no header and the order of the NTFS fields must be respected.
 
@@ -29,10 +31,8 @@ NTFS field | NTM object | NTM property | Notes/Mapping rule
 NTFS field | NTM object | NTM property | Notes/Mapping rule
 --- | --- | --- | ---
 Origin ID | OD Rules | origin_stoparea_id | 
-Origin name | | | This field is explicitly left empty.
 Origin mode | | | Fixed value `stop`.
 Destination ID | OD Rules | dest_stoparea_id | 
-Destination name | | | This field is explicitly left empty.
 Destination mode | | | Fixed value `stop`.
 ticket_id | OD Rules | ticket_id | Link to the ticket specified in [prices](#pricescsv)
 
