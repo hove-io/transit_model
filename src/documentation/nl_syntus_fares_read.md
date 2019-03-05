@@ -38,13 +38,13 @@ If *FareFrame/RoundingWrtCurrencyRule* is specified, a rounding rule for the spe
 
 If the computed ticket price exceeds the value of *FareFrame/CappingWrtCurrencyRule*, then the latter is taken into account.
 
-### OD Rules
+### OD Rule
 NTM property | Source frame | Source element | Notes/Mapping rule
 --- | --- | --- | ---
 id | *FareFrame* | *DistanceMatrixElement{id}* | The id is prefixed with `OD:`.
 ticket_id | | | Id of the `Ticket` to which this `OD Rule` is applied.
-origin_stoparea_id | *FareFrame* | *DistanceMatrixElement/StartStopPointRef{ref}* | See the mapping rule below.
-dest_stoparea_id | *FareFrame* | *DistanceMatrixElement/EndStopPointRef{ref}* | See the mapping rule below.
+origin_stop_area_id | *FareFrame* | *DistanceMatrixElement/StartStopPointRef{ref}* | See the mapping rule below.
+destination_stop_area_id | *FareFrame* | *DistanceMatrixElement/EndStopPointRef{ref}* | See the mapping rule below.
 physical_mode_id | | | Fixed value `Bus`. This field will be necessary for modeling transitions when writing the NTFS fares.
 
 **Setting the origin_stoparea_id and the dest_stoparea_id of an OD Rule**

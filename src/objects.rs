@@ -30,6 +30,7 @@ use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Sub};
 use std::str::FromStr;
+use chrono::NaiveDate;
 
 pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);
@@ -1229,6 +1230,35 @@ pub struct AdminStation {
     pub admin_name: String,
     pub stop_id: String,
 }
+
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Ticket {
+    pub id: String,
+    #[serde(
+    deserialize_with = "de_from_date_string",
+    serialize_with = "ser_from_naive_date"
+    )]
+    pub start_date: NaiveDate,
+    #[serde(
+    deserialize_with = "de_from_date_string",
+    serialize_with = "ser_from_naive_date"
+    )]
+    pub end_date: NaiveDate,
+    pub currency_type: String,
+    pub price: f64,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ODRule {
+    pub id: String,
+    pub ticket_id: String,
+    pub origin_stop_area_id: String,
+    pub destination_stop_area_id: String,
+}
+
+impl_id!(Ticket);
+impl_id!(ODRule);
 
 #[cfg(test)]
 mod tests {

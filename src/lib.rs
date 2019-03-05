@@ -27,6 +27,7 @@ pub mod collection;
 pub(crate) mod common_format;
 #[macro_use]
 pub mod objects;
+pub mod syntus_fares;
 pub mod gtfs;
 pub mod merge_stop_areas;
 pub mod model;
