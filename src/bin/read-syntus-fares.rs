@@ -43,10 +43,11 @@ fn run() -> Result<()> {
     info!("Launching read_syntus_fares.");
     let opt = Opt::from_args();
     let model = navitia_model::ntfs::read(opt.input)?;
-    let (tickets, od_rules) = syntus_fares::read(opt.fares, &model.stop_points)?;
+    let (tickets, od_rules, fares) = syntus_fares::read(opt.fares, &model.stop_points)?;
     let mut collections = model.into_collections();
     collections.tickets = tickets;
     collections.od_rules = od_rules;
+    collections.fares = fares;
     let model = navitia_model::Model::new(collections)?;
     navitia_model::ntfs::write(&model, opt.output)?;
 

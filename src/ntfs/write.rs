@@ -115,48 +115,49 @@ pub fn write_vehicle_journeys_and_stop_times(
     Ok(())
 }
 
+pub fn write_fares_collection_with_id<T>(
+    path: &path::Path,
+    file: &str,
+    collection: &CollectionWithId<T>,
+    write_headers: bool,
+    headers: Option<Vec<&str>>
+) -> Result<()>
+where
+    T: Id<T>,
+    T: serde::Serialize,
+{
+    info!("Writing {}", file);
+    let path = path.join(file);
+    let mut builder = csv::WriterBuilder::new();
+    builder.has_headers(write_headers);
+    builder.delimiter(b';');
+    let mut wtr = builder.from_path(&path).with_context(ctx_from_path!(path))?;
+    if write_headers && collection.is_empty() && headers.is_some() {
+        wtr.write_record(&headers.unwrap());
+    }
+    for obj in collection.values() {
+        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
+    }
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
+}
+
 pub fn write_collection_with_id<T>(
     path: &path::Path,
     file: &str,
     collection: &CollectionWithId<T>,
 ) -> Result<()>
-where
-    T: Id<T>,
-    T: serde::Serialize,
-{
-    write_collection_with_id_headers_specified(path, file, collection, true)
-}
-
-pub fn write_collection_with_id_no_headers<T>(
-    path: &path::Path,
-    file: &str,
-    collection: &CollectionWithId<T>,
-) -> Result<()>
-where
-    T: Id<T>,
-    T: serde::Serialize,
-{
-    write_collection_with_id_headers_specified(path, file, collection, false)
-}
-
-fn write_collection_with_id_headers_specified<T>(
-    path: &path::Path,
-    file: &str,
-    collection: &CollectionWithId<T>,
-    write_headers: bool,
-) -> Result<()>
-where
-    T: Id<T>,
-    T: serde::Serialize,
+    where
+        T: Id<T>,
+        T: serde::Serialize,
 {
     if collection.is_empty() {
         return Ok(());
     }
     info!("Writing {}", file);
     let path = path.join(file);
-    let mut builder = csv::WriterBuilder::new();
-    builder.has_headers(write_headers);
-    let mut wtr = builder.from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for obj in collection.values() {
         wtr.serialize(obj).with_context(ctx_from_path!(path))?;
     }

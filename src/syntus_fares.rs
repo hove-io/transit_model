@@ -18,7 +18,7 @@
 use crate::collection::CollectionWithId;
 use crate::objects::StopPoint;
 use crate::Result;
-use crate::objects::{Ticket, ODRule};
+use crate::objects::{Ticket, ODRule, Fare};
 use chrono::NaiveDate;
 use failure::bail;
 use failure::format_err;
@@ -305,6 +305,7 @@ pub fn read<P: AsRef<path::Path>>(
 ) -> Result<(
     CollectionWithId<Ticket>,
     CollectionWithId<ODRule>,
+    CollectionWithId<Fare>,
 )> {
     let files: Vec<String> = fs::read_dir(&path)
         .unwrap()
@@ -324,9 +325,10 @@ pub fn read<P: AsRef<path::Path>>(
         .collect();
     let mut tickets = vec![];
     let mut od_rules = vec![];
+    let fares = vec![];
     for filename in files {
         let file = fs::File::open(path.as_ref().join(filename))?;
-        let mut zip = zip::ZipArchive::new(file)?;
+        let mut zip = skip_fail!(zip::ZipArchive::new(file));
         for i in 0..zip.len() {
             let file = zip.by_index(i)?;
             match file.sanitized_name().extension() {
@@ -340,5 +342,5 @@ pub fn read<P: AsRef<path::Path>>(
             }
         }
     }
-    Ok((CollectionWithId::new(tickets)?, CollectionWithId::new(od_rules)?))
+    Ok((CollectionWithId::new(tickets)?, CollectionWithId::new(od_rules)?, CollectionWithId::new(fares)?))
 }

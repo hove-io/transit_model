@@ -1258,17 +1258,40 @@ pub struct ODRule {
     pub id: String,
     #[serde(rename = "Origin ID")]
     pub origin_stop_area_id: String,
+    #[serde(rename = "Origin name")]
+    pub origin_name: String,
     #[serde(rename = "Origin mode")]
     pub origin_mode: String,
     #[serde(rename = "Destination ID")]
     pub destination_stop_area_id: String,
+    #[serde(rename = "Destination name")]
+    pub destination_name: String,
     #[serde(rename = "Destination mode")]
     pub destination_mode: String,
     pub ticket_id: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Fare {
+    #[serde(skip)]
+    pub id: String,
+    #[serde(rename = "avant changement")]
+    pub before_change: String,
+    #[serde(rename = "après changement")]
+    pub after_change: String,
+    #[serde(rename = "début trajet")]
+    pub start_trip: String,
+    #[serde(rename = "fin trajet")]
+    pub end_trip: String,
+    #[serde(rename = "condition globale")]
+    pub global_condition: String,
+    #[serde(rename = "clef ticket")]
+    pub ticket_id: String,
+}
+
 impl_id!(Ticket);
 impl_id!(ODRule);
+impl_id!(Fare);
 
 impl Ticket {
     pub fn new(id: String, start_date: NaiveDate, end_date: NaiveDate, price: f64) -> Self {
@@ -1290,8 +1313,10 @@ impl ODRule {
         ODRule {
             id,
             origin_stop_area_id,
+            origin_name: "".to_string(),
             origin_mode: "stop".to_string(),
             destination_stop_area_id,
+            destination_name: "".to_string(),
             destination_mode: "stop".to_string(),
             ticket_id
         }

@@ -166,8 +166,9 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_collection_with_id(path, "routes.txt", &model.routes)?;
     write::write_collection_with_id(path, "trip_properties.txt", &model.trip_properties)?;
     write::write_collection_with_id(path, "geometries.txt", &model.geometries)?;
-    write::write_collection_with_id_no_headers(path, "prices.csv", &model.tickets)?;
-    write::write_collection_with_id(path, "od_fares.csv", &model.od_rules)?;
+    write::write_fares_collection_with_id(path, "prices.csv", &model.tickets, false, None)?;
+    write::write_fares_collection_with_id(path, "od_fares.csv", &model.od_rules, true, None)?;
+    write::write_fares_collection_with_id(path, "fares.csv", &model.fares, true, Some(vec!["avant changement", "après changement", "début trajet", "condition globale", "clef ticket"]))?;
     write::write_collection(path, "transfers.txt", &model.transfers)?;
     write::write_collection(path, "admin_stations.txt", &model.admin_stations)?;
     write::write_vehicle_journeys_and_stop_times(
