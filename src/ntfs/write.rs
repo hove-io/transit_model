@@ -124,12 +124,39 @@ where
     T: Id<T>,
     T: serde::Serialize,
 {
+    write_collection_with_id_headers_specified(path, file, collection, true)
+}
+
+pub fn write_collection_with_id_no_headers<T>(
+    path: &path::Path,
+    file: &str,
+    collection: &CollectionWithId<T>,
+) -> Result<()>
+where
+    T: Id<T>,
+    T: serde::Serialize,
+{
+    write_collection_with_id_headers_specified(path, file, collection, false)
+}
+
+fn write_collection_with_id_headers_specified<T>(
+    path: &path::Path,
+    file: &str,
+    collection: &CollectionWithId<T>,
+    write_headers: bool,
+) -> Result<()>
+where
+    T: Id<T>,
+    T: serde::Serialize,
+{
     if collection.is_empty() {
         return Ok(());
     }
     info!("Writing {}", file);
     let path = path.join(file);
-    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut builder = csv::WriterBuilder::new();
+    builder.has_headers(write_headers);
+    let mut wtr = builder.from_path(&path).with_context(ctx_from_path!(path))?;
     for obj in collection.values() {
         wtr.serialize(obj).with_context(ctx_from_path!(path))?;
     }

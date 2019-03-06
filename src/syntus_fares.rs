@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
-//! TODO
-//!
+
+//! See function read
 use crate::collection::CollectionWithId;
 use crate::objects::StopPoint;
 use crate::Result;
@@ -108,11 +108,8 @@ fn load_syntus_file<R: Read>(
         version.get_child("EndDate", &ns).unwrap().text().as_str(),
         DATE_TIME_FORMAT,
     )?;
-//    dbg!(start_date);
-//    dbg!(end_date);
     let service_frame = frames.find(|frame| frame.name() == "ServiceFrame").unwrap();
     let fare_frames = frames.filter(|frame| frame.name() == "FareFrame");
-    //    let fare_structures = fare_frames.flat_map(|fare_frame| fare_frame.get_child("fareStructures", &ns).unwrap().children());
     let mut frame_by_type = HashMap::new();
     for fare_frame in fare_frames {
         let fare_type =
@@ -132,7 +129,7 @@ fn load_syntus_file<R: Read>(
             .or_insert_with(|| vec![])
             .push(fare_frame);
     }
-    let mut stop_point_ref_to_gtfs_stop_codes: HashMap<String, Vec<String>> = service_frame
+    let stop_point_ref_to_gtfs_stop_codes: HashMap<String, Vec<String>> = service_frame
         .get_child("scheduledStopPoints", &ns)
         .unwrap()
         .children()
@@ -155,7 +152,6 @@ fn load_syntus_file<R: Read>(
             )
         })
         .collect();
-    dbg!(&stop_point_ref_to_gtfs_stop_codes);
     if let Some(unit_price_frames) = frame_by_type.get("UnitPrice") {
         if unit_price_frames.len() > 1 {
             bail!("unable to pick a reference UnitPrice FareFrame for the DistanceMatrix FareFrame")
@@ -195,12 +191,6 @@ fn load_syntus_file<R: Read>(
                 .text()
                 .parse::<f64>()?;
         for distance_matrix_frame in frame_by_type.get("DistanceMatrix").unwrap_or(&vec![]) {
-            let currency_type = distance_matrix_frame
-                .get_child("FrameDefaults", &ns)
-                .unwrap()
-                .get_child("DefaultCurrency", &ns)
-                .unwrap()
-                .text();
             for distance_matrix_elt in get_list_element_from_inner_list(
                 distance_matrix_frame,
                 "fareStructures",
@@ -226,27 +216,13 @@ fn load_syntus_file<R: Read>(
                     .unwrap()
                     .attr("ref")
                     .unwrap();
-//                dbg!(&boarding_fee);
-//                dbg!(&rounding);
-//                dbg!(&capping);
-//                dbg!(&base_price);
-//                dbg!(&distance);
+                let id = distance_matrix_elt.attr("id").unwrap().to_string();
                 let mut price =
                     ((boarding_fee + base_price * distance) / rounding).round() * rounding;
-//                dbg!(&price);
                 if let Ok(capping) = capping {
                     price = price.min(capping);
                 }
-                let id = distance_matrix_elt.attr("id").unwrap().to_string();
-//                dbg!(&price);
-                let ticket = Ticket {
-                    id: id.clone(),
-                    start_date,
-                    end_date,
-                    currency_type: currency_type.clone(),
-                    price,
-                };
-                dbg!(&ticket);
+                let ticket = Ticket::new(id.clone(), start_date, end_date, price);
                 let od_rule = match (
                     stop_point_ref_to_gtfs_stop_codes.get(start_stop_point),
                     stop_point_ref_to_gtfs_stop_codes.get(end_stop_point),
@@ -260,23 +236,17 @@ fn load_syntus_file<R: Read>(
                             .iter()
                             .filter_map(|code| stop_code_to_stop_area.get(code))
                             .collect::<HashSet<_>>();
-                        dbg!(&origin_stop_area_ids);
-                        dbg!(&destination_stop_area_ids);
                         match (origin_stop_area_ids.len(), destination_stop_area_ids.len()) {
-                            (1, 1) => ODRule {
-                                id: format!("OD:{}", id.clone()),
-                                ticket_id: id.clone(),
-                                origin_stop_area_id: origin_stop_area_ids
+                            (1, 1) => ODRule::new(format!("OD:{}", id.clone()), origin_stop_area_ids
                                     .iter()
                                     .last()
                                     .unwrap()
                                     .to_string(),
-                                destination_stop_area_id: destination_stop_area_ids
+                                destination_stop_area_ids
                                     .iter()
                                     .last()
                                     .unwrap()
-                                    .to_string(),
-                            },
+                                    .to_string(),id.clone()),
                             (nb_stop_areas, 1) => {
                                 warn!(
                                     "found {} stop area matches for origin {:?}",
@@ -324,7 +294,11 @@ fn load_syntus_file<R: Read>(
     Ok(())
 }
 
-/// TODO
+/// Read Syntus fares data from provided `path` parameter which should be a link to a directory
+/// containing at least one zip file containing some xml files in Netex format.
+/// Fares will be calculated using the `stop_points` parameter collection as a referential for
+/// mapping Netex stop points to NTFS ones using `object_codes.txt` data from `object_system`
+/// `gtfs_stop_code`
 pub fn read<P: AsRef<path::Path>>(
     path: P,
     stop_points: &CollectionWithId<StopPoint>,
@@ -344,7 +318,7 @@ pub fn read<P: AsRef<path::Path>>(
         .filter_map(|sp| {
             sp.codes
                 .iter()
-                .find(|(key, value)| key == "gtfs_stop_code")
+                .find(|(key, _)| key == "gtfs_stop_code")
                 .map(|(_, code)| (code.clone(), sp.stop_area_id.clone()))
         })
         .collect();
@@ -357,7 +331,7 @@ pub fn read<P: AsRef<path::Path>>(
             let file = zip.by_index(i)?;
             match file.sanitized_name().extension() {
                 Some(ext) if ext == "xml" => {
-                    dbg!(file.name());
+                    info!("reading fares file {:?}", file.name());
                     load_syntus_file(file, &stop_code_to_stop_area, &mut tickets, &mut od_rules)?;
                 }
                 _ => {

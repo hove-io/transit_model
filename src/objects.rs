@@ -1245,20 +1245,58 @@ pub struct Ticket {
     serialize_with = "ser_from_naive_date"
     )]
     pub end_date: NaiveDate,
+    pub price: u32,
+    pub name: String,
+    pub ignored: String,
+    pub comment: String,
     pub currency_type: String,
-    pub price: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ODRule {
+    #[serde(skip)]
     pub id: String,
-    pub ticket_id: String,
+    #[serde(rename = "Origin ID")]
     pub origin_stop_area_id: String,
+    #[serde(rename = "Origin mode")]
+    pub origin_mode: String,
+    #[serde(rename = "Destination ID")]
     pub destination_stop_area_id: String,
+    #[serde(rename = "Destination mode")]
+    pub destination_mode: String,
+    pub ticket_id: String,
 }
 
 impl_id!(Ticket);
 impl_id!(ODRule);
+
+impl Ticket {
+    pub fn new(id: String, start_date: NaiveDate, end_date: NaiveDate, price: f64) -> Self {
+        Ticket {
+            id,
+            start_date,
+            end_date,
+            price: (price * 100.).round() as u32,
+            name: "Ticket Orgine-Destination".to_string(),
+            ignored: "".to_string(),
+            comment: "".to_string(),
+            currency_type: "centime".to_string(),
+        }
+    }
+}
+
+impl ODRule {
+    pub fn new(id: String, origin_stop_area_id: String, destination_stop_area_id: String, ticket_id: String) -> Self {
+        ODRule {
+            id,
+            origin_stop_area_id,
+            origin_mode: "stop".to_string(),
+            destination_stop_area_id,
+            destination_mode: "stop".to_string(),
+            ticket_id
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

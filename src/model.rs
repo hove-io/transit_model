@@ -53,7 +53,7 @@ pub struct Collections {
     pub transfers: Collection<Transfer>,
     pub trip_properties: CollectionWithId<TripProperty>,
     pub geometries: CollectionWithId<Geometry>,
-    pub tickets: CollectionWithId<Tickets>,
+    pub tickets: CollectionWithId<Ticket>,
     pub od_rules: CollectionWithId<ODRule>,
     pub admin_stations: Collection<AdminStation>,
     #[serde(skip)]
@@ -86,12 +86,16 @@ impl Collections {
             transfers,
             trip_properties,
             geometries,
+            tickets,
+            od_rules,
             admin_stations,
             stop_time_headsigns,
             stop_time_ids,
             stop_time_comments,
             ..
         } = c;
+        self.tickets.try_merge(tickets)?;
+        self.od_rules.try_merge(od_rules)?;
         self.contributors.try_merge(contributors)?;
         self.datasets.try_merge(datasets)?;
         self.networks.try_merge(networks)?;
