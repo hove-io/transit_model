@@ -22,6 +22,7 @@ use crate::collection::{Id, Idx};
 use crate::common_format::Availability;
 use crate::utils::*;
 use chrono;
+use chrono::NaiveDate;
 use derivative::Derivative;
 use geo_types::Geometry as GeoGeometry;
 use serde_derive::{Deserialize, Serialize};
@@ -30,7 +31,6 @@ use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Sub};
 use std::str::FromStr;
-use chrono::NaiveDate;
 
 pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);
@@ -1231,18 +1231,17 @@ pub struct AdminStation {
     pub stop_id: String,
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Ticket {
     pub id: String,
     #[serde(
-    deserialize_with = "de_from_date_string",
-    serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
     )]
     pub start_date: NaiveDate,
     #[serde(
-    deserialize_with = "de_from_date_string",
-    serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
     )]
     pub end_date: NaiveDate,
     pub price: u32,
@@ -1300,7 +1299,7 @@ impl Ticket {
             start_date,
             end_date,
             price: (price * 100.).round() as u32,
-            name: "Ticket Orgine-Destination".to_string(),
+            name: "Ticket Origine-Destination".to_string(),
             ignored: "".to_string(),
             comment: "".to_string(),
             currency_type: "centime".to_string(),
@@ -1309,7 +1308,12 @@ impl Ticket {
 }
 
 impl ODRule {
-    pub fn new(id: String, origin_stop_area_id: String, destination_stop_area_id: String, ticket_id: String) -> Self {
+    pub fn new(
+        id: String,
+        origin_stop_area_id: String,
+        destination_stop_area_id: String,
+        ticket_id: String,
+    ) -> Self {
         ODRule {
             id,
             origin_stop_area_id,
@@ -1318,7 +1322,7 @@ impl ODRule {
             destination_stop_area_id,
             destination_name: "".to_string(),
             destination_mode: "stop".to_string(),
-            ticket_id
+            ticket_id,
         }
     }
 }

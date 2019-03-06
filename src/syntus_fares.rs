@@ -17,8 +17,8 @@
 //! See function read
 use crate::collection::CollectionWithId;
 use crate::objects::StopPoint;
+use crate::objects::{Fare, ODRule, Ticket};
 use crate::Result;
-use crate::objects::{Ticket, ODRule, Fare};
 use chrono::NaiveDate;
 use failure::bail;
 use failure::format_err;
@@ -129,6 +129,10 @@ fn load_syntus_file<R: Read>(
             .or_insert_with(|| vec![])
             .push(fare_frame);
     }
+    for (ft, frames) in &frame_by_type {
+        dbg!(&ft);
+        dbg!(frames.len());
+    }
     let stop_point_ref_to_gtfs_stop_codes: HashMap<String, Vec<String>> = service_frame
         .get_child("scheduledStopPoints", &ns)
         .unwrap()
@@ -152,6 +156,7 @@ fn load_syntus_file<R: Read>(
             )
         })
         .collect();
+    dbg!(&stop_point_ref_to_gtfs_stop_codes);
     if let Some(unit_price_frames) = frame_by_type.get("UnitPrice") {
         if unit_price_frames.len() > 1 {
             bail!("unable to pick a reference UnitPrice FareFrame for the DistanceMatrix FareFrame")
@@ -216,82 +221,94 @@ fn load_syntus_file<R: Read>(
                     .unwrap()
                     .attr("ref")
                     .unwrap();
-                let id = distance_matrix_elt.attr("id").unwrap().to_string();
+                dbg!(&distance);
+                dbg!(&start_stop_point);
+                dbg!(&end_stop_point);
                 let mut price =
                     ((boarding_fee + base_price * distance) / rounding).round() * rounding;
                 if let Ok(capping) = capping {
                     price = price.min(capping);
                 }
+                let id = distance_matrix_elt.attr("id").unwrap().to_string();
                 let ticket = Ticket::new(id.clone(), start_date, end_date, price);
-                let od_rule = match (
-                    stop_point_ref_to_gtfs_stop_codes.get(start_stop_point),
-                    stop_point_ref_to_gtfs_stop_codes.get(end_stop_point),
-                ) {
-                    (Some(start_gtfs_stop_codes), Some(end_gtfs_stop_codes)) => {
-                        let origin_stop_area_ids = start_gtfs_stop_codes
-                            .iter()
-                            .filter_map(|code| stop_code_to_stop_area.get(code))
-                            .collect::<HashSet<_>>();
-                        let destination_stop_area_ids = end_gtfs_stop_codes
-                            .iter()
-                            .filter_map(|code| stop_code_to_stop_area.get(code))
-                            .collect::<HashSet<_>>();
-                        match (origin_stop_area_ids.len(), destination_stop_area_ids.len()) {
-                            (1, 1) => ODRule::new(format!("OD:{}", id.clone()), origin_stop_area_ids
-                                    .iter()
-                                    .last()
-                                    .unwrap()
-                                    .to_string(),
-                                destination_stop_area_ids
-                                    .iter()
-                                    .last()
-                                    .unwrap()
-                                    .to_string(),id.clone()),
-                            (nb_stop_areas, 1) => {
-                                warn!(
-                                    "found {} stop area matches for origin {:?}",
-                                    nb_stop_areas, start_gtfs_stop_codes
-                                );
-                                continue;
-                            }
-                            (1, nb_stop_areas) => {
-                                warn!(
-                                    "found {} stop area matches for destination {:?}",
-                                    nb_stop_areas, end_gtfs_stop_codes
-                                );
-                                continue;
-                            }
-                            (origin_nb_stop_areas, destination_nb_stop_areas) => {
-                                warn!(
-                                    "found {} stop area matches for origin {:?} and {} matches for destination {:?}",
-                                    origin_nb_stop_areas,
-                                    start_gtfs_stop_codes,
-                                    destination_nb_stop_areas,
-                                    end_gtfs_stop_codes
-                                );
-                                continue;
-                            }
-                        }
-                    }
-                    (Some(_), None) => {
-                        warn!("StartStopPointRef {:?} has no corresponding scheduledStopPoints/projections/ProjectedPointRef", start_stop_point);
-                        continue;
-                    }
-                    (None, Some(_)) => {
-                        warn!("EndStopPointRef {:?} has no corresponding scheduledStopPoints/projections/ProjectedPointRef", end_stop_point);
-                        continue;
-                    }
-                    (None, None) => {
-                        warn!("StartStopPointRef and EndStopPointRef {:?} have no corresponding scheduledStopPoints/projections/ProjectedPointRef", end_stop_point);
-                        continue;
-                    }
-                };
+                dbg!(&ticket);
+                dbg!(stop_point_ref_to_gtfs_stop_codes.get(start_stop_point));
+                dbg!(stop_point_ref_to_gtfs_stop_codes.get(end_stop_point));
+                let od_rule = skip_fail!(get_od_rule(
+                    &stop_point_ref_to_gtfs_stop_codes,
+                    id,
+                    start_stop_point,
+                    end_stop_point,
+                    &stop_code_to_stop_area
+                ));
+                dbg!(&od_rule);
                 od_rules.push(od_rule);
                 tickets.push(ticket);
             }
         }
     }
     Ok(())
+}
+
+fn get_od_rule(
+    stop_point_ref_to_gtfs_stop_codes: &HashMap<String, Vec<String>>,
+    ticket_id: String,
+    start_stop_point: &str,
+    end_stop_point: &str,
+    stop_code_to_stop_area: &HashMap<String, String>,
+) -> Result<ODRule> {
+    match (
+        stop_point_ref_to_gtfs_stop_codes.get(start_stop_point),
+        stop_point_ref_to_gtfs_stop_codes.get(end_stop_point),
+    ) {
+        (Some(start_gtfs_stop_codes), Some(end_gtfs_stop_codes)) => {
+            let origin_stop_area_ids = start_gtfs_stop_codes
+                .iter()
+                .filter_map(|code| stop_code_to_stop_area.get(code))
+                .collect::<HashSet<_>>();
+            let destination_stop_area_ids = end_gtfs_stop_codes
+                .iter()
+                .filter_map(|code| stop_code_to_stop_area.get(code))
+                .collect::<HashSet<_>>();
+            dbg!(&origin_stop_area_ids);
+            dbg!(&destination_stop_area_ids);
+            match (origin_stop_area_ids.len(), destination_stop_area_ids.len()) {
+                (1, 1) => Ok(ODRule::new(format!("OD:{}", ticket_id.clone()), origin_stop_area_ids
+                    .iter()
+                    .last()
+                    .unwrap()
+                    .to_string(),
+                                      destination_stop_area_ids
+                                          .iter()
+                                          .last()
+                                          .unwrap()
+                                          .to_string(),ticket_id.clone())),
+                (nb_stop_areas, 1) =>
+                    bail!(
+                        "found {} stop area matches for origin {:?}",
+                        nb_stop_areas, start_gtfs_stop_codes
+                    ),
+                (1, nb_stop_areas) =>
+                    bail!(
+                        "found {} stop area matches for destination {:?}",
+                        nb_stop_areas, end_gtfs_stop_codes
+                    ),
+                (origin_nb_stop_areas, destination_nb_stop_areas) =>
+                    bail!(
+                        "found {} stop area matches for origin {:?} and {} matches for destination {:?}",
+                        origin_nb_stop_areas,
+                        start_gtfs_stop_codes,
+                        destination_nb_stop_areas,
+                        end_gtfs_stop_codes
+                    ),
+            }
+        }
+        (Some(_), None) =>
+            bail!("StartStopPointRef {:?} has no corresponding scheduledStopPoints/projections/ProjectedPointRef", start_stop_point),
+        (None, Some(_)) =>
+            bail!("EndStopPointRef {:?} has no corresponding scheduledStopPoints/projections/ProjectedPointRef", end_stop_point),
+        (None, None) => bail!("StartStopPointRef and EndStopPointRef {:?} have no corresponding scheduledStopPoints/projections/ProjectedPointRef", end_stop_point),
+    }
 }
 
 /// Read Syntus fares data from provided `path` parameter which should be a link to a directory
@@ -342,5 +359,9 @@ pub fn read<P: AsRef<path::Path>>(
             }
         }
     }
-    Ok((CollectionWithId::new(tickets)?, CollectionWithId::new(od_rules)?, CollectionWithId::new(fares)?))
+    Ok((
+        CollectionWithId::new(tickets)?,
+        CollectionWithId::new(od_rules)?,
+        CollectionWithId::new(fares)?,
+    ))
 }

@@ -120,7 +120,7 @@ pub fn write_fares_collection_with_id<T>(
     file: &str,
     collection: &CollectionWithId<T>,
     write_headers: bool,
-    headers: Option<Vec<&str>>
+    headers: Option<Vec<&str>>,
 ) -> Result<()>
 where
     T: Id<T>,
@@ -131,9 +131,11 @@ where
     let mut builder = csv::WriterBuilder::new();
     builder.has_headers(write_headers);
     builder.delimiter(b';');
-    let mut wtr = builder.from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut wtr = builder
+        .from_path(&path)
+        .with_context(ctx_from_path!(path))?;
     if write_headers && collection.is_empty() && headers.is_some() {
-        wtr.write_record(&headers.unwrap());
+        wtr.write_record(&headers.unwrap())?;
     }
     for obj in collection.values() {
         wtr.serialize(obj).with_context(ctx_from_path!(path))?;
@@ -148,9 +150,9 @@ pub fn write_collection_with_id<T>(
     file: &str,
     collection: &CollectionWithId<T>,
 ) -> Result<()>
-    where
-        T: Id<T>,
-        T: serde::Serialize,
+where
+    T: Id<T>,
+    T: serde::Serialize,
 {
     if collection.is_empty() {
         return Ok(());
