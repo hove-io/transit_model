@@ -30,9 +30,9 @@ NTFS field | NTM object | NTM property | Notes/Mapping rule
 
 NTFS field | NTM object | NTM property | Notes/Mapping rule
 --- | --- | --- | ---
-Origin ID | OD Rules | origin_stoparea_id | 
+Origin ID | OD Rules | origin_stoparea_id | The id is prefixed with `stop_area:`.
 Origin mode | | | Fixed value `stop`.
-Destination ID | OD Rules | dest_stoparea_id | 
+Destination ID | OD Rules | dest_stoparea_id | The id is prefixed with `stop_area:`.
 Destination mode | | | Fixed value `stop`.
 ticket_id | OD Rules | ticket_id | Link to the ticket specified in [prices](#pricescsv)
 
