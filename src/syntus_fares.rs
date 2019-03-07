@@ -15,9 +15,8 @@
 // <http://www.gnu.org/licenses/>.
 
 //! See function read
-use crate::collection::CollectionWithId;
-use crate::objects::StopPoint;
-use crate::objects::{Fare, ODRule, Ticket};
+use crate::collection::{Collection, CollectionWithId};
+use crate::objects::{ODRule, StopPoint, Ticket};
 use crate::Result;
 use chrono::NaiveDate;
 use failure::bail;
@@ -30,6 +29,39 @@ use std::io::Read;
 use std::path;
 use zip;
 const DATE_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S.0Z";
+
+impl Ticket {
+    fn new(id: String, start_date: NaiveDate, end_date: NaiveDate, price: f64) -> Self {
+        Ticket {
+            id,
+            start_date,
+            end_date,
+            price: (price * 100.).round() as u32,
+            currency_type: "centime".to_string(),
+            validity_duration: None,
+            transfers: None,
+        }
+    }
+}
+
+impl ODRule {
+    fn new(
+        id: String,
+        origin_stop_area_id: String,
+        destination_stop_area_id: String,
+        ticket_id: String,
+    ) -> Self {
+        ODRule {
+            id,
+            origin_stop_area_id: format!("stop_area:{}", origin_stop_area_id),
+            destination_stop_area_id: format!("stop_area:{}", destination_stop_area_id),
+            ticket_id,
+            line_id: None,
+            network_id: None,
+            physical_mode_id: Some("bus".to_string()),
+        }
+    }
+}
 
 fn get_value_for_key(key_list_container: &Element, key: &str, name_space: &str) -> Result<f64> {
     let key_list = key_list_container
@@ -129,10 +161,6 @@ fn load_syntus_file<R: Read>(
             .or_insert_with(|| vec![])
             .push(fare_frame);
     }
-    for (ft, frames) in &frame_by_type {
-        dbg!(&ft);
-        dbg!(frames.len());
-    }
     let stop_point_ref_to_gtfs_stop_codes: HashMap<String, Vec<String>> = service_frame
         .get_child("scheduledStopPoints", &ns)
         .unwrap()
@@ -156,7 +184,6 @@ fn load_syntus_file<R: Read>(
             )
         })
         .collect();
-    dbg!(&stop_point_ref_to_gtfs_stop_codes);
     if frame_by_type.get("UnitPrice").is_none() && frame_by_type.get("DistanceMatrix").is_some() {
         bail!("no UnitPrice FareFrame found for the DistanceMatrix FareFrame")
     }
@@ -203,18 +230,12 @@ fn load_syntus_file<R: Read>(
                 get_matrix_elts(distance_matrix_frame, &ns, "Distance")?
             {
                 let distance = distance_elt.text().parse::<f64>().unwrap();
-                dbg!(&distance);
-                dbg!(&start_stop_point);
-                dbg!(&end_stop_point);
                 let mut price =
                     ((boarding_fee + base_price * distance) / rounding).round() * rounding;
                 if let Ok(capping) = capping {
                     price = price.min(capping);
                 }
                 let ticket = Ticket::new(id.clone(), start_date, end_date, price);
-                dbg!(&ticket);
-                dbg!(stop_point_ref_to_gtfs_stop_codes.get(start_stop_point));
-                dbg!(stop_point_ref_to_gtfs_stop_codes.get(end_stop_point));
                 let od_rule = skip_fail!(get_od_rule(
                     &stop_point_ref_to_gtfs_stop_codes,
                     id,
@@ -222,7 +243,6 @@ fn load_syntus_file<R: Read>(
                     end_stop_point,
                     &stop_code_to_stop_area
                 ));
-                dbg!(&od_rule);
                 try_add_od_rule_and_ticket(od_rules, tickets, od_rule, ticket);
             }
         }
@@ -245,9 +265,6 @@ fn load_syntus_file<R: Read>(
                         .text()
                         .parse::<f64>()?;
             let ticket = Ticket::new(id.clone(), start_date, end_date, price);
-            dbg!(&ticket);
-            dbg!(stop_point_ref_to_gtfs_stop_codes.get(start_stop_point));
-            dbg!(stop_point_ref_to_gtfs_stop_codes.get(end_stop_point));
             let od_rule = skip_fail!(get_od_rule(
                 &stop_point_ref_to_gtfs_stop_codes,
                 id,
@@ -255,7 +272,6 @@ fn load_syntus_file<R: Read>(
                 end_stop_point,
                 &stop_code_to_stop_area
             ));
-            dbg!(&od_rule);
             try_add_od_rule_and_ticket(od_rules, tickets, od_rule, ticket);
         }
     }
@@ -346,8 +362,6 @@ fn get_od_rule(
                 .iter()
                 .filter_map(|code| stop_code_to_stop_area.get(code))
                 .collect::<HashSet<_>>();
-            dbg!(&origin_stop_area_ids);
-            dbg!(&destination_stop_area_ids);
             match (origin_stop_area_ids.len(), destination_stop_area_ids.len()) {
                 (1, 1) => Ok(ODRule::new(format!("OD:{}", ticket_id.clone()), origin_stop_area_ids
                     .iter()
@@ -395,11 +409,7 @@ fn get_od_rule(
 pub fn read<P: AsRef<path::Path>>(
     path: P,
     stop_points: &CollectionWithId<StopPoint>,
-) -> Result<(
-    CollectionWithId<Ticket>,
-    CollectionWithId<ODRule>,
-    CollectionWithId<Fare>,
-)> {
+) -> Result<(Collection<Ticket>, CollectionWithId<ODRule>)> {
     let files: Vec<String> = fs::read_dir(&path)
         .unwrap()
         .map(|f| f.unwrap().file_name().into_string().unwrap())
@@ -418,7 +428,6 @@ pub fn read<P: AsRef<path::Path>>(
         .collect();
     let mut tickets = vec![];
     let mut od_rules = BTreeMap::new();
-    let fares = vec![];
     for filename in files {
         let file = fs::File::open(path.as_ref().join(filename))?;
         let mut zip = skip_fail!(zip::ZipArchive::new(file));
@@ -436,9 +445,5 @@ pub fn read<P: AsRef<path::Path>>(
         }
     }
     let od_rules = od_rules.into_iter().map(|(_, od_rule)| od_rule).collect();
-    Ok((
-        CollectionWithId::new(tickets)?,
-        CollectionWithId::new(od_rules)?,
-        CollectionWithId::new(fares)?,
-    ))
+    Ok((Collection::new(tickets), CollectionWithId::new(od_rules)?))
 }

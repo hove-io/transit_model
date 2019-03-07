@@ -17,14 +17,16 @@
 use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
 use crate::collection::{Collection, CollectionWithId, Id, Idx};
 use crate::model::Collections;
+use crate::ntfs::{Fare, ODFare, Price};
 use crate::objects::*;
 use crate::NTFS_VERSION;
 use chrono::NaiveDateTime;
 use csv;
+use failure::bail;
 use failure::ResultExt;
 use log::info;
 use serde;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path;
 
 pub fn write_feed_infos(
@@ -115,32 +117,74 @@ pub fn write_vehicle_journeys_and_stop_times(
     Ok(())
 }
 
-pub fn write_fares_collection_with_id<T>(
-    path: &path::Path,
-    file: &str,
-    collection: &CollectionWithId<T>,
-    write_headers: bool,
-    headers: Option<Vec<&str>>,
-) -> Result<()>
-where
-    T: Id<T>,
-    T: serde::Serialize,
-{
-    info!("Writing {}", file);
-    let path = path.join(file);
+pub fn write_fares(
+    base_path: &path::Path,
+    tickets: &Collection<Ticket>,
+    od_rules: &CollectionWithId<ODRule>,
+) -> Result<()> {
+    if tickets.is_empty() {
+        return Ok(());
+    }
     let mut builder = csv::WriterBuilder::new();
-    builder.has_headers(write_headers);
     builder.delimiter(b';');
-    let mut wtr = builder
+    let file = "prices.csv";
+    info!("Writing {}", file);
+    let path = base_path.join(file);
+    builder.has_headers(false);
+    let mut prices_wtr = builder
         .from_path(&path)
         .with_context(ctx_from_path!(path))?;
-    if write_headers && collection.is_empty() && headers.is_some() {
-        wtr.write_record(&headers.unwrap())?;
+    for (_, ticket) in tickets.into_iter() {
+        prices_wtr
+            .serialize(Price::from(ticket.clone()))
+            .with_context(ctx_from_path!(path))?;
     }
-    for obj in collection.values() {
-        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
+    prices_wtr.flush().with_context(ctx_from_path!(path))?;
+    let file = "od_fares.csv";
+    info!("Writing {}", file);
+    let path = base_path.join(file);
+    builder.has_headers(true);
+    let mut od_fares_wtr = builder
+        .from_path(&path)
+        .with_context(ctx_from_path!(path))?;
+    for (_, od_rule) in od_rules.into_iter() {
+        od_fares_wtr
+            .serialize(ODFare::from(od_rule.clone()))
+            .with_context(ctx_from_path!(path))?;
     }
-    wtr.flush().with_context(ctx_from_path!(path))?;
+    od_fares_wtr.flush().with_context(ctx_from_path!(path))?;
+    let file = "fares.csv";
+    info!("Writing {}", file);
+    let path = base_path.join(file);
+    let mut fares_wtr = builder
+        .from_path(&path)
+        .with_context(ctx_from_path!(path))?;
+    let physical_modes: HashSet<Option<String>> = od_rules
+        .values()
+        .map(|od_rule| od_rule.physical_mode_id.clone())
+        .collect();
+    if physical_modes.len() != 1 {
+        bail!(
+            "unable to write to {:?}, {} physical modes found, expected one",
+            file,
+            physical_modes.len()
+        );
+    }
+    let physical_mode = physical_modes.iter().last().unwrap();
+    if physical_mode.is_none() {
+        bail!("unable to write to {:?}, no physical modes found", file);
+    }
+    fares_wtr
+        .serialize(Fare {
+            before_change: "*".to_string(),
+            after_change: format!("mode=physical_mode:{}", physical_mode.clone().unwrap()),
+            start_trip: "".to_string(),
+            end_trip: "".to_string(),
+            global_condition: "with_changes".to_string(),
+            ticket_id: "".to_string(),
+        })
+        .with_context(ctx_from_path!(path))?;
+    fares_wtr.flush().with_context(ctx_from_path!(path))?;
 
     Ok(())
 }

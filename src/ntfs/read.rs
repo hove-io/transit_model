@@ -105,6 +105,12 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
     Ok(())
 }
 
+pub fn manage_fares(collections: &mut Collections, path: &path::Path) -> Result<()> {
+    info!("Reading fares");
+
+    Ok(())
+}
+
 pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Result<()> {
     info!("Reading stop_times.txt");
     let path = path.join("stop_times.txt");

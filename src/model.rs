@@ -53,9 +53,10 @@ pub struct Collections {
     pub transfers: Collection<Transfer>,
     pub trip_properties: CollectionWithId<TripProperty>,
     pub geometries: CollectionWithId<Geometry>,
-    pub tickets: CollectionWithId<Ticket>,
+    #[serde(skip)]
+    pub tickets: Collection<Ticket>,
+    #[serde(skip)]
     pub od_rules: CollectionWithId<ODRule>,
-    pub fares: CollectionWithId<Fare>,
     pub admin_stations: Collection<AdminStation>,
     #[serde(skip)]
     pub stop_time_headsigns: HashMap<(Idx<VehicleJourney>, u32), String>,
@@ -89,16 +90,14 @@ impl Collections {
             geometries,
             tickets,
             od_rules,
-            fares,
             admin_stations,
             stop_time_headsigns,
             stop_time_ids,
             stop_time_comments,
             ..
         } = c;
-        self.tickets.try_merge(tickets)?;
+        self.tickets.merge(tickets);
         self.od_rules.try_merge(od_rules)?;
-        self.fares.try_merge(fares)?;
         self.contributors.try_merge(contributors)?;
         self.datasets.try_merge(datasets)?;
         self.networks.try_merge(networks)?;

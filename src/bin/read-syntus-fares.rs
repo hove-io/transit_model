@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use chrono::NaiveDateTime;
 use log::info;
 use navitia_model::syntus_fares;
 use navitia_model::Result;
@@ -37,19 +38,27 @@ struct Opt {
     /// output directory
     #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
+
+    /// current datetime
+    #[structopt(
+        short = "x",
+        long,
+        parse(try_from_str),
+        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+    )]
+    current_datetime: NaiveDateTime,
 }
 
 fn run() -> Result<()> {
     info!("Launching read_syntus_fares.");
     let opt = Opt::from_args();
     let model = navitia_model::ntfs::read(opt.input)?;
-    let (tickets, od_rules, fares) = syntus_fares::read(opt.fares, &model.stop_points)?;
+    let (tickets, od_rules) = syntus_fares::read(opt.fares, &model.stop_points)?;
     let mut collections = model.into_collections();
     collections.tickets = tickets;
     collections.od_rules = od_rules;
-    collections.fares = fares;
     let model = navitia_model::Model::new(collections)?;
-    navitia_model::ntfs::write(&model, opt.output)?;
+    navitia_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
 
     Ok(())
 }

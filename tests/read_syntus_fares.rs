@@ -25,7 +25,7 @@ fn test_read_global() {
         let objects =
             navitia_model::ntfs::read(Path::new("./fixtures/read-syntus-fares/input/ntfs"))
                 .unwrap();
-        let (tickets, od_rules, fares) = syntus_fares::read(
+        let (tickets, od_rules) = syntus_fares::read(
             Path::new("./fixtures/read-syntus-fares/input/syntus_fares_ok"),
             &objects.stop_points,
         )
@@ -33,7 +33,6 @@ fn test_read_global() {
         let mut collections = objects.into_collections();
         collections.tickets = tickets;
         collections.od_rules = od_rules;
-        collections.fares = fares;
         let new_model = Model::new(collections).unwrap();
         navitia_model::ntfs::write(&new_model, path).unwrap();
         compare_output_dir_with_expected(

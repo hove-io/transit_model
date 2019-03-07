@@ -1231,101 +1231,30 @@ pub struct AdminStation {
     pub stop_id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Clone)]
 pub struct Ticket {
     pub id: String,
-    #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
-    )]
     pub start_date: NaiveDate,
-    #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
-    )]
     pub end_date: NaiveDate,
     pub price: u32,
-    pub name: String,
-    pub ignored: String,
-    pub comment: String,
     pub currency_type: String,
+    pub validity_duration: Option<u32>,
+    pub transfers: Option<u16>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Clone)]
 pub struct ODRule {
-    #[serde(skip)]
     pub id: String,
-    #[serde(rename = "Origin ID")]
     pub origin_stop_area_id: String,
-    #[serde(rename = "Origin name")]
-    pub origin_name: String,
-    #[serde(rename = "Origin mode")]
-    pub origin_mode: String,
-    #[serde(rename = "Destination ID")]
     pub destination_stop_area_id: String,
-    #[serde(rename = "Destination name")]
-    pub destination_name: String,
-    #[serde(rename = "Destination mode")]
-    pub destination_mode: String,
     pub ticket_id: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Fare {
-    #[serde(skip)]
-    pub id: String,
-    #[serde(rename = "avant changement")]
-    pub before_change: String,
-    #[serde(rename = "après changement")]
-    pub after_change: String,
-    #[serde(rename = "début trajet")]
-    pub start_trip: String,
-    #[serde(rename = "fin trajet")]
-    pub end_trip: String,
-    #[serde(rename = "condition globale")]
-    pub global_condition: String,
-    #[serde(rename = "clef ticket")]
-    pub ticket_id: String,
+    pub line_id: Option<String>,
+    pub network_id: Option<String>,
+    pub physical_mode_id: Option<String>,
 }
 
 impl_id!(Ticket);
 impl_id!(ODRule);
-impl_id!(Fare);
-
-impl Ticket {
-    pub fn new(id: String, start_date: NaiveDate, end_date: NaiveDate, price: f64) -> Self {
-        Ticket {
-            id,
-            start_date,
-            end_date,
-            price: (price * 100.).round() as u32,
-            name: "Ticket Origine-Destination".to_string(),
-            ignored: "".to_string(),
-            comment: "".to_string(),
-            currency_type: "centime".to_string(),
-        }
-    }
-}
-
-impl ODRule {
-    pub fn new(
-        id: String,
-        origin_stop_area_id: String,
-        destination_stop_area_id: String,
-        ticket_id: String,
-    ) -> Self {
-        ODRule {
-            id,
-            origin_stop_area_id: format!("stop_area:{}", origin_stop_area_id),
-            origin_name: "".to_string(),
-            origin_mode: "stop".to_string(),
-            destination_stop_area_id: format!("stop_area:{}", destination_stop_area_id),
-            destination_name: "".to_string(),
-            destination_mode: "stop".to_string(),
-            ticket_id,
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {

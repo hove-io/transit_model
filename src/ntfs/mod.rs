@@ -27,6 +27,7 @@ use crate::objects::*;
 use crate::read_utils;
 use crate::utils::*;
 use crate::Result;
+use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use log::info;
 use serde_derive::{Deserialize, Serialize};
@@ -78,6 +79,91 @@ struct Stop {
     timezone: Option<String>,
     geometry_id: Option<String>,
     equipment_id: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Price {
+    pub id: String,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub start_date: NaiveDate,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub end_date: NaiveDate,
+    pub price: u32,
+    pub name: String,
+    pub ignored: String,
+    pub comment: String,
+    pub currency_type: String,
+}
+
+impl From<Ticket> for Price {
+    fn from(ticket: Ticket) -> Self {
+        Price {
+            id: ticket.id,
+            start_date: ticket.start_date,
+            end_date: ticket.end_date,
+            price: ticket.price,
+            name: "Ticket Origine-Destination".to_string(),
+            ignored: "".to_string(),
+            comment: "".to_string(),
+            currency_type: ticket.currency_type,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ODFare {
+    #[serde(skip)]
+    pub id: String,
+    #[serde(rename = "Origin ID")]
+    pub origin_stop_area_id: String,
+    #[serde(rename = "Origin name")]
+    pub origin_name: Option<String>,
+    #[serde(rename = "Origin mode")]
+    pub origin_mode: String,
+    #[serde(rename = "Destination ID")]
+    pub destination_stop_area_id: String,
+    #[serde(rename = "Destination name")]
+    pub destination_name: Option<String>,
+    #[serde(rename = "Destination mode")]
+    pub destination_mode: String,
+    pub ticket_id: String,
+}
+
+impl From<ODRule> for ODFare {
+    fn from(od_rule: ODRule) -> Self {
+        ODFare {
+            id: od_rule.id,
+            origin_stop_area_id: od_rule.origin_stop_area_id,
+            origin_name: None,
+            origin_mode: "stop".to_string(),
+            destination_stop_area_id: od_rule.destination_stop_area_id,
+            destination_name: None,
+            destination_mode: "stop".to_string(),
+            ticket_id: od_rule.ticket_id,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Fare {
+    #[serde(rename = "avant changement")]
+    pub before_change: String,
+    #[serde(rename = "après changement")]
+    pub after_change: String,
+    #[serde(rename = "début trajet")]
+    pub start_trip: String,
+    #[serde(rename = "fin trajet")]
+    pub end_trip: String,
+    #[serde(rename = "condition globale")]
+    pub global_condition: String,
+    #[serde(rename = "clef ticket")]
+    pub ticket_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -137,6 +223,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     read::manage_codes(&mut collections, path)?;
     read::manage_comments(&mut collections, path)?;
     read::manage_object_properties(&mut collections, path)?;
+    read::manage_fares(&mut collections, path)?;
     info!("Indexing");
     let res = Model::new(collections)?;
     info!("Loading NTFS done");
@@ -166,21 +253,6 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_collection_with_id(path, "routes.txt", &model.routes)?;
     write::write_collection_with_id(path, "trip_properties.txt", &model.trip_properties)?;
     write::write_collection_with_id(path, "geometries.txt", &model.geometries)?;
-    write::write_fares_collection_with_id(path, "prices.csv", &model.tickets, false, None)?;
-    write::write_fares_collection_with_id(path, "od_fares.csv", &model.od_rules, true, None)?;
-    write::write_fares_collection_with_id(
-        path,
-        "fares.csv",
-        &model.fares,
-        true,
-        Some(vec![
-            "avant changement",
-            "après changement",
-            "début trajet",
-            "condition globale",
-            "clef ticket",
-        ]),
-    )?;
     write::write_collection(path, "transfers.txt", &model.transfers)?;
     write::write_collection(path, "admin_stations.txt", &model.admin_stations)?;
     write::write_vehicle_journeys_and_stop_times(
@@ -195,6 +267,7 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
+    write::write_fares(path, &model.tickets, &model.od_rules)?;
 
     Ok(())
 }
