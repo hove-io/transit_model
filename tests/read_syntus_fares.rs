@@ -14,7 +14,6 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use chrono::NaiveDate;
 use navitia_model::model::Model;
 use navitia_model::syntus_fares;
 use navitia_model::test_utils::*;

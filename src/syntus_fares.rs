@@ -196,31 +196,10 @@ fn load_syntus_file<R: Read>(
                 .text()
                 .parse::<f64>()?;
         for distance_matrix_frame in frame_by_type.get("DistanceMatrix").unwrap_or(&vec![]) {
-            for distance_matrix_elt in get_list_element_from_inner_list(
-                distance_matrix_frame,
-                "fareStructures",
-                "FareStructure",
-                &ns,
-            )?
-            .get_child("distanceMatrixElements", &ns)
-            .unwrap()
-            .children()
+            for (id, distance_elt, start_stop_point, end_stop_point) in
+                get_matrix_elts(distance_matrix_frame, &ns, "Distance")?
             {
-                let distance = distance_matrix_elt
-                    .get_child("Distance", &ns)
-                    .unwrap()
-                    .text()
-                    .parse::<f64>()?;
-                let start_stop_point = distance_matrix_elt
-                    .get_child("StartStopPointRef", &ns)
-                    .unwrap()
-                    .attr("ref")
-                    .unwrap();
-                let end_stop_point = distance_matrix_elt
-                    .get_child("EndStopPointRef", &ns)
-                    .unwrap()
-                    .attr("ref")
-                    .unwrap();
+                let distance = distance_elt.text().parse::<f64>().unwrap();
                 dbg!(&distance);
                 dbg!(&start_stop_point);
                 dbg!(&end_stop_point);
@@ -229,7 +208,6 @@ fn load_syntus_file<R: Read>(
                 if let Ok(capping) = capping {
                     price = price.min(capping);
                 }
-                let id = distance_matrix_elt.attr("id").unwrap().to_string();
                 let ticket = Ticket::new(id.clone(), start_date, end_date, price);
                 dbg!(&ticket);
                 dbg!(stop_point_ref_to_gtfs_stop_codes.get(start_stop_point));
@@ -247,7 +225,76 @@ fn load_syntus_file<R: Read>(
             }
         }
     }
+    for direct_matrix_frame in frame_by_type.get("DirectPriceMatrix").unwrap_or(&vec![]) {
+        let boarding_fee = get_value_for_key(direct_matrix_frame, "EntranceRateWrtCurrency", &ns)?;
+        for (id, prices, start_stop_point, end_stop_point) in
+            get_matrix_elts(direct_matrix_frame, &ns, "prices")?
+        {
+            let matrix_elt_price = prices.get_child("DistanceMatrixElementPrice", &ns).unwrap();
+            let price = boarding_fee
+                + matrix_elt_price
+                    .get_child("Amount", &ns)
+                    .unwrap()
+                    .text()
+                    .parse::<f64>()?
+                    * matrix_elt_price
+                        .get_child("Units", &ns)
+                        .unwrap()
+                        .text()
+                        .parse::<f64>()?;
+            let ticket = Ticket::new(id.clone(), start_date, end_date, price);
+            dbg!(&ticket);
+            dbg!(stop_point_ref_to_gtfs_stop_codes.get(start_stop_point));
+            dbg!(stop_point_ref_to_gtfs_stop_codes.get(end_stop_point));
+            let od_rule = skip_fail!(get_od_rule(
+                &stop_point_ref_to_gtfs_stop_codes,
+                id,
+                start_stop_point,
+                end_stop_point,
+                &stop_code_to_stop_area
+            ));
+            dbg!(&od_rule);
+            od_rules.push(od_rule);
+            tickets.push(ticket);
+        }
+    }
     Ok(())
+}
+
+fn get_matrix_elts<'a>(
+    distance_matrix_frame: &'a Element,
+    name_space: &str,
+    tag_for_price_ref: &str,
+) -> Result<Vec<(String, &'a Element, &'a str, &'a str)>> {
+    let matrix_elts = get_list_element_from_inner_list(
+        distance_matrix_frame,
+        "fareStructures",
+        "FareStructure",
+        name_space,
+    )?
+    .get_child("distanceMatrixElements", name_space)
+    .unwrap()
+    .children()
+    .map(|distance_matrix_elt| {
+        (
+            distance_matrix_elt.attr("id").unwrap().to_string(),
+            distance_matrix_elt
+                .get_child(tag_for_price_ref, name_space)
+                .unwrap(),
+            distance_matrix_elt
+                .get_child("StartStopPointRef", name_space)
+                .unwrap()
+                .attr("ref")
+                .unwrap(),
+            distance_matrix_elt
+                .get_child("EndStopPointRef", name_space)
+                .unwrap()
+                .attr("ref")
+                .unwrap(),
+        )
+    })
+    .collect();
+    Ok(matrix_elts)
 }
 
 fn get_od_rule(

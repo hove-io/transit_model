@@ -7,3 +7,9 @@ stop_point,sp:6,gtfs_stop_code,sc:9
 stop_point,sp:7,gtfs_stop_code,sc:10
 stop_point,sp:8,gtfs_stop_code,sc:11
 stop_point,sp:9,gtfs_stop_code,sc:12
+stop_point,sp:10,gtfs_stop_code,sc:13
+stop_point,sp:11,gtfs_stop_code,sc:14
+stop_point,sp:12,gtfs_stop_code,sc:15
+stop_point,sp:13,gtfs_stop_code,sc:16
+stop_point,sp:14,gtfs_stop_code,sc:17
+stop_point,sp:15,gtfs_stop_code,sc:18

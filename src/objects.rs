@@ -1316,10 +1316,10 @@ impl ODRule {
     ) -> Self {
         ODRule {
             id,
-            origin_stop_area_id,
+            origin_stop_area_id: format!("stop_area:{}", origin_stop_area_id),
             origin_name: "".to_string(),
             origin_mode: "stop".to_string(),
-            destination_stop_area_id,
+            destination_stop_area_id: format!("stop_area:{}", destination_stop_area_id),
             destination_name: "".to_string(),
             destination_mode: "stop".to_string(),
             ticket_id,
