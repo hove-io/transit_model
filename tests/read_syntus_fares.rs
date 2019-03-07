@@ -26,7 +26,7 @@ fn test_read_global() {
             navitia_model::ntfs::read(Path::new("./fixtures/read-syntus-fares/input/ntfs"))
                 .unwrap();
         let (tickets, od_rules, fares) = syntus_fares::read(
-            Path::new("./fixtures/read-syntus-fares/input/syntus_fares"),
+            Path::new("./fixtures/read-syntus-fares/input/syntus_fares_ok"),
             &objects.stop_points,
         )
         .unwrap();
@@ -42,4 +42,30 @@ fn test_read_global() {
             "./fixtures/read-syntus-fares/output/",
         );
     });
+}
+
+#[test]
+#[should_panic(expected = "no UnitPrice FareFrame found for the DistanceMatrix FareFrame")]
+fn test_read_ko_no_unit_price() {
+    let objects =
+        navitia_model::ntfs::read(Path::new("./fixtures/read-syntus-fares/input/ntfs")).unwrap();
+    syntus_fares::read(
+        Path::new("./fixtures/read-syntus-fares/input/syntus_fares_ko_no_unit"),
+        &objects.stop_points,
+    )
+    .unwrap();
+}
+
+#[test]
+#[should_panic(
+    expected = "unable to pick a reference UnitPrice FareFrame for the DistanceMatrix FareFrame"
+)]
+fn test_read_ko_several_unit_prices() {
+    let objects =
+        navitia_model::ntfs::read(Path::new("./fixtures/read-syntus-fares/input/ntfs")).unwrap();
+    syntus_fares::read(
+        Path::new("./fixtures/read-syntus-fares/input/syntus_fares_ko_several_unit"),
+        &objects.stop_points,
+    )
+    .unwrap();
 }

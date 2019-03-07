@@ -1,11 +1,10 @@
 Origin ID;Origin name;Origin mode;Destination ID;Destination name;Destination mode;ticket_id
 stop_area:sa:1;;stop;stop_area:sa:1;;stop;mat:1
-stop_area:sa:1;;stop;stop_area:sa:6;;stop;mat:2
-stop_area:sa:1;;stop;stop_area:sa:1;;stop;mat:3
-stop_area:sa:6;;stop;stop_area:sa:1;;stop;mat:4
 stop_area:sa:1;;stop;stop_area:sa:2;;stop;mat:5
-stop_area:sa:6;;stop;stop_area:sa:2;;stop;mat:6
+stop_area:sa:1;;stop;stop_area:sa:6;;stop;mat:2
 stop_area:sa:2;;stop;stop_area:sa:2;;stop;mat:7
 stop_area:sa:4;;stop;stop_area:sa:5;;stop;mat:15
+stop_area:sa:6;;stop;stop_area:sa:1;;stop;mat:4
+stop_area:sa:6;;stop;stop_area:sa:2;;stop;mat:6
 stop_area:sa:6;;stop;stop_area:sa:3;;stop;mat:21
 stop_area:sa:6;;stop;stop_area:sa:4;;stop;mat:22

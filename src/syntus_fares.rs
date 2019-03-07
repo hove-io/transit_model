@@ -24,7 +24,7 @@ use failure::bail;
 use failure::format_err;
 use log::{info, warn};
 use minidom::Element;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::io::Read;
 use std::path;
@@ -75,7 +75,7 @@ fn load_syntus_file<R: Read>(
     mut file: R,
     stop_code_to_stop_area: &HashMap<String, String>,
     tickets: &mut Vec<Ticket>,
-    od_rules: &mut Vec<ODRule>,
+    od_rules: &mut BTreeMap<(String, String), ODRule>,
 ) -> Result<()> {
     let mut file_content = "".to_string();
     file.read_to_string(&mut file_content)?;
@@ -157,6 +157,9 @@ fn load_syntus_file<R: Read>(
         })
         .collect();
     dbg!(&stop_point_ref_to_gtfs_stop_codes);
+    if frame_by_type.get("UnitPrice").is_none() && frame_by_type.get("DistanceMatrix").is_some() {
+        bail!("no UnitPrice FareFrame found for the DistanceMatrix FareFrame")
+    }
     if let Some(unit_price_frames) = frame_by_type.get("UnitPrice") {
         if unit_price_frames.len() > 1 {
             bail!("unable to pick a reference UnitPrice FareFrame for the DistanceMatrix FareFrame")
@@ -220,8 +223,7 @@ fn load_syntus_file<R: Read>(
                     &stop_code_to_stop_area
                 ));
                 dbg!(&od_rule);
-                od_rules.push(od_rule);
-                tickets.push(ticket);
+                try_add_od_rule_and_ticket(od_rules, tickets, od_rule, ticket);
             }
         }
     }
@@ -254,11 +256,38 @@ fn load_syntus_file<R: Read>(
                 &stop_code_to_stop_area
             ));
             dbg!(&od_rule);
-            od_rules.push(od_rule);
-            tickets.push(ticket);
+            try_add_od_rule_and_ticket(od_rules, tickets, od_rule, ticket);
         }
     }
     Ok(())
+}
+
+fn try_add_od_rule_and_ticket(
+    od_rules: &mut BTreeMap<(String, String), ODRule>,
+    tickets: &mut Vec<Ticket>,
+    od_rule: ODRule,
+    ticket: Ticket,
+) {
+    match od_rules.get(&(
+        od_rule.origin_stop_area_id.clone(),
+        od_rule.destination_stop_area_id.clone(),
+    )) {
+        Some(existing_rule) => warn!(
+            "od_rule for {:?} / {:?} already exists, skipping the following one",
+            existing_rule.origin_stop_area_id.clone(),
+            existing_rule.destination_stop_area_id.clone()
+        ),
+        None => {
+            od_rules.insert(
+                (
+                    od_rule.origin_stop_area_id.clone(),
+                    od_rule.destination_stop_area_id.clone(),
+                ),
+                od_rule,
+            );
+            tickets.push(ticket);
+        }
+    }
 }
 
 fn get_matrix_elts<'a>(
@@ -388,7 +417,7 @@ pub fn read<P: AsRef<path::Path>>(
         })
         .collect();
     let mut tickets = vec![];
-    let mut od_rules = vec![];
+    let mut od_rules = BTreeMap::new();
     let fares = vec![];
     for filename in files {
         let file = fs::File::open(path.as_ref().join(filename))?;
@@ -401,11 +430,12 @@ pub fn read<P: AsRef<path::Path>>(
                     load_syntus_file(file, &stop_code_to_stop_area, &mut tickets, &mut od_rules)?;
                 }
                 _ => {
-                    info!("skipping file in ZIP : {:?}", file.sanitized_name());
+                    info!("skipping file in zip: {:?}", file.sanitized_name());
                 }
             }
         }
     }
+    let od_rules = od_rules.into_iter().map(|(_, od_rule)| od_rule).collect();
     Ok((
         CollectionWithId::new(tickets)?,
         CollectionWithId::new(od_rules)?,
