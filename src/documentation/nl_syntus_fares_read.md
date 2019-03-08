@@ -45,6 +45,7 @@ id | *FareFrame* | *DistanceMatrixElement{id}* | The id is prefixed with `OD:`.
 ticket_id | | | Id of the `Ticket` to which this `OD Rule` is applied.
 origin_stoparea_id | *FareFrame* | *DistanceMatrixElement/StartStopPointRef{ref}* | See the mapping rule below.
 dest_stoparea_id | *FareFrame* | *DistanceMatrixElement/EndStopPointRef{ref}* | See the mapping rule below.
+physical_mode_id | | | Fixed value `Bus`. This field will be necessary for modeling transitions when writing the NTFS fares.
 
 **Setting the origin_stoparea_id and the dest_stoparea_id of an OD Rule**
 
