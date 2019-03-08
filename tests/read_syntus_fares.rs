@@ -34,7 +34,7 @@ fn test_read_global() {
         collections.tickets = tickets;
         collections.od_rules = od_rules;
         let new_model = Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&new_model, path).unwrap();
+        navitia_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["fares.csv", "od_fares.csv", "prices.csv"]),

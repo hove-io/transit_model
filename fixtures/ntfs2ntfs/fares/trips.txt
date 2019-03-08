@@ -1,0 +1,2 @@
+route_id,service_id,trip_id,company_id,physical_mode_id,dataset_id
+B42F,Week,B42F1,TGC,Bus,TGDS

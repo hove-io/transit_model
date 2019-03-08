@@ -118,8 +118,6 @@ impl From<Ticket> for Price {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ODFare {
-    #[serde(skip)]
-    pub id: String,
     #[serde(rename = "Origin ID")]
     pub origin_stop_area_id: String,
     #[serde(rename = "Origin name")]
@@ -138,11 +136,10 @@ struct ODFare {
 impl From<ODRule> for ODFare {
     fn from(od_rule: ODRule) -> Self {
         ODFare {
-            id: od_rule.id,
-            origin_stop_area_id: od_rule.origin_stop_area_id,
+            origin_stop_area_id: format!("stop_area:{}", od_rule.origin_stop_area_id),
             origin_name: None,
             origin_mode: "stop".to_string(),
-            destination_stop_area_id: od_rule.destination_stop_area_id,
+            destination_stop_area_id: format!("stop_area:{}", od_rule.destination_stop_area_id),
             destination_name: None,
             destination_mode: "stop".to_string(),
             ticket_id: od_rule.ticket_id,

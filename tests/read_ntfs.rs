@@ -104,7 +104,20 @@ fn ntfs_stops_output() {
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec!["stops.txt", "stop_times.txt"]),
-            "fixtures/ntfs2ntfs",
+            "fixtures/ntfs2ntfs/stops",
+        );
+    });
+}
+
+#[test]
+fn test_minimal_fares_stay_same() {
+    let ntm = navitia_model::ntfs::read("fixtures/ntfs2ntfs/fares").unwrap();
+    test_in_tmp_dir(|output_dir| {
+        navitia_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &output_dir,
+            Some(vec!["stops.txt", "fares.csv", "od_fares.csv", "prices.csv"]),
+            "fixtures/ntfs2ntfs/fares",
         );
     });
 }

@@ -14,10 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
+use super::{
+    Code, CommentLink, Fare, ODFare, ODRule, ObjectProperty, Price, Result, Stop, StopTime,
+};
 use crate::collection::{Collection, CollectionWithId, Id, Idx};
 use crate::model::Collections;
-use crate::ntfs::{Fare, ODFare, Price};
 use crate::objects::*;
 use crate::NTFS_VERSION;
 use chrono::NaiveDateTime;
@@ -120,7 +121,7 @@ pub fn write_vehicle_journeys_and_stop_times(
 pub fn write_fares(
     base_path: &path::Path,
     tickets: &Collection<Ticket>,
-    od_rules: &CollectionWithId<ODRule>,
+    od_rules: &Collection<ODRule>,
 ) -> Result<()> {
     if tickets.is_empty() {
         return Ok(());

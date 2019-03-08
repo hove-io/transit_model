@@ -53,12 +53,12 @@ impl ODRule {
     ) -> Self {
         ODRule {
             id,
-            origin_stop_area_id: format!("stop_area:{}", origin_stop_area_id),
-            destination_stop_area_id: format!("stop_area:{}", destination_stop_area_id),
+            origin_stop_area_id,
+            destination_stop_area_id,
             ticket_id,
             line_id: None,
             network_id: None,
-            physical_mode_id: Some("bus".to_string()),
+            physical_mode_id: Some("Bus".to_string()),
         }
     }
 }
@@ -409,7 +409,7 @@ fn get_od_rule(
 pub fn read<P: AsRef<path::Path>>(
     path: P,
     stop_points: &CollectionWithId<StopPoint>,
-) -> Result<(Collection<Ticket>, CollectionWithId<ODRule>)> {
+) -> Result<(Collection<Ticket>, Collection<ODRule>)> {
     let files: Vec<String> = fs::read_dir(&path)
         .unwrap()
         .map(|f| f.unwrap().file_name().into_string().unwrap())
@@ -445,5 +445,5 @@ pub fn read<P: AsRef<path::Path>>(
         }
     }
     let od_rules = od_rules.into_iter().map(|(_, od_rule)| od_rule).collect();
-    Ok((Collection::new(tickets), CollectionWithId::new(od_rules)?))
+    Ok((Collection::new(tickets), Collection::new(od_rules)))
 }

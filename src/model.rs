@@ -56,7 +56,7 @@ pub struct Collections {
     #[serde(skip)]
     pub tickets: Collection<Ticket>,
     #[serde(skip)]
-    pub od_rules: CollectionWithId<ODRule>,
+    pub od_rules: Collection<ODRule>,
     pub admin_stations: Collection<AdminStation>,
     #[serde(skip)]
     pub stop_time_headsigns: HashMap<(Idx<VehicleJourney>, u32), String>,
@@ -97,7 +97,7 @@ impl Collections {
             ..
         } = c;
         self.tickets.merge(tickets);
-        self.od_rules.try_merge(od_rules)?;
+        self.od_rules.merge(od_rules);
         self.contributors.try_merge(contributors)?;
         self.datasets.try_merge(datasets)?;
         self.networks.try_merge(networks)?;

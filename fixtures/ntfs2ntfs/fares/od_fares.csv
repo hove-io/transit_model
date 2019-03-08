@@ -1,0 +1,3 @@
+Origin ID;Origin name;Origin mode;Destination ID;Destination name;Destination mode;ticket_id
+stop_area:sa:1;;stop;stop_area:sa:1;;stop;mat:1
+stop_area:sa:1;;stop;stop_area:sa:2;;stop;mat:5
