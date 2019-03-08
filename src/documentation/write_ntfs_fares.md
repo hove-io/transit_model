@@ -4,7 +4,7 @@ This document describes how fares specified in Navitia Transit Model are transfo
 
 In this initial version: 
 - only tickets on origin-destination stops are taken into account
-- if a ticket is specified for a specific line or network, this information is ignored
+- only constraints on physical modes are taken into account (if a ticket is specified for a specific line or network, this information is ignored)
 - the validity duration and the transfers allowed for a ticket, if specified, are ignored
 - tickets specified in a currency different than EUR are ignored.
 
@@ -37,4 +37,13 @@ Destination mode | | | Fixed value `stop`.
 ticket_id | OD Rules | ticket_id | Link to the ticket specified in [prices](#pricescsv)
 
 ### fares.csv
-As the NTM fares model does not yet support special conditions for tickets, no content is written in this file (empty file with a header row).
+For each distinct physical mode specified in `OD Rules`, a row is created in this file in order to allow to represent transitions for the origin-destination tickets.
+
+NTFS field | NTM object | NTM property | Notes/Mapping rule
+--- | --- | --- | ---
+avant changement | | | Fixed value `*`.
+après changement | OD Rules | physical_mode_id | The id is prefixed with `mode=physical_mode:`.
+début trajet | | | This field is explicitly left empty.
+fin trajet | | | This field is explicitly left empty.
+condition globale | | | Fixed value `with_changes`.
+clef ticket | | | This field is explicitly left empty.
