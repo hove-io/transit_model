@@ -4,7 +4,7 @@ This document describes how [NTFS fares](https://github.com/CanalTP/navitia/blob
 
 In this initial version: 
 - only tickets on origin-destination stops are taken into account
-- the NTFS file *fares.csv* is ignored, as the NTM fares model does not yet support special conditions on tickets (e.g validity duration, number of transfers allowed, constraints on networks/lines) 
+- only transitions based on physical modes are taken into account, all other constraints are ignored (e.g validity duration, number of transfers allowed, constraints on networks/lines) 
 - tickets specified in a currency different than EUR are ignored
 - only tickets on origin-destination stops are taken into account.
 
@@ -28,5 +28,6 @@ NTM property | NTFS file | NTFS field | Note/mapping rule
 --- | --- | --- | ---
 id | prices.csv | \*clef de ticket\* | Id of the `OD Rule`. The id is prefixed with `OD:`.
 ticket_id | | | Id of the `Ticket` to which this `OD Rule` is applied.
-origin_stoparea_id | od_fares.csv | Origin ID | Id of the origin stop_area in Navitia when the value of Origin mode is set to `stop`. Otherwise, the rule and the corresponding ticket is ignored.
-dest_stoparea_id | od_fares.csv | Destination ID | Id of the destination stop_area in Navitia when the value of Destination mode is set to `stop`. Otherwise, the rule and the corresponding ticket is ignored.
+origin_stoparea_id | od_fares.csv | Origin ID | Id of the origin stop_area in Navitia when the value of "Origin mode" is set to `stop`. Otherwise, the rule and the corresponding ticket is ignored.
+dest_stoparea_id | od_fares.csv | Destination ID | Id of the destination stop_area in Navitia when the value of "Destination mode" is set to `stop`. Otherwise, the rule and the corresponding ticket is ignored.
+physical_mode_id | fares.csv | après changement | Id of the physical mode in Navitia associated to this `OD Rule` when the value of "condition globale" is set to `with_changes`. 
