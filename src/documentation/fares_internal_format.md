@@ -29,3 +29,4 @@ origin_stoparea_id | String | Yes | Id of the origin stop_area in Navitia.
 dest_stoparea_id | String | Yes | Id of the destination stop_area in Navitia.
 line_id | String | No | Id of the line in Navitia for which the `Ticket` is applicable.
 network_id | String | No | Id of the network in Navitia for which the `Ticket` is applicable.
+physical_mode_id | String | No | Id of the physical mode in Navitia applicable for this OD.
