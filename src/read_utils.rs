@@ -159,7 +159,7 @@ where
         let mut archive = zip::ZipArchive::new(r)?;
         Ok(ZipHandler {
             index_by_name: Self::files_by_name(&mut archive),
-            archive: archive,
+            archive,
             archive_path: path.as_ref().to_path_buf(),
         })
     }

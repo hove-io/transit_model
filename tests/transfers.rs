@@ -45,7 +45,7 @@ fn test_generates_transfers() {
             None,
         )
         .unwrap();
-        navitia_model::ntfs::write(&model, path).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt"]),
@@ -70,7 +70,7 @@ fn test_generates_transfers_with_modification_rules() {
             None,
         )
         .unwrap();
-        navitia_model::ntfs::write(&model, path).unwrap();
+        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt"]),

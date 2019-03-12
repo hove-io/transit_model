@@ -18,6 +18,8 @@ use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
 use crate::collection::{Collection, CollectionWithId, Id, Idx};
 use crate::model::Collections;
 use crate::objects::*;
+use crate::NTFS_VERSION;
+use chrono::NaiveDateTime;
 use csv;
 use failure::ResultExt;
 use log::info;
@@ -25,9 +27,37 @@ use serde;
 use std::collections::{BTreeMap, HashMap};
 use std::path;
 
-pub fn write_feed_infos(path: &path::Path, feed_infos: &BTreeMap<String, String>) -> Result<()> {
+pub fn write_feed_infos(
+    path: &path::Path,
+    feed_infos: &BTreeMap<String, String>,
+    datasets: &CollectionWithId<Dataset>,
+    current_datetime: NaiveDateTime,
+) -> Result<()> {
     info!("Writing feed_infos.txt");
     let path = path.join("feed_infos.txt");
+    let mut feed_infos = feed_infos.clone();
+    feed_infos.insert(
+        "feed_creation_date".to_string(),
+        current_datetime.format("%Y%m%d").to_string(),
+    );
+    feed_infos.insert(
+        "feed_creation_time".to_string(),
+        current_datetime.format("%T").to_string(),
+    );
+    feed_infos.insert("ntfs_version".to_string(), NTFS_VERSION.to_string());
+    if let Some(d) = datasets.values().min_by_key(|d| d.start_date) {
+        feed_infos.insert(
+            "feed_start_date".to_string(),
+            d.start_date.format("%Y%m%d").to_string(),
+        );
+    }
+    if let Some(d) = datasets.values().max_by_key(|d| d.end_date) {
+        feed_infos.insert(
+            "feed_end_date".to_string(),
+            d.end_date.format("%Y%m%d").to_string(),
+        );
+    }
+
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     wtr.write_record(&["feed_info_param", "feed_info_value"])
         .with_context(ctx_from_path!(path))?;
@@ -146,7 +176,7 @@ pub fn write_stops(
             lat: st.coord.lat,
             lon: st.coord.lon,
             fare_zone_id: st.fare_zone_id.clone(),
-            location_type: location_type,
+            location_type,
             parent_station: stop_areas.get(&st.stop_area_id).map(|sa| sa.id.clone()),
             timezone: st.timezone.clone(),
             equipment_id: st.equipment_id.clone(),

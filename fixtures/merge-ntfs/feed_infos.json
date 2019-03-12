@@ -1,0 +1,7 @@
+{	
+	"feed_publisher_name": "CoverageName",
+	"feed_license": "CoverageLicense",
+	"feed_license_url": "http://www.coverage-license.org",
+	"tartare_platform": "prod",
+	"tartare_coverage_id": "cn"		
+}

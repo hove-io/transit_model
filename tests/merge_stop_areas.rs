@@ -37,13 +37,14 @@ fn test_merge_stop_areas_multi_steps() {
         )
         .unwrap();
         let new_model = Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&new_model, path).unwrap();
+        navitia_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec![
                 "comment_links.txt",
                 "comments.txt",
                 "geometries.txt",
+                "feed_infos.txt",
                 "lines.txt",
                 "object_codes.txt",
                 "object_properties.txt",

@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
 use log::info;
 use navitia_model;
 use navitia_model::Model;
@@ -45,6 +45,15 @@ struct Opt {
     /// output directory
     #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
+
+    /// current datetime
+    #[structopt(
+        short = "x",
+        long,
+        parse(try_from_str),
+        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+    )]
+    current_datetime: NaiveDateTime,
 }
 
 fn run() -> Result<()> {
@@ -57,7 +66,7 @@ fn run() -> Result<()> {
     collections.restrict_period(&opt.start_validity_date, &opt.end_validity_date)?;
     collections.sanitize()?;
     let model = Model::new(collections)?;
-    navitia_model::ntfs::write(&model, opt.output)?;
+    navitia_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
     Ok(())
 }
 

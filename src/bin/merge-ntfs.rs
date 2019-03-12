@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use chrono::NaiveDateTime;
 use failure::bail;
 use log::info;
 use navitia_model;
@@ -21,6 +22,9 @@ use navitia_model::model::Collections;
 use navitia_model::transfers;
 use navitia_model::transfers::TransfersMode;
 use navitia_model::Result;
+use serde_json;
+use std::collections::BTreeMap;
+use std::fs::File;
 use std::path::PathBuf;
 use structopt;
 use structopt::StructOpt;
@@ -44,6 +48,10 @@ struct Opt {
     #[structopt(short = "c", long = "config", parse(from_os_str))]
     rule_files: Vec<PathBuf>,
 
+    /// json file for feed_infos
+    #[structopt(short, long, parse(from_os_str))]
+    feed_infos: Option<PathBuf>,
+
     /// output report file path
     #[structopt(short, long, parse(from_os_str))]
     report: Option<PathBuf>,
@@ -60,6 +68,15 @@ struct Opt {
     // Waiting time at stop in second
     #[structopt(long, short = "t", default_value = "60")]
     waiting_time: u32,
+
+    /// current datetime
+    #[structopt(
+        short = "x",
+        long,
+        parse(try_from_str),
+        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+    )]
+    current_datetime: NaiveDateTime,
 }
 
 fn run() -> Result<()> {
@@ -74,6 +91,14 @@ fn run() -> Result<()> {
             let to_append_model = navitia_model::ntfs::read(input_directory)?;
             collections.try_merge(to_append_model.into_collections())?;
         }
+
+        if let Some(config_feed_infos) = opt.feed_infos {
+            info!("Reading feed_infos from {:?}", config_feed_infos);
+            let json_file = File::open(config_feed_infos)?;
+            let mut feed_infos: BTreeMap<String, String> = serde_json::from_reader(json_file)?;
+            collections.feed_infos.append(&mut feed_infos);
+        }
+
         let model = navitia_model::Model::new(collections)?;
         let model = transfers::generates_transfers(
             model,
@@ -84,7 +109,7 @@ fn run() -> Result<()> {
             &TransfersMode::InterContributor,
             opt.report,
         )?;
-        navitia_model::ntfs::write(&model, opt.output)?;
+        navitia_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
         Ok(())
     }
 }
