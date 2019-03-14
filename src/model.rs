@@ -442,6 +442,10 @@ impl Collections {
             .retain(|commercial_mode| commercial_modes_used.contains(&commercial_mode.id));
         self.physical_modes
             .retain(|physical_mode| physical_modes_used.contains(&physical_mode.id));
+        self.transfers.retain(|t| {
+            stop_points_used.contains(&t.from_stop_id) && stop_points_used.contains(&t.to_stop_id)
+        });
+
         Ok(())
     }
 }

@@ -273,6 +273,32 @@ impl<T> Collection<T> {
     pub fn is_empty(&self) -> bool {
         self.objects.is_empty()
     }
+
+    /// Retains the elements matching predicate parameter from the current `CollectionWithId` object
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use navitia_model::collection::*;
+    /// # use std::collections::HashSet;
+    /// # fn run() -> navitia_model::Result<()> {
+    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// let mut c = Collection::new(vec![Obj("foo"), Obj("bar"), Obj("qux")]);
+    /// let mut ids_to_keep: HashSet<String> = HashSet::new();
+    /// ids_to_keep.insert("foo".to_string());
+    /// ids_to_keep.insert("qux".to_string());
+    /// c.retain(|item| ids_to_keep.contains(item.0));
+    /// assert_eq!(c.len(), 2);
+    /// assert_eq!(c.values().map(|obj| obj.0).collect::<Vec<&str>>(), ["foo", "qux"]);
+    /// # Ok(())
+    /// # }
+    /// # fn main() { run().unwrap() }
+    /// ```
+    pub fn retain<F: FnMut(&T) -> bool>(&mut self, f: F) {
+        let mut purged = self.take();
+        purged.retain(f);
+        *self = Self::new(purged);
+    }
 }
 
 /// The type returned by `Collection::iter`.

@@ -1,0 +1,3 @@
+from_stop_id,to_stop_id,min_transfer_time,real_min_transfer_time,equipment_id
+GDLB,GDLB,0,60,
+NATM,NATM,0,60,
