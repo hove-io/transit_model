@@ -53,6 +53,7 @@ fn test_restrict_global() {
                 "trips.txt",
                 "object_codes.txt",
                 "object_properties.txt",
+                "transfers.txt",
             ]),
             "./fixtures/restrict-validity-period/output/",
         );
