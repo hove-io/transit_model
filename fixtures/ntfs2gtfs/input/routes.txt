@@ -1,0 +1,5 @@
+route_id,route_name,line_id,geometry_id
+route:1,whatever,line:1,
+route:2,whatever,line:1,
+route:3,whatever,line:2,
+route:4,whatever,line:2,

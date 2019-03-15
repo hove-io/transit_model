@@ -37,7 +37,8 @@ fn run() -> Result<()> {
     info!("Launching ntfs2gtfs...");
     let opt = Opt::from_args();
     let model = navitia_model::ntfs::read(opt.input)?;
-    navitia_model::gtfs::write(&model, opt.output)?;
+
+    navitia_model::gtfs::write(model, opt.output)?;
     Ok(())
 }
 

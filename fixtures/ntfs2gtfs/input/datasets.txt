@@ -1,0 +1,3 @@
+dataset_id,contributor_id,dataset_start_date,dataset_end_date
+dataset:kept,contributor:kept,20180101,20181231
+dataset:removed,contributor:removed,20180101,20181231

@@ -20,12 +20,14 @@ mod read;
 mod write;
 
 use crate::collection::CollectionWithId;
+use crate::collection::Idx;
 use crate::common_format;
 use crate::common_format::{manage_calendars, Availability};
 use crate::gtfs::read::EquipmentList;
 use crate::model::{Collections, Model};
 use crate::objects;
 use crate::objects::Time;
+use crate::objects::{StopPoint, StopType};
 use crate::read_utils;
 use crate::read_utils::add_prefix;
 use crate::utils::*;
@@ -384,10 +386,30 @@ struct Route {
     sort_order: Option<u32>,
 }
 
+fn remove_stop_zones(model: Model) -> Result<Collections> {
+    let mut collections = model.into_collections();
+    collections
+        .stop_points
+        .retain(|sp| sp.stop_type != StopType::Zone);
+    let stop_point_ids: Vec<&Idx<StopPoint>> =
+        collections.stop_points.get_id_to_idx().values().collect();
+    let mut vjs = collections.vehicle_journeys.take();
+    for vj in &mut vjs {
+        vj.stop_times
+            .retain(|st| stop_point_ids.contains(&&st.stop_point_idx));
+    }
+    vjs.retain(|vj| !vj.stop_times.is_empty());
+    collections.vehicle_journeys = CollectionWithId::new(vjs)?;
+    Ok(collections)
+}
+
 /// Exports a `Model` to [GTFS](http://gtfs.org/) files
 /// in the given directory.
 /// see [NTFS to GTFS conversion](https://github.com/CanalTP/navitia_model/blob/master/src/documentation/ntfs2gtfs.md)
-pub fn write<P: AsRef<Path>>(model: &Model, path: P) -> Result<()> {
+pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
+    let mut collections = remove_stop_zones(model)?;
+    collections.sanitize()?;
+    let model = Model::new(collections)?;
     let path = path.as_ref();
     info!("Writing GTFS to {:?}", path);
 
