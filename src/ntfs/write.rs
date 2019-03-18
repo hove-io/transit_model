@@ -30,6 +30,35 @@ use serde;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path;
 
+impl From<&Ticket> for Price {
+    fn from(ticket: &Ticket) -> Self {
+        Price {
+            id: ticket.id.clone(),
+            start_date: ticket.start_date,
+            end_date: ticket.end_date,
+            price: (ticket.price * 100.).round() as u32,
+            name: "Ticket Origine-Destination".to_string(),
+            ignored: "".to_string(),
+            comment: "".to_string(),
+            currency_type: "centime".into(),
+        }
+    }
+}
+
+impl From<&ODRule> for ODFare {
+    fn from(od_rule: &ODRule) -> Self {
+        ODFare {
+            origin_stop_area_id: format!("stop_area:{}", od_rule.origin_stop_area_id),
+            origin_name: None,
+            origin_mode: "stop".to_string(),
+            destination_stop_area_id: format!("stop_area:{}", od_rule.destination_stop_area_id),
+            destination_name: None,
+            destination_mode: "stop".to_string(),
+            ticket_id: od_rule.ticket_id.clone(),
+        }
+    }
+}
+
 pub fn write_feed_infos(
     path: &path::Path,
     feed_infos: &BTreeMap<String, String>,
@@ -135,9 +164,9 @@ pub fn write_fares(
     let mut prices_wtr = builder
         .from_path(&path)
         .with_context(ctx_from_path!(path))?;
-    for (_, ticket) in tickets.into_iter() {
+    for ticket in tickets.values() {
         prices_wtr
-            .serialize(Price::from(ticket.clone()))
+            .serialize(Price::from(ticket))
             .with_context(ctx_from_path!(path))?;
     }
     prices_wtr.flush().with_context(ctx_from_path!(path))?;
@@ -148,9 +177,9 @@ pub fn write_fares(
     let mut od_fares_wtr = builder
         .from_path(&path)
         .with_context(ctx_from_path!(path))?;
-    for (_, od_rule) in od_rules.into_iter() {
+    for od_rule in od_rules.values() {
         od_fares_wtr
-            .serialize(ODFare::from(od_rule.clone()))
+            .serialize(ODFare::from(od_rule))
             .with_context(ctx_from_path!(path))?;
     }
     od_fares_wtr.flush().with_context(ctx_from_path!(path))?;
@@ -160,34 +189,27 @@ pub fn write_fares(
     let mut fares_wtr = builder
         .from_path(&path)
         .with_context(ctx_from_path!(path))?;
-    let physical_modes: HashSet<Option<String>> = od_rules
+    let physical_modes: HashSet<&String> = od_rules
         .values()
-        .map(|od_rule| od_rule.physical_mode_id.clone())
+        .filter_map(|od_rule| od_rule.physical_mode_id.as_ref())
         .collect();
-    if physical_modes.len() != 1 {
-        bail!(
-            "unable to write to {:?}, {} physical modes found, expected one",
-            file,
-            physical_modes.len()
-        );
-    }
-    let physical_mode = physical_modes.iter().last().unwrap();
-    if physical_mode.is_none() {
+
+    if let Some(physical_mode) = physical_modes.into_iter().last() {
+        fares_wtr
+            .serialize(Fare {
+                before_change: "*".to_string(),
+                after_change: format!("mode=physical_mode:{}", physical_mode),
+                start_trip: "".to_string(),
+                end_trip: "".to_string(),
+                global_condition: "with_changes".to_string(),
+                ticket_id: "".to_string(),
+            })
+            .with_context(ctx_from_path!(path))?;
+        fares_wtr.flush().with_context(ctx_from_path!(path))?;
+        Ok(())
+    } else {
         bail!("unable to write to {:?}, no physical modes found", file);
     }
-    fares_wtr
-        .serialize(Fare {
-            before_change: "*".to_string(),
-            after_change: format!("mode=physical_mode:{}", physical_mode.clone().unwrap()),
-            start_trip: "".to_string(),
-            end_trip: "".to_string(),
-            global_condition: "with_changes".to_string(),
-            ticket_id: "".to_string(),
-        })
-        .with_context(ctx_from_path!(path))?;
-    fares_wtr.flush().with_context(ctx_from_path!(path))?;
-
-    Ok(())
 }
 
 pub fn write_collection_with_id<T>(

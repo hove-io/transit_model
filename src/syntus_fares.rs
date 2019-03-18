@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Kisio Digital and/or its affiliates.
+// Copyright 2017 Kisio Digital and/or its affiliates.
 //
 // This program is free software: you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
@@ -36,8 +36,8 @@ impl Ticket {
             id,
             start_date,
             end_date,
-            price: (price * 100.).round() as u32,
-            currency_type: "centime".to_string(),
+            price,
+            currency_type: "EUR".to_string(),
             validity_duration: None,
             transfers: None,
         }
@@ -105,7 +105,7 @@ fn get_list_element_from_inner_list<'a>(
 
 fn load_syntus_file<R: Read>(
     mut file: R,
-    stop_code_to_stop_area: &HashMap<String, String>,
+    stop_code_to_stop_area: &HashMap<&str, &str>,
     tickets: &mut Vec<Ticket>,
     od_rules: &mut BTreeMap<(String, String), ODRule>,
 ) -> Result<()> {
@@ -117,7 +117,7 @@ fn load_syntus_file<R: Read>(
 
     let mut frames = root
         .get_child("dataObjects", &ns)
-        .ok_or_else(|| format_err!("Netex file does't contain a 'dataObjects' node"))?
+        .ok_or_else(|| format_err!("Netex file doesn't contain a 'dataObjects' node"))?
         .children()
         .find(|frame| frame.name() == "CompositeFrame")
         .unwrap()
@@ -218,8 +218,7 @@ fn load_syntus_file<R: Read>(
             .get_child("Amount", &ns)
             .unwrap()
             .text()
-            .parse::<f64>()
-            .unwrap()
+            .parse::<f64>()?
             * price
                 .get_child("Units", &ns)
                 .unwrap()
@@ -229,7 +228,7 @@ fn load_syntus_file<R: Read>(
             for (id, distance_elt, start_stop_point, end_stop_point) in
                 get_matrix_elts(distance_matrix_frame, &ns, "Distance")?
             {
-                let distance = distance_elt.text().parse::<f64>().unwrap();
+                let distance = distance_elt.text().parse::<f64>()?;
                 let mut price =
                     ((boarding_fee + base_price * distance) / rounding).round() * rounding;
                 if let Ok(capping) = capping {
@@ -241,7 +240,7 @@ fn load_syntus_file<R: Read>(
                     id,
                     start_stop_point,
                     end_stop_point,
-                    &stop_code_to_stop_area
+                    stop_code_to_stop_area
                 ));
                 try_add_od_rule_and_ticket(od_rules, tickets, od_rule, ticket);
             }
@@ -290,8 +289,7 @@ fn try_add_od_rule_and_ticket(
     )) {
         Some(existing_rule) => warn!(
             "od_rule for {:?} / {:?} already exists, skipping the following one",
-            existing_rule.origin_stop_area_id.clone(),
-            existing_rule.destination_stop_area_id.clone()
+            existing_rule.origin_stop_area_id, existing_rule.destination_stop_area_id
         ),
         None => {
             od_rules.insert(
@@ -347,7 +345,7 @@ fn get_od_rule(
     ticket_id: String,
     start_stop_point: &str,
     end_stop_point: &str,
-    stop_code_to_stop_area: &HashMap<String, String>,
+    stop_code_to_stop_area: &HashMap<&str, &str>,
 ) -> Result<ODRule> {
     match (
         stop_point_ref_to_gtfs_stop_codes.get(start_stop_point),
@@ -356,23 +354,24 @@ fn get_od_rule(
         (Some(start_gtfs_stop_codes), Some(end_gtfs_stop_codes)) => {
             let origin_stop_area_ids = start_gtfs_stop_codes
                 .iter()
-                .filter_map(|code| stop_code_to_stop_area.get(code))
+                .filter_map(|code| stop_code_to_stop_area.get::<str>(&code.to_string()))
                 .collect::<HashSet<_>>();
             let destination_stop_area_ids = end_gtfs_stop_codes
                 .iter()
-                .filter_map(|code| stop_code_to_stop_area.get(code))
+                .filter_map(|code| stop_code_to_stop_area.get::<str>(&code.to_string()))
                 .collect::<HashSet<_>>();
             match (origin_stop_area_ids.len(), destination_stop_area_ids.len()) {
-                (1, 1) => Ok(ODRule::new(format!("OD:{}", ticket_id.clone()), origin_stop_area_ids
-                    .iter()
-                    .last()
-                    .unwrap()
-                    .to_string(),
-                                      destination_stop_area_ids
-                                          .iter()
-                                          .last()
-                                          .unwrap()
-                                          .to_string(),ticket_id.clone())),
+                (1, 1) => Ok(
+                    ODRule::new(format!("OD:{}",
+                    ticket_id.clone()),
+                    origin_stop_area_ids.iter().last().unwrap().to_string(),
+                    destination_stop_area_ids
+                        .iter()
+                        .last()
+                        .unwrap()
+                        .to_string(),
+                    ticket_id.clone())
+                ),
                 (nb_stop_areas, 1) =>
                     bail!(
                         "found {} stop area matches for origin {:?}",
@@ -410,20 +409,19 @@ pub fn read<P: AsRef<path::Path>>(
     path: P,
     stop_points: &CollectionWithId<StopPoint>,
 ) -> Result<(Collection<Ticket>, Collection<ODRule>)> {
-    let files: Vec<String> = fs::read_dir(&path)
-        .unwrap()
+    let files: Vec<String> = fs::read_dir(&path)?
         .map(|f| f.unwrap().file_name().into_string().unwrap())
         .collect();
     if files.is_empty() {
         bail!("no files found into syntus fares directory");
     }
-    let stop_code_to_stop_area: HashMap<String, String> = stop_points
+    let stop_code_to_stop_area: HashMap<&str, &str> = stop_points
         .values()
         .filter_map(|sp| {
             sp.codes
                 .iter()
                 .find(|(key, _)| key == "gtfs_stop_code")
-                .map(|(_, code)| (code.clone(), sp.stop_area_id.clone()))
+                .map(|(_, code)| (code.as_ref(), sp.stop_area_id.as_ref()))
         })
         .collect();
     let mut tickets = vec![];

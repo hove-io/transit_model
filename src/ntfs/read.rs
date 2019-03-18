@@ -112,8 +112,8 @@ impl From<Price> for Ticket {
             id: price.id,
             start_date: price.start_date,
             end_date: price.end_date,
-            price: price.price,
-            currency_type: price.currency_type,
+            price: f64::from(price.price) / 100.,
+            currency_type: "EUR".into(),
             validity_duration: None,
             transfers: None,
         }
@@ -142,19 +142,26 @@ pub fn manage_fares(collections: &mut Collections, base_path: &path::Path) -> Re
     }
 
     let file = "fares.csv";
+    if !base_path.join(file).exists() {
+        info!("Skipping fares");
+        return Ok(());
+    }
     let path = base_path.join(file);
     builder.has_headers(true);
     let mut rdr = builder
         .from_path(&path)
         .with_context(ctx_from_path!(path))?;
-    let ref_fare: Fare = rdr.deserialize().next().unwrap()?;
+    let ref_fare: Fare = match rdr.deserialize().next() {
+        Some(ref_fare) => ref_fare?,
+        None => bail!("no fares in {:?}", path),
+    };
     let after_change_pattern = Regex::new(r"mode=physical_mode:(\w+)")?;
     let captures = after_change_pattern
         .captures(&ref_fare.after_change)
-        .unwrap_or_else(|| unimplemented!("after_change found in {:?} is not handled yet", file));
+        .ok_or_else(|| format_err!("after_change found in {:?} is not handled yet", file))?;
     let physical_mode = match (ref_fare.before_change.as_str(), captures.len()) {
         ("*", 2) => captures.get(1).unwrap().as_str(),
-        _ => unimplemented!("record in {:?} cannot map to a known transition", file),
+        _ => bail!("record in {:?} cannot map to a known transition", file),
     };
     let file = "od_fares.csv";
     let path = base_path.join(file);

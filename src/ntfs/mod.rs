@@ -83,84 +83,55 @@ struct Stop {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Price {
-    pub id: String,
+    id: String,
     #[serde(
         deserialize_with = "de_from_date_string",
         serialize_with = "ser_from_naive_date"
     )]
-    pub start_date: NaiveDate,
+    start_date: NaiveDate,
     #[serde(
         deserialize_with = "de_from_date_string",
         serialize_with = "ser_from_naive_date"
     )]
-    pub end_date: NaiveDate,
-    pub price: u32,
-    pub name: String,
-    pub ignored: String,
-    pub comment: String,
-    pub currency_type: String,
-}
-
-impl From<Ticket> for Price {
-    fn from(ticket: Ticket) -> Self {
-        Price {
-            id: ticket.id,
-            start_date: ticket.start_date,
-            end_date: ticket.end_date,
-            price: ticket.price,
-            name: "Ticket Origine-Destination".to_string(),
-            ignored: "".to_string(),
-            comment: "".to_string(),
-            currency_type: ticket.currency_type,
-        }
-    }
+    end_date: NaiveDate,
+    price: u32,
+    name: String,
+    ignored: String,
+    comment: String,
+    currency_type: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ODFare {
     #[serde(rename = "Origin ID")]
-    pub origin_stop_area_id: String,
+    origin_stop_area_id: String,
     #[serde(rename = "Origin name")]
-    pub origin_name: Option<String>,
+    origin_name: Option<String>,
     #[serde(rename = "Origin mode")]
-    pub origin_mode: String,
+    origin_mode: String,
     #[serde(rename = "Destination ID")]
-    pub destination_stop_area_id: String,
+    destination_stop_area_id: String,
     #[serde(rename = "Destination name")]
-    pub destination_name: Option<String>,
+    destination_name: Option<String>,
     #[serde(rename = "Destination mode")]
-    pub destination_mode: String,
-    pub ticket_id: String,
-}
-
-impl From<ODRule> for ODFare {
-    fn from(od_rule: ODRule) -> Self {
-        ODFare {
-            origin_stop_area_id: format!("stop_area:{}", od_rule.origin_stop_area_id),
-            origin_name: None,
-            origin_mode: "stop".to_string(),
-            destination_stop_area_id: format!("stop_area:{}", od_rule.destination_stop_area_id),
-            destination_name: None,
-            destination_mode: "stop".to_string(),
-            ticket_id: od_rule.ticket_id,
-        }
-    }
+    destination_mode: String,
+    ticket_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Fare {
     #[serde(rename = "avant changement")]
-    pub before_change: String,
+    before_change: String,
     #[serde(rename = "après changement")]
-    pub after_change: String,
+    after_change: String,
     #[serde(rename = "début trajet")]
-    pub start_trip: String,
+    start_trip: String,
     #[serde(rename = "fin trajet")]
-    pub end_trip: String,
+    end_trip: String,
     #[serde(rename = "condition globale")]
-    pub global_condition: String,
+    global_condition: String,
     #[serde(rename = "clef ticket")]
-    pub ticket_id: String,
+    ticket_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

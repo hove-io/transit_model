@@ -1236,7 +1236,7 @@ pub struct Ticket {
     pub id: String,
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
-    pub price: u32,
+    pub price: f64,
     pub currency_type: String,
     pub validity_duration: Option<u32>,
     pub transfers: Option<u16>,
