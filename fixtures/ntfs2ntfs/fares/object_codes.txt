@@ -1,0 +1,4 @@
+object_type,object_id,object_system,object_code
+stop_point,sp:1,gtfs_stop_code,sc:1
+stop_point,sp:2,gtfs_stop_code,sc:2
+stop_point,sp:4,gtfs_stop_code,sc:4

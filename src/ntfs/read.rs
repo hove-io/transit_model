@@ -17,7 +17,7 @@
 use csv;
 use std::path;
 
-use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
+use super::{Code, CommentLink, Fare, ODFare, ODRule, ObjectProperty, Price, Stop, StopTime};
 use crate::collection::*;
 use crate::model::Collections;
 use crate::objects::*;
@@ -25,6 +25,7 @@ use crate::utils::make_collection_with_id;
 use crate::Result;
 use failure::{bail, ensure, format_err, ResultExt};
 use log::{error, info, warn};
+use regex::Regex;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -102,6 +103,85 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
     }
     collections.stop_areas = CollectionWithId::new(stop_areas)?;
     collections.stop_points = CollectionWithId::new(stop_points)?;
+    Ok(())
+}
+
+impl From<Price> for Ticket {
+    fn from(price: Price) -> Self {
+        Ticket {
+            id: price.id,
+            start_date: price.start_date,
+            end_date: price.end_date,
+            price: f64::from(price.price) / 100.,
+            currency_type: "EUR".into(),
+            validity_duration: None,
+            transfers: None,
+        }
+    }
+}
+
+pub fn manage_fares(collections: &mut Collections, base_path: &path::Path) -> Result<()> {
+    let file = "prices.csv";
+    if !base_path.join(file).exists() {
+        info!("Skipping fares");
+        return Ok(());
+    }
+    info!("Reading fares");
+    let mut tickets = vec![];
+    let mut od_rules = vec![];
+    let mut builder = csv::ReaderBuilder::new();
+    builder.delimiter(b';');
+    let path = base_path.join(file);
+    builder.has_headers(false);
+    let mut rdr = builder
+        .from_path(&path)
+        .with_context(ctx_from_path!(path))?;
+    for price in rdr.deserialize() {
+        let price: Price = price.with_context(ctx_from_path!(path))?;
+        tickets.push(Ticket::from(price));
+    }
+
+    let file = "fares.csv";
+    if !base_path.join(file).exists() {
+        info!("Skipping fares");
+        return Ok(());
+    }
+    let path = base_path.join(file);
+    builder.has_headers(true);
+    let mut rdr = builder
+        .from_path(&path)
+        .with_context(ctx_from_path!(path))?;
+    let ref_fare: Fare = match rdr.deserialize().next() {
+        Some(ref_fare) => ref_fare?,
+        None => bail!("no fares in {:?}", path),
+    };
+    let after_change_pattern = Regex::new(r"mode=physical_mode:(\w+)")?;
+    let captures = after_change_pattern
+        .captures(&ref_fare.after_change)
+        .ok_or_else(|| format_err!("after_change found in {:?} is not handled yet", file))?;
+    let physical_mode = match (ref_fare.before_change.as_str(), captures.len()) {
+        ("*", 2) => captures.get(1).unwrap().as_str(),
+        _ => bail!("record in {:?} cannot map to a known transition", file),
+    };
+    let file = "od_fares.csv";
+    let path = base_path.join(file);
+    let mut rdr = builder
+        .from_path(&path)
+        .with_context(ctx_from_path!(path))?;
+    for od_fare in rdr.deserialize() {
+        let od_fare: ODFare = od_fare.with_context(ctx_from_path!(path))?;
+        od_rules.push(ODRule {
+            id: "unknown".to_string(),
+            origin_stop_area_id: od_fare.origin_stop_area_id.replace("stop_area:", ""),
+            destination_stop_area_id: od_fare.destination_stop_area_id.replace("stop_area:", ""),
+            ticket_id: od_fare.ticket_id,
+            line_id: None,
+            network_id: None,
+            physical_mode_id: Some(physical_mode.to_string()),
+        });
+    }
+    collections.tickets = Collection::new(tickets);
+    collections.od_rules = Collection::new(od_rules);
     Ok(())
 }
 

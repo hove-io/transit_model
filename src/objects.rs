@@ -22,6 +22,7 @@ use crate::collection::{Id, Idx};
 use crate::common_format::Availability;
 use crate::utils::*;
 use chrono;
+use chrono::NaiveDate;
 use derivative::Derivative;
 use geo_types::Geometry as GeoGeometry;
 use serde_derive::{Deserialize, Serialize};
@@ -1229,6 +1230,31 @@ pub struct AdminStation {
     pub admin_name: String,
     pub stop_id: String,
 }
+
+#[derive(Debug, Clone)]
+pub struct Ticket {
+    pub id: String,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+    pub price: f64,
+    pub currency_type: String,
+    pub validity_duration: Option<u32>,
+    pub transfers: Option<u16>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ODRule {
+    pub id: String,
+    pub origin_stop_area_id: String,
+    pub destination_stop_area_id: String,
+    pub ticket_id: String,
+    pub line_id: Option<String>,
+    pub network_id: Option<String>,
+    pub physical_mode_id: Option<String>,
+}
+
+impl_id!(Ticket);
+impl_id!(ODRule);
 
 #[cfg(test)]
 mod tests {

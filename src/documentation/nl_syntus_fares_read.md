@@ -20,10 +20,10 @@ The current version of the connector does not describe the NTM properties that a
 ### Ticket
 NTM Property | Source frame | Source element | Notes/Mapping rule
 --- | --- | --- | ---
-id | *FareFrame* | *DistanceMatrixElement{id}* | 
-start_date | *ResourceFrame* | *versions/Version/StartDate* | 
-end_date | *ResourceFrame* | *versions/Version/EndDate* | 
-currency_type | *FareFrame* | *FrameDefaults/DefaultCurrency* | 
+id | *FareFrame* | *DistanceMatrixElement{id}* |
+start_date | *ResourceFrame* | *versions/Version/StartDate* |
+end_date | *ResourceFrame* | *versions/Version/EndDate* |
+currency_type | *FareFrame* | *FrameDefaults/DefaultCurrency* |
 price | | | See the mapping rule below.
 
 **Computing the ticket price**
@@ -38,22 +38,21 @@ If *FareFrame/RoundingWrtCurrencyRule* is specified, a rounding rule for the spe
 
 If the computed ticket price exceeds the value of *FareFrame/CappingWrtCurrencyRule*, then the latter is taken into account.
 
-### OD Rules
+### OD Rule
 NTM property | Source frame | Source element | Notes/Mapping rule
 --- | --- | --- | ---
 id | *FareFrame* | *DistanceMatrixElement{id}* | The id is prefixed with `OD:`.
 ticket_id | | | Id of the `Ticket` to which this `OD Rule` is applied.
-origin_stoparea_id | *FareFrame* | *DistanceMatrixElement/StartStopPointRef{ref}* | See the mapping rule below.
-dest_stoparea_id | *FareFrame* | *DistanceMatrixElement/EndStopPointRef{ref}* | See the mapping rule below.
+origin_stop_area_id | *FareFrame* | *DistanceMatrixElement/StartStopPointRef{ref}* | See the mapping rule below.
+destination_stop_area_id | *FareFrame* | *DistanceMatrixElement/EndStopPointRef{ref}* | See the mapping rule below.
 physical_mode_id | | | Fixed value `Bus`. This field will be necessary for modeling transitions when writing the NTFS fares.
 
-**Setting the origin_stoparea_id and the dest_stoparea_id of an OD Rule**
+**Setting the origin_stop_area_id and the destination_stop_area_id of an OD Rule**
 
 Finding the right stops in the NTFS to which a fare is applied is not straightforward. The stops in the *FareFrame* point to the *ScheduledStopPoint*s in the *ServiceFrame*. The *ScheduledStopPoint*s are composed of *PointProjection*s that are referenced in the NTFS.
 
-The *origin_stoparea_id* should have an associated stop_point with a complementary code of type `gtfs_stop_code` that matches the value of *ProjectedPointRef{ref}* (without the network prefixe, if any) of the *ScheduledStopPoint* in the *ServiceFrame* whose *id* is referenced by *StartStopPointRef{ref}* in the *DistanceMatrixElement*.
+The *origin_stop_area_id* should have an associated stop_point with a complementary code of type `gtfs_stop_code` that matches the value of *ProjectedPointRef{ref}* (without the network prefixe, if any) of the *ScheduledStopPoint* in the *ServiceFrame* whose *id* is referenced by *StartStopPointRef{ref}* in the *DistanceMatrixElement*.
 
-The *dest_stoparea_id* should have an associated stop_point with a complementary code of type `gtfs_stop_code` that matches the value of *ProjectedPointRef{ref}* (without the network prefixe, if any) of the *ScheduledStopPoint* in the *ServiceFrame* whose *id* is referenced by *EndStopPointRef{ref}* in the *DistanceMatrixElement*.
+The *destination_stop_area_id* should have an associated stop_point with a complementary code of type `gtfs_stop_code` that matches the value of *ProjectedPointRef{ref}* (without the network prefixe, if any) of the *ScheduledStopPoint* in the *ServiceFrame* whose *id* is referenced by *EndStopPointRef{ref}* in the *DistanceMatrixElement*.
 
 If no matching is found for the origin or the destination stop, then the stop is ignored and no rule is created. In this case, the corresponding `Ticket` is discarded.
-

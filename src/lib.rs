@@ -34,6 +34,7 @@ pub mod netex;
 pub mod ntfs;
 mod read_utils;
 pub mod relations;
+pub mod syntus_fares;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;

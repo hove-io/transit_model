@@ -27,6 +27,7 @@ use crate::objects::*;
 use crate::read_utils;
 use crate::utils::*;
 use crate::Result;
+use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use log::info;
 use serde_derive::{Deserialize, Serialize};
@@ -78,6 +79,59 @@ struct Stop {
     timezone: Option<String>,
     geometry_id: Option<String>,
     equipment_id: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Price {
+    id: String,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    start_date: NaiveDate,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    end_date: NaiveDate,
+    price: u32,
+    name: String,
+    ignored: String,
+    comment: String,
+    currency_type: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ODFare {
+    #[serde(rename = "Origin ID")]
+    origin_stop_area_id: String,
+    #[serde(rename = "Origin name")]
+    origin_name: Option<String>,
+    #[serde(rename = "Origin mode")]
+    origin_mode: String,
+    #[serde(rename = "Destination ID")]
+    destination_stop_area_id: String,
+    #[serde(rename = "Destination name")]
+    destination_name: Option<String>,
+    #[serde(rename = "Destination mode")]
+    destination_mode: String,
+    ticket_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Fare {
+    #[serde(rename = "avant changement")]
+    before_change: String,
+    #[serde(rename = "après changement")]
+    after_change: String,
+    #[serde(rename = "début trajet")]
+    start_trip: String,
+    #[serde(rename = "fin trajet")]
+    end_trip: String,
+    #[serde(rename = "condition globale")]
+    global_condition: String,
+    #[serde(rename = "clef ticket")]
+    ticket_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -137,6 +191,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     read::manage_codes(&mut collections, path)?;
     read::manage_comments(&mut collections, path)?;
     read::manage_object_properties(&mut collections, path)?;
+    read::manage_fares(&mut collections, path)?;
     info!("Indexing");
     let res = Model::new(collections)?;
     info!("Loading NTFS done");
@@ -180,6 +235,7 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
+    write::write_fares(path, &model.tickets, &model.od_rules)?;
 
     Ok(())
 }

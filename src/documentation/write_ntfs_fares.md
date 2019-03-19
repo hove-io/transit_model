@@ -2,7 +2,7 @@
 ## Introduction
 This document describes how fares specified in Navitia Transit Model are transformed into a [NTFS fare feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fare_extension_fr.md).
 
-In this initial version: 
+In this initial version:
 - only tickets on origin-destination stops are taken into account
 - only constraints on physical modes are taken into account (if a ticket is specified for a specific line or network, this information is ignored)
 - the validity duration and the transfers allowed for a ticket, if specified, are ignored
@@ -30,9 +30,9 @@ NTFS field | NTM object | NTM property | Notes/Mapping rule
 
 NTFS field | NTM object | NTM property | Notes/Mapping rule
 --- | --- | --- | ---
-Origin ID | OD Rules | origin_stoparea_id | The id is prefixed with `stop_area:`.
+Origin ID | OD Rules | origin_stop_area_id | The id is prefixed with `stop_area:`.
 Origin mode | | | Fixed value `stop`.
-Destination ID | OD Rules | dest_stoparea_id | The id is prefixed with `stop_area:`.
+Destination ID | OD Rules | destination_stop_area_id | The id is prefixed with `stop_area:`.
 Destination mode | | | Fixed value `stop`.
 ticket_id | OD Rules | ticket_id | Link to the ticket specified in [prices](#pricescsv)
 
