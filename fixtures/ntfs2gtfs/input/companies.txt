@@ -1,0 +1,3 @@
+company_id,company_name
+company:kept,The Great Company
+company:removed,The Bad Company
