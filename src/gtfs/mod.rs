@@ -166,8 +166,8 @@ fn default_true_bool() -> bool {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
     trip_id: String,
-    arrival_time: Time,
-    departure_time: Time,
+    arrival_time: Option<Time>,
+    departure_time: Option<Time>,
     #[serde(deserialize_with = "de_without_slashes")]
     stop_id: String,
     stop_sequence: u32,

@@ -330,8 +330,12 @@ where
             .push(objects::StopTime {
                 stop_point_idx,
                 sequence: stop_time.stop_sequence,
-                arrival_time: stop_time.arrival_time,
-                departure_time: stop_time.departure_time,
+                arrival_time: stop_time
+                    .arrival_time
+                    .unwrap_or_else(|| objects::Time::undefined()),
+                departure_time: stop_time
+                    .departure_time
+                    .unwrap_or_else(|| objects::Time::undefined()),
                 boarding_duration: 0,
                 alighting_duration: 0,
                 pickup_type: stop_time.pickup_type,
@@ -344,9 +348,68 @@ where
     let mut vehicle_journeys = collections.vehicle_journeys.take();
     for vj in &mut vehicle_journeys {
         vj.stop_times.sort_unstable_by_key(|st| st.sequence);
+        interpolate_undefined_stop_times(vj)?;
     }
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     Ok(())
+}
+
+fn ventilate_stop_times(
+    undefined_stop_times: &mut [&mut objects::StopTime],
+    before: &objects::StopTime,
+    after: &objects::StopTime,
+) {
+    let duration = after.arrival_time - before.departure_time;
+    let distance = duration / (undefined_stop_times.len() + 1) as u32;
+    let mut idx = 1u32;
+    for mut st in undefined_stop_times.iter_mut() {
+        let time = before.departure_time + objects::Time::new(0, 0, idx * distance.total_seconds());
+
+        st.departure_time = time;
+        st.arrival_time = time;
+        st.datetime_estimated = true;
+        idx += 1;
+    }
+}
+
+// in the GTFS some stoptime can have undefined departure/arrival (all stop_times but the first and the last)
+// when it's the case, we apply a simple distribution of those stops, and we mark them as `estimated`
+// cf. https://github.com/CanalTP/navitia_model/blob/master/src/documentation/gtfs_read.md#reading-stop_timestxt
+fn interpolate_undefined_stop_times(vj: &mut objects::VehicleJourney) -> Result<()> {
+    let mut undefined_stops_bulk = Vec::with_capacity(0);
+    let mut before = None;
+    for st in &mut vj.stop_times {
+        if st.departure_time.is_undefined() && st.arrival_time.is_undefined() {
+            undefined_stops_bulk.push(st);
+            continue;
+        }
+
+        // if only one in departure/arrival value is defined, we set it to the other value
+        if st.departure_time.is_undefined() && !st.arrival_time.is_undefined() {
+            log::debug!("for vj '{}', stop time n° {} has no departure defined, we set it to its arrival value", &vj.id, st.sequence);
+            st.departure_time = st.arrival_time;
+        }
+        if !st.departure_time.is_undefined() && st.arrival_time.is_undefined() {
+            log::debug!("for vj '{}', stop time n° {} has no arrival defined, we set it to its departure value", &vj.id, st.sequence);
+            st.arrival_time = st.departure_time;
+        }
+
+        if !undefined_stops_bulk.is_empty() {
+            ventilate_stop_times(
+                &mut undefined_stops_bulk,
+                before.ok_or(format_err!("the first stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", &vj.id))?,
+                st,
+            );
+            undefined_stops_bulk.clear();
+        }
+        before = Some(st);
+    }
+
+    if !undefined_stops_bulk.is_empty() {
+        Err(format_err!("the last stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", &vj.id))
+    } else {
+        Ok(())
+    }
 }
 
 pub fn read_agency<H>(
@@ -2664,6 +2727,136 @@ mod tests {
                 .cloned()
                 .collect();
             assert_eq!(latitudes, &[65.444, 66.666, 0.00]);
+        });
+    }
+
+    #[test]
+    fn gtfs_undefined_stop_times() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF";
+
+        let stops_content =
+            r#"stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station
+             sp:01,my stop point name 1,my first desc,0.1,1.2,0,
+             sp:02,my stop point name 2,my first desc,0.1,1.2,0,
+             sp:03,my stop point name 3,my first desc,0.1,1.2,0,
+             sp:04,my stop point name 4,my first desc,0.1,1.2,0,
+             sp:05,my stop point name 5,my first desc,0.1,1.2,0,
+             sp:06,my stop point name 6,my first desc,0.1,1.2,0,
+             sp:07,my stop point name 7,my first desc,0.1,1.2,0,
+             sp:08,my stop point name 8,my first desc,0.1,1.2,0,"#;
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,";
+
+        let stop_times_content = "trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled\n\
+                                  1,06:00:00,06:00:00,sp:01,1,,,,\n\
+                                  1,07:00:00,07:00:00,sp:02,2,,,,\n\
+                                  1,,,sp:03,3,,,,\n\
+                                  1,,,sp:04,4,,,,\n\
+                                  1,10:00:00,,sp:05,5,,,,\n\
+                                  1,,,sp:06,6,,,,\n\
+                                  1,,12:00:00,sp:07,7,,,,\n\
+                                  1,13:00:00,13:00:00,sp:08,8,,,,\n\
+                                  ";
+
+        test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
+            create_file_with_content(path, "stop_times.txt", stop_times_content);
+            create_file_with_content(path, "stops.txt", stops_content);
+
+            let mut collections = Collections::default();
+            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let mut equipments = EquipmentList::default();
+            let (_, stop_points) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+            collections.stop_points = stop_points;
+
+            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler).unwrap();
+
+            assert_eq!(
+                collections.vehicle_journeys.into_vec()[0]
+                    .stop_times
+                    .iter()
+                    .map(|st| (st.arrival_time, st.departure_time))
+                    .collect::<Vec<_>>(),
+                vec![
+                    (Time::new(6, 0, 0), Time::new(6, 0, 0)),
+                    (Time::new(7, 0, 0), Time::new(7, 0, 0)),
+                    (Time::new(8, 0, 0), Time::new(8, 0, 0)),
+                    (Time::new(9, 0, 0), Time::new(9, 0, 0)),
+                    (Time::new(10, 0, 0), Time::new(10, 0, 0)),
+                    (Time::new(11, 0, 0), Time::new(11, 0, 0)),
+                    (Time::new(12, 0, 0), Time::new(12, 0, 0)),
+                    (Time::new(13, 0, 0), Time::new(13, 0, 0)),
+                ]
+            );
+        });
+    }
+
+    #[test]
+    fn gtfs_invalid_undefined_stop_times() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF";
+
+        let stops_content =
+            r#"stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station
+             sp:01,my stop point name 1,my first desc,0.1,1.2,0,
+             sp:02,my stop point name 2,my first desc,0.1,1.2,0,
+             sp:03,my stop point name 3,my first desc,0.1,1.2,0,
+             sp:04,my stop point name 4,my first desc,0.1,1.2,0,
+             sp:05,my stop point name 5,my first desc,0.1,1.2,0,
+             sp:06,my stop point name 6,my first desc,0.1,1.2,0,
+             sp:07,my stop point name 7,my first desc,0.1,1.2,0,
+             sp:08,my stop point name 8,my first desc,0.1,1.2,0,"#;
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,";
+
+        let stop_times_content = "trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled\n\
+                                  1,,,sp:01,1,,,,\n\
+                                  1,07:00:00,07:00:00,sp:02,2,,,,\n\
+                                  1,,,sp:03,3,,,,\n\
+                                  1,,,sp:04,4,,,,\n\
+                                  1,10:00:00,10:00:00,sp:05,5,,,,\n\
+                                  1,,,sp:06,6,,,,\n\
+                                  1,12:00:00,12:00:00,sp:07,7,,,,\n\
+                                  1,13:00:00,13:00:00,sp:08,8,,,,\n\
+                                  ";
+
+        test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
+            create_file_with_content(path, "stop_times.txt", stop_times_content);
+            create_file_with_content(path, "stops.txt", stops_content);
+
+            let mut collections = Collections::default();
+            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let mut equipments = EquipmentList::default();
+            let (_, stop_points) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+            collections.stop_points = stop_points;
+
+            super::read_routes(&mut handler, &mut collections).unwrap();
+            let val = super::manage_stop_times(&mut collections, &mut handler);
+
+            // the first stop time of the vj has no departure/arrival, it's an error
+            let err = val.unwrap_err();
+            assert_eq!(format!("{}", err), "the first stop time of the vj '1' has no departure/arrival, the stop_times.txt file is not valid");
         });
     }
 }
