@@ -56,3 +56,7 @@ The *origin_stop_area_id* should have an associated stop_point with a complement
 The *destination_stop_area_id* should have an associated stop_point with a complementary code of type `gtfs_stop_code` that matches the value of *ProjectedPointRef{ref}* (without the network prefixe, if any) of the *ScheduledStopPoint* in the *ServiceFrame* whose *id* is referenced by *EndStopPointRef{ref}* in the *DistanceMatrixElement*.
 
 If no matching is found for the origin or the destination stop, then the stop is ignored and no rule is created. In this case, the corresponding `Ticket` is discarded.
+
+If the origin or the destination stop is matched more than once, then an OD rule is created for each possible combination of origin-destination pairs. In this case, the id of each rule is suffixed by an auto-incremental integer and all the rules correspond to the same `Ticket` (with the same price).
+
+Note that multiple tickets (with a different price) are not allowed for a given origin-destination pair. In case an OD rule already exists for an origin-destination pair, all additional rules for the same pair will be ignored.
