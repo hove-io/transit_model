@@ -23,7 +23,7 @@ use failure::bail;
 use failure::format_err;
 use log::{info, warn};
 use minidom::Element;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs;
 use std::io::Read;
 use std::path;
@@ -409,9 +409,13 @@ pub fn read<P: AsRef<path::Path>>(
     path: P,
     stop_points: &CollectionWithId<StopPoint>,
 ) -> Result<(Collection<Ticket>, Collection<ODRule>)> {
-    let files: Vec<String> = fs::read_dir(&path)?
-        .map(|f| f.unwrap().file_name().into_string().unwrap())
-        .collect();
+    let files = fs::read_dir(&path)?
+        .map(|f| {
+            f?.file_name()
+                .into_string()
+                .map_err(|_| format_err!("syntus fares filename is not convertible into utf-8"))
+        })
+        .collect::<Result<BTreeSet<_>>>()?;
     if files.is_empty() {
         bail!("no files found into syntus fares directory");
     }
