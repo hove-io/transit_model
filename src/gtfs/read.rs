@@ -354,6 +354,20 @@ where
     Ok(())
 }
 
+trait Undefined {
+    fn undefined() -> Self;
+    fn is_undefined(&self) -> bool;
+}
+
+impl Undefined for objects::Time {
+    fn undefined() -> Self {
+        Time::new(0, 0, u32::max_value())
+    }
+    fn is_undefined(&self) -> bool {
+        self.total_seconds() == u32::max_value()
+    }
+}
+
 fn ventilate_stop_times(
     undefined_stop_times: &mut [&mut objects::StopTime],
     before: &objects::StopTime,

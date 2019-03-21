@@ -721,12 +721,6 @@ impl Time {
     pub fn total_seconds(&self) -> u32 {
         self.0
     }
-    pub fn undefined() -> Self {
-        Time(u32::max_value())
-    }
-    pub fn is_undefined(&self) -> bool {
-        self.0 == u32::max_value()
-    }
 }
 impl Add for Time {
     type Output = Time;
