@@ -521,7 +521,7 @@ pub struct Line {
     )]
     pub text_color: Option<Rgb>,
     #[serde(rename = "line_sort_order")]
-    pub sort_order: Option<u32>,
+    pub sort_order: Option<i32>,
     #[derivative(Default(value = "\"default_network\".into()"))]
     pub network_id: String,
     #[derivative(Default(value = "\"default_commercial_mode\".into()"))]

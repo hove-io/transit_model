@@ -149,6 +149,7 @@ pub fn manage_fares(collections: &mut Collections, base_path: &path::Path) -> Re
     let path = base_path.join(file);
     builder.has_headers(true);
     let mut rdr = builder
+        .trim(csv::Trim::All)
         .from_path(&path)
         .with_context(ctx_from_path!(path))?;
     let ref_fare: Fare = match rdr.deserialize().next() {
@@ -293,7 +294,7 @@ pub fn manage_codes(collections: &mut Collections, path: &path::Path) -> Result<
     let path = path.join(file);
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
     for code in rdr.deserialize() {
-        let code: Code = code.with_context(ctx_from_path!(path))?;
+        let code: Code = skip_fail!(code);
         match code.object_type {
             ObjectType::StopArea => insert_code(&mut collections.stop_areas, code),
             ObjectType::StopPoint => insert_code(&mut collections.stop_points, code),

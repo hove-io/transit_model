@@ -383,7 +383,7 @@ struct Route {
     )]
     text_color: Option<objects::Rgb>,
     #[serde(rename = "route_sort_order")]
-    sort_order: Option<u32>,
+    sort_order: Option<i32>,
 }
 
 fn remove_stop_zones(model: Model) -> Result<Collections> {
