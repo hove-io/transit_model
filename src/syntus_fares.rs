@@ -105,9 +105,9 @@ fn get_list_element_from_inner_list<'a>(
 
 fn load_syntus_file<R: Read>(
     mut file: R,
-    stop_code_to_stop_area: &HashMap<&str, &str>,
+    stop_code_to_stop_areas: &HashMap<&str, HashSet<&str>>,
     tickets: &mut Vec<Ticket>,
-    od_rules: &mut BTreeMap<(String, String), ODRule>,
+    od_rules_map: &mut BTreeMap<(String, String), ODRule>,
 ) -> Result<()> {
     let mut file_content = "".to_string();
     file.read_to_string(&mut file_content)?;
@@ -235,14 +235,14 @@ fn load_syntus_file<R: Read>(
                     price = price.min(capping);
                 }
                 let ticket = Ticket::new(id.clone(), start_date, end_date, price);
-                let od_rule = skip_fail!(get_od_rule(
+                let od_rules = skip_fail!(get_od_rules(
                     &stop_point_ref_to_gtfs_stop_codes,
                     id,
                     start_stop_point,
                     end_stop_point,
-                    stop_code_to_stop_area
+                    stop_code_to_stop_areas
                 ));
-                try_add_od_rule_and_ticket(od_rules, tickets, od_rule, ticket);
+                try_add_od_rule_and_ticket(od_rules_map, tickets, od_rules, ticket);
             }
         }
     }
@@ -264,43 +264,53 @@ fn load_syntus_file<R: Read>(
                         .text()
                         .parse::<f64>()?;
             let ticket = Ticket::new(id.clone(), start_date, end_date, price);
-            let od_rule = skip_fail!(get_od_rule(
+            let od_rules = skip_fail!(get_od_rules(
                 &stop_point_ref_to_gtfs_stop_codes,
                 id,
                 start_stop_point,
                 end_stop_point,
-                &stop_code_to_stop_area
+                &stop_code_to_stop_areas
             ));
-            try_add_od_rule_and_ticket(od_rules, tickets, od_rule, ticket);
+            try_add_od_rule_and_ticket(od_rules_map, tickets, od_rules, ticket);
         }
     }
     Ok(())
 }
 
 fn try_add_od_rule_and_ticket(
-    od_rules: &mut BTreeMap<(String, String), ODRule>,
+    od_rules_map: &mut BTreeMap<(String, String), ODRule>,
     tickets: &mut Vec<Ticket>,
-    od_rule: ODRule,
+    od_rules: Vec<ODRule>,
     ticket: Ticket,
 ) {
-    match od_rules.get(&(
-        od_rule.origin_stop_area_id.clone(),
-        od_rule.destination_stop_area_id.clone(),
-    )) {
-        Some(existing_rule) => warn!(
-            "od_rule for {:?} / {:?} already exists, skipping the following one",
-            existing_rule.origin_stop_area_id, existing_rule.destination_stop_area_id
-        ),
-        None => {
-            od_rules.insert(
-                (
-                    od_rule.origin_stop_area_id.clone(),
-                    od_rule.destination_stop_area_id.clone(),
-                ),
-                od_rule,
-            );
-            tickets.push(ticket);
-        }
+    let mut od_rules_to_add: BTreeMap<(String, String), ODRule> = od_rules
+        .into_iter()
+        .filter_map(|od_rule| {
+            match od_rules_map.get(&(
+                od_rule.origin_stop_area_id.clone(),
+                od_rule.destination_stop_area_id.clone(),
+            )) {
+                Some(existing_rule) => {
+                    warn!(
+                        "od_rule for {:?} / {:?} already exists, skipping the following one",
+                        existing_rule.origin_stop_area_id, existing_rule.destination_stop_area_id
+                    );
+                    None
+                }
+                None => Some((
+                    (
+                        od_rule.origin_stop_area_id.clone(),
+                        od_rule.destination_stop_area_id.clone(),
+                    ),
+                    od_rule,
+                )),
+            }
+        })
+        .collect();
+
+    if !od_rules_to_add.is_empty() {
+        od_rules_map.append(&mut od_rules_to_add);
+        tickets.push(ticket);
     }
 }
 
@@ -340,13 +350,13 @@ fn get_matrix_elts<'a>(
     Ok(matrix_elts)
 }
 
-fn get_od_rule(
+fn get_od_rules(
     stop_point_ref_to_gtfs_stop_codes: &HashMap<String, Vec<String>>,
     ticket_id: String,
     start_stop_point: &str,
     end_stop_point: &str,
-    stop_code_to_stop_area: &HashMap<&str, &str>,
-) -> Result<ODRule> {
+    stop_code_to_stop_areas: &HashMap<&str, HashSet<&str>>,
+) -> Result<Vec<ODRule>> {
     match (
         stop_point_ref_to_gtfs_stop_codes.get(start_stop_point),
         stop_point_ref_to_gtfs_stop_codes.get(end_stop_point),
@@ -354,42 +364,39 @@ fn get_od_rule(
         (Some(start_gtfs_stop_codes), Some(end_gtfs_stop_codes)) => {
             let origin_stop_area_ids = start_gtfs_stop_codes
                 .iter()
-                .filter_map(|code| stop_code_to_stop_area.get::<str>(&code.to_string()))
+                .filter_map(|code| stop_code_to_stop_areas.get::<str>(&code.to_string()))
+                .flat_map(|sas| sas)
                 .collect::<HashSet<_>>();
             let destination_stop_area_ids = end_gtfs_stop_codes
                 .iter()
-                .filter_map(|code| stop_code_to_stop_area.get::<str>(&code.to_string()))
+                .filter_map(|code| stop_code_to_stop_areas.get::<str>(&code.to_string()))
+                .flat_map(|sas| sas)
                 .collect::<HashSet<_>>();
             match (origin_stop_area_ids.len(), destination_stop_area_ids.len()) {
-                (1, 1) => Ok(
-                    ODRule::new(format!("OD:{}",
-                    ticket_id.clone()),
-                    origin_stop_area_ids.iter().last().unwrap().to_string(),
-                    destination_stop_area_ids
-                        .iter()
-                        .last()
-                        .unwrap()
-                        .to_string(),
-                    ticket_id.clone())
-                ),
-                (nb_stop_areas, 1) =>
+                (_, 0) =>
                     bail!(
-                        "found {} stop area matches for origin {:?}",
-                        nb_stop_areas, start_gtfs_stop_codes
+                        "no stop areas found for origins {:?}",
+                        start_gtfs_stop_codes
                     ),
-                (1, nb_stop_areas) =>
+                (0, _) =>
                     bail!(
-                        "found {} stop area matches for destination {:?}",
-                        nb_stop_areas, end_gtfs_stop_codes
-                    ),
-                (origin_nb_stop_areas, destination_nb_stop_areas) =>
-                    bail!(
-                        "found {} stop area matches for origin {:?} and {} matches for destination {:?}",
-                        origin_nb_stop_areas,
-                        start_gtfs_stop_codes,
-                        destination_nb_stop_areas,
+                        "no stop areas found for destination {:?}",
                         end_gtfs_stop_codes
                     ),
+                (_, _) => {
+                    let mut od_rules = vec![];
+                    for sa_orig in origin_stop_area_ids {
+                        for sa_dest in &destination_stop_area_ids {
+                            od_rules.push(ODRule::new(
+                                format!("OD:{}", ticket_id.clone()),
+                                sa_orig.to_string(),
+                                sa_dest.to_string(),
+                                ticket_id.clone())
+                            );
+                        }
+                    }
+                    Ok(od_rules)
+                }
             }
         }
         (Some(_), None) =>
@@ -419,7 +426,7 @@ pub fn read<P: AsRef<path::Path>>(
     if files.is_empty() {
         bail!("no files found into syntus fares directory");
     }
-    let stop_code_to_stop_area: HashMap<&str, &str> = stop_points
+    let stop_code_to_stop_areas: HashMap<&str, HashSet<&str>> = stop_points
         .values()
         .filter_map(|sp| {
             sp.codes
@@ -427,7 +434,10 @@ pub fn read<P: AsRef<path::Path>>(
                 .find(|(key, _)| key == "gtfs_stop_code")
                 .map(|(_, code)| (code.as_ref(), sp.stop_area_id.as_ref()))
         })
-        .collect();
+        .fold(HashMap::default(), |mut acc, (code, sa)| {
+            acc.entry(code).or_insert_with(HashSet::new).insert(sa);
+            acc
+        });
     let mut tickets = vec![];
     let mut od_rules = BTreeMap::new();
     for filename in files {
@@ -438,7 +448,7 @@ pub fn read<P: AsRef<path::Path>>(
             match file.sanitized_name().extension() {
                 Some(ext) if ext == "xml" => {
                     info!("reading fares file {:?}", file.name());
-                    load_syntus_file(file, &stop_code_to_stop_area, &mut tickets, &mut od_rules)?;
+                    load_syntus_file(file, &stop_code_to_stop_areas, &mut tickets, &mut od_rules)?;
                 }
                 _ => {
                     info!("skipping file in zip: {:?}", file.sanitized_name());
