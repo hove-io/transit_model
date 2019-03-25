@@ -217,7 +217,10 @@ impl Trip {
         trip_property_id: &Option<String>,
         networks: &CollectionWithId<objects::Network>,
     ) -> Result<objects::VehicleJourney> {
-        let route = routes.get(&self.route_id).unwrap();
+        let route = match routes.get(&self.route_id) {
+            Some(route) => route,
+            None => bail!("Coudn't find route {} for trip {}", self.route_id, self.id),
+        };
         let physical_mode = get_physical_mode(&route.route_type);
 
         Ok(objects::VehicleJourney {
@@ -805,12 +808,12 @@ fn make_ntfs_vehicle_journeys(
             id_incr += 1;
         }
         for t in trips {
-            vehicle_journeys.push(t.to_ntfs_vehicle_journey(
+            vehicle_journeys.push(skip_fail!(t.to_ntfs_vehicle_journey(
                 routes,
                 dataset,
                 &property_id,
                 networks,
-            )?);
+            )));
         }
     }
 
@@ -1825,7 +1828,8 @@ mod tests {
             "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
              1,route_1,0,service_1,,\n\
              2,route_2,0,service_1,1,2\n\
-             3,route_3,0,service_1,1,2";
+             3,route_3,0,service_1,1,2
+             4,unknown_route,0,service_1,1,2";
 
         test_in_tmp_dir(|path| {
             let mut handler = PathFileHandler::new(path.to_path_buf());
