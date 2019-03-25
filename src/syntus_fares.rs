@@ -372,16 +372,17 @@ fn get_od_rules(
                 .filter_map(|code| stop_code_to_stop_areas.get::<str>(&code.to_string()))
                 .flat_map(|sas| sas)
                 .collect::<HashSet<_>>();
+
             match (origin_stop_area_ids.len(), destination_stop_area_ids.len()) {
-                (_, 0) =>
-                    bail!(
-                        "no stop areas found for origins {:?}",
-                        start_gtfs_stop_codes
-                    ),
                 (0, _) =>
                     bail!(
-                        "no stop areas found for destination {:?}",
-                        end_gtfs_stop_codes
+                        "no stop areas found for origins {:?} with destinations {:?}",
+                        start_gtfs_stop_codes, end_gtfs_stop_codes
+                    ),
+                (_, 0) =>
+                    bail!(
+                        "no stop areas found for destinations {:?} with origins {:?}",
+                        end_gtfs_stop_codes, start_gtfs_stop_codes
                     ),
                 (_, _) => {
                     let mut od_rules = vec![];
