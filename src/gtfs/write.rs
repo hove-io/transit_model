@@ -927,7 +927,7 @@ mod tests {
             stop_type: StopType::Point,
         }])
         .unwrap();
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
         write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
         let output_file_path = tmp_dir.path().join("stop_extensions.txt");
         let mut output_file = File::open(output_file_path.clone())
@@ -950,7 +950,7 @@ mod tests {
     fn ntfs_object_code_to_stop_extensions_nothing_generated() {
         let stop_areas = CollectionWithId::new(vec![]).unwrap();
         let stop_points = CollectionWithId::new(vec![]).unwrap();
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
         write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
         let output_file_path = tmp_dir.path().join("stop_extensions.txt");
         assert!(!output_file_path.exists());
@@ -1036,7 +1036,7 @@ mod tests {
             },
         ])
         .unwrap();
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
         write_calendar_dates(tmp_dir.path(), &calendar).unwrap();
         let output_file_path = tmp_dir.path().join("calendar_dates.txt");
         let mut output_file = File::open(output_file_path.clone())
@@ -1121,7 +1121,7 @@ mod tests {
             (vehicle_journeys.get_idx("vj:01").unwrap(), 1),
             "somewhere".to_string(),
         );
-        let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+        let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
         write_stop_times(
             tmp_dir.path(),
             &vehicle_journeys,

@@ -16,11 +16,11 @@
 
 use chrono::NaiveDateTime;
 use log::info;
-use navitia_model;
-use navitia_model::Result;
 use std::path::PathBuf;
 use structopt;
 use structopt::StructOpt;
+use transit_model;
+use transit_model::Result;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.")]
@@ -51,7 +51,7 @@ struct Opt {
         short = "x",
         long,
         parse(try_from_str),
-        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+        raw(default_value = "&transit_model::CURRENT_DATETIME")
     )]
     current_datetime: NaiveDateTime,
 }
@@ -62,14 +62,14 @@ fn run() -> Result<()> {
     let opt = Opt::from_args();
 
     let objects = if let Some(url) = opt.url {
-        navitia_model::gtfs::read_from_url(&url, opt.config_path, opt.prefix)?
+        transit_model::gtfs::read_from_url(&url, opt.config_path, opt.prefix)?
     } else if opt.input.is_file() {
-        navitia_model::gtfs::read_from_zip(opt.input, opt.config_path, opt.prefix)?
+        transit_model::gtfs::read_from_zip(opt.input, opt.config_path, opt.prefix)?
     } else {
-        navitia_model::gtfs::read_from_path(opt.input, opt.config_path, opt.prefix)?
+        transit_model::gtfs::read_from_path(opt.input, opt.config_path, opt.prefix)?
     };
 
-    navitia_model::ntfs::write(&objects, opt.output, opt.current_datetime)?;
+    transit_model::ntfs::write(&objects, opt.output, opt.current_datetime)?;
     Ok(())
 }
 

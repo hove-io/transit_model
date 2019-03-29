@@ -16,13 +16,13 @@
 
 use chrono::NaiveDateTime;
 use log::info;
-use navitia_model;
-use navitia_model::transfers;
-use navitia_model::transfers::TransfersMode;
-use navitia_model::Result;
 use std::path::PathBuf;
 use structopt;
 use structopt::StructOpt;
+use transit_model;
+use transit_model::transfers;
+use transit_model::transfers::TransfersMode;
+use transit_model::Result;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "transfers", about = "Generate transfers.")]
@@ -74,7 +74,7 @@ struct Opt {
         short = "x",
         long,
         parse(try_from_str),
-        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+        raw(default_value = "&transit_model::CURRENT_DATETIME")
     )]
     current_datetime: NaiveDateTime,
 }
@@ -84,7 +84,7 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let model = navitia_model::ntfs::read(opt.input)?;
+    let model = transit_model::ntfs::read(opt.input)?;
 
     let model = transfers::generates_transfers(
         model,
@@ -96,7 +96,7 @@ fn run() -> Result<()> {
         opt.report,
     )?;
 
-    navitia_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
+    transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
     Ok(())
 }
 

@@ -14,13 +14,13 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use navitia_model;
-use navitia_model::collection::{CollectionWithId, Id, Idx};
-use navitia_model::model::{GetCorresponding, Model};
-use navitia_model::objects::*;
-use navitia_model::relations::IdxSet;
-use navitia_model::test_utils::*;
 use std::collections::HashMap;
+use transit_model;
+use transit_model::collection::{CollectionWithId, Id, Idx};
+use transit_model::model::{GetCorresponding, Model};
+use transit_model::objects::*;
+use transit_model::relations::IdxSet;
+use transit_model::test_utils::*;
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
 where
@@ -36,7 +36,7 @@ where
 
 #[test]
 fn minimal() {
-    let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+    let ntm = transit_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
 
     assert_eq!(8, ntm.stop_areas.len());
     assert_eq!(12, ntm.stop_points.len());
@@ -89,7 +89,7 @@ fn minimal() {
 
 #[test]
 fn ntfs_stop_zones() {
-    let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+    let ntm = transit_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
     let stop_zone_1 = ntm.stop_points.get("MTPZ").unwrap();
     assert_eq!(stop_zone_1.stop_type, StopType::Zone);
     let stop_zone_2 = ntm.stop_points.get("CDGZ").unwrap();
@@ -98,9 +98,9 @@ fn ntfs_stop_zones() {
 
 #[test]
 fn ntfs_stops_output() {
-    let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+    let ntm = transit_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
     test_in_tmp_dir(|output_dir| {
-        navitia_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec!["stops.txt", "stop_times.txt"]),
@@ -111,9 +111,9 @@ fn ntfs_stops_output() {
 
 #[test]
 fn test_minimal_fares_stay_same() {
-    let ntm = navitia_model::ntfs::read("fixtures/ntfs2ntfs/fares").unwrap();
+    let ntm = transit_model::ntfs::read("fixtures/ntfs2ntfs/fares").unwrap();
     test_in_tmp_dir(|output_dir| {
-        navitia_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec!["stops.txt", "fares.csv", "od_fares.csv", "prices.csv"]),
@@ -124,7 +124,7 @@ fn test_minimal_fares_stay_same() {
 
 #[test]
 fn ntfs() {
-    let pt_objects = navitia_model::ntfs::read("fixtures/ntfs/").unwrap();
+    let pt_objects = transit_model::ntfs::read("fixtures/ntfs/").unwrap();
 
     // comments
     use crate::CommentType::*;
@@ -178,9 +178,9 @@ fn ntfs() {
 
 #[test]
 fn optional_empty_collections_not_created() {
-    let ntm = navitia_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+    let ntm = transit_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
     test_in_tmp_dir(|path| {
-        navitia_model::ntfs::write(&ntm, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&ntm, path, get_test_datetime()).unwrap();
 
         use std::collections::HashSet;
         let entries: HashSet<String> = ::std::fs::read_dir(path)

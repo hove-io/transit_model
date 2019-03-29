@@ -15,7 +15,7 @@
 // <http://www.gnu.org/licenses/>.
 
 //! Custom derive for GetCorresponding.  See
-//! `navitia_model::relations` for the documentation.
+//! `transit_model::relations` for the documentation.
 
 #![recursion_limit = "128"]
 

@@ -852,7 +852,7 @@ impl Coord {
     /// # Example
     ///
     /// ```
-    /// # use navitia_model::objects::Coord;
+    /// # use transit_model::objects::Coord;
     /// # fn get_coords() -> Vec<Coord> { vec![] }
     /// let v: Vec<Coord> = get_coords();
     /// let from = Coord { lon: 2.37715, lat: 48.846781 };
@@ -885,7 +885,7 @@ impl Approx {
     /// # Example
     ///
     /// ```
-    /// # use navitia_model::objects::Coord;
+    /// # use transit_model::objects::Coord;
     /// # fn get_coords() -> Vec<Coord> { vec![] }
     /// let v: Vec<Coord> = get_coords();
     /// let from = Coord { lon: 2.37715, lat: 48.846781 };

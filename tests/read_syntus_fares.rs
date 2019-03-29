@@ -14,16 +14,16 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use navitia_model::model::Model;
-use navitia_model::syntus_fares;
-use navitia_model::test_utils::*;
 use std::path::Path;
+use transit_model::model::Model;
+use transit_model::syntus_fares;
+use transit_model::test_utils::*;
 
 #[test]
 fn test_read_global() {
     test_in_tmp_dir(|path| {
         let objects =
-            navitia_model::ntfs::read(Path::new("./fixtures/read-syntus-fares/input/ntfs"))
+            transit_model::ntfs::read(Path::new("./fixtures/read-syntus-fares/input/ntfs"))
                 .unwrap();
         let (tickets, od_rules) = syntus_fares::read(
             Path::new("./fixtures/read-syntus-fares/input/syntus_fares_ok"),
@@ -34,7 +34,7 @@ fn test_read_global() {
         collections.tickets = tickets;
         collections.od_rules = od_rules;
         let new_model = Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["fares.csv", "od_fares.csv", "prices.csv"]),
@@ -47,7 +47,7 @@ fn test_read_global() {
 #[should_panic(expected = "no UnitPrice FareFrame found for the DistanceMatrix FareFrame")]
 fn test_read_ko_no_unit_price() {
     let objects =
-        navitia_model::ntfs::read(Path::new("./fixtures/read-syntus-fares/input/ntfs")).unwrap();
+        transit_model::ntfs::read(Path::new("./fixtures/read-syntus-fares/input/ntfs")).unwrap();
     syntus_fares::read(
         Path::new("./fixtures/read-syntus-fares/input/syntus_fares_ko_no_unit"),
         &objects.stop_points,
@@ -61,7 +61,7 @@ fn test_read_ko_no_unit_price() {
 )]
 fn test_read_ko_several_unit_prices() {
     let objects =
-        navitia_model::ntfs::read(Path::new("./fixtures/read-syntus-fares/input/ntfs")).unwrap();
+        transit_model::ntfs::read(Path::new("./fixtures/read-syntus-fares/input/ntfs")).unwrap();
     syntus_fares::read(
         Path::new("./fixtures/read-syntus-fares/input/syntus_fares_ko_several_unit"),
         &objects.stop_points,

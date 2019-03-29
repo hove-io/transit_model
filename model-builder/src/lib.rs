@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use navitia_model::{collection, model, objects};
+use transit_model::{collection, model, objects};
 
 mod builder;
 

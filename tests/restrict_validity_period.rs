@@ -15,15 +15,15 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::NaiveDate;
-use navitia_model::model::Model;
-use navitia_model::test_utils::*;
 use std::path::Path;
+use transit_model::model::Model;
+use transit_model::test_utils::*;
 
 #[test]
 fn test_restrict_global() {
     test_in_tmp_dir(|path| {
         let objects =
-            navitia_model::ntfs::read(Path::new("./fixtures/restrict-validity-period/input"))
+            transit_model::ntfs::read(Path::new("./fixtures/restrict-validity-period/input"))
                 .unwrap();
         let mut collections = objects.into_collections();
         collections
@@ -34,7 +34,7 @@ fn test_restrict_global() {
             .unwrap();
         collections.sanitize().unwrap();
         let new_model = Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec![
@@ -64,7 +64,7 @@ fn test_restrict_global() {
 fn test_restrict_no_panic() {
     test_in_tmp_dir(|path| {
         let objects =
-            navitia_model::ntfs::read(Path::new("./fixtures/restrict-validity-period/input"))
+            transit_model::ntfs::read(Path::new("./fixtures/restrict-validity-period/input"))
                 .unwrap();
         let mut collections = objects.into_collections();
         collections
@@ -75,6 +75,6 @@ fn test_restrict_no_panic() {
             .unwrap();
         collections.sanitize().unwrap();
         let new_model = Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
     });
 }

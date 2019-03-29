@@ -17,17 +17,17 @@
 use chrono::NaiveDateTime;
 use failure::bail;
 use log::info;
-use navitia_model;
-use navitia_model::model::Collections;
-use navitia_model::transfers;
-use navitia_model::transfers::TransfersMode;
-use navitia_model::Result;
 use serde_json;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::path::PathBuf;
 use structopt;
 use structopt::StructOpt;
+use transit_model;
+use transit_model::model::Collections;
+use transit_model::transfers;
+use transit_model::transfers::TransfersMode;
+use transit_model::Result;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -74,7 +74,7 @@ struct Opt {
         short = "x",
         long,
         parse(try_from_str),
-        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+        raw(default_value = "&transit_model::CURRENT_DATETIME")
     )]
     current_datetime: NaiveDateTime,
 }
@@ -88,7 +88,7 @@ fn run() -> Result<()> {
     } else {
         let mut collections = Collections::default();
         for input_directory in opt.input_directories {
-            let to_append_model = navitia_model::ntfs::read(input_directory)?;
+            let to_append_model = transit_model::ntfs::read(input_directory)?;
             collections.try_merge(to_append_model.into_collections())?;
         }
 
@@ -99,7 +99,7 @@ fn run() -> Result<()> {
             collections.feed_infos.append(&mut feed_infos);
         }
 
-        let model = navitia_model::Model::new(collections)?;
+        let model = transit_model::Model::new(collections)?;
         let model = transfers::generates_transfers(
             model,
             opt.max_distance,
@@ -109,7 +109,7 @@ fn run() -> Result<()> {
             &TransfersMode::InterContributor,
             opt.report,
         )?;
-        navitia_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
+        transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
         Ok(())
     }
 }

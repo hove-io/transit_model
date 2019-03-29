@@ -15,11 +15,11 @@
 // <http://www.gnu.org/licenses/>.
 
 use log::info;
-use navitia_model;
-use navitia_model::Result;
 use std::path::PathBuf;
 use structopt;
 use structopt::StructOpt;
+use transit_model;
+use transit_model::Result;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "ntfs2gtfs", about = "Convert an NTFS to a GTFS.")]
@@ -36,9 +36,9 @@ struct Opt {
 fn run() -> Result<()> {
     info!("Launching ntfs2gtfs...");
     let opt = Opt::from_args();
-    let model = navitia_model::ntfs::read(opt.input)?;
+    let model = transit_model::ntfs::read(opt.input)?;
 
-    navitia_model::gtfs::write(model, opt.output)?;
+    transit_model::gtfs::write(model, opt.output)?;
     Ok(())
 }
 

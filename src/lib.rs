@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-//! The `navitia_model` crate proposes a model to manage transit data.
+//! The `transit_model` crate proposes a model to manage transit data.
 //! It can import and export data from [GTFS](http://gtfs.org/) and
 //! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
 

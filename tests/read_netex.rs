@@ -14,13 +14,13 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use navitia_model;
-use navitia_model::test_utils::*;
-use navitia_model::Result;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
 use tempdir::TempDir;
+use transit_model;
+use transit_model::test_utils::*;
+use transit_model::Result;
 use zip;
 
 fn compare_ntfs_zips<P, T>(ntfs_zipfile1: P, ntfs_zipfile2: T) -> Result<()>
@@ -65,11 +65,11 @@ fn ratp_line7bis() {
     let input_data = "fixtures/netex/RATP_Line7bis-extract-2009-NeTEx.zip";
     let expected_result_file = "fixtures/netex/expected_result/ratp_result.zip";
 
-    let read_result = navitia_model::netex::read(Path::new(input_data), None, None);
+    let read_result = transit_model::netex::read(Path::new(input_data), None, None);
     assert!(read_result.is_ok(), "{:?}", read_result.err().unwrap());
     let tmp_dir = TempDir::new("netex_computed_result").unwrap();
     let file_path = tmp_dir.path().join("netex_computed_result_ratp.zip");
-    navitia_model::ntfs::write_to_zip(
+    transit_model::ntfs::write_to_zip(
         &read_result.unwrap(),
         file_path.clone(),
         get_test_datetime(),
@@ -84,11 +84,11 @@ fn read_netex_oslo() {
     let input_data = "fixtures/netex/Full_PublicationDelivery_109_Oslo_morningbus_example.xml";
     let expected_result_file = "fixtures/netex/expected_result/oslo_result.zip";
 
-    let read_result = navitia_model::netex::read(Path::new(input_data), None, None);
+    let read_result = transit_model::netex::read(Path::new(input_data), None, None);
     assert!(read_result.is_ok(), "{:?}", read_result.err().unwrap());
     let tmp_dir = TempDir::new("netex_computed_result").unwrap();
     let file_path = tmp_dir.path().join("netex_computed_result_oslo.zip");
-    navitia_model::ntfs::write_to_zip(
+    transit_model::ntfs::write_to_zip(
         &read_result.unwrap(),
         file_path.clone(),
         get_test_datetime(),

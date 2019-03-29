@@ -14,11 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use navitia_model::Result;
 use serde_json::json;
+use transit_model::Result;
 
 fn run() -> Result<()> {
-    let objects = navitia_model::gtfs::read_from_path(".", None, None)?;
+    let objects = transit_model::gtfs::read_from_path(".", None, None)?;
     let json_objs = json!(objects);
     println!("{:?}", json_objs.to_string());
     Ok(())

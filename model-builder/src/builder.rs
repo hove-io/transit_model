@@ -118,7 +118,7 @@ impl<'a> ModelBuilder {
     /// Add a new Calendar to the model
     ///
     /// ```
-    /// # use navitia_model::objects::Date;
+    /// # use transit_model::objects::Date;
     ///
     /// # fn main() {
     /// let model = model_builder::ModelBuilder::default()
@@ -270,7 +270,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// Set the calendar (service_id) of the vj
     ///
     /// ```
-    /// # use navitia_model::objects::Date;
+    /// # use transit_model::objects::Date;
     ///
     /// # fn main() {
     /// let model = model_builder::ModelBuilder::default()

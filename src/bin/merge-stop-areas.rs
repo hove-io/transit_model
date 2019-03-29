@@ -16,11 +16,11 @@
 
 use chrono::NaiveDateTime;
 use log::info;
-use navitia_model;
-use navitia_model::{Model, Result};
 use std::path::PathBuf;
 use structopt;
 use structopt::StructOpt;
+use transit_model;
+use transit_model::{Model, Result};
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -53,7 +53,7 @@ struct Opt {
         short = "x",
         long,
         parse(try_from_str),
-        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+        raw(default_value = "&transit_model::CURRENT_DATETIME")
     )]
     current_datetime: NaiveDateTime,
 }
@@ -63,9 +63,9 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let objects = navitia_model::ntfs::read(opt.input)?;
+    let objects = transit_model::ntfs::read(opt.input)?;
     let mut collections = objects.into_collections();
-    collections = navitia_model::merge_stop_areas::merge_stop_areas(
+    collections = transit_model::merge_stop_areas::merge_stop_areas(
         collections,
         opt.rules,
         opt.automatic_max_distance,
@@ -73,7 +73,7 @@ fn run() -> Result<()> {
     )?;
     let new_model = Model::new(collections)?;
 
-    navitia_model::ntfs::write(&new_model, opt.output, opt.current_datetime)?;
+    transit_model::ntfs::write(&new_model, opt.output, opt.current_datetime)?;
     Ok(())
 }
 

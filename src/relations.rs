@@ -34,8 +34,8 @@
 //!
 //! ```no_run
 //! # use get_corresponding_derive::*;
-//! # use navitia_model::relations::*;
-//! # use navitia_model::collection::Idx;
+//! # use transit_model::relations::*;
+//! # use transit_model::collection::Idx;
 //! # struct Bike;
 //! # struct Brand;
 //! # struct Owner;
@@ -109,8 +109,8 @@
 //!
 //! ```
 //! # use get_corresponding_derive::*;
-//! # use navitia_model::relations::*;
-//! # use navitia_model::collection::Idx;
+//! # use transit_model::relations::*;
+//! # use transit_model::collection::Idx;
 //! # struct Bike;
 //! # struct Brand;
 //! # struct Owner;
