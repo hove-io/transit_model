@@ -14,15 +14,15 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use navitia_model;
-use navitia_model::test_utils::*;
+use transit_model;
+use transit_model::test_utils::*;
 
 #[test]
 fn test_stop_zones_not_exported_and_cleaned() {
     test_in_tmp_dir(|path| {
         let input = "./fixtures/ntfs2gtfs/input";
-        let model = navitia_model::ntfs::read(input).unwrap();
-        navitia_model::gtfs::write(model, path).unwrap();
+        let model = transit_model::ntfs::read(input).unwrap();
+        transit_model::gtfs::write(model, path).unwrap();
         compare_output_dir_with_expected(&path, None, "./fixtures/ntfs2gtfs/output");
     });
 }

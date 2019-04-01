@@ -14,11 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use navitia_model;
-use navitia_model::test_utils::*;
-use navitia_model::transfers;
-use navitia_model::transfers::TransfersMode;
 use std::path::Path;
+use transit_model;
+use transit_model::test_utils::*;
+use transit_model::transfers;
+use transit_model::transfers::TransfersMode;
 
 #[test]
 //                    206m
@@ -33,7 +33,7 @@ use std::path::Path;
 fn test_generates_transfers() {
     test_in_tmp_dir(|path| {
         let input_dir = "fixtures/transfers/input";
-        let model = navitia_model::ntfs::read(input_dir).unwrap();
+        let model = transit_model::ntfs::read(input_dir).unwrap();
         let rules: Vec<Box<Path>> = vec![];
         let model = transfers::generates_transfers(
             model,
@@ -45,7 +45,7 @@ fn test_generates_transfers() {
             None,
         )
         .unwrap();
-        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt"]),
@@ -58,7 +58,7 @@ fn test_generates_transfers() {
 fn test_generates_transfers_with_modification_rules() {
     test_in_tmp_dir(|path| {
         let input_dir = "fixtures/transfers/input";
-        let model = navitia_model::ntfs::read(input_dir).unwrap();
+        let model = transit_model::ntfs::read(input_dir).unwrap();
         let rules = vec![Path::new("./fixtures/transfers/rules.txt").to_path_buf()];
         let model = transfers::generates_transfers(
             model,
@@ -70,7 +70,7 @@ fn test_generates_transfers_with_modification_rules() {
             None,
         )
         .unwrap();
-        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt"]),

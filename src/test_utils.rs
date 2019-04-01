@@ -67,7 +67,7 @@ pub fn test_in_tmp_dir<F>(func: F)
 where
     F: FnOnce(&path::Path),
 {
-    let tmp_dir = TempDir::new("navitia_model_tests").expect("create temp dir");
+    let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
     {
         let path = tmp_dir.as_ref();
         func(path);

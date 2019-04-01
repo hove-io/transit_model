@@ -14,9 +14,9 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use navitia_model::model::Model;
-use navitia_model::test_utils::*;
 use std::path::Path;
+use transit_model::model::Model;
+use transit_model::test_utils::*;
 
 #[test]
 fn test_merge_stop_areas_multi_steps() {
@@ -26,10 +26,10 @@ fn test_merge_stop_areas_multi_steps() {
             Path::new("./fixtures/merge-stop-areas/rule2.csv").to_path_buf(),
         ];
         let objects =
-            navitia_model::ntfs::read(Path::new("./fixtures/merge-stop-areas/ntfs-to-merge"))
+            transit_model::ntfs::read(Path::new("./fixtures/merge-stop-areas/ntfs-to-merge"))
                 .unwrap();
         let report_path = path.join("report.json");
-        let collections = navitia_model::merge_stop_areas::merge_stop_areas(
+        let collections = transit_model::merge_stop_areas::merge_stop_areas(
             objects.into_collections(),
             paths,
             200,
@@ -37,7 +37,7 @@ fn test_merge_stop_areas_multi_steps() {
         )
         .unwrap();
         let new_model = Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec![

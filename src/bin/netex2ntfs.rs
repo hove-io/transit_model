@@ -16,11 +16,11 @@
 
 use chrono::NaiveDateTime;
 use log::info;
-use navitia_model;
-use navitia_model::Result;
 use std::path::PathBuf;
 use structopt;
 use structopt::StructOpt;
+use transit_model;
+use transit_model::Result;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "netex2ntfs", about = "Convert Netex data to an NTFS.")]
@@ -46,7 +46,7 @@ struct Opt {
         short = "x",
         long,
         parse(try_from_str),
-        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+        raw(default_value = "&transit_model::CURRENT_DATETIME")
     )]
     current_datetime: NaiveDateTime,
 }
@@ -56,9 +56,9 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let objects = navitia_model::netex::read(opt.input, opt.config_path, opt.prefix)?;
+    let objects = transit_model::netex::read(opt.input, opt.config_path, opt.prefix)?;
 
-    navitia_model::ntfs::write(&objects, opt.output, opt.current_datetime)?;
+    transit_model::ntfs::write(&objects, opt.output, opt.current_datetime)?;
     Ok(())
 }
 

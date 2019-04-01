@@ -14,10 +14,10 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use navitia_model::collection::{CollectionWithId, Id, Idx};
-use navitia_model::model::GetCorresponding;
-use navitia_model::relations::IdxSet;
-use navitia_model::{Model, Result};
+use transit_model::collection::{CollectionWithId, Id, Idx};
+use transit_model::model::GetCorresponding;
+use transit_model::relations::IdxSet;
+use transit_model::{Model, Result};
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
 where
@@ -32,7 +32,7 @@ where
 }
 
 fn run() -> Result<()> {
-    let objects = navitia_model::ntfs::read(".")?;
+    let objects = transit_model::ntfs::read(".")?;
 
     for (from, stop_area) in &objects.stop_areas {
         let cms = get(from, &objects.commercial_modes, &objects);

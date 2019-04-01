@@ -498,8 +498,8 @@ impl Model {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::model::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::model::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// let _: Model = Model::new(Collections::default())?;
     /// # Ok(())
     /// # }
@@ -507,9 +507,9 @@ impl Model {
     /// ```
     ///
     /// ```
-    /// # use navitia_model::model::*;
-    /// # use navitia_model::collection::Collection;
-    /// # use navitia_model::objects::Transfer;
+    /// # use transit_model::model::*;
+    /// # use transit_model::collection::Collection;
+    /// # use transit_model::objects::Transfer;
     /// let mut collections = Collections::default();
     /// // This transfer is invalid as there is no stop points in collections
     /// collections.transfers = Collection::new(vec![Transfer {
@@ -619,9 +619,9 @@ impl Model {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::model::*;
+    /// # use transit_model::model::*;
     /// # use std::collections::HashMap;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # fn run() -> transit_model::Result<()> {
     /// let model: Model = Model::new(Collections::default())?;
     /// let mut collections = model.into_collections();
     ///  collections

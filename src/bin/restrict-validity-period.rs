@@ -16,12 +16,12 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 use log::info;
-use navitia_model;
-use navitia_model::Model;
-use navitia_model::Result;
 use std::path::PathBuf;
 use structopt;
 use structopt::StructOpt;
+use transit_model;
+use transit_model::Model;
+use transit_model::Result;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -51,7 +51,7 @@ struct Opt {
         short = "x",
         long,
         parse(try_from_str),
-        raw(default_value = "&navitia_model::CURRENT_DATETIME")
+        raw(default_value = "&transit_model::CURRENT_DATETIME")
     )]
     current_datetime: NaiveDateTime,
 }
@@ -61,12 +61,12 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let model = navitia_model::ntfs::read(opt.input)?;
+    let model = transit_model::ntfs::read(opt.input)?;
     let mut collections = model.into_collections();
     collections.restrict_period(&opt.start_validity_date, &opt.end_validity_date)?;
     collections.sanitize()?;
     let model = Model::new(collections)?;
-    navitia_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
+    transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
     Ok(())
 }
 

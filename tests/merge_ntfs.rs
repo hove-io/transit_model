@@ -14,18 +14,18 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use navitia_model;
-use navitia_model::collection::CollectionWithId;
-use navitia_model::collection::Idx;
-use navitia_model::model::Collections;
-use navitia_model::model::Model;
-use navitia_model::objects::{Comment, StopPoint, VehicleJourney};
-use navitia_model::test_utils::*;
-use navitia_model::transfers;
-use navitia_model::transfers::TransfersMode;
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::path::Path;
+use transit_model;
+use transit_model::collection::CollectionWithId;
+use transit_model::collection::Idx;
+use transit_model::model::Collections;
+use transit_model::model::Model;
+use transit_model::objects::{Comment, StopPoint, VehicleJourney};
+use transit_model::test_utils::*;
+use transit_model::transfers;
+use transit_model::transfers::TransfersMode;
 
 #[test]
 #[should_panic(expected = "TGC already found")] // first collision is on contributor id
@@ -33,7 +33,7 @@ fn merge_collections_with_collisions() {
     let mut collections = Collections::default();
     let input_collisions = ["fixtures/ntfs", "fixtures/ntfs"];
     for input_directory in input_collisions.iter() {
-        let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
+        let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
         collections
             .try_merge(to_append_model.into_collections())
             .unwrap();
@@ -45,7 +45,7 @@ fn merge_collections_ok() {
     let mut collections = Collections::default();
     let input_dirs = ["fixtures/ntfs", "fixtures/merge-ntfs/input"];
     for input_directory in input_dirs.iter() {
-        let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
+        let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
 
         collections
             .try_merge(to_append_model.into_collections())
@@ -203,7 +203,7 @@ fn merge_collections_with_transfers_ok() {
         let input_dirs = ["fixtures/minimal_ntfs", "fixtures/merge-ntfs/input"];
         let rule_paths = vec![Path::new("./fixtures/merge-ntfs/transfer_rules.csv").to_path_buf()];
         for input_directory in input_dirs.iter() {
-            let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
+            let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
 
             collections
                 .try_merge(to_append_model.into_collections())
@@ -220,7 +220,7 @@ fn merge_collections_with_transfers_ok() {
             Some(Path::new(&report_path).to_path_buf()),
         )
         .unwrap();
-        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt", "report.json"]),
@@ -237,14 +237,14 @@ fn merge_collections_with_feed_infos() {
         let mut feed_infos: BTreeMap<String, String> =
             serde_json::from_reader(feed_infos_file).unwrap();
         for input_directory in &["fixtures/minimal_ntfs", "fixtures/merge-ntfs/input"] {
-            let to_append_model = navitia_model::ntfs::read(input_directory).unwrap();
+            let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
             collections
                 .try_merge(to_append_model.into_collections())
                 .unwrap();
         }
         collections.feed_infos.append(&mut feed_infos);
         let model = Model::new(collections).unwrap();
-        navitia_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["feed_infos.txt"]),

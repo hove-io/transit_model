@@ -90,7 +90,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
+    /// # use transit_model::collection::*;
     /// let _: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// ```
     pub fn new(v: Vec<T>) -> Self {
@@ -102,7 +102,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
+    /// # use transit_model::collection::*;
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// assert_eq!(c.len(), 6);
     /// ```
@@ -115,7 +115,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
+    /// # use transit_model::collection::*;
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// let (k, v): (Idx<i32>, &i32) = c.iter().nth(4).unwrap();
     /// assert_eq!(v, &5);
@@ -133,7 +133,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
+    /// # use transit_model::collection::*;
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// let values: Vec<&i32> = c.values().collect();
     /// assert_eq!(values, &[&1, &1, &2, &3, &5, &8]);
@@ -147,7 +147,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
+    /// # use transit_model::collection::*;
     /// let mut c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// for elem in c.values_mut() {
     ///     *elem *= 2;
@@ -163,7 +163,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
+    /// # use transit_model::collection::*;
     /// # use std::collections::BTreeSet;
     /// # fn get_transit_indices(c: &Collection<&'static str>) -> BTreeSet<Idx<&'static str>> {
     /// #     c.iter()
@@ -191,8 +191,8 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -216,8 +216,8 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -241,8 +241,8 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// let mut c = Collection::new(vec![Obj("foo"), Obj("bar")]);
     /// let v = c.take();
@@ -261,8 +261,8 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj;
     /// let mut c: Collection<Obj> = Collection::new(vec![]);
     /// assert!(c.is_empty());
@@ -279,9 +279,9 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
+    /// # use transit_model::collection::*;
     /// # use std::collections::HashSet;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// let mut c = Collection::new(vec![Obj("foo"), Obj("bar"), Obj("qux")]);
     /// let mut ids_to_keep: HashSet<String> = HashSet::new();
@@ -368,8 +368,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
     /// impl Id<Obj> for Obj {
@@ -405,9 +405,9 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
+    /// # use transit_model::collection::*;
     /// # use std::collections::HashMap;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # fn run() -> transit_model::Result<()> {
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
     /// impl Id<Obj> for Obj {
@@ -431,8 +431,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -447,8 +447,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// ```
     ///
     /// ```should_panic
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -472,8 +472,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -495,8 +495,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -529,9 +529,9 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
+    /// # use transit_model::collection::*;
     /// # use std::collections::HashSet;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -559,8 +559,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -587,8 +587,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -613,8 +613,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -635,9 +635,9 @@ impl<T: Id<T> + WithId> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # use navitia_model::objects::WithId;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # use transit_model::objects::WithId;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(String);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { &self.0 }
     /// # fn set_id(&mut self, id: String) { self.0 = id; }}
@@ -667,9 +667,9 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # use navitia_model::objects::WithId;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # use transit_model::objects::WithId;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(String, String);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { &self.0 }
     /// # fn set_id(&mut self, id: String) { self.0 = id; }}
@@ -709,8 +709,8 @@ impl<T: Id<T>> iter::Extend<T> for CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -735,8 +735,8 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -758,8 +758,8 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -779,8 +779,8 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
@@ -801,8 +801,8 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use navitia_model::collection::*;
-    /// # fn run() -> navitia_model::Result<()> {
+    /// # use transit_model::collection::*;
+    /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
