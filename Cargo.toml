@@ -2,6 +2,10 @@
 authors = ["Kisio Digital <team.coretools@kisio.org>", "Guillaume Pinot <texitoi@texitoi.eu>"]
 name = "transit_model"
 version = "0.4.0"
+license = "AGPL-3.0"
+description = "Transit data management"
+repository = "https://github.com/CanalTP/transit_model"
+keywords = ["ntfs", "gtfs", "netex", "navitia", "transit"]
 edition = "2018"
 
 [dependencies]
@@ -27,6 +31,7 @@ regex = "1.1.2"
 
 [dependencies.get-corresponding-derive]
 path = "get-corresponding-derive"
+version = "0.1.0"
 
 [workspace]
 members = ["model-builder"]
