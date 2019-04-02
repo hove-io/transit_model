@@ -23,12 +23,12 @@ use crate::{Error, Result};
 use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::format_err;
-use get_corresponding_derive::*;
 use serde_derive::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops;
 use std::result::Result as StdResult;
+use transit_model_procmacro::*;
 
 /// The set of collections representing the model.
 #[derive(Derivative, Serialize, Deserialize, Debug)]

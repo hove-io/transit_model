@@ -1,7 +1,9 @@
 [package]
-name = "get-corresponding-derive"
+name = "transit_model_procmacro"
 version = "0.1.0"
 authors = ["Guillaume Pinot <texitoi@texitoi.eu>"]
+license = "AGPL-3.0"
+description = "A private procmacro crate for the transit_model crate"
 edition = "2018"
 
 [lib]
