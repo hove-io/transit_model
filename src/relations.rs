@@ -33,7 +33,7 @@
 //! Let's defines these relations and use them a bit:
 //!
 //! ```no_run
-//! # use get_corresponding_derive::*;
+//! # use transit_model_procmacro::*;
 //! # use transit_model::relations::*;
 //! # use transit_model::collection::Idx;
 //! # struct Bike;
@@ -108,7 +108,7 @@
 //! Let's implement that:
 //!
 //! ```
-//! # use get_corresponding_derive::*;
+//! # use transit_model_procmacro::*;
 //! # use transit_model::relations::*;
 //! # use transit_model::collection::Idx;
 //! # struct Bike;

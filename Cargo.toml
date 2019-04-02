@@ -29,8 +29,8 @@ reqwest = "0.9"
 lazy_static = "1.2.0"
 regex = "1.1.2"
 
-[dependencies.get-corresponding-derive]
-path = "get-corresponding-derive"
+[dependencies.transit_model_procmacro]
+path = "transit_model_procmacro"
 version = "0.1.0"
 
 [workspace]
