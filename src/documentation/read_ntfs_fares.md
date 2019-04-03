@@ -17,6 +17,7 @@ In the following, the NTM properties that are not specified are ignored and not 
 NTM property | NTFS file | NTFS field | Note/mapping rule
 --- | --- | --- | ---
 id | prices.csv | \*clef de ticket\* | 
+name | prices.csv | \*name\* | 
 start_date | prices.csv | \*date de début de validité\* | 
 end_date | prices.csv | \*date de fin de validité\* | The previous date of the specified date in the input.
 currency_type | prices.csv | \*devise\* | The currency is set to `EUR` when the input value is `centime`. Otherwise, the ticket is ignored.

@@ -21,6 +21,7 @@ The current version of the connector does not describe the NTM properties that a
 NTM Property | Source frame | Source element | Notes/Mapping rule
 --- | --- | --- | ---
 id | *FareFrame* | *DistanceMatrixElement{id}* |
+name | | | Fixed value `Ticket Origin-Destination`.
 start_date | *ResourceFrame* | *versions/Version/StartDate* |
 end_date | *ResourceFrame* | *versions/Version/EndDate* |
 currency_type | *FareFrame* | *FrameDefaults/DefaultCurrency* |
