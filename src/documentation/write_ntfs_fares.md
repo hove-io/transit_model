@@ -21,7 +21,7 @@ NTFS field | NTM object | NTM property | Notes/Mapping rule
 \*date de début de validité\* | Ticket | start_date | Starting date of the validity period of the fare structure in the form YYYYMMDD.
 \*date de fin de validité\* | Ticket | end_date | The date after the specified end date in the form YYYYMMDD.
 \*prix\* | Ticket | price | The specified value is converted into euro cents.
-\*name\* | | | Fixed value `Ticket Orgine-Destination`.
+\*name\* | Ticket | name | 
 \*champ ignoré\* | | | This field is explicitly left empty.
 \*commentaire\* | | | This field is explicitly left empty.
 \*devise\* | Ticket | currency_type | The value is set to `centime` provided that the currency used for the ticket is EUR.
