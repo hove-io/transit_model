@@ -198,7 +198,7 @@ Be carefull to only create necessary trip_properties and avoid dupplicates.
 
 (1) GTFS `arrival_time` and `departure_time` should contain values.
 * if both of them are empty :
-    * if the stop_time is the first or the last of the trip, an error shoud be logged and the stop_time ignored
+    * if the stop_time is the first or the last of the trip, an error is returned
     * if not, the time should be interpolated (see below).
 * if one of them is empty, a warning should be logged and the value of the other field should be copied to the empty one.
 

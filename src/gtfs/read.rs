@@ -297,18 +297,9 @@ where
     info!("Reading stop_times.txt");
     let mut rdr = csv::Reader::from_reader(reader);
     let mut headsigns = HashMap::new();
+    let mut tmp_vjs = HashMap::new();
     for stop_time in rdr.deserialize() {
-        let stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
-        let stop_point_idx = collections
-            .stop_points
-            .get_idx(&stop_time.stop_id)
-            .ok_or_else(|| {
-                format_err!(
-                    "Problem reading {:?}: stop_id={:?} not found",
-                    file_name,
-                    stop_time.stop_id
-                )
-            })?;
+        let mut stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
         let vj_idx = collections
             .vehicle_journeys
             .get_idx(&stop_time.trip_id)
@@ -320,33 +311,131 @@ where
                 )
             })?;
 
-        if let Some(headsign) = stop_time.stop_headsign {
+        // consume the stop headsign
+        let headsign = std::mem::replace(&mut stop_time.stop_headsign, None);
+        if let Some(headsign) = headsign {
             headsigns.insert((vj_idx, stop_time.stop_sequence), headsign);
         }
-        collections
-            .vehicle_journeys
-            .index_mut(vj_idx)
-            .stop_times
-            .push(objects::StopTime {
+
+        tmp_vjs
+            .entry(vj_idx)
+            .or_insert_with(|| vec![])
+            .push(stop_time);
+    }
+    collections.stop_time_headsigns = headsigns;
+
+    for (vj_idx, mut stop_times) in tmp_vjs {
+        stop_times.sort_unstable_by_key(|st| st.stop_sequence);
+
+        let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
+        let st_values = interpolate_undefined_stop_times(&vj.id, &stop_times)?;
+
+        for (stop_time, st_values) in stop_times.iter().zip(st_values) {
+            let stop_point_idx = collections
+                .stop_points
+                .get_idx(&stop_time.stop_id)
+                .ok_or_else(|| {
+                    format_err!(
+                        "Problem reading {:?}: stop_id={:?} not found",
+                        file_name,
+                        stop_time.stop_id
+                    )
+                })?;
+
+            vj.stop_times.push(objects::StopTime {
                 stop_point_idx,
                 sequence: stop_time.stop_sequence,
-                arrival_time: stop_time.arrival_time,
-                departure_time: stop_time.departure_time,
+                arrival_time: st_values.arrival_time,
+                departure_time: st_values.departure_time,
                 boarding_duration: 0,
                 alighting_duration: 0,
                 pickup_type: stop_time.pickup_type,
                 drop_off_type: stop_time.drop_off_type,
-                datetime_estimated: !stop_time.timepoint,
+                datetime_estimated: st_values.datetime_estimated,
                 local_zone_id: stop_time.local_zone_id,
             });
+        }
     }
-    collections.stop_time_headsigns = headsigns;
-    let mut vehicle_journeys = collections.vehicle_journeys.take();
-    for vj in &mut vehicle_journeys {
-        vj.stop_times.sort_unstable_by_key(|st| st.sequence);
-    }
-    collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     Ok(())
+}
+
+fn ventilate_stop_times(
+    undefined_stop_times: &[&StopTime],
+    before: &StopTimesValues,
+    after: &StopTimesValues,
+) -> Vec<StopTimesValues> {
+    let duration = after.arrival_time - before.departure_time;
+    let step = duration / (undefined_stop_times.len() + 1) as u32;
+    let mut res = vec![];
+    for idx in 0..undefined_stop_times.len() {
+        let num = idx as u32 + 1u32;
+        let time = before.departure_time + objects::Time::new(0, 0, num * step.total_seconds());
+        res.push(StopTimesValues {
+            departure_time: time,
+            arrival_time: time,
+            datetime_estimated: true,
+        });
+    }
+    res
+}
+
+// Temporary struct used by the interpolation process
+struct StopTimesValues {
+    arrival_time: Time,
+    departure_time: Time,
+    datetime_estimated: bool,
+}
+
+// in the GTFS some stoptime can have undefined departure/arrival (all stop_times but the first and the last)
+// when it's the case, we apply a simple distribution of those stops, and we mark them as `estimated`
+// cf. https://github.com/CanalTP/navitia_model/blob/master/src/documentation/gtfs_read.md#reading-stop_timestxt
+fn interpolate_undefined_stop_times(
+    vj_id: &str,
+    stop_times: &[StopTime],
+) -> Result<Vec<StopTimesValues>> {
+    let mut undefined_stops_bulk = Vec::with_capacity(0);
+    let mut res = vec![];
+    for st in stop_times {
+        // if only one in departure/arrival value is defined, we set it to the other value
+        let (departure_time, arrival_time) = match (st.departure_time, st.arrival_time) {
+            (Some(departure_time), None) => {
+                log::debug!("for vj '{}', stop time n° {} has no arrival defined, we set it to its departure value", vj_id, st.stop_sequence);
+                (departure_time, departure_time)
+            }
+            (None, Some(arrival_time)) => {
+                log::debug!("for vj '{}', stop time n° {} has no departure defined, we set it to its arrival value", vj_id, st.stop_sequence);
+                (arrival_time, arrival_time)
+            }
+            (Some(departure_time), Some(arrival_time)) => (departure_time, arrival_time),
+            (None, None) => {
+                undefined_stops_bulk.push(st);
+                continue;
+            }
+        };
+
+        let st_value = StopTimesValues {
+            departure_time,
+            arrival_time,
+            datetime_estimated: !st.timepoint,
+        };
+
+        if !undefined_stops_bulk.is_empty() {
+            let values = ventilate_stop_times(
+                &undefined_stops_bulk,
+                res.last().ok_or(format_err!("the first stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))?,
+                &st_value,
+            );
+            res.extend(values);
+            undefined_stops_bulk.clear();
+        }
+        res.push(st_value);
+    }
+
+    if !undefined_stops_bulk.is_empty() {
+        Err(format_err!("the last stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))
+    } else {
+        Ok(res)
+    }
 }
 
 pub fn read_agency<H>(
@@ -2664,6 +2753,136 @@ mod tests {
                 .cloned()
                 .collect();
             assert_eq!(latitudes, &[65.444, 66.666, 0.00]);
+        });
+    }
+
+    #[test]
+    fn gtfs_undefined_stop_times() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF";
+
+        let stops_content =
+            r#"stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station
+             sp:01,my stop point name 1,my first desc,0.1,1.2,0,
+             sp:02,my stop point name 2,my first desc,0.1,1.2,0,
+             sp:03,my stop point name 3,my first desc,0.1,1.2,0,
+             sp:04,my stop point name 4,my first desc,0.1,1.2,0,
+             sp:05,my stop point name 5,my first desc,0.1,1.2,0,
+             sp:06,my stop point name 6,my first desc,0.1,1.2,0,
+             sp:07,my stop point name 7,my first desc,0.1,1.2,0,
+             sp:08,my stop point name 8,my first desc,0.1,1.2,0,"#;
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,";
+
+        let stop_times_content = "trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled\n\
+                                  1,06:00:00,06:00:00,sp:01,1,,,,\n\
+                                  1,07:00:00,07:00:00,sp:02,2,,,,\n\
+                                  1,,,sp:03,3,,,,\n\
+                                  1,,,sp:04,4,,,,\n\
+                                  1,10:00:00,,sp:05,5,,,,\n\
+                                  1,,,sp:06,6,,,,\n\
+                                  1,,12:00:00,sp:07,7,,,,\n\
+                                  1,13:00:00,13:00:00,sp:08,8,,,,\n\
+                                  ";
+
+        test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
+            create_file_with_content(path, "stop_times.txt", stop_times_content);
+            create_file_with_content(path, "stops.txt", stops_content);
+
+            let mut collections = Collections::default();
+            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let mut equipments = EquipmentList::default();
+            let (_, stop_points) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+            collections.stop_points = stop_points;
+
+            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler).unwrap();
+
+            assert_eq!(
+                collections.vehicle_journeys.into_vec()[0]
+                    .stop_times
+                    .iter()
+                    .map(|st| (st.arrival_time, st.departure_time))
+                    .collect::<Vec<_>>(),
+                vec![
+                    (Time::new(6, 0, 0), Time::new(6, 0, 0)),
+                    (Time::new(7, 0, 0), Time::new(7, 0, 0)),
+                    (Time::new(8, 0, 0), Time::new(8, 0, 0)),
+                    (Time::new(9, 0, 0), Time::new(9, 0, 0)),
+                    (Time::new(10, 0, 0), Time::new(10, 0, 0)),
+                    (Time::new(11, 0, 0), Time::new(11, 0, 0)),
+                    (Time::new(12, 0, 0), Time::new(12, 0, 0)),
+                    (Time::new(13, 0, 0), Time::new(13, 0, 0)),
+                ]
+            );
+        });
+    }
+
+    #[test]
+    fn gtfs_invalid_undefined_stop_times() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF";
+
+        let stops_content =
+            r#"stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station
+             sp:01,my stop point name 1,my first desc,0.1,1.2,0,
+             sp:02,my stop point name 2,my first desc,0.1,1.2,0,
+             sp:03,my stop point name 3,my first desc,0.1,1.2,0,
+             sp:04,my stop point name 4,my first desc,0.1,1.2,0,
+             sp:05,my stop point name 5,my first desc,0.1,1.2,0,
+             sp:06,my stop point name 6,my first desc,0.1,1.2,0,
+             sp:07,my stop point name 7,my first desc,0.1,1.2,0,
+             sp:08,my stop point name 8,my first desc,0.1,1.2,0,"#;
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,";
+
+        let stop_times_content = "trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled\n\
+                                  1,,,sp:01,1,,,,\n\
+                                  1,07:00:00,07:00:00,sp:02,2,,,,\n\
+                                  1,,,sp:03,3,,,,\n\
+                                  1,,,sp:04,4,,,,\n\
+                                  1,10:00:00,10:00:00,sp:05,5,,,,\n\
+                                  1,,,sp:06,6,,,,\n\
+                                  1,12:00:00,12:00:00,sp:07,7,,,,\n\
+                                  1,13:00:00,13:00:00,sp:08,8,,,,\n\
+                                  ";
+
+        test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
+            create_file_with_content(path, "stop_times.txt", stop_times_content);
+            create_file_with_content(path, "stops.txt", stops_content);
+
+            let mut collections = Collections::default();
+            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            collections.contributors = contributors;
+            collections.datasets = datasets;
+
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let mut equipments = EquipmentList::default();
+            let (_, stop_points) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+            collections.stop_points = stop_points;
+
+            super::read_routes(&mut handler, &mut collections).unwrap();
+            let val = super::manage_stop_times(&mut collections, &mut handler);
+
+            // the first stop time of the vj has no departure/arrival, it's an error
+            let err = val.unwrap_err();
+            assert_eq!(format!("{}", err), "the first stop time of the vj '1' has no departure/arrival, the stop_times.txt file is not valid");
         });
     }
 }

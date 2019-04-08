@@ -29,7 +29,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
-use std::ops::{Add, Sub};
+use std::ops::{Add, Div, Sub};
 use std::str::FromStr;
 
 pub trait AddPrefix {
@@ -734,6 +734,12 @@ impl Sub for Time {
         Time(self.total_seconds() - other.total_seconds())
     }
 }
+impl Div<u32> for Time {
+    type Output = Time;
+    fn div(self, rhs: u32) -> Time {
+        Time(self.total_seconds() / rhs)
+    }
+}
 impl FromStr for Time {
     type Err = TimeError;
     fn from_str(time: &str) -> Result<Self, Self::Err> {
@@ -757,12 +763,7 @@ impl ::serde::Serialize for Time {
     where
         S: ::serde::Serializer,
     {
-        let time = format!(
-            "{:02}:{:02}:{:02}",
-            self.hours(),
-            self.minutes(),
-            self.seconds()
-        );
+        let time = format!("{}", self);
         serializer.serialize_str(&time)
     }
 }
@@ -787,6 +788,18 @@ impl<'de> ::serde::Deserialize<'de> for Time {
         }
 
         deserializer.deserialize_str(TimeVisitor)
+    }
+}
+
+impl std::fmt::Display for Time {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{:02}:{:02}:{:02}",
+            self.hours(),
+            self.minutes(),
+            self.seconds()
+        )
     }
 }
 
