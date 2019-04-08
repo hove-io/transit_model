@@ -330,7 +330,7 @@ where
         let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
         let st_values = interpolate_undefined_stop_times(&vj.id, &stop_times)?;
 
-        for (stop_time, st_values) in stop_times.iter().zip(st_values.iter()) {
+        for (stop_time, st_values) in stop_times.iter().zip(st_values) {
             let stop_point_idx = collections
                 .stop_points
                 .get_idx(&stop_time.stop_id)
@@ -365,11 +365,11 @@ fn ventilate_stop_times(
     after: &StopTimesValues,
 ) -> Vec<StopTimesValues> {
     let duration = after.arrival_time - before.departure_time;
-    let distance = duration / (undefined_stop_times.len() + 1) as u32;
+    let step = duration / (undefined_stop_times.len() + 1) as u32;
     let mut res = vec![];
     for idx in 0..undefined_stop_times.len() {
         let num = idx as u32 + 1u32;
-        let time = before.departure_time + objects::Time::new(0, 0, num * distance.total_seconds());
+        let time = before.departure_time + objects::Time::new(0, 0, num * step.total_seconds());
         res.push(StopTimesValues {
             departure_time: time,
             arrival_time: time,
