@@ -297,18 +297,9 @@ where
     info!("Reading stop_times.txt");
     let mut rdr = csv::Reader::from_reader(reader);
     let mut headsigns = HashMap::new();
+    let mut tmp_vjs = HashMap::new();
     for stop_time in rdr.deserialize() {
-        let stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
-        let stop_point_idx = collections
-            .stop_points
-            .get_idx(&stop_time.stop_id)
-            .ok_or_else(|| {
-                format_err!(
-                    "Problem reading {:?}: stop_id={:?} not found",
-                    file_name,
-                    stop_time.stop_id
-                )
-            })?;
+        let mut stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
         let vj_idx = collections
             .vehicle_journeys
             .get_idx(&stop_time.trip_id)
@@ -320,109 +311,130 @@ where
                 )
             })?;
 
-        if let Some(headsign) = stop_time.stop_headsign {
+        // consume the stop headsign
+        let headsign = std::mem::replace(&mut stop_time.stop_headsign, None);
+        if let Some(headsign) = headsign {
             headsigns.insert((vj_idx, stop_time.stop_sequence), headsign);
         }
-        collections
-            .vehicle_journeys
-            .index_mut(vj_idx)
-            .stop_times
-            .push(objects::StopTime {
+
+        tmp_vjs
+            .entry(vj_idx)
+            .or_insert_with(|| vec![])
+            .push(stop_time);
+    }
+    collections.stop_time_headsigns = headsigns;
+
+    for (vj_idx, mut stop_times) in tmp_vjs {
+        stop_times.sort_unstable_by_key(|st| st.stop_sequence);
+
+        let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
+        let st_values = interpolate_undefined_stop_times(&vj.id, &stop_times)?;
+
+        for (stop_time, st_values) in stop_times.iter().zip(st_values.iter()) {
+            let stop_point_idx = collections
+                .stop_points
+                .get_idx(&stop_time.stop_id)
+                .ok_or_else(|| {
+                    format_err!(
+                        "Problem reading {:?}: stop_id={:?} not found",
+                        file_name,
+                        stop_time.stop_id
+                    )
+                })?;
+
+            vj.stop_times.push(objects::StopTime {
                 stop_point_idx,
                 sequence: stop_time.stop_sequence,
-                arrival_time: stop_time
-                    .arrival_time
-                    .unwrap_or_else(|| objects::Time::undefined()),
-                departure_time: stop_time
-                    .departure_time
-                    .unwrap_or_else(|| objects::Time::undefined()),
+                arrival_time: st_values.arrival_time,
+                departure_time: st_values.departure_time,
                 boarding_duration: 0,
                 alighting_duration: 0,
                 pickup_type: stop_time.pickup_type,
                 drop_off_type: stop_time.drop_off_type,
-                datetime_estimated: !stop_time.timepoint,
+                datetime_estimated: st_values.datetime_estimated,
                 local_zone_id: stop_time.local_zone_id,
             });
+        }
     }
-    collections.stop_time_headsigns = headsigns;
-    let mut vehicle_journeys = collections.vehicle_journeys.take();
-    for vj in &mut vehicle_journeys {
-        vj.stop_times.sort_unstable_by_key(|st| st.sequence);
-        interpolate_undefined_stop_times(vj)?;
-    }
-    collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     Ok(())
 }
 
-trait Undefined {
-    fn undefined() -> Self;
-    fn is_undefined(&self) -> bool;
-}
-
-impl Undefined for objects::Time {
-    fn undefined() -> Self {
-        Time::new(0, 0, u32::max_value())
-    }
-    fn is_undefined(&self) -> bool {
-        self.total_seconds() == u32::max_value()
-    }
-}
-
 fn ventilate_stop_times(
-    undefined_stop_times: &mut [&mut objects::StopTime],
-    before: &objects::StopTime,
-    after: &objects::StopTime,
-) {
+    undefined_stop_times: &[&StopTime],
+    before: &StopTimesValues,
+    after: &StopTimesValues,
+) -> Vec<StopTimesValues> {
     let duration = after.arrival_time - before.departure_time;
     let distance = duration / (undefined_stop_times.len() + 1) as u32;
-    let mut idx = 1u32;
-    for mut st in undefined_stop_times.iter_mut() {
-        let time = before.departure_time + objects::Time::new(0, 0, idx * distance.total_seconds());
-
-        st.departure_time = time;
-        st.arrival_time = time;
-        st.datetime_estimated = true;
-        idx += 1;
+    let mut res = vec![];
+    for idx in 0..undefined_stop_times.len() {
+        let num = idx as u32 + 1u32;
+        let time = before.departure_time + objects::Time::new(0, 0, num * distance.total_seconds());
+        res.push(StopTimesValues {
+            departure_time: time,
+            arrival_time: time,
+            datetime_estimated: true,
+        });
     }
+    res
+}
+
+// Temporary struct used by the interpolation process
+struct StopTimesValues {
+    arrival_time: Time,
+    departure_time: Time,
+    datetime_estimated: bool,
 }
 
 // in the GTFS some stoptime can have undefined departure/arrival (all stop_times but the first and the last)
 // when it's the case, we apply a simple distribution of those stops, and we mark them as `estimated`
 // cf. https://github.com/CanalTP/navitia_model/blob/master/src/documentation/gtfs_read.md#reading-stop_timestxt
-fn interpolate_undefined_stop_times(vj: &mut objects::VehicleJourney) -> Result<()> {
+fn interpolate_undefined_stop_times(
+    vj_id: &str,
+    stop_times: &[StopTime],
+) -> Result<Vec<StopTimesValues>> {
     let mut undefined_stops_bulk = Vec::with_capacity(0);
-    let mut before = None;
-    for st in &mut vj.stop_times {
-        if st.departure_time.is_undefined() && st.arrival_time.is_undefined() {
-            undefined_stops_bulk.push(st);
-            continue;
-        }
-
+    let mut res = vec![];
+    for st in stop_times {
         // if only one in departure/arrival value is defined, we set it to the other value
-        if st.departure_time.is_undefined() && !st.arrival_time.is_undefined() {
-            log::debug!("for vj '{}', stop time n° {} has no departure defined, we set it to its arrival value", &vj.id, st.sequence);
-            st.departure_time = st.arrival_time;
-        }
-        if !st.departure_time.is_undefined() && st.arrival_time.is_undefined() {
-            log::debug!("for vj '{}', stop time n° {} has no arrival defined, we set it to its departure value", &vj.id, st.sequence);
-            st.arrival_time = st.departure_time;
-        }
+        let (departure_time, arrival_time) = match (st.departure_time, st.arrival_time) {
+            (Some(departure_time), None) => {
+                log::debug!("for vj '{}', stop time n° {} has no arrival defined, we set it to its departure value", vj_id, st.stop_sequence);
+                (departure_time, departure_time)
+            }
+            (None, Some(arrival_time)) => {
+                log::debug!("for vj '{}', stop time n° {} has no departure defined, we set it to its arrival value", vj_id, st.stop_sequence);
+                (arrival_time, arrival_time)
+            }
+            (Some(departure_time), Some(arrival_time)) => (departure_time, arrival_time),
+            (None, None) => {
+                undefined_stops_bulk.push(st);
+                continue;
+            }
+        };
+
+        let st_value = StopTimesValues {
+            departure_time,
+            arrival_time,
+            datetime_estimated: !st.timepoint,
+        };
 
         if !undefined_stops_bulk.is_empty() {
-            ventilate_stop_times(
-                &mut undefined_stops_bulk,
-                before.ok_or(format_err!("the first stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", &vj.id))?,
-                st,
+            let values = ventilate_stop_times(
+                &undefined_stops_bulk,
+                res.last().ok_or(format_err!("the first stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))?,
+                &st_value,
             );
+            res.extend(values);
             undefined_stops_bulk.clear();
         }
-        before = Some(st);
+        res.push(st_value);
     }
 
     if !undefined_stops_bulk.is_empty() {
-        Err(format_err!("the last stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", &vj.id))
+        Err(format_err!("the last stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))
     } else {
-        Ok(())
+        Ok(res)
     }
 }
 
