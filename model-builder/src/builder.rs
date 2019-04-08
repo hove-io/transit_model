@@ -18,7 +18,7 @@
 //!
 //! ```
 //! # fn main() {
-//!  let model = model_builder::ModelBuilder::default()
+//!  let model = transit_model_builder::ModelBuilder::default()
 //!      .vj("toto", |vj| {
 //!          vj.route("1")
 //!            .st("A", "10:00:00", "10:01:00")
@@ -53,7 +53,7 @@ impl<'a> ModelBuilder {
     ///
     /// ```
     /// # fn main() {
-    /// let model = model_builder::ModelBuilder::default()
+    /// let model = transit_model_builder::ModelBuilder::default()
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder
     ///                .st("A", "10:00:00", "10:01:00")
@@ -91,7 +91,7 @@ impl<'a> ModelBuilder {
     ///
     /// ```
     /// # fn main() {
-    /// let model = model_builder::ModelBuilder::default()
+    /// let model = transit_model_builder::ModelBuilder::default()
     ///      .route("l1", |r| {
     ///             r.name = "ligne 1".to_owned();
     ///         })
@@ -121,7 +121,7 @@ impl<'a> ModelBuilder {
     /// # use transit_model::objects::Date;
     ///
     /// # fn main() {
-    /// let model = model_builder::ModelBuilder::default()
+    /// let model = transit_model_builder::ModelBuilder::default()
     ///      .calendar("c1", |c| {
     ///             c.dates.insert(Date::from_ymd(2019, 2, 6));
     ///         })
@@ -203,7 +203,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///
     /// ```
     /// # fn main() {
-    /// let model = model_builder::ModelBuilder::default()
+    /// let model = transit_model_builder::ModelBuilder::default()
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder
     ///                .st("A", "10:00:00", "10:01:00")
@@ -244,7 +244,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///
     /// ```
     /// # fn main() {
-    /// let model = model_builder::ModelBuilder::default()
+    /// let model = transit_model_builder::ModelBuilder::default()
     ///        .route("1", |r| {
     ///            r.name = "bob".into();
     ///        })
@@ -273,7 +273,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// # use transit_model::objects::Date;
     ///
     /// # fn main() {
-    /// let model = model_builder::ModelBuilder::default()
+    /// let model = transit_model_builder::ModelBuilder::default()
     ///        .calendar("c1", |c| {
     ///             c.dates.insert(Date::from_ymd(2019, 2, 6));
     ///         })
