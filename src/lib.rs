@@ -38,6 +38,7 @@ pub mod syntus_fares;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
+pub(crate) mod vptranslator;
 
 /// Current version of the NTFS format
 pub const NTFS_VERSION: &str = "0.7";
