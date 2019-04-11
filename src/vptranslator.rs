@@ -16,41 +16,15 @@
 
 //use crate::common_format;
 
-use chrono::{Datelike, Duration, NaiveDate, Weekday};
-use num_traits::FromPrimitive;
+use crate::objects::{Date, ExceptionType, ValidityPeriod};
+use chrono::{Datelike, Duration, Weekday};
+use num_traits::cast::FromPrimitive;
 use std::collections::BTreeSet;
 use std::vec::Vec;
 
-#[derive(Debug, PartialOrd)]
-struct ValidityPeriod {
-    start_date: NaiveDate,
-    end_date: NaiveDate,
-}
-
-impl Default for ValidityPeriod {
-    fn default() -> Self {
-        ValidityPeriod {
-            start_date: chrono::naive::MIN_DATE,
-            end_date: chrono::naive::MIN_DATE,
-        }
-    }
-}
-
-impl PartialEq for ValidityPeriod {
-    fn eq(&self, other: &Self) -> bool {
-        (self.start_date, &self.end_date) == (other.start_date, &other.end_date)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-enum ExceptionType {
-    Sub,
-    Add,
-}
-
 #[derive(Debug)]
-struct ExceptionDate {
-    date: NaiveDate,
+pub struct ExceptionDate {
+    date: Date,
     exception_type: ExceptionType,
 }
 
@@ -69,14 +43,14 @@ pub struct BlockPattern {
     exceptions: Vec<ExceptionDate>,
 }
 
-fn get_prev_monday(date: NaiveDate) -> NaiveDate {
+fn get_prev_monday(date: Date) -> Date {
     let res = date + Duration::days(-1 * date.weekday().num_days_from_monday() as i64);
     res
 }
 
-fn weeks(dates: &BTreeSet<NaiveDate>) -> Vec<u8> {
-    let start_date: NaiveDate = get_prev_monday(*dates.iter().next().unwrap());
-    let end_date: NaiveDate = *dates.iter().next_back().unwrap();
+fn weeks(dates: &BTreeSet<Date>) -> Vec<u8> {
+    let start_date: Date = get_prev_monday(*dates.iter().next().unwrap());
+    let end_date: Date = *dates.iter().next_back().unwrap();
     let length = (end_date.signed_duration_since(start_date).num_weeks() + 1) as usize;
 
     let mut res = vec![0; length];
@@ -113,7 +87,7 @@ fn get_min_week_pattern(weeks: &Vec<u8>) -> u8 {
 }
 
 fn fill_exceptions(
-    start_date: NaiveDate,
+    start_date: Date,
     exception: u8,
     exception_type: ExceptionType,
     exception_list: &mut Vec<ExceptionDate>,
@@ -138,11 +112,11 @@ fn fill_operating_days(week: u8, operating_days: &mut Vec<Weekday>) {
     operating_days.sort_by_key(|w| w.num_days_from_monday());
 }
 
-fn clean_extra_dates(start_date: NaiveDate, end_date: NaiveDate, dates: &mut Vec<ExceptionDate>) {
+fn clean_extra_dates(start_date: Date, end_date: Date, dates: &mut Vec<ExceptionDate>) {
     dates.retain(|d| d.date >= start_date && d.date <= end_date);
 }
 
-pub fn translate(dates: &BTreeSet<NaiveDate>) -> BlockPattern {
+pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
     let mut res = BlockPattern {
         week: 0,
         nb_weeks: 0,
@@ -156,8 +130,8 @@ pub fn translate(dates: &BTreeSet<NaiveDate>) -> BlockPattern {
         res.nb_weeks = validity_pattern.len() as i64;
         fill_operating_days(res.week, &mut res.operating_days);
 
-        let start_date: NaiveDate = *dates.iter().next().unwrap();
-        let end_date: NaiveDate = *dates.iter().next_back().unwrap();
+        let start_date: Date = *dates.iter().next().unwrap();
+        let end_date: Date = *dates.iter().next_back().unwrap();
 
         let validity_period = ValidityPeriod {
             start_date: start_date,
@@ -180,7 +154,7 @@ pub fn translate(dates: &BTreeSet<NaiveDate>) -> BlockPattern {
                 fill_exceptions(
                     monday_ref,
                     exception,
-                    ExceptionType::Sub,
+                    ExceptionType::Remove,
                     &mut res.exceptions,
                 );
             }
