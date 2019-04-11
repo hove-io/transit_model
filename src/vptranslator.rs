@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-//use crate::common_format;
+//! See function translate
 
 use crate::objects::{Date, ExceptionType, ValidityPeriod};
 use chrono::{Datelike, Duration, Weekday};
@@ -22,10 +22,13 @@ use num_traits::cast::FromPrimitive;
 use std::collections::BTreeSet;
 use std::vec::Vec;
 
+///Indicates whether service is available on the date specified.
 #[derive(Debug)]
 pub struct ExceptionDate {
-    date: Date,
-    exception_type: ExceptionType,
+    ///Date of exception
+    pub date: Date,
+    ///exception type
+    pub exception_type: ExceptionType,
 }
 
 impl PartialEq for ExceptionDate {
@@ -34,25 +37,23 @@ impl PartialEq for ExceptionDate {
     }
 }
 
+///Presents a list of dates in the form of intervals and exception dates.
 #[derive(Default, Debug)]
 pub struct BlockPattern {
-    week: u8,
-    nb_weeks: i64,
-    operating_days: Vec<Weekday>,
-    validity_periods: Vec<ValidityPeriod>,
-    exceptions: Vec<ExceptionDate>,
+    ///Indicates operating days of the service
+    pub operating_days: Vec<Weekday>,
+    ///Start and end service day for the service interval
+    pub validity_periods: Vec<ValidityPeriod>,
+    ///List of dates where service is available or not in interval.
+    pub exceptions: Vec<ExceptionDate>,
 }
 
 fn get_prev_monday(date: Date) -> Date {
-    let res = date + Duration::days(-1 * date.weekday().num_days_from_monday() as i64);
-    res
+    date + Duration::days(-1 * date.weekday().num_days_from_monday() as i64)
 }
 
-fn weeks(dates: &BTreeSet<Date>) -> Vec<u8> {
-    let start_date: Date = get_prev_monday(*dates.iter().next().unwrap());
-    let end_date: Date = *dates.iter().next_back().unwrap();
+fn compute_validity_pattern(start_date: Date, end_date: Date, dates: &BTreeSet<Date>) -> Vec<u8> {
     let length = (end_date.signed_duration_since(start_date).num_weeks() + 1) as usize;
-
     let mut res = vec![0; length];
     for date in dates {
         let w = date.signed_duration_since(start_date).num_weeks() as usize;
@@ -61,17 +62,16 @@ fn weeks(dates: &BTreeSet<Date>) -> Vec<u8> {
     res
 }
 
-fn dists(w: u8, weeks: &Vec<u8>) -> u32 {
-    let mut res: u32 = 0;
-    for n in weeks.iter() {
-        if *n != 0 {
-            res += (*n as u8 ^ w).count_ones();
-        }
-    }
+fn dists(w: u8, weeks: &[u8]) -> u32 {
+    let res = weeks
+        .iter()
+        .filter(|n| **n != 0u8)
+        .map(|n| (*n as u8 ^ w).count_ones())
+        .sum();
     res
 }
 
-fn get_min_week_pattern(weeks: &Vec<u8>) -> u8 {
+fn get_min_week_pattern(weeks: &[u8]) -> u8 {
     let mut best: u8 = 0;
     let mut best_score = std::u32::MAX;
     for i in 0..128 {
@@ -115,52 +115,49 @@ fn fill_operating_days(week: u8, operating_days: &mut Vec<Weekday>) {
 fn clean_extra_dates(start_date: Date, end_date: Date, dates: &mut Vec<ExceptionDate>) {
     dates.retain(|d| d.date >= start_date && d.date <= end_date);
 }
-
+///Allows you to present a list of dates in a readable way.
 pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
-    let mut res = BlockPattern {
-        week: 0,
-        nb_weeks: 0,
-        operating_days: Vec::new(),
-        validity_periods: Vec::new(),
-        exceptions: Vec::new(),
+    let mut res = BlockPattern::default();
+    let start_date = match dates.iter().next() {
+        Some(d) => *d,
+        None => return res,
     };
-    if !dates.is_empty() {
-        let validity_pattern = &weeks(&dates);
-        res.week = get_min_week_pattern(validity_pattern);
-        res.nb_weeks = validity_pattern.len() as i64;
-        fill_operating_days(res.week, &mut res.operating_days);
+    let end_date = match dates.iter().next_back() {
+        Some(d) => *d,
+        None => return res,
+    };
 
-        let start_date: Date = *dates.iter().next().unwrap();
-        let end_date: Date = *dates.iter().next_back().unwrap();
+    let validity_period = ValidityPeriod {
+        start_date: start_date,
+        end_date: end_date,
+    };
+    res.validity_periods.push(validity_period);
 
-        let validity_period = ValidityPeriod {
-            start_date: start_date,
-            end_date: end_date,
-        };
-        res.validity_periods.push(validity_period);
+    let mut monday_ref = get_prev_monday(start_date);
+    let validity_pattern = compute_validity_pattern(monday_ref, end_date, &dates);
+    let best_week = get_min_week_pattern(&validity_pattern);
+    fill_operating_days(best_week, &mut res.operating_days);
 
-        let mut monday_ref = get_prev_monday(start_date);
-        for week in validity_pattern {
-            if *week != res.week {
-                let exception: u8 = (!res.week) & week;
-                fill_exceptions(
-                    monday_ref,
-                    exception,
-                    ExceptionType::Add,
-                    &mut res.exceptions,
-                );
+    for week in validity_pattern {
+        if week != best_week {
+            let exception: u8 = (!best_week) & week;
+            fill_exceptions(
+                monday_ref,
+                exception,
+                ExceptionType::Add,
+                &mut res.exceptions,
+            );
 
-                let exception: u8 = (week ^ res.week) & res.week;
-                fill_exceptions(
-                    monday_ref,
-                    exception,
-                    ExceptionType::Remove,
-                    &mut res.exceptions,
-                );
-            }
-            monday_ref += Duration::days(7);
+            let exception: u8 = (week ^ best_week) & best_week;
+            fill_exceptions(
+                monday_ref,
+                exception,
+                ExceptionType::Remove,
+                &mut res.exceptions,
+            );
         }
-        clean_extra_dates(start_date, end_date, &mut res.exceptions);
-    };
+        monday_ref += Duration::days(7);
+    }
+    clean_extra_dates(start_date, end_date, &mut res.exceptions);
     res
 }
