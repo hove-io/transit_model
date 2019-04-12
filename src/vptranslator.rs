@@ -23,18 +23,12 @@ use std::collections::BTreeSet;
 use std::vec::Vec;
 
 ///Indicates whether service is available on the date specified.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ExceptionDate {
     ///Date of exception
     pub date: Date,
     ///exception type
     pub exception_type: ExceptionType,
-}
-
-impl PartialEq for ExceptionDate {
-    fn eq(&self, other: &ExceptionDate) -> bool {
-        self.exception_type == other.exception_type
-    }
 }
 
 ///Presents a list of dates in the form of intervals and exception dates.
@@ -49,7 +43,7 @@ pub struct BlockPattern {
 }
 
 fn get_prev_monday(date: Date) -> Date {
-    date + Duration::days(-1 * date.weekday().num_days_from_monday() as i64)
+    date - Duration::days(date.weekday().num_days_from_monday() as i64)
 }
 
 fn compute_validity_pattern(start_date: Date, end_date: Date, dates: &BTreeSet<Date>) -> Vec<u8> {
@@ -62,13 +56,13 @@ fn compute_validity_pattern(start_date: Date, end_date: Date, dates: &BTreeSet<D
     res
 }
 
+///Determining a Hamming distance betwenn a validity pattern and a week pattern
 fn dists(w: u8, weeks: &[u8]) -> u32 {
-    let res = weeks
+    weeks
         .iter()
         .filter(|n| **n != 0u8)
         .map(|n| (*n as u8 ^ w).count_ones())
-        .sum();
-    res
+        .sum()
 }
 
 fn get_min_week_pattern(weeks: &[u8]) -> u8 {
@@ -103,40 +97,42 @@ fn fill_exceptions(
     }
 }
 
-fn fill_operating_days(week: u8, operating_days: &mut Vec<Weekday>) {
+fn get_operating_days(week: u8) -> Vec<Weekday> {
+    let mut res = Vec::new();
     for i in 0..7 {
         if week & (1 << i) == (1 << i) {
-            operating_days.push(Weekday::from_u8(6 - i).unwrap());
+            res.push(Weekday::from_u8(6 - i).unwrap());
         }
     }
-    operating_days.sort_by_key(|w| w.num_days_from_monday());
+    res.sort_by_key(|w| w.num_days_from_monday());
+    res
 }
 
 fn clean_extra_dates(start_date: Date, end_date: Date, dates: &mut Vec<ExceptionDate>) {
     dates.retain(|d| d.date >= start_date && d.date <= end_date);
 }
+
 ///Allows you to present a list of dates in a readable way.
 pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
-    let mut res = BlockPattern::default();
     let start_date = match dates.iter().next() {
         Some(d) => *d,
-        None => return res,
+        None => return BlockPattern::default(),
     };
     let end_date = match dates.iter().next_back() {
         Some(d) => *d,
-        None => return res,
+        None => return BlockPattern::default(),
     };
 
-    let validity_period = ValidityPeriod {
+    let validity_period = vec![ValidityPeriod {
         start_date: start_date,
         end_date: end_date,
-    };
-    res.validity_periods.push(validity_period);
+    }];
 
     let mut monday_ref = get_prev_monday(start_date);
     let validity_pattern = compute_validity_pattern(monday_ref, end_date, &dates);
     let best_week = get_min_week_pattern(&validity_pattern);
-    fill_operating_days(best_week, &mut res.operating_days);
+    let operating_days = get_operating_days(best_week);
+    let mut exceptions_list = Vec::new();
 
     for week in validity_pattern {
         if week != best_week {
@@ -145,7 +141,7 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
                 monday_ref,
                 exception,
                 ExceptionType::Add,
-                &mut res.exceptions,
+                &mut exceptions_list,
             );
 
             let exception: u8 = (week ^ best_week) & best_week;
@@ -153,13 +149,17 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
                 monday_ref,
                 exception,
                 ExceptionType::Remove,
-                &mut res.exceptions,
+                &mut exceptions_list,
             );
         }
         monday_ref += Duration::days(7);
     }
-    clean_extra_dates(start_date, end_date, &mut res.exceptions);
-    res
+    clean_extra_dates(start_date, end_date, &mut exceptions_list);
+    BlockPattern {
+        operating_days: operating_days,
+        validity_periods: validity_period,
+        exceptions: exceptions_list,
+    }
 }
 
 //       July 2012
