@@ -57,15 +57,14 @@ struct Opt {
 fn run() -> Result<()> {
     info!("Launching apply_rules.");
     let opt = Opt::from_args();
-    let model = transit_model::ntfs::read(opt.input)?;
-    let mut collections = model.into_collections();
-    apply_rules::apply_rules(
-        &mut collections,
+
+    let model = apply_rules::apply_rules(
+        transit_model::ntfs::read(opt.input)?,
         opt.complementary_code_rules_files,
         opt.property_rules_files,
         opt.report,
     )?;
-    let model = transit_model::Model::new(collections)?;
+
     transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
 
     Ok(())

@@ -310,6 +310,7 @@ pub enum ReportType {
     MultipleValue,
     OldPropertyValueDoesNotMatch,
     GeometryNotValid,
+    NonConvertibleString,
 }
 
 #[derive(Debug, Serialize)]

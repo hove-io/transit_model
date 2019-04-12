@@ -28,16 +28,13 @@ fn test_apply_complementary_codes() {
         let p_rules = vec![Path::new("./fixtures/apply_rules/property_rules.txt").to_path_buf()];
         let report_path = path.join("report.json");
 
-        let model = transit_model::ntfs::read(input_dir).unwrap();
-        let mut collections = model.into_collections();
-        apply_rules::apply_rules(
-            &mut collections,
+        let model = apply_rules::apply_rules(
+            transit_model::ntfs::read(input_dir).unwrap(),
             cc_rules,
             p_rules,
             Path::new(&report_path).to_path_buf(),
         )
         .unwrap();
-        let model = transit_model::Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
@@ -46,6 +43,7 @@ fn test_apply_complementary_codes() {
                 "geometries.txt",
                 "lines.txt",
                 "routes.txt",
+                "trips.txt",
                 "report.json",
             ]),
             "./fixtures/apply_rules/output",

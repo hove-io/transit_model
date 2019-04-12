@@ -16,11 +16,15 @@
 
 //! See function apply_rules
 
-use crate::collection::{CollectionWithId, Id};
+use crate::collection::{CollectionWithId, Id, Idx};
 use crate::model::Collections;
-use crate::objects::{Codes, Geometry};
 use crate::utils::{Report, ReportType};
 use crate::Result;
+use crate::{
+    objects::{Codes, Geometry, Line, VehicleJourney},
+    relations::IdxSet,
+    Model,
+};
 use csv;
 use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
@@ -133,7 +137,7 @@ fn read_property_rules_files<P: AsRef<Path>>(
     let properties = properties
         .into_iter()
         .filter(|((object_type, object_id, property_name), property)| {
-            if !PROPERTY_UPDATER.contains_key(&(*object_type, property_name)) {
+            if !PROPERTY_UPDATER.contains_key(&(*object_type, property_name)) && (*object_type, property_name) != (ObjectType::Line, &"physical_mode_id".to_string()) {
                 report.add_warning(
                     format!(
                         "object_type={}, object_id={}: unknown property_name {} defined",
@@ -236,7 +240,7 @@ fn update_stringable_option<T: FromStr + ToString + Clone>(
                     p.property_name,
                     err_msg
                 ),
-                ReportType::OldPropertyValueDoesNotMatch,
+                ReportType::NonConvertibleString,
             );
         }
     } else {
@@ -268,6 +272,79 @@ fn update_object_id<T>(
         }
     } else {
         property_old_value_do_not_match(report, p);
+    }
+}
+
+fn update_physical_mode(
+    p: &PropertyRule,
+    line: &Line,
+    report: &mut Report,
+    collections: &mut Collections,
+    vjs_by_line: &HashMap<String, IdxSet<VehicleJourney>>,
+) {
+    let any_prop = "*";
+    if let Some(pov) = p.property_old_value.as_ref() {
+        if collections.physical_modes.get(pov).is_none() && *pov != any_prop {
+            report.add_warning(
+                format!(
+                    "object_type={}, object_id={}, property_name={}, property_old_value={}: physical mode not found",
+                    p.object_type.as_str(),
+                    p.object_id,
+                    p.property_name,
+                    pov
+                ),
+                ReportType::ObjectNotFound,
+            );
+            return;
+        }
+
+        if let Some(vjs) = vjs_by_line.get(&line.id) {
+            let vjs_by_mode: Vec<Idx<VehicleJourney>> = vjs
+                .iter()
+                .filter_map(|idx| {
+                    if *pov == any_prop
+                        || collections.vehicle_journeys[*idx].physical_mode_id == *pov
+                    {
+                        Some(*idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            if vjs_by_mode.is_empty() {
+                report.add_warning(
+                    format!(
+                        "object_type={}, object_id={}: no vehicle journeys with physical mode {}",
+                        p.object_type.as_str(),
+                        p.object_id,
+                        pov
+                    ),
+                    ReportType::ObjectNotFound,
+                );
+                return;
+            }
+            if collections.physical_modes.get(&p.property_value).is_none() {
+                report.add_warning(
+                    format!(
+                        "object_type={}, object_id={}, property_name={}, property_value={}: physical mode not found",
+                        p.object_type.as_str(),
+                        p.object_id,
+                        p.property_name,
+                        p.property_value
+                    ),
+                    ReportType::ObjectNotFound,
+                );
+                return;
+            }
+
+            for vj_idx in vjs_by_mode {
+                collections
+                    .vehicle_journeys
+                    .index_mut(vj_idx)
+                    .physical_mode_id = p.property_value.clone();
+            }
+        }
     }
 }
 
@@ -489,7 +566,12 @@ lazy_static! {
             (ObjectType::Line, "line_color"),
             Box::new(|c, p, r| {
                 c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
-                    update_stringable_option(p, &mut obj.color, r, "property_value is an invalid RGB");
+                    update_stringable_option(
+                        p,
+                        &mut obj.color,
+                        r,
+                        "property_value is an invalid RGB",
+                    );
                     true
                 })
             }),
@@ -513,12 +595,7 @@ lazy_static! {
             Box::new(|c, p, r| {
                 let cms = &c.commercial_modes;
                 c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
-                    update_object_id(
-                        p,
-                        &mut obj.commercial_mode_id,
-                        r,
-                        cms,
-                    );
+                    update_object_id(p, &mut obj.commercial_mode_id, r, cms);
                     true
                 })
             }),
@@ -528,18 +605,12 @@ lazy_static! {
             Box::new(|c, p, r| {
                 let cms = &c.networks;
                 c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
-                    update_object_id(
-                        p,
-                        &mut obj.network_id,
-                        r,
-                        cms,
-                    );
+                    update_object_id(p, &mut obj.network_id, r, cms);
                     true
                 })
             }),
         );
-        // physical_mode_id
-        //
+
         m
     };
 }
@@ -548,11 +619,26 @@ lazy_static! {
 ///
 /// `complementary_code_rules_files` Csv files containing codes to add for certain objects
 pub fn apply_rules(
-    collections: &mut Collections,
+    model: Model,
     complementary_code_rules_files: Vec<PathBuf>,
     property_rules_files: Vec<PathBuf>,
     report_path: PathBuf,
-) -> Result<()> {
+) -> Result<Model> {
+    let vjs_by_line: HashMap<String, IdxSet<VehicleJourney>> = model
+        .lines
+        .iter()
+        .filter_map(|(idx, obj)| {
+            let vjs = model.get_corresponding_from_idx(idx);
+            if vjs.is_empty() {
+                None
+            } else {
+                Some((obj.id.clone(), vjs))
+            }
+        })
+        .collect();
+
+    let mut collections = model.into_collections();
+
     info!("Applying rules...");
     let mut report = Report::default();
     let codes = read_complementary_code_rules_files(complementary_code_rules_files, &mut report)?;
@@ -566,22 +652,35 @@ pub fn apply_rules(
     }
 
     let properties = read_property_rules_files(property_rules_files, &mut report)?;
+
+    let lines = collections.lines.clone();
     for mut p in properties {
+        let mut obj_found = true;
         if let Some(func) = PROPERTY_UPDATER.get(&(p.object_type, &p.property_name.clone())) {
-            if !func(collections, &mut p, &mut report) {
-                report.add_warning(
-                    format!(
-                        "{} {} not found in the data",
-                        p.object_type.as_str(),
-                        p.object_id
-                    ),
-                    ReportType::ObjectNotFound,
-                );
-            }
+            obj_found = func(&mut collections, &mut p, &mut report);
+        } else if (p.object_type, p.property_name.as_ref())
+            == (ObjectType::Line, "physical_mode_id")
+        {
+            obj_found = lines.get(&p.object_id).map_or(false, |obj| {
+                update_physical_mode(&p, &obj, &mut report, &mut collections, &vjs_by_line);
+                true
+            });
+        }
+
+        if !obj_found {
+            report.add_warning(
+                format!(
+                    "{} {} not found in the data",
+                    p.object_type.as_str(),
+                    p.object_id
+                ),
+                ReportType::ObjectNotFound,
+            );
         }
     }
 
     let serialized_report = serde_json::to_string_pretty(&report)?;
     fs::write(report_path, serialized_report)?;
-    Ok(())
+
+    Model::new(collections)
 }

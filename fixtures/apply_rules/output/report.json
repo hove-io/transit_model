@@ -18,7 +18,7 @@
       "message": "object_type=line, object_id=B42, property_name=commercial_mode_id, property_value=unknown: object not found"
     },
     {
-      "category": "OldPropertyValueDoesNotMatch",
+      "category": "NonConvertibleString",
       "message": "object_type=line, object_id=B42, property_name=line_sort_order: property_value should be an integer"
     },
     {
@@ -30,8 +30,12 @@
       "message": "object_type=line, object_id=M1, property_name=line_color: property_old_value does not match the value found in the data"
     },
     {
-      "category": "OldPropertyValueDoesNotMatch",
+      "category": "NonConvertibleString",
       "message": "object_type=line, object_id=M1, property_name=line_text_color: property_value is an invalid RGB"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=line, object_id=M1, property_name=physical_mode_id, property_old_value=unknown: physical mode not found"
     },
     {
       "category": "GeometryNotValid",
