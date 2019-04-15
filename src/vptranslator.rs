@@ -171,83 +171,86 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
 // 23 24 25 26 27 28 29
 // 30 31
 
-#[test]
-fn nb_weeks() {
-    let mut dates = BTreeSet::new();
-    let mut start_date: Date;
-    let mut end_date: Date;
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    start_date = Date::from_ymd(2012, 7, 2);
-    assert_eq!(get_prev_monday(start_date), start_date);
+    fn compute_between(start_date: Date, end_date: Date) -> Vec<u8> {
+        let mut dates = BTreeSet::new();
+        dates.insert(start_date);
+        dates.insert(end_date);
+        compute_validity_pattern(get_prev_monday(start_date), end_date, &dates)
+    }
 
-    start_date = Date::from_ymd(2012, 7, 5);
-    assert_eq!(get_prev_monday(start_date), Date::from_ymd(2012, 7, 2));
+    #[test]
+    fn one_week() {
+        assert_eq!(
+            compute_between(Date::from_ymd(2012, 7, 2), Date::from_ymd(2012, 7, 8)).len(),
+            1
+        );
+    }
 
-    start_date = Date::from_ymd(2012, 7, 8);
-    assert_eq!(get_prev_monday(start_date), Date::from_ymd(2012, 7, 2));
+    #[test]
+    fn partial_one_week() {
+        assert_eq!(
+            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 15)).len(),
+            2
+        );
+    }
 
-    // one week
-    start_date = Date::from_ymd(2012, 7, 2);
-    end_date = Date::from_ymd(2012, 7, 8);
-    dates.insert(start_date);
-    dates.insert(end_date);
-    assert_eq!(
-        compute_validity_pattern(get_prev_monday(start_date), end_date, &dates).len(),
-        1
-    );
+    #[test]
+    fn one_week_partial() {
+        assert_eq!(
+            compute_between(Date::from_ymd(2012, 7, 2), Date::from_ymd(2012, 7, 13)).len(),
+            2
+        );
+    }
 
-    // partial + one week
-    dates.clear();
-    start_date = Date::from_ymd(2012, 7, 4);
-    end_date = Date::from_ymd(2012, 7, 15);
-    dates.insert(start_date);
-    dates.insert(end_date);
-    assert_eq!(
-        compute_validity_pattern(get_prev_monday(start_date), end_date, &dates).len(),
-        2
-    );
+    #[test]
+    fn partial_one_week_partial_with_nb_partial_6() {
+        assert_eq!(
+            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 17)).len(),
+            3
+        );
+    }
 
-    // one week + partial
-    dates.clear();
-    start_date = Date::from_ymd(2012, 7, 2);
-    end_date = Date::from_ymd(2012, 7, 13);
-    dates.insert(start_date);
-    dates.insert(end_date);
-    assert_eq!(
-        compute_validity_pattern(get_prev_monday(start_date), end_date, &dates).len(),
-        2
-    );
+    #[test]
+    fn partial_one_week_partial_with_nb_partial_7() {
+        assert_eq!(
+            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 18)).len(),
+            3
+        );
+    }
 
-    // partial + one week + partial with nb partial = 6
-    dates.clear();
-    start_date = Date::from_ymd(2012, 7, 4);
-    end_date = Date::from_ymd(2012, 7, 17);
-    dates.insert(start_date);
-    dates.insert(end_date);
-    assert_eq!(
-        compute_validity_pattern(get_prev_monday(start_date), end_date, &dates).len(),
-        3
-    );
+    #[test]
+    fn partial_one_week_partial_with_nb_partial_8() {
+        assert_eq!(
+            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 19)).len(),
+            3
+        );
+    }
 
-    // partial + one week + partial with nb partial = 7
-    dates.clear();
-    start_date = Date::from_ymd(2012, 7, 4);
-    end_date = Date::from_ymd(2012, 7, 18);
-    dates.insert(start_date);
-    dates.insert(end_date);
-    assert_eq!(
-        compute_validity_pattern(get_prev_monday(start_date), end_date, &dates).len(),
-        3
-    );
+    #[test]
+    fn prev_monday_from_monday() {
+        assert_eq!(
+            get_prev_monday(Date::from_ymd(2012, 7, 2)),
+            Date::from_ymd(2012, 7, 2)
+        );
+    }
 
-    // partial + one week + partial with nb partial = 8
-    dates.clear();
-    start_date = Date::from_ymd(2012, 7, 4);
-    end_date = Date::from_ymd(2012, 7, 19);
-    dates.insert(start_date);
-    dates.insert(end_date);
-    assert_eq!(
-        compute_validity_pattern(get_prev_monday(start_date), end_date, &dates).len(),
-        3
-    );
+    #[test]
+    fn prev_monday_from_thursday() {
+        assert_eq!(
+            get_prev_monday(Date::from_ymd(2012, 7, 5)),
+            Date::from_ymd(2012, 7, 2)
+        );
+    }
+
+    #[test]
+    fn prev_monday_from_sunday() {
+        assert_eq!(
+            get_prev_monday(Date::from_ymd(2012, 7, 8)),
+            Date::from_ymd(2012, 7, 2)
+        );
+    }
 }
