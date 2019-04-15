@@ -202,32 +202,6 @@ fn three_complete_weeks() {
 }
 
 #[test]
-#[ignore]
-fn mo_tu_th_fr_x3_mo_tu_we_th_fr_x2_mo_tu_th_fr_x1_sa_su_x2() {
-    let mttf = "1101100";
-    let mtwtf = "1111100";
-    let ss = "0000011";
-    let pattern = format!(
-        "{}{}{}{}{}{}{}{}",
-        mttf, mttf, mttf, mtwtf, mtwtf, mttf, ss, ss
-    );
-    let res = translate(&get_dates_from_bitset(Date::from_ymd(2012, 7, 2), &pattern));
-
-    assert_eq!(get_week_from_weekday(res.operating_days), 0b1101100);
-    assert_eq!(res.exceptions.len(), 14);
-    //assert!(res.exceptions.is_empty());
-    /*
-    assert_eq!(
-        res.validity_periods.iter().next().unwrap(),
-        &ValidityPeriod {
-            start_date: Date::from_ymd(2012, 7, 2),
-            end_date: Date::from_ymd(2012, 7, 22),
-        }
-    )
-    */
-}
-
-#[test]
 fn three_mtwss_excluding_one_day() {
     let res = translate(&get_dates_from_bitset(
         Date::from_ymd(2012, 7, 2),
@@ -357,27 +331,6 @@ fn t_w_t() {
 }
 
 #[test]
-#[ignore]
-fn one_full_week_except_monday_black_week_two_full_week() {
-    let res = translate(&get_dates_from_bitset(
-        Date::from_ymd(2012, 7, 2),
-        &format!("{}{}{}{}", "0111111", "0000000", "1111111", "1111111"),
-    ));
-
-    assert_eq!(get_week_from_weekday(res.operating_days), 0b1111111);
-    assert!(res.exceptions.is_empty());
-    /*
-    assert_eq!(
-        res.validity_periods.iter().next().unwrap(),
-        &ValidityPeriod {
-            start_date: Date::from_ymd(2012, 7, 9),
-            end_date: Date::from_ymd(2012, 7, 29),
-        }
-    )
-    */
-}
-
-#[test]
 fn bound_compression() {
     let res = translate(&get_dates_from_bitset(
         Date::from_ymd(2012, 7, 2),
@@ -393,27 +346,6 @@ fn bound_compression() {
             end_date: Date::from_ymd(2012, 7, 21),
         }
     )
-}
-
-#[test]
-#[ignore]
-fn sa_su_blank_week_mo_tu_we_th_fr() {
-    let res = translate(&get_dates_from_bitset(
-        Date::from_ymd(2012, 7, 7),
-        &format!("{}{}", "1100000", "0011111"),
-    ));
-
-    assert_eq!(get_week_from_weekday(res.operating_days), 0b1111111);
-    assert!(res.exceptions.is_empty());
-    /*
-    assert_eq!(
-        res.validity_periods.iter().next().unwrap(),
-        &ValidityPeriod {
-            start_date: Date::from_ymd(2015, 4, 27),
-            end_date: Date::from_ymd(2015, 5, 31),
-        }
-    )
-    */
 }
 
 // ROADEF 2015 example
