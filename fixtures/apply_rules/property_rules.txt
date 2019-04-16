@@ -43,3 +43,13 @@ line,B42,network_id,TGN,unknown
 line,B42,physical_mode_id,Bus,RapidTransit
 line,M1,physical_mode_id,unknown,Metro
 line,RERA,physical_mode_id,*,Metro
+stop_point,GDLR,stop_name,Gare de Lyon (RER),Another stop point name
+stop_area,GDL,stop_name,Gare de Lyon,Another stop area name
+stop_point,GDLR,stop_position,invalid,"POINT(1 2)"
+stop_point,CDGR,stop_position,"LINESTRING(3 4,10 50,20 25)","POINT(1 2)"
+stop_point,NATR,stop_position,"POINT(1.53 2)","POINT(1 2)"
+stop_point,DEFR,stop_position,"POINT(2.238964 48.891737)",invalid
+stop_point,CHAM,stop_position,"POINT(2.348145 48.858137)","LINESTRING(3 4,10 50,20 25)"
+stop_point,MTPB,stop_position,"POINT(2.321783 48.842481)","POINT(1.1 2.2)"
+stop_point,GDLM,stop_position,*,"POINT(6.7 8.9)"
+stop_area,GDL,stop_position,"POINT(2.372987 48.844746)","POINT(5.3 8.1)"

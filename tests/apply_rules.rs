@@ -44,6 +44,7 @@ fn test_apply_complementary_codes() {
                 "lines.txt",
                 "routes.txt",
                 "trips.txt",
+                "stops.txt",
                 "report.json",
             ]),
             "./fixtures/apply_rules/output",

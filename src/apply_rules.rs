@@ -21,7 +21,7 @@ use crate::model::Collections;
 use crate::utils::{Report, ReportType};
 use crate::Result;
 use crate::{
-    objects::{Codes, Geometry, Line, VehicleJourney},
+    objects::{Codes, Coord, Geometry, Line, VehicleJourney},
     relations::IdxSet,
     Model,
 };
@@ -442,6 +442,53 @@ fn update_geometry(
     }
 }
 
+fn wkt_to_coord(wkt: &str, report: &mut Report, p: &PropertyRule) -> Option<Coord> {
+    let pov_geo = wkt_to_geo(wkt, report, &p)?;
+
+    match pov_geo {
+        GeoGeometry::Point(p) => Some(Coord {
+            lon: p.x(),
+            lat: p.y(),
+        }),
+        _ => {
+            report.add_warning(
+                format!(
+                    "object_type={}, object_id={}, property_name={}, property_old_value={}: WKT should be POINT",
+                    p.object_type.as_str(),
+                    p.object_id,
+                    p.property_name,
+                    p.property_value
+                ),
+                ReportType::ObjectNotFound,
+            );
+            None
+        }
+    }
+}
+
+fn update_position(p: &mut PropertyRule, field: &mut Coord, report: &mut Report) {
+    if let Some(pov) = p.property_old_value.as_ref() {
+        if *pov != "*" {
+            let p_old_value_coord = match wkt_to_coord(&pov, report, &p) {
+                Some(pov_geo) => pov_geo,
+                None => return,
+            };
+
+            if *field != p_old_value_coord {
+                property_old_value_do_not_match(report, p);
+                return;
+            }
+        }
+
+        let p_value_coord = match wkt_to_coord(&p.property_value, report, &p) {
+            Some(pov_geo) => pov_geo,
+            None => return,
+        };
+
+        *field = p_value_coord;
+    }
+}
+
 type FnUpdater = Box<Fn(&mut Collections, &mut PropertyRule, &mut Report) -> bool + Send + Sync>;
 
 lazy_static! {
@@ -606,6 +653,46 @@ lazy_static! {
                 let cms = &c.networks;
                 c.lines.get_mut(&p.object_id).map_or(false, |mut obj| {
                     update_object_id(p, &mut obj.network_id, r, cms);
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::StopPoint, "stop_name"),
+            Box::new(|c, p, r| {
+                c.stop_points
+                    .get_mut(&p.object_id)
+                    .map_or(false, |mut obj| {
+                        update_prop(p, &mut obj.name, r);
+                        true
+                    })
+            }),
+        );
+        m.insert(
+            (ObjectType::StopArea, "stop_name"),
+            Box::new(|c, p, r| {
+                c.stop_areas.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_prop(p, &mut obj.name, r);
+                    true
+                })
+            }),
+        );
+        m.insert(
+            (ObjectType::StopPoint, "stop_position"),
+            Box::new(|c, p, r| {
+                c.stop_points
+                    .get_mut(&p.object_id)
+                    .map_or(false, |mut obj| {
+                        update_position(p, &mut obj.coord, r);
+                        true
+                    })
+            }),
+        );
+        m.insert(
+            (ObjectType::StopArea, "stop_position"),
+            Box::new(|c, p, r| {
+                c.stop_areas.get_mut(&p.object_id).map_or(false, |mut obj| {
+                    update_position(p, &mut obj.coord, r);
                     true
                 })
             }),
