@@ -118,11 +118,7 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
         Some(d) => *d,
         None => return BlockPattern::default(),
     };
-    let end_date = match dates.iter().next_back() {
-        Some(d) => *d,
-        None => return BlockPattern::default(),
-    };
-
+    let end_date: Date = *dates.iter().next_back().unwrap();
     let validity_period = vec![ValidityPeriod {
         start_date: start_date,
         end_date: end_date,

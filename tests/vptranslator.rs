@@ -81,7 +81,10 @@ fn bound_cut() {
             end_date: Date::from_ymd(2012, 7, 22),
         }
     );
+}
 
+#[test]
+fn bound_cut_one_day() {
     let res = translate(&get_dates_from_bitset(
         Date::from_ymd(2012, 7, 16),
         &format!("{}{}", "0000010", "00"),
