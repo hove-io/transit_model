@@ -20,11 +20,12 @@ use crate::objects::{self, Date, ExceptionType};
 use crate::read_utils::FileHandler;
 use crate::utils::*;
 use crate::utils::{de_from_date_string, ser_from_naive_date};
+use crate::vptranslator::translate;
 use crate::Result;
-use chrono::{self, Datelike};
+use chrono::{self, Datelike, Weekday};
 use csv;
 use derivative::Derivative;
-use failure::{bail, ResultExt};
+use failure::{bail, format_err, ResultExt};
 use log::info;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeSet;
@@ -84,28 +85,28 @@ pub struct Calendar {
 }
 
 impl Calendar {
-    fn get_valid_days(&self) -> Vec<chrono::Weekday> {
-        let mut valid_days: Vec<chrono::Weekday> = vec![];
+    fn get_valid_days(&self) -> Vec<Weekday> {
+        let mut valid_days: Vec<Weekday> = vec![];
         if self.monday {
-            valid_days.push(chrono::Weekday::Mon);
+            valid_days.push(Weekday::Mon);
         }
         if self.tuesday {
-            valid_days.push(chrono::Weekday::Tue);
+            valid_days.push(Weekday::Tue);
         }
         if self.wednesday {
-            valid_days.push(chrono::Weekday::Wed);
+            valid_days.push(Weekday::Wed);
         }
         if self.thursday {
-            valid_days.push(chrono::Weekday::Thu);
+            valid_days.push(Weekday::Thu);
         }
         if self.friday {
-            valid_days.push(chrono::Weekday::Fri);
+            valid_days.push(Weekday::Fri);
         }
         if self.saturday {
-            valid_days.push(chrono::Weekday::Sat);
+            valid_days.push(Weekday::Sat);
         }
         if self.sunday {
-            valid_days.push(chrono::Weekday::Sun);
+            valid_days.push(Weekday::Sun);
         }
 
         valid_days
@@ -217,18 +218,54 @@ pub fn write_calendar_dates(
     let calendar_dates_path = path.join("calendar_dates.txt");
     let mut wtr = csv::Writer::from_path(&calendar_dates_path)
         .with_context(ctx_from_path!(calendar_dates_path))?;
+    let mut translations: Vec<Calendar> = vec![];
     for c in calendars.values() {
-        for d in &c.dates {
+        let translation = translate(&c.dates);
+        if !translation.operating_days.is_empty() {
+            let validity_period = skip_fail!(translation
+                .validity_periods
+                .iter()
+                .next()
+                .ok_or_else(|| format_err!(
+                    "Validity period not found for service id {}",
+                    c.id.clone()
+                )));
+            translations.push(Calendar {
+                id: c.id.clone(),
+                monday: translation.operating_days.contains(&Weekday::Mon),
+                tuesday: translation.operating_days.contains(&Weekday::Tue),
+                wednesday: translation.operating_days.contains(&Weekday::Wed),
+                thursday: translation.operating_days.contains(&Weekday::Thu),
+                friday: translation.operating_days.contains(&Weekday::Fri),
+                saturday: translation.operating_days.contains(&Weekday::Sat),
+                sunday: translation.operating_days.contains(&Weekday::Sun),
+                start_date: validity_period.start_date,
+                end_date: validity_period.end_date,
+            });
+        };
+        for e in translation.exceptions {
             wtr.serialize(CalendarDate {
                 service_id: c.id.clone(),
-                date: *d,
-                exception_type: ExceptionType::Add,
+                date: e.date,
+                exception_type: e.exception_type,
             })
             .with_context(ctx_from_path!(calendar_dates_path))?;
         }
     }
     wtr.flush()
         .with_context(ctx_from_path!(calendar_dates_path))?;
+    write_calendar(path, &translations)
+}
 
+pub fn write_calendar(path: &path::Path, calendars: &[Calendar]) -> Result<()> {
+    info!("Writing calendar.txt");
+    let calendar_path = path.join("calendar.txt");
+    let mut wtr =
+        csv::Writer::from_path(&calendar_path).with_context(ctx_from_path!(calendar_path))?;
+    for calendar in calendars {
+        wtr.serialize(calendar)
+            .with_context(ctx_from_path!(calendar_path))?;
+    }
+    wtr.flush().with_context(ctx_from_path!(calendar_path))?;
     Ok(())
 }
