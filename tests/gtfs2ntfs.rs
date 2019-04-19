@@ -27,6 +27,7 @@ fn test_frequencies_generate_trips() {
             &path,
             Some(vec![
                 "calendar_dates.txt",
+                "calendar.txt",
                 "trips.txt",
                 "stop_times.txt",
                 "object_codes.txt",

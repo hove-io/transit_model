@@ -1023,7 +1023,9 @@ mod tests {
     #[test]
     fn write_calendar_dates_from_calendar() {
         let mut dates = BTreeSet::new();
+        //saturday
         dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
+        //sunday
         dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
         let calendar = CollectionWithId::new(vec![
             Calendar {
@@ -1038,17 +1040,19 @@ mod tests {
         .unwrap();
         let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
         write_calendar_dates(tmp_dir.path(), &calendar).unwrap();
-        let output_file_path = tmp_dir.path().join("calendar_dates.txt");
+        assert!(!path::Path::new(&tmp_dir.path().join("calendar_dates.txt")).exists());
+
+        let output_file_path = tmp_dir.path().join("calendar.txt");
         let mut output_file = File::open(output_file_path.clone())
             .expect(&format!("file {:?} not found", output_file_path));
         let mut output_contents = String::new();
         output_file.read_to_string(&mut output_contents).unwrap();
         assert_eq!(
-            "service_id,date,exception_type\n\
-             1,20180505,1\n\
-             1,20180506,1\n",
-            output_contents
-        );
+                    "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
+                     1,0,0,0,0,0,1,1,20180505,20180506\n",
+                    output_contents
+                );
+
         tmp_dir.close().expect("delete temp dir");
     }
 
