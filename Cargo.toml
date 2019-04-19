@@ -8,6 +8,9 @@ repository = "https://github.com/CanalTP/transit_model"
 keywords = ["ntfs", "gtfs", "netex", "navitia", "transit"]
 edition = "2018"
 
+[badges]
+travis-ci = { repository = "CanalTP/transit_model" }
+
 [dependencies]
 chrono = "0.4.0"
 csv = "1.0.0"
