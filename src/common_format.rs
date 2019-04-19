@@ -216,9 +216,8 @@ pub fn write_calendar_dates(
 ) -> Result<()> {
     info!("Writing calendar_dates.txt");
     let calendar_dates_path = path.join("calendar_dates.txt");
-    let mut wtr = csv::Writer::from_path(&calendar_dates_path)
-        .with_context(ctx_from_path!(calendar_dates_path))?;
     let mut translations: Vec<Calendar> = vec![];
+    let mut exceptions: Vec<CalendarDate> = vec![];
     for c in calendars.values() {
         let translation = translate(&c.dates);
         if !translation.operating_days.is_empty() {
@@ -244,21 +243,32 @@ pub fn write_calendar_dates(
             });
         };
         for e in translation.exceptions {
-            wtr.serialize(CalendarDate {
+            exceptions.push(CalendarDate {
                 service_id: c.id.clone(),
                 date: e.date,
                 exception_type: e.exception_type,
-            })
-            .with_context(ctx_from_path!(calendar_dates_path))?;
+            });
         }
     }
-    wtr.flush()
-        .with_context(ctx_from_path!(calendar_dates_path))?;
+    if !exceptions.is_empty() {
+        let mut wtr = csv::Writer::from_path(&calendar_dates_path)
+            .with_context(ctx_from_path!(calendar_dates_path))?;
+        for e in exceptions {
+            wtr.serialize(&e)
+                .with_context(ctx_from_path!(calendar_dates_path))?;
+        }
+        wtr.flush()
+            .with_context(ctx_from_path!(calendar_dates_path))?;
+    }
     write_calendar(path, &translations)
 }
 
 pub fn write_calendar(path: &path::Path, calendars: &[Calendar]) -> Result<()> {
     info!("Writing calendar.txt");
+    if calendars.is_empty() {
+        return Ok(());
+    }
+
     let calendar_path = path.join("calendar.txt");
     let mut wtr =
         csv::Writer::from_path(&calendar_path).with_context(ctx_from_path!(calendar_path))?;
