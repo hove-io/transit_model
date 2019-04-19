@@ -359,7 +359,7 @@ impl Eq for PhysicalMode {}
 
 impl_with_id!(PhysicalMode);
 
-#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[derivative(Default)]
 pub struct Network {
     #[derivative(Default(value = "\"default_network\".into()"))]

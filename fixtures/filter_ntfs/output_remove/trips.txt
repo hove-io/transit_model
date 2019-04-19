@@ -1,0 +1,3 @@
+trip_id,route_id,physical_mode_id,dataset_id,service_id,trip_headsign,block_id,company_id,trip_property_id,geometry_id
+OIF:77100911-1_1420-1,OIF:002002002:BDE,Train,OIF:0,3,,,OIF:101,0,
+OIF:77100915-1_1424-1,OIF:002002002:BDE,Train,OIF:0,3,,,OIF:101,0,

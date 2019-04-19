@@ -17,6 +17,8 @@
 //! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
 //! format management.
 
+#![allow(missing_docs)]
+pub mod filter;
 mod read;
 mod write;
 

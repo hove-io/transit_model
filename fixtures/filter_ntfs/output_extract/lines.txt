@@ -1,0 +1,2 @@
+line_id,line_code,line_name,forward_line_name,forward_direction,backward_line_name,backward_direction,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+B42,,Bus 42,,,,,,,,TGN,Bus,,,

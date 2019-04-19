@@ -17,32 +17,30 @@
 use chrono::NaiveDateTime;
 use log::info;
 use std::path::PathBuf;
+// use structopt::clap::arg_enum;
 use structopt::StructOpt;
-use transit_model::apply_rules;
-use transit_model::Result;
+use transit_model::{ntfs, Result};
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "apply_rules", about = "Enrich the data of an NTFS.")]
+#[structopt(
+    name = "filter_ntfs",
+    about = "Remove or extract networks from an NTFS. "
+)]
 struct Opt {
     /// input directory.
-    #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
+    #[structopt(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// complementary code rules files.
-    #[structopt(short = "c", long = "complementary-code-rules", parse(from_os_str))]
-    complementary_code_rules_files: Vec<PathBuf>,
+    /// Network ids.
+    #[structopt(raw(
+        possible_values = "&ntfs::filter::Action::variants()",
+        case_insensitive = "true"
+    ))]
+    action: ntfs::filter::Action,
 
-    /// property rules files.
-    #[structopt(short = "p", long = "property-rules", parse(from_os_str))]
-    property_rules_files: Vec<PathBuf>,
-
-    /// output report file path
-    #[structopt(short = "r", long = "report", parse(from_os_str))]
-    report: PathBuf,
-
-    /// output directory
-    #[structopt(short = "o", long = "output", parse(from_os_str))]
-    output: PathBuf,
+    /// Network ids.
+    #[structopt(short, long)]
+    networks: Vec<String>,
 
     /// current datetime
     #[structopt(
@@ -52,19 +50,19 @@ struct Opt {
         raw(default_value = "&transit_model::CURRENT_DATETIME")
     )]
     current_datetime: NaiveDateTime,
+
+    /// output directory
+    #[structopt(short, long, parse(from_os_str))]
+    output: PathBuf,
 }
 
 fn run() -> Result<()> {
-    info!("Launching apply_rules.");
+    info!("Launching filter-ntfs.");
+
     let opt = Opt::from_args();
-
-    let model = apply_rules::apply_rules(
-        transit_model::ntfs::read(opt.input)?,
-        opt.complementary_code_rules_files,
-        opt.property_rules_files,
-        opt.report,
-    )?;
-
+    let model = transit_model::ntfs::read(opt.input)?;
+    info!("{:?} networks {:?}", opt.action, opt.networks);
+    let model = ntfs::filter::filter(model, opt.action, opt.networks)?;
     transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
 
     Ok(())
