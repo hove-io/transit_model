@@ -442,7 +442,12 @@ fn update_geometry(
     }
 }
 
-fn wkt_to_coord(wkt: &str, report: &mut Report, p: &PropertyRule) -> Option<Coord> {
+fn wkt_to_coord(
+    wkt: &str,
+    report: &mut Report,
+    p: &PropertyRule,
+    property_label: &str,
+) -> Option<Coord> {
     let pov_geo = wkt_to_geo(wkt, report, &p)?;
 
     match pov_geo {
@@ -453,11 +458,12 @@ fn wkt_to_coord(wkt: &str, report: &mut Report, p: &PropertyRule) -> Option<Coor
         _ => {
             report.add_warning(
                 format!(
-                    "object_type={}, object_id={}, property_name={}, property_old_value={}: WKT should be POINT",
+                    "object_type={}, object_id={}, property_name={}, {}={}: WKT should be POINT",
                     p.object_type.as_str(),
                     p.object_id,
                     p.property_name,
-                    p.property_value
+                    property_label,
+                    wkt,
                 ),
                 ReportType::ObjectNotFound,
             );
@@ -469,7 +475,7 @@ fn wkt_to_coord(wkt: &str, report: &mut Report, p: &PropertyRule) -> Option<Coor
 fn update_position(p: &mut PropertyRule, field: &mut Coord, report: &mut Report) {
     if let Some(pov) = p.property_old_value.as_ref() {
         if *pov != "*" {
-            let p_old_value_coord = match wkt_to_coord(&pov, report, &p) {
+            let p_old_value_coord = match wkt_to_coord(&pov, report, &p, "property_old_value") {
                 Some(pov_geo) => pov_geo,
                 None => return,
             };
@@ -480,7 +486,7 @@ fn update_position(p: &mut PropertyRule, field: &mut Coord, report: &mut Report)
             }
         }
 
-        let p_value_coord = match wkt_to_coord(&p.property_value, report, &p) {
+        let p_value_coord = match wkt_to_coord(&p.property_value, report, &p, "property_value") {
             Some(pov_geo) => pov_geo,
             None => return,
         };

@@ -67,11 +67,11 @@
     },
     {
       "category": "ObjectNotFound",
-      "message": "object_type=stop_point, object_id=CDGR, property_name=stop_position, property_old_value=POINT(1 2): WKT should be POINT"
+      "message": "object_type=stop_point, object_id=CDGR, property_name=stop_position, property_old_value=LINESTRING(3 4,10 50,20 25): WKT should be POINT"
     },
     {
       "category": "ObjectNotFound",
-      "message": "object_type=stop_point, object_id=CHAM, property_name=stop_position, property_old_value=LINESTRING(3 4,10 50,20 25): WKT should be POINT"
+      "message": "object_type=stop_point, object_id=CHAM, property_name=stop_position, property_value=LINESTRING(3 4,10 50,20 25): WKT should be POINT"
     },
     {
       "category": "GeometryNotValid",
