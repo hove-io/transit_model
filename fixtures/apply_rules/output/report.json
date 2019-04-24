@@ -64,6 +64,26 @@
     {
       "category": "ObjectNotFound",
       "message": "object_type=route, object_id=RERAF: geometry unknown not found"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=stop_point, object_id=CDGR, property_name=stop_position, property_old_value=LINESTRING(3 4,10 50,20 25): WKT should be POINT"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=stop_point, object_id=CHAM, property_name=stop_position, property_value=LINESTRING(3 4,10 50,20 25): WKT should be POINT"
+    },
+    {
+      "category": "GeometryNotValid",
+      "message": "object_type=stop_point, object_id=DEFR: invalid geometry"
+    },
+    {
+      "category": "GeometryNotValid",
+      "message": "object_type=stop_point, object_id=GDLR: invalid geometry"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=stop_point, object_id=NATR, property_name=stop_position: property_old_value does not match the value found in the data"
     }
   ]
 }
