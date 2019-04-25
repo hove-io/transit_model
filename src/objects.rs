@@ -642,6 +642,7 @@ impl_id!(VehicleJourney, Route, route_id);
 impl_id!(VehicleJourney, PhysicalMode, physical_mode_id);
 impl_id!(VehicleJourney, Dataset, dataset_id);
 impl_id!(VehicleJourney, Company, company_id);
+impl_id!(VehicleJourney, Calendar, service_id);
 
 impl AddPrefix for VehicleJourney {
     fn add_prefix(&mut self, prefix: &str) {

@@ -475,6 +475,7 @@ pub struct Model {
     companies_to_vehicle_journeys: OneToMany<Company, VehicleJourney>,
     vehicle_journeys_to_stop_points: ManyToMany<VehicleJourney, StopPoint>,
     transfers_to_stop_points: ManyToMany<Transfer, StopPoint>,
+    calendars_to_vehicle_journeys: OneToMany<Calendar, VehicleJourney>,
 
     // shortcuts
     #[get_corresponding(weight = "1.9")]
@@ -609,6 +610,11 @@ impl Model {
                 &c.companies,
                 &c.vehicle_journeys,
                 "companies_to_vehicle_journeys",
+            )?,
+            calendars_to_vehicle_journeys: OneToMany::new(
+                &c.calendars,
+                &c.vehicle_journeys,
+                "calendars_to_vehicle_journeys",
             )?,
             collections: c,
         })

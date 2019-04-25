@@ -20,7 +20,7 @@
 
 use crate::{
     Model, Result,
-    {collection::Idx, objects::VehicleJourney},
+    {collection::Idx, objects::Calendar},
 };
 use failure::bail;
 use std::collections::BTreeSet;
@@ -39,7 +39,7 @@ arg_enum! {
 pub fn filter(model: Model, action: Action, network_ids: Vec<String>) -> Result<Model> {
     let mut networks = model.networks.clone();
     let n_id_to_old_idx = networks.get_id_to_idx().clone();
-    let vjs = model.vehicle_journeys.clone();
+    let calendars = model.calendars.clone();
 
     let network_ids: HashSet<String> = network_ids
         .into_iter()
@@ -54,10 +54,10 @@ pub fn filter(model: Model, action: Action, network_ids: Vec<String>) -> Result<
         Action::Remove => networks.retain(|n| !network_ids.contains(&n.id)),
     }
 
-    let trips_used: BTreeSet<Idx<VehicleJourney>> = networks
+    let calendars_used: BTreeSet<_> = networks
         .iter()
         .flat_map(|(idx, _)| {
-            let vjs: BTreeSet<Idx<VehicleJourney>> =
+            let vjs: BTreeSet<Idx<Calendar>> =
                 model.get_corresponding_from_idx(n_id_to_old_idx[&networks[idx].id]);
             vjs
         })
@@ -66,11 +66,11 @@ pub fn filter(model: Model, action: Action, network_ids: Vec<String>) -> Result<
     let mut collections = model.into_collections();
     collections.networks = networks;
     collections
-        .vehicle_journeys
-        .retain(|vj| trips_used.contains(&vjs.get_idx(&vj.id).unwrap()));
+        .calendars
+        .retain(|vj| calendars_used.contains(&calendars.get_idx(&vj.id).unwrap()));
 
-    if collections.vehicle_journeys.is_empty() {
-        bail!("the data does not contain trips anymore.")
+    if collections.calendars.is_empty() {
+        bail!("the data does not contain services anymore.")
     }
 
     collections.sanitize()?;

@@ -63,7 +63,7 @@ fn test_extract_with_unknown_network() {
 }
 
 #[test]
-#[should_panic(expected = "the data does not contain trips anymore.")]
+#[should_panic(expected = "the data does not contain services anymore.")]
 fn test_remove_all_networks() {
     let input_dir = "fixtures/filter_ntfs/input";
     filter::filter(
