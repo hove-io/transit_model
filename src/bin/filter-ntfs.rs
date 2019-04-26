@@ -27,22 +27,22 @@ use transit_model::{ntfs, Result};
     about = "Remove or extract networks from an NTFS. "
 )]
 struct Opt {
-    /// input directory.
+    /// Input directory
     #[structopt(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// Network ids.
+    /// Extract or remove networks
     #[structopt(raw(
         possible_values = "&ntfs::filter::Action::variants()",
         case_insensitive = "true"
     ))]
     action: ntfs::filter::Action,
 
-    /// Network ids.
+    /// Network ids
     #[structopt(short, long)]
     networks: Vec<String>,
 
-    /// current datetime
+    /// Current datetime
     #[structopt(
         short = "x",
         long,
@@ -51,7 +51,7 @@ struct Opt {
     )]
     current_datetime: NaiveDateTime,
 
-    /// output directory
+    /// Output directory
     #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
 }
