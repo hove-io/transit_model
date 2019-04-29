@@ -359,7 +359,7 @@ impl Eq for PhysicalMode {}
 
 impl_with_id!(PhysicalMode);
 
-#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[derivative(Default)]
 pub struct Network {
     #[derivative(Default(value = "\"default_network\".into()"))]
@@ -642,6 +642,7 @@ impl_id!(VehicleJourney, Route, route_id);
 impl_id!(VehicleJourney, PhysicalMode, physical_mode_id);
 impl_id!(VehicleJourney, Dataset, dataset_id);
 impl_id!(VehicleJourney, Company, company_id);
+impl_id!(VehicleJourney, Calendar, service_id);
 
 impl AddPrefix for VehicleJourney {
     fn add_prefix(&mut self, prefix: &str) {

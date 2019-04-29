@@ -1,0 +1,3 @@
+contributor_id,contributor_name,contributor_license,contributor_website
+OIF,OIF - STIF Ile de France,ODbL,http://www.vianavigo.com
+TGC,The Great Contributor,,

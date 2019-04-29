@@ -9,6 +9,8 @@ matrix:
   - rust: stable
     before_script: rustup component add rustfmt
     script: cargo fmt --all -- --check
+  allow_failures:
+  - rust: nightly
 deploy:
   provider: cargo
   on:
