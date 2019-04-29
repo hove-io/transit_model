@@ -17,7 +17,6 @@
 use chrono::NaiveDateTime;
 use log::info;
 use std::path::PathBuf;
-// use structopt::clap::arg_enum;
 use structopt::StructOpt;
 use transit_model::{ntfs, Result};
 

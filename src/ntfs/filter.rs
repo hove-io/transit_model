@@ -67,7 +67,7 @@ pub fn filter(model: Model, action: Action, network_ids: Vec<String>) -> Result<
     collections.networks = networks;
     collections
         .calendars
-        .retain(|vj| calendars_used.contains(&calendars.get_idx(&vj.id).unwrap()));
+        .retain(|c| calendars_used.contains(&calendars.get_idx(&c.id).unwrap()));
 
     if collections.calendars.is_empty() {
         bail!("the data does not contain services anymore.")
