@@ -221,14 +221,9 @@ pub fn write_calendar_dates(
     for c in calendars.values() {
         let translation = translate(&c.dates);
         if !translation.operating_days.is_empty() {
-            let validity_period = skip_fail!(translation
-                .validity_periods
-                .iter()
-                .next()
-                .ok_or_else(|| format_err!(
-                    "Validity period not found for service id {}",
-                    c.id.clone()
-                )));
+            let validity_period = skip_fail!(translation.validity_period.ok_or_else(
+                || format_err!("Validity period not found for service id {}", c.id.clone())
+            ));
             translations.push(Calendar {
                 id: c.id.clone(),
                 monday: translation.operating_days.contains(&Weekday::Mon),

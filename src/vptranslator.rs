@@ -37,7 +37,7 @@ pub struct BlockPattern {
     ///Indicates operating days of the service
     pub operating_days: Vec<Weekday>,
     ///Start and end service day for the service interval
-    pub validity_periods: Vec<ValidityPeriod>,
+    pub validity_period: Option<ValidityPeriod>,
     ///List of dates where service is available or not in interval.
     pub exceptions: Vec<ExceptionDate>,
 }
@@ -56,7 +56,7 @@ fn compute_validity_pattern(start_date: Date, end_date: Date, dates: &BTreeSet<D
     res
 }
 
-///Determining a Hamming distance betwenn a validity pattern and a week pattern
+///Determining the sum of Hamming distances between a validity pattern and a week pattern
 fn dists(w: u8, weeks: &[u8]) -> u32 {
     weeks
         .iter()
@@ -104,7 +104,7 @@ fn get_operating_days(week: u8) -> Vec<Weekday> {
             res.push(Weekday::from_u8(6 - i).unwrap());
         }
     }
-    res.sort_by_key(|w| w.num_days_from_monday());
+    res.sort_by_key(Weekday::num_days_from_monday);
     res
 }
 
@@ -119,10 +119,6 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
         None => return BlockPattern::default(),
     };
     let end_date: Date = *dates.iter().next_back().unwrap();
-    let validity_period = vec![ValidityPeriod {
-        start_date: start_date,
-        end_date: end_date,
-    }];
 
     let mut monday_ref = get_prev_monday(start_date);
     let validity_pattern = compute_validity_pattern(monday_ref, end_date, &dates);
@@ -153,7 +149,10 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
     clean_extra_dates(start_date, end_date, &mut exceptions_list);
     BlockPattern {
         operating_days: operating_days,
-        validity_periods: validity_period,
+        validity_period: Some(ValidityPeriod {
+            start_date: start_date,
+            end_date: end_date,
+        }),
         exceptions: exceptions_list,
     }
 }
@@ -249,4 +248,384 @@ mod tests {
             Date::from_ymd(2012, 7, 2)
         );
     }
+
+    fn get_dates_from_bitset(start_date: Date, vpattern: &str) -> BTreeSet<Date> {
+        let mut res = BTreeSet::new();
+        for (i, c) in vpattern.chars().enumerate() {
+            if c == '1' {
+                res.insert(start_date + Duration::days(i as i64));
+            }
+        }
+        res
+    }
+
+    fn get_week_from_weekday(weekday: Vec<Weekday>) -> u8 {
+        let mut res = 0;
+        for day in weekday {
+            res |= 1 << (7 - day.number_from_monday());
+        }
+        res
+    }
+
+    #[test]
+    fn only_first_day() {
+        let mut dates = BTreeSet::new();
+
+        dates.insert(Date::from_ymd(2012, 7, 2));
+        let res = translate(&dates);
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b1000000);
+
+        assert!(res.exceptions.is_empty());
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 2),
+                end_date: Date::from_ymd(2012, 7, 2),
+            }
+        );
+    }
+
+    #[test]
+    fn bound_cut() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 16),
+            &format!("{}{}", "0011101", "000"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b0011101);
+        assert!(res.exceptions.is_empty());
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 18),
+                end_date: Date::from_ymd(2012, 7, 22),
+            }
+        );
+    }
+
+    #[test]
+    fn bound_cut_one_day() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 16),
+            &format!("{}{}", "0000010", "00"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b0000010);
+        assert!(res.exceptions.is_empty());
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 21),
+                end_date: Date::from_ymd(2012, 7, 21),
+            }
+        )
+    }
+
+    #[test]
+    fn empty_vp() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 16),
+            &format!("{}", "0000000"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b0000000);
+        assert!(res.exceptions.is_empty());
+        assert!(res.validity_period.is_none());
+    }
+
+    #[test]
+    fn only_one_thursday() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 2),
+            &format!("{}{}", "0000000", "0001000"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b0001000);
+        assert!(res.exceptions.is_empty());
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 12),
+                end_date: Date::from_ymd(2012, 7, 12),
+            }
+        )
+    }
+
+    #[test]
+    fn only_one_monday() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 2),
+            &format!("{}{}", "0000000", "1000000"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b1000000);
+        assert!(res.exceptions.is_empty());
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 9),
+                end_date: Date::from_ymd(2012, 7, 9),
+            }
+        )
+    }
+
+    #[test]
+    fn only_one_sunday() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 2),
+            &format!("{}{}", "0000001", "0000000"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b0000001);
+        assert!(res.exceptions.is_empty());
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 8),
+                end_date: Date::from_ymd(2012, 7, 8),
+            }
+        )
+    }
+
+    // only one thursday friday saturday sunday
+    #[test]
+    fn only_one_tfss() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 2),
+            &format!("{}{}", "0000000", "0001111"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b0001111);
+        assert!(res.exceptions.is_empty());
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 12),
+                end_date: Date::from_ymd(2012, 7, 15),
+            }
+        )
+    }
+
+    #[test]
+    fn three_complete_weeks() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 2),
+            &format!("{}{}{}", "1111111", "1111111", "1111111"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b1111111);
+        assert!(res.exceptions.is_empty());
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 2),
+                end_date: Date::from_ymd(2012, 7, 22),
+            }
+        )
+    }
+
+    #[test]
+    fn three_mtwss_excluding_one_day() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 2),
+            &format!("{}{}{}", "1100111", "1100011", "1100111"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b1100111);
+        assert_eq!(res.exceptions.len(), 1);
+        assert_eq!(
+            res.exceptions.iter().next().unwrap(),
+            &ExceptionDate {
+                date: Date::from_ymd(2012, 07, 13),
+                exception_type: ExceptionType::Remove,
+            }
+        );
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 2),
+                end_date: Date::from_ymd(2012, 7, 22),
+            }
+        )
+    }
+
+    #[test]
+    fn three_mtwss_including_one_day() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 2),
+            &format!("{}{}{}", "1100111", "1101111", "1100111"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b1100111);
+        assert_eq!(res.exceptions.len(), 1);
+        assert_eq!(
+            res.exceptions.iter().next().unwrap(),
+            &ExceptionDate {
+                date: Date::from_ymd(2012, 07, 12),
+                exception_type: ExceptionType::Add,
+            }
+        );
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 2),
+                end_date: Date::from_ymd(2012, 7, 22),
+            }
+        )
+    }
+
+    #[test]
+    fn mwtfss_mttfss_mtwfss() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 2),
+            &format!("{}{}{}", "1011111", "1101111", "1110111"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b1111111);
+        assert_eq!(res.exceptions.len(), 3);
+
+        assert_eq!(
+            res.exceptions[0],
+            ExceptionDate {
+                date: Date::from_ymd(2012, 7, 3),
+                exception_type: ExceptionType::Remove,
+            }
+        );
+        assert_eq!(
+            res.exceptions[1],
+            ExceptionDate {
+                date: Date::from_ymd(2012, 7, 11),
+                exception_type: ExceptionType::Remove,
+            }
+        );
+        assert_eq!(
+            res.exceptions[2],
+            ExceptionDate {
+                date: Date::from_ymd(2012, 7, 19),
+                exception_type: ExceptionType::Remove,
+            }
+        );
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 2),
+                end_date: Date::from_ymd(2012, 7, 22),
+            }
+        )
+    }
+
+    #[test]
+    fn t_w_t() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 2),
+            &format!("{}{}{}", "0100000", "0010000", "0001000"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b0000000);
+        assert_eq!(res.exceptions.len(), 3);
+        assert_eq!(
+            res.exceptions[0],
+            ExceptionDate {
+                date: Date::from_ymd(2012, 7, 3),
+                exception_type: ExceptionType::Add,
+            }
+        );
+        assert_eq!(
+            res.exceptions[1],
+            ExceptionDate {
+                date: Date::from_ymd(2012, 7, 11),
+                exception_type: ExceptionType::Add,
+            }
+        );
+        assert_eq!(
+            res.exceptions[2],
+            ExceptionDate {
+                date: Date::from_ymd(2012, 7, 19),
+                exception_type: ExceptionType::Add,
+            }
+        );
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 3),
+                end_date: Date::from_ymd(2012, 7, 19),
+            }
+        )
+    }
+
+    #[test]
+    fn bound_compression() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2012, 7, 2),
+            &format!("{}{}{}", "0000111", "0001111", "0001110"),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b0001111);
+        assert!(res.exceptions.is_empty());
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2012, 7, 6),
+                end_date: Date::from_ymd(2012, 7, 21),
+            }
+        )
+    }
+
+    // ROADEF 2015 example
+    #[test]
+    fn may2015() {
+        let res = translate(&get_dates_from_bitset(
+            Date::from_ymd(2015, 4, 27),
+            &format!(
+                "{}{}{}{}{}",
+                "1111000", "1111000", "1110100", "1111100", "0111110"
+            ),
+        ));
+
+        assert_eq!(get_week_from_weekday(res.operating_days), 0b1111100);
+        assert_eq!(res.exceptions.len(), 5);
+        assert_eq!(
+            res.exceptions[0],
+            ExceptionDate {
+                date: Date::from_ymd(2015, 5, 1),
+                exception_type: ExceptionType::Remove,
+            }
+        );
+        assert_eq!(
+            res.exceptions[1],
+            ExceptionDate {
+                date: Date::from_ymd(2015, 5, 8),
+                exception_type: ExceptionType::Remove,
+            }
+        );
+        assert_eq!(
+            res.exceptions[2],
+            ExceptionDate {
+                date: Date::from_ymd(2015, 5, 14),
+                exception_type: ExceptionType::Remove,
+            }
+        );
+        assert_eq!(
+            res.exceptions[3],
+            ExceptionDate {
+                date: Date::from_ymd(2015, 5, 30),
+                exception_type: ExceptionType::Add,
+            }
+        );
+        assert_eq!(
+            res.exceptions[4],
+            ExceptionDate {
+                date: Date::from_ymd(2015, 5, 25),
+                exception_type: ExceptionType::Remove,
+            }
+        );
+        assert_eq!(
+            res.validity_period.unwrap(),
+            ValidityPeriod {
+                start_date: Date::from_ymd(2015, 4, 27),
+                end_date: Date::from_ymd(2015, 5, 30),
+            }
+        )
+    }
+
 }
