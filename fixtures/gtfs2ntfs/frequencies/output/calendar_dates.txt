@@ -1,14 +1,3 @@
 service_id,date,exception_type
-service:1,20180101,1
-service:1,20180102,1
-service:1,20180103,1
-service:2,20180105,1
-service:2,20180106,1
-service:3,20180105,1
-service:3,20180106,1
-service:2:+1days,20180106,1
-service:2:+1days,20180107,1
-service:3:+1days,20180106,1
-service:3:+1days,20180107,1
 service:3:+2days,20180107,1
 service:3:+2days,20180108,1

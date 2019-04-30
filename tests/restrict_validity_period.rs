@@ -39,6 +39,7 @@ fn test_restrict_global() {
             &path,
             Some(vec![
                 "calendar_dates.txt",
+                "calendar.txt",
                 "companies.txt",
                 "datasets.txt",
                 "equipments.txt",

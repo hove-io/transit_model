@@ -31,6 +31,7 @@ wkt = "0.1.2"
 reqwest = "0.9"
 lazy_static = "1.2.0"
 regex = "1.1.2"
+num-traits = "0.2.6"
 
 [dependencies.transit_model_procmacro]
 path = "transit_model_procmacro"
