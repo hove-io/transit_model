@@ -28,6 +28,7 @@ pub(crate) mod common_format;
 #[macro_use]
 pub mod objects;
 pub mod gtfs;
+pub mod kv1;
 pub mod merge_stop_areas;
 pub mod model;
 pub mod netex;
