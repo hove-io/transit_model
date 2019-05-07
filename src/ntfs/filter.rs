@@ -18,12 +18,8 @@
 //! It can import and export data from [GTFS](http://gtfs.org/) and
 //! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
 
-use crate::{
-    Model, Result,
-    {collection::Idx, objects::Calendar},
-};
+use crate::{Model, Result};
 use failure::bail;
-use std::collections::BTreeSet;
 use std::collections::HashSet;
 use structopt::clap::arg_enum;
 
@@ -40,6 +36,7 @@ pub fn filter(model: Model, action: Action, network_ids: Vec<String>) -> Result<
     let mut networks = model.networks.clone();
     let n_id_to_old_idx = networks.get_id_to_idx().clone();
     let calendars = model.calendars.clone();
+    let vjs = model.vehicle_journeys.clone();
 
     let network_ids: HashSet<String> = network_ids
         .into_iter()
@@ -54,20 +51,18 @@ pub fn filter(model: Model, action: Action, network_ids: Vec<String>) -> Result<
         Action::Remove => networks.retain(|n| !network_ids.contains(&n.id)),
     }
 
-    let calendars_used: BTreeSet<_> = networks
-        .iter()
-        .flat_map(|(idx, _)| {
-            let vjs: BTreeSet<Idx<Calendar>> =
-                model.get_corresponding_from_idx(n_id_to_old_idx[&networks[idx].id]);
-            vjs
-        })
-        .collect();
+    let network_idx = networks.values().map(|n| n_id_to_old_idx[&n.id]).collect();
+    let calendars_used = model.get_corresponding(&network_idx);
+    let vjs_used = model.get_corresponding(&network_idx);
 
     let mut collections = model.into_collections();
-    collections.networks = networks;
     collections
         .calendars
         .retain(|c| calendars_used.contains(&calendars.get_idx(&c.id).unwrap()));
+
+    collections
+        .vehicle_journeys
+        .retain(|c| vjs_used.contains(&vjs.get_idx(&c.id).unwrap()));
 
     if collections.calendars.is_empty() {
         bail!("the data does not contain services anymore.")

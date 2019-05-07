@@ -1,3 +1,5 @@
 stop_id,trip_id,stop_sequence,arrival_time,departure_time,boarding_duration,alighting_duration,pickup_type,drop_off_type,datetime_estimated,local_zone_id,stop_headsign,stop_time_id
-sp:1,B42F1,10,10:10:00,10:10:00,0,0,0,0,0,,,
-sp:2,B42F1,20,10:20:00,10:20:00,0,0,0,0,0,,,
+stop1,trip1,1,22:41:00,22:41:00,0,0,0,0,0,,,
+stop2,trip1,2,22:42:00,22:42:00,0,0,0,0,0,,,
+stop1,trip2,1,10:41:00,10:41:00,0,0,0,0,0,,,
+stop2,trip2,2,10:42:00,10:42:00,0,0,0,0,0,,,

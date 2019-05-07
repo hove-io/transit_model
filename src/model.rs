@@ -233,19 +233,8 @@ impl Collections {
             }
         }
 
-        let mut calendars = self.calendars.take();
-        let services_used: Vec<String> = calendars
-            .iter()
-            .filter_map(|elt| {
-                if elt.dates.is_empty() {
-                    None
-                } else {
-                    Some(elt.id.clone())
-                }
-            })
-            .collect();
-        calendars.retain(|cal| services_used.contains(&cal.id));
-        self.calendars = CollectionWithId::new(calendars)?;
+        self.calendars.retain(|cal| !cal.dates.is_empty());
+
         let mut geometries_used: HashSet<String> = HashSet::new();
         let mut companies_used: HashSet<String> = HashSet::new();
         let mut trip_properties_used: HashSet<String> = HashSet::new();
@@ -264,7 +253,7 @@ impl Collections {
             .take()
             .into_iter()
             .filter(|vj| {
-                if services_used.contains(&vj.service_id) {
+                if self.calendars.get(&vj.service_id).is_some() {
                     if let Some(geo_id) = &vj.geometry_id {
                         geometries_used.insert(geo_id.clone());
                     }

@@ -1,2 +1,3 @@
 line_id,line_code,line_name,forward_line_name,forward_direction,backward_line_name,backward_direction,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
-OIF:002002002:BDEOIF829,BDE,BDE,Hôtels - Hôtels,OIF:SA:4:126,Hôtels - Hôtels,OIF:SA:4:126,7D36F5,FFFFFF,,OIF:101,tram,,05:10:00,22:19:00
+line2,,line2,,,,,,,,network2,Bus,,,
+line3,,line3,,,,,,,,network3,Bus,,,
