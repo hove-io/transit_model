@@ -24,9 +24,12 @@ use crate::{
 };
 use chrono::NaiveDate;
 use csv;
-use failure::{format_err, ResultExt};
+use failure::{bail, format_err, ResultExt};
+use geo::algorithm::centroid::Centroid;
+use geo_types::MultiPoint as GeoMultiPoint;
 use lazy_static::lazy_static;
 use log::info;
+use proj::Proj;
 use serde_derive::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::result::Result as StdResult;
@@ -125,6 +128,36 @@ lazy_static! {
     };
 }
 
+#[derive(Deserialize, Debug)]
+struct Point {
+    #[serde(rename = "[PointCode]")]
+    code: String,
+    #[serde(rename = "[LocationX_EW]")]
+    lon: f64,
+    #[serde(rename = "[LocationY_NS]")]
+    lat: f64,
+    #[serde(rename = "[PointType]")]
+    category: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct UsrStopArea {
+    #[serde(rename = "[UserStopAreaCode]")]
+    id: String,
+    #[serde(rename = "[Name]")]
+    name: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct UsrStop {
+    #[serde(rename = "[Name]")]
+    name: String,
+    #[serde(rename = "[UserStopAreaCode]")]
+    parent_station: String,
+    #[serde(rename = "[UserstopCode]")]
+    point_code: String,
+}
+
 /// Generates calendars
 pub fn read_operday<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
@@ -195,32 +228,140 @@ pub fn make_physical_and_commercial_modes(collections: &mut Collections) {
     }
 }
 
+/// Read stop coordinates
+fn read_point<H>(file_handler: &mut H) -> Result<BTreeMap<String, Coord>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let file = "POINTXXXXX.TMI";
+    let (file_reader, path) = file_handler.get_file(file)?;
+    info!("Reading {}", file);
+
+    let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b'|')
+        .trim(csv::Trim::All)
+        .from_reader(file_reader);
+
+    let mut point_map = BTreeMap::new();
+    let from = "EPSG:28992";
+    // FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
+    let to = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
+    let proj = match Proj::new_known_crs(&from, &to, None) {
+        Some(p) => p,
+        None => bail!("Proj cannot build a converter from {} to {}", from, to),
+    };
+    for point in rdr.deserialize() {
+        let point: Point = point.with_context(ctx_from_path!(path))?;
+        if point.category == "SP" {
+            let coords = proj.convert((point.lon, point.lat).into())?;
+            let coords = Coord {
+                lon: coords.x(),
+                lat: coords.y(),
+            };
+            point_map.insert(point.code, coords);
+        }
+    }
+    Ok(point_map)
+}
+
+/// Read stop areas
+fn read_usrstar<H>(file_handler: &mut H) -> Result<BTreeMap<String, UsrStopArea>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let file = "USRSTARXXX.TMI";
+    let (file_reader, path) = file_handler.get_file(file)?;
+    info!("Reading {}", file);
+
+    let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b'|')
+        .trim(csv::Trim::All)
+        .from_reader(file_reader);
+    let mut usr_stop_area_map = BTreeMap::new();
+    for usr_stop_area in rdr.deserialize() {
+        let usr_stop_area: UsrStopArea = usr_stop_area.with_context(ctx_from_path!(path))?;
+        usr_stop_area_map.insert(usr_stop_area.id.clone(), usr_stop_area);
+    }
+    Ok(usr_stop_area_map)
+}
+
 /// Generates stop_points
 pub fn read_usrstop_point<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
-    info!("Reading USRSTOPXXX.TMI and POINTXXXXX.TMI");
+    let point_map = read_point(file_handler)?;
+    let usr_stop_area_map = read_usrstar(file_handler)?;
 
-    // read POINTXXXXX.TMI
-    // Generate HashMap<PointCode, (LocationX_EW, LocationY_NS)>
+    let file = "USRSTOPXXX.TMI";
+    let (file_reader, path) = file_handler.get_file(file)?;
+    info!("Reading {}", file);
 
-    // Read USRSTOPXXX.TMI and use the HashMap above to get the stop position
-    // use proj crate to convert coordinates EPSG:28992 to EPSG:4326
+    let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b'|')
+        .trim(csv::Trim::All)
+        .from_reader(file_reader);
 
-    // collections.stop_points = CollectionWithId::new(stop_points)?;
+    for usr_stop in rdr.deserialize() {
+        let usr_stop: UsrStop = usr_stop.with_context(ctx_from_path!(path))?;
+        let coord = match point_map.get(&usr_stop.point_code) {
+            Some(c) => c.clone(),
+            None => bail!("Point code {} does not exist.", usr_stop.point_code),
+        };
+        let stop_area_id = match usr_stop_area_map.get(&usr_stop.parent_station) {
+            Some(stop_area) => stop_area.id.clone(),
+            None => bail!(
+                "Stop Area with id {} does not exist.",
+                usr_stop.parent_station
+            ),
+        };
+        let stop_point = StopPoint {
+            id: usr_stop.point_code,
+            name: usr_stop.name,
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            visible: true,
+            coord,
+            stop_area_id,
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+            fare_zone_id: None,
+            stop_type: StopType::Point,
+        };
+        collections.stop_points.push(stop_point)?;
+    }
 
-    Ok(())
-}
-
-/// Generates stop_areas
-pub fn read_usrstar<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    info!("Reading USRSTARXXX.TMI");
-    // filter collections.stop_points by sp.parent == UserStopAreaCode to calculate barycenter
-    // collections.stop_areas = CollectionWithId::new(stop_areas)?;
+    for (_, usr_stop_area) in usr_stop_area_map {
+        let stop_points = &collections.stop_points;
+        let coord = stop_points
+            .values()
+            .filter(|sp| sp.stop_area_id == usr_stop_area.id)
+            .map(|sp| (sp.coord.lon, sp.coord.lat))
+            .collect::<GeoMultiPoint<_>>()
+            .centroid()
+            .map(|c| Coord {lon: c.x(), lat: c.y()})
+            .ok_or_else(||
+                format_err!(
+                    "Failed to calculate a barycenter of stop area {} because it doesn't refer to any corresponding stop point.",
+                    usr_stop_area.id
+                )
+            )?;
+        let stop_area = StopArea {
+            id: usr_stop_area.id,
+            name: usr_stop_area.name,
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            visible: true,
+            coord,
+            timezone: None,
+            geometry_id: None,
+            equipment_id: None,
+        };
+        collections.stop_areas.push(stop_area)?;
+    }
 
     Ok(())
 }
@@ -392,8 +533,6 @@ where
         });
 
         let stop_id = pujopass.user_stop_code;
-        // TODO: Remove after creating stop_points
-        let stop_id = "fake_sp".to_string();
         let stop_point_idx = collections.stop_points.get_idx(&stop_id).ok_or_else(|| {
             format_err!(
                 "Problem reading {:?}: stop_id={:?} not found",
@@ -457,35 +596,6 @@ fn make_fake_collections(collections: &mut Collections) -> Result<()> {
         geometry_id: None,
         opening_time: None,
         closing_time: None,
-    }])?;
-
-    collections.stop_points = CollectionWithId::new(vec![StopPoint {
-        id: "fake_sp".into(),
-        name: "fake_sp".into(),
-        codes: KeysValues::default(),
-        object_properties: KeysValues::default(),
-        comment_links: CommentLinksT::default(),
-        coord: Coord { lon: 2., lat: 45. },
-        stop_area_id: "fake_sa".into(),
-        timezone: None,
-        visible: true,
-        geometry_id: None,
-        equipment_id: None,
-        fare_zone_id: None,
-        stop_type: StopType::Point,
-    }])?;
-
-    collections.stop_areas = CollectionWithId::new(vec![StopArea {
-        id: "fake_sa".into(),
-        name: "fake_sa".into(),
-        codes: KeysValues::default(),
-        object_properties: KeysValues::default(),
-        comment_links: CommentLinksT::default(),
-        coord: Coord { lon: 2., lat: 45. },
-        timezone: None,
-        visible: true,
-        geometry_id: None,
-        equipment_id: None,
     }])?;
 
     Ok(())

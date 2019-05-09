@@ -15,6 +15,7 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::{NaiveDate, NaiveDateTime};
+use pretty_assertions::assert_eq;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
