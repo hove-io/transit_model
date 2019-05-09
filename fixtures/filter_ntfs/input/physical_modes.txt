@@ -1,3 +1,2 @@
-physical_mode_id,physical_mode_name,co2_emission
-Bus,Bus,
-Train,Train,11.9
+physical_mode_id,physical_mode_name
+Bus,Bus

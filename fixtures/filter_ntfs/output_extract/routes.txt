@@ -1,2 +1,2 @@
 route_id,route_name,direction_type,line_id,geometry_id,destination_id
-B42F,Gare de Lyon - Montparnasse,,B42,,
+route1,route1,,line1,,
