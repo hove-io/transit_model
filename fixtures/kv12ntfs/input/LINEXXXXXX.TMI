@@ -1,0 +1,3 @@
+[Recordtype]|[Version number]|[Implicit/Explicit]|[DataOwnerCode]|[LinePlanningNumber]|[LinePublicNumber]|[LineName]|[LineVeTagNumber]|[Description]|[TransportType]|[LineIcon]|[LineColor]
+LINE|1|I|SYNTUS|2029|29|29|0|MO Lijn_2029|BUS||
+LINE|1|I|SYNTUS|2030|30|30|0|MO Lijn_2030|BUS||

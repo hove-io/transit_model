@@ -14,9 +14,12 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use crate::collection::CollectionWithId;
 use crate::common_format::CalendarDate;
 use crate::model::Collections;
-use crate::objects::{Calendar, CommercialMode, Date, ExceptionType, PhysicalMode};
+use crate::objects::{
+    Calendar, CommercialMode, Company, Date, ExceptionType, Network, PhysicalMode,
+};
 use crate::read_utils::FileHandler;
 use crate::Result;
 use chrono::NaiveDate;
@@ -25,8 +28,7 @@ use failure::ResultExt;
 use lazy_static::lazy_static;
 use log::info;
 use serde_derive::Deserialize;
-use std::collections::BTreeSet;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::result::Result as StdResult;
 
 /// Deserialize kv1 string date (Y-m-d) to NaiveDate
@@ -50,6 +52,12 @@ struct OPerDay {
     schedule_type_code: String,
     #[serde(rename = "[ValidDate]", deserialize_with = "de_from_date_string")]
     valid_date: Date,
+}
+
+#[derive(Deserialize, Debug)]
+struct Line {
+    #[serde(rename = "[DataOwnerCode]")]
+    data_owner_code: String,
 }
 
 lazy_static! {
@@ -169,10 +177,6 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     info!("Reading JOPAXXXXXX.TMI, PUJOPASSXX.TMI and LINEXXXXXX.TMI");
-
-    // collections.networks = CollectionWithId::new(networks)?;
-    // collections.companies = CollectionWithId::new(companies)?;
-
     // Check that UserStopCode exists in collections.stop_points?
     // collections.stop_times = CollectionWithId::new(stop_times)?;
 
@@ -185,7 +189,51 @@ where
 
     // need routes + stop_areas
     // collections.lines = CollectionWithId::new(lines)?;
+    let lines_file = "LINEXXXXXX.TMI";
+    let mut network_ids = HashSet::new();
+    let (reader, path) = file_handler.get_file(lines_file)?;
+    info!("Reading {}", lines_file);
 
+    let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b'|')
+        .trim(csv::Trim::All)
+        .from_reader(reader);
+
+    for line in rdr.deserialize() {
+        let line: Line = line.with_context(ctx_from_path!(path))?;
+        network_ids.insert(line.data_owner_code.clone());
+    }
+
+    collections.networks = CollectionWithId::new(
+        network_ids
+            .iter()
+            .map(|network_id| Network {
+                id: network_id.clone(),
+                name: network_id.clone(),
+                url: None,
+                codes: BTreeSet::new(),
+                timezone: Some("Europe/Amsterdam".into()),
+                lang: None,
+                phone: None,
+                address: None,
+                sort_order: None,
+            })
+            .collect(),
+    )?;
+
+    collections.companies = CollectionWithId::new(
+        network_ids
+            .iter()
+            .map(|network_id| Company {
+                id: network_id.clone(),
+                name: network_id.clone(),
+                address: None,
+                url: None,
+                mail: None,
+                phone: None,
+            })
+            .collect(),
+    )?;
     Ok(())
 }
 
