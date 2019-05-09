@@ -32,10 +32,9 @@ where
     let mut collections = Collections::default();
 
     read::read_operday(file_handler, &mut collections)?;
-    read::read_line(file_handler, &mut collections)?;
     read::read_usrstop_point(file_handler, &mut collections)?;
     read::read_usrstar(file_handler, &mut collections)?;
-    read::read_jopa_pujopass(file_handler, &mut collections)?;
+    read::read_jopa_pujopass_line(file_handler, &mut collections)?;
     read::read_notice_ntcassgn(file_handler, &mut collections)?;
 
     //add prefixes

@@ -31,26 +31,18 @@ where
     Ok(())
 }
 
-/// Generates networks, companies and lines
-pub fn read_line<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    info!("Reading LINEXXXXXX.TMI");
-
-    // collections.networks = CollectionWithId::new(networks)?;
-    // collections.companies = CollectionWithId::new(companies)?;
-    // collections.lines = CollectionWithId::new(lines)?;
-
-    Ok(())
-}
-
 /// Generates stop_points
 pub fn read_usrstop_point<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
     info!("Reading USRSTOPXXX.TMI and POINTXXXXX.TMI");
+
+    // read POINTXXXXX.TMI
+    // Generate HashMap<PointCode, (LocationX_EW, LocationY_NS)>
+
+    // Read USRSTOPXXX.TMI and use the HashMap above to get the stop position
+    // use proj crate to convert coordinates EPSG:28992 to EPSG:4326
 
     // collections.stop_points = CollectionWithId::new(stop_points)?;
 
@@ -63,22 +55,34 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     info!("Reading USRSTARXXX.TMI");
-
+    // filter collections.stop_points by sp.parent == UserStopAreaCode to calculate barycenter
     // collections.stop_areas = CollectionWithId::new(stop_areas)?;
 
     Ok(())
 }
 
-/// Generates vehicle_journeys, stop_times and routes
-pub fn read_jopa_pujopass<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+/// Generates networks, companies, stop_times, vehicle_journeys, routes and lines
+pub fn read_jopa_pujopass_line<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
-    info!("Reading JOPAXXXXXX.TMI and PUJOPASSXX.TMI");
+    info!("Reading JOPAXXXXXX.TMI, PUJOPASSXX.TMI and LINEXXXXXX.TMI");
 
-    // collections.routes = CollectionWithId::new(routes)?;
+    // collections.networks = CollectionWithId::new(networks)?;
+    // collections.companies = CollectionWithId::new(companies)?;
+
+    // Check that UserStopCode exists in collections.stop_points?
+    // collections.stop_times = CollectionWithId::new(stop_times)?;
+
+    // physical_mode_id = TransportationType in LINEXXXX.TMI where JOPAXXXXXX.(LinePlanningNumber, Direction) == LINEXXXXXX.(LinePlanningNumber, Direction)
+    // needs collections.calendars
     // collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
-    // collections.stop_times = CollectionWithId::new(listop_timesnes)?;
+
+    // needs vehicles_journeys -> stop_times -> stop_points + stop_areas
+    // collections.routes = CollectionWithId::new(routes)?;
+
+    // need routes + stop_areas
+    // collections.lines = CollectionWithId::new(lines)?;
 
     Ok(())
 }
