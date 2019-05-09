@@ -1,0 +1,4 @@
+service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+2029:1:1,0,0,0,0,0,0,1,20190428,20190530
+2029:10:10,0,0,0,0,0,1,0,20190427,20190504
+2165:6:6,0,0,0,0,1,0,0,20190913,20190913

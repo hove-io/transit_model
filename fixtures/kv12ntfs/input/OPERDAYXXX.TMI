@@ -1,0 +1,7 @@
+[Recordtype]|[Version number]|[Implicit/Explicit]|[DataOwnerCode]|[OrganizationalUnitCode]|[ScheduleCode]|[ScheduleTypeCode]|[ValidDate]|[Description]
+OPERDAY|1|I|SYNTUS|2029|1|1|2019-04-28|
+OPERDAY|1|I|SYNTUS|2029|1|1|2019-05-05|
+OPERDAY|1|I|SYNTUS|2029|1|1|2019-05-30|
+OPERDAY|1|I|SYNTUS|2029|10|10|2019-04-27|
+OPERDAY|1|I|SYNTUS|2029|10|10|2019-05-04|
+OPERDAY|1|I|SYNTUS|2165|6|6|2019-09-13|
