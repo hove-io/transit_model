@@ -1,0 +1,2 @@
+network_id,network_name,network_url,network_timezone,network_lang,network_phone,network_address,network_sort_order
+SYNTUS,SYNTUS,,Europe/Amsterdam,,,,
