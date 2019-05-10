@@ -21,11 +21,8 @@ use super::{
 use crate::collection::{Collection, CollectionWithId, Id};
 use crate::common_format::Availability;
 use crate::model::Collections;
-use crate::objects::{
-    self, CommentLinksT, Contributor, Coord, KeysValues, StopType, TransportType,
-};
+use crate::objects::{self, CommentLinksT, Coord, KeysValues, StopType, TransportType};
 use crate::objects::{StopTime as NtfsStopTime, Time, VehicleJourney};
-use crate::read_utils;
 use crate::read_utils::{read_collection, read_objects, FileHandler};
 use crate::utils::*;
 use crate::Result;
@@ -35,10 +32,7 @@ use failure::{bail, format_err, ResultExt};
 use geo_types::{LineString, Point};
 use log::{info, warn};
 use serde_derive::Deserialize;
-use serde_json;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::fs::File;
-use std::path;
 use std::result::Result as StdResult;
 
 fn default_agency_id() -> String {
@@ -665,50 +659,6 @@ where
     }
 }
 
-#[derive(Deserialize, Debug)]
-struct Dataset {
-    dataset_id: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Config {
-    contributor: objects::Contributor,
-    dataset: Dataset,
-    feed_infos: Option<BTreeMap<String, String>>,
-}
-
-pub fn read_config<P: AsRef<path::Path>>(
-    config_path: Option<P>,
-) -> Result<(
-    CollectionWithId<objects::Contributor>,
-    CollectionWithId<objects::Dataset>,
-    BTreeMap<String, String>,
-)> {
-    let contributor;
-    let dataset;
-    let mut feed_infos = BTreeMap::default();
-
-    if let Some(config_path) = config_path {
-        let config_path = config_path.as_ref();
-        info!("Reading dataset and contributor from {:?}", config_path);
-        let json_config_file = File::open(config_path)?;
-        let config: Config = serde_json::from_reader(json_config_file)?;
-
-        contributor = config.contributor;
-        dataset = objects::Dataset::new(config.dataset.dataset_id, contributor.id.clone());
-        if let Some(config_feed_infos) = config.feed_infos {
-            feed_infos = config_feed_infos;
-        }
-    } else {
-        contributor = Contributor::default();
-        dataset = objects::Dataset::default();
-    }
-
-    let contributors = CollectionWithId::new(vec![contributor])?;
-    let datasets = CollectionWithId::new(vec![dataset])?;
-    Ok((contributors, datasets, feed_infos))
-}
-
 fn get_commercial_mode(route_type: &RouteType) -> objects::CommercialMode {
     objects::CommercialMode {
         id: route_type.to_string(),
@@ -940,25 +890,6 @@ where
     Ok(())
 }
 
-pub fn set_dataset_validity_period(
-    datasets: &mut CollectionWithId<objects::Dataset>,
-    calendars: &CollectionWithId<objects::Calendar>,
-) -> Result<()> {
-    let validity_period = read_utils::get_validity_period(calendars);
-
-    if let Some(vp) = validity_period {
-        let mut objects = datasets.take();
-        for d in &mut objects {
-            d.start_date = vp.start_date;
-            d.end_date = vp.end_date;
-        }
-
-        *datasets = CollectionWithId::new(objects)?;
-    }
-
-    Ok(())
-}
-
 #[derivative(Default)]
 #[derive(Derivative, Deserialize, Debug, Clone, PartialEq)]
 enum FrequencyPrecision {
@@ -1115,7 +1046,7 @@ mod tests {
     use crate::gtfs::read::EquipmentList;
     use crate::model::Collections;
     use crate::objects::*;
-    use crate::read_utils::PathFileHandler;
+    use crate::read_utils::{self, PathFileHandler};
     use crate::test_utils::*;
     use chrono;
     use geo_types::Geometry as GeoGeometry;
@@ -1332,7 +1263,7 @@ mod tests {
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -1401,7 +1332,7 @@ mod tests {
             let mut collections = Collections::default();
             let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -1444,7 +1375,7 @@ mod tests {
             let mut collections = Collections::default();
             let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -1516,7 +1447,7 @@ mod tests {
             let mut collections = Collections::default();
             let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -1547,7 +1478,7 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -1582,7 +1513,7 @@ mod tests {
             let mut collections = Collections::default();
             let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -1625,7 +1556,7 @@ mod tests {
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -1658,7 +1589,7 @@ mod tests {
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -1692,7 +1623,7 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -1749,7 +1680,7 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
             let (stop_areas, stop_points) =
@@ -1926,7 +1857,7 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
@@ -1967,7 +1898,7 @@ mod tests {
             let mut collections = Collections::default();
             let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
@@ -2000,7 +1931,7 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
@@ -2034,7 +1965,7 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
@@ -2213,7 +2144,7 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
@@ -2296,7 +2227,7 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
@@ -2566,10 +2497,10 @@ mod tests {
             create_file_with_content(path, "calendar_dates.txt", calendar_dates_content);
 
             let mut collections = Collections::default();
-            let (_, mut datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (_, mut datasets, _) = read_utils::read_config(None::<&str>).unwrap();
 
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
-            super::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
+            read_utils::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
 
             assert_eq!(
                 datasets.into_vec(),
@@ -2597,10 +2528,10 @@ mod tests {
             create_file_with_content(path, "calendar.txt", calendars_content);
 
             let mut collections = Collections::default();
-            let (_, mut datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (_, mut datasets, _) = read_utils::read_config(None::<&str>).unwrap();
 
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
-            super::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
+            read_utils::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
 
             assert_eq!(
                 datasets.into_vec(),
@@ -2686,7 +2617,7 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
@@ -2792,7 +2723,7 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 
@@ -2864,7 +2795,7 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = super::read_config(None::<&str>).unwrap();
+            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = contributors;
             collections.datasets = datasets;
 

@@ -25,13 +25,25 @@ use crate::Result;
 use std::fs::File;
 use std::path::Path;
 
-fn read<H>(file_handler: &mut H, prefix: Option<String>) -> Result<Model>
+fn read<H>(
+    file_handler: &mut H,
+    config_path: Option<impl AsRef<Path>>,
+    prefix: Option<String>,
+) -> Result<Model>
 where
     for<'a> &'a mut H: read_utils::FileHandler,
 {
     let mut collections = Collections::default();
 
     read::read_operday(file_handler, &mut collections)?;
+
+    let (contributors, mut datasets, feed_infos) = read_utils::read_config(config_path)?;
+    read_utils::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
+
+    collections.contributors = contributors;
+    collections.datasets = datasets;
+    collections.feed_infos = feed_infos;
+
     read::make_physical_and_commercial_modes(&mut collections);
     read::read_usrstop_point(file_handler, &mut collections)?;
     read::read_usrstar(file_handler, &mut collections)?;
@@ -48,32 +60,56 @@ where
 
 /// Imports a `Model` from the KV1 files in the `path` directory.
 ///
+/// The `config_path` argument allows you to give a path to a file
+/// containing a json representing the contributor and dataset used
+/// for this KV1. If not given, default values will be created.
+///
 /// The `prefix` argument is a string that will be prepended to every
 /// identifiers, allowing to namespace the dataset. By default, no
 /// prefix will be added to the identifiers.
-pub fn read_from_path<P: AsRef<Path>>(p: P, prefix: Option<String>) -> Result<Model> {
+pub fn read_from_path<P: AsRef<Path>>(
+    p: P,
+    config_path: Option<P>,
+    prefix: Option<String>,
+) -> Result<Model> {
     let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
-    read(&mut file_handle, prefix)
+    read(&mut file_handle, config_path, prefix)
 }
 
 /// Imports a `Model` from a zip file containing the KV1.
 ///
-/// The `prefix` argument is a string that will be prepended to every
-/// identifiers, allowing to namespace the dataset. By default, no
-/// prefix will be added to the identifiers.
-pub fn read_from_zip<P: AsRef<Path>>(p: P, prefix: Option<String>) -> Result<Model> {
-    let reader = File::open(p.as_ref())?;
-    let mut file_handle = read_utils::ZipHandler::new(reader, p)?;
-    read(&mut file_handle, prefix)
-}
-
-/// Imports a `Model` from a url hosting a zip file containing the KV1.
+/// The `config_path` argument allows you to give a path to a file
+/// containing a json representing the contributor and dataset used
+/// for this KV1. If not given, default values will be created.
 ///
 /// The `prefix` argument is a string that will be prepended to every
 /// identifiers, allowing to namespace the dataset. By default, no
 /// prefix will be added to the identifiers.
-pub fn read_from_url(url: &str, prefix: Option<String>) -> Result<Model> {
+pub fn read_from_zip<P: AsRef<Path>>(
+    p: P,
+    config_path: Option<P>,
+    prefix: Option<String>,
+) -> Result<Model> {
+    let reader = File::open(p.as_ref())?;
+    let mut file_handle = read_utils::ZipHandler::new(reader, p)?;
+    read(&mut file_handle, config_path, prefix)
+}
+
+/// Imports a `Model` from a url hosting a zip file containing the KV1.
+///
+/// The `config_path` argument allows you to give a path to a file
+/// containing a json representing the contributor and dataset used
+/// for this KV1. If not given, default values will be created.
+///
+/// The `prefix` argument is a string that will be prepended to every
+/// identifiers, allowing to namespace the dataset. By default, no
+/// prefix will be added to the identifiers.
+pub fn read_from_url<P: AsRef<Path>>(
+    url: &str,
+    config_path: Option<P>,
+    prefix: Option<String>,
+) -> Result<Model> {
     let reader = read_utils::read_url(&url)?;
     let mut file_handle = read_utils::ZipHandler::new(reader, &url)?;
-    read(&mut file_handle, prefix)
+    read(&mut file_handle, config_path, prefix)
 }

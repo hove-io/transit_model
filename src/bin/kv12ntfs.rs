@@ -38,6 +38,10 @@ struct Opt {
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: PathBuf,
 
+    /// config file
+    #[structopt(short = "c", long = "config", parse(from_os_str))]
+    config_path: Option<PathBuf>,
+
     /// prefix
     #[structopt(short = "p", long = "prefix")]
     prefix: Option<String>,
@@ -58,11 +62,11 @@ fn run() -> Result<()> {
     let opt = Opt::from_args();
 
     let objects = if let Some(url) = opt.url {
-        transit_model::kv1::read_from_url(&url, opt.prefix)?
+        transit_model::kv1::read_from_url(&url, opt.config_path, opt.prefix)?
     } else if opt.input.is_file() {
-        transit_model::kv1::read_from_zip(opt.input, opt.prefix)?
+        transit_model::kv1::read_from_zip(opt.input, opt.config_path, opt.prefix)?
     } else {
-        transit_model::kv1::read_from_path(opt.input, opt.prefix)?
+        transit_model::kv1::read_from_path(opt.input, opt.config_path, opt.prefix)?
     };
 
     transit_model::ntfs::write(&objects, opt.output, opt.current_datetime)?;

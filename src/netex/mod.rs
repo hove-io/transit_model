@@ -19,7 +19,6 @@
 mod read;
 
 use self::read::NetexReader;
-use crate::collection::CollectionWithId;
 use crate::model::Model;
 use crate::read_utils;
 use crate::Result;
@@ -87,18 +86,11 @@ where
         }
     };
 
-    let (contributor, mut dataset) = read_utils::read_config(config_path)?;
-    let vp = read_utils::get_validity_period(&netex_reader.collections.calendars);
-    let vp = match vp {
-        None => bail!("No valid calendar in Netex Data"),
-        Some(vp) => vp,
-    };
-    dataset.start_date = vp.start_date;
-    dataset.end_date = vp.end_date;
-    dataset.system = Some("Netex".to_string());
+    let (contributor, mut dataset, _) = read_utils::read_config(config_path)?;
+    read_utils::set_dataset_validity_period(&mut dataset, &netex_reader.collections.calendars)?;
+    netex_reader.collections.contributors = contributor;
+    netex_reader.collections.datasets = dataset;
 
-    netex_reader.collections.contributors = CollectionWithId::new(vec![contributor])?;
-    netex_reader.collections.datasets = CollectionWithId::new(vec![dataset])?;
     //add prefixes
     if let Some(prefix) = prefix {
         read_utils::add_prefix(prefix, &mut netex_reader.collections)?;
