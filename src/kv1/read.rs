@@ -16,15 +16,17 @@
 
 use crate::common_format::CalendarDate;
 use crate::model::Collections;
-use crate::objects::{Calendar, Date, ExceptionType};
+use crate::objects::{Calendar, CommercialMode, Date, ExceptionType, PhysicalMode};
 use crate::read_utils::FileHandler;
 use crate::Result;
 use chrono::NaiveDate;
 use csv;
 use failure::ResultExt;
+use lazy_static::lazy_static;
 use log::info;
 use serde_derive::Deserialize;
 use std::collections::BTreeSet;
+use std::collections::HashMap;
 use std::result::Result as StdResult;
 
 /// Deserialize kv1 string date (Y-m-d) to NaiveDate
@@ -48,6 +50,18 @@ struct OPerDay {
     schedule_type_code: String,
     #[serde(rename = "[ValidDate]", deserialize_with = "de_from_date_string")]
     valid_date: Date,
+}
+
+lazy_static! {
+    static ref MODES: HashMap<&'static str, &'static str> = {
+        let mut m = HashMap::new();
+        m.insert("BUS", "Bus");
+        m.insert("TRAIN", "Train");
+        m.insert("METRO", "Metro");
+        m.insert("TRAM", "Tramway");
+        m.insert("BOAT", "Ferry");
+        m
+    };
 }
 
 /// Generates calendars
@@ -96,6 +110,27 @@ where
         });
     }
     Ok(())
+}
+
+/// Generates physical and commercial modes
+pub fn make_physical_and_commercial_modes(collections: &mut Collections) {
+    for m in MODES.values() {
+        collections
+            .physical_modes
+            .push(PhysicalMode {
+                id: m.to_string(),
+                name: m.to_string(),
+                co2_emission: None,
+            })
+            .unwrap();
+        collections
+            .commercial_modes
+            .push(CommercialMode {
+                id: m.to_string(),
+                name: m.to_string(),
+            })
+            .unwrap();
+    }
 }
 
 /// Generates stop_points
@@ -168,7 +203,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::model::Collections;
+    use super::Collections;
     use crate::read_utils::PathFileHandler;
     use crate::test_utils::*;
 
@@ -185,5 +220,36 @@ mod tests {
             let mut collections = Collections::default();
             super::read_operday(&mut handler, &mut collections).unwrap();
         });
+    }
+
+    #[test]
+    fn make_physical_and_commercial_modes() {
+        let mut collections = Collections::default();
+        super::make_physical_and_commercial_modes(&mut collections);
+
+        let expected = [
+            ("Bus", "Bus"),
+            ("Ferry", "Ferry"),
+            ("Metro", "Metro"),
+            ("Train", "Train"),
+            ("Tramway", "Tramway"),
+        ];
+
+        let mut pms: Vec<(&str, &str)> = collections
+            .physical_modes
+            .values()
+            .map(|pm| (pm.id.as_ref(), pm.name.as_ref()))
+            .collect();
+        pms.sort_unstable_by(|a, b| a.cmp(&b));
+
+        let mut cms: Vec<(&str, &str)> = collections
+            .commercial_modes
+            .values()
+            .map(|cm| (cm.id.as_ref(), cm.name.as_ref()))
+            .collect();
+        cms.sort_unstable_by(|a, b| a.cmp(&b));
+
+        assert_eq!(pms, expected);
+        assert_eq!(cms, expected);
     }
 }
