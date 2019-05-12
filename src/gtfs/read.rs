@@ -717,7 +717,7 @@ fn map_line_routes<'a>(
     let mut map = BTreeMap::new();
     for r in gtfs_routes.values().filter(|r| {
         if !gtfs_trips.iter().any(|t| t.route_id == r.id) {
-            warn!("Coudn't find trips for route_id {}", r.id);
+            warn!("Couldn't find trips for route_id {}", r.id);
             return false;
         }
         true

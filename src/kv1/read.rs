@@ -14,21 +14,21 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use crate::collection::CollectionWithId;
-use crate::common_format::CalendarDate;
-use crate::model::Collections;
-use crate::objects::{
-    Calendar, CommercialMode, Company, Date, ExceptionType, Network, PhysicalMode,
+use crate::{
+    collection::{CollectionWithId, Id},
+    common_format::CalendarDate,
+    model::Collections,
+    objects::*,
+    read_utils::FileHandler,
+    Result,
 };
-use crate::read_utils::FileHandler;
-use crate::Result;
 use chrono::NaiveDate;
 use csv;
-use failure::ResultExt;
+use failure::{format_err, ResultExt};
 use lazy_static::lazy_static;
 use log::info;
 use serde_derive::Deserialize;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::result::Result as StdResult;
 
 /// Deserialize kv1 string date (Y-m-d) to NaiveDate
@@ -55,9 +55,62 @@ struct OPerDay {
 }
 
 #[derive(Deserialize, Debug)]
-struct Line {
+struct Kv1Line {
     #[serde(rename = "[DataOwnerCode]")]
     data_owner_code: String,
+    #[serde(rename = "[LinePlanningNumber]")]
+    id: String,
+    #[serde(rename = "[TransportType]")]
+    transport_type: String,
+}
+impl_id!(Kv1Line);
+
+#[derive(Deserialize, Debug, Hash, Eq, PartialEq)]
+enum Accessibility {
+    #[serde(rename = "ACCESSIBLE")]
+    Accessible,
+    #[serde(rename = "NOTACCESSIBLE")]
+    NotAccessible,
+    #[serde(rename = "UNKNOWN")]
+    Unknown,
+}
+
+#[derive(Deserialize, Debug)]
+struct PujoPass {
+    #[serde(rename = "[OrganizationalUnitCode]")]
+    organizational_unit_code: String,
+    #[serde(rename = "[ScheduleCode]")]
+    schedule_code: String,
+    #[serde(rename = "[ScheduleTypeCode]")]
+    schedule_type_code: String,
+    #[serde(rename = "[LinePlanningNumber]")]
+    line_planning_number: String,
+    #[serde(rename = "[JourneyPatternCode]")]
+    journey_pattern_code: String,
+    #[serde(rename = "[JourneyNumber]")]
+    journey_number: String,
+    #[serde(rename = "[TargetArrivalTime]")]
+    arrival_time: Time,
+    #[serde(rename = "[TargetDepartureTime]")]
+    departure_time: Time,
+    #[serde(rename = "[UserStopCode]")]
+    user_stop_code: String,
+    #[serde(rename = "[StopOrder]")]
+    stop_order: u32,
+    #[serde(rename = "[WheelChairAccessible]")]
+    wheelchair_accessible: Accessibility,
+}
+
+#[derive(Deserialize, Debug)]
+struct Jopa {
+    #[serde(rename = "[LinePlanningNumber]")]
+    line_planning_number: String,
+    #[serde(rename = "[Direction]")]
+    direction: String,
+    #[serde(rename = "[DataOwnerCode]")]
+    data_owner_code: String,
+    #[serde(rename = "[JourneyPatternCode]")]
+    journey_pattern_code: String,
 }
 
 lazy_static! {
@@ -122,7 +175,8 @@ where
 
 /// Generates physical and commercial modes
 pub fn make_physical_and_commercial_modes(collections: &mut Collections) {
-    for m in MODES.values() {
+    let modes: BTreeSet<&str> = MODES.values().map(|m| *m).collect();
+    for m in modes {
         collections
             .physical_modes
             .push(PhysicalMode {
@@ -171,45 +225,63 @@ where
     Ok(())
 }
 
-/// Generates networks, companies, stop_times, vehicle_journeys, routes and lines
-pub fn read_jopa_pujopass_line<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+fn read_jopa<H>(file_handler: &mut H) -> Result<HashMap<String, Jopa>>
 where
     for<'a> &'a mut H: FileHandler,
 {
-    info!("Reading JOPAXXXXXX.TMI, PUJOPASSXX.TMI and LINEXXXXXX.TMI");
-    // Check that UserStopCode exists in collections.stop_points?
-    // collections.stop_times = CollectionWithId::new(stop_times)?;
-
-    // physical_mode_id = TransportationType in LINEXXXX.TMI where JOPAXXXXXX.(LinePlanningNumber, Direction) == LINEXXXXXX.(LinePlanningNumber, Direction)
-    // needs collections.calendars
-    // collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
-
-    // needs vehicles_journeys -> stop_times -> stop_points + stop_areas
-    // collections.routes = CollectionWithId::new(routes)?;
-
-    // need routes + stop_areas
-    // collections.lines = CollectionWithId::new(lines)?;
-    let lines_file = "LINEXXXXXX.TMI";
-    let mut network_ids = HashSet::new();
-    let (reader, path) = file_handler.get_file(lines_file)?;
-    info!("Reading {}", lines_file);
+    let file = "JOPAXXXXXX.TMI";
+    let (reader, path) = file_handler.get_file(file)?;
+    info!("Reading {}", file);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
         .trim(csv::Trim::All)
         .from_reader(reader);
 
-    for line in rdr.deserialize() {
-        let line: Line = line.with_context(ctx_from_path!(path))?;
-        network_ids.insert(line.data_owner_code.clone());
-    }
+    let jopas: Vec<Jopa> = rdr
+        .deserialize()
+        .collect::<StdResult<_, _>>()
+        .with_context(ctx_from_path!(path))?;
 
-    collections.networks = CollectionWithId::new(
-        network_ids
-            .iter()
-            .map(|network_id| Network {
-                id: network_id.clone(),
-                name: network_id.clone(),
+    Ok(jopas
+        .into_iter()
+        .map(|obj| (obj.journey_pattern_code.clone(), obj))
+        .collect())
+}
+
+fn read_line<H>(file_handler: &mut H) -> Result<CollectionWithId<Kv1Line>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let file = "LINEXXXXXX.TMI";
+    let (reader, path) = file_handler.get_file(file)?;
+    info!("Reading {}", file);
+
+    let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b'|')
+        .trim(csv::Trim::All)
+        .from_reader(reader);
+    let lines = rdr
+        .deserialize()
+        .collect::<StdResult<_, _>>()
+        .with_context(ctx_from_path!(path))?;
+    Ok(CollectionWithId::new(lines)?)
+}
+
+fn make_networks_and_companies<H>(
+    collections: &mut Collections,
+    lines: &CollectionWithId<Kv1Line>,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let network_ids: HashSet<&str> = lines.values().map(|l| l.data_owner_code.as_ref()).collect();
+    for n_id in network_ids {
+        collections
+            .networks
+            .push(Network {
+                id: n_id.to_string(),
+                name: n_id.to_string(),
                 url: None,
                 codes: BTreeSet::new(),
                 timezone: Some("Europe/Amsterdam".into()),
@@ -218,22 +290,226 @@ where
                 address: None,
                 sort_order: None,
             })
-            .collect(),
-    )?;
+            .unwrap();
 
-    collections.companies = CollectionWithId::new(
-        network_ids
-            .iter()
-            .map(|network_id| Company {
-                id: network_id.clone(),
-                name: network_id.clone(),
+        collections
+            .companies
+            .push(Company {
+                id: n_id.to_string(),
+                name: n_id.to_string(),
                 address: None,
                 url: None,
                 mail: None,
                 phone: None,
             })
-            .collect(),
-    )?;
+            .unwrap();
+    }
+
+    Ok(())
+}
+
+fn make_vjs_and_stop_times<H>(
+    file_handler: &mut H,
+    collections: &mut Collections,
+    jopas: &HashMap<String, Jopa>,
+    lines: &CollectionWithId<Kv1Line>,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let pujopass_file = "PUJOPASSXX.TMI";
+    let (reader, path) = file_handler.get_file(pujopass_file)?;
+    info!("Reading {}", pujopass_file);
+
+    let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b'|')
+        .trim(csv::Trim::All)
+        .from_reader(reader);
+    let mut id_vj: BTreeMap<String, VehicleJourney> = BTreeMap::new();
+    // there always is one dataset from config or a default one
+    let dataset = collections.datasets.values().next().unwrap();
+    for pujopass in rdr.deserialize() {
+        let pujopass: PujoPass = pujopass.with_context(ctx_from_path!(path))?;
+
+        let route_id = jopas
+            .get(&pujopass.journey_pattern_code)
+            .map(|j| format!("{}:{}", j.line_planning_number, j.direction))
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: journey_pattern_code={:?} not found",
+                    pujopass_file,
+                    pujopass.journey_pattern_code
+                )
+            })?;
+
+        // TODO: Remove after creating routes
+        let route_id = "fake_route".to_string();
+
+        let line = lines.get(&pujopass.line_planning_number).ok_or_else(|| {
+            format_err!(
+                "Problem reading {:?}: line_id={:?} not found",
+                pujopass_file,
+                pujopass.line_planning_number
+            )
+        })?;
+        let physical_mode_id = MODES
+            .get::<str>(&line.transport_type)
+            .map(|m| m.to_string())
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: transport_type={:?} of line_id={:?} not found",
+                    pujopass_file,
+                    line.transport_type,
+                    pujopass.line_planning_number
+                )
+            })?;
+
+        let id = format!(
+            "{}:{}:{}",
+            pujopass.line_planning_number, pujopass.journey_pattern_code, pujopass.journey_number
+        );
+
+        let vj = id_vj.entry(id.clone()).or_insert(VehicleJourney {
+            id: id.clone(),
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            route_id,
+            physical_mode_id,
+            dataset_id: dataset.id.clone(),
+            service_id: format!(
+                "{}:{}:{}",
+                pujopass.organizational_unit_code,
+                pujopass.schedule_code,
+                pujopass.schedule_type_code
+            ),
+            headsign: None,
+            block_id: None,
+            company_id: line.data_owner_code.clone(),
+            trip_property_id: None, // TODO: handle this correctly with property wheelchair_accessible
+            geometry_id: None,
+            stop_times: vec![],
+        });
+
+        let stop_id = pujopass.user_stop_code;
+        // TODO: Remove after creating stop_points
+        let stop_id = "fake_sp".to_string();
+        let stop_point_idx = collections.stop_points.get_idx(&stop_id).ok_or_else(|| {
+            format_err!(
+                "Problem reading {:?}: stop_id={:?} not found",
+                pujopass_file,
+                stop_id
+            )
+        })?;
+
+        vj.stop_times.push(StopTime {
+            stop_point_idx,
+            sequence: pujopass.stop_order,
+            arrival_time: pujopass.arrival_time,
+            departure_time: pujopass.departure_time,
+            boarding_duration: 0,
+            alighting_duration: 0,
+            pickup_type: 0,
+            drop_off_type: 0,
+            datetime_estimated: false,
+            local_zone_id: None,
+        });
+    }
+
+    collections.vehicle_journeys =
+        CollectionWithId::new(id_vj.into_iter().map(|(_, vj)| vj).collect())?;
+    Ok(())
+}
+
+fn make_fake_collections(collections: &mut Collections) -> Result<()> {
+    collections.routes = CollectionWithId::new(vec![Route {
+        id: "fake_route".into(),
+        name: "fake_route".into(),
+        direction_type: Some("forward".into()),
+        codes: KeysValues::default(),
+        object_properties: KeysValues::default(),
+        comment_links: CommentLinksT::default(),
+        line_id: "fake_line".into(),
+        geometry_id: None,
+        destination_id: None,
+    }])?;
+
+    collections.lines = CollectionWithId::new(vec![Line {
+        id: "fake_line".into(),
+        code: None,
+        codes: KeysValues::default(),
+        object_properties: KeysValues::default(),
+        comment_links: CommentLinksT::default(),
+        name: "fake_line".into(),
+        forward_name: None,
+        forward_direction: None,
+        backward_name: None,
+        backward_direction: None,
+        color: Some(Rgb {
+            red: 120,
+            green: 125,
+            blue: 125,
+        }),
+        text_color: None,
+        sort_order: None,
+        network_id: "SYNTUS".into(),
+        commercial_mode_id: "Bus".into(),
+        geometry_id: None,
+        opening_time: None,
+        closing_time: None,
+    }])?;
+
+    collections.stop_points = CollectionWithId::new(vec![StopPoint {
+        id: "fake_sp".into(),
+        name: "fake_sp".into(),
+        codes: KeysValues::default(),
+        object_properties: KeysValues::default(),
+        comment_links: CommentLinksT::default(),
+        coord: Coord { lon: 2., lat: 45. },
+        stop_area_id: "fake_sa".into(),
+        timezone: None,
+        visible: true,
+        geometry_id: None,
+        equipment_id: None,
+        fare_zone_id: None,
+        stop_type: StopType::Point,
+    }])?;
+
+    collections.stop_areas = CollectionWithId::new(vec![StopArea {
+        id: "fake_sa".into(),
+        name: "fake_sa".into(),
+        codes: KeysValues::default(),
+        object_properties: KeysValues::default(),
+        comment_links: CommentLinksT::default(),
+        coord: Coord { lon: 2., lat: 45. },
+        timezone: None,
+        visible: true,
+        geometry_id: None,
+        equipment_id: None,
+    }])?;
+
+    Ok(())
+}
+
+/// Generates networks, companies, stop_times, vehicle_journeys, routes and lines
+pub fn read_jopa_pujopass_line<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    make_fake_collections(collections)?;
+
+    let kv1_lines = read_line(file_handler)?;
+    make_networks_and_companies(collections, &kv1_lines)?;
+
+    let jopas = read_jopa(file_handler)?;
+    make_vjs_and_stop_times(file_handler, collections, &jopas, &kv1_lines)?;
+
+    // needs vehicles_journeys -> stop_times -> stop_points + stop_areas
+    // collections.routes = CollectionWithId::new(routes)?;
+
+    // need routes + stop_areas
+    // collections.lines = CollectionWithId::new(lines)?;
+
     Ok(())
 }
 
@@ -283,19 +559,17 @@ mod tests {
             ("Tramway", "Tramway"),
         ];
 
-        let mut pms: Vec<(&str, &str)> = collections
+        let pms: Vec<(&str, &str)> = collections
             .physical_modes
             .values()
             .map(|pm| (pm.id.as_ref(), pm.name.as_ref()))
             .collect();
-        pms.sort_unstable_by(|a, b| a.cmp(&b));
 
-        let mut cms: Vec<(&str, &str)> = collections
+        let cms: Vec<(&str, &str)> = collections
             .commercial_modes
             .values()
             .map(|cm| (cm.id.as_ref(), cm.name.as_ref()))
             .collect();
-        cms.sort_unstable_by(|a, b| a.cmp(&b));
 
         assert_eq!(pms, expected);
         assert_eq!(cms, expected);
