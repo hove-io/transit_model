@@ -247,8 +247,8 @@ where
 
     manage_calendars(file_handler, &mut collections)?;
 
-    let (contributors, mut datasets, feed_infos) = read::read_config(config_path)?;
-    read::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
+    let (contributors, mut datasets, feed_infos) = read_utils::read_config(config_path)?;
+    read_utils::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
 
     collections.contributors = contributors;
     collections.datasets = datasets;

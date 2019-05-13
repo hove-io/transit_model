@@ -3,7 +3,7 @@
 transit_model is a rust crate to manage transit data. Its model corresponds to the one used in [navitia](https://github.com/CanalTP/navitia). This repository also provides :
 - (incomplete) [GTFS](http://gtfs.org/) to [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md) and (soon) NTFS to GTFS conversion.
 - (incomplete) Generation of transfers.
-- (incomplete) [Netex](http://netex-cen.eu/) to [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md) and (soon) Netex to GTFS conversion. Conversion fixtures comes from official [Github repository](https://github.com/NeTEx-CEN/NeTEx/).
+.
 - Merge [NTFS] (https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
 
 ## Compile
