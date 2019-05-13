@@ -486,7 +486,7 @@ mod tests {
     use crate::objects::Transfer as NtfsTransfer;
     use crate::objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
     use chrono;
-    use geo_types::Geometry as GeoGeometry;
+    use geo_types::{line_string, point};
     use std::collections::BTreeSet;
     use std::fs::File;
     use std::io::Read;
@@ -938,7 +938,7 @@ mod tests {
     fn ntfs_geometry_linestring_exported() {
         let geo = objects::Geometry {
             id: "1".to_string(),
-            geometry: GeoGeometry::LineString(vec![(1.1, 2.2), (3.3, 4.4)].into()),
+            geometry: line_string![(x: 1.1, y: 2.2), (x: 3.3, y: 4.4)].into(),
         };
 
         let expected = vec![
@@ -966,7 +966,7 @@ mod tests {
     fn ntfs_geometry_not_linestring_not_exported() {
         let geo = objects::Geometry {
             id: "1".to_string(),
-            geometry: GeoGeometry::Point((1.1, 2.2).into()),
+            geometry: point!(x: 1.1, y: 2.2).into(),
         };
 
         let shapes: Vec<Shape> = ntfs_geometry_to_gtfs_shapes(&geo).collect();
