@@ -37,6 +37,10 @@ fn test_read_kv1() {
                 "datasets.txt",
                 "feed_infos.txt",
                 "networks.txt",
+                "trips.txt",
+                "stop_times.txt",
+                "physical_modes.txt",
+                "commercial_modes.txt",
             ]),
             "fixtures/kv12ntfs/output",
         );
