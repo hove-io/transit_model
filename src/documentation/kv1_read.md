@@ -2,9 +2,9 @@
 ## Introduction
 This document describes how a KV1 feed is read in Navitia Transit model (NTM) and transformed into a [NTFS feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
 
-For the sake of simplicity, the follownig specification describes only those NTFS fields that are specified in the source data (e.g. the `network_url` is not specified and therefore not detailed.)
+For the sake of simplicity, the following specification describes only those NTFS fields that are specified in the source data (e.g. the `network_url` is not specified and therefore not detailed.)
 
-In order to guarantee that the NTFS objects identifiers are unique and stable, each object id is prefixed with a unique prefix (specified for each datasource), following the general pattern \<prefix>:\<id>.
+In order to guarantee that the NTFS objects identifiers are unique and stable, each object id is prefixed with a unique prefix (specified for each datasource), following the general pattern `<prefix>:<id>`.
 
 ## Mapping between KV1 and NTFS objects
 ### networks.txt
@@ -20,15 +20,15 @@ company_id | LINEXXXXXX.TMI | *DataOwnerCode* | This field is prefixed.
 company_name | LINEXXXXXX.TMI | *DataOwnerCode* | 
 
 ### stops.txt
-**For stop_points**
+#### For stop_points
 
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 stop_id | USRSTOPXXX.TMI | *UserstopCode* | This field is prefixed.
 stop_name | USRSTOPXXX.TMI | *Name* | 
 location_type |  |  | Fixed value `0`.
-stop_lat | POINTXXXXX.TMI | *LocationX_EW* | See bellow for the link of a Point with a UserStop.
-stop_lon | POINTXXXXX.TMI | *LocationY_NS* | See bellow for the link of a Point with a UserStop.
+stop_lat | POINTXXXXX.TMI | *LocationX_EW* | See below for the link of a Point with a UserStop.
+stop_lon | POINTXXXXX.TMI | *LocationY_NS* | See below for the link of a Point with a UserStop.
 parent_station | USRSTOPXXX.TMI | *UserStopAreaCode* | 
 platform_code | USRSTOPXXX.TMI | *StopSideCode* | 
 
@@ -36,7 +36,7 @@ platform_code | USRSTOPXXX.TMI | *StopSideCode* |
 
 The latitude/longitude of a stop_point correspond to the fields *LocationX_EW*, *LocationY_NS* in the file POINTXXXXX.TMI of the point whose *PointCode* matches *UserstopCode* and *PointType* equals the value `SP`. The input coordinate system Amersfoort / RD New (EPSG:28992) should be converted to WGS84 (EPSG:4326).
 
-**For stop_areas**
+#### For stop_areas
 
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
@@ -51,10 +51,10 @@ NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 line_id | LINEXXXXXX.TMI | *LinePlanningNumber* | This field is prefixed.
 line_code | LINEXXXXXX.TMI | *LinePublicNumber* | 
-line_name |  |  | This field is computed using the the name of the assoicated Route in the forward direction (identical to forward_line_name).
-forward_line_name |  |  | This field is computed using the the name of the assoicated Route in the forward direction.
+line_name |  |  | This field is computed using the name of the associated Route in the forward direction.
+forward_line_name |  |  | This field is computed using the name of the associated Route in the forward direction (identical to line_name).
 forward_direction |  |  | This field is computed using the last stop_area of the associated Route in the forward direction.
-backward_line_name |  |  | This field is computed using the the name of the assoicated Route in the backward direction.
+backward_line_name |  |  | This field is computed using the name of the associated Route in the backward direction.
 backward_direction |  |  | This field is computed using the last stop_area of the associated Route in the backward direction.
 line_color | LINEXXXXXX.TMI | *LineColor* | 
 network_id | LINEXXXXXX.TMI | *DataOwnerCode* | This field is prefixed. Link to the file [networks.txt](#networkstxt).
@@ -85,12 +85,12 @@ route_id | JOPAXXXXXX.TMI | *LinePlanningNumber*, *Direction* | This field is pr
 service_id | PUJOPASSXX.TMI | *OrganizationalUnitCode*, *ScheduleCode*, *ScheduleTypeCode* | This field is prefixed. Link to the file [calendar_dates.txt](#calendardatestxt). Concatenation of the 3 specified fields separated by a ':'. Ex: "\<prefix\>:2029:1:1"
 trip_id | JOPAXXXXXX.TMI, PUJOPASSXX.TMI | *LinePlanningNumber*, *JourneyPatternCode*, *JourneyNumber* | This field is prefixed. Concatenation of the 3 specified fields separated by a `:`. Ex: "\<prefix\>:2029:9001:23366"
 company_id | JOPAXXXXXX.TMI | *DataOwnerCode* | This field is prefixed. Link to the file [companies.txt](#companiestxt).
-physical_mode_id |  |  | This field is not prefixed. Link to the file [physical_modes.txt](#physical_modestxt). It is computed using the type of transportation specified for the associated line of the trip.
+physical_mode_id | LINEXXXXXX.TMI | *TransportType* | This field is not prefixed. Link to the file physical_modes.txt of the NTFS. It is computed using the *TransportType* specified for the associated line of the trip.
 trip_properties.wheelchair_accessible | PUJOPASSXX.TMI | *WheelChairAccessible* | The trip is considered accessible if the value is `ACCESSIBLE` for all stop_times of the trip. The trip is considered not accessible if the value is `NOTACCESSIBLE` for all stop_times of the trip. The information on a trip's accessibility is considered unknown if the value is `UNKNOWN` for at least one stop_time of the trip or in case the value is the same for all stop_times of the trip.
 
-**Mapping of TransportType with NTFS modes**
+#### Mapping of TransportType with NTFS modes
 
-The possible values of the *TransportType* field are directly mapped to the NTFS modes according to the following table. Note that the physical_mode_id nor the commercial_mode_id fields are prefixed.
+The possible values of the *TransportType* field are directly mapped to the NTFS modes according to the following table. Note that neither the physical_mode_id nor the commercial_mode_id fields are prefixed.
 
 TransportType in KV1 | physical_mode_id in NTFS | physical_mode_name in NTFS | commercial_mode_id in NTFS | commercial_mode_name in NTFS
 --- | --- | --- | --- | ---
@@ -116,7 +116,7 @@ comment_id | NOTICEXXXX.TMI | *Notice coder* | This field is prefixed.
 comment_name | NOTICEXXXX.TMI | *Notice (content)* | 
 
 ### comment_links.txt
-Only coments on trips (Object field specified with `PUJOPASS`) will be handeled.
+Only comments on trips (Object field specified with `PUJOPASS`) will be handled.
 
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
