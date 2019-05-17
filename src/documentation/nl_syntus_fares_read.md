@@ -15,7 +15,7 @@ The supported fare structures depend on origin-destination (OD) stop pairs in tw
 ## Connector description
 Each *FareFrame* specified in the input fare data corresponds to several `Tickets` in NTM (as many as the elements of the *DistanceMatrix*). For each *DistanceMatrixElement*, one `Ticket` object is created specifying the associated line and the origin/destination stops.
 
-The NTM properties that are not specified in the source data (e.g. the validity duration of a ticket) are not described below.
+The NTM properties that are not specified in the source data are not described below.
 
 ### Ticket
 NTM Property | Source frame | Source element | Notes/Mapping rule
@@ -49,6 +49,8 @@ NTM property | Source frame | Source element | Notes/Mapping rule
 ticket_id | | | Id of the `Ticket` to which this `Ticket_use` is applied.
 ticket_use_id | *FareFrame* | *DistanceMatrixElement{id}* | The id is prefixed with `TU:`.
 max_transfers | | | Fixed value `0`.
+boarding_time_limit | | | This field is explicitly left empty.
+alighting_time_limit | | | This field is explicitly left empty.
 
 ### Ticket_use_perimeter
 NTM property | Source frame | Source element | Notes/Mapping rule
@@ -82,17 +84,3 @@ The *use_destination* refers to the stop_area found in the NTFS that has an asso
 
 If no matching is found for the origin or the destination stop, then the stop is ignored and the corresponding `Ticket` is discarded.
 
-### Special NS Ticket
-After loading the Tickets associated with the input data, a special ticket is loaded (only once) that will be necessary for modeling transitions when writing the NTFS fares. This special ticket has the following fixed properties:
-
-NTM object | NTM property | Value 
---- | --- | --- 
-Ticket | ticket_id | Fixed value `ticket_NS`.
-Ticket | ticket_name | Fixed value `Ticket NS`.
-Ticket_use | ticket_id | Fixed value `ticket_NS`.
-Ticket_use | ticket_use_id | Fixed value `ticket_use_NS`.
-Ticket_use | max_transfers | Fixed value `0`.
-Ticket_use_perimeter | ticket_use_id | Fixed value `ticket_use_NS`.
-Ticket_use_perimeter | object_type | Fixed value `network`.
-Ticket_use_perimeter | object_id | The network_id found in the NTFS correspondinf to the network named `NS`.
-Ticket_use_perimeter | perimeter_action | Fixed value `1`.
