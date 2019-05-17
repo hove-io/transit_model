@@ -31,9 +31,7 @@ use serde_derive::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::path;
 
-#[derive(
-    Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy, Ord, PartialOrd,
-)]
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
 #[derivative(Default)]
 pub enum Availability {
     #[derivative(Default)]

@@ -455,35 +455,30 @@ where
 }
 
 fn make_trip_properties(
-    map_vj_accs: HashMap<String, HashSet<Accessibility>>,
+    map_vj_accs: BTreeMap<String, HashSet<&Accessibility>>,
     collections: &mut Collections,
 ) -> Result<()> {
-    let mut map_acc_vjs: BTreeMap<Availability, Vec<String>> = BTreeMap::new();
+    let mut trip_properties: HashMap<Availability, TripProperty> = HashMap::new();
+    let mut id_incr: u8 = 0;
     for (vj_id, acc) in map_vj_accs {
         let avaibility = {
             if acc.len() == 1 {
                 match acc.iter().next() {
-                    Some(acc) if *acc == Accessibility::Accessible => Availability::Available,
-                    Some(acc) if *acc == Accessibility::NotAccessible => Availability::NotAvailable,
+                    Some(&acc) if *acc == Accessibility::Accessible => Availability::Available,
+                    Some(&acc) if *acc == Accessibility::NotAccessible => {
+                        Availability::NotAvailable
+                    }
                     _ => Availability::InformationNotAvailable,
                 }
             } else {
                 Availability::InformationNotAvailable
             }
         };
-        map_acc_vjs
-            .entry(avaibility)
-            .or_insert_with(Vec::new)
-            .push(vj_id.clone());
-    }
-
-    let mut id_incr: u8 = 1;
-    for (wheelchair, vj_ids) in map_acc_vjs {
-        collections
-            .trip_properties
-            .push(TripProperty {
+        let associated_trip_property = trip_properties.entry(avaibility).or_insert_with(|| {
+            id_incr += 1;
+            TripProperty {
                 id: id_incr.to_string(),
-                wheelchair_accessible: wheelchair,
+                wheelchair_accessible: avaibility,
                 bike_accepted: Availability::InformationNotAvailable,
                 air_conditioned: Availability::InformationNotAvailable,
                 visual_announcement: Availability::InformationNotAvailable,
@@ -491,15 +486,16 @@ fn make_trip_properties(
                 appropriate_escort: Availability::InformationNotAvailable,
                 appropriate_signage: Availability::InformationNotAvailable,
                 school_vehicle_type: TransportType::Regular,
-            })
-            .unwrap();
+            }
+        });
 
-        for id in vj_ids {
-            let mut vj = collections.vehicle_journeys.get_mut(&id).unwrap();
-            vj.trip_property_id = Some(id_incr.to_string());
-        }
-        id_incr += 1;
+        let mut vj = collections.vehicle_journeys.get_mut(&vj_id).unwrap();
+        vj.trip_property_id = Some(associated_trip_property.id.clone());
     }
+
+    let mut trip_properties: Vec<_> = trip_properties.into_iter().map(|(_, tp)| tp).collect();
+    trip_properties.sort_unstable_by(|tp1, tp2| tp1.id.cmp(&tp2.id));
+    collections.trip_properties = CollectionWithId::new(trip_properties)?;
 
     Ok(())
 }
@@ -554,7 +550,7 @@ where
         })
         .collect();
     let mut id_vj: BTreeMap<String, VehicleJourney> = BTreeMap::new();
-    let mut map_vj_accs: HashMap<String, HashSet<Accessibility>> = HashMap::new();
+    let mut map_vj_accs: BTreeMap<String, HashSet<&Accessibility>> = BTreeMap::new();
 
     // there always is one dataset from config or a default one
     let dataset = collections.datasets.values().next().unwrap();
@@ -623,7 +619,7 @@ where
         map_vj_accs
             .entry(id.clone())
             .or_insert_with(HashSet::new)
-            .insert(pujopass.wheelchair_accessible);
+            .insert(&pujopass.wheelchair_accessible);
 
         let stop_id = &pujopass.user_stop_code;
         let stop_point_idx = collections
