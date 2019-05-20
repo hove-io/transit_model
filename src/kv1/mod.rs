@@ -46,8 +46,8 @@ where
 
     read::make_physical_and_commercial_modes(&mut collections);
     read::read_usrstop_point(file_handler, &mut collections)?;
+    read::read_notice(file_handler, &mut collections)?;
     read::read_jopa_pujopass_line(file_handler, &mut collections)?;
-    read::read_notice_ntcassgn(file_handler, &mut collections)?;
 
     //add prefixes
     if let Some(prefix) = prefix {
