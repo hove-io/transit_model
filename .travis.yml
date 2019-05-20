@@ -16,8 +16,8 @@ matrix:
   allow_failures:
   - rust: nightly
 script:
-- cargo build --verbose --features=proj4
-- cargo test --verbose --features=proj4
+- cargo build --verbose --features=proj
+- cargo test --verbose --features=proj
 deploy:
   provider: cargo
   on:
