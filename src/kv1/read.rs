@@ -158,6 +158,9 @@ struct UsrStop {
     point_code: String,
 }
 
+type PujoJopaMap = HashMap<(String, String), Vec<PujoPass>>;
+type JopaMap = HashMap<(String, String), Jopa>;
+
 /// Generates calendars
 pub fn read_operday<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
@@ -366,7 +369,7 @@ where
     Ok(())
 }
 
-fn read_jopa<H>(file_handler: &mut H) -> Result<HashMap<String, Jopa>>
+fn read_jopa<H>(file_handler: &mut H) -> Result<JopaMap>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -386,7 +389,15 @@ where
 
     Ok(jopas
         .into_iter()
-        .map(|obj| (obj.journey_pattern_code.clone(), obj))
+        .map(|obj| {
+            (
+                (
+                    obj.line_planning_number.clone(),
+                    obj.journey_pattern_code.clone(),
+                ),
+                obj,
+            )
+        })
         .collect())
 }
 
@@ -449,12 +460,7 @@ where
     Ok(())
 }
 
-fn make_vjs_and_stop_times<H>(
-    file_handler: &mut H,
-    collections: &mut Collections,
-    jopas: &HashMap<String, Jopa>,
-    lines: &CollectionWithId<Kv1Line>,
-) -> Result<()>
+fn read_pujopass<H>(file_handler: &mut H) -> Result<PujoJopaMap>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -466,19 +472,45 @@ where
         .delimiter(b'|')
         .trim(csv::Trim::All)
         .from_reader(reader);
+
+    let mut map: PujoJopaMap = HashMap::new();
+    for pujopass in rdr.deserialize() {
+        let pujopass: PujoPass = pujopass.with_context(ctx_from_path!(path))?;
+        map.entry((
+            pujopass.line_planning_number.clone(),
+            pujopass.journey_number.clone(),
+        ))
+        .or_insert_with(|| vec![])
+        .push(pujopass);
+    }
+
+    Ok(map)
+}
+
+fn make_vjs_and_stop_times<H>(
+    file_handler: &mut H,
+    collections: &mut Collections,
+    map_jopas: &JopaMap,
+    map_pujopass: &PujoJopaMap,
+    lines: &CollectionWithId<Kv1Line>,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     let mut id_vj: BTreeMap<String, VehicleJourney> = BTreeMap::new();
     // there always is one dataset from config or a default one
     let dataset = collections.datasets.values().next().unwrap();
-    for pujopass in rdr.deserialize() {
-        let pujopass: PujoPass = pujopass.with_context(ctx_from_path!(path))?;
-
-        let route_id = jopas
-            .get(&pujopass.journey_pattern_code)
+    for pujopass in map_pujopass.values().flat_map(|p| p) {
+        let route_id = map_jopas
+            .get(&(
+                pujopass.line_planning_number.clone(),
+                pujopass.journey_pattern_code.clone(),
+            ))
             .map(|j| format!("{}:{}", j.line_planning_number, j.direction))
             .ok_or_else(|| {
                 format_err!(
-                    "Problem reading {:?}: journey_pattern_code={:?} not found",
-                    pujopass_file,
+                    "line_id={:?}, journey_pattern_code={:?} not found",
+                    pujopass.line_planning_number,
                     pujopass.journey_pattern_code
                 )
             })?;
@@ -488,8 +520,7 @@ where
 
         let line = lines.get(&pujopass.line_planning_number).ok_or_else(|| {
             format_err!(
-                "Problem reading {:?}: line_id={:?} not found",
-                pujopass_file,
+                "line with line_planning_number={:?} not found",
                 pujopass.line_planning_number
             )
         })?;
@@ -498,16 +529,18 @@ where
             .map(|m| m.to_string())
             .ok_or_else(|| {
                 format_err!(
-                    "Problem reading {:?}: transport_type={:?} of line_id={:?} not found",
-                    pujopass_file,
+                    "transport_type={:?} of line_id={:?} not found",
                     line.transport_type,
                     pujopass.line_planning_number
                 )
             })?;
 
         let id = format!(
-            "{}:{}:{}",
-            pujopass.line_planning_number, pujopass.journey_pattern_code, pujopass.journey_number
+            "{}:{}:{}:{}",
+            pujopass.line_planning_number,
+            pujopass.journey_pattern_code,
+            pujopass.journey_number,
+            pujopass.schedule_code
         );
 
         let vj = id_vj.entry(id.clone()).or_insert(VehicleJourney {
@@ -532,14 +565,11 @@ where
             stop_times: vec![],
         });
 
-        let stop_id = pujopass.user_stop_code;
-        let stop_point_idx = collections.stop_points.get_idx(&stop_id).ok_or_else(|| {
-            format_err!(
-                "Problem reading {:?}: stop_id={:?} not found",
-                pujopass_file,
-                stop_id
-            )
-        })?;
+        let stop_id = &pujopass.user_stop_code;
+        let stop_point_idx = collections
+            .stop_points
+            .get_idx(&stop_id)
+            .ok_or_else(|| format_err!("stop_id={:?} not found", stop_id))?;
 
         vj.stop_times.push(StopTime {
             stop_point_idx,
@@ -611,8 +641,15 @@ where
     let kv1_lines = read_line(file_handler)?;
     make_networks_and_companies(collections, &kv1_lines)?;
 
-    let jopas = read_jopa(file_handler)?;
-    make_vjs_and_stop_times(file_handler, collections, &jopas, &kv1_lines)?;
+    let map_jopas = read_jopa(file_handler)?;
+    let map_pujopas = read_pujopass(file_handler)?;
+    make_vjs_and_stop_times(
+        file_handler,
+        collections,
+        &map_jopas,
+        &map_pujopas,
+        &kv1_lines,
+    )?;
 
     // needs vehicles_journeys -> stop_times -> stop_points + stop_areas
     // collections.routes = CollectionWithId::new(routes)?;
