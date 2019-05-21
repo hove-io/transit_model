@@ -28,7 +28,7 @@ pub(crate) mod common_format;
 #[macro_use]
 pub mod objects;
 pub mod gtfs;
-#[cfg(feature = "proj4")]
+#[cfg(feature = "proj")]
 pub mod kv1;
 pub mod merge_stop_areas;
 pub mod model;

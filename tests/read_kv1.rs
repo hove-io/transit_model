@@ -17,7 +17,7 @@
 use transit_model;
 use transit_model::test_utils::*;
 
-#[cfg(feature = "proj4")]
+#[cfg(feature = "proj")]
 #[test]
 fn test_read_kv1() {
     let ntm = transit_model::kv1::read_from_path(
