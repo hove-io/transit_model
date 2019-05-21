@@ -1,0 +1,4 @@
+line_id,line_code,line_name,forward_line_name,forward_direction,backward_line_name,backward_direction,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+2029,29,"Slagharen, Centrum - Slagharen, Attractiepark","Slagharen, Centrum - Slagharen, Attractiepark",20718,"Dedemsvaart, Busstation - Dedemsvaart, Adelaarweg",20361,,,,SYNTUS,Bus,,,
+2030,30,"Hoogeveen, Station - Hoogeveen, Willemskade","Hoogeveen, Station - Hoogeveen, Willemskade",20718,,,,,,SYNTUS,Bus,,,
+3170,170,"Epe, Centrum - Epe, Sint Jorisweg","Epe, Centrum - Epe, Sint Jorisweg",32704,,,,,,SYNTUS,Bus,,,

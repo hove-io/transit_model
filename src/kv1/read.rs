@@ -63,6 +63,10 @@ struct Kv1Line {
     data_owner_code: String,
     #[serde(rename = "[LinePlanningNumber]")]
     id: String,
+    #[serde(rename = "[LinePublicNumber]")]
+    public_number: String,
+    #[serde(rename = "[LineColor]")]
+    color: Option<Rgb>,
     #[serde(rename = "[TransportType]")]
     transport_type: String,
 }
@@ -204,7 +208,7 @@ where
 {
     let file = "OPERDAYXXX.TMI";
     let (reader, path) = file_handler.get_file(file)?;
-    info!("Reading {}", file);
+    info!("Reading {} and generating calendars", file);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
@@ -247,7 +251,8 @@ where
 
 /// Generates physical and commercial modes
 pub fn make_physical_and_commercial_modes(collections: &mut Collections) {
-    let modes: BTreeSet<&str> = MODES.values().map(|m| *m).collect();
+    info!("Generating physical and commercial modes");
+    let modes: BTreeSet<&str> = MODES.values().cloned().collect();
     for m in modes {
         collections
             .physical_modes
@@ -334,7 +339,7 @@ where
 
     let file = "USRSTOPXXX.TMI";
     let (file_reader, path) = file_handler.get_file(file)?;
-    info!("Reading {}", file);
+    info!("Reading {} and generating stop points and stop areas", file);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
@@ -344,7 +349,7 @@ where
     for usr_stop in rdr.deserialize() {
         let usr_stop: UsrStop = usr_stop.with_context(ctx_from_path!(path))?;
         let coord = match point_map.get(&usr_stop.point_code) {
-            Some(c) => c.clone(),
+            Some(c) => *c,
             None => bail!("Point code {} does not exist.", usr_stop.point_code),
         };
         let stop_area_id = match usr_stop_area_map.get(&usr_stop.parent_station) {
@@ -451,6 +456,7 @@ fn make_networks_and_companies<H>(
 where
     for<'a> &'a mut H: FileHandler,
 {
+    info!("Generating networks and companies");
     let network_ids: HashSet<&str> = lines.values().map(|l| l.data_owner_code.as_ref()).collect();
     for n_id in network_ids {
         collections
@@ -488,6 +494,7 @@ fn make_trip_properties(
     map_vj_accs: BTreeMap<String, HashSet<&Accessibility>>,
     collections: &mut Collections,
 ) -> Result<()> {
+    info!("Generating trip properties");
     let mut trip_properties: HashMap<Availability, TripProperty> = HashMap::new();
     let mut id_incr: u8 = 0;
     for (vj_id, acc) in map_vj_accs {
@@ -558,17 +565,17 @@ where
 }
 
 fn make_vjs_and_stop_times<H>(
-    file_handler: &mut H,
     collections: &mut Collections,
-    jopas: &Vec<Jopa>,
+    jopas: &[Jopa],
     map_pujopass: &PujoJopaMap,
     lines: &CollectionWithId<Kv1Line>,
 ) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
+    info!("Generating vehicle journeys and stop times");
     let map_jopas: JopaMap = jopas
-        .into_iter()
+        .iter()
         .map(|obj| {
             (
                 (
@@ -675,21 +682,23 @@ where
 fn get_route_origin_destination<'a>(
     collections: &'a Collections,
     route_id: &str,
-) -> Option<(&'a StopPoint, &'a StopPoint)> {
+) -> Result<(&'a StopPoint, &'a StopPoint)> {
     let stop_times = &collections
         .vehicle_journeys
         .values()
         .filter(|vj| vj.route_id == route_id)
-        .min_by_key(|vj| &vj.id)? // TODO: instead of picking the first trip, find the most frequence origin (or destination) from all the trips
+        .min_by_key(|vj| &vj.id) // TODO: instead of picking the first trip, find the most frequence origin (or destination) from all the trips
+        .ok_or_else(|| format_err!("vehicle_journeys with route_id={} not found", route_id))?
         .stop_times;
     let origin = &collections.stop_points[stop_times[0].stop_point_idx];
     let destination = &collections.stop_points[stop_times[stop_times.len() - 1].stop_point_idx];
-    Some((origin, destination))
+    Ok((origin, destination))
 }
 
-fn make_routes(collections: &mut Collections, jopas: &Vec<Jopa>) -> Result<()> {
+fn make_routes(collections: &mut Collections, jopas: &[Jopa]) -> Result<()> {
+    info!("Generating routes");
     let jopas_map: JopaMap = jopas
-        .into_iter()
+        .iter()
         .map(|jopa| {
             (
                 (jopa.line_planning_number.clone(), jopa.direction.clone()),
@@ -699,13 +708,7 @@ fn make_routes(collections: &mut Collections, jopas: &Vec<Jopa>) -> Result<()> {
         .collect();
     for ((line_id, direction), jopa) in jopas_map {
         let id = jopa.route_id();
-        let (origin, destination) =
-            get_route_origin_destination(collections, &id).ok_or_else(|| {
-                format_err!(
-                    "Failed to find an origin and a destination for route {}",
-                    id
-                )
-            })?;
+        let (origin, destination) = get_route_origin_destination(collections, &id)?;
         let name = format!("{} - {}", origin.name, destination.name);
         let destination_stop_area = collections
             .stop_areas
@@ -723,8 +726,6 @@ fn make_routes(collections: &mut Collections, jopas: &Vec<Jopa>) -> Result<()> {
             "backward"
         };
         let direction_type = Some(direction_type.to_string());
-        // TODO: Remove line below once line_id have been completed (ND-215)
-        let line_id = "fake_line".into();
         let route = Route {
             id,
             name,
@@ -741,60 +742,79 @@ fn make_routes(collections: &mut Collections, jopas: &Vec<Jopa>) -> Result<()> {
     Ok(())
 }
 
-fn make_fake_collections(collections: &mut Collections) -> Result<()> {
-    collections.lines = CollectionWithId::new(vec![Line {
-        id: "fake_line".into(),
-        code: None,
-        codes: KeysValues::default(),
-        object_properties: KeysValues::default(),
-        comment_links: CommentLinksT::default(),
-        name: "fake_line".into(),
-        forward_name: None,
-        forward_direction: None,
-        backward_name: None,
-        backward_direction: None,
-        color: Some(Rgb {
-            red: 120,
-            green: 125,
-            blue: 125,
-        }),
-        text_color: None,
-        sort_order: None,
-        network_id: "SYNTUS".into(),
-        commercial_mode_id: "Bus".into(),
-        geometry_id: None,
-        opening_time: None,
-        closing_time: None,
-    }])?;
+fn route_name_by_direction<'a>(routes: &[&'a Route], direction_type: &str) -> Option<&'a Route> {
+    routes
+        .iter()
+        .filter(|r| r.direction_type == Some(direction_type.to_string()))
+        .min_by_key(|r| &r.id)
+        .cloned()
+}
 
+fn make_lines(collections: &mut Collections, lines: &CollectionWithId<Kv1Line>) -> Result<()> {
+    info!("Generating lines");
+    for l in lines.values() {
+        let commercial_mode_id = MODES
+            .get::<str>(&l.transport_type)
+            .map(|m| m.to_string())
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: transport_type={:?} not found",
+                    "LINEXXXXXX.TMI",
+                    l.transport_type,
+                )
+            })?;
+
+        let corresponding_routes: Vec<&Route> = collections
+            .routes
+            .values()
+            .filter(|r| r.line_id == l.id)
+            .collect();
+        let backward_route = route_name_by_direction(&corresponding_routes, "backward");
+        let forward_route = route_name_by_direction(&corresponding_routes, "forward")
+            .or(backward_route)
+            .ok_or_else(|| format_err!("no routes found with line_id={}", l.id,))?;
+
+        collections
+            .lines
+            .push(Line {
+                id: l.id.clone(),
+                code: Some(l.public_number.clone()),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
+                comment_links: CommentLinksT::default(),
+                name: forward_route.name.clone(),
+                forward_name: Some(forward_route.name.clone()),
+                forward_direction: forward_route.destination_id.clone(),
+                backward_name: backward_route.map(|r| r.name.clone()),
+                backward_direction: backward_route.and_then(|r| r.destination_id.clone()),
+                color: l.color.clone(),
+                text_color: None,
+                sort_order: None,
+                network_id: l.data_owner_code.clone(),
+                commercial_mode_id,
+                geometry_id: None,
+                opening_time: None,
+                closing_time: None,
+            })
+            .unwrap();
+    }
     Ok(())
 }
 
-/// Generates networks, companies, stop_times, vehicle_journeys, routes and lines
+/// Generates networks, companies, stop_times, vehicle_journeys, comments, routes and lines
 pub fn read_jopa_pujopass_line<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
-    make_fake_collections(collections)?;
-
     let kv1_lines = read_line(file_handler)?;
-    make_networks_and_companies(collections, &kv1_lines)?;
-
     let list_jopas = read_jopa(file_handler)?;
     let map_pujopas = read_pujopass(file_handler)?;
-    make_vjs_and_stop_times(
-        file_handler,
-        collections,
-        &list_jopas,
-        &map_pujopas,
-        &kv1_lines,
-    )?;
 
+    make_networks_and_companies(collections, &kv1_lines)?;
+    make_vjs_and_stop_times(collections, &list_jopas, &map_pujopas, &kv1_lines)?;
     make_routes(collections, &list_jopas)?;
     read_ntcassgn(file_handler, collections, &map_pujopas)?;
-
-    // need routes + stop_areas
-    // collections.lines = CollectionWithId::new(lines)?;
+    make_lines(collections, &kv1_lines)?;
 
     Ok(())
 }
@@ -805,7 +825,7 @@ where
 {
     let file = "NOTICEXXXX.TMI";
     let (reader, path) = file_handler.get_file(file)?;
-    info!("Reading {}", file);
+    info!("Reading {} and generating comments", file);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
@@ -839,7 +859,10 @@ where
 {
     let file = "NTCASSGNMX.TMI";
     let (reader, path) = file_handler.get_file(file)?;
-    info!("Reading {}", file);
+    info!(
+        "Reading {} and generating comment links on vehicle journeys",
+        file
+    );
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')

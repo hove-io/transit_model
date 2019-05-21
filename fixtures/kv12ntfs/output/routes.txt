@@ -1,4 +1,5 @@
 route_id,route_name,direction_type,line_id,geometry_id,destination_id
-2029:2,"Dedemsvaart, Busstation - Dedemsvaart, Adelaarweg",backward,fake_line,,20361
-2030:1,"Hoogeveen, Station - Hoogeveen, Willemskade",forward,fake_line,,20718
-3170:1,"Epe, Centrum - Epe, Sint Jorisweg",forward,fake_line,,32704
+2029:1,"Slagharen, Centrum - Slagharen, Attractiepark",forward,2029,,20718
+2029:2,"Dedemsvaart, Busstation - Dedemsvaart, Adelaarweg",backward,2029,,20361
+2030:1,"Hoogeveen, Station - Hoogeveen, Willemskade",forward,2030,,20718
+3170:1,"Epe, Centrum - Epe, Sint Jorisweg",forward,3170,,32704
