@@ -11,13 +11,13 @@ In order to guarantee that the NTFS objects identifiers are unique and stable, e
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 network_id | LINEXXXXXX.TMI | *DataOwnerCode* | This field is prefixed.
-network_name | LINEXXXXXX.TMI | *DataOwnerCode* | 
+network_name | LINEXXXXXX.TMI | *DataOwnerCode* |
 
 ### companies.txt
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 company_id | LINEXXXXXX.TMI | *DataOwnerCode* | This field is prefixed.
-company_name | LINEXXXXXX.TMI | *DataOwnerCode* | 
+company_name | LINEXXXXXX.TMI | *DataOwnerCode* |
 
 ### stops.txt
 #### For stop_points
@@ -25,14 +25,14 @@ company_name | LINEXXXXXX.TMI | *DataOwnerCode* |
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 stop_id | USRSTOPXXX.TMI | *UserstopCode* | This field is prefixed.
-stop_name | USRSTOPXXX.TMI | *Name* | 
+stop_name | USRSTOPXXX.TMI | *Name* |
 location_type |  |  | Fixed value `0`.
-stop_lat | POINTXXXXX.TMI | *LocationX_EW* | See below for the link of a Point with a UserStop.
-stop_lon | POINTXXXXX.TMI | *LocationY_NS* | See below for the link of a Point with a UserStop.
-parent_station | USRSTOPXXX.TMI | *UserStopAreaCode* | 
-platform_code | USRSTOPXXX.TMI | *StopSideCode* | 
+stop_lat | POINTXXXXX.TMI | *LocationY_NS* | See below for the link of a Point with a UserStop.
+stop_lon | POINTXXXXX.TMI | *LocationX_EW* | See below for the link of a Point with a UserStop.
+parent_station | USRSTOPXXX.TMI | *UserStopAreaCode* |
+platform_code | USRSTOPXXX.TMI | *StopSideCode* |
 
-**Definining the coordinate of a stop_point :**
+**Defining the coordinate of a stop_point :**
 
 The latitude/longitude of a stop_point correspond to the fields *LocationX_EW*, *LocationY_NS* in the file POINTXXXXX.TMI of the point whose *PointCode* matches *UserstopCode* and *PointType* equals the value `SP`. The input coordinate system Amersfoort / RD New (EPSG:28992) should be converted to WGS84 (EPSG:4326).
 
@@ -40,23 +40,23 @@ The latitude/longitude of a stop_point correspond to the fields *LocationX_EW*, 
 
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
-stop_id | USRSTARXXX.TMI | *UserstopCode* | This field is prefixed.
-stop_name | USRSTARXXX.TMI | *Name* | 
-stop_lat |  |  | The coordinates of the stop_area are computed as the barycentre of all the associated stop_points.
-stop_lon |  |  | The coordinates of the stop_area are computed as the barycentre of all the associated stop_points.
+stop_id | USRSTARXXX.TMI | *UserStopAreaCode* | This field is prefixed.
+stop_name | USRSTARXXX.TMI | *Name* |
+stop_lat |  |  | The coordinates of the stop_area are computed as the barycenter of all the associated stop_points.
+stop_lon |  |  | The coordinates of the stop_area are computed as the barycenter of all the associated stop_points.
 location_type |  |  | Fixed value `1`.
 
 ### lines.txt
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 line_id | LINEXXXXXX.TMI | *LinePlanningNumber* | This field is prefixed.
-line_code | LINEXXXXXX.TMI | *LinePublicNumber* | 
-line_name |  |  | This field is computed using the name of the associated Route in the forward direction.
+line_code | LINEXXXXXX.TMI | *LinePublicNumber* |
+line_name |  |  | This field is computed using the name of the first associated Route in the forward direction.
 forward_line_name |  |  | This field is computed using the name of the associated Route in the forward direction (identical to line_name).
 forward_direction |  |  | This field is computed using the last stop_area of the associated Route in the forward direction.
 backward_line_name |  |  | This field is computed using the name of the associated Route in the backward direction.
 backward_direction |  |  | This field is computed using the last stop_area of the associated Route in the backward direction.
-line_color | LINEXXXXXX.TMI | *LineColor* | 
+line_color | LINEXXXXXX.TMI | *LineColor* |
 network_id | LINEXXXXXX.TMI | *DataOwnerCode* | This field is prefixed. Link to the file [networks.txt](#networkstxt).
 commercial_mode_id | LINEXXXXXX.TMI | *TransportType* | This field is not prefixed. Link to the file [commercial_modes.txt](#comercialmodestxt).
 
@@ -71,11 +71,13 @@ direction_type | JOPAXXXXXX.TMI | *Direction* | `forward` value when *Direction*
 line_id | JOPAXXXXXX.TMI | *LinePlanningNumber* | This field is prefixed. Link to the file [lines.txt](#linestxt).
 destination_id |  |  | This field is computed using the most frequent last stop_area of contained trips.
 
-### calendar_dates.txt
+### calendar.txt and calendar_dates.txt
+This document specifies a straightforward NTFS conversion using only `calendar_dates.txt` file. The resulting files may be different with the use of an optimizing processing, but the result should be functionnaly identical.
+
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 service_id | OPERDAYXXX.TMI | *OrganizationalUnitCode*, *ScheduleCode*, *ScheduleTypeCode* | This field is prefixed. Concatenation of the 3 specified fields separated by a ':'. Ex: "\<prefix\>:2029:1:1"
-date | OPERDAYXXX.TMI |  | Service date to be transformed into the YYYYMMDD format.
+date | OPERDAYXXX.TMI | ValidDate | Service date to be transformed into the YYYYMMDD format.
 exception_type |  |  | Fixed value `1`.
 
 ### trips.txt
@@ -104,22 +106,22 @@ BOAT | Ferry | Ferry | Ferry | Ferry
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 trip_id | PUJOPASSXX.TMI | *LinePlanningNumber*, *JourneyPatternCode*, *JourneyNumber* | This field is prefixed. Link to the file [trips.txt](#tripstxt). Concatenation of the 3 specified fields separated by a `:`. Ex: "\<prefix\>:2029:9001:23366"
-arrival_time | PUJOPASSXX.TMI | *TargetArrivalTime* | 
-departure_time | PUJOPASSXX.TMI | *TargetDepartureTime* | 
+arrival_time | PUJOPASSXX.TMI | *TargetArrivalTime* |
+departure_time | PUJOPASSXX.TMI | *TargetDepartureTime* |
 stop_id | PUJOPASSXX.TMI | *UserStopCode* | This field is prefixed. Link to the file [stops.txt](#stopstxt).
-stop_sequence | PUJOPASSXX.TMI | *StopOrder* | 
+stop_sequence | PUJOPASSXX.TMI | *StopOrder* |
 
 ### comments.txt
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 comment_id | NOTICEXXXX.TMI | *Notice coder* | This field is prefixed.
-comment_name | NOTICEXXXX.TMI | *Notice (content)* | 
+comment_name | NOTICEXXXX.TMI | *Notice (content)* |
 
 ### comment_links.txt
 Only comments on trips (Object field specified with `PUJOPASS`) will be handled.
 
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
-object_id | NTCASSGNMX.TMI | *LinePlanningNumber*, *JourneyPatternCode*, *JourneyNumber* | This field is prefixed. Link to the file [trips.txt](#tripstxt). If the *JourneyPatternCode* is not specified, the comment should be applied using only the *LinePlanningNumber* and the *JourneyNumber*.
+object_id | NTCASSGNMX.TMI | *LinePlanningNumber*, *TripNumber* | This field is prefixed. Link to the file [trips.txt](#tripstxt) using the *TripNumber* as a *JourneyNumber* field (the *JourneyPatternCode* is not available).
 object_type |  |  | Fixed value `trip`.
 comment_id | NTCASSGNMX.TMI | *Notice code* | This field is prefixed. Link to the file [comments.txt](#commentstxt).
