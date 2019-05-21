@@ -58,10 +58,10 @@ backward_line_name |  |  | This field is computed using the name of the first as
 backward_direction |  |  | This field should have the same value as the `destination_id` of the route used to provide the `backward_line_name` value.
 line_color | LINEXXXXXX.TMI | *LineColor* |
 network_id | LINEXXXXXX.TMI | *DataOwnerCode* | This field is prefixed. Link to the file [networks.txt](#networkstxt).
-commercial_mode_id | LINEXXXXXX.TMI | *TransportType* | This field is not prefixed. Link to the file [commercial_modes.txt](#comercialmodestxt).
+commercial_mode_id | LINEXXXXXX.TMI | *TransportType* | This field is not prefixed. Link to the file [commercial_modes.txt](#commercialmodestxt).
 
 ### routes.txt
-A Route is created by a line and a direction stated in the JOPAXXXXXX.TMI file.
+A Route is created from a line and a direction stated in the JOPAXXXXXX.TMI file.
 
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
@@ -83,6 +83,8 @@ date | OPERDAYXXX.TMI | ValidDate | Service date to be transformed into the YYYY
 exception_type |  |  | Fixed value `1`.
 
 ### trips.txt
+Trips are described in the `PUJOPASSXX.TMI` file. The `Direction` field of the `JOPAXXXXXX.TMI` is required to link a trip to it's corresponding route. The mapping between the two file is made by the fields `JourneyPatternCode` and `LinePlanningNumber`
+
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 route_id | JOPAXXXXXX.TMI | *LinePlanningNumber*, *Direction* | This field is prefixed. Link to the files [routes.txt](#routestxt). Concatenation of *LinePlanningNumber* and *Direction* separated by a `:`. Ex: "\<prefix\>:2029:2"
@@ -120,7 +122,7 @@ comment_id | NOTICEXXXX.TMI | *Notice coder* | This field is prefixed.
 comment_name | NOTICEXXXX.TMI | *Notice (content)* |
 
 ### comment_links.txt
-Only comments on trips (Object field specified with `PUJOPASS`) will be handled.
+Only comments on trips (`Object` field specified with `PUJOPASS`) will be handled.
 
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
