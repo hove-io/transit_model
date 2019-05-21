@@ -83,13 +83,13 @@ date | OPERDAYXXX.TMI | ValidDate | Service date to be transformed into the YYYY
 exception_type |  |  | Fixed value `1`.
 
 ### trips.txt
-Trips are described in the `PUJOPASSXX.TMI` file. The `Direction` field of the `JOPAXXXXXX.TMI` is required to link a trip to it's corresponding route. The mapping between the two file is made by the fields `JourneyPatternCode` and `LinePlanningNumber`
+Trips are described in the `PUJOPASSXX.TMI` file. The `Direction` field of the `JOPAXXXXXX.TMI` is required to link a trip to it's corresponding route. The mapping between the two file is made by the fields `JourneyPatternCode` and `LinePlanningNumber`.
 
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 route_id | JOPAXXXXXX.TMI | *LinePlanningNumber*, *Direction* | This field is prefixed. Link to the files [routes.txt](#routestxt). Concatenation of *LinePlanningNumber* and *Direction* separated by a `:`. Ex: "\<prefix\>:2029:2"
 service_id | PUJOPASSXX.TMI | *OrganizationalUnitCode*, *ScheduleCode*, *ScheduleTypeCode* | This field is prefixed. Link to the file [calendar_dates.txt](#calendardatestxt). Concatenation of the 3 specified fields separated by a ':'. Ex: "\<prefix\>:2029:1:1"
-trip_id | JOPAXXXXXX.TMI, PUJOPASSXX.TMI | *LinePlanningNumber*, *JourneyPatternCode*, *JourneyNumber* | This field is prefixed. Concatenation of the 3 specified fields separated by a `:`. Ex: "\<prefix\>:2029:9001:23366"
+trip_id | JOPAXXXXXX.TMI, PUJOPASSXX.TMI | *LinePlanningNumber*, *JourneyPatternCode*, *JourneyNumber*, *ScheduleCode* | This field is prefixed. Concatenation of the 4 specified fields separated by a `:`. Ex: "\<prefix\>:2029:9001:23366:1"
 company_id | JOPAXXXXXX.TMI | *DataOwnerCode* | This field is prefixed. Link to the file [companies.txt](#companiestxt).
 physical_mode_id | LINEXXXXXX.TMI | *TransportType* | This field is not prefixed. Link to the file physical_modes.txt of the NTFS. It is computed using the *TransportType* specified for the associated line of the trip.
 trip_properties.wheelchair_accessible | PUJOPASSXX.TMI | *WheelChairAccessible* | The trip is considered accessible if the value is `ACCESSIBLE` for all stop_times of the trip. The trip is considered not accessible if the value is `NOTACCESSIBLE` for all stop_times of the trip. The information on a trip's accessibility is considered unknown if the value is `UNKNOWN` for at least one stop_time of the trip or in case the value is the same for all stop_times of the trip.
