@@ -51,11 +51,11 @@ NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 line_id | LINEXXXXXX.TMI | *LinePlanningNumber* | This field is prefixed.
 line_code | LINEXXXXXX.TMI | *LinePublicNumber* |
-line_name |  |  | This field is computed using the name of the first associated Route in the forward direction.
-forward_line_name |  |  | This field is computed using the name of the associated Route in the forward direction (identical to line_name).
-forward_direction |  |  | This field is computed using the last stop_area of the associated Route in the forward direction.
-backward_line_name |  |  | This field is computed using the name of the associated Route in the backward direction.
-backward_direction |  |  | This field is computed using the last stop_area of the associated Route in the backward direction.
+line_name |  |  | This field is computed using the name of the first associated Route in the forward direction. If several forward routes are available, the one with the smallest `route_id` is used.
+forward_line_name |  |  | Same value as `line_name`
+forward_direction |  |  | This field should have the same value as the `destination_id` of the route used to provide the `line_name` value.
+backward_line_name |  |  | This field is computed using the name of the first associated Route in the backward direction. If several backward routes are available, the one with the smallest `route_id` is used.
+backward_direction |  |  | This field should have the same value as the `destination_id` of the route used to provide the `backward_line_name` value.
 line_color | LINEXXXXXX.TMI | *LineColor* |
 network_id | LINEXXXXXX.TMI | *DataOwnerCode* | This field is prefixed. Link to the file [networks.txt](#networkstxt).
 commercial_mode_id | LINEXXXXXX.TMI | *TransportType* | This field is not prefixed. Link to the file [commercial_modes.txt](#comercialmodestxt).
@@ -66,10 +66,12 @@ A Route is created by a line and a direction stated in the JOPAXXXXXX.TMI file.
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 route_id | JOPAXXXXXX.TMI | *LinePlanningNumber*, *Direction* | This field is prefixed. Concatenation of *LinePlanningNumber* and *Direction* separated by a `:`. Ex: "\<prefix\>:2029:2"
-route_name | JOPAXXXXXX.TMI |  | "[most frequent first stop of contained trips] - [most frequent last stop of contained trips]"
+route_name | JOPAXXXXXX.TMI |  | "[first stop of the first trip] - [last stop of the first trip]" (1)
 direction_type | JOPAXXXXXX.TMI | *Direction* | `forward` value when *Direction* is `1` or `A`. `backward` in all other cases.
 line_id | JOPAXXXXXX.TMI | *LinePlanningNumber* | This field is prefixed. Link to the file [lines.txt](#linestxt).
-destination_id |  |  | This field is computed using the most frequent last stop_area of contained trips.
+destination_id |  |  | `stop_id` of the stop_area of the last stop of the first trip.  (1)
+
+(1) The first trip of a route is the one with the smallest `trip_id` value.
 
 ### calendar.txt and calendar_dates.txt
 This document specifies a straightforward NTFS conversion using only `calendar_dates.txt` file. The resulting files may be different with the use of an optimizing processing, but the result should be functionnaly identical.
