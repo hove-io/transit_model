@@ -116,6 +116,12 @@ struct Jopa {
     journey_pattern_code: String,
 }
 
+impl Jopa {
+    fn route_id(&self) -> String {
+        format!("{}:{}", self.line_planning_number, self.direction)
+    }
+}
+
 lazy_static! {
     static ref MODES: HashMap<&'static str, &'static str> = {
         let mut m = HashMap::new();
@@ -159,7 +165,7 @@ struct UsrStop {
 }
 
 type PujoJopaMap = HashMap<(String, String), Vec<PujoPass>>;
-type JopaMap = HashMap<(String, String), Jopa>;
+type JopaMap<'a> = BTreeMap<(String, String), &'a Jopa>;
 
 /// Generates calendars
 pub fn read_operday<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
@@ -369,7 +375,7 @@ where
     Ok(())
 }
 
-fn read_jopa<H>(file_handler: &mut H) -> Result<JopaMap>
+fn read_jopa<H>(file_handler: &mut H) -> Result<Vec<Jopa>>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -382,23 +388,11 @@ where
         .trim(csv::Trim::All)
         .from_reader(reader);
 
-    let jopas: Vec<Jopa> = rdr
+    let jopas = rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(path))?;
-
-    Ok(jopas
-        .into_iter()
-        .map(|obj| {
-            (
-                (
-                    obj.line_planning_number.clone(),
-                    obj.journey_pattern_code.clone(),
-                ),
-                obj,
-            )
-        })
-        .collect())
+    Ok(jopas)
 }
 
 fn read_line<H>(file_handler: &mut H) -> Result<CollectionWithId<Kv1Line>>
@@ -490,13 +484,25 @@ where
 fn make_vjs_and_stop_times<H>(
     file_handler: &mut H,
     collections: &mut Collections,
-    map_jopas: &JopaMap,
+    jopas: &Vec<Jopa>,
     map_pujopass: &PujoJopaMap,
     lines: &CollectionWithId<Kv1Line>,
 ) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
+    let map_jopas: JopaMap = jopas
+        .into_iter()
+        .map(|obj| {
+            (
+                (
+                    obj.line_planning_number.clone(),
+                    obj.journey_pattern_code.clone(),
+                ),
+                obj,
+            )
+        })
+        .collect();
     let mut id_vj: BTreeMap<String, VehicleJourney> = BTreeMap::new();
     // there always is one dataset from config or a default one
     let dataset = collections.datasets.values().next().unwrap();
@@ -506,7 +512,7 @@ where
                 pujopass.line_planning_number.clone(),
                 pujopass.journey_pattern_code.clone(),
             ))
-            .map(|j| format!("{}:{}", j.line_planning_number, j.direction))
+            .map(|j| j.route_id())
             .ok_or_else(|| {
                 format_err!(
                     "line_id={:?}, journey_pattern_code={:?} not found",
@@ -514,9 +520,6 @@ where
                     pujopass.journey_pattern_code
                 )
             })?;
-
-        // TODO: Remove after creating routes
-        let route_id = "fake_route".to_string();
 
         let line = lines.get(&pujopass.line_planning_number).ok_or_else(|| {
             format_err!(
@@ -590,19 +593,76 @@ where
     Ok(())
 }
 
-fn make_fake_collections(collections: &mut Collections) -> Result<()> {
-    collections.routes = CollectionWithId::new(vec![Route {
-        id: "fake_route".into(),
-        name: "fake_route".into(),
-        direction_type: Some("forward".into()),
-        codes: KeysValues::default(),
-        object_properties: KeysValues::default(),
-        comment_links: CommentLinksT::default(),
-        line_id: "fake_line".into(),
-        geometry_id: None,
-        destination_id: None,
-    }])?;
+fn get_route_origin_destination<'a>(
+    collections: &'a Collections,
+    route_id: &str,
+) -> Option<(&'a StopPoint, &'a StopPoint)> {
+    let stop_times = &collections
+        .vehicle_journeys
+        .values()
+        .filter(|vj| vj.route_id == route_id)
+        .min_by_key(|vj| &vj.id)? // TODO: instead of picking the first trip, find the most frequence origin (or destination) from all the trips
+        .stop_times;
+    let origin = &collections.stop_points[stop_times[0].stop_point_idx];
+    let destination = &collections.stop_points[stop_times[stop_times.len() - 1].stop_point_idx];
+    Some((origin, destination))
+}
 
+fn make_routes(collections: &mut Collections, jopas: &Vec<Jopa>) -> Result<()> {
+    let jopas_map: JopaMap = jopas
+        .into_iter()
+        .map(|jopa| {
+            (
+                (jopa.line_planning_number.clone(), jopa.direction.clone()),
+                jopa,
+            )
+        })
+        .collect();
+    for ((line_id, direction), jopa) in jopas_map {
+        let id = jopa.route_id();
+        let (origin, destination) =
+            get_route_origin_destination(collections, &id).ok_or_else(|| {
+                format_err!(
+                    "Failed to find an origin and a destination for route {}",
+                    id
+                )
+            })?;
+        let name = format!("{} - {}", origin.name, destination.name);
+        let destination_stop_area = collections
+            .stop_areas
+            .get(&destination.stop_area_id)
+            .ok_or_else(|| {
+                format_err!(
+                    "The stop point {} doesn't have a corresponding stop area.",
+                    destination.id
+                )
+            })?;
+        let destination_id = Some(destination_stop_area.id.clone());
+        let direction_type = if direction == "1" || direction == "A" {
+            "forward"
+        } else {
+            "backward"
+        };
+        let direction_type = Some(direction_type.to_string());
+        // TODO: Remove line below once line_id have been completed (ND-215)
+        let line_id = "fake_line".into();
+        let route = Route {
+            id,
+            name,
+            direction_type,
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            line_id,
+            geometry_id: None,
+            destination_id,
+        };
+        collections.routes.push(route)?;
+    }
+    Ok(())
+}
+
+fn make_fake_collections(collections: &mut Collections) -> Result<()> {
     collections.lines = CollectionWithId::new(vec![Line {
         id: "fake_line".into(),
         code: None,
@@ -641,18 +701,17 @@ where
     let kv1_lines = read_line(file_handler)?;
     make_networks_and_companies(collections, &kv1_lines)?;
 
-    let map_jopas = read_jopa(file_handler)?;
+    let list_jopas = read_jopa(file_handler)?;
     let map_pujopas = read_pujopass(file_handler)?;
     make_vjs_and_stop_times(
         file_handler,
         collections,
-        &map_jopas,
+        &list_jopas,
         &map_pujopas,
         &kv1_lines,
     )?;
 
-    // needs vehicles_journeys -> stop_times -> stop_points + stop_areas
-    // collections.routes = CollectionWithId::new(routes)?;
+    make_routes(collections, &list_jopas)?;
 
     // need routes + stop_areas
     // collections.lines = CollectionWithId::new(lines)?;
