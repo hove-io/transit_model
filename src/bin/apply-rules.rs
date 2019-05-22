@@ -36,6 +36,10 @@ struct Opt {
     #[structopt(short = "p", long = "property-rules", parse(from_os_str))]
     property_rules_files: Vec<PathBuf>,
 
+    /// network file consolidation.
+    #[structopt(short = "n", long = "networks-consolidation", parse(from_os_str))]
+    networks_consolidation_file: PathBuf,
+
     /// output report file path
     #[structopt(short = "r", long = "report", parse(from_os_str))]
     report: PathBuf,
@@ -62,6 +66,7 @@ fn run() -> Result<()> {
         transit_model::ntfs::read(opt.input)?,
         opt.complementary_code_rules_files,
         opt.property_rules_files,
+        opt.networks_consolidation_file,
         opt.report,
     )?;
 

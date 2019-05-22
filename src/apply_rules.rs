@@ -21,7 +21,7 @@ use crate::model::Collections;
 use crate::utils::{Report, ReportType};
 use crate::Result;
 use crate::{
-    objects::{Codes, Coord, Geometry, Line, VehicleJourney},
+    objects::{Codes, Coord, Geometry, Line, Network, VehicleJourney},
     relations::IdxSet,
     Model,
 };
@@ -31,8 +31,10 @@ use geo_types::Geometry as GeoGeometry;
 use lazy_static::lazy_static;
 use log::{info, warn};
 use serde_derive::Deserialize;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs;
+use std::fs::File;
+use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use wkt::{self, conversion::try_into_geometry};
@@ -71,6 +73,96 @@ struct PropertyRule {
     property_name: String,
     property_old_value: Option<String>,
     property_value: String,
+}
+
+#[derive(Default, Debug, Deserialize)]
+struct NetworkConsolidation {
+    #[serde(flatten)]
+    network: Network,
+    grouped_from: Vec<String>,
+}
+
+fn read_networks_consolidation_file<P: AsRef<Path>>(
+    networks_consolidation_file: P,
+) -> Result<Vec<NetworkConsolidation>> {
+    info!("Reading networks consolidation rules.");
+
+    #[derive(Debug, Deserialize)]
+    struct Consolidation {
+        #[serde(rename = "networks")]
+        networks_consolidation: Vec<NetworkConsolidation>,
+    }
+
+    let file = File::open(networks_consolidation_file)?;
+    let reader = BufReader::new(file);
+    let consolidation: Consolidation = serde_json::from_reader(reader)?;
+    Ok(consolidation.networks_consolidation)
+}
+
+fn check_networks_consolidation(
+    report: &mut Report,
+    networks: &CollectionWithId<Network>,
+    networks_consolidation: Vec<NetworkConsolidation>,
+) -> Result<Vec<NetworkConsolidation>> {
+    #[derive(Debug, Deserialize)]
+    struct Consolidation {
+        #[serde(rename = "networks")]
+        networks_consolidation: Vec<NetworkConsolidation>,
+    }
+
+    info!("Checking networks consolidation.");
+    let mut res: Vec<NetworkConsolidation> = vec![];
+
+    for ntw in networks_consolidation.into_iter() {
+        let mut network_consolidation = false;
+        if networks.get(&ntw.network.id).is_none() {
+            for ntw_grouped in &ntw.grouped_from {
+                if networks.get(&ntw_grouped).is_none() {
+                    report.add_warning(
+                        format!("The grouped network {} don't exists", ntw_grouped),
+                        ReportType::ObjectNotFound,
+                    );
+                } else {
+                    network_consolidation = true;
+                }
+            }
+        } else {
+            report.add_error(
+                format!("The network {} already exists", ntw.network.id),
+                ReportType::MultipleValue,
+            );
+            panic!(format!("The network {} already exists", ntw.network.id));
+        };
+        if network_consolidation {
+            res.push(ntw);
+        };
+    }
+    Ok(res)
+}
+
+fn set_networks_consolidation(
+    mut collections: Collections,
+    lines_by_network: &HashMap<String, IdxSet<Line>>,
+    networks_consolidation: Vec<NetworkConsolidation>,
+) -> Result<Collections> {
+    let mut networks_to_remove: HashSet<String> = HashSet::new();
+    for network in networks_consolidation {
+        let network_id = network.network.id.clone();
+        collections.networks.push(network.network)?;
+        for grouped_from in network.grouped_from {
+            if let Some(lines) = lines_by_network.get(&grouped_from) {
+                for line_idx in lines {
+                    let mut line = collections.lines.index_mut(*line_idx);
+                    line.network_id = network_id.to_string();
+                }
+            }
+            networks_to_remove.insert(grouped_from);
+        }
+    }
+    collections
+        .networks
+        .retain(|ntw| !networks_to_remove.contains(&ntw.id));
+    Ok(collections)
 }
 
 fn read_complementary_code_rules_files<P: AsRef<Path>>(
@@ -715,6 +807,7 @@ pub fn apply_rules(
     model: Model,
     complementary_code_rules_files: Vec<PathBuf>,
     property_rules_files: Vec<PathBuf>,
+    networks_consolidation_file: PathBuf,
     report_path: PathBuf,
 ) -> Result<Model> {
     let vjs_by_line: HashMap<String, IdxSet<VehicleJourney>> = model
@@ -730,10 +823,33 @@ pub fn apply_rules(
         })
         .collect();
 
+    let line_by_network: HashMap<String, IdxSet<Line>> = model
+        .networks
+        .iter()
+        .filter_map(|(idx, obj)| {
+            let line = model.get_corresponding_from_idx(idx);
+            if line.is_empty() {
+                None
+            } else {
+                Some((obj.id.clone(), line))
+            }
+        })
+        .collect();
+
     let mut collections = model.into_collections();
 
     info!("Applying rules...");
     let mut report = Report::default();
+
+    let networks_consolidation = read_networks_consolidation_file(networks_consolidation_file)?;
+    let networks_consolidation = check_networks_consolidation(
+        &mut report,
+        &mut collections.networks,
+        networks_consolidation,
+    )?;
+    collections =
+        set_networks_consolidation(collections, &line_by_network, networks_consolidation)?;
+
     let codes = read_complementary_code_rules_files(complementary_code_rules_files, &mut report)?;
     for code in codes {
         match code.object_type {
