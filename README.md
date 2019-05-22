@@ -12,6 +12,32 @@ transit_model is a rust crate to manage transit data. Its model corresponds to t
 cargo build --release
 ```
 
+### Compile for KV1
+The KV1 format needs a additional dependency called [Proj.4](https://proj4.org/)
+which allows the transformation of localization coordinates.
+[crates.io](https://crates.io/) provides a
+[`proj`](https://crates.io/crates/proj) crate which is a binding to the C
+library (version 6+). This means you need [Proj.4](https://proj4.org/) version
+6+ installed on your system.  See [Proj.4 installation
+instructions](https://github.com/OSGeo/proj.4#installation) or take a look at
+our [Dockerfile](https://github.com/CanalTP/transit_model/blob/kv1/Dockerfile).
+```
+
+[Proj.4](https://proj4.org/) is configured as a `feature` of the `transit_model`
+crate.  Once [Proj.4](https://proj4.org/) is installed, you need a few more
+dependencies for building `transit_model`.
+```
+apt install -y clang libssl-dev
+cargo build --features=proj
+```
+
+Now, you should be able to use the converter `kv12ntfs`. Enjoy!
+
+### Using Proj.4
+If you want to use [Proj.4](https://proj4.org/) in your code, you can if you
+activate the `proj` feature (`cargo build --features=proj`). Then don't forget
+to protect your code with `#[cfg(feature="proj")]`.
+
 ## Converting from GTFS to NTFS
 
 NTFS needs a `Dataset` and a `Contributor`.
