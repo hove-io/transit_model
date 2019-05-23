@@ -26,7 +26,7 @@ fn test_extract_network() {
         let model = filter::filter(
             transit_model::ntfs::read(input_dir).unwrap(),
             filter::Action::Extract,
-            vec!["TGN".into()],
+            vec!["network1".into()],
         )
         .unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
@@ -42,7 +42,7 @@ fn test_remove_network() {
         let model = filter::filter(
             transit_model::ntfs::read(input_dir).unwrap(),
             filter::Action::Remove,
-            vec!["TGN".into()],
+            vec!["network1".into()],
         )
         .unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
@@ -69,7 +69,7 @@ fn test_remove_all_networks() {
     filter::filter(
         transit_model::ntfs::read(input_dir).unwrap(),
         filter::Action::Remove,
-        vec!["TGN".into(), "OIF:101".into()],
+        vec!["network1".into(), "network2".into(), "network3".into()],
     )
     .unwrap();
 }
