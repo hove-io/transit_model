@@ -26,12 +26,14 @@ fn test_apply_complementary_codes() {
         let cc_rules =
             vec![Path::new("./fixtures/apply_rules/complementary_codes_rules.txt").to_path_buf()];
         let p_rules = vec![Path::new("./fixtures/apply_rules/property_rules.txt").to_path_buf()];
+        let n_consolidation = Path::new("").to_path_buf();
         let report_path = path.join("report.json");
 
         let model = apply_rules::apply_rules(
             transit_model::ntfs::read(input_dir).unwrap(),
             cc_rules,
             p_rules,
+            n_consolidation,
             Path::new(&report_path).to_path_buf(),
         )
         .unwrap();
@@ -45,6 +47,7 @@ fn test_apply_complementary_codes() {
                 "routes.txt",
                 "trips.txt",
                 "stops.txt",
+                "networks.txt",
                 "report.json",
             ]),
             "./fixtures/apply_rules/output",

@@ -38,8 +38,8 @@ line,RERA,line_text_color,,CC00FF
 line,M1,line_text_color,,invalid
 line,M1,commercial_mode_id,Metro,Bus
 line,B42,commercial_mode_id,Bus,unknown
-line,M1,network_id,TGN,AN
-line,B42,network_id,TGN,unknown
+line,M1,network_id,TGM,TGB
+line,B42,network_id,TGB,unknown
 line,B42,physical_mode_id,Bus,RapidTransit
 line,M1,physical_mode_id,unknown,Metro
 line,RERA,physical_mode_id,*,Metro
