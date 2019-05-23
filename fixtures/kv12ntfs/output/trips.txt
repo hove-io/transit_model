@@ -1,3 +1,4 @@
 trip_id,route_id,physical_mode_id,dataset_id,service_id,trip_headsign,block_id,company_id,trip_property_id,geometry_id
-2029:90016:20135:1,2029:2,Bus,SYNTUS,2029:1:1,,,SYNTUS,,
-2030:00011:21499:15,2030:1,Bus,SYNTUS,2030:15:15,,,SYNTUS,,
+2029:90016:20135:1,2029:2,Bus,SYNTUS,2029:1:1,,,SYNTUS,1,
+2030:00011:21499:15,2030:1,Bus,SYNTUS,2030:15:15,,,SYNTUS,2,
+3170:0001:32613:1003,3170:1,Bus,SYNTUS,3170:1003:1003,,,SYNTUS,3,

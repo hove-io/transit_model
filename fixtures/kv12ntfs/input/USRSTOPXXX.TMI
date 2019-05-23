@@ -1,5 +1,4 @@
 [Recordtype]|[Version number]|[Implicit/Explicit]|[DataOwnerCode]|[UserstopCode]|[TimingPointCode]|[Getin]|[Getout]|[Depricated]|[Name]|[Town]|[UserStopAreaCode]|[StopSideCode]|[RoadSideEqDataOwnerCode]|[RoadSideEqUnitNumber]|[MinimalStopTime]|[StopSideLength]|[Description]|[UserStopType]
-USRSTOP|1|I|SYNTUS|16000080|16000080|TRUE|TRUE|N|Meppel, Station|Meppel|20457|B||0|0|0||PASSENGER
 USRSTOP|1|I|SYNTUS|16000260|16000260|TRUE|TRUE|N|Meppel, Medisch Centrum|Meppel|20695|-||0|0|0||PASSENGER
 USRSTOP|1|I|SYNTUS|19480230|19480230|TRUE|TRUE|N|Dedemsvaart, Adelaarweg|Dedemsvaart|20361|-||0|0|0||PASSENGER
 USRSTOP|1|I|SYNTUS|19480250|19480250|TRUE|TRUE|N|Dedemsvaart, Sportlaan|Dedemsvaart|20362|-||0|0|0||PASSENGER
@@ -7,3 +6,6 @@ USRSTOP|1|I|SYNTUS|19480290|19480290|TRUE|TRUE|N|Dedemsvaart, Busstation|Dedemsv
 USRSTOP|1|I|SYNTUS|17000040|17000040|TRUE|TRUE|N|Hoogeveen, Station|Hoogeveen|20570|D||0|0|0||PASSENGER
 USRSTOP|1|I|SYNTUS|17003020|17003020|TRUE|TRUE|N|Hoogeveen, Brinkstraat|Hoogeveen|20717|-||0|0|0||PASSENGER
 USRSTOP|1|I|SYNTUS|17001660|17001660|TRUE|TRUE|N|Hoogeveen, Willemskade|Hoogeveen|20718|-||0|0|0||PASSENGER
+USRSTOP|1|I|SYNTUS|47552005|47552005|TRUE|TRUE|N|Epe, Centrum|Epe|31215|-||0|0|0||PASSENGER
+USRSTOP|1|I|SYNTUS|47552021|47552021|TRUE|TRUE|N|Epe, Lohuizerweg|Epe|32705|-||0|0|0||PASSENGER
+USRSTOP|1|I|SYNTUS|47552019|47552019|TRUE|TRUE|N|Epe, Sint Jorisweg|Epe|32704|-||0|0|0||PASSENGER

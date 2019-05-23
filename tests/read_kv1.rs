@@ -44,6 +44,7 @@ fn test_read_kv1() {
                 "stop_times.txt",
                 "stops.txt",
                 "trips.txt",
+                "trip_properties.txt",
             ]),
             "fixtures/kv12ntfs/output",
         );
