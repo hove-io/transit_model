@@ -11,6 +11,9 @@ matrix:
     script: cargo fmt --all -- --check
   allow_failures:
   - rust: nightly
+script:
+- cargo test --verbose
+- cd model-builder && cargo test --verbose
 deploy:
   provider: cargo
   on:

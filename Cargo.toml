@@ -37,5 +37,5 @@ num-traits = "0.2.6"
 path = "transit_model_procmacro"
 version = "0.1.0"
 
-[workspace]
-members = ["model-builder"]
+[dev-dependencies]
+transit_model_builder= "0.1.0"
