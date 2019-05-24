@@ -1,0 +1,93 @@
+{
+  "errors": [],
+  "warnings": [
+    {
+      "category": "InvalidFile",
+      "message": "Error reading \"complementary_codes_rules.txt\": CSV deserialize error: unknown variant `object_not_allowed`, expected one of `line`, `route`, `stop_point`, `stop_area`"
+    },
+    {
+      "category": "MultipleValue",
+      "message": "object_type=route, object_id=RERAB: multiple values specified for the property route_name"
+    },
+    {
+      "category": "UnknownPropertyName",
+      "message": "object_type=route, object_id=RERAB: unknown property_name unknown_property defined"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=line, object_id=B42, property_name=commercial_mode_id, property_value=unknown: object not found"
+    },
+    {
+      "category": "NonConvertibleString",
+      "message": "object_type=line, object_id=B42, property_name=line_sort_order: property_value should be an integer"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=line, object_id=B42, property_name=network_id, property_value=unknown: object not found"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=line, object_id=M1, property_name=line_color: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "NonConvertibleString",
+      "message": "object_type=line, object_id=M1, property_name=line_text_color: property_value is an invalid RGB"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=line, object_id=M1, property_name=network_id: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=line, object_id=M1, property_name=physical_mode_id, property_old_value=unknown: physical mode not found"
+    },
+    {
+      "category": "GeometryNotValid",
+      "message": "object_type=route, object_id=B42B: invalid geometry"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=route, object_id=B42F:2, property_name=route_geometry: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "GeometryNotValid",
+      "message": "object_type=route, object_id=B42F:4: invalid geometry"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=route, object_id=M1B, property_name=route_geometry: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=route, object_id=RERAB, property_name=direction_type: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=route, object_id=RERAB:2, property_name=route_geometry: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=route, object_id=RERAF: geometry unknown not found"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=stop_point, object_id=CDGR, property_name=stop_position, property_old_value=LINESTRING(3 4,10 50,20 25): WKT should be POINT"
+    },
+    {
+      "category": "ObjectNotFound",
+      "message": "object_type=stop_point, object_id=CHAM, property_name=stop_position, property_value=LINESTRING(3 4,10 50,20 25): WKT should be POINT"
+    },
+    {
+      "category": "GeometryNotValid",
+      "message": "object_type=stop_point, object_id=DEFR: invalid geometry"
+    },
+    {
+      "category": "GeometryNotValid",
+      "message": "object_type=stop_point, object_id=GDLR: invalid geometry"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=stop_point, object_id=NATR, property_name=stop_position: property_old_value does not match the value found in the data"
+    }
+  ]
+}
