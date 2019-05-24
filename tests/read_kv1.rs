@@ -28,27 +28,6 @@ fn test_read_kv1() {
     .unwrap();
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(
-            &output_dir,
-            Some(vec![
-                "calendar.txt",
-                "calendar_dates.txt",
-                "contributors.txt",
-                "comments.txt",
-                "comment_links.txt",
-                "commercial_modes.txt",
-                "companies.txt",
-                "datasets.txt",
-                "feed_infos.txt",
-                "networks.txt",
-                "physical_modes.txt",
-                "routes.txt",
-                "stop_times.txt",
-                "stops.txt",
-                "trips.txt",
-                "trip_properties.txt",
-            ]),
-            "fixtures/kv12ntfs/output",
-        );
+        compare_output_dir_with_expected(&output_dir, None, "fixtures/kv12ntfs/output");
     });
 }
