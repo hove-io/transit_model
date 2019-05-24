@@ -1,0 +1,6 @@
+[Recordtype]|[Version number]|[Implicit/Explicit]|[DataOwnerCode]|[LinePlanningNumber]|[JourneyPatternCode]|[JourneyPatternType]|[Direction]|[Description]
+JOPA|1|I|SYNTUS|2029|90014|SRVC|2|
+JOPA|1|I|SYNTUS|2029|90016|SRVC|2|
+JOPA|1|I|SYNTUS|2029|90049|SRVC|1|
+JOPA|1|I|SYNTUS|2030|00011|SRVC|1|
+JOPA|1|I|SYNTUS|3170|0001|SRVC|1|

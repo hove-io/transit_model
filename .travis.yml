@@ -4,6 +4,10 @@ rust:
 - stable
 - beta
 - nightly
+before_install:
+- wget https://github.com/OSGeo/proj.4/releases/download/6.0.0/proj-6.0.0.tar.gz
+- tar -xzvf proj-6.0.0.tar.gz
+- pushd proj-6.0.0 && ./configure --prefix=/usr && make && sudo make install && popd
 matrix:
   include:
   - rust: stable
@@ -12,7 +16,7 @@ matrix:
   allow_failures:
   - rust: nightly
 script:
-- cargo test --verbose
+- cargo test --verbose --features=proj
 - cd model-builder && cargo test --verbose
 deploy:
   provider: cargo

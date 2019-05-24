@@ -23,11 +23,16 @@ use transit_model;
 use transit_model::Result;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "netex2ntfs", about = "Convert Netex data to an NTFS.")]
+#[structopt(name = "kv12ntfs", about = "Convert a KV1 to an NTFS.")]
 struct Opt {
     /// input directory.
     #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
     input: PathBuf,
+
+    /// input url.
+    /// If both input and url are set, the url is used.
+    #[structopt(short = "u", long = "url")]
+    url: Option<String>,
 
     /// output directory
     #[structopt(short = "o", long = "output", parse(from_os_str))]
@@ -52,11 +57,17 @@ struct Opt {
 }
 
 fn run() -> Result<()> {
-    info!("Launching netex2ntfs...");
+    info!("Launching kv12ntfs...");
 
     let opt = Opt::from_args();
 
-    let objects = transit_model::netex::read(opt.input, opt.config_path, opt.prefix)?;
+    let objects = if let Some(url) = opt.url {
+        transit_model::kv1::read_from_url(&url, opt.config_path, opt.prefix)?
+    } else if opt.input.is_file() {
+        transit_model::kv1::read_from_zip(opt.input, opt.config_path, opt.prefix)?
+    } else {
+        transit_model::kv1::read_from_path(opt.input, opt.config_path, opt.prefix)?
+    };
 
     transit_model::ntfs::write(&objects, opt.output, opt.current_datetime)?;
     Ok(())
