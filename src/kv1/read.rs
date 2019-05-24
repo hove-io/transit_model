@@ -104,6 +104,18 @@ struct PujoPass {
     wheelchair_accessible: Accessibility,
 }
 
+impl PujoPass {
+    fn vehiclejourney_id(&self) -> String {
+        format!(
+            "{}:{}:{}:{}",
+            self.line_planning_number,
+            self.journey_pattern_code,
+            self.journey_number,
+            self.schedule_code
+        )
+    }
+}
+
 #[derive(Deserialize, Debug)]
 struct Jopa {
     #[serde(rename = "[LinePlanningNumber]")]
@@ -120,6 +132,24 @@ impl Jopa {
     fn route_id(&self) -> String {
         format!("{}:{}", self.line_planning_number, self.direction)
     }
+}
+
+#[derive(Deserialize, Debug)]
+struct Notice {
+    #[serde(rename = "[Notice code]")]
+    notice_code: String,
+    #[serde(rename = "[Notice (content)]")]
+    notice_content: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct NoticeAssignment {
+    #[serde(rename = "[LinePlanningNumber]")]
+    line_planning_number: String,
+    #[serde(rename = "[TripNumber]")]
+    journey_number: String,
+    #[serde(rename = "[Notice code]")]
+    notice_code: String,
 }
 
 lazy_static! {
@@ -586,13 +616,7 @@ where
                 )
             })?;
 
-        let id = format!(
-            "{}:{}:{}:{}",
-            pujopass.line_planning_number,
-            pujopass.journey_pattern_code,
-            pujopass.journey_number,
-            pujopass.schedule_code
-        );
+        let id = pujopass.vehiclejourney_id();
 
         let vj = id_vj.entry(id.clone()).or_insert(VehicleJourney {
             id: id.clone(),
@@ -767,6 +791,7 @@ where
     )?;
 
     make_routes(collections, &list_jopas)?;
+    read_ntcassgn(file_handler, collections, &map_pujopas)?;
 
     // need routes + stop_areas
     // collections.lines = CollectionWithId::new(lines)?;
@@ -774,14 +799,73 @@ where
     Ok(())
 }
 
-/// Generates comments on trips
-pub fn read_notice_ntcassgn<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+pub fn read_notice<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
-    info!("Reading NOTICEXXXX.TMI and NTCASSGNMX.TMI");
+    let file = "NOTICEXXXX.TMI";
+    let (reader, path) = file_handler.get_file(file)?;
+    info!("Reading {}", file);
 
-    // collections.comments = CollectionWithId::new(comments)?;
+    let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b'|')
+        .trim(csv::Trim::All)
+        .from_reader(reader);
+
+    for notice in rdr.deserialize() {
+        let notice: Notice = notice.with_context(ctx_from_path!(path))?;
+        collections
+            .comments
+            .push(Comment {
+                id: notice.notice_code,
+                comment_type: CommentType::default(),
+                label: None,
+                name: notice.notice_content,
+                url: None,
+            })
+            .unwrap();
+    }
+
+    Ok(())
+}
+
+fn read_ntcassgn<H>(
+    file_handler: &mut H,
+    collections: &mut Collections,
+    map_pujopass: &PujoJopaMap,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let file = "NTCASSGNMX.TMI";
+    let (reader, path) = file_handler.get_file(file)?;
+    info!("Reading {}", file);
+
+    let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b'|')
+        .trim(csv::Trim::All)
+        .from_reader(reader);
+
+    for notice_assignment in rdr.deserialize() {
+        let notice_assignment: NoticeAssignment =
+            notice_assignment.with_context(ctx_from_path!(path))?;
+
+        if let Some(comment_idx) = collections.comments.get_idx(&notice_assignment.notice_code) {
+            if let Some(pujopasses) = map_pujopass.get(&(
+                notice_assignment.line_planning_number,
+                notice_assignment.journey_number,
+            )) {
+                for pujopass in pujopasses.iter().filter(|p| p.stop_order == 1) {
+                    collections
+                        .vehicle_journeys
+                        .get_mut(&pujopass.vehiclejourney_id())
+                        .unwrap()
+                        .comment_links
+                        .insert(comment_idx);
+                }
+            }
+        }
+    }
 
     Ok(())
 }

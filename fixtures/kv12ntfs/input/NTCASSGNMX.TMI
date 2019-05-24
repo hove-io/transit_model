@@ -1,0 +1,3 @@
+[RecordType]|[Version Number]|[Implicit/Explicit]|[Object]|[DataOwnerCode]|[TIVECode]|[ORUNCode]|[ScheduleCode]|[ScheduleTypeCode]|[SpecDayCode]|[DayType]|[LinePlanningNumber]|[TripNumber]|[StopOrder]|[JopaCode]|[UsrStopCode]|[Notice code]
+NTCASSGNM|1|I|PUJOPASS|SYNTUS|||1|1|||2029|20135||||KOL
+NTCASSGNM|1|I|PUJOPASS|SYNTUS|||15|15|||2030|21499||||FLEXW

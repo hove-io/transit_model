@@ -34,6 +34,8 @@ fn test_read_kv1() {
                 "calendar.txt",
                 "calendar_dates.txt",
                 "contributors.txt",
+                "comments.txt",
+                "comment_links.txt",
                 "commercial_modes.txt",
                 "companies.txt",
                 "datasets.txt",
