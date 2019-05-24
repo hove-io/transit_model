@@ -37,7 +37,7 @@ struct Opt {
     property_rules_files: Vec<PathBuf>,
 
     /// network file consolidation.
-    #[structopt(short = "n", long = "networks-consolidation", parse(from_os_str))]
+    #[structopt(short = "n", long = "networks-consolidation", parse(from_os_str), default_value = "")]
     networks_consolidation_file: PathBuf,
 
     /// output report file path

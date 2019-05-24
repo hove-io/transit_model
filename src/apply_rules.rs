@@ -75,7 +75,7 @@ struct PropertyRule {
     property_value: String,
 }
 
-#[derive(Default, Debug, Deserialize)]
+#[derive(Clone, Default, Debug, Deserialize)]
 struct NetworkConsolidation {
     #[serde(flatten)]
     network: Network,
@@ -95,7 +95,8 @@ fn read_networks_consolidation_file<P: AsRef<Path>>(
 
     let file = File::open(networks_consolidation_file)?;
     let reader = BufReader::new(file);
-    let consolidation: Consolidation = serde_json::from_reader(reader)?;
+    let consolidation: Consolidation =
+        serde_json::from_reader(reader).expect("unvalid networks configuration file");
     Ok(consolidation.networks_consolidation)
 }
 
@@ -131,11 +132,17 @@ fn check_networks_consolidation(
                 format!("The network {} already exists", ntw.network.id),
                 ReportType::MultipleValue,
             );
-            panic!(format!("The network {} already exists", ntw.network.id));
+            res.clear();
+            return Ok(res);
         };
         if network_consolidation {
             res.push(ntw);
-        };
+        } else {
+            report.add_error(
+                format!("No grouped network exists {}", ntw.network.id),
+                ReportType::ObjectNotFound,
+            );
+        }
     }
     Ok(res)
 }
@@ -841,14 +848,16 @@ pub fn apply_rules(
     info!("Applying rules...");
     let mut report = Report::default();
 
-    let networks_consolidation = read_networks_consolidation_file(networks_consolidation_file)?;
-    let networks_consolidation = check_networks_consolidation(
-        &mut report,
-        &mut collections.networks,
-        networks_consolidation,
-    )?;
-    collections =
-        set_networks_consolidation(collections, &line_by_network, networks_consolidation)?;
+    if networks_consolidation_file.exists() {
+        let networks_consolidation = read_networks_consolidation_file(networks_consolidation_file)?;
+        let networks_consolidation = check_networks_consolidation(
+            &mut report,
+            &mut collections.networks,
+            networks_consolidation,
+        )?;
+        collections =
+            set_networks_consolidation(collections, &line_by_network, networks_consolidation)?;
+    }
 
     let codes = read_complementary_code_rules_files(complementary_code_rules_files, &mut report)?;
     for code in codes {
