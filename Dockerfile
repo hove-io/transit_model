@@ -16,7 +16,7 @@ RUN apt update && apt install -y wget build-essential pkg-config sqlite3 libsqli
 	&& cp -r /build_proj/usr/include/* /usr/include \
 	&& cp -r /build_proj/usr/lib/* /usr/lib
 COPY . ./
-RUN cargo build --features=proj4 --release \
+RUN cargo build --features=proj --release \
 	&& mkdir /usr/src/bin_transit_model && for file in ls ./target/release/*; do if test -f $file -a -x $file; then cp $file /usr/src/bin_transit_model; fi; done \
 	&& cd .. && rm -rf transit_model
 
