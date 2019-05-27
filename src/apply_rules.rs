@@ -132,8 +132,7 @@ fn check_networks_consolidation(
                 format!("The network {} already exists", ntw.network.id),
                 ReportType::MultipleValue,
             );
-            res.clear();
-            return Ok(res);
+            panic!(format!("The network {} already exists", ntw.network.id));
         };
         if network_consolidation {
             res.push(ntw);

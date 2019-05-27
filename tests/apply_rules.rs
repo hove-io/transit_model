@@ -175,6 +175,7 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
     fn test_ntw_consolidation_duplicate_id() {
         test_apply_rules(
             "",
