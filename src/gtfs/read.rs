@@ -1643,9 +1643,9 @@ mod tests {
                               584,TAM,http://whatever.canaltp.fr/,Europe/Paris,fr\n\
                               285,Phébus,http://plop.kisio.com/,Europe/London,en";
 
-        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
-                              route_1,agency_1,1,My line 1A,3,8F7A32,FFFFFF\n\
-                              route_2,agency_1,2,My line 1B,3,8F7A32,FFFFFF";
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color,destination_id\n\
+                              route_1,agency_1,1,My line 1A,3,8F7A32,FFFFFF,\n\
+                              route_2,agency_1,2,My line 1B,3,8F7A32,FFFFFF,sp:01";
 
         let trips_content =
             "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed,shape_id\n\
@@ -1741,25 +1741,31 @@ mod tests {
             );
             assert_eq!(
                 vec![
-                    ("my_prefix:route_1", "my_prefix:agency_1", "Bus"),
-                    ("my_prefix:route_2", "my_prefix:agency_1", "Bus"),
+                    ("my_prefix:route_1", "my_prefix:agency_1", "Bus", None, None),
+                    ("my_prefix:route_2", "my_prefix:agency_1", "Bus", None, None),
                 ],
                 extract(
                     |obj| (
                         obj.id.as_str(),
                         obj.network_id.as_str(),
                         obj.commercial_mode_id.as_str(),
+                        obj.forward_direction.as_ref().map(|e| e.as_str()),
+                        obj.backward_direction.as_ref().map(|e| e.as_str()),
                     ),
                     &collections.lines,
                 )
             );
             assert_eq!(
                 vec![
-                    ("my_prefix:route_1", "my_prefix:route_1"),
-                    ("my_prefix:route_2_R", "my_prefix:route_2"),
+                    ("my_prefix:route_1", "my_prefix:route_1", None),
+                    ("my_prefix:route_2_R", "my_prefix:route_2", None),
                 ],
                 extract(
-                    |obj| (obj.id.as_str(), obj.line_id.as_str(),),
+                    |obj| (
+                        obj.id.as_str(),
+                        obj.line_id.as_str(),
+                        obj.destination_id.as_ref().map(|e| e.as_str())
+                    ),
                     &collections.routes,
                 )
             );

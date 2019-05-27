@@ -23,7 +23,7 @@ fn test_read_kv1() {
     let ntm = transit_model::kv1::read_from_path(
         "fixtures/kv12ntfs/input",
         Some("fixtures/kv12ntfs/config.json"),
-        None,
+        Some("prefix".into()),
     )
     .unwrap();
     test_in_tmp_dir(|output_dir| {
