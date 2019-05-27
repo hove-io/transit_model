@@ -539,6 +539,14 @@ impl AddPrefix for Line {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
         self.network_id = prefix.to_string() + &self.network_id;
+        self.forward_direction = self
+            .forward_direction
+            .as_ref()
+            .map(|id| prefix.to_string() + &id);
+        self.backward_direction = self
+            .backward_direction
+            .as_ref()
+            .map(|id| prefix.to_string() + &id);
     }
 }
 
@@ -581,6 +589,10 @@ impl AddPrefix for Route {
         self.id = prefix.to_string() + &self.id;
         self.line_id = prefix.to_string() + &self.line_id;
         self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
+        self.destination_id = self
+            .destination_id
+            .as_ref()
+            .map(|id| prefix.to_string() + &id);
     }
 }
 impl_codes!(Route);
