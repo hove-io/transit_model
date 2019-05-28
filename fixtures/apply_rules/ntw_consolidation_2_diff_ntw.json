@@ -4,8 +4,8 @@
             "network_id": "TGB2",
             "network_name": "TGB2 Network",
             "network_url": "http://TGB2",
-            "network_phone" : "0123456789",
-	    "network_address" : "ici",
+            "network_phone": "0123456789",
+            "network_address": "ici",
             "grouped_from": [
                 "TGB"
             ]
@@ -14,12 +14,11 @@
             "network_id": "TGM2",
             "network_name": "TGM2 Network",
             "network_url": "http://TGM2",
-            "network_phone" : "0123456789",
-	    "network_address" : "ici",
+            "network_phone": "0123456789",
+            "network_address": "ici",
             "grouped_from": [
                 "TGM"
             ]
         }
     ]
 }
-
