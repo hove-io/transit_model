@@ -12,6 +12,7 @@ NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 network_id | LINEXXXXXX.TMI | *DataOwnerCode* | This field is prefixed.
 network_name | LINEXXXXXX.TMI | *DataOwnerCode* |
+network_timezone | | | Fixed value `Europe/Amsterdam`
 
 ### companies.txt
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
