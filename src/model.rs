@@ -54,9 +54,9 @@ pub struct Collections {
     pub trip_properties: CollectionWithId<TripProperty>,
     pub geometries: CollectionWithId<Geometry>,
     #[serde(skip)]
-    pub tickets: Collection<Ticket>,
+    pub tickets: Collection<TicketV1>,
     #[serde(skip)]
-    pub od_rules: Collection<ODRule>,
+    pub od_rules: Collection<ODRuleV1>,
     pub admin_stations: Collection<AdminStation>,
     #[serde(skip)]
     pub stop_time_headsigns: HashMap<(Idx<VehicleJourney>, u32), String>,
