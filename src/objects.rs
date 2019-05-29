@@ -48,6 +48,7 @@ pub enum ObjectType {
     VehicleJourney,
     StopTime,
     LineGroup,
+    Ticket,
 }
 
 pub trait GetObjectType {
@@ -65,6 +66,7 @@ impl ObjectType {
             ObjectType::VehicleJourney => "trip",
             ObjectType::StopTime => "stop_time",
             ObjectType::LineGroup => "line_group",
+            ObjectType::Ticket => "ticket",
         }
     }
 }
@@ -1257,7 +1259,10 @@ pub struct AdminStation {
 }
 
 #[derive(Debug, Clone)]
-#[deprecated(since = "0.5.0", note = "Ticketing model in NTFS v0.9 is a breaking change, look for the Ticket struct.")]
+#[deprecated(
+    since = "0.5.0",
+    note = "Ticketing model in NTFS v0.9 is a breaking change, look for the Ticket struct."
+)]
 pub struct TicketV1 {
     pub id: String,
     pub start_date: NaiveDate,
@@ -1267,9 +1272,13 @@ pub struct TicketV1 {
     pub validity_duration: Option<u32>,
     pub transfers: Option<u16>,
 }
+impl_id!(TicketV1);
 
 #[derive(Debug, Clone)]
-#[deprecated(since = "0.5.0", note = "Ticketing model in NTFS v0.9 is a breaking change, look for the Ticket struct.")]
+#[deprecated(
+    since = "0.5.0",
+    note = "Ticketing model in NTFS v0.9 is a breaking change, look for the Ticket struct."
+)]
 pub struct ODRuleV1 {
     pub id: String,
     pub origin_stop_area_id: String,
@@ -1279,9 +1288,95 @@ pub struct ODRuleV1 {
     pub network_id: Option<String>,
     pub physical_mode_id: Option<String>,
 }
-
-impl_id!(TicketV1);
 impl_id!(ODRuleV1);
+
+#[derive(Serialize, Deserialize, Debug)]
+#[cfg(feature = "fare-v2")]
+pub struct Ticket {
+    pub id: String,
+    pub name: String,
+    pub comment: Option<String>,
+}
+#[cfg(feature = "fare-v2")]
+impl_id!(Ticket);
+
+#[cfg(feature = "fare-v2")]
+impl GetObjectType for Ticket {
+    fn get_object_type() -> ObjectType {
+        ObjectType::Ticket
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[cfg(feature = "fare-v2")]
+pub struct TicketPrice {
+    pub ticket_id: String,
+    #[serde(deserialize_with = "de_positive_f64")]
+    pub price: f64,
+    #[serde(
+        serialize_with = "ser_currency_code",
+        deserialize_with = "de_currency_code"
+    )]
+    pub currency: String,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub ticket_validity_start: Date,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub ticket_validity_end: Date,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[cfg(feature = "fare-v2")]
+pub struct TicketUse {
+    pub id: String,
+    pub ticket_id: String,
+    pub max_transfers: Option<u64>,
+    pub boarding_time_limit: Option<u64>,
+    pub alighting_time_limit: Option<u64>,
+}
+#[cfg(feature = "fare-v2")]
+impl_id!(TicketUse);
+
+#[derive(Serialize, Deserialize, Debug)]
+#[cfg(feature = "fare-v2")]
+pub enum PerimeterAction {
+    #[serde(rename = "1")]
+    Included,
+    #[serde(rename = "2")]
+    Excluded,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[cfg(feature = "fare-v2")]
+pub struct TicketUsePerimeter {
+    pub ticket_use_id: String,
+    pub object_type: ObjectType,
+    pub object_id: String,
+    pub perimeter_action: PerimeterAction,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[cfg(feature = "fare-v2")]
+pub enum RestrictionType {
+    #[serde(rename = "zone")]
+    Zone,
+    #[serde(rename = "OD")]
+    OriginDestination,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[cfg(feature = "fare-v2")]
+pub struct TicketUseRestriction {
+    pub ticket_use_id: String,
+    pub restriction_type: RestrictionType,
+    pub use_origin: String,
+    pub use_destination: String,
+}
 
 #[cfg(test)]
 mod tests {
