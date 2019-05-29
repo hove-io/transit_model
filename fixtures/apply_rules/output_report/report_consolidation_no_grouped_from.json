@@ -1,0 +1,9 @@
+{
+  "errors": [
+    {
+      "category": "ObjectNotFound",
+      "message": "The grouped network is empty"
+    }
+  ],
+  "warnings": []
+}

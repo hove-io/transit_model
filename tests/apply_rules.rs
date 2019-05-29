@@ -185,4 +185,38 @@ mod tests {
             "./fixtures/apply_rules/output_report/report_consolidation_duplicate_id.json",
         );
     }
+
+    #[test]
+    #[should_panic]
+    fn test_ntw_consolidation_unvalid_network() {
+        test_apply_rules(
+            "",
+            "",
+            "./fixtures/apply_rules/ntw_consolidation_unvalid_network.json",
+            "./fixtures/apply_rules/output",
+            "./fixtures/apply_rules/output_report/report_consolidation_duplicate_id.json",
+        );
+    }
+
+    #[test]
+    fn test_ntw_consolidation_no_grouped_from() {
+        test_apply_rules(
+            "",
+            "",
+            "./fixtures/apply_rules/ntw_consolidation_no_grouped_from.json",
+            "./fixtures/apply_rules/output",
+            "./fixtures/apply_rules/output_report/report_consolidation_no_grouped_from.json",
+        );
+    }
+
+    #[test]
+    fn test_ntw_consolidation_empty_grouped_from() {
+        test_apply_rules(
+            "",
+            "",
+            "./fixtures/apply_rules/ntw_consolidation_empty_grouped_from.json",
+            "./fixtures/apply_rules/output",
+            "./fixtures/apply_rules/output_report/report_consolidation_empty_grouped_from.json",
+        );
+    }
 }
