@@ -17,7 +17,7 @@
 use csv;
 use std::path;
 
-use super::{Code, CommentLink, Fare, ODFare, ODRule, ObjectProperty, Price, Stop, StopTime};
+use super::{Code, CommentLink, Fare, ODFare, ODRuleV1, ObjectProperty, Price, Stop, StopTime};
 use crate::collection::*;
 use crate::model::Collections;
 use crate::objects::*;
@@ -106,9 +106,9 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
     Ok(())
 }
 
-impl From<Price> for Ticket {
+impl From<Price> for TicketV1 {
     fn from(price: Price) -> Self {
-        Ticket {
+        TicketV1 {
             id: price.id,
             start_date: price.start_date,
             end_date: price.end_date,
@@ -138,7 +138,7 @@ pub fn manage_fares(collections: &mut Collections, base_path: &path::Path) -> Re
         .with_context(ctx_from_path!(path))?;
     for price in rdr.deserialize() {
         let price: Price = price.with_context(ctx_from_path!(path))?;
-        tickets.push(Ticket::from(price));
+        tickets.push(TicketV1::from(price));
     }
 
     let file = "fares.csv";
@@ -170,7 +170,7 @@ pub fn manage_fares(collections: &mut Collections, base_path: &path::Path) -> Re
         .with_context(ctx_from_path!(path))?;
     for od_fare in rdr.deserialize() {
         let od_fare: ODFare = od_fare.with_context(ctx_from_path!(path))?;
-        od_rules.push(ODRule {
+        od_rules.push(ODRuleV1 {
             id: "unknown".to_string(),
             origin_stop_area_id: od_fare.origin_stop_area_id.replace("stop_area:", ""),
             destination_stop_area_id: od_fare.destination_stop_area_id.replace("stop_area:", ""),

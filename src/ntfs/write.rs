@@ -15,7 +15,7 @@
 // <http://www.gnu.org/licenses/>.
 
 use super::{
-    Code, CommentLink, Fare, ODFare, ODRule, ObjectProperty, Price, Result, Stop, StopTime,
+    Code, CommentLink, Fare, ODFare, ODRuleV1, ObjectProperty, Price, Result, Stop, StopTime,
 };
 use crate::collection::{Collection, CollectionWithId, Id, Idx};
 use crate::model::Collections;
@@ -30,8 +30,8 @@ use serde;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path;
 
-impl From<&Ticket> for Price {
-    fn from(ticket: &Ticket) -> Self {
+impl From<&TicketV1> for Price {
+    fn from(ticket: &TicketV1) -> Self {
         Price {
             id: ticket.id.clone(),
             start_date: ticket.start_date,
@@ -45,8 +45,8 @@ impl From<&Ticket> for Price {
     }
 }
 
-impl From<&ODRule> for ODFare {
-    fn from(od_rule: &ODRule) -> Self {
+impl From<&ODRuleV1> for ODFare {
+    fn from(od_rule: &ODRuleV1) -> Self {
         ODFare {
             origin_stop_area_id: format!("stop_area:{}", od_rule.origin_stop_area_id),
             origin_name: None,
@@ -149,8 +149,8 @@ pub fn write_vehicle_journeys_and_stop_times(
 
 pub fn write_fares(
     base_path: &path::Path,
-    tickets: &Collection<Ticket>,
-    od_rules: &Collection<ODRule>,
+    tickets: &Collection<TicketV1>,
+    od_rules: &Collection<ODRuleV1>,
 ) -> Result<()> {
     if tickets.is_empty() {
         return Ok(());
