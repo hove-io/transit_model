@@ -26,6 +26,7 @@ use crate::{
     Model,
 };
 use csv;
+use failure::bail;
 use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
 use lazy_static::lazy_static;
@@ -79,6 +80,7 @@ struct PropertyRule {
 struct NetworkConsolidation {
     #[serde(flatten)]
     network: Network,
+    #[serde(default)]
     grouped_from: Vec<String>,
 }
 
@@ -105,21 +107,22 @@ fn check_networks_consolidation(
     networks: &CollectionWithId<Network>,
     networks_consolidation: Vec<NetworkConsolidation>,
 ) -> Result<Vec<NetworkConsolidation>> {
-    #[derive(Debug, Deserialize)]
-    struct Consolidation {
-        #[serde(rename = "networks")]
-        networks_consolidation: Vec<NetworkConsolidation>,
-    }
-
     info!("Checking networks consolidation.");
     let mut res: Vec<NetworkConsolidation> = vec![];
 
     for ntw in networks_consolidation.into_iter() {
         let mut network_consolidation = false;
         if networks.get(&ntw.network.id).is_none() {
+            if ntw.grouped_from.is_empty() {
+                report.add_error(
+                    "The grouped network is empty".to_string(),
+                    ReportType::ObjectNotFound,
+                );
+                continue;
+            }
             for ntw_grouped in &ntw.grouped_from {
                 if networks.get(&ntw_grouped).is_none() {
-                    report.add_warning(
+                    report.add_error(
                         format!("The grouped network {} don't exists", ntw_grouped),
                         ReportType::ObjectNotFound,
                     );
@@ -128,11 +131,7 @@ fn check_networks_consolidation(
                 }
             }
         } else {
-            report.add_error(
-                format!("The network {} already exists", ntw.network.id),
-                ReportType::MultipleValue,
-            );
-            panic!(format!("The network {} already exists", ntw.network.id));
+            bail!(format!("The network {} already exists", ntw.network.id));
         };
         if network_consolidation {
             res.push(ntw);
@@ -829,15 +828,15 @@ pub fn apply_rules(
         })
         .collect();
 
-    let line_by_network: HashMap<String, IdxSet<Line>> = model
+    let lines_by_network: HashMap<String, IdxSet<Line>> = model
         .networks
         .iter()
         .filter_map(|(idx, obj)| {
-            let line = model.get_corresponding_from_idx(idx);
-            if line.is_empty() {
+            let lines = model.get_corresponding_from_idx(idx);
+            if lines.is_empty() {
                 None
             } else {
-                Some((obj.id.clone(), line))
+                Some((obj.id.clone(), lines))
             }
         })
         .collect();
@@ -855,7 +854,7 @@ pub fn apply_rules(
             networks_consolidation,
         )?;
         collections =
-            set_networks_consolidation(collections, &line_by_network, networks_consolidation)?;
+            set_networks_consolidation(collections, &lines_by_network, networks_consolidation)?;
     }
 
     let codes = read_complementary_code_rules_files(complementary_code_rules_files, &mut report)?;
