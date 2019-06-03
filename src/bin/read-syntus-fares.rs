@@ -55,7 +55,7 @@ fn run() -> Result<()> {
     let model = transit_model::ntfs::read(opt.input)?;
     let (tickets, od_rules) = syntus_fares::read(opt.fares, &model.stop_points)?;
     let mut collections = model.into_collections();
-    collections.tickets = tickets;
+    collections.tickets_v1 = tickets;
     collections.od_rules = od_rules;
     let model = transit_model::Model::new(collections)?;
     transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;

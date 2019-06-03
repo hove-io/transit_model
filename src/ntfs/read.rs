@@ -120,7 +120,7 @@ impl From<Price> for TicketV1 {
     }
 }
 
-pub fn manage_fares(collections: &mut Collections, base_path: &path::Path) -> Result<()> {
+pub fn manage_fares_v1(collections: &mut Collections, base_path: &path::Path) -> Result<()> {
     let file = "prices.csv";
     if !base_path.join(file).exists() {
         info!("Skipping fares");
@@ -180,7 +180,7 @@ pub fn manage_fares(collections: &mut Collections, base_path: &path::Path) -> Re
             physical_mode_id: Some(physical_mode.to_string()),
         });
     }
-    collections.tickets = Collection::new(tickets);
+    collections.tickets_v1 = Collection::new(tickets);
     collections.od_rules = Collection::new(od_rules);
     Ok(())
 }

@@ -147,7 +147,7 @@ pub fn write_vehicle_journeys_and_stop_times(
     Ok(())
 }
 
-pub fn write_fares(
+pub fn write_fares_v1(
     base_path: &path::Path,
     tickets: &Collection<TicketV1>,
     od_rules: &Collection<ODRuleV1>,
