@@ -17,8 +17,8 @@ The KV1 format needs a additional dependency called [Proj.4](https://proj4.org/)
 which allows the transformation of localization coordinates.
 [crates.io](https://crates.io/) provides a
 [`proj`](https://crates.io/crates/proj) crate which is a binding to the C
-library (version 6+). This means you need [Proj.4](https://proj4.org/) version
-6+ installed on your system.  See [Proj.4 installation
+library (version 6.1.0). This means you need [Proj.4](https://proj4.org/)
+version 6.1.0 installed on your system.  See [Proj.4 installation
 instructions](https://github.com/OSGeo/proj.4#installation) or take a look at
 our [Dockerfile](https://github.com/CanalTP/transit_model/blob/kv1/Dockerfile).
 ```
