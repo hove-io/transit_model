@@ -47,4 +47,5 @@ path = "src/bin/kv12ntfs.rs"
 required-features = ["proj"]
 
 [dev-dependencies]
+approx = "0.3.2"
 transit_model_builder= "0.1.0"
