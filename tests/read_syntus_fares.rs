@@ -31,7 +31,7 @@ fn test_read_global() {
         )
         .unwrap();
         let mut collections = objects.into_collections();
-        collections.tickets = tickets;
+        collections.tickets_v1 = tickets;
         collections.od_rules = od_rules;
         let new_model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();

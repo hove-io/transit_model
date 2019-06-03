@@ -1259,10 +1259,6 @@ pub struct AdminStation {
 }
 
 #[derive(Debug, Clone)]
-#[deprecated(
-    since = "0.5.0",
-    note = "Ticketing model in NTFS v0.9 is a breaking change, look for the Ticket struct."
-)]
 pub struct TicketV1 {
     pub id: String,
     pub start_date: NaiveDate,
@@ -1275,10 +1271,6 @@ pub struct TicketV1 {
 impl_id!(TicketV1);
 
 #[derive(Debug, Clone)]
-#[deprecated(
-    since = "0.5.0",
-    note = "Ticketing model in NTFS v0.9 is a breaking change, look for the Ticket struct."
-)]
 pub struct ODRuleV1 {
     pub id: String,
     pub origin_stop_area_id: String,

@@ -193,7 +193,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     read::manage_codes(&mut collections, path)?;
     read::manage_comments(&mut collections, path)?;
     read::manage_object_properties(&mut collections, path)?;
-    read::manage_fares(&mut collections, path)?;
+    read::manage_fares_v1(&mut collections, path)?;
     info!("Indexing");
     let res = Model::new(collections)?;
     info!("Loading NTFS done");
@@ -237,7 +237,7 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
-    write::write_fares(path, &model.tickets, &model.od_rules)?;
+    write::write_fares_v1(path, &model.tickets_v1, &model.od_rules)?;
 
     Ok(())
 }
