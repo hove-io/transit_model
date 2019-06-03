@@ -386,3 +386,53 @@ impl Report {
         });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    mod serde_currency {
+        use super::super::*;
+        use pretty_assertions::assert_eq;
+        use serde_derive::{Deserialize, Serialize};
+
+        #[derive(Debug, Serialize, Deserialize)]
+        struct CurrencyCodeWrapper {
+            #[serde(
+                serialize_with = "ser_currency_code",
+                deserialize_with = "de_currency_code"
+            )]
+            pub currency_code: String,
+        }
+
+        #[test]
+        fn test_serde_valid_currency_code() {
+            let wrapper = CurrencyCodeWrapper {
+                currency_code: "EUR".to_string(),
+            };
+            let json = serde_json::to_string(&wrapper).unwrap();
+            let wrapper: CurrencyCodeWrapper = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(wrapper.currency_code, "EUR");
+        }
+
+        #[test]
+        fn test_de_invalid_currency_code() {
+            let result: Result<CurrencyCodeWrapper, _> =
+                serde_json::from_str("{\"currency_code\":\"XXX\"}");
+            let err_msg = result.unwrap_err().to_string();
+            assert_eq!(err_msg, "invalid value: unrecognized currency code (ISO-4217), expected 3-letters currency code (ISO-4217) at line 1 column 23")
+        }
+
+        #[test]
+        fn test_ser_invalid_currency_code() {
+            let wrapper = CurrencyCodeWrapper {
+                currency_code: "XXX".to_string(),
+            };
+            let result = serde_json::to_string(&wrapper);
+            let err_msg = result.unwrap_err().to_string();
+            assert_eq!(
+                err_msg,
+                "The String is not a valid currency code (ISO-4217)"
+            )
+        }
+    }
+}
