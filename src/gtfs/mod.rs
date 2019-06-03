@@ -270,6 +270,8 @@ where
     read::manage_stop_times(&mut collections, file_handler)?;
     read::manage_frequencies(&mut collections, file_handler)?;
 
+    collections.sanitize()?;
+
     //add prefixes
     if let Some(prefix) = prefix {
         add_prefix(prefix, &mut collections)?;

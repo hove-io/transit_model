@@ -1837,10 +1837,7 @@ mod tests {
                 vec!["my_prefix:1", "my_prefix:2"],
                 extract_ids(&collections.geometries)
             );
-            assert_eq!(
-                vec!["my_prefix:1", "my_prefix:2"],
-                extract_ids(&collections.calendars)
-            );
+            assert_eq!(vec!["my_prefix:1"], extract_ids(&collections.calendars));
         });
     }
 
@@ -2399,16 +2396,10 @@ mod tests {
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
             assert_eq!(
                 collections.calendars.into_vec(),
-                vec![
-                    Calendar {
-                        id: "1".to_string(),
-                        dates,
-                    },
-                    Calendar {
-                        id: "2".to_string(),
-                        dates: BTreeSet::new(),
-                    },
-                ]
+                vec![Calendar {
+                    id: "1".to_string(),
+                    dates,
+                },]
             );
         });
     }

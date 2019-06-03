@@ -194,10 +194,13 @@ where
                 let mut rdr = csv::Reader::from_reader(calendar_reader);
                 for calendar in rdr.deserialize() {
                     let calendar: Calendar = calendar.with_context(ctx_from_path!(path))?;
-                    calendars.push(objects::Calendar {
-                        id: calendar.id.clone(),
-                        dates: calendar.get_valid_dates(),
-                    });
+                    let dates = calendar.get_valid_dates();
+                    if !dates.is_empty() {
+                        calendars.push(objects::Calendar {
+                            id: calendar.id.clone(),
+                            dates,
+                        });
+                    }
                 }
                 collections.calendars = CollectionWithId::new(calendars)?;
                 true
