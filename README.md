@@ -1,6 +1,11 @@
 # transit_model [![Build Status](https://travis-ci.org/CanalTP/transit_model.svg?branch=master)](https://travis-ci.org/CanalTP/transit_model)
 
-transit_model is a rust crate to manage transit data. Its model corresponds to the one used in [navitia](https://github.com/CanalTP/navitia). This repository also provides :
+`transit_model` is a Rust crate managing transit data by implementing the NTFS
+model `v0.9` (used  in [navitia](https://github.com/CanalTP/navitia)). See the
+section [NTFS: Level of Support](#ntfs-level-of-support) for more details about the
+level of support of the NTFS standard.
+
+This repository also provides :
 - (incomplete) [GTFS](http://gtfs.org/) to [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md) and (soon) NTFS to GTFS conversion.
 - (incomplete) Generation of transfers.
 .
@@ -17,8 +22,8 @@ The KV1 format needs a additional dependency called [Proj.4](https://proj4.org/)
 which allows the transformation of localization coordinates.
 [crates.io](https://crates.io/) provides a
 [`proj`](https://crates.io/crates/proj) crate which is a binding to the C
-library (version 6+). This means you need [Proj.4](https://proj4.org/) version
-6+ installed on your system.  See [Proj.4 installation
+library (version 6.1.0). This means you need [Proj.4](https://proj4.org/)
+version 6.1.0 installed on your system.  See [Proj.4 installation
 instructions](https://github.com/OSGeo/proj.4#installation) or take a look at
 our [Dockerfile](https://github.com/CanalTP/transit_model/blob/kv1/Dockerfile).
 ```
@@ -82,6 +87,14 @@ docker run --rm -v path/to/input:/app/input -v path/to/output:/app/output naviti
 ```bash
 cargo test
 ```
+
+## NTFS: Level of Support
+`transit_model` is partially supporting `v0.9` of NTFS (see [CHANGELOG in
+French](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_changelog_fr.md)). From the standard, some of the functionalities are not fully supported:
+- Management of pathways introduced in version `v0.8` is not supported
+- No support for all periodic description (files `grid_calendars.txt`,
+  `grid_exception_dates.txt`, `grid_periods.txt` and `grid_rel_calendar_line.txt`)
+- No support for Line Groups (files `line_groups.txt` and `line_group_links.txt`)
 
 ## License
 

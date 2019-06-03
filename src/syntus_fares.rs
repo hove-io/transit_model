@@ -16,7 +16,7 @@
 
 //! See function read
 use crate::collection::{Collection, CollectionWithId};
-use crate::objects::{ODRule, StopPoint, Ticket};
+use crate::objects::{ODRuleV1, StopPoint, TicketV1};
 use crate::Result;
 use chrono::NaiveDate;
 use failure::bail;
@@ -30,9 +30,9 @@ use std::path;
 use zip;
 const DATE_TIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S.0Z";
 
-impl Ticket {
+impl TicketV1 {
     fn new(id: String, start_date: NaiveDate, end_date: NaiveDate, price: f64) -> Self {
-        Ticket {
+        TicketV1 {
             id,
             start_date,
             end_date,
@@ -44,14 +44,14 @@ impl Ticket {
     }
 }
 
-impl ODRule {
+impl ODRuleV1 {
     fn new(
         id: String,
         origin_stop_area_id: String,
         destination_stop_area_id: String,
         ticket_id: String,
     ) -> Self {
-        ODRule {
+        ODRuleV1 {
             id,
             origin_stop_area_id,
             destination_stop_area_id,
@@ -106,8 +106,8 @@ fn get_list_element_from_inner_list<'a>(
 fn load_syntus_file<R: Read>(
     mut file: R,
     stop_code_to_stop_areas: &HashMap<&str, HashSet<&str>>,
-    tickets: &mut Vec<Ticket>,
-    od_rules_map: &mut BTreeMap<(String, String), ODRule>,
+    tickets: &mut Vec<TicketV1>,
+    od_rules_map: &mut BTreeMap<(String, String), ODRuleV1>,
 ) -> Result<()> {
     let mut file_content = "".to_string();
     file.read_to_string(&mut file_content)?;
@@ -234,7 +234,7 @@ fn load_syntus_file<R: Read>(
                 if let Ok(capping) = capping {
                     price = price.min(capping);
                 }
-                let ticket = Ticket::new(id.clone(), start_date, end_date, price);
+                let ticket = TicketV1::new(id.clone(), start_date, end_date, price);
                 let od_rules = skip_fail!(get_od_rules(
                     &stop_point_ref_to_gtfs_stop_codes,
                     id,
@@ -263,7 +263,7 @@ fn load_syntus_file<R: Read>(
                         .unwrap()
                         .text()
                         .parse::<f64>()?;
-            let ticket = Ticket::new(id.clone(), start_date, end_date, price);
+            let ticket = TicketV1::new(id.clone(), start_date, end_date, price);
             let od_rules = skip_fail!(get_od_rules(
                 &stop_point_ref_to_gtfs_stop_codes,
                 id,
@@ -278,12 +278,12 @@ fn load_syntus_file<R: Read>(
 }
 
 fn try_add_od_rule_and_ticket(
-    od_rules_map: &mut BTreeMap<(String, String), ODRule>,
-    tickets: &mut Vec<Ticket>,
-    od_rules: Vec<ODRule>,
-    ticket: Ticket,
+    od_rules_map: &mut BTreeMap<(String, String), ODRuleV1>,
+    tickets: &mut Vec<TicketV1>,
+    od_rules: Vec<ODRuleV1>,
+    ticket: TicketV1,
 ) {
-    let mut od_rules_to_add: BTreeMap<(String, String), ODRule> = od_rules
+    let mut od_rules_to_add: BTreeMap<(String, String), ODRuleV1> = od_rules
         .into_iter()
         .filter_map(|od_rule| {
             match od_rules_map.get(&(
@@ -356,7 +356,7 @@ fn get_od_rules(
     start_stop_point: &str,
     end_stop_point: &str,
     stop_code_to_stop_areas: &HashMap<&str, HashSet<&str>>,
-) -> Result<Vec<ODRule>> {
+) -> Result<Vec<ODRuleV1>> {
     match (
         stop_point_ref_to_gtfs_stop_codes.get(start_stop_point),
         stop_point_ref_to_gtfs_stop_codes.get(end_stop_point),
@@ -388,7 +388,7 @@ fn get_od_rules(
                     let mut od_rules = vec![];
                     for sa_orig in origin_stop_area_ids {
                         for sa_dest in &destination_stop_area_ids {
-                            od_rules.push(ODRule::new(
+                            od_rules.push(ODRuleV1::new(
                                 format!("OD:{}", ticket_id.clone()),
                                 sa_orig.to_string(),
                                 sa_dest.to_string(),
@@ -416,7 +416,7 @@ fn get_od_rules(
 pub fn read<P: AsRef<path::Path>>(
     path: P,
     stop_points: &CollectionWithId<StopPoint>,
-) -> Result<(Collection<Ticket>, Collection<ODRule>)> {
+) -> Result<(Collection<TicketV1>, Collection<ODRuleV1>)> {
     let files = fs::read_dir(&path)?
         .map(|f| {
             f?.file_name()

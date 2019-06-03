@@ -172,6 +172,56 @@ where
     try_into_geometry(&wkt.items[0]).map_err(serde::de::Error::custom)
 }
 
+#[cfg(feature = "fare-v2")]
+pub fn de_positive_f64<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::{
+        de::{Error, Unexpected::Other},
+        Deserialize,
+    };
+    let number = f64::deserialize(deserializer)?;
+    if number >= 0f64 {
+        Ok(number)
+    } else {
+        Err(D::Error::invalid_value(
+            Other("strictly negative float number"),
+            &"positive float number",
+        ))
+    }
+}
+
+#[cfg(feature = "fare-v2")]
+pub fn de_currency_code<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::{
+        de::{Error, Unexpected::Other},
+        Deserialize,
+    };
+    let string = String::deserialize(deserializer)?;
+    let currency_code = iso4217::alpha3(&string).ok_or_else(|| {
+        D::Error::invalid_value(
+            Other("unrecognized currency code (ISO-4217)"),
+            &"3-letters currency code (ISO-4217)",
+        )
+    })?;
+    Ok(String::from(currency_code.alpha3))
+}
+
+#[cfg(feature = "fare-v2")]
+pub fn ser_currency_code<S>(currency_code: &String, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    use serde::ser::Error;
+    let currency_code = iso4217::alpha3(&currency_code)
+        .ok_or_else(|| S::Error::custom("The String is not a valid currency code (ISO-4217)"))?;
+    serializer.serialize_str(&format!("{}", currency_code.alpha3))
+}
+
 pub fn ser_geometry<S>(
     geometry: &geo_types::Geometry<f64>,
     serializer: S,
