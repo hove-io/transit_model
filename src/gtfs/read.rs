@@ -289,7 +289,10 @@ where
     let file_name = "stop_times.txt";
     let (reader, path) = file_handler.get_file(file_name)?;
     info!("Reading stop_times.txt");
-    let mut rdr = csv::Reader::from_reader(reader);
+
+    let mut rdr = csv::ReaderBuilder::new()
+        .trim(csv::Trim::Fields)
+        .from_reader(reader);
     let mut headsigns = HashMap::new();
     let mut tmp_vjs = HashMap::new();
     for stop_time in rdr.deserialize() {
