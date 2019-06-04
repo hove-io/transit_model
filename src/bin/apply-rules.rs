@@ -38,12 +38,11 @@ struct Opt {
 
     /// network file consolidation.
     #[structopt(
-        short = "n",
+        short,
         long = "networks-consolidation",
         parse(from_os_str),
-        default_value = ""
     )]
-    networks_consolidation_file: PathBuf,
+    networks_consolidation_file: Option<PathBuf>,
 
     /// output report file path
     #[structopt(short = "r", long = "report", parse(from_os_str))]

@@ -27,7 +27,7 @@ use crate::{
 };
 use csv;
 use failure::bail;
-use failure::ResultExt;
+use failure::{format_err, ResultExt};
 use geo_types::Geometry as GeoGeometry;
 use lazy_static::lazy_static;
 use log::{info, warn};
@@ -35,7 +35,6 @@ use serde_derive::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs;
 use std::fs::File;
-use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use wkt::{self, conversion::try_into_geometry};
@@ -96,9 +95,8 @@ fn read_networks_consolidation_file<P: AsRef<Path>>(
     }
 
     let file = File::open(networks_consolidation_file)?;
-    let reader = BufReader::new(file);
-    let consolidation: Consolidation =
-        serde_json::from_reader(reader).expect("unvalid networks configuration file");
+    let consolidation: Consolidation = serde_json::from_reader(file)
+        .map_err(|_| format_err!("unvalid networks configuration file"))?;
     Ok(consolidation.networks_consolidation)
 }
 
@@ -112,32 +110,38 @@ fn check_networks_consolidation(
 
     for ntw in networks_consolidation.into_iter() {
         let mut network_consolidation = false;
-        if networks.get(&ntw.network.id).is_none() {
-            if ntw.grouped_from.is_empty() {
+        if networks.get(&ntw.network.id).is_some() {
+            bail!(format!("The network \"{}\" already exists", ntw.network.id));
+        };
+
+        if ntw.grouped_from.is_empty() {
+            report.add_error(
+                format!(
+                    "The grouped network list is empty for network consolidation \"{}\"",
+                    &ntw.network.id
+                ),
+                ReportType::ObjectNotFound,
+            );
+            continue;
+        }
+        for ntw_grouped in &ntw.grouped_from {
+            if networks.get(&ntw_grouped).is_none() {
                 report.add_error(
-                    "The grouped network is empty".to_string(),
+                    format!("The grouped network \"{}\" don't exist", ntw_grouped),
                     ReportType::ObjectNotFound,
                 );
-                continue;
+            } else {
+                network_consolidation = true;
             }
-            for ntw_grouped in &ntw.grouped_from {
-                if networks.get(&ntw_grouped).is_none() {
-                    report.add_error(
-                        format!("The grouped network {} don't exists", ntw_grouped),
-                        ReportType::ObjectNotFound,
-                    );
-                } else {
-                    network_consolidation = true;
-                }
-            }
-        } else {
-            bail!(format!("The network {} already exists", ntw.network.id));
-        };
+        }
         if network_consolidation {
             res.push(ntw);
         } else {
             report.add_error(
-                format!("No grouped network exists {}", ntw.network.id),
+                format!(
+                    "No network has been consolidated for network \"{}\"",
+                    ntw.network.id
+                ),
                 ReportType::ObjectNotFound,
             );
         }
@@ -812,7 +816,7 @@ pub fn apply_rules(
     model: Model,
     complementary_code_rules_files: Vec<PathBuf>,
     property_rules_files: Vec<PathBuf>,
-    networks_consolidation_file: PathBuf,
+    networks_consolidation_file: Option<PathBuf>,
     report_path: PathBuf,
 ) -> Result<Model> {
     let vjs_by_line: HashMap<String, IdxSet<VehicleJourney>> = model
@@ -846,8 +850,9 @@ pub fn apply_rules(
     info!("Applying rules...");
     let mut report = Report::default();
 
-    if networks_consolidation_file.exists() {
-        let networks_consolidation = read_networks_consolidation_file(networks_consolidation_file)?;
+    if networks_consolidation_file.is_some() {
+        let networks_consolidation =
+            read_networks_consolidation_file(networks_consolidation_file.unwrap())?;
         let networks_consolidation = check_networks_consolidation(
             &mut report,
             &mut collections.networks,
