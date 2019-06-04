@@ -55,12 +55,11 @@ mod tests {
                 p_rules.push(Path::new(p_rules_dir).to_path_buf());
             }
 
-            let consolidation: Option<PathBuf>;
-            if n_consolidation.is_empty() {
-                consolidation = None;
+            let consolidation = if n_consolidation.is_empty() {
+                None
             } else {
-                consolidation = Some(Path::new(n_consolidation).to_path_buf());
-            }
+                Some(Path::new(n_consolidation).to_path_buf())
+            };
 
             let report_path = path.join("report.json");
             let model = apply_rules::apply_rules(
