@@ -17,9 +17,7 @@
 #[cfg(test)]
 mod tests {
     use std::path::{Path, PathBuf};
-    use transit_model;
-    use transit_model::apply_rules;
-    use transit_model::test_utils::*;
+    use transit_model::{apply_rules, test_utils::*};
 
     fn compare_report(report_path: PathBuf, fixture_report_output: PathBuf) {
         let output_contents = get_file_content(report_path);
@@ -57,14 +55,19 @@ mod tests {
                 p_rules.push(Path::new(p_rules_dir).to_path_buf());
             }
 
-            let n_consolidation = Path::new(n_consolidation).to_path_buf();
+            let consolidation: Option<PathBuf>;
+            if n_consolidation.is_empty() {
+                consolidation = None;
+            } else {
+                consolidation = Some(Path::new(n_consolidation).to_path_buf());
+            }
 
             let report_path = path.join("report.json");
             let model = apply_rules::apply_rules(
                 transit_model::ntfs::read(input_dir).unwrap(),
                 cc_rules,
                 p_rules,
-                n_consolidation,
+                consolidation,
                 Path::new(&report_path).to_path_buf(),
             )
             .unwrap();

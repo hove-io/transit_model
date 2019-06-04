@@ -2,11 +2,11 @@
   "errors": [
     {
       "category": "ObjectNotFound",
-      "message": "The grouped network TGS don't exists"
+      "message": "The grouped network \"TGS\" don't exist"
     },
     {
       "category": "ObjectNotFound",
-      "message": "No grouped network exists bus_vert"
+      "message": "No network has been consolidated for network \"bus_vert\""
     }
   ],
   "warnings": []
