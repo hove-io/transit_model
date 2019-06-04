@@ -291,7 +291,7 @@ where
     info!("Reading stop_times.txt");
 
     let mut rdr = csv::ReaderBuilder::new()
-        .trim(csv::Trim::Fields)
+        .trim(csv::Trim::All)
         .from_reader(reader);
     let mut headsigns = HashMap::new();
     let mut tmp_vjs = HashMap::new();
