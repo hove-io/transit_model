@@ -172,7 +172,6 @@ where
     try_into_geometry(&wkt.items[0]).map_err(serde::de::Error::custom)
 }
 
-#[cfg(feature = "fare-v2")]
 pub fn de_positive_f64<'de, D>(deserializer: D) -> Result<f64, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -192,7 +191,6 @@ where
     }
 }
 
-#[cfg(feature = "fare-v2")]
 pub fn de_currency_code<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -211,7 +209,6 @@ where
     Ok(String::from(currency_code.alpha3))
 }
 
-#[cfg(feature = "fare-v2")]
 pub fn ser_currency_code<S>(currency_code: &String, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,

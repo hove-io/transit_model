@@ -36,7 +36,7 @@ pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum ObjectType {
     StopArea,
@@ -1282,30 +1282,30 @@ pub struct ODRuleV1 {
 }
 impl_id!(ODRuleV1);
 
-#[derive(Serialize, Deserialize, Debug)]
-#[cfg(feature = "fare-v2")]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Ticket {
+    #[serde(rename = "ticket_id")]
     pub id: String,
+    #[serde(rename = "ticket_name")]
     pub name: String,
+    #[serde(rename = "ticket_comment")]
     pub comment: Option<String>,
 }
-#[cfg(feature = "fare-v2")]
 impl_id!(Ticket);
 
-#[cfg(feature = "fare-v2")]
 impl GetObjectType for Ticket {
     fn get_object_type() -> ObjectType {
         ObjectType::Ticket
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[cfg(feature = "fare-v2")]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct TicketPrice {
     pub ticket_id: String,
-    #[serde(deserialize_with = "de_positive_f64")]
+    #[serde(rename = "ticket_price", deserialize_with = "de_positive_f64")]
     pub price: f64,
     #[serde(
+        rename = "ticket_currency",
         serialize_with = "ser_currency_code",
         deserialize_with = "de_currency_code"
     )]
@@ -1322,20 +1322,18 @@ pub struct TicketPrice {
     pub ticket_validity_end: Date,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[cfg(feature = "fare-v2")]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct TicketUse {
+    #[serde(rename = "ticket_use_id")]
     pub id: String,
     pub ticket_id: String,
-    pub max_transfers: Option<u64>,
-    pub boarding_time_limit: Option<u64>,
-    pub alighting_time_limit: Option<u64>,
+    pub max_transfers: Option<u32>,
+    pub boarding_time_limit: Option<u32>,
+    pub alighting_time_limit: Option<u32>,
 }
-#[cfg(feature = "fare-v2")]
 impl_id!(TicketUse);
 
-#[derive(Serialize, Deserialize, Debug)]
-#[cfg(feature = "fare-v2")]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum PerimeterAction {
     #[serde(rename = "1")]
     Included,
@@ -1343,8 +1341,7 @@ pub enum PerimeterAction {
     Excluded,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[cfg(feature = "fare-v2")]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct TicketUsePerimeter {
     pub ticket_use_id: String,
     pub object_type: ObjectType,
@@ -1352,8 +1349,7 @@ pub struct TicketUsePerimeter {
     pub perimeter_action: PerimeterAction,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[cfg(feature = "fare-v2")]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum RestrictionType {
     #[serde(rename = "zone")]
     Zone,
@@ -1361,8 +1357,7 @@ pub enum RestrictionType {
     OriginDestination,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[cfg(feature = "fare-v2")]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct TicketUseRestriction {
     pub ticket_use_id: String,
     pub restriction_type: RestrictionType,

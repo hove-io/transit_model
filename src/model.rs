@@ -64,6 +64,11 @@ pub struct Collections {
     pub stop_time_ids: HashMap<(Idx<VehicleJourney>, u32), String>,
     #[serde(skip)]
     pub stop_time_comments: HashMap<(Idx<VehicleJourney>, u32), Idx<Comment>>,
+    pub tickets: CollectionWithId<Ticket>,
+    pub ticket_uses: CollectionWithId<TicketUse>,
+    pub ticket_prices: Collection<TicketPrice>,
+    pub ticket_use_perimeters: Collection<TicketUsePerimeter>,
+    pub ticket_use_restrictions: Collection<TicketUseRestriction>,
 }
 
 impl Collections {
@@ -94,6 +99,11 @@ impl Collections {
             stop_time_headsigns,
             stop_time_ids,
             stop_time_comments,
+            tickets,
+            ticket_uses,
+            ticket_prices,
+            ticket_use_perimeters,
+            ticket_use_restrictions,
             ..
         } = c;
         self.tickets_v1.merge(tickets_v1);
@@ -106,6 +116,11 @@ impl Collections {
         self.routes.try_merge(routes)?;
         self.physical_modes.extend(physical_modes);
         self.stop_areas.try_merge(stop_areas)?;
+        self.tickets.try_merge(tickets)?;
+        self.ticket_uses.try_merge(ticket_uses)?;
+        self.ticket_prices.merge(ticket_prices);
+        self.ticket_use_perimeters.merge(ticket_use_perimeters);
+        self.ticket_use_restrictions.merge(ticket_use_restrictions);
 
         fn get_new_idx<T>(
             old_idx: Idx<T>,

@@ -185,6 +185,11 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.trip_properties = make_opt_collection_with_id(path, "trip_properties.txt")?;
     collections.transfers = make_opt_collection(path, "transfers.txt")?;
     collections.admin_stations = make_opt_collection(path, "admin_stations.txt")?;
+    collections.tickets = make_opt_collection_with_id(path, "tickets.txt")?;
+    collections.ticket_uses = make_opt_collection_with_id(path, "ticket_uses.txt")?;
+    collections.ticket_prices = make_opt_collection(path, "ticket_prices.txt")?;
+    collections.ticket_use_perimeters = make_opt_collection(path, "ticket_use_perimeter.txt")?;
+    collections.ticket_use_restrictions = make_opt_collection(path, "ticket_use_restriction.txt")?;
     common_format::manage_calendars(&mut file_handle, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
@@ -225,6 +230,19 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_collection_with_id(path, "geometries.txt", &model.geometries)?;
     write::write_collection(path, "transfers.txt", &model.transfers)?;
     write::write_collection(path, "admin_stations.txt", &model.admin_stations)?;
+    write::write_collection_with_id(path, "tickets.txt", &model.tickets)?;
+    write::write_collection_with_id(path, "ticket_uses.txt", &model.ticket_uses)?;
+    write::write_collection(path, "ticket_prices.txt", &model.ticket_prices)?;
+    write::write_collection(
+        path,
+        "ticket_use_perimeter.txt",
+        &model.ticket_use_perimeters,
+    )?;
+    write::write_collection(
+        path,
+        "ticket_use_restriction.txt",
+        &model.ticket_use_restrictions,
+    )?;
     write::write_vehicle_journeys_and_stop_times(
         path,
         &model.vehicle_journeys,
@@ -1296,6 +1314,98 @@ mod tests {
                 admin_id: "admin:2".to_string(),
                 admin_name: "Paris Nord".to_string(),
                 stop_id: "OIF:SA:8727100".to_string(),
+            },
+        ]);
+    }
+
+    #[test]
+    fn tickets_serialization_deserialization() {
+        test_serialize_deserialize_collection_with_id(vec![
+            Ticket {
+                id: "PF1:Ticket1".to_string(),
+                name: "Ticket name 1".to_string(),
+                comment: Some("Some comment on ticket".to_string()),
+            },
+            Ticket {
+                id: "PF2:Ticket2".to_string(),
+                name: "Ticket name 1".to_string(),
+                comment: None,
+            },
+        ]);
+    }
+
+    #[test]
+    fn ticket_uses_serialization_deserialization() {
+        test_serialize_deserialize_collection_with_id(vec![
+            TicketUse {
+                id: "PF1:TicketUse1".to_string(),
+                ticket_id: "PF1:Ticket1".to_string(),
+                max_transfers: Some(1),
+                boarding_time_limit: Some(60),
+                alighting_time_limit: Some(60),
+            },
+            TicketUse {
+                id: "PF2:TicketUse2".to_string(),
+                ticket_id: "PF2:Ticket2".to_string(),
+                max_transfers: None,
+                boarding_time_limit: None,
+                alighting_time_limit: None,
+            },
+        ]);
+    }
+
+    #[test]
+    fn ticket_prices_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            TicketPrice {
+                ticket_id: "PF1:Ticket1".to_string(),
+                price: 150.0,
+                currency: "EUR".to_string(),
+                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
+            },
+            TicketPrice {
+                ticket_id: "PF2:Ticket2".to_string(),
+                price: 900.0,
+                currency: "GHS".to_string(),
+                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
+            },
+        ]);
+    }
+
+    #[test]
+    fn ticket_use_perimeters_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            TicketUsePerimeter {
+                ticket_use_id: "PF1:TicketUse1".to_string(),
+                object_type: ObjectType::Network,
+                object_id: "PF1:Network1".to_string(),
+                perimeter_action: PerimeterAction::Included,
+            },
+            TicketUsePerimeter {
+                ticket_use_id: "PF1:TicketUse1".to_string(),
+                object_type: ObjectType::Line,
+                object_id: "PF2:Line2".to_string(),
+                perimeter_action: PerimeterAction::Excluded,
+            },
+        ]);
+    }
+
+    #[test]
+    fn ticket_use_restrictions_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            TicketUseRestriction {
+                ticket_use_id: "PF1:TicketUse1".to_string(),
+                restriction_type: RestrictionType::OriginDestination,
+                use_origin: "PF1:SA1".to_string(),
+                use_destination: "PF1:SA2".to_string(),
+            },
+            TicketUseRestriction {
+                ticket_use_id: "PF2:TicketUse2".to_string(),
+                restriction_type: RestrictionType::Zone,
+                use_origin: "PF2:ZO1".to_string(),
+                use_destination: "PF2:ZO2".to_string(),
             },
         ]);
     }
