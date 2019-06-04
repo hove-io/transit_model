@@ -596,7 +596,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "transfers.txt";
-    let (reader, path) = file_handler.get_file_if_exists(file)?;
+    let (reader, _path) = file_handler.get_file_if_exists(file)?;
     match reader {
         None => {
             info!("Skipping {}", file);
@@ -607,7 +607,14 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             let mut transfers = vec![];
             for transfer in rdr.deserialize() {
-                let transfer: Transfer = transfer.with_context(ctx_from_path!(path))?;
+                let transfer: Transfer = match transfer {
+                    Ok(val) => val,
+                    Err(e) => {
+                        warn!("Problem reading {:?}: {}", file, e);
+                        continue;
+                    }
+                };
+
                 let from_stop_point = skip_fail!(stop_points
                     .get(&transfer.from_stop_id)
                     .ok_or_else(|| format_err!(
