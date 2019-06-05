@@ -289,7 +289,10 @@ where
     let file_name = "stop_times.txt";
     let (reader, path) = file_handler.get_file(file_name)?;
     info!("Reading stop_times.txt");
-    let mut rdr = csv::Reader::from_reader(reader);
+
+    let mut rdr = csv::ReaderBuilder::new()
+        .trim(csv::Trim::All)
+        .from_reader(reader);
     let mut headsigns = HashMap::new();
     let mut tmp_vjs = HashMap::new();
     for stop_time in rdr.deserialize() {
@@ -596,7 +599,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "transfers.txt";
-    let (reader, path) = file_handler.get_file_if_exists(file)?;
+    let (reader, _path) = file_handler.get_file_if_exists(file)?;
     match reader {
         None => {
             info!("Skipping {}", file);
@@ -607,7 +610,12 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             let mut transfers = vec![];
             for transfer in rdr.deserialize() {
-                let transfer: Transfer = transfer.with_context(ctx_from_path!(path))?;
+                let transfer: Transfer = skip_fail!(transfer.map_err(|e| format_err!(
+                    "Problem reading {:?}: {}",
+                    file,
+                    e
+                )));
+
                 let from_stop_point = skip_fail!(stop_points
                     .get(&transfer.from_stop_id)
                     .ok_or_else(|| format_err!(
