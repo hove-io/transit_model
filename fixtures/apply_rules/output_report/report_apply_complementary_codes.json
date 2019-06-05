@@ -1,0 +1,9 @@
+{
+  "errors": [],
+  "warnings": [
+    {
+      "category": "InvalidFile",
+      "message": "Error reading \"complementary_codes_rules.txt\": CSV deserialize error: unknown variant `object_not_allowed`, expected one of `line`, `route`, `stop_point`, `stop_area`"
+    }
+  ]
+}

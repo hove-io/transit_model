@@ -1,0 +1,4 @@
+network_id,network_name,network_url,network_timezone,network_lang,network_phone,network_address,network_sort_order
+TGR,RER Network,,,,,,
+TGB2,TGB2 Network,http://TGB2,,,0123456789,ici,
+TGM2,TGM2 Network,http://TGM2,,,0123456789,ici,

@@ -1,0 +1,9 @@
+{
+  "errors": [
+    {
+      "category": "ObjectNotFound",
+      "message": "The grouped network list is empty for network consolidation \"bus_vert\""
+    }
+  ],
+  "warnings": []
+}
