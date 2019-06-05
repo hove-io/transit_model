@@ -610,13 +610,11 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             let mut transfers = vec![];
             for transfer in rdr.deserialize() {
-                let transfer: Transfer = match transfer {
-                    Ok(val) => val,
-                    Err(e) => {
-                        warn!("Problem reading {:?}: {}", file, e);
-                        continue;
-                    }
-                };
+                let transfer: Transfer = skip_fail!(transfer.map_err(|e| format_err!(
+                    "Problem reading {:?}: {}",
+                    file,
+                    e
+                )));
 
                 let from_stop_point = skip_fail!(stop_points
                     .get(&transfer.from_stop_id)
