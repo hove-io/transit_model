@@ -87,6 +87,26 @@ fn test_gtfs_physical_modes() {
 }
 
 #[test]
+fn test_gtfs_remove_vjs_with_no_traffic() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./fixtures/gtfs2ntfs/no_traffic/input";
+        let model = transit_model::gtfs::read_from_path(input_dir, None, None).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec![
+                "trips.txt",
+                "calendar.txt",
+                "stops.txt",
+                "routes.txt",
+                "stop_times.txt",
+            ]),
+            "./fixtures/gtfs2ntfs/no_traffic/output",
+        );
+    });
+}
+
+#[test]
 fn test_minimal_ziped_gtfs() {
     test_in_tmp_dir(|path| {
         let input = "./fixtures/ziped_gtfs/gtfs.zip";
