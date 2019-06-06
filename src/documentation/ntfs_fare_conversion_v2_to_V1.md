@@ -9,10 +9,10 @@ The only possible conversions are:
 
 ## Conversion of an OD fare on a specific line
 ### Description in V2 model
-An OD fare on a specific line is described in the V2 fare sytem as:
+An OD fare on a specific line is described in the V2 fare system as:
 * A ticket in `tickets.txt` (with an ID) with:
   * A `ticket price` with a validity period, and only a euro currency
-  * One `ticket use` without transfers, and empty bording and alighting times
+  * One `ticket use` not allowing transfers, and empty bording and alighting times
   * One `ticket use perimeter` with only the specified line (and no exclusion)
   * One `ticket use restriction` of type `OD`
 
@@ -54,7 +54,7 @@ This file must be created without any data.
 An flat fare on a specific network is described in the V2 fare sytem as:
 * A ticket in `tickets.txt` (with an ID) with:
   * A `ticket price` with a validity period, and only a euro currency
-  * One `ticket use` without transfers, and empty bording and alighting times
+  * One `ticket use` without constrain on transfers, and empty bording and alighting times
   * One `ticket use perimeter` with only the specified network (and no exclusion)
   * No `ticket use restriction`
 
@@ -87,7 +87,7 @@ prices.csv field | Source file | Source field | Notes/Mapping rule
 "condition globale" |  |  | this field is empty
 "clef ticket" | tickets.txt | ticket_id |
 
-Then a transition allowing a transfert from one section of the network to an other section of the same network:
+Then a transition allowing a transfert from one section of the network to another section of the same network:
 
 prices.csv field | Source file | Source field | Notes/Mapping rule
 --- | --- | --- | ---
