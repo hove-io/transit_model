@@ -1,4 +1,4 @@
-# Syntus fares reading specification
+# HelloGo fares reading specification
 ## Introduction
 This document describes how fares provided by Keolis Netherlands are read in Navitia Transit Model (NTM).
 
@@ -10,10 +10,10 @@ The fare data expected at the input of the connector comes in the form of XML fi
 
 The supported fare structures depend on origin-destination (OD) stop pairs in two ways:
 - the ticket price between an origin and a destination is directly specified (*DirectPriceMatrix*)
-- the price for a fare distance unit is specified, as well as the fare distance between an origin and a destination (*UnitPrice* & *DirectMatrix*). The ticket price between the origin and destination stops is computed by multiplying the fare distance by the fare distance unit.
+- the price for a fare distance unit is specified, as well as the fare distance between an origin and a destination (*UnitPrice* & *DirectMatrix*). The ticket price between the origin and destination stops is computed by multiplying the fare distance by the fare distance unit. In this case, one and only one frame of type *UnitPrice* is expected: if none or more than two are provided, the file is considered invalid and should be discarded.
 
 ## Connector description
-Each *FareFrame* specified in the input fare data corresponds to several `Tickets` in NTM (as many as the elements of the *DistanceMatrix*). For each *DistanceMatrixElement*, one `Ticket` object is created specifying the associated line and the origin/destination stops.
+Each *FareFrame* specified in the input fare data corresponds to several `Tickets` in NTM (as many as the elements of the *DistanceMatrix* and *DirectPriceMatrix*). For each *DistanceMatrixElement*, one `Ticket` object is created specifying the associated line and the origin/destination stops.
 
 The NTM properties that are not specified in the source data are not described below.
 
@@ -81,6 +81,8 @@ The stops in the *FareFrame* point to the *ScheduledStopPoint*s in the *ServiceF
 The *use_origin* refers to the stop_area found in the NTFS that has an associated stop_point whose *stop_id* (ignoring the NTFS applied prefix) matches the value of *ProjectedPointRef{ref}* (without the network prefix, if any) of the *ScheduledStopPoint* in the *ServiceFrame* having the *id* referenced by *StartStopPointRef{ref}* in the *DistanceMatrixElement*. 
 
 The *use_destination* refers to the stop_area found in the NTFS that has an associated stop_point whose *stop_id* (ignoring the NTFS applied prefix) matches the value of *ProjectedPointRef{ref}* (without the network prefix, if any) of the *ScheduledStopPoint* in the *ServiceFrame* having the *id* referenced by *EndStopPointRef{ref}* in the *DistanceMatrixElement*.
+
+If multiple *ProjectedPointRef{ref}* are found for *use_origin*, one Ticket Use Restriction will be created for each possible combination of *use_origin* and *use_destination*. Same applies if multiple *ProjectedPointRef{ref}* are found for *use_destination* (all possible combinations).
 
 If no matching is found for the origin or the destination stop, then the stop is ignored and the corresponding `Ticket` is discarded.
 
