@@ -250,9 +250,20 @@ where
 }
 
 /// Generates physical and commercial modes
-pub fn make_physical_and_commercial_modes(collections: &mut Collections) {
+fn make_physical_and_commercial_modes(
+    collections: &mut Collections,
+    lines: &CollectionWithId<Kv1Line>,
+) -> Result<()> {
     info!("Generating physical and commercial modes");
-    let modes: BTreeSet<&str> = MODES.values().cloned().collect();
+    let modes = lines
+        .values()
+        .map(|l| {
+            MODES.get(l.transport_type.as_str()).ok_or_else(|| {
+                format_err!("transport_type={} is not a valid mode", l.transport_type)
+            })
+        })
+        .collect::<Result<BTreeSet<_>>>()?;
+
     for m in modes {
         collections
             .physical_modes
@@ -270,6 +281,8 @@ pub fn make_physical_and_commercial_modes(collections: &mut Collections) {
             })
             .unwrap();
     }
+
+    Ok(())
 }
 
 /// Read stop coordinates
@@ -810,6 +823,7 @@ where
     let list_jopas = read_jopa(file_handler)?;
     let map_pujopas = read_pujopass(file_handler)?;
 
+    make_physical_and_commercial_modes(collections, &kv1_lines)?;
     make_networks_and_companies(collections, &kv1_lines)?;
     make_vjs_and_stop_times(collections, &list_jopas, &map_pujopas, &kv1_lines)?;
     make_routes(collections, &list_jopas)?;
@@ -895,7 +909,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::Collections;
+    use super::{CollectionWithId, Collections, Kv1Line};
     use crate::read_utils::PathFileHandler;
     use crate::test_utils::*;
 
@@ -915,17 +929,36 @@ mod tests {
     }
 
     #[test]
-    fn make_physical_and_commercial_modes() {
-        let mut collections = Collections::default();
-        super::make_physical_and_commercial_modes(&mut collections);
+    fn make_physical_and_commercial_modes_ok() {
+        let kv1_lines = CollectionWithId::new(vec![
+            Kv1Line {
+                data_owner_code: "do1".into(),
+                id: "id1".into(),
+                public_number: "1".into(),
+                color: None,
+                transport_type: "BUS".into(),
+            },
+            Kv1Line {
+                data_owner_code: "do2".into(),
+                id: "id2".into(),
+                public_number: "2".into(),
+                color: None,
+                transport_type: "BUS".into(),
+            },
+            Kv1Line {
+                data_owner_code: "do3".into(),
+                id: "id3".into(),
+                public_number: "3".into(),
+                color: None,
+                transport_type: "BOAT".into(),
+            },
+        ])
+        .unwrap();
 
-        let expected = [
-            ("Bus", "Bus"),
-            ("Ferry", "Ferry"),
-            ("Metro", "Metro"),
-            ("Train", "Train"),
-            ("Tramway", "Tramway"),
-        ];
+        let mut collections = Collections::default();
+        super::make_physical_and_commercial_modes(&mut collections, &kv1_lines).unwrap();
+
+        let expected = [("Bus", "Bus"), ("Ferry", "Ferry")];
 
         let pms: Vec<(&str, &str)> = collections
             .physical_modes
@@ -941,5 +974,30 @@ mod tests {
 
         assert_eq!(pms, expected);
         assert_eq!(cms, expected);
+    }
+
+    #[test]
+    #[should_panic(expected = "transport_type=UNKNOWN is not a valid mode")]
+    fn make_physical_and_commercial_modes_ko() {
+        let kv1_lines = CollectionWithId::new(vec![
+            Kv1Line {
+                data_owner_code: "do1".into(),
+                id: "id1".into(),
+                public_number: "1".into(),
+                color: None,
+                transport_type: "BUS".into(),
+            },
+            Kv1Line {
+                data_owner_code: "do2".into(),
+                id: "id2".into(),
+                public_number: "2".into(),
+                color: None,
+                transport_type: "UNKNOWN".into(),
+            },
+        ])
+        .unwrap();
+
+        let mut collections = Collections::default();
+        super::make_physical_and_commercial_modes(&mut collections, &kv1_lines).unwrap();
     }
 }
