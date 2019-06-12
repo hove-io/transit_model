@@ -29,7 +29,6 @@ use crate::objects::*;
 use crate::read_utils;
 use crate::utils::*;
 use crate::Result;
-use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use log::info;
 use serde_derive::{Deserialize, Serialize};
@@ -81,59 +80,6 @@ struct Stop {
     timezone: Option<String>,
     geometry_id: Option<String>,
     equipment_id: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Price {
-    id: String,
-    #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
-    )]
-    start_date: NaiveDate,
-    #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
-    )]
-    end_date: NaiveDate,
-    price: u32,
-    name: String,
-    ignored: String,
-    comment: String,
-    currency_type: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ODFare {
-    #[serde(rename = "Origin ID")]
-    origin_stop_area_id: String,
-    #[serde(rename = "Origin name")]
-    origin_name: Option<String>,
-    #[serde(rename = "Origin mode")]
-    origin_mode: String,
-    #[serde(rename = "Destination ID")]
-    destination_stop_area_id: String,
-    #[serde(rename = "Destination name")]
-    destination_name: Option<String>,
-    #[serde(rename = "Destination mode")]
-    destination_mode: String,
-    ticket_id: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Fare {
-    #[serde(rename = "avant changement")]
-    before_change: String,
-    #[serde(rename = "après changement")]
-    after_change: String,
-    #[serde(rename = "début trajet")]
-    start_trip: String,
-    #[serde(rename = "fin trajet")]
-    end_trip: String,
-    #[serde(rename = "condition globale")]
-    global_condition: String,
-    #[serde(rename = "clef ticket")]
-    ticket_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -255,7 +201,7 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
-    write::write_fares_v1(path, &model.tickets_v1, &model.od_rules)?;
+    write::write_fares_v1(path, &model.prices_v1, &model.od_fares_v1, &model.fares_v1)?;
 
     Ok(())
 }
@@ -1314,6 +1260,78 @@ mod tests {
                 admin_id: "admin:2".to_string(),
                 admin_name: "Paris Nord".to_string(),
                 stop_id: "OIF:SA:8727100".to_string(),
+            },
+        ]);
+    }
+
+    #[test]
+    fn prices_v1_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            PriceV1 {
+                id: "PV1-01".to_string(),
+                start_date: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                end_date: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                price: 190,
+                name: "Ticket PV1-01".to_string(),
+                ignored: "".to_string(),
+                comment: "Comment on PV1-01".to_string(),
+                currency_type: Some("centime".to_string()),
+            },
+            PriceV1 {
+                id: "PV1-02".to_string(),
+                start_date: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                end_date: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                price: 280,
+                name: "Ticket PV1-02".to_string(),
+                ignored: "".to_string(),
+                comment: "".to_string(),
+                currency_type: None,
+            },
+        ]);
+    }
+
+    #[test]
+    fn od_fares_v1_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            ODFareV1 {
+                origin_stop_area_id: "stop_area:0:SA:8727114".to_string(),
+                origin_name: Some("EPINAY-S/SEINE".to_string()),
+                origin_mode: "stop".to_string(),
+                destination_stop_area_id: "stop_area:0:SA:8727116".to_string(),
+                destination_name: Some("PIERREFITTE-ST.".to_string()),
+                destination_mode: "stop".to_string(),
+                ticket_id: "29".to_string(),
+            },
+            ODFareV1 {
+                origin_stop_area_id: "stop_area:0:SA:8773006".to_string(),
+                origin_name: None,
+                origin_mode: "zone".to_string(),
+                destination_stop_area_id: "stop_area:0:SA:8775812".to_string(),
+                destination_name: None,
+                destination_mode: "stop".to_string(),
+                ticket_id: "99-93".to_string(),
+            },
+        ]);
+    }
+
+    #[test]
+    fn fares_v1_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            FareV1 {
+                before_change: "*".to_string(),
+                after_change: "mode=physical_mode:Bus".to_string(),
+                start_trip: "duration<90".to_string(),
+                end_trip: "".to_string(),
+                global_condition: "".to_string(),
+                ticket_id: "".to_string(),
+            },
+            FareV1 {
+                before_change: "*".to_string(),
+                after_change: "network=network:0:56".to_string(),
+                start_trip: "zone=1".to_string(),
+                end_trip: "zone=1".to_string(),
+                global_condition: "exclusive".to_string(),
+                ticket_id: "tickett".to_string(),
             },
         ]);
     }

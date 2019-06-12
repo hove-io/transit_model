@@ -1258,29 +1258,58 @@ pub struct AdminStation {
     pub stop_id: String,
 }
 
-#[derive(Debug, Clone)]
-pub struct TicketV1 {
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct PriceV1 {
     pub id: String,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
     pub start_date: NaiveDate,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
     pub end_date: NaiveDate,
-    pub price: f64,
-    pub currency_type: String,
-    pub validity_duration: Option<u32>,
-    pub transfers: Option<u16>,
+    pub price: u32,
+    pub name: String,
+    pub ignored: String,
+    pub comment: String,
+    pub currency_type: Option<String>,
 }
-impl_id!(TicketV1);
 
-#[derive(Debug, Clone)]
-pub struct ODRuleV1 {
-    pub id: String,
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct ODFareV1 {
+    #[serde(rename = "Origin ID")]
     pub origin_stop_area_id: String,
+    #[serde(rename = "Origin name")]
+    pub origin_name: Option<String>,
+    #[serde(rename = "Origin mode")]
+    pub origin_mode: String,
+    #[serde(rename = "Destination ID")]
     pub destination_stop_area_id: String,
+    #[serde(rename = "Destination name")]
+    pub destination_name: Option<String>,
+    #[serde(rename = "Destination mode")]
+    pub destination_mode: String,
     pub ticket_id: String,
-    pub line_id: Option<String>,
-    pub network_id: Option<String>,
-    pub physical_mode_id: Option<String>,
 }
-impl_id!(ODRuleV1);
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct FareV1 {
+    #[serde(rename = "avant changement")]
+    pub before_change: String,
+    #[serde(rename = "après changement")]
+    pub after_change: String,
+    #[serde(rename = "début trajet")]
+    pub start_trip: String,
+    #[serde(rename = "fin trajet")]
+    pub end_trip: String,
+    #[serde(rename = "condition globale")]
+    pub global_condition: String,
+    #[serde(rename = "clef ticket")]
+    pub ticket_id: String,
+}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Ticket {

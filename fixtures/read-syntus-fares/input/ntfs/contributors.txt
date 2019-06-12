@@ -1,2 +1,0 @@
-contributor_id,contributor_name
-TGC,The Great Contributor
