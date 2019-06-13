@@ -18,10 +18,10 @@
 
 use serde_json;
 
-use crate::collection::CollectionWithId;
+use crate::collection::{Collection, CollectionWithId};
 use crate::model::Collections;
-use crate::objects::StopArea;
 use crate::objects::{CommentLinksT, KeysValues};
+use crate::objects::{ObjectType, StopArea};
 use crate::utils::{Report, ReportType};
 use crate::Result;
 use csv;
@@ -182,6 +182,7 @@ fn apply_rules(
     let mut stop_points_updated = collections.stop_points.take();
     let mut geometries_updated = collections.geometries.take();
     let mut lines_updated = collections.lines.take();
+    let mut ticket_use_perimeters_updated = collections.ticket_use_perimeters.take();
     let mut stop_areas_to_remove: HashSet<String> = HashSet::new();
     let mut stop_area_ids = collections
         .stop_areas
@@ -209,6 +210,13 @@ fn apply_rules(
                 if rule.to_merge_stop_area_ids.contains(&backward) {
                     *backward = rule.master_stop_area_id.clone();
                 }
+            }
+        }
+        for ticket in &mut ticket_use_perimeters_updated {
+            if ticket.object_type == ObjectType::StopArea
+                && rule.to_merge_stop_area_ids.contains(&ticket.object_id)
+            {
+                ticket.object_id = rule.master_stop_area_id.clone();
             }
         }
         let mut comment_links = CommentLinksT::default();
@@ -240,6 +248,7 @@ fn apply_rules(
     collections.geometries = CollectionWithId::new(geometries_updated)?;
     collections.stop_areas = CollectionWithId::new(stop_areas_updated)?;
     collections.lines = CollectionWithId::new(lines_updated)?;
+    collections.ticket_use_perimeters = Collection::new(ticket_use_perimeters_updated);
     Ok(collections)
 }
 
