@@ -25,7 +25,7 @@ use tempdir;
 
 use self::tempdir::TempDir;
 
-fn get_file_content<P: AsRef<Path>>(path: P) -> String {
+pub fn get_file_content<P: AsRef<Path>>(path: P) -> String {
     let path = path.as_ref();
     let mut output_file = File::open(path).unwrap_or_else(|_| panic!("file {:?} not found", path));
     let mut output_contents = String::new();

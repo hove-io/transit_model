@@ -1,3 +1,5 @@
 network_id,network_name
-TGN,The Great Network
-AN,Another network
+TGM,Metro Network
+TGB,Bus Network
+TGR,RER Network
+
