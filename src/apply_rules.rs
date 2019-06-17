@@ -22,8 +22,7 @@ use crate::utils::{Report, ReportType};
 use crate::Result;
 use crate::{
     objects::{
-        Codes, Coord, Geometry, Line, Network, ObjectType as ModelObjectType, TicketUsePerimeter,
-        VehicleJourney,
+        Codes, Coord, Geometry, Line, Network, ObjectType as ModelObjectType, VehicleJourney,
     },
     relations::IdxSet,
     Model,
@@ -154,22 +153,19 @@ fn check_networks_consolidation(
 
 fn update_ticket_use_perimeters(
     collections: &mut Collections,
-    networks_consolidation: Vec<NetworkConsolidation>,
+    networks_consolidation: &[NetworkConsolidation],
 ) {
     for network in networks_consolidation {
-        let network_id = network.network.id.clone();
-        for grouped_from in network.grouped_from {
-            let ticket_use_perimeter_by_network: Vec<&mut TicketUsePerimeter> = collections
+        let network_id = &network.network.id;
+        for grouped_from in &network.grouped_from {
+            collections
                 .ticket_use_perimeters
                 .values_mut()
                 .filter(|ticket| {
                     ticket.object_type == ModelObjectType::Network
-                        && ticket.object_id == grouped_from
+                        && &ticket.object_id == grouped_from
                 })
-                .collect();
-            for mut ticket in ticket_use_perimeter_by_network {
-                ticket.object_id = network_id.to_string();
-            }
+                .for_each(|mut ticket| ticket.object_id = network_id.to_string());
         }
     }
 }
@@ -884,7 +880,7 @@ pub fn apply_rules(
             networks_consolidation,
         )?;
 
-        update_ticket_use_perimeters(&mut collections, networks_consolidation.clone());
+        update_ticket_use_perimeters(&mut collections, &networks_consolidation);
         collections =
             set_networks_consolidation(collections, &lines_by_network, networks_consolidation)?;
     }
