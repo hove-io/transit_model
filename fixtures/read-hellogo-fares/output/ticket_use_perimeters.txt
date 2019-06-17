@@ -1,0 +1,13 @@
+ticket_use_id,object_type,object_id,perimeter_action
+TU:mat:1,line,B42,1
+TU:mat:2,line,B42,1
+TU:mat:3,line,B42,1
+TU:mat:4,line,B42,1
+TU:mat:5,line,B42,1
+TU:mat:6,line,B42,1
+TU:mat:7,line,T42,1
+TU:mat:11,line,B42,1
+TU:mat:15,line,B42,1
+TU:mat:16,line,B42,1
+TU:mat:21,line,T42,1
+TU:mat:22,line,T42,1

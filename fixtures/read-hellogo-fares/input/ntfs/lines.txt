@@ -1,0 +1,3 @@
+line_id,line_name,network_id,commercial_mode_id
+B42,Bus 42,TGN,Bus
+T42,Train 42,TGN,Train
