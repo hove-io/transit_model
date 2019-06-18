@@ -23,6 +23,7 @@ use crate::Result;
 use failure::{bail, format_err};
 use log::{info, warn};
 use minidom::Element;
+use rust_decimal::Decimal;
 use std::collections::BTreeSet;
 use std::convert::{From, TryFrom};
 use std::fs;
@@ -49,10 +50,10 @@ impl TryFrom<&Element> for Ticket {
     }
 }
 
-impl TryFrom<(String, f64, String, (Date, Date))> for TicketPrice {
+impl TryFrom<(String, Decimal, String, (Date, Date))> for TicketPrice {
     type Error = failure::Error;
     fn try_from(
-        (ticket_id, price, currency, validity): (String, f64, String, (Date, Date)),
+        (ticket_id, price, currency, validity): (String, Decimal, String, (Date, Date)),
     ) -> Result<Self> {
         iso4217::alpha3(&currency)
             .ok_or_else(|| format_err!("Failed to convert '{}' as a currency", currency))?;
@@ -102,7 +103,7 @@ impl From<(String, (String, String))> for TicketUseRestriction {
     }
 }
 
-fn calculate_direct_price(distance_matrix_element: &Element) -> Result<f64> {
+fn calculate_direct_price(distance_matrix_element: &Element) -> Result<Decimal> {
     let distance_matrix_element_price = distance_matrix_element
         .try_only_child("prices")?
         .try_only_child("DistanceMatrixElementPrice")?;
@@ -111,11 +112,11 @@ fn calculate_direct_price(distance_matrix_element: &Element) -> Result<f64> {
     )?)
 }
 
-fn get_distance(distance_matrix_element: &Element) -> Result<f64> {
+fn get_distance(distance_matrix_element: &Element) -> Result<u32> {
     let distance_str = distance_matrix_element.try_only_child("Distance")?.text();
     distance_str
         .parse()
-        .map_err(|_| format_err!("Failed to parse '{}' into a 'f64'", distance_str))
+        .map_err(|_| format_err!("Failed to parse '{}' into a 'u32'", distance_str))
 }
 
 fn get_line_id(fare_frame: &Element, service_frame: &Element) -> Result<String> {
@@ -232,10 +233,6 @@ fn get_origin_destinations(
     Ok(origin_destinations)
 }
 
-fn round_price(price: f64, rounding_rule: f64) -> f64 {
-    (price / rounding_rule).round() * rounding_rule
-}
-
 fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()> {
     let frames = utils::get_fare_frames(root)?;
     let unit_price_frame = utils::get_only_frame(&frames, FrameType::UnitPrice)?;
@@ -246,10 +243,11 @@ fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()>
     for frame_type in &[FrameType::DistanceMatrix, FrameType::DirectPriceMatrix] {
         if let Some(fare_frames) = frames.get(frame_type) {
             for fare_frame in fare_frames {
-                let boarding_fee: f64 =
+                let boarding_fee: Decimal =
                     utils::get_value_in_keylist(fare_frame, "EntranceRateWrtCurrency")?;
-                let rounding_rule: f64 =
+                let rounding_rule: Decimal =
                     utils::get_value_in_keylist(fare_frame, "RoundingWrtCurrencyRule")?;
+                let rounding_rule = rounding_rule.normalize().scale();
                 let currency = utils::get_currency(fare_frame)?;
                 let distance_matrix_elements = utils::get_distance_matrix_elements(fare_frame)?;
                 for distance_matrix_element in distance_matrix_elements {
@@ -259,11 +257,15 @@ fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()>
                             boarding_fee + calculate_direct_price(distance_matrix_element)?
                         }
                         FrameType::DistanceMatrix => {
-                            boarding_fee + unit_price * get_distance(distance_matrix_element)?
+                            let distance: Decimal = get_distance(distance_matrix_element)?.into();
+                            boarding_fee + unit_price * distance
                         }
                         _ => continue,
                     };
-                    let price = round_price(price, rounding_rule);
+                    let price = price.round_dp_with_strategy(
+                        rounding_rule,
+                        rust_decimal::RoundingStrategy::RoundHalfUp,
+                    );
                     let ticket_price = TicketPrice::try_from((
                         ticket.id.clone(),
                         price,
@@ -383,15 +385,15 @@ mod tests {
 
     mod ticket_price {
         use crate::objects::TicketPrice;
-        use approx::assert_relative_eq;
         use chrono::NaiveDate;
         use pretty_assertions::assert_eq;
+        use rust_decimal_macros::dec;
         use std::convert::TryFrom;
 
         #[test]
         fn valid_ticket_price() {
             let ticket_id = String::from("ticket:1");
-            let price = 4.2;
+            let price = dec!(4.2);
             let currency = String::from("EUR");
             let validity_start = NaiveDate::from_ymd(2019, 2, 7);
             let validity_end = NaiveDate::from_ymd(2019, 3, 14);
@@ -399,7 +401,7 @@ mod tests {
                 TicketPrice::try_from((ticket_id, price, currency, (validity_start, validity_end)))
                     .unwrap();
             assert_eq!(ticket_price.ticket_id, String::from("ticket:1"));
-            assert_relative_eq!(ticket_price.price, 4.2);
+            assert_eq!(ticket_price.price, dec!(4.2));
             assert_eq!(ticket_price.currency, String::from("EUR"));
             assert_eq!(ticket_price.ticket_validity_start, validity_start);
             assert_eq!(ticket_price.ticket_validity_end, validity_end);
@@ -409,7 +411,7 @@ mod tests {
         #[should_panic(expected = "Failed to convert \\'XXX\\' as a currency")]
         fn invalid_currency() {
             let ticket_id = String::from("ticket:1");
-            let price = 4.2;
+            let price = dec!(4.2);
             let currency = String::from("XXX");
             let validity_start = NaiveDate::from_ymd(2019, 2, 7);
             let validity_end = NaiveDate::from_ymd(2019, 3, 14);
@@ -493,6 +495,7 @@ mod tests {
         use super::super::calculate_direct_price;
         use minidom::Element;
         use pretty_assertions::assert_eq;
+        use rust_decimal_macros::dec;
 
         #[test]
         fn get_direct_price() {
@@ -506,7 +509,7 @@ mod tests {
                 </DistanceMatrixElement>"#;
             let distance_element_matrix: Element = xml.parse().unwrap();
             let price = calculate_direct_price(&distance_element_matrix).unwrap();
-            assert_eq!(price, 21.0);
+            assert_eq!(price, dec!(21.0));
         }
 
         #[test]
@@ -559,7 +562,7 @@ mod tests {
                 </DistanceMatrixElement>"#;
             let distance_element_matrix: Element = xml.parse().unwrap();
             let distance = get_distance(&distance_element_matrix).unwrap();
-            assert_eq!(distance, 50.0);
+            assert_eq!(distance, 50);
         }
 
         #[test]
@@ -980,29 +983,6 @@ mod tests {
                 get_origin_destinations(&collections, &service_frame, &distance_matrix_element)
                     .unwrap();
             assert_eq!(origin_destinations.len(), 0);
-        }
-    }
-
-    mod round_price {
-        use super::super::round_price;
-        use approx::assert_relative_eq;
-
-        #[test]
-        fn round_with_unit() {
-            let price = round_price(12.0123, 1.0);
-            assert_relative_eq!(price, 12.0);
-        }
-
-        #[test]
-        fn round_with_cents() {
-            let price = round_price(12.0123, 0.01);
-            assert_relative_eq!(price, 12.01);
-        }
-
-        #[test]
-        fn round_on_half() {
-            let price = round_price(12.125, 0.01);
-            assert_relative_eq!(price, 12.13);
         }
     }
 }

@@ -1374,17 +1374,18 @@ mod tests {
 
     #[test]
     fn ticket_prices_serialization_deserialization() {
+        use rust_decimal_macros::dec;
         test_serialize_deserialize_collection(vec![
             TicketPrice {
                 ticket_id: "PF1:Ticket1".to_string(),
-                price: 150.0,
+                price: dec!(150.0),
                 currency: "EUR".to_string(),
                 ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 01, 01),
                 ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
             },
             TicketPrice {
                 ticket_id: "PF2:Ticket2".to_string(),
-                price: 900.0,
+                price: dec!(900.0),
                 currency: "GHS".to_string(),
                 ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 01, 01),
                 ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),

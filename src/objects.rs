@@ -25,6 +25,7 @@ use chrono;
 use chrono::NaiveDate;
 use derivative::Derivative;
 use geo_types::Geometry as GeoGeometry;
+use rust_decimal::Decimal;
 use serde_derive::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -1331,8 +1332,8 @@ impl GetObjectType for Ticket {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct TicketPrice {
     pub ticket_id: String,
-    #[serde(rename = "ticket_price", deserialize_with = "de_positive_f64")]
-    pub price: f64,
+    #[serde(rename = "ticket_price", deserialize_with = "de_positive_decimal")]
+    pub price: Decimal,
     #[serde(
         rename = "ticket_currency",
         serialize_with = "ser_currency_code",

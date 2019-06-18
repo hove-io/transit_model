@@ -20,6 +20,7 @@ use crate::Result;
 use chrono::NaiveDate;
 use failure::{bail, format_err, Error};
 use minidom::Element;
+use rust_decimal::Decimal;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -83,13 +84,19 @@ where
         .map_err(|_| format_err!("Failed to get the value out of 'KeyList' for key '{}'", key))
 }
 
-pub fn get_amount_units_factor(element: &Element) -> Result<f64> {
-    let amount: f64 = element.try_only_child("Amount")?.text().parse()?;
-    let units: f64 = element.try_only_child("Units")?.text().parse()?;
+pub fn get_amount_units_factor(element: &Element) -> Result<Decimal> {
+    let amount = element.try_only_child("Amount")?.text();
+    let amount: Decimal = amount
+        .parse()
+        .map_err(|_| format_err!("Failed to convert '{}' into a 'Decimal'", amount))?;
+    let units = element.try_only_child("Units")?.text();
+    let units: Decimal = units
+        .parse()
+        .map_err(|_| format_err!("Failed to convert '{}' into a 'Decimal'", units))?;
     Ok(amount * units)
 }
 
-pub fn get_unit_price(unit_price_frame: &Element) -> Result<f64> {
+pub fn get_unit_price(unit_price_frame: &Element) -> Result<Decimal> {
     let geographic_interval_price = unit_price_frame
         .try_only_child("fareStructures")?
         .try_only_child("FareStructure")?
@@ -263,8 +270,9 @@ mod tests {
 
     mod amount_unit_factor {
         use super::super::get_amount_units_factor;
-        use approx::assert_relative_eq;
         use minidom::Element;
+        use pretty_assertions::assert_eq;
+        use rust_decimal_macros::dec;
 
         #[test]
         fn has_amount_units() {
@@ -274,7 +282,7 @@ mod tests {
                 </root>"#;
             let root: Element = xml.parse().unwrap();
             let factor = get_amount_units_factor(&root).unwrap();
-            assert_relative_eq!(factor, 21.0);
+            assert_eq!(factor, dec!(21.0));
         }
 
         #[test]
@@ -300,8 +308,9 @@ mod tests {
 
     mod unit_price {
         use super::super::get_unit_price;
-        use approx::assert_relative_eq;
         use minidom::Element;
+        use pretty_assertions::assert_eq;
+        use rust_decimal_macros::dec;
 
         #[test]
         fn extract_unit_price() {
@@ -323,7 +332,7 @@ mod tests {
                 </FareFrame>"#;
             let unit_price_frame: Element = xml.parse().unwrap();
             let unit_price = get_unit_price(&unit_price_frame).unwrap();
-            assert_relative_eq!(unit_price, 0.011);
+            assert_eq!(unit_price, dec!(0.011));
         }
 
         #[test]

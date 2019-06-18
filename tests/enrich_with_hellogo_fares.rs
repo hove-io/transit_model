@@ -38,8 +38,7 @@ fn test_read_global() {
             Some(vec![
                 "tickets.txt",
                 "ticket_uses.txt",
-                // TODO: Add all fixture files from './fixtures/enrich-with-hellogo-fares/output/'
-                // "ticket_prices.txt",
+                "ticket_prices.txt",
                 "ticket_use_perimeters.txt",
                 "ticket_use_restrictions.txt",
             ]),
