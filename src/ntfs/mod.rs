@@ -134,8 +134,8 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.tickets = make_opt_collection_with_id(path, "tickets.txt")?;
     collections.ticket_uses = make_opt_collection_with_id(path, "ticket_uses.txt")?;
     collections.ticket_prices = make_opt_collection(path, "ticket_prices.txt")?;
-    collections.ticket_use_perimeters = make_opt_collection(path, "ticket_use_perimeter.txt")?;
-    collections.ticket_use_restrictions = make_opt_collection(path, "ticket_use_restriction.txt")?;
+    collections.ticket_use_perimeters = make_opt_collection(path, "ticket_use_perimeters.txt")?;
+    collections.ticket_use_restrictions = make_opt_collection(path, "ticket_use_restrictions.txt")?;
     common_format::manage_calendars(&mut file_handle, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
@@ -181,12 +181,12 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_collection(path, "ticket_prices.txt", &model.ticket_prices)?;
     write::write_collection(
         path,
-        "ticket_use_perimeter.txt",
+        "ticket_use_perimeters.txt",
         &model.ticket_use_perimeters,
     )?;
     write::write_collection(
         path,
-        "ticket_use_restriction.txt",
+        "ticket_use_restrictions.txt",
         &model.ticket_use_restrictions,
     )?;
     write::write_vehicle_journeys_and_stop_times(
