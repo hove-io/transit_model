@@ -54,7 +54,19 @@ pub fn compare_output_dir_with_expected<P: AsRef<Path>>(
         let expected_file_path = format!("{}/{}", work_dir_expected, filename);
         let expected_contents = get_file_content(expected_file_path);
 
-        assert_eq!(output_contents, expected_contents);
+        let output_lines: Vec<_> = output_contents.split("\n").collect();
+        let expected_lines: Vec<_> = expected_contents.split("\n").collect();
+        assert_eq!(
+            output_lines.len(),
+            expected_lines.len(),
+            "File '{}' contains '{}' lines but the expected result file contains '{}' lines",
+            filename,
+            output_lines.len(),
+            expected_lines.len()
+        );
+        for i in 0..output_lines.len() {
+            assert_eq!(output_lines[i], expected_lines[i]);
+        }
     }
 }
 
