@@ -37,9 +37,9 @@ prices.csv field | Source file | Source field | Notes/Mapping rule
 prices.csv field | Source file | Source field | Notes/Mapping rule
 --- | --- | --- | ---
 "avant changement" |  |  | fixed value `*`
-"après changement" | ticket_use_perimeter.txt | object_id | the content of the field must follow the pattern : "line=line:[object_id]"
-"début trajet" | ticket_use_restriction.txt | use_origin | the content of the field must follow the pattern : "stoparea=stop_area:[use_origin]"
-"fin trajet" | ticket_use_restriction.txt | use_destination | the content of the field must follow the pattern : "stoparea=stop_area:[use_destination]"
+"après changement" | ticket_use_perimeters.txt | object_id | the content of the field must follow the pattern : "line=line:[object_id]"
+"début trajet" | ticket_use_restrictions.txt | use_origin | the content of the field must follow the pattern : "stoparea=stop_area:[use_origin]"
+"fin trajet" | ticket_use_restrictions.txt | use_destination | the content of the field must follow the pattern : "stoparea=stop_area:[use_destination]"
 "condition globale" |  |  | this field is empty
 "clef ticket" | tickets.txt | ticket_id |
 
@@ -81,7 +81,7 @@ First, a transition from anything to board in the network is defined:
 prices.csv field | Source file | Source field | Notes/Mapping rule
 --- | --- | --- | ---
 "avant changement" |  |  | fixed value `*`
-"après changement" | ticket_use_perimeter.txt | object_id | the content of the field must follow the pattern : "network=network:[object_id]"
+"après changement" | ticket_use_perimeters.txt | object_id | the content of the field must follow the pattern : "network=network:[object_id]"
 "début trajet" |  |  | this field is empty
 "fin trajet" |  |  | this field is empty
 "condition globale" |  |  | this field is empty
@@ -91,8 +91,8 @@ Then a transition allowing a transfert from one section of the network to anothe
 
 prices.csv field | Source file | Source field | Notes/Mapping rule
 --- | --- | --- | ---
-"avant changement" | ticket_use_perimeter.txt | object_id | the content of the field must follow the pattern : "network=network:[object_id]"
-"après changement" | ticket_use_perimeter.txt | object_id | the content of the field must follow the pattern : "network=network:[object_id]"
+"avant changement" | ticket_use_perimeters.txt | object_id | the content of the field must follow the pattern : "network=network:[object_id]"
+"après changement" | ticket_use_perimeters.txt | object_id | the content of the field must follow the pattern : "network=network:[object_id]"
 "début trajet" |  |  | this field is empty
 "fin trajet" |  |  | this field is empty
 "condition globale" |  |  | this field is empty
