@@ -1254,6 +1254,7 @@ pub struct AdminStation {
     pub admin_id: String,
     pub admin_name: String,
     pub stop_id: String,
+    pub station_id: Option<String>,
 }
 
 #[derive(Debug, Clone)]

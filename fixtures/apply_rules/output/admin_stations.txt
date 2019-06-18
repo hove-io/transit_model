@@ -1,0 +1,5 @@
+admin_id,admin_name,stop_id,station_id
+02163,Charly-sur-Marne,0:SA:47:14648,47:14648
+02168,Château-Thierry,0:SA:8711658,8711658
+02168,Château-Thierry,0:SA:8711658,8711658
+02186,Chézy-sur-Marne,0:SA:8711657,8711657
