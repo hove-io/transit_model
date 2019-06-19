@@ -162,9 +162,7 @@ pub fn get_fare_frames<'a>(root: &'a Element) -> Result<HashMap<FrameType, Vec<&
         .children()
         .try_fold(HashMap::new(), |mut map, frame| {
             let frame_type = get_frame_type(frame)?;
-            map.entry(frame_type)
-                .or_insert_with(Vec::new)
-                .push(frame);
+            map.entry(frame_type).or_insert_with(Vec::new).push(frame);
             Ok(map)
         })
 }

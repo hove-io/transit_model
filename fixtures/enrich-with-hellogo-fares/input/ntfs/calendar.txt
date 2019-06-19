@@ -1,2 +1,2 @@
 service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
-service:1,1,1,1,1,0,0,0,20180101,20180104
+NTM:service:1,1,1,1,1,0,0,0,20180101,20180104

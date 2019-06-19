@@ -103,6 +103,21 @@ impl From<(String, (String, String))> for TicketUseRestriction {
     }
 }
 
+/// For HelloGo fares connector, we need the prefix of the input NTFS.
+/// The prefix will be extracted from the 'contributor_id'
+fn get_prefix(collections: &Collections) -> Option<String> {
+    collections
+        .contributors
+        .values()
+        .next()
+        .map(|contributor| &contributor.id)
+        .and_then(|contributor_id| {
+            contributor_id
+                .find(':')
+                .map(|index| contributor_id[..index].to_string())
+        })
+}
+
 fn calculate_direct_price(distance_matrix_element: &Element) -> Result<Decimal> {
     let distance_matrix_element_price = distance_matrix_element
         .try_only_child("prices")?
@@ -170,6 +185,7 @@ fn get_origin_destinations(
     collections: &Collections,
     service_frame: &Element,
     distance_matrix_element: &Element,
+    prefix_with_colon: &str,
 ) -> Result<Vec<(String, String)>> {
     fn get_ref(distance_matrix_element: &Element, element_name: &str) -> Result<String> {
         distance_matrix_element
@@ -200,6 +216,17 @@ fn get_origin_destinations(
             )
         }
         let scheduled_stop_point = selected_scheduled_stop_points[0];
+        fn remove_netex_prefix<'a>(reference: &'a str) -> Result<&'a str> {
+            if let Some(index) = reference.find(':') {
+                if reference.len() > index + 1 {
+                    Ok(&reference[index + 1..])
+                } else {
+                    bail!("Failed to remove prefix from '{}'", reference)
+                }
+            } else {
+                bail!("Failed to find ':' to remove a prefix in '{}'", reference)
+            }
+        }
         let stop_point_ids = scheduled_stop_point
             .try_only_child("projections")?
             .children()
@@ -207,19 +234,33 @@ fn get_origin_destinations(
             .flat_map(|point_projection| point_projection.children())
             .filter(|element| element.name() == "ProjectedPointRef")
             .flat_map(|projected_point_ref| projected_point_ref.attr("ref"))
-            .collect();
+            .map(|reference| remove_netex_prefix(reference))
+            .collect::<Result<_>>()?;
         Ok(stop_point_ids)
     }
     let start_stop_point_ids = get_stop_point_ids(scheduled_stop_points, &start_stop_point_ref)?;
     let end_stop_point_ids = get_stop_point_ids(scheduled_stop_points, &end_stop_point_ref)?;
+    fn get_stop_point_from_collections<'a>(
+        collections: &'a Collections,
+        stop_point_id: &str,
+        prefix_with_colon: &str,
+    ) -> Option<&'a StopPoint> {
+        collections
+            .stop_points
+            .get(&format!("{}{}", prefix_with_colon, stop_point_id))
+    }
     let start_stop_area_ids: BTreeSet<_> = start_stop_point_ids
         .iter()
-        .flat_map(|stop_point_id| collections.stop_points.get(*stop_point_id))
+        .flat_map(|stop_point_id| {
+            get_stop_point_from_collections(collections, stop_point_id, prefix_with_colon)
+        })
         .map(|stop_point| stop_point.stop_area_id.clone())
         .collect();
     let end_stop_area_ids: BTreeSet<_> = end_stop_point_ids
         .iter()
-        .flat_map(|stop_point_id| collections.stop_points.get(*stop_point_id))
+        .flat_map(|stop_point_id| {
+            get_stop_point_from_collections(collections, stop_point_id, prefix_with_colon)
+        })
         .map(|stop_point| stop_point.stop_area_id.clone())
         .collect();
     let origin_destinations = start_stop_area_ids
@@ -234,6 +275,9 @@ fn get_origin_destinations(
 }
 
 fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()> {
+    let prefix_with_colon = get_prefix(&collections)
+        .map(|prefix| prefix + ":")
+        .unwrap_or_else(String::new);
     let frames = utils::get_fare_frames(root)?;
     let unit_price_frame = utils::get_only_frame(&frames, FrameType::UnitPrice)?;
     let service_frame = utils::get_only_frame(&frames, FrameType::Service)?;
@@ -243,6 +287,16 @@ fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()>
     for frame_type in &[FrameType::DistanceMatrix, FrameType::DirectPriceMatrix] {
         if let Some(fare_frames) = frames.get(frame_type) {
             for fare_frame in fare_frames {
+                let line_id = get_line_id(fare_frame, service_frame)?;
+                let line = if let Some(line) = collections
+                    .lines
+                    .get(&format!("{}{}", &prefix_with_colon, line_id))
+                {
+                    line
+                } else {
+                    warn!("Failed to find line ID '{}' in the existing NTFS", line_id);
+                    continue;
+                };
                 let boarding_fee: Decimal =
                     utils::get_value_in_keylist(fare_frame, "EntranceRateWrtCurrency")?;
                 let rounding_rule: Decimal =
@@ -251,7 +305,7 @@ fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()>
                 let currency = utils::get_currency(fare_frame)?;
                 let distance_matrix_elements = utils::get_distance_matrix_elements(fare_frame)?;
                 for distance_matrix_element in distance_matrix_elements {
-                    let ticket = Ticket::try_from(distance_matrix_element)?;
+                    let mut ticket = Ticket::try_from(distance_matrix_element)?;
                     let price = match frame_type {
                         FrameType::DirectPriceMatrix => {
                             boarding_fee + calculate_direct_price(distance_matrix_element)?
@@ -266,34 +320,45 @@ fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()>
                         rounding_rule,
                         rust_decimal::RoundingStrategy::RoundHalfUp,
                     );
-                    let ticket_price = TicketPrice::try_from((
+                    let mut ticket_price = TicketPrice::try_from((
                         ticket.id.clone(),
                         price,
                         currency.clone(),
                         validity,
                     ))?;
-                    let ticket_use = TicketUse::from(ticket.id.clone());
-                    let line_id = get_line_id(fare_frame, service_frame)?;
-                    let ticket_use_perimeter =
-                        TicketUsePerimeter::from((ticket_use.id.clone(), line_id));
+                    let mut ticket_use = TicketUse::from(ticket.id.clone());
+                    let mut ticket_use_perimeter =
+                        TicketUsePerimeter::from((ticket_use.id.clone(), line.id.clone()));
                     let origin_destinations = get_origin_destinations(
                         &*collections,
                         service_frame,
                         distance_matrix_element,
+                        &prefix_with_colon,
                     )?;
                     if !origin_destinations.is_empty() {
                         for origin_destination in origin_destinations {
-                            let ticket_use_restriction = TicketUseRestriction::from((
+                            let mut ticket_use_restriction = TicketUseRestriction::from((
                                 ticket_use.id.clone(),
                                 origin_destination,
                             ));
+                            // `use_origin` and `use_destination` are already
+                            // prefixed so we can't use the AddPrefix trait here
+                            ticket_use_restriction.ticket_use_id =
+                                prefix_with_colon.clone() + &ticket_use_restriction.ticket_use_id;
                             collections
                                 .ticket_use_restrictions
                                 .push(ticket_use_restriction);
                         }
+                        ticket.add_prefix(&prefix_with_colon);
                         collections.tickets.push(ticket)?;
+                        ticket_use.add_prefix(&prefix_with_colon);
                         collections.ticket_uses.push(ticket_use)?;
+                        ticket_price.add_prefix(&prefix_with_colon);
                         collections.ticket_prices.push(ticket_price);
+                        // `object_id` is already prefixed so we can't use the
+                        // AddPrefix trait here
+                        ticket_use_perimeter.ticket_use_id =
+                            prefix_with_colon.clone() + &ticket_use_perimeter.ticket_use_id;
                         collections.ticket_use_perimeters.push(ticket_use_perimeter);
                     }
                 }
@@ -346,6 +411,32 @@ pub fn enrich_with_hellogo_fares<P: AsRef<Path>>(
 
 #[cfg(test)]
 mod tests {
+    mod prefix {
+        use super::super::get_prefix;
+        use crate::model::Collections;
+        use crate::objects::Contributor;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn extract_prefix() {
+            let mut collections = Collections::default();
+            let contributor = Contributor {
+                id: String::from("PRE:contributor:id"),
+                ..Default::default()
+            };
+            collections.contributors.push(contributor).unwrap();
+            let prefix = get_prefix(&collections).unwrap();
+            assert_eq!(prefix, "PRE");
+        }
+
+        #[test]
+        fn no_prefix() {
+            let collections = Collections::default();
+            let prefix = get_prefix(&collections);
+            assert_eq!(prefix, None);
+        }
+    }
+
     mod ticket {
         use crate::objects::Ticket;
         use minidom::Element;
@@ -734,22 +825,24 @@ mod tests {
         use pretty_assertions::assert_eq;
         use std::default::Default;
 
+        const PREFIX_WITH_COLON: &'static str = "NTM:";
+
         const SERVICE_XML: &'static str = r#"<ServiceFrame>
                 <scheduledStopPoints>
-                    <ScheduledStopPoint id="ssp:1">
+                    <ScheduledStopPoint id="syn:ssp:1">
                         <projections>
                             <PointProjection>
-                                <ProjectedPointRef ref="sp:1" />
+                                <ProjectedPointRef ref="syn:sp:1" />
                             </PointProjection>
                         </projections>
                     </ScheduledStopPoint>
-                    <ScheduledStopPoint id="ssp:2">
+                    <ScheduledStopPoint id="syn:ssp:2">
                         <projections>
                             <PointProjection>
-                                <ProjectedPointRef ref="sp:2" />
+                                <ProjectedPointRef ref="syn:sp:2" />
                             </PointProjection>
                             <PointProjection>
-                                <ProjectedPointRef ref="sp:3" />
+                                <ProjectedPointRef ref="syn:sp:3" />
                             </PointProjection>
                         </projections>
                     </ScheduledStopPoint>
@@ -757,37 +850,37 @@ mod tests {
             </ServiceFrame>"#;
         const DISTANCE_MATRIX_ELEMENT_XML: &'static str = r#"<DistanceMatrixElement>
                 <Distance>50</Distance>
-                <StartStopPointRef ref="ssp:1" />
-                <EndStopPointRef ref="ssp:2" />
+                <StartStopPointRef ref="syn:ssp:1" />
+                <EndStopPointRef ref="syn:ssp:2" />
             </DistanceMatrixElement>"#;
 
         fn init_collections() -> Collections {
             let mut collections = Collections::default();
             let sa1 = StopArea {
-                id: String::from("sa:1"),
+                id: String::from(format!("{}sa:1", PREFIX_WITH_COLON)),
                 ..Default::default()
             };
             let sa2 = StopArea {
-                id: String::from("sa:2"),
+                id: String::from(format!("{}sa:2", PREFIX_WITH_COLON)),
                 ..Default::default()
             };
             let sa3 = StopArea {
-                id: String::from("sa:3"),
+                id: String::from(format!("{}sa:3", PREFIX_WITH_COLON)),
                 ..Default::default()
             };
             let sp1 = StopPoint {
-                id: String::from("sp:1"),
-                stop_area_id: String::from("sa:1"),
+                id: String::from(format!("{}sp:1", PREFIX_WITH_COLON)),
+                stop_area_id: String::from(format!("{}sa:1", PREFIX_WITH_COLON)),
                 ..Default::default()
             };
             let sp2 = StopPoint {
-                id: String::from("sp:2"),
-                stop_area_id: String::from("sa:2"),
+                id: String::from(format!("{}sp:2", PREFIX_WITH_COLON)),
+                stop_area_id: String::from(format!("{}sa:2", PREFIX_WITH_COLON)),
                 ..Default::default()
             };
             let sp3 = StopPoint {
-                id: String::from("sp:3"),
-                stop_area_id: String::from("sa:3"),
+                id: String::from(format!("{}sp:3", PREFIX_WITH_COLON)),
+                stop_area_id: String::from(format!("{}sa:3", PREFIX_WITH_COLON)),
                 ..Default::default()
             };
             collections.stop_areas.push(sa1).unwrap();
@@ -804,16 +897,32 @@ mod tests {
             let collections = init_collections();
             let service_frame: Element = SERVICE_XML.parse().unwrap();
             let distance_matrix_element: Element = DISTANCE_MATRIX_ELEMENT_XML.parse().unwrap();
-            let ticket_use_restrictions =
-                get_origin_destinations(&collections, &service_frame, &distance_matrix_element)
-                    .unwrap();
+            let ticket_use_restrictions = get_origin_destinations(
+                &collections,
+                &service_frame,
+                &distance_matrix_element,
+                PREFIX_WITH_COLON,
+            )
+            .unwrap();
             assert_eq!(ticket_use_restrictions.len(), 2);
             let ticket_use_restriction = &ticket_use_restrictions[0];
-            assert_eq!(ticket_use_restriction.0, "sa:1");
-            assert_eq!(ticket_use_restriction.1, "sa:2");
+            assert_eq!(
+                ticket_use_restriction.0,
+                format!("{}sa:1", PREFIX_WITH_COLON)
+            );
+            assert_eq!(
+                ticket_use_restriction.1,
+                format!("{}sa:2", PREFIX_WITH_COLON)
+            );
             let ticket_use_restriction = &ticket_use_restrictions[1];
-            assert_eq!(ticket_use_restriction.0, "sa:1");
-            assert_eq!(ticket_use_restriction.1, "sa:3");
+            assert_eq!(
+                ticket_use_restriction.0,
+                format!("{}sa:1", PREFIX_WITH_COLON)
+            );
+            assert_eq!(
+                ticket_use_restriction.1,
+                format!("{}sa:3", PREFIX_WITH_COLON)
+            );
         }
 
         #[test]
@@ -825,11 +934,16 @@ mod tests {
             let service_frame: Element = SERVICE_XML.parse().unwrap();
             let distance_matrix_element_xml = r#"<DistanceMatrixElement>
                 <Distance>50</Distance>
-                <EndStopPointRef ref="ssp:2" />
+                <EndStopPointRef ref="syn:ssp:2" />
             </DistanceMatrixElement>"#;
             let distance_matrix_element: Element = distance_matrix_element_xml.parse().unwrap();
-            get_origin_destinations(&collections, &service_frame, &distance_matrix_element)
-                .unwrap();
+            get_origin_destinations(
+                &collections,
+                &service_frame,
+                &distance_matrix_element,
+                PREFIX_WITH_COLON,
+            )
+            .unwrap();
         }
 
         #[test]
@@ -842,11 +956,16 @@ mod tests {
             let distance_matrix_element_xml = r#"<DistanceMatrixElement>
                 <Distance>50</Distance>
                 <StartStopPointRef />
-                <EndStopPointRef ref="ssp:2" />
+                <EndStopPointRef ref="syn:ssp:2" />
             </DistanceMatrixElement>"#;
             let distance_matrix_element: Element = distance_matrix_element_xml.parse().unwrap();
-            get_origin_destinations(&collections, &service_frame, &distance_matrix_element)
-                .unwrap();
+            get_origin_destinations(
+                &collections,
+                &service_frame,
+                &distance_matrix_element,
+                PREFIX_WITH_COLON,
+            )
+            .unwrap();
         }
 
         #[test]
@@ -858,50 +977,65 @@ mod tests {
             let service_xml = r#"<ServiceFrame />"#;
             let service_frame: Element = service_xml.parse().unwrap();
             let distance_matrix_element: Element = DISTANCE_MATRIX_ELEMENT_XML.parse().unwrap();
-            get_origin_destinations(&collections, &service_frame, &distance_matrix_element)
-                .unwrap();
+            get_origin_destinations(
+                &collections,
+                &service_frame,
+                &distance_matrix_element,
+                PREFIX_WITH_COLON,
+            )
+            .unwrap();
         }
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a unique \\'ScheduledStopPoint\\' with reference \\'ssp:2\\'"
+            expected = "Failed to find a unique \\'ScheduledStopPoint\\' with reference \\'syn:ssp:2\\'"
         )]
         fn scheduled_stop_point_not_found() {
             let collections = init_collections();
             let service_xml = r#"<ServiceFrame>
                 <scheduledStopPoints>
-                    <ScheduledStopPoint id="ssp:1">
+                    <ScheduledStopPoint id="syn:ssp:1">
                         <projections>
                             <PointProjection>
-                                <ProjectedPointRef ref="sp:1" />
+                                <ProjectedPointRef ref="syn:sp:1" />
                             </PointProjection>
                         </projections>
                     </ScheduledStopPoint>
-                    <ScheduledStopPoint id="ssp:42" />
+                    <ScheduledStopPoint id="syn:ssp:42" />
                 </scheduledStopPoints>
             </ServiceFrame>"#;
             let service_frame: Element = service_xml.parse().unwrap();
             let distance_matrix_element: Element = DISTANCE_MATRIX_ELEMENT_XML.parse().unwrap();
-            get_origin_destinations(&collections, &service_frame, &distance_matrix_element)
-                .unwrap();
+            get_origin_destinations(
+                &collections,
+                &service_frame,
+                &distance_matrix_element,
+                PREFIX_WITH_COLON,
+            )
+            .unwrap();
         }
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a unique \\'ScheduledStopPoint\\' with reference \\'ssp:1\\'"
+            expected = "Failed to find a unique \\'ScheduledStopPoint\\' with reference \\'syn:ssp:1\\'"
         )]
         fn multiple_scheduled_stop_points_found() {
             let collections = init_collections();
             let service_xml = r#"<ServiceFrame>
                 <scheduledStopPoints>
-                    <ScheduledStopPoint id="ssp:1" />
-                    <ScheduledStopPoint id="ssp:1" />
+                    <ScheduledStopPoint id="syn:ssp:1" />
+                    <ScheduledStopPoint id="syn:ssp:1" />
                 </scheduledStopPoints>
             </ServiceFrame>"#;
             let service_frame: Element = service_xml.parse().unwrap();
             let distance_matrix_element: Element = DISTANCE_MATRIX_ELEMENT_XML.parse().unwrap();
-            get_origin_destinations(&collections, &service_frame, &distance_matrix_element)
-                .unwrap();
+            get_origin_destinations(
+                &collections,
+                &service_frame,
+                &distance_matrix_element,
+                PREFIX_WITH_COLON,
+            )
+            .unwrap();
         }
 
         #[test]
@@ -912,20 +1046,25 @@ mod tests {
             let collections = init_collections();
             let service_xml = r#"<ServiceFrame>
                 <scheduledStopPoints>
-                    <ScheduledStopPoint id="ssp:1">
+                    <ScheduledStopPoint id="syn:ssp:1">
                         <projections>
                             <PointProjection>
-                                <ProjectedPointRef ref="sp:1" />
+                                <ProjectedPointRef ref="syn:sp:1" />
                             </PointProjection>
                         </projections>
                     </ScheduledStopPoint>
-                    <ScheduledStopPoint id="ssp:2" />
+                    <ScheduledStopPoint id="syn:ssp:2" />
                 </scheduledStopPoints>
             </ServiceFrame>"#;
             let service_frame: Element = service_xml.parse().unwrap();
             let distance_matrix_element: Element = DISTANCE_MATRIX_ELEMENT_XML.parse().unwrap();
-            get_origin_destinations(&collections, &service_frame, &distance_matrix_element)
-                .unwrap();
+            get_origin_destinations(
+                &collections,
+                &service_frame,
+                &distance_matrix_element,
+                PREFIX_WITH_COLON,
+            )
+            .unwrap();
         }
 
         #[test]
@@ -933,23 +1072,27 @@ mod tests {
             let collections = init_collections();
             let service_xml = r#"<ServiceFrame>
                 <scheduledStopPoints>
-                    <ScheduledStopPoint id="ssp:1">
+                    <ScheduledStopPoint id="syn:ssp:1">
                         <projections>
                             <PointProjection>
-                                <ProjectedPointRef ref="sp:1" />
+                                <ProjectedPointRef ref="syn:sp:1" />
                             </PointProjection>
                         </projections>
                     </ScheduledStopPoint>
-                    <ScheduledStopPoint id="ssp:2">
+                    <ScheduledStopPoint id="syn:ssp:2">
                         <projections />
                     </ScheduledStopPoint>
                 </scheduledStopPoints>
             </ServiceFrame>"#;
             let service_frame: Element = service_xml.parse().unwrap();
             let distance_matrix_element: Element = DISTANCE_MATRIX_ELEMENT_XML.parse().unwrap();
-            let origin_destinations =
-                get_origin_destinations(&collections, &service_frame, &distance_matrix_element)
-                    .unwrap();
+            let origin_destinations = get_origin_destinations(
+                &collections,
+                &service_frame,
+                &distance_matrix_element,
+                PREFIX_WITH_COLON,
+            )
+            .unwrap();
             assert_eq!(origin_destinations.len(), 0);
         }
 
@@ -958,20 +1101,20 @@ mod tests {
             let collections = init_collections();
             let service_xml = r#"<ServiceFrame>
                 <scheduledStopPoints>
-                    <ScheduledStopPoint id="ssp:1">
+                    <ScheduledStopPoint id="syn:ssp:1">
                         <projections>
                             <PointProjection>
-                                <ProjectedPointRef ref="sp:42" />
+                                <ProjectedPointRef ref="syn:sp:42" />
                             </PointProjection>
                         </projections>
                     </ScheduledStopPoint>
-                    <ScheduledStopPoint id="ssp:2">
+                    <ScheduledStopPoint id="syn:ssp:2">
                         <projections>
                             <PointProjection>
-                                <ProjectedPointRef ref="sp:2" />
+                                <ProjectedPointRef ref="syn:sp:2" />
                             </PointProjection>
                             <PointProjection>
-                                <ProjectedPointRef ref="sp:3" />
+                                <ProjectedPointRef ref="syn:sp:3" />
                             </PointProjection>
                         </projections>
                     </ScheduledStopPoint>
@@ -979,9 +1122,13 @@ mod tests {
             </ServiceFrame>"#;
             let service_frame: Element = service_xml.parse().unwrap();
             let distance_matrix_element: Element = DISTANCE_MATRIX_ELEMENT_XML.parse().unwrap();
-            let origin_destinations =
-                get_origin_destinations(&collections, &service_frame, &distance_matrix_element)
-                    .unwrap();
+            let origin_destinations = get_origin_destinations(
+                &collections,
+                &service_frame,
+                &distance_matrix_element,
+                PREFIX_WITH_COLON,
+            )
+            .unwrap();
             assert_eq!(origin_destinations.len(), 0);
         }
     }
