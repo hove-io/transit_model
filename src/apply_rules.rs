@@ -21,7 +21,9 @@ use crate::model::Collections;
 use crate::utils::{Report, ReportType};
 use crate::Result;
 use crate::{
-    objects::{Codes, Coord, Geometry, Line, Network, VehicleJourney},
+    objects::{
+        Codes, Coord, Geometry, Line, Network, ObjectType as ModelObjectType, VehicleJourney,
+    },
     relations::IdxSet,
     Model,
 };
@@ -147,6 +149,25 @@ fn check_networks_consolidation(
         }
     }
     Ok(res)
+}
+
+fn update_ticket_use_perimeters(
+    collections: &mut Collections,
+    networks_consolidation: &[NetworkConsolidation],
+) {
+    for network in networks_consolidation {
+        let network_id = &network.network.id;
+        for grouped_from in &network.grouped_from {
+            collections
+                .ticket_use_perimeters
+                .values_mut()
+                .filter(|ticket| {
+                    ticket.object_type == ModelObjectType::Network
+                        && &ticket.object_id == grouped_from
+                })
+                .for_each(|mut ticket| ticket.object_id = network_id.to_string());
+        }
+    }
 }
 
 fn set_networks_consolidation(
@@ -858,6 +879,8 @@ pub fn apply_rules(
             &mut collections.networks,
             networks_consolidation,
         )?;
+
+        update_ticket_use_perimeters(&mut collections, &networks_consolidation);
         collections =
             set_networks_consolidation(collections, &lines_by_network, networks_consolidation)?;
     }

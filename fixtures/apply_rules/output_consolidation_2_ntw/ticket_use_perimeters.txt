@@ -1,0 +1,3 @@
+ticket_use_id,object_type,object_id,perimeter_action
+1,network,bus_vert,1
+1,network,bus_vert,1

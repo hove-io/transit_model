@@ -1,0 +1,4 @@
+ticket_id,ticket_price,ticket_currency,ticket_validity_start,ticket_validity_end
+1,1.0,EUR,20190101,20191231
+2,2.0,EUR,20190101,20191231
+

@@ -1,0 +1,3 @@
+ticket_use_id,object_type,object_id,perimeter_action
+1,network,TGM2,1
+1,network,TGB2,1

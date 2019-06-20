@@ -40,6 +40,7 @@ mod tests {
                 "trips.txt",
                 "stops.txt",
                 "networks.txt",
+                "ticket_use_perimeters.txt",
             ];
 
             let input_dir = "fixtures/apply_rules/input";

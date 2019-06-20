@@ -1,0 +1,2 @@
+ticket_use_id,restriction_type,use_origin,use_destination
+2,OD,GDLR,CDGR

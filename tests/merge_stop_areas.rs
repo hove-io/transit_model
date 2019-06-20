@@ -49,6 +49,7 @@ fn test_merge_stop_areas_multi_steps() {
                 "object_codes.txt",
                 "object_properties.txt",
                 "stops.txt",
+                "ticket_use_restrictions.txt",
                 "report.json",
             ]),
             "./fixtures/merge-stop-areas/output/",
