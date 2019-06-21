@@ -1,5 +1,5 @@
 avant changement;après changement;début trajet;fin trajet;condition globale;clef ticket
+*;line=line:B42;stoparea=stop_area:NAT;stoparea=stop_area:CDG;;ticket.2
+*;line=line:M1;stoparea=stop_area:NAT;stoparea=stop_area:CDG;;ticket.4
 *;network=network:TGN;;;;ticket.1
 network=network:TGN;network=network:TGN;;;;ticket.1
-*;line=line:B42;stoparea=stop_area:NAT;stoparea=stop_area:CDG;;ticket.2
-*;line=line:M1;stoparea=stop_area:NAD;stoparea=stop_area:CDG;;ticket.4

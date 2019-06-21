@@ -109,6 +109,20 @@ fn default_visible() -> bool {
     true
 }
 
+/// Checks if minimum FaresV2 collections are defined and not empty (ticket_use_restrictions is optional)
+/// See https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fare_extension.md
+fn has_fares_v2(collections: &Collections) -> bool {
+    !collections.tickets.is_empty()
+        && !collections.ticket_prices.is_empty()
+        && !collections.ticket_uses.is_empty()
+        && !collections.ticket_use_perimeters.is_empty()
+}
+/// Checks if minimum FaresV1 collections are defined and not empty (fares_v1 is optional)
+/// See https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fare_extension_fr_deprecated.md
+fn has_fares_v1(collections: &Collections) -> bool {
+    !collections.prices_v1.is_empty() && !collections.od_fares_v1.is_empty()
+}
+
 /// Imports a `Model` from the
 /// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
 /// files in the given directory.
@@ -202,7 +216,7 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
-    write::write_fares_v1(path, &model.prices_v1, &model.od_fares_v1, &model.fares_v1)?;
+    write::write_fares_v1_dispatch(path, &model)?;
 
     Ok(())
 }
