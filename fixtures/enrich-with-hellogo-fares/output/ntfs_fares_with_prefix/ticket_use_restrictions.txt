@@ -1,0 +1,14 @@
+ticket_use_id,restriction_type,use_origin,use_destination
+NTM:TU:syn:mat:1,OD,NTM:sa:1,NTM:sa:1
+NTM:TU:syn:mat:2,OD,NTM:sa:1,NTM:sa:2
+NTM:TU:syn:mat:3,OD,NTM:sa:1,NTM:sa:3
+NTM:TU:syn:mat:4,OD,NTM:sa:2,NTM:sa:3
+NTM:TU:syn:mat:5,OD,NTM:sa:1,NTM:sa:4
+NTM:TU:syn:mat:6,OD,NTM:sa:2,NTM:sa:4
+NTM:TU:syn:mat:7,OD,NTM:sa:4,NTM:sa:5
+NTM:TU:syn:mat:11,OD,NTM:sa:4,NTM:sa:6
+NTM:TU:syn:mat:11,OD,NTM:sa:4,NTM:sa:7
+NTM:TU:syn:mat:15,OD,NTM:sa:4,NTM:sa:2
+NTM:TU:syn:mat:16,OD,NTM:sa:2,NTM:sa:4
+NTM:TU:syn:mat:21,OD,NTM:sa:3,NTM:sa:4
+NTM:TU:syn:mat:22,OD,NTM:sa:5,NTM:sa:3

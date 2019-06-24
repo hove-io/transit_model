@@ -22,6 +22,7 @@ iso4217 = "0.3.2"
 log = "0.4"
 pretty_assertions = "0.6.1"
 proj = { version = "0.9.3", optional = true }
+rust_decimal = "1.0.1"
 serde = "1"
 serde_derive = "1"
 structopt = "0.2"
@@ -47,4 +48,6 @@ path = "src/bin/kv12ntfs.rs"
 required-features = ["proj"]
 
 [dev-dependencies]
+approx = "0.3.2"
+rust_decimal_macros = "1.0.1"
 transit_model_builder= "0.1.0"

@@ -25,6 +25,7 @@ use chrono;
 use chrono::NaiveDate;
 use derivative::Derivative;
 use geo_types::Geometry as GeoGeometry;
+use rust_decimal::Decimal;
 use serde_derive::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -1328,11 +1329,17 @@ impl GetObjectType for Ticket {
     }
 }
 
+impl AddPrefix for Ticket {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct TicketPrice {
     pub ticket_id: String,
-    #[serde(rename = "ticket_price", deserialize_with = "de_positive_f64")]
-    pub price: f64,
+    #[serde(rename = "ticket_price", deserialize_with = "de_positive_decimal")]
+    pub price: Decimal,
     #[serde(
         rename = "ticket_currency",
         serialize_with = "ser_currency_code",
@@ -1351,6 +1358,12 @@ pub struct TicketPrice {
     pub ticket_validity_end: Date,
 }
 
+impl AddPrefix for TicketPrice {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.ticket_id = prefix.to_string() + &self.ticket_id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct TicketUse {
     #[serde(rename = "ticket_use_id")]
@@ -1361,6 +1374,13 @@ pub struct TicketUse {
     pub alighting_time_limit: Option<u32>,
 }
 impl_id!(TicketUse);
+
+impl AddPrefix for TicketUse {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+        self.ticket_id = prefix.to_string() + &self.ticket_id;
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum PerimeterAction {
@@ -1378,6 +1398,13 @@ pub struct TicketUsePerimeter {
     pub perimeter_action: PerimeterAction,
 }
 
+impl AddPrefix for TicketUsePerimeter {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.ticket_use_id = prefix.to_string() + &self.ticket_use_id;
+        self.object_id = prefix.to_string() + &self.object_id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum RestrictionType {
     #[serde(rename = "zone")]
@@ -1392,6 +1419,14 @@ pub struct TicketUseRestriction {
     pub restriction_type: RestrictionType,
     pub use_origin: String,
     pub use_destination: String,
+}
+
+impl AddPrefix for TicketUseRestriction {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.ticket_use_id = prefix.to_string() + &self.ticket_use_id;
+        self.use_origin = prefix.to_string() + &self.use_origin;
+        self.use_destination = prefix.to_string() + &self.use_destination;
+    }
 }
 
 #[cfg(test)]

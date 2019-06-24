@@ -1,0 +1,13 @@
+ticket_use_id,object_type,object_id,perimeter_action
+TU:syn:mat:1,line,B42,1
+TU:syn:mat:2,line,B42,1
+TU:syn:mat:3,line,B42,1
+TU:syn:mat:4,line,B42,1
+TU:syn:mat:5,line,B42,1
+TU:syn:mat:6,line,B42,1
+TU:syn:mat:7,line,T42,1
+TU:syn:mat:11,line,B42,1
+TU:syn:mat:15,line,B42,1
+TU:syn:mat:16,line,B42,1
+TU:syn:mat:21,line,T42,1
+TU:syn:mat:22,line,T42,1
