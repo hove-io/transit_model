@@ -1,2 +1,5 @@
-./target
+examples/
+**/target/
+LICENSE
+README.md
 Dockerfile
