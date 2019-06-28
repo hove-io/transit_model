@@ -55,12 +55,12 @@ fn merge_collections_ok() {
     assert_eq!(collections.datasets.len(), 2);
     assert_eq!(collections.networks.len(), 3);
     // check that commercial mode Bus appears once.
-    let cm_bus: Vec<_> = collections
+    let count_bus = collections
         .commercial_modes
         .values()
         .filter(|cm| cm.id == "Bus" && cm.name == "Bus")
-        .collect();
-    assert_eq!(cm_bus.len(), 1);
+        .count();
+    assert_eq!(count_bus, 1);
     assert_eq!(collections.commercial_modes.len(), 6);
     assert_eq!(collections.lines.len(), 6);
     assert_eq!(collections.routes.len(), 8);
@@ -249,6 +249,87 @@ fn merge_collections_with_feed_infos() {
             &path,
             Some(vec!["feed_infos.txt"]),
             "./fixtures/merge-ntfs/output_feedinfos",
+        );
+    });
+}
+
+#[test]
+fn merge_collections_fares_v2() {
+    let mut collections = Collections::default();
+    test_in_tmp_dir(|path| {
+        let input_dirs = ["fixtures/ntfs", "fixtures/merge-ntfs/input"];
+        for input_directory in input_dirs.iter() {
+            let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
+
+            collections
+                .try_merge(to_append_model.into_collections())
+                .unwrap();
+        }
+        let model = Model::new(collections).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec![
+                "tickets.txt",
+                "ticket_prices.txt",
+                "ticket_uses.txt",
+                "ticket_use_perimeters.txt",
+                "ticket_use_restrictions.txt",
+                // TODO: Uncomment once ND-242 is done
+                // "prices.csv",
+                // "fares.csv",
+                // "od_fares.csv",
+            ]),
+            "./fixtures/merge-ntfs/output_merge_fares",
+        );
+    });
+}
+
+#[test]
+#[should_panic(expected = "ticket.1 already found")]
+fn merge_collections_fares_v2_with_collisions() {
+    let mut collections = Collections::default();
+    let input_dirs = [
+        "fixtures/ntfs",
+        "fixtures/merge-ntfs/input_farev2_conflicts",
+    ];
+    for input_directory in input_dirs.iter() {
+        let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
+
+        collections
+            .try_merge(to_append_model.into_collections())
+            .unwrap();
+    }
+}
+
+#[test]
+fn merge_collections_fares_v2_with_ntfs_only_farev1() {
+    let mut collections = Collections::default();
+    test_in_tmp_dir(|path| {
+        let input_dirs = ["fixtures/ntfs", "fixtures/merge-ntfs/input_only_farev1"];
+        for input_directory in input_dirs.iter() {
+            let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
+
+            collections
+                .try_merge(to_append_model.into_collections())
+                .unwrap();
+        }
+        let model = Model::new(collections).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec![
+                "tickets.txt",
+                "ticket_prices.txt",
+                "ticket_uses.txt",
+                "ticket_use_perimeters.txt",
+                "ticket_use_restrictions.txt",
+                // TODO: Uncomment once ND-242 is done
+                // "prices.csv",
+                // "fares.csv",
+                // "od_fares.csv",
+            ]),
+            "./fixtures/merge-ntfs/output_merge_fares_only_one_farev2",
         );
     });
 }

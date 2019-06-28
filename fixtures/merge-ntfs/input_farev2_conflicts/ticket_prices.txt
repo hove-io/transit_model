@@ -1,0 +1,2 @@
+ticket_id,ticket_price,ticket_currency,ticket_validity_start,ticket_validity_end
+ticket.1,3.14,USD,20190101,20190630
