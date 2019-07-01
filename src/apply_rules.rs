@@ -48,8 +48,8 @@ enum ObjectType {
     StopArea,
 }
 impl ObjectType {
-    pub fn as_str(&self) -> &'static str {
-        match *self {
+    pub fn as_str(self) -> &'static str {
+        match self {
             ObjectType::Line => "line",
             ObjectType::Route => "route",
             ObjectType::StopPoint => "stop_point",
@@ -855,7 +855,7 @@ pub fn apply_rules(
             read_networks_consolidation_file(networks_consolidation_file.unwrap())?;
         let networks_consolidation = check_networks_consolidation(
             &mut report,
-            &mut collections.networks,
+            &collections.networks,
             networks_consolidation,
         )?;
         collections =
