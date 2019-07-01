@@ -210,14 +210,14 @@ where
     Ok(String::from(currency_code.alpha3))
 }
 
-pub fn ser_currency_code<S>(currency_code: &String, serializer: S) -> Result<S::Ok, S::Error>
+pub fn ser_currency_code<S>(currency_code: &str, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
     use serde::ser::Error;
-    let currency_code = iso4217::alpha3(&currency_code)
+    let currency_code = iso4217::alpha3(currency_code)
         .ok_or_else(|| S::Error::custom("The String is not a valid currency code (ISO-4217)"))?;
-    serializer.serialize_str(&format!("{}", currency_code.alpha3))
+    serializer.serialize_str(&currency_code.alpha3.to_string())
 }
 
 pub fn ser_geometry<S>(
