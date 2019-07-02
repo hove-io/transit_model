@@ -547,8 +547,8 @@ pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {
     if !vjs_without_company.is_empty() {
         let default_company = collections.companies.get_or_create("default_company");
         for vj_idx in vjs_without_company {
-            let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
-            vj.company_id = default_company.id.to_string();
+            collections.vehicle_journeys.index_mut(vj_idx).company_id =
+                default_company.id.to_string();
         }
     }
     Ok(())
