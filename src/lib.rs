@@ -42,7 +42,7 @@ pub mod transfers;
 pub mod vptranslator;
 
 /// Current version of the NTFS format
-pub const NTFS_VERSION: &str = "0.7";
+pub const NTFS_VERSION: &str = "0.9";
 
 lazy_static::lazy_static! {
     /// Current datetime
