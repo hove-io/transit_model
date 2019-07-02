@@ -21,6 +21,7 @@ use csv;
 use failure::ResultExt;
 use geo_types;
 use log::{debug, error, info};
+use rust_decimal::Decimal;
 use serde_derive::Serialize;
 use std::fs;
 use std::io::{Read, Write};
@@ -170,6 +171,53 @@ where
     let s = String::deserialize(deserializer)?;
     let wkt = wkt::Wkt::from_str(&s).map_err(serde::de::Error::custom)?;
     try_into_geometry(&wkt.items[0]).map_err(serde::de::Error::custom)
+}
+
+pub fn de_positive_decimal<'de, D>(deserializer: D) -> Result<Decimal, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::{
+        de::{Error, Unexpected::Other},
+        Deserialize,
+    };
+    let number = <Decimal as Deserialize<'de>>::deserialize(deserializer)?;
+    if number.is_sign_positive() {
+        Ok(number)
+    } else {
+        Err(D::Error::invalid_value(
+            Other("strictly negative float number"),
+            &"positive float number",
+        ))
+    }
+}
+
+pub fn de_currency_code<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::{
+        de::{Error, Unexpected::Other},
+        Deserialize,
+    };
+    let string = String::deserialize(deserializer)?;
+    let currency_code = iso4217::alpha3(&string).ok_or_else(|| {
+        D::Error::invalid_value(
+            Other("unrecognized currency code (ISO-4217)"),
+            &"3-letters currency code (ISO-4217)",
+        )
+    })?;
+    Ok(String::from(currency_code.alpha3))
+}
+
+pub fn ser_currency_code<S>(currency_code: &str, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    use serde::ser::Error;
+    let currency_code = iso4217::alpha3(currency_code)
+        .ok_or_else(|| S::Error::custom("The String is not a valid currency code (ISO-4217)"))?;
+    serializer.serialize_str(&currency_code.alpha3.to_string())
 }
 
 pub fn ser_geometry<S>(
@@ -337,5 +385,93 @@ impl Report {
             category: error_type,
             message: error,
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    mod serde_currency {
+        use super::super::*;
+        use pretty_assertions::assert_eq;
+        use serde_derive::{Deserialize, Serialize};
+
+        #[derive(Debug, Serialize, Deserialize)]
+        struct CurrencyCodeWrapper {
+            #[serde(
+                serialize_with = "ser_currency_code",
+                deserialize_with = "de_currency_code"
+            )]
+            pub currency_code: String,
+        }
+
+        #[test]
+        fn test_serde_valid_currency_code() {
+            let wrapper = CurrencyCodeWrapper {
+                currency_code: "EUR".to_string(),
+            };
+            let json = serde_json::to_string(&wrapper).unwrap();
+            let wrapper: CurrencyCodeWrapper = serde_json::from_str(&json).unwrap();
+
+            assert_eq!(wrapper.currency_code, "EUR");
+        }
+
+        #[test]
+        fn test_de_invalid_currency_code() {
+            let result: Result<CurrencyCodeWrapper, _> =
+                serde_json::from_str("{\"currency_code\":\"XXX\"}");
+            let err_msg = result.unwrap_err().to_string();
+            assert_eq!(err_msg, "invalid value: unrecognized currency code (ISO-4217), expected 3-letters currency code (ISO-4217) at line 1 column 23");
+        }
+
+        #[test]
+        fn test_ser_invalid_currency_code() {
+            let wrapper = CurrencyCodeWrapper {
+                currency_code: "XXX".to_string(),
+            };
+            let result = serde_json::to_string(&wrapper);
+            let err_msg = result.unwrap_err().to_string();
+            assert_eq!(
+                err_msg,
+                "The String is not a valid currency code (ISO-4217)"
+            );
+        }
+    }
+
+    mod deserialize_decimal {
+        use super::super::*;
+        use pretty_assertions::assert_eq;
+        use rust_decimal_macros::dec;
+        use serde_derive::{Deserialize, Serialize};
+
+        #[derive(Debug, Serialize, Deserialize)]
+        struct DecimalWrapper {
+            #[serde(deserialize_with = "de_positive_decimal")]
+            pub value: Decimal,
+        }
+
+        #[test]
+        fn positive_decimal() {
+            let result: Result<DecimalWrapper, _> = serde_json::from_str("{\"value\":\"4.2\"}");
+            let wrapper = result.unwrap();
+            assert_eq!(wrapper.value, dec!(4.2));
+        }
+
+        #[test]
+        fn negative_decimal() {
+            let result: Result<DecimalWrapper, _> = serde_json::from_str("{\"value\":\"-4.2\"}");
+            let err_msg = result.unwrap_err().to_string();
+            assert_eq!(err_msg, "invalid value: strictly negative float number, expected positive float number at line 1 column 16");
+        }
+
+        #[test]
+        fn not_a_number() {
+            let result: Result<DecimalWrapper, _> =
+                serde_json::from_str("{\"value\":\"NotANumber\"}");
+            let err_msg = result.unwrap_err().to_string();
+            assert_eq!(
+                err_msg,
+                "invalid value: string \"NotANumber\", expected a Decimal type representing a fixed-point number at line 1 column 21"
+            );
+        }
     }
 }

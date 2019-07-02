@@ -25,6 +25,7 @@ use chrono;
 use chrono::NaiveDate;
 use derivative::Derivative;
 use geo_types::Geometry as GeoGeometry;
+use rust_decimal::Decimal;
 use serde_derive::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -36,7 +37,7 @@ pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum ObjectType {
     StopArea,
@@ -48,6 +49,7 @@ pub enum ObjectType {
     VehicleJourney,
     StopTime,
     LineGroup,
+    Ticket,
 }
 
 pub trait GetObjectType {
@@ -65,6 +67,7 @@ impl ObjectType {
             ObjectType::VehicleJourney => "trip",
             ObjectType::StopTime => "stop_time",
             ObjectType::LineGroup => "line_group",
+            ObjectType::Ticket => "ticket",
         }
     }
 }
@@ -1257,30 +1260,175 @@ pub struct AdminStation {
     pub station_id: Option<String>,
 }
 
-#[derive(Debug, Clone)]
-pub struct Ticket {
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct PriceV1 {
     pub id: String,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
     pub start_date: NaiveDate,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
     pub end_date: NaiveDate,
-    pub price: f64,
-    pub currency_type: String,
-    pub validity_duration: Option<u32>,
-    pub transfers: Option<u16>,
+    pub price: u32,
+    pub name: String,
+    pub ignored: String,
+    pub comment: String,
+    pub currency_type: Option<String>,
 }
 
-#[derive(Debug, Clone)]
-pub struct ODRule {
-    pub id: String,
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct ODFareV1 {
+    #[serde(rename = "Origin ID")]
     pub origin_stop_area_id: String,
+    #[serde(rename = "Origin name")]
+    pub origin_name: Option<String>,
+    #[serde(rename = "Origin mode")]
+    pub origin_mode: String,
+    #[serde(rename = "Destination ID")]
     pub destination_stop_area_id: String,
+    #[serde(rename = "Destination name")]
+    pub destination_name: Option<String>,
+    #[serde(rename = "Destination mode")]
+    pub destination_mode: String,
     pub ticket_id: String,
-    pub line_id: Option<String>,
-    pub network_id: Option<String>,
-    pub physical_mode_id: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct FareV1 {
+    #[serde(rename = "avant changement")]
+    pub before_change: String,
+    #[serde(rename = "après changement")]
+    pub after_change: String,
+    #[serde(rename = "début trajet")]
+    pub start_trip: String,
+    #[serde(rename = "fin trajet")]
+    pub end_trip: String,
+    #[serde(rename = "condition globale")]
+    pub global_condition: String,
+    #[serde(rename = "clef ticket")]
+    pub ticket_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct Ticket {
+    #[serde(rename = "ticket_id")]
+    pub id: String,
+    #[serde(rename = "ticket_name")]
+    pub name: String,
+    #[serde(rename = "ticket_comment")]
+    pub comment: Option<String>,
+}
 impl_id!(Ticket);
-impl_id!(ODRule);
+
+impl GetObjectType for Ticket {
+    fn get_object_type() -> ObjectType {
+        ObjectType::Ticket
+    }
+}
+
+impl AddPrefix for Ticket {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct TicketPrice {
+    pub ticket_id: String,
+    #[serde(rename = "ticket_price", deserialize_with = "de_positive_decimal")]
+    pub price: Decimal,
+    #[serde(
+        rename = "ticket_currency",
+        serialize_with = "ser_currency_code",
+        deserialize_with = "de_currency_code"
+    )]
+    pub currency: String,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub ticket_validity_start: Date,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub ticket_validity_end: Date,
+}
+
+impl AddPrefix for TicketPrice {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.ticket_id = prefix.to_string() + &self.ticket_id;
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct TicketUse {
+    #[serde(rename = "ticket_use_id")]
+    pub id: String,
+    pub ticket_id: String,
+    pub max_transfers: Option<u32>,
+    pub boarding_time_limit: Option<u32>,
+    pub alighting_time_limit: Option<u32>,
+}
+impl_id!(TicketUse);
+
+impl AddPrefix for TicketUse {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+        self.ticket_id = prefix.to_string() + &self.ticket_id;
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub enum PerimeterAction {
+    #[serde(rename = "1")]
+    Included,
+    #[serde(rename = "2")]
+    Excluded,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct TicketUsePerimeter {
+    pub ticket_use_id: String,
+    pub object_type: ObjectType,
+    pub object_id: String,
+    pub perimeter_action: PerimeterAction,
+}
+
+impl AddPrefix for TicketUsePerimeter {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.ticket_use_id = prefix.to_string() + &self.ticket_use_id;
+        self.object_id = prefix.to_string() + &self.object_id;
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub enum RestrictionType {
+    #[serde(rename = "zone")]
+    Zone,
+    #[serde(rename = "OD")]
+    OriginDestination,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct TicketUseRestriction {
+    pub ticket_use_id: String,
+    pub restriction_type: RestrictionType,
+    pub use_origin: String,
+    pub use_destination: String,
+}
+
+impl AddPrefix for TicketUseRestriction {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.ticket_use_id = prefix.to_string() + &self.ticket_use_id;
+        self.use_origin = prefix.to_string() + &self.use_origin;
+        self.use_destination = prefix.to_string() + &self.use_destination;
+    }
+}
 
 #[cfg(test)]
 mod tests {

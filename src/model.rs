@@ -53,10 +53,6 @@ pub struct Collections {
     pub transfers: Collection<Transfer>,
     pub trip_properties: CollectionWithId<TripProperty>,
     pub geometries: CollectionWithId<Geometry>,
-    #[serde(skip)]
-    pub tickets: Collection<Ticket>,
-    #[serde(skip)]
-    pub od_rules: Collection<ODRule>,
     pub admin_stations: Collection<AdminStation>,
     #[serde(skip)]
     pub stop_time_headsigns: HashMap<(Idx<VehicleJourney>, u32), String>,
@@ -64,6 +60,14 @@ pub struct Collections {
     pub stop_time_ids: HashMap<(Idx<VehicleJourney>, u32), String>,
     #[serde(skip)]
     pub stop_time_comments: HashMap<(Idx<VehicleJourney>, u32), Idx<Comment>>,
+    pub prices_v1: Collection<PriceV1>,
+    pub od_fares_v1: Collection<ODFareV1>,
+    pub fares_v1: Collection<FareV1>,
+    pub tickets: CollectionWithId<Ticket>,
+    pub ticket_uses: CollectionWithId<TicketUse>,
+    pub ticket_prices: Collection<TicketPrice>,
+    pub ticket_use_perimeters: Collection<TicketUsePerimeter>,
+    pub ticket_use_restrictions: Collection<TicketUseRestriction>,
 }
 
 impl Collections {
@@ -88,16 +92,20 @@ impl Collections {
             transfers,
             trip_properties,
             geometries,
-            tickets,
-            od_rules,
             admin_stations,
             stop_time_headsigns,
             stop_time_ids,
             stop_time_comments,
+            prices_v1,
+            od_fares_v1,
+            fares_v1,
+            tickets,
+            ticket_uses,
+            ticket_prices,
+            ticket_use_perimeters,
+            ticket_use_restrictions,
             ..
         } = c;
-        self.tickets.merge(tickets);
-        self.od_rules.merge(od_rules);
         self.contributors.try_merge(contributors)?;
         self.datasets.try_merge(datasets)?;
         self.networks.try_merge(networks)?;
@@ -106,6 +114,14 @@ impl Collections {
         self.routes.try_merge(routes)?;
         self.physical_modes.extend(physical_modes);
         self.stop_areas.try_merge(stop_areas)?;
+        self.prices_v1.merge(prices_v1);
+        self.od_fares_v1.merge(od_fares_v1);
+        self.fares_v1.merge(fares_v1);
+        self.tickets.try_merge(tickets)?;
+        self.ticket_uses.try_merge(ticket_uses)?;
+        self.ticket_prices.merge(ticket_prices);
+        self.ticket_use_perimeters.merge(ticket_use_perimeters);
+        self.ticket_use_restrictions.merge(ticket_use_restrictions);
 
         fn get_new_idx<T>(
             old_idx: Idx<T>,

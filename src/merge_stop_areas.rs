@@ -18,10 +18,10 @@
 
 use serde_json;
 
-use crate::collection::CollectionWithId;
+use crate::collection::{Collection, CollectionWithId};
 use crate::model::Collections;
-use crate::objects::StopArea;
 use crate::objects::{CommentLinksT, KeysValues};
+use crate::objects::{RestrictionType, StopArea};
 use crate::utils::{Report, ReportType};
 use crate::Result;
 use csv;
@@ -182,6 +182,7 @@ fn apply_rules(
     let mut stop_points_updated = collections.stop_points.take();
     let mut geometries_updated = collections.geometries.take();
     let mut lines_updated = collections.lines.take();
+    let mut ticket_use_restrictions_updated = collections.ticket_use_restrictions.take();
     let mut stop_areas_to_remove: HashSet<String> = HashSet::new();
     let mut stop_area_ids = collections
         .stop_areas
@@ -208,6 +209,19 @@ fn apply_rules(
             if let Some(ref mut backward) = line.backward_direction {
                 if rule.to_merge_stop_area_ids.contains(&backward) {
                     *backward = rule.master_stop_area_id.clone();
+                }
+            }
+        }
+        for ticket in &mut ticket_use_restrictions_updated {
+            if ticket.restriction_type == RestrictionType::OriginDestination {
+                if rule.to_merge_stop_area_ids.contains(&ticket.use_origin) {
+                    ticket.use_origin = rule.master_stop_area_id.clone();
+                }
+                if rule
+                    .to_merge_stop_area_ids
+                    .contains(&ticket.use_destination)
+                {
+                    ticket.use_destination = rule.master_stop_area_id.clone();
                 }
             }
         }
@@ -240,6 +254,7 @@ fn apply_rules(
     collections.geometries = CollectionWithId::new(geometries_updated)?;
     collections.stop_areas = CollectionWithId::new(stop_areas_updated)?;
     collections.lines = CollectionWithId::new(lines_updated)?;
+    collections.ticket_use_restrictions = Collection::new(ticket_use_restrictions_updated);
     Ok(collections)
 }
 

@@ -1,0 +1,4 @@
+ticket_use_id,restriction_type,use_origin,use_destination
+ticket-use.2,OD,NAT,CDG
+ticket-use.3,zone,ZoneParis,ZoneOffParis
+ticket-use.4,OD,NAT,CDG

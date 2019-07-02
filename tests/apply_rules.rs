@@ -41,6 +41,7 @@ mod tests {
                 "stops.txt",
                 "networks.txt",
                 "admin_stations.txt",
+                "ticket_use_perimeters.txt",
             ];
 
             let input_dir = "fixtures/apply_rules/input";

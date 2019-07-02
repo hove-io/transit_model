@@ -1,0 +1,3 @@
+avant changement;après changement;début trajet;fin trajet;condition globale;clef ticket
+*;line=line:OIF:002002002:LICOIF829;stoparea=stop_area:OIF:SA:10:1002;stoparea=stop_area:OIF:SA:10:1002;;ticket.1
+*;network=network:OIF:101;;;;ticket.2

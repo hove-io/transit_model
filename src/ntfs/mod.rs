@@ -29,7 +29,6 @@ use crate::objects::*;
 use crate::read_utils;
 use crate::utils::*;
 use crate::Result;
-use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use log::info;
 use serde_derive::{Deserialize, Serialize};
@@ -83,59 +82,6 @@ struct Stop {
     equipment_id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Price {
-    id: String,
-    #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
-    )]
-    start_date: NaiveDate,
-    #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
-    )]
-    end_date: NaiveDate,
-    price: u32,
-    name: String,
-    ignored: String,
-    comment: String,
-    currency_type: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ODFare {
-    #[serde(rename = "Origin ID")]
-    origin_stop_area_id: String,
-    #[serde(rename = "Origin name")]
-    origin_name: Option<String>,
-    #[serde(rename = "Origin mode")]
-    origin_mode: String,
-    #[serde(rename = "Destination ID")]
-    destination_stop_area_id: String,
-    #[serde(rename = "Destination name")]
-    destination_name: Option<String>,
-    #[serde(rename = "Destination mode")]
-    destination_mode: String,
-    ticket_id: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Fare {
-    #[serde(rename = "avant changement")]
-    before_change: String,
-    #[serde(rename = "après changement")]
-    after_change: String,
-    #[serde(rename = "début trajet")]
-    start_trip: String,
-    #[serde(rename = "fin trajet")]
-    end_trip: String,
-    #[serde(rename = "condition globale")]
-    global_condition: String,
-    #[serde(rename = "clef ticket")]
-    ticket_id: String,
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct CommentLink {
     object_id: String,
@@ -185,6 +131,11 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.trip_properties = make_opt_collection_with_id(path, "trip_properties.txt")?;
     collections.transfers = make_opt_collection(path, "transfers.txt")?;
     collections.admin_stations = make_opt_collection(path, "admin_stations.txt")?;
+    collections.tickets = make_opt_collection_with_id(path, "tickets.txt")?;
+    collections.ticket_uses = make_opt_collection_with_id(path, "ticket_uses.txt")?;
+    collections.ticket_prices = make_opt_collection(path, "ticket_prices.txt")?;
+    collections.ticket_use_perimeters = make_opt_collection(path, "ticket_use_perimeters.txt")?;
+    collections.ticket_use_restrictions = make_opt_collection(path, "ticket_use_restrictions.txt")?;
     common_format::manage_calendars(&mut file_handle, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
@@ -193,7 +144,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     read::manage_codes(&mut collections, path)?;
     read::manage_comments(&mut collections, path)?;
     read::manage_object_properties(&mut collections, path)?;
-    read::manage_fares(&mut collections, path)?;
+    read::manage_fares_v1(&mut collections, path)?;
     read::manage_companies_on_vj(&mut collections)?;
     info!("Indexing");
     let res = Model::new(collections)?;
@@ -226,6 +177,19 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_collection_with_id(path, "geometries.txt", &model.geometries)?;
     write::write_collection(path, "transfers.txt", &model.transfers)?;
     write::write_collection(path, "admin_stations.txt", &model.admin_stations)?;
+    write::write_collection_with_id(path, "tickets.txt", &model.tickets)?;
+    write::write_collection_with_id(path, "ticket_uses.txt", &model.ticket_uses)?;
+    write::write_collection(path, "ticket_prices.txt", &model.ticket_prices)?;
+    write::write_collection(
+        path,
+        "ticket_use_perimeters.txt",
+        &model.ticket_use_perimeters,
+    )?;
+    write::write_collection(
+        path,
+        "ticket_use_restrictions.txt",
+        &model.ticket_use_restrictions,
+    )?;
     write::write_vehicle_journeys_and_stop_times(
         path,
         &model.vehicle_journeys,
@@ -238,7 +202,7 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
-    write::write_fares(path, &model.tickets, &model.od_rules)?;
+    write::write_fares_v1(path, &model.prices_v1, &model.od_fares_v1, &model.fares_v1)?;
 
     Ok(())
 }
@@ -343,7 +307,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.7".to_string()),
+                    ("ntfs_version".to_string(), "0.9".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -1300,6 +1264,171 @@ mod tests {
                 admin_name: "Paris Nord".to_string(),
                 stop_id: "OIF:SA:8727100".to_string(),
                 station_id: None,
+            },
+        ]);
+    }
+
+    #[test]
+    fn prices_v1_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            PriceV1 {
+                id: "PV1-01".to_string(),
+                start_date: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                end_date: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                price: 190,
+                name: "Ticket PV1-01".to_string(),
+                ignored: "".to_string(),
+                comment: "Comment on PV1-01".to_string(),
+                currency_type: Some("centime".to_string()),
+            },
+            PriceV1 {
+                id: "PV1-02".to_string(),
+                start_date: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                end_date: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                price: 280,
+                name: "Ticket PV1-02".to_string(),
+                ignored: "".to_string(),
+                comment: "".to_string(),
+                currency_type: None,
+            },
+        ]);
+    }
+
+    #[test]
+    fn od_fares_v1_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            ODFareV1 {
+                origin_stop_area_id: "stop_area:0:SA:8727114".to_string(),
+                origin_name: Some("EPINAY-S/SEINE".to_string()),
+                origin_mode: "stop".to_string(),
+                destination_stop_area_id: "stop_area:0:SA:8727116".to_string(),
+                destination_name: Some("PIERREFITTE-ST.".to_string()),
+                destination_mode: "stop".to_string(),
+                ticket_id: "29".to_string(),
+            },
+            ODFareV1 {
+                origin_stop_area_id: "stop_area:0:SA:8773006".to_string(),
+                origin_name: None,
+                origin_mode: "zone".to_string(),
+                destination_stop_area_id: "stop_area:0:SA:8775812".to_string(),
+                destination_name: None,
+                destination_mode: "stop".to_string(),
+                ticket_id: "99-93".to_string(),
+            },
+        ]);
+    }
+
+    #[test]
+    fn fares_v1_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            FareV1 {
+                before_change: "*".to_string(),
+                after_change: "mode=physical_mode:Bus".to_string(),
+                start_trip: "duration<90".to_string(),
+                end_trip: "".to_string(),
+                global_condition: "".to_string(),
+                ticket_id: "".to_string(),
+            },
+            FareV1 {
+                before_change: "*".to_string(),
+                after_change: "network=network:0:56".to_string(),
+                start_trip: "zone=1".to_string(),
+                end_trip: "zone=1".to_string(),
+                global_condition: "exclusive".to_string(),
+                ticket_id: "tickett".to_string(),
+            },
+        ]);
+    }
+
+    #[test]
+    fn tickets_serialization_deserialization() {
+        test_serialize_deserialize_collection_with_id(vec![
+            Ticket {
+                id: "PF1:Ticket1".to_string(),
+                name: "Ticket name 1".to_string(),
+                comment: Some("Some comment on ticket".to_string()),
+            },
+            Ticket {
+                id: "PF2:Ticket2".to_string(),
+                name: "Ticket name 1".to_string(),
+                comment: None,
+            },
+        ]);
+    }
+
+    #[test]
+    fn ticket_uses_serialization_deserialization() {
+        test_serialize_deserialize_collection_with_id(vec![
+            TicketUse {
+                id: "PF1:TicketUse1".to_string(),
+                ticket_id: "PF1:Ticket1".to_string(),
+                max_transfers: Some(1),
+                boarding_time_limit: Some(60),
+                alighting_time_limit: Some(60),
+            },
+            TicketUse {
+                id: "PF2:TicketUse2".to_string(),
+                ticket_id: "PF2:Ticket2".to_string(),
+                max_transfers: None,
+                boarding_time_limit: None,
+                alighting_time_limit: None,
+            },
+        ]);
+    }
+
+    #[test]
+    fn ticket_prices_serialization_deserialization() {
+        use rust_decimal_macros::dec;
+        test_serialize_deserialize_collection(vec![
+            TicketPrice {
+                ticket_id: "PF1:Ticket1".to_string(),
+                price: dec!(150.0),
+                currency: "EUR".to_string(),
+                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
+            },
+            TicketPrice {
+                ticket_id: "PF2:Ticket2".to_string(),
+                price: dec!(900.0),
+                currency: "GHS".to_string(),
+                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
+            },
+        ]);
+    }
+
+    #[test]
+    fn ticket_use_perimeters_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            TicketUsePerimeter {
+                ticket_use_id: "PF1:TicketUse1".to_string(),
+                object_type: ObjectType::Network,
+                object_id: "PF1:Network1".to_string(),
+                perimeter_action: PerimeterAction::Included,
+            },
+            TicketUsePerimeter {
+                ticket_use_id: "PF1:TicketUse1".to_string(),
+                object_type: ObjectType::Line,
+                object_id: "PF2:Line2".to_string(),
+                perimeter_action: PerimeterAction::Excluded,
+            },
+        ]);
+    }
+
+    #[test]
+    fn ticket_use_restrictions_serialization_deserialization() {
+        test_serialize_deserialize_collection(vec![
+            TicketUseRestriction {
+                ticket_use_id: "PF1:TicketUse1".to_string(),
+                restriction_type: RestrictionType::OriginDestination,
+                use_origin: "PF1:SA1".to_string(),
+                use_destination: "PF1:SA2".to_string(),
+            },
+            TicketUseRestriction {
+                ticket_use_id: "PF2:TicketUse2".to_string(),
+                restriction_type: RestrictionType::Zone,
+                use_origin: "PF2:ZO1".to_string(),
+                use_destination: "PF2:ZO2".to_string(),
             },
         ]);
     }

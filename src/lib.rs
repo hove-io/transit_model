@@ -28,6 +28,7 @@ pub(crate) mod common_format;
 #[macro_use]
 pub mod objects;
 pub mod gtfs;
+pub mod hellogo_fares;
 #[cfg(feature = "proj")]
 pub mod kv1;
 pub mod merge_stop_areas;
@@ -35,14 +36,13 @@ pub mod model;
 pub mod ntfs;
 mod read_utils;
 pub mod relations;
-pub mod syntus_fares;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
 pub mod vptranslator;
 
 /// Current version of the NTFS format
-pub const NTFS_VERSION: &str = "0.7";
+pub const NTFS_VERSION: &str = "0.9";
 
 lazy_static::lazy_static! {
     /// Current datetime

@@ -14,7 +14,9 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+#[cfg(feature = "proj")]
 use transit_model;
+#[cfg(feature = "proj")]
 use transit_model::test_utils::*;
 
 #[cfg(feature = "proj")]
