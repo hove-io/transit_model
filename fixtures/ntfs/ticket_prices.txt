@@ -1,0 +1,5 @@
+ticket_id,ticket_price,ticket_currency,ticket_validity_start,ticket_validity_end
+ticket.1,0.90,EUR,20190101,20191231
+ticket.2,1.13,EUR,20190101,20191231
+ticket.3,1.38,GBP,20190101,20191231
+ticket.4,1.16,EUR,20190101,20191231

@@ -1,0 +1,4 @@
+ticket_use_id,object_type,object_id,perimeter_action
+ticket-use.1,network,101,1
+ticket-use.1,network,102,1
+ticket-use.1,line,002002002:LICOIF829,2
