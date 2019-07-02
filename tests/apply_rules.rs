@@ -40,6 +40,7 @@ mod tests {
                 "trips.txt",
                 "stops.txt",
                 "networks.txt",
+                "admin_stations.txt",
                 "ticket_use_perimeters.txt",
             ];
 

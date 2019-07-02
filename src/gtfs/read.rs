@@ -419,7 +419,7 @@ fn interpolate_undefined_stop_times(
         if !undefined_stops_bulk.is_empty() {
             let values = ventilate_stop_times(
                 &undefined_stops_bulk,
-                res.last().ok_or(format_err!("the first stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))?,
+                res.last().ok_or_else(|| format_err!("the first stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))?,
                 &st_value,
             );
             res.extend(values);

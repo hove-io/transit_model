@@ -1250,16 +1250,19 @@ mod tests {
                 admin_id: "admin:1".to_string(),
                 admin_name: "Paris 12".to_string(),
                 stop_id: "OIF:SA:8768600".to_string(),
+                station_id: None,
             },
             AdminStation {
                 admin_id: "admin:1".to_string(),
                 admin_name: "Paris 12".to_string(),
                 stop_id: "OIF:SA:8768666".to_string(),
+                station_id: None,
             },
             AdminStation {
                 admin_id: "admin:2".to_string(),
                 admin_name: "Paris Nord".to_string(),
                 stop_id: "OIF:SA:8727100".to_string(),
+                station_id: None,
             },
         ]);
     }

@@ -43,7 +43,7 @@ pub struct BlockPattern {
 }
 
 fn get_prev_monday(date: Date) -> Date {
-    date - Duration::days(date.weekday().num_days_from_monday() as i64)
+    date - Duration::days(i64::from(date.weekday().num_days_from_monday()))
 }
 
 fn compute_validity_pattern(start_date: Date, end_date: Date, dates: &BTreeSet<Date>) -> Vec<u8> {
@@ -88,9 +88,9 @@ fn fill_exceptions(
 ) {
     for i in 0..7 {
         if exception & (1 << i) == (1 << i) {
-            let date = start_date + Duration::days((6 - i) as i64);
+            let date = start_date + Duration::days(i64::from(6 - i));
             exception_list.push(ExceptionDate {
-                date: date,
+                date,
                 exception_type: exception_type.clone(),
             });
         }
@@ -148,10 +148,10 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
     }
     clean_extra_dates(start_date, end_date, &mut exceptions_list);
     BlockPattern {
-        operating_days: operating_days,
+        operating_days,
         validity_period: Some(ValidityPeriod {
-            start_date: start_date,
-            end_date: end_date,
+            start_date,
+            end_date,
         }),
         exceptions: exceptions_list,
     }
