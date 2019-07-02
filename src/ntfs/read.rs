@@ -531,6 +531,29 @@ pub fn manage_geometries(collections: &mut Collections, path: &path::Path) -> Re
     Ok(())
 }
 
+pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {
+    let vjs_without_company: Vec<Idx<VehicleJourney>> = collections
+        .vehicle_journeys
+        .iter()
+        .filter_map(|(idx, _)| {
+            if collections.vehicle_journeys[idx].company_id.is_empty() {
+                Some(idx)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    if !vjs_without_company.is_empty() {
+        let default_company = collections.companies.get_or_create("default_company");
+        for vj_idx in vjs_without_company {
+            let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
+            vj.company_id = default_company.id.to_string();
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::model::Collections;

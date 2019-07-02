@@ -194,6 +194,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     read::manage_comments(&mut collections, path)?;
     read::manage_object_properties(&mut collections, path)?;
     read::manage_fares(&mut collections, path)?;
+    read::manage_companies_on_vj(&mut collections)?;
     info!("Indexing");
     let res = Model::new(collections)?;
     info!("Loading NTFS done");
