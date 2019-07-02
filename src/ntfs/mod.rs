@@ -200,6 +200,10 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.ticket_use_perimeters = make_opt_collection(path, "ticket_use_perimeters.txt")?;
     collections.ticket_use_restrictions = make_opt_collection(path, "ticket_use_restrictions.txt")?;
     collections.levels = make_opt_collection_with_id(path, "levels.txt")?;
+    collections.grid_calendars = make_opt_collection_with_id(path, "grid_calendars.txt")?;
+    collections.grid_exception_dates = make_opt_collection(path, "grid_exception_dates.txt")?;
+    collections.grid_periods = make_opt_collection(path, "grid_periods.txt")?;
+    collections.grid_rel_calendar_line = make_opt_collection(path, "grid_rel_calendar_line.txt")?;
     manage_calendars(&mut file_handle, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
@@ -254,6 +258,18 @@ pub fn write<P: AsRef<path::Path>>(
         path,
         "ticket_use_restrictions.txt",
         &model.ticket_use_restrictions,
+    )?;
+    write_collection_with_id(path, "grid_calendars.txt", &model.grid_calendars)?;
+    write_collection(
+        path,
+        "grid_exception_dates.txt",
+        &model.grid_exception_dates,
+    )?;
+    write_collection(path, "grid_periods.txt", &model.grid_periods)?;
+    write_collection(
+        path,
+        "grid_rel_calendar_line.txt",
+        &model.grid_rel_calendar_line,
     )?;
     write::write_vehicle_journeys_and_stop_times(
         path,

@@ -240,6 +240,24 @@ fn preserve_frequencies() {
 }
 
 #[test]
+fn preserve_grid() {
+    let ntm = transit_model::ntfs::read("tests/fixtures/ntfs/").unwrap();
+    test_in_tmp_dir(|output_dir| {
+        transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &output_dir,
+            Some(vec![
+                "grid_calendars.txt",
+                "grid_exception_dates.txt",
+                "grid_periods.txt",
+                "grid_rel_calendar_line.txt",
+            ]),
+            "tests/fixtures/ntfs2ntfs/grid",
+        );
+    });
+}
+
+#[test]
 fn sanitize_frequencies() {
     let mut collections = Collections::default();
     let frequency = Frequency {

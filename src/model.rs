@@ -71,6 +71,10 @@ pub struct Collections {
     pub ticket_use_restrictions: Collection<TicketUseRestriction>,
     pub pathways: CollectionWithId<Pathway>,
     pub levels: CollectionWithId<Level>,
+    pub grid_calendars: CollectionWithId<GridCalendar>,
+    pub grid_exception_dates: Collection<GridExceptionDate>,
+    pub grid_periods: Collection<GridPeriod>,
+    pub grid_rel_calendar_line: Collection<GridRelCalendarLine>,
 }
 
 impl Collections {

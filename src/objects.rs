@@ -1637,6 +1637,65 @@ impl AddPrefix for TicketUseRestriction {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GridCalendar {
+    pub id: String,
+    pub name: String,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub monday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub tuesday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub wednesday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub thursday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub friday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub saturday: bool,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub sunday: bool,
+}
+impl_id!(GridCalendar);
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GridExceptionDate {
+    pub grid_calendar_id: String,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub date: Date,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub r#type: bool,
+}
+impl_id!(GridExceptionDate, GridCalendar, grid_calendar_id);
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GridPeriod {
+    pub grid_calendar_id: String,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub start_date: Date,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub end_date: Date,
+}
+impl_id!(GridPeriod, GridCalendar, grid_calendar_id);
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GridRelCalendarLine {
+    pub grid_calendar_id: String,
+    pub line_id: String,
+    pub line_external_code: Option<String>,
+}
+impl_id!(GridRelCalendarLine, GridCalendar, grid_calendar_id);
+impl_id!(GridRelCalendarLine, Line, line_id);
+
 #[cfg(test)]
 mod tests {
     use super::*;

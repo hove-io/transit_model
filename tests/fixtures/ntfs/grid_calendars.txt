@@ -1,0 +1,2 @@
+id,name,monday,tuesday,wednesday,thursday,friday,saturday,sunday
+1,Grid Calendar 1,1,1,1,1,1,0,0
