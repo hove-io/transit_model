@@ -20,6 +20,7 @@ use std::path;
 use super::{Code, CommentLink, ObjectProperty, Stop, StopTime};
 use crate::collection::*;
 use crate::model::Collections;
+use crate::ntfs::has_fares_v2;
 use crate::objects::*;
 use crate::utils::make_collection_with_id;
 use crate::Result;
@@ -110,7 +111,10 @@ pub fn manage_fares_v1(collections: &mut Collections, base_path: &path::Path) ->
     let file_od_fares = "od_fares.csv";
     let file_fares = "fares.csv";
 
-    if !base_path.join(file_prices).exists() || !base_path.join(file_od_fares).exists() {
+    if !base_path.join(file_prices).exists()
+        || !base_path.join(file_od_fares).exists()
+        || has_fares_v2(collections)
+    {
         info!(
             "Skipping {}, {} and {}",
             file_prices, file_od_fares, file_fares

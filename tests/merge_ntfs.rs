@@ -275,10 +275,9 @@ fn merge_collections_fares_v2() {
                 "ticket_uses.txt",
                 "ticket_use_perimeters.txt",
                 "ticket_use_restrictions.txt",
-                // TODO: Uncomment once conversion fare V2 into V1 is done
-                // "prices.csv",
-                // "fares.csv",
-                // "od_fares.csv",
+                "prices.csv",
+                "fares.csv",
+                "od_fares.csv",
             ]),
             "./fixtures/merge-ntfs/output_merge_fares",
         );
@@ -324,10 +323,9 @@ fn merge_collections_fares_v2_with_ntfs_only_farev1() {
                 "ticket_uses.txt",
                 "ticket_use_perimeters.txt",
                 "ticket_use_restrictions.txt",
-                // TODO: Uncomment once conversion fare V2 into V1 is done
-                // "prices.csv",
-                // "fares.csv",
-                // "od_fares.csv",
+                "prices.csv",
+                "fares.csv",
+                "od_fares.csv",
             ]),
             "./fixtures/merge-ntfs/output_merge_fares_only_one_farev2",
         );
