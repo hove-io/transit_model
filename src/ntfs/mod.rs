@@ -216,7 +216,7 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
-    write::write_fares_v1_dispatch(path, &model)?;
+    write::write_fares_v1(path, &model)?;
 
     Ok(())
 }

@@ -23,7 +23,7 @@ use crate::NTFS_VERSION;
 use chrono::{Duration, NaiveDateTime};
 use csv;
 use failure::{format_err, ResultExt};
-use log::info;
+use log::{info, warn};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
 use serde;
 use std::collections::{BTreeMap, HashMap};
@@ -37,7 +37,7 @@ impl TryFrom<(&Ticket, &TicketPrice)> for PriceV1 {
         let cents_price = cents_price
             .round_dp(0)
             .to_u32()
-            .ok_or_else(|| format_err!("Cannot convert price into a u32"))?;
+            .ok_or_else(|| format_err!("Cannot convert price {:?} into a u32", price.price))?;
         let comment = ticket.comment.as_ref().cloned().unwrap_or_else(String::new);
         let price_v1 = Self {
             id: ticket.id.clone(),
@@ -141,7 +141,7 @@ pub fn write_vehicle_journeys_and_stop_times(
     Ok(())
 }
 
-fn write_fares_v1(
+fn do_write_fares_v1(
     base_path: &path::Path,
     prices_v1: &Collection<PriceV1>,
     od_fares_v1: &Collection<ODFareV1>,
@@ -179,6 +179,7 @@ fn write_fares_v1(
             .serialize(od_fare_v1)
             .with_context(ctx_from_path!(path))?;
     }
+    // Write file header if collection is empty (normally done by serialize)
     if od_fares_v1.is_empty() {
         od_fares_wtr.write_record(&[
             "Origin ID",
@@ -221,14 +222,17 @@ struct Fares<'a> {
 }
 
 fn has_constraints(ticket_use: &TicketUse) -> bool {
-    ticket_use.max_transfers.map(|mt| mt != 0).unwrap_or(false)
-        || ticket_use.boarding_time_limit.is_some()
-        || ticket_use.alighting_time_limit.is_some()
+    ticket_use
+        .max_transfers
+        .filter(|&mt| mt != 0)
+        .or(ticket_use.boarding_time_limit)
+        .or(ticket_use.alighting_time_limit)
+        .is_some()
 }
 
 fn get_prices<'a>(
     ticket_prices: &'a Collection<TicketPrice>,
-    ticket_id: &'a String,
+    ticket_id: &str,
 ) -> Vec<&'a TicketPrice> {
     ticket_prices
         .values()
@@ -264,7 +268,7 @@ fn insert_od_specific_line_as_fare_v1(
                 .and_then(|ticket_use| fares.tickets.get(&ticket_use.ticket_id))
                 .map(|ticket| (ticket, ticket_use_restriction))
                 .or_else(|| {
-                    info!(
+                    warn!(
                         "Failed to find Ticket for TicketUseId {:?}",
                         ticket_use_restriction.ticket_use_id
                     );
@@ -286,7 +290,7 @@ fn insert_od_specific_line_as_fare_v1(
             .collect();
 
         if perimeters.is_empty() {
-            info!(
+            warn!(
                 "Failed to find TicketUsePerimeter for TicketUse {:?}",
                 ticket_use_id
             );
@@ -295,7 +299,7 @@ fn insert_od_specific_line_as_fare_v1(
 
         let prices = get_prices(fares.ticket_prices, &ticket.id);
         if prices.is_empty() {
-            info!("Failed to find TicketPrice for Ticket {:?}", ticket.id);
+            warn!("Failed to find TicketPrice for Ticket {:?}", ticket.id);
             continue;
         }
 
@@ -320,8 +324,8 @@ fn insert_od_specific_line_as_fare_v1(
     Ok(())
 }
 
-// Conversion of a flat fate on a specific network
-// https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs_fare_conversion_v2_to_V1.md#conversion-of-a-flat-fate-on-a-specific-network
+// Conversion of a flat fare on a specific network
+// https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs_fare_conversion_v2_to_V1.md#conversion-of-a-flat-fare-on-a-specific-network
 fn insert_flat_fare_as_fare_v1(
     fares: &Fares,
     prices_v1: &mut Vec<PriceV1>,
@@ -339,7 +343,7 @@ fn insert_flat_fare_as_fare_v1(
                 .and_then(|ticket_use| fares.tickets.get(&ticket_use.ticket_id))
                 .map(|ticket| (ticket, ticket_use_perimeter))
                 .or_else(|| {
-                    info!(
+                    warn!(
                         "Failed to find Ticket for TicketUseId {:?}",
                         ticket_use_perimeter.ticket_use_id
                     );
@@ -349,7 +353,7 @@ fn insert_flat_fare_as_fare_v1(
     for (ticket, ticket_use_perimeter) in ticket_use_perimeters {
         let prices = get_prices(fares.ticket_prices, &ticket.id);
         if prices.is_empty() {
-            info!("Failed to find TicketPrice for Ticket {:?}", ticket.id);
+            warn!("Failed to find TicketPrice for Ticket {:?}", ticket.id);
             continue;
         }
 
@@ -377,24 +381,24 @@ fn insert_flat_fare_as_fare_v1(
     Ok(())
 }
 
-fn write_fares_v1_from_v2(base_path: &path::Path, fares: &Fares) -> Result<()> {
+fn do_write_fares_v1_from_v2(base_path: &path::Path, fares: &Fares) -> Result<()> {
     let mut prices_v1: Vec<PriceV1> = vec![];
     let mut fares_v1: Vec<FareV1> = vec![];
 
     insert_od_specific_line_as_fare_v1(fares, &mut prices_v1, &mut fares_v1)?;
     insert_flat_fare_as_fare_v1(fares, &mut prices_v1, &mut fares_v1)?;
 
-    return write_fares_v1(
+    do_write_fares_v1(
         base_path,
         &Collection::new(prices_v1),
         &Collection::new(vec![]),
         &Collection::new(fares_v1),
-    );
+    )
 }
 
-pub fn write_fares_v1_dispatch(base_path: &path::Path, collections: &Collections) -> Result<()> {
+pub fn write_fares_v1(base_path: &path::Path, collections: &Collections) -> Result<()> {
     if has_fares_v2(collections) {
-        return write_fares_v1_from_v2(
+        return do_write_fares_v1_from_v2(
             base_path,
             &Fares {
                 tickets: &collections.tickets,
@@ -404,8 +408,9 @@ pub fn write_fares_v1_dispatch(base_path: &path::Path, collections: &Collections
                 ticket_use_restrictions: &collections.ticket_use_restrictions,
             },
         );
-    } else if has_fares_v1(collections) {
-        return write_fares_v1(
+    }
+    if has_fares_v1(collections) {
+        return do_write_fares_v1(
             base_path,
             &collections.prices_v1,
             &collections.od_fares_v1,

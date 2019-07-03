@@ -48,7 +48,7 @@ prices.csv field | Source file | Source field | Notes/Mapping rule
 This file must be created without any data.
 
 
-## Conversion of a flat fate on a specific network
+## Conversion of a flat fare on a specific network
 
 ### Description in V2 model
 An flat fare on a specific network is described in the V2 fare sytem as:
