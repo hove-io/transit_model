@@ -256,21 +256,24 @@ fn insert_od_specific_line_as_fare_v1(
                 .get(&ticket_use_restriction.ticket_use_id)
                 .map(|ticket_use| !has_constraints(ticket_use))
                 .unwrap_or(false)
+        })
+        .filter_map(|ticket_use_restriction| {
+            fares
+                .ticket_uses
+                .get(&ticket_use_restriction.ticket_use_id)
+                .and_then(|ticket_use| fares.tickets.get(&ticket_use.ticket_id))
+                .map(|ticket| (ticket, ticket_use_restriction))
+                .or_else(|| {
+                    info!(
+                        "Failed to find Ticket for TicketUseId {:?}",
+                        ticket_use_restriction.ticket_use_id
+                    );
+                    None
+                })
         });
 
-    for ticket_use_restriction in ticket_use_restrictions {
+    for (ticket, ticket_use_restriction) in ticket_use_restrictions {
         let ticket_use_id = &ticket_use_restriction.ticket_use_id;
-        let ticket = match fares
-            .ticket_uses
-            .get(ticket_use_id)
-            .and_then(|ticket_use| fares.tickets.get(&ticket_use.ticket_id))
-        {
-            Some(t) => t,
-            _ => {
-                info!("Failed to find Ticket for TicketUseId {:?}", ticket_use_id);
-                continue;
-            }
-        };
 
         let perimeters: Vec<&TicketUsePerimeter> = fares
             .ticket_use_perimeters
@@ -328,21 +331,22 @@ fn insert_flat_fare_as_fare_v1(
         .ticket_use_perimeters
         .values()
         .filter(|p| p.object_type == ObjectType::Network)
-        .filter(|p| p.perimeter_action == PerimeterAction::Included);
-    for ticket_use_perimeter in ticket_use_perimeters {
-        let ticket_use_id = &ticket_use_perimeter.ticket_use_id;
-        let ticket = match fares
-            .ticket_uses
-            .get(ticket_use_id)
-            .and_then(|ticket_use| fares.tickets.get(&ticket_use.ticket_id))
-        {
-            Some(t) => t,
-            _ => {
-                info!("Failed to find Ticket for TicketUseId {:?}", ticket_use_id);
-                continue;
-            }
-        };
-
+        .filter(|p| p.perimeter_action == PerimeterAction::Included)
+        .filter_map(|ticket_use_perimeter| {
+            fares
+                .ticket_uses
+                .get(&ticket_use_perimeter.ticket_use_id)
+                .and_then(|ticket_use| fares.tickets.get(&ticket_use.ticket_id))
+                .map(|ticket| (ticket, ticket_use_perimeter))
+                .or_else(|| {
+                    info!(
+                        "Failed to find Ticket for TicketUseId {:?}",
+                        ticket_use_perimeter.ticket_use_id
+                    );
+                    None
+                })
+        });
+    for (ticket, ticket_use_perimeter) in ticket_use_perimeters {
         let prices = get_prices(fares.ticket_prices, &ticket.id);
         if prices.is_empty() {
             info!("Failed to find TicketPrice for Ticket {:?}", ticket.id);
