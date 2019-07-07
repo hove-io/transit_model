@@ -13,9 +13,9 @@ the general pattern `<prefix>:<id>`.
 ## Input data description
 Each file of a TransXChange dataset represents a transit line for a *specific 
 operating period*. Several files of the same archive might need to be read in order 
-to consolidate all the trips associated to a NTFS line.
+to consolidate all the trips associated to a transit NTFS line.
 
-An addtional source is necessary in order to retrieve the information relative to the 
+An additional data source is necessary in order to retrieve the information relative to the 
 stops used in the TransXChange feed. The National Public Transport Access Nodes ([NaPTAN](http://naptan.app.dft.gov.uk/DataRequest/Naptan.ashx?format=csv)) database 
 is a UK nationwide system for uniquely identifying all the points of access to public transport in the UK.
 
@@ -96,14 +96,20 @@ A Route is created from a line and a direction of journey patterns (*StandardSer
 Routes might not be specified at all in the xml --> reconstruct routes after trips?
 
 ### calendar_dates.txt
-The validity period of a service is stated in *Services/Service/OperatingPeriod*. In case the *EndDate* is not specified, the default value [*StartDate* + 180 days] should be used.
+The validity period of a service is stated in *Services/Service/OperatingPeriod*. In case the validity period is open ended (the *EndDate* is not specified), the default value [*StartDate* + 180 days] should be used.
 
-Service days are calculated from the *VehicleJourneys/VehicleJourney/OperatingProfile* (if not specified, the operation days are inherited from *Service/OperatingProfile*). The corresponding day of the week is activated according to the pattern given by *RegularDayType/DaysofWeek*. In case *DaysOfNonOperation* is defined, the corresponding days are excluded from the associated service.
+Service days are calculated from the *VehicleJourneys/VehicleJourney/OperatingProfile* (if not specified, the operation days are inherited from *Service/OperatingProfile*). The corresponding days of the week are activated according to the pattern given by *RegularDayType/DaysOfWeek*. If no particular day of the week is explicitly specified, all days of the week (Monday to Sunday) are considered by default.
+
+The element *SpecialDaysOperation* may also be present specifying a *DateRange* with the specific dates of (non) operation. The days on which the service does (*DaysOfOperation*) or does not (*DaysOfNonOperation*) run are specified separately. Note that special days of operation are additional to the regular operating period (inclusion); inversely, special days of non operation further restrict the regular operating period (exclusion).
+
+Similarly, the element *BankHolidaysOperation* may be also be present, specifying how the service operates on a bank holiday. The possible values are the following: `AllBankHolidays`, `AllHolidaysExceptChristmas`, `ChristmasDay`, `Christmas`, `BoxingDay`, `NewYearsDay`, `Jan2ndScotland`, `GoodFriday`, `EasterMonday`, `MayDay`, `SpringBank`, `AugustBankHolidayScotland`, `LateSummerBankHolidayNotScotland`, `StAndrewsDay`.
+
+Note that special days override any Bank holiday day types.
 
 ### trips.txt
 A trip is to be created from a VehicleJourney and then link to the JourneyPattern that specifies the sequence of stops and time intervals for the trip.
 
-JourneyPattern or VehicleJourne/DestinationDisplay = trip_headsign
+JourneyPattern or VehicleJourney/DestinationDisplay = trip_headsign
 
 ### stop_times.txt
 
