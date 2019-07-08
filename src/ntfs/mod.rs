@@ -117,12 +117,13 @@ fn has_fares_v2(collections: &Collections) -> bool {
         && !collections.ticket_uses.is_empty()
         && !collections.ticket_use_perimeters.is_empty()
 }
+
 /// Checks if minimum FaresV1 collections are defined and not empty (fares_v1 is optional)
+/// `prices.csv` and `od_fares.csv` are mandatory but od_fares.csv can be empty.
 /// See https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fare_extension_fr_deprecated.md
 fn has_fares_v1(collections: &Collections) -> bool {
-    !collections.prices_v1.is_empty() && !collections.od_fares_v1.is_empty()
+    !collections.prices_v1.is_empty()
 }
-
 /// Imports a `Model` from the
 /// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
 /// files in the given directory.
