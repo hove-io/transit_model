@@ -30,7 +30,7 @@ use csv;
 use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
 use log::{info, warn};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path;
 

@@ -23,7 +23,7 @@ use crate::{Error, Result};
 use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::format_err;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops;

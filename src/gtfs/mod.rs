@@ -34,7 +34,7 @@ use crate::utils::*;
 use crate::Result;
 use derivative::Derivative;
 use log::info;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fs::File;
 use std::path::Path;

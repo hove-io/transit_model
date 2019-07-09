@@ -33,7 +33,7 @@ use failure::{format_err, ResultExt};
 use geo_types::Geometry as GeoGeometry;
 use lazy_static::lazy_static;
 use log::{info, warn};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs;
 use std::fs::File;

@@ -21,7 +21,7 @@ use crate::utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
 use crate::Result;
 use failure::{format_err, ResultExt};
 use log::info;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use serde_json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;

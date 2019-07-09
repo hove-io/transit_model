@@ -26,7 +26,7 @@ use crate::utils::{Report, ReportType};
 use crate::Result;
 use csv;
 use failure::{bail, ResultExt};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path;

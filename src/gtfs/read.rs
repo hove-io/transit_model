@@ -31,7 +31,7 @@ use derivative::Derivative;
 use failure::{bail, format_err, ResultExt};
 use geo_types::{LineString, Point};
 use log::{info, warn};
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::result::Result as StdResult;
 

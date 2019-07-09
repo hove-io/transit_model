@@ -22,7 +22,7 @@ use failure::ResultExt;
 use geo_types;
 use log::{debug, error, info};
 use rust_decimal::Decimal;
-use serde_derive::Serialize;
+use serde::Serialize;
 use std::fs;
 use std::io::{Read, Write};
 use std::path;
@@ -393,7 +393,7 @@ mod tests {
     mod serde_currency {
         use super::super::*;
         use pretty_assertions::assert_eq;
-        use serde_derive::{Deserialize, Serialize};
+        use serde::{Deserialize, Serialize};
 
         #[derive(Debug, Serialize, Deserialize)]
         struct CurrencyCodeWrapper {
@@ -441,7 +441,7 @@ mod tests {
         use super::super::*;
         use pretty_assertions::assert_eq;
         use rust_decimal_macros::dec;
-        use serde_derive::{Deserialize, Serialize};
+        use serde::{Deserialize, Serialize};
 
         #[derive(Debug, Serialize, Deserialize)]
         struct DecimalWrapper {
