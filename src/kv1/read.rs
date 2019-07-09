@@ -30,7 +30,7 @@ use geo_types::MultiPoint as GeoMultiPoint;
 use lazy_static::lazy_static;
 use log::info;
 use proj::Proj;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::result::Result as StdResult;
 
@@ -39,7 +39,6 @@ fn de_from_date_string<'de, D>(deserializer: D) -> StdResult<Date, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    use serde::Deserialize;
     let s = String::deserialize(deserializer)?;
 
     NaiveDate::parse_from_str(&s, "%Y-%m-%d").map_err(serde::de::Error::custom)

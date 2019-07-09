@@ -31,7 +31,7 @@ use crate::utils::*;
 use crate::Result;
 use chrono::NaiveDateTime;
 use log::info;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::path;
 use tempdir;
 

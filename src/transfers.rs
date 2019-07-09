@@ -24,7 +24,7 @@ use crate::Result;
 use csv;
 use failure::ResultExt;
 use log::info;
-use serde_derive::Deserialize;
+use serde::Deserialize;
 use std::collections::hash_map::Entry::*;
 use std::collections::BTreeSet;
 use std::collections::{HashMap, HashSet};

@@ -26,7 +26,7 @@ use chrono::NaiveDate;
 use derivative::Derivative;
 use geo_types::Geometry as GeoGeometry;
 use rust_decimal::Decimal;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
