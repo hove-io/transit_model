@@ -24,7 +24,7 @@ use crate::utils::*;
 use chrono;
 use chrono::NaiveDate;
 use derivative::Derivative;
-use geo_types::Geometry as GeoGeometry;
+use geo_types::{Geometry as GeoGeometry, Point as GeoPoint};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -850,6 +850,7 @@ impl GetObjectType for StopTime {
     }
 }
 
+/// Spatial Coordinates in WGS84 format (aka EPSG:4326)
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Default)]
 pub struct Coord {
     pub lon: f64,
@@ -895,6 +896,15 @@ impl Coord {
             cos_lat: lat_rad.cos(),
             lon_rad: self.lon.to_radians(),
             lat_rad,
+        }
+    }
+}
+
+impl From<GeoPoint<f64>> for Coord {
+    fn from(point: GeoPoint<f64>) -> Self {
+        Coord {
+            lon: point.x(),
+            lat: point.y(),
         }
     }
 }
