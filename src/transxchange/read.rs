@@ -16,11 +16,49 @@
 
 use crate::{
     model::{Collections, Model},
+    transxchange::naptan,
     Result,
 };
-use std::path::Path;
+use log::info;
+use minidom::Element;
+use std::{fs::File, io::Read, path::Path};
+use zip::ZipArchive;
+
+fn read_transxchange(_transxchange: &Element, _collections: &mut Collections) -> Result<()> {
+    unimplemented!()
+}
+
+fn read_transxchange_archive<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let zip_file = File::open(transxchange_path)?;
+    let mut zip_archive = ZipArchive::new(zip_file)?;
+    for index in 0..zip_archive.len() {
+        let mut zip_file = zip_archive.by_index(index)?;
+        match zip_file.sanitized_name().extension() {
+            Some(ext) if ext == "xml" => {
+                info!("reading TransXChange file {:?}", zip_file.sanitized_name());
+                let mut file_content = String::new();
+                zip_file.read_to_string(&mut file_content)?;
+                let root: Element = file_content.parse()?;
+                read_transxchange(&root, collections)?;
+            }
+            _ => {
+                info!("skipping file in zip: {:?}", zip_file.sanitized_name());
+            }
+        }
+    }
+    Ok(())
+}
 
 /// Read TransXChange format into a Navitia Transit Model
-pub fn read<P: AsRef<Path>>(_transxchange_path: P, _naptan_path: P) -> Result<Model> {
-    Model::new(Collections::default())
+pub fn read<P>(transxchange_path: P, naptan_path: P) -> Result<Model>
+where
+    P: AsRef<Path>,
+{
+    let mut collections = Collections::default();
+    naptan::read_naptan(naptan_path, &mut collections)?;
+    read_transxchange_archive(transxchange_path, &mut collections)?;
+    Model::new(collections)
 }

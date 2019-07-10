@@ -15,6 +15,8 @@
 // <http://www.gnu.org/licenses/>.
 
 //! Module to handle UK Theoric Data Model for Public Transportation called TransXChange
+
+mod naptan;
 mod read;
 
 pub use read::read;

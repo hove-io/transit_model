@@ -31,7 +31,7 @@ struct Opt {
     #[structopt(long, short, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// input directory containing NAPTAN files
+    /// input directory containing NaPTAN files
     #[structopt(long, short, parse(from_os_str), default_value = ".")]
     naptan: PathBuf,
 
