@@ -16,7 +16,7 @@
 
 //! The `transit_model` crate proposes a model to manage transit data.
 //! It can import and export data from [GTFS](http://gtfs.org/) and
-//! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
+//! [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
 
 #![deny(missing_docs)]
 
