@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-//! [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
+//! [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 //! format management.
 
 #![allow(missing_docs)]
@@ -125,7 +125,7 @@ fn has_fares_v1(collections: &Collections) -> bool {
     !collections.prices_v1.is_empty()
 }
 /// Imports a `Model` from the
-/// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
+/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let path = path.as_ref();
@@ -168,7 +168,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
 }
 
 /// Exports a `Model` to the
-/// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
+/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 pub fn write<P: AsRef<path::Path>>(
     model: &Model,
@@ -223,7 +223,7 @@ pub fn write<P: AsRef<path::Path>>(
 }
 
 /// Exports a `Model` to a
-/// [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md)
+/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 /// ZIP archive at the given full path.
 pub fn write_to_zip<P: AsRef<path::Path>>(
     model: &Model,

@@ -1,6 +1,6 @@
 # KV1 reading specification
 ## Introduction
-This document describes how a KV1 feed is read in Navitia Transit model (NTM) and transformed into a [NTFS feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
+This document describes how a KV1 feed is read in Navitia Transit model (NTM) and transformed into a [NTFS feed](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
 
 For the sake of simplicity, the following specification describes only those NTFS fields that are specified in the source data (e.g. the `network_url` is not specified and therefore not detailed.)
 

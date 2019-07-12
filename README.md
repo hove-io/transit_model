@@ -6,10 +6,10 @@ section [NTFS: Level of Support](#ntfs-level-of-support) for more details about 
 level of support of the NTFS standard.
 
 This repository also provides :
-- (incomplete) [GTFS](http://gtfs.org/) to [NTFS](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md) and (soon) NTFS to GTFS conversion.
+- (incomplete) [GTFS](http://gtfs.org/) to [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md) and (soon) NTFS to GTFS conversion.
 - (incomplete) Generation of transfers.
 .
-- Merge [NTFS] (https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
+- Merge [NTFS] (https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
 
 ## Compile
 
