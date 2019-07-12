@@ -14,8 +14,10 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-//! See function enrich_with_hellogo_fares
-mod read;
-mod utils;
+//! Some utilities to use Minidom and returns [Result](crate::Result) when
+//! parsing instead of [Option](Option)
 
-pub use self::read::enrich_with_hellogo_fares;
+mod try_attribute;
+pub use try_attribute::TryAttribute;
+mod try_only_child;
+pub use try_only_child::TryOnlyChild;

@@ -18,7 +18,14 @@ use crate::Result;
 use failure::bail;
 use minidom::Element;
 
+/// Try to get the only child of an [Element](minidom::Element) and returns a
+/// [Result](crate::Result) instead of an [Option](Option). Note also that
+/// [get_child()](minidom::Element::get_child) will return the first child if
+/// multiple childrens are found but TryOnlyChild will succeed only if one child
+/// is present (if none or more than two childrens are found, TryOnlyChild will
+/// fail)
 pub trait TryOnlyChild {
+    /// Try to get an unique child from its name and return a [Result](crate::Result)
     fn try_only_child<'a>(&'a self, child_name: &str) -> Result<&'a Element>;
 }
 

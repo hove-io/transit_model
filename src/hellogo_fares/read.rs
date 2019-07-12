@@ -16,7 +16,7 @@
 
 use super::utils;
 use super::utils::FrameType;
-use super::{TryAttribute, TryOnlyChild};
+use crate::minidom_utils::{TryAttribute, TryOnlyChild};
 use crate::model::Collections;
 use crate::objects::*;
 use crate::Result;

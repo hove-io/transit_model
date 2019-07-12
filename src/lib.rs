@@ -32,6 +32,7 @@ pub mod hellogo_fares;
 #[cfg(feature = "proj")]
 pub mod kv1;
 pub mod merge_stop_areas;
+mod minidom_utils;
 pub mod model;
 pub mod ntfs;
 mod read_utils;
