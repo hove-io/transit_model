@@ -39,6 +39,8 @@ pub mod relations;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
+#[cfg(feature = "transxchange")]
+pub mod transxchange;
 pub mod vptranslator;
 mod wgs84;
 pub use wgs84::WGS84Coordinates;
