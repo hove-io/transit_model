@@ -40,6 +40,8 @@ pub mod relations;
 pub mod test_utils;
 pub mod transfers;
 pub mod vptranslator;
+mod wgs84;
+pub use wgs84::WGS84Coordinates;
 
 /// Current version of the NTFS format
 pub const NTFS_VERSION: &str = "0.9";
