@@ -19,7 +19,10 @@ use failure::format_err;
 use minidom::Element;
 use std::str::FromStr;
 
+/// Try to get an attribute of a [Element](minidom::Element) and returns a
+/// [Result](crate::Result) instead of an [Option](Option)
 pub trait TryAttribute {
+    /// Try to get an attribute from its name and return a [Result](crate::Result)
     fn try_attribute<F>(&self, attr_name: &str) -> Result<F>
     where
         F: FromStr;

@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use crate::hellogo_fares::TryOnlyChild;
+use crate::minidom_utils::TryOnlyChild;
 use crate::objects::Date;
 use crate::Result;
 use chrono::NaiveDate;
