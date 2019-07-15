@@ -18,19 +18,17 @@ cargo build --release
 ```
 
 ### Compile for KV1
-The KV1 format needs a additional dependency called [Proj.4](https://proj4.org/)
+The KV1 format needs a additional dependency called [PROJ](https://proj.org/)
 which allows the transformation of localization coordinates.
 [crates.io](https://crates.io/) provides a
 [`proj`](https://crates.io/crates/proj) crate which is a binding to the C
-library (version 6.1.0). This means you need [Proj.4](https://proj4.org/)
-version 6.1.0 installed on your system.  See [Proj.4 installation
-instructions](https://github.com/OSGeo/proj.4#installation) or take a look at
-our [Dockerfile](https://github.com/CanalTP/transit_model/blob/kv1/Dockerfile).
-```
+library (version 6.1.0). This means you need [PROJ](https://proj.org/) version
+6.1.0 installed on your system.  See [PROJ installation
+instructions](https://github.com/OSGeo/PROJ#installation).
 
-[Proj.4](https://proj4.org/) is configured as a `feature` of the `transit_model`
-crate.  Once [Proj.4](https://proj4.org/) is installed, you need a few more
-dependencies for building `transit_model`.
+[PROJ](https://proj.org/) is configured as a `feature` of the `transit_model`
+crate.  Once [PROJ](https://proj.org/) is installed on your machine, you need a
+few more dependencies for building `transit_model`.
 ```
 apt install -y clang libssl-dev
 cargo build --features=proj
@@ -38,8 +36,8 @@ cargo build --features=proj
 
 Now, you should be able to use the converter `kv12ntfs`. Enjoy!
 
-### Using Proj.4
-If you want to use [Proj.4](https://proj4.org/) in your code, you can if you
+### Using PROJ
+If you want to use [PROJ](https://proj.org/) in your code, you can if you
 activate the `proj` feature (`cargo build --features=proj`). Then don't forget
 to protect your code with `#[cfg(feature="proj")]`.
 
@@ -95,6 +93,24 @@ French](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_chan
 - No support for all periodic description (files `grid_calendars.txt`,
   `grid_exception_dates.txt`, `grid_periods.txt` and `grid_rel_calendar_line.txt`)
 - No support for Line Groups (files `line_groups.txt` and `line_group_links.txt`)
+
+## FAQ
+**I'm having the following error when building the Docker image from
+`Dockerfile`**
+```
+$> docker build --tag navitia_model:deb-proj --file Dockerfile .
+...
+ ---> Running in 74d8af8aa077
+ gpg: directory '/root/.gnupg' created
+ gpg: keybox '/root/.gnupg/pubring.kbx' created
+ gpg: keyserver receive failed: Cannot assign requested address
+ The command '/bin/sh -c gpg2 --receive-keys ${GPG_KEY}' returned a non-zero
+ code: 2
+```
+
+It seems that `gpg2` sometimes fails to find a public key from key server.
+Launch the `docker build` command again, the build should succeed eventually. If
+not, please fill an issue.
 
 ## License
 
