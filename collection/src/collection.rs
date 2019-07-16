@@ -342,6 +342,41 @@ impl<T> IntoIterator for Collection<T> {
     }
 }
 
+/// Collect from an iterator into a `Collection`
+///
+/// ```
+/// # use transit_model_collection::{Collection, Id};
+/// struct ObjectWithId(String);
+/// impl Id<ObjectWithId> for ObjectWithId {
+///     fn id(&self) -> &str { &self.0 }
+///     fn set_id(&mut self, _id: String) { unimplemented!() }
+/// }
+///
+/// let range = vec![42, 43, 42];
+/// let collection: Collection<_> = range
+///     .into_iter()
+///     .map(|id| ObjectWithId(id.to_string()))
+///     .collect();
+/// assert_eq!(collection.len(), 3);
+///
+/// let mut values = collection.values();
+/// assert_eq!("42", values.next().unwrap().0);
+/// assert_eq!("43", values.next().unwrap().0);
+/// assert_eq!("42", values.next().unwrap().0);
+/// ```
+impl<T> std::iter::FromIterator<T> for Collection<T> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        iter.into_iter()
+            .fold(Collection::default(), |mut accumulator, object| {
+                accumulator.push(object);
+                accumulator
+            })
+    }
+}
+
 impl<T> ops::Index<Idx<T>> for Collection<T> {
     type Output = T;
     fn index(&self, index: Idx<T>) -> &Self::Output {
@@ -1050,6 +1085,42 @@ impl<T> IntoIterator for CollectionWithId<T> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.collection.into_iter()
+    }
+}
+
+/// Collect from an iterator into a `CollectionWithId`
+///
+/// ```
+/// # use transit_model_collection::{CollectionWithId, Id};
+/// struct ObjectWithId(String);
+/// impl Id<ObjectWithId> for ObjectWithId {
+///     fn id(&self) -> &str { &self.0 }
+///     fn set_id(&mut self, _id: String) { unimplemented!() }
+/// }
+///
+/// let range = vec![42, 43, 42];
+/// let collection: CollectionWithId<_> = range
+///     .into_iter()
+///     .map(|id| ObjectWithId(id.to_string()))
+///     .collect();
+/// assert_eq!(collection.len(), 2);
+/// assert!(collection.contains_id("42"));
+/// assert!(collection.contains_id("43"));
+/// ```
+impl<T> std::iter::FromIterator<T> for CollectionWithId<T>
+where
+    T: Id<T>,
+{
+    #![allow(unused_must_use)]
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        iter.into_iter()
+            .fold(CollectionWithId::default(), |mut accumulator, object| {
+                accumulator.push(object);
+                accumulator
+            })
     }
 }
 
