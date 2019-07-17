@@ -47,10 +47,23 @@ fn load_network(operator: &Element) -> Result<Network> {
     Ok(network)
 }
 
+fn load_company(operator: &Element) -> Result<Company> {
+    let id = operator.try_only_child("OperatorCode")?.text();
+    let name = operator.try_only_child("OperatorShortName")?.text();
+    let company = Company {
+        id,
+        name,
+        ..Default::default()
+    };
+    Ok(company)
+}
+
 fn read_transxchange(transxchange: &Element, collections: &mut Collections) -> Result<()> {
     let operator = get_operator(transxchange)?;
     let network = load_network(operator)?;
     collections.networks.push(network)?;
+    let company = load_company(operator)?;
+    collections.companies.push(company)?;
     unimplemented!()
 }
 
@@ -193,6 +206,46 @@ mod tests {
             </root>"#;
             let root: Element = xml.parse().unwrap();
             load_network(&root).unwrap();
+        }
+    }
+
+    mod load_company {
+        use super::*;
+
+        #[test]
+        fn has_company() {
+            let xml = r#"<root>
+                <OperatorCode>SOME_CODE</OperatorCode>
+                <OperatorShortName>Some name</OperatorShortName>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let company = load_company(&root).unwrap();
+            assert_eq!(company.id, String::from("SOME_CODE"));
+            assert_eq!(company.name, String::from("Some name"));
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Failed to find a child \\'OperatorCode\\' in element \\'root\\'"
+        )]
+        fn no_id() {
+            let xml = r#"<root>
+                <OperatorShortName>Some name</OperatorShortName>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            load_company(&root).unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Failed to find a child \\'OperatorShortName\\' in element \\'root\\'"
+        )]
+        fn no_name() {
+            let xml = r#"<root>
+                <OperatorCode>SOME_CODE</OperatorCode>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            load_company(&root).unwrap();
         }
     }
 }
