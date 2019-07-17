@@ -101,12 +101,19 @@ where
         .delimiter(b',')
         .trim(csv::Trim::All)
         .from_reader(reader);
+    let mut stop_areas = CollectionWithId::default();
     for record in reader.deserialize() {
-        let _stop_area: StopArea =
+        let stop_area: StopArea =
             record.with_context(|_| "Error parsing the CSV record into a StopArea")?;
-        // TODO: Load stop_area into a collection
+        let ntm_stop_area = NTMStopArea {
+            id: stop_area.stop_area_code.clone(),
+            name: stop_area.name.clone(),
+            coord: stop_area.coord()?,
+            ..Default::default()
+        };
+        stop_areas.push(ntm_stop_area)?;
     }
-    unimplemented!()
+    Ok(stop_areas)
 }
 
 fn read_stops_in_area<R>(reader: R) -> Result<HashMap<String, String>>
@@ -214,6 +221,50 @@ mod tests {
             let wgs84 = stop_area.coord().unwrap();
             assert_relative_eq!(wgs84.lon, -2.5925401721561157);
             assert_relative_eq!(wgs84.lat, 51.45918359900175);
+        }
+    }
+
+    mod read_stop_area {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn parsing_works() {
+            let csv_content = r#""StopAreaCode","Name","Easting","Northing"
+"010G0001","Bristol Bus Station",358929,173523
+"010G0002","Temple Meads",359657,172418"#;
+            let stop_areas = read_stop_areas(csv_content.as_bytes()).unwrap();
+            assert_eq!(stop_areas.len(), 2);
+            let stop_area = stop_areas.get("010G0001").unwrap();
+            assert_eq!(stop_area.name, "Bristol Bus Station");
+            let stop_area = stop_areas.get("010G0002").unwrap();
+            assert_eq!(stop_area.name, "Temple Meads");
+        }
+
+        #[test]
+        #[should_panic]
+        fn no_stop_area_code() {
+            let csv_content = r#""Name","NameLang","AdministrativeAreaCode","StopAreaType","GridType","Easting","Northing"
+"Temple Meads",359657,172418"#;
+            read_stop_areas(csv_content.as_bytes()).unwrap();
+        }
+
+        #[test]
+        #[should_panic]
+        fn empty_stop_area_code() {
+            let csv_content = r#""StopAreaCode","Name","NameLang","AdministrativeAreaCode","StopAreaType","GridType","Easting","Northing"
+,"Bristol Bus Station",358929,173523
+,"Temple Meads",359657,172418"#;
+            read_stop_areas(csv_content.as_bytes()).unwrap();
+        }
+
+        #[test]
+        #[should_panic]
+        fn missing_coords() {
+            let csv_content = r#""StopAreaCode","Name"
+"010G0001","Bristol Bus Station"
+"010G0002","Temple Meads""#;
+            read_stop_areas(csv_content.as_bytes()).unwrap();
         }
     }
 }
