@@ -109,11 +109,10 @@ fn default_visible() -> bool {
     true
 }
 
-/// Checks if minimum FaresV2 collections are defined and not empty (ticket_use_restrictions is optional)
+/// Checks if minimum FaresV2 collections are defined and not empty (ticket_use_restrictions and ticket_prices are optional)
 /// See https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fare_extension.md
 fn has_fares_v2(collections: &Collections) -> bool {
     !collections.tickets.is_empty()
-        && !collections.ticket_prices.is_empty()
         && !collections.ticket_uses.is_empty()
         && !collections.ticket_use_perimeters.is_empty()
 }

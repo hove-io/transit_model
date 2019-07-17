@@ -22,11 +22,11 @@ use crate::objects::*;
 use crate::NTFS_VERSION;
 use chrono::{Duration, NaiveDateTime};
 use csv;
-use failure::{format_err, ResultExt};
+use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
 use serde;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
 use std::path;
 
@@ -245,8 +245,8 @@ fn get_prices<'a>(
 // https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs_fare_conversion_v2_to_V1.md#conversion-of-an-od-fare-on-a-specific-line
 fn insert_od_specific_line_as_fare_v1(
     fares: &Fares,
-    prices_v1: &mut Vec<PriceV1>,
-    fares_v1: &mut Vec<FareV1>,
+    prices_v1: &mut BTreeSet<PriceV1>,
+    fares_v1: &mut BTreeSet<FareV1>,
 ) -> Result<()> {
     let ticket_use_restrictions = fares
         .ticket_use_restrictions
@@ -304,11 +304,11 @@ fn insert_od_specific_line_as_fare_v1(
         }
 
         for price in prices {
-            prices_v1.push(PriceV1::try_from((ticket, price))?);
+            prices_v1.insert(PriceV1::try_from((ticket, price))?);
         }
 
         for perimeter in perimeters {
-            fares_v1.push(FareV1 {
+            fares_v1.insert(FareV1 {
                 before_change: "*".to_string(),
                 after_change: format!("line=line:{}", perimeter.object_id),
                 start_trip: format!("stoparea=stop_area:{}", ticket_use_restriction.use_origin),
@@ -328,8 +328,8 @@ fn insert_od_specific_line_as_fare_v1(
 // https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs_fare_conversion_v2_to_V1.md#conversion-of-a-flat-fare-on-a-specific-network
 fn insert_flat_fare_as_fare_v1(
     fares: &Fares,
-    prices_v1: &mut Vec<PriceV1>,
-    fares_v1: &mut Vec<FareV1>,
+    prices_v1: &mut BTreeSet<PriceV1>,
+    fares_v1: &mut BTreeSet<FareV1>,
 ) -> Result<()> {
     let ticket_use_perimeters = fares
         .ticket_use_perimeters
@@ -358,10 +358,10 @@ fn insert_flat_fare_as_fare_v1(
         }
 
         for price in prices {
-            prices_v1.push(PriceV1::try_from((ticket, price))?);
+            prices_v1.insert(PriceV1::try_from((ticket, price))?);
         }
 
-        fares_v1.push(FareV1 {
+        fares_v1.insert(FareV1 {
             before_change: "*".to_string(),
             after_change: format!("network=network:{}", ticket_use_perimeter.object_id),
             start_trip: String::new(),
@@ -369,7 +369,7 @@ fn insert_flat_fare_as_fare_v1(
             global_condition: String::new(),
             ticket_id: ticket.id.clone(),
         });
-        fares_v1.push(FareV1 {
+        fares_v1.insert(FareV1 {
             before_change: format!("network=network:{}", ticket_use_perimeter.object_id),
             after_change: format!("network=network:{}", ticket_use_perimeter.object_id),
             start_trip: String::new(),
@@ -382,17 +382,20 @@ fn insert_flat_fare_as_fare_v1(
 }
 
 fn do_write_fares_v1_from_v2(base_path: &path::Path, fares: &Fares) -> Result<()> {
-    let mut prices_v1: Vec<PriceV1> = vec![];
-    let mut fares_v1: Vec<FareV1> = vec![];
+    let mut prices_v1: BTreeSet<PriceV1> = BTreeSet::new();
+    let mut fares_v1: BTreeSet<FareV1> = BTreeSet::new();
 
     insert_od_specific_line_as_fare_v1(fares, &mut prices_v1, &mut fares_v1)?;
     insert_flat_fare_as_fare_v1(fares, &mut prices_v1, &mut fares_v1)?;
 
+    if prices_v1.is_empty() || fares_v1.is_empty() {
+        bail!("Cannot convert Fares V2 to V1. Prices or fares are empty.")
+    }
     do_write_fares_v1(
         base_path,
-        &Collection::new(prices_v1),
+        &Collection::new(prices_v1.into_iter().collect()),
         &Collection::new(vec![]),
-        &Collection::new(fares_v1),
+        &Collection::new(fares_v1.into_iter().collect()),
     )
 }
 
