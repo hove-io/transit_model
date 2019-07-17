@@ -120,17 +120,23 @@ fn read_stops_in_area<R>(reader: R) -> Result<HashMap<String, String>>
 where
     R: Read,
 {
-    let mut reader = csv::ReaderBuilder::new()
+    csv::ReaderBuilder::new()
         .delimiter(b',')
         .trim(csv::Trim::All)
-        .from_reader(reader);
-    for record in reader.deserialize() {
-        let _stop_in_area: StopInArea =
-            record.with_context(|_| "Error parsing the CSV record into a StopInArea")?;
-        // TODO: Load relations between Stops and Stop Areas in a map where the
-        //       key is the Stop ID and the value is the Stop Area ID
-    }
-    unimplemented!()
+        .from_reader(reader)
+        .deserialize()
+        .map(|record: csv::Result<StopInArea>| {
+            record.with_context(|_| "Error parsing the CSV record into a StopInArea")
+        })
+        .map(|record| {
+            let stop_in_area = record?;
+            let key_value = (
+                stop_in_area.atco_code.clone(),
+                stop_in_area.stop_area_code.clone(),
+            );
+            Ok(key_value)
+        })
+        .collect()
 }
 
 fn read_stops<R>(
@@ -224,7 +230,7 @@ mod tests {
         }
     }
 
-    mod read_stop_area {
+    mod read_stop_areas {
         use super::*;
         use pretty_assertions::assert_eq;
 
@@ -265,6 +271,33 @@ mod tests {
 "010G0001","Bristol Bus Station"
 "010G0002","Temple Meads""#;
             read_stop_areas(csv_content.as_bytes()).unwrap();
+        }
+    }
+
+    mod read_stop_in_area {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn parsing_works() {
+            let csv_content = r#""StopAreaCode","AtcoCode"
+"010G0005","01000053220"
+"910GBDMNSTR","0100BDMNSTR0""#;
+            let stops_in_area = read_stops_in_area(csv_content.as_bytes()).unwrap();
+            assert_eq!(stops_in_area.len(), 2);
+            let stop_area_code = stops_in_area.get("01000053220").unwrap();
+            assert_eq!(stop_area_code, "010G0005");
+            let stop_area_code = stops_in_area.get("0100BDMNSTR0").unwrap();
+            assert_eq!(stop_area_code, "910GBDMNSTR");
+        }
+
+        #[test]
+        #[should_panic]
+        fn no_atco_code() {
+            let csv_content = r#""StopAreaCode"
+"010G0005"
+"910GBDMNSTR""#;
+            read_stops_in_area(csv_content.as_bytes()).unwrap();
         }
     }
 }
