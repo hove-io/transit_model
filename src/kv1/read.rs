@@ -381,17 +381,11 @@ where
         let stop_point = StopPoint {
             id: usr_stop.point_code,
             name: usr_stop.name,
-            codes: KeysValues::default(),
-            object_properties: KeysValues::default(),
-            comment_links: CommentLinksT::default(),
             visible: true,
             coord,
             stop_area_id,
-            timezone: None,
-            geometry_id: None,
-            equipment_id: None,
-            fare_zone_id: None,
             stop_type: StopType::Point,
+            ..Default::default()
         };
         collections.stop_points.push(stop_point)?;
     }

@@ -112,8 +112,6 @@ impl From<Stop> for objects::StopPoint {
             id: stop.id,
             name: stop.name,
             codes: stop_codes,
-            object_properties: KeysValues::default(),
-            comment_links: objects::CommentLinksT::default(),
             coord: Coord {
                 lon: stop.lon,
                 lat: stop.lat,
@@ -121,10 +119,8 @@ impl From<Stop> for objects::StopPoint {
             stop_area_id: stop.parent_station.unwrap(),
             timezone: stop.timezone,
             visible: true,
-            geometry_id: None,
-            equipment_id: None,
-            fare_zone_id: None,
             stop_type: StopType::Point,
+            ..Default::default()
         }
     }
 }

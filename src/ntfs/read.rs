@@ -54,9 +54,6 @@ impl StopPoint {
         StopPoint {
             id,
             name: stop.name,
-            codes: KeysValues::default(),
-            object_properties: KeysValues::default(),
-            comment_links: CommentLinksT::default(),
             visible: stop.visible,
             coord: Coord {
                 lon: stop.lon,
@@ -68,6 +65,7 @@ impl StopPoint {
             equipment_id: stop.equipment_id,
             fare_zone_id: stop.fare_zone_id,
             stop_type,
+            ..Default::default()
         }
     }
 }
