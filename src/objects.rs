@@ -1270,7 +1270,7 @@ pub struct AdminStation {
     pub station_id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PriceV1 {
     pub id: String,
     #[serde(
@@ -1307,7 +1307,7 @@ pub struct ODFareV1 {
     pub ticket_id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct FareV1 {
     #[serde(rename = "avant changement")]
     pub before_change: String,

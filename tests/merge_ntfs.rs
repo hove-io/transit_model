@@ -302,6 +302,26 @@ fn merge_collections_fares_v2_with_collisions() {
 }
 
 #[test]
+#[should_panic(expected = "Cannot convert Fares V2 to V1. Prices or fares are empty.")]
+fn merge_collections_fares_v2_not_convertible_in_v1() {
+    let mut collections = Collections::default();
+    test_in_tmp_dir(|path| {
+        let input_dirs = [
+            "fixtures/minimal_ntfs",
+            "fixtures/merge-ntfs/input_faresv2_without_euro_currency",
+        ];
+        for input_directory in input_dirs.iter() {
+            let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
+            collections
+                .try_merge(to_append_model.into_collections())
+                .unwrap();
+        }
+        let model = Model::new(collections).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+    });
+}
+
+#[test]
 fn merge_collections_fares_v2_with_ntfs_only_farev1() {
     let mut collections = Collections::default();
     test_in_tmp_dir(|path| {
