@@ -426,7 +426,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// Access to a mutable reference of the corresponding object.
     ///
     /// The `drop` of the proxy object panic if the identifier is
-    /// modified to an indentifier already on the collection.
+    /// modified to an identifier already on the collection.
     ///
     /// # Examples
     ///

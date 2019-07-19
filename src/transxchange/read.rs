@@ -15,11 +15,16 @@
 // <http://www.gnu.org/licenses/>.
 
 use crate::{
+    collection::CollectionWithId,
     minidom_utils::TryOnlyChild,
     model::{Collections, Model},
     objects::*,
     transxchange::naptan,
     Result,
+};
+use chrono::{
+    naive::{MAX_DATE, MIN_DATE},
+    Duration,
 };
 use log::info;
 use minidom::Element;
@@ -27,6 +32,73 @@ use std::{fs::File, io::Read, path::Path};
 use zip::ZipArchive;
 
 const EUROPE_LONDON_TIMEZONE: &str = "Europe/London";
+
+fn get_service_validity_period(transxchange: &Element) -> Result<ValidityPeriod> {
+    let operating_period = transxchange
+        .try_only_child("Services")?
+        .try_only_child("Service")?
+        .try_only_child("OperatingPeriod")?;
+    let start_date: Date = operating_period
+        .try_only_child("StartDate")?
+        .text()
+        .parse()?;
+    let end_date: Date = operating_period
+        .try_only_child("EndDate")
+        .map(Element::text)
+        .map(|end_date_text| end_date_text.parse())
+        .unwrap_or_else(|_| Ok(start_date + Duration::days(180)))?;
+    Ok(ValidityPeriod {
+        start_date,
+        end_date,
+    })
+}
+
+fn update_validity_period(dataset: &mut Dataset, service_validity_period: &ValidityPeriod) {
+    dataset.start_date = if service_validity_period.start_date < dataset.start_date {
+        service_validity_period.start_date
+    } else {
+        dataset.start_date
+    };
+    dataset.end_date = if service_validity_period.end_date > dataset.end_date {
+        service_validity_period.end_date
+    } else {
+        dataset.end_date
+    };
+}
+
+// The datasets already have some validity period. This function tries to
+// extend them with a service validity period from the TransXChange file:
+// - if service start date is before the dataset start date, then update the
+//   dataset start date with service start date
+// - if service end date is after the dataset end date, then update the
+//   dataset end date with service end date
+//
+// Examples:
+// Past                                                             Future
+// |--------------------------------------------------------------------->
+//
+//             ^--------- dataset validity ---------^
+//                 ^---- service validity ----^
+//             ^------ final dataset validity ------^
+//
+//             ^--------- dataset validity ---------^
+//      ^---- service validity ----^
+//      ^--------- final dataset validity ----------^
+//
+//             ^--------- dataset validity ---------^
+//          ^-------------- service validity --------------^
+//          ^----------- final dataset validity -----------^
+fn update_validity_period_from_transxchange(
+    datasets: &mut CollectionWithId<Dataset>,
+    transxchange: &Element,
+) -> Result<CollectionWithId<Dataset>> {
+    let service_validity_period = get_service_validity_period(transxchange)?;
+    let mut datasets = datasets.take();
+    for dataset in &mut datasets {
+        update_validity_period(dataset, &service_validity_period);
+    }
+    CollectionWithId::new(datasets)
+}
 
 fn get_operator(root: &Element) -> Result<&Element> {
     root.try_only_child("Operators")?.try_only_child("Operator")
@@ -59,6 +131,8 @@ fn load_company(operator: &Element) -> Result<Company> {
 }
 
 fn read_transxchange(transxchange: &Element, collections: &mut Collections) -> Result<()> {
+    collections.datasets =
+        update_validity_period_from_transxchange(&mut collections.datasets, transxchange)?;
     let operator = get_operator(transxchange)?;
     let network = load_network(operator)?;
     collections.networks.push(network)?;
@@ -92,11 +166,26 @@ where
 }
 
 /// Read TransXChange format into a Navitia Transit Model
-pub fn read<P>(transxchange_path: P, naptan_path: P) -> Result<Model>
+pub fn read<P>(transxchange_path: P, naptan_path: P, config_path: Option<P>) -> Result<Model>
 where
     P: AsRef<Path>,
 {
+    fn init_dataset_validity_periods(
+        mut datasets: CollectionWithId<Dataset>,
+    ) -> Result<CollectionWithId<Dataset>> {
+        let mut datasets = datasets.take();
+        for dataset in &mut datasets {
+            dataset.start_date = MAX_DATE;
+            dataset.end_date = MIN_DATE;
+        }
+        CollectionWithId::new(datasets)
+    }
+
     let mut collections = Collections::default();
+    let (contributors, datasets, feed_infos) = crate::read_utils::read_config(config_path)?;
+    collections.contributors = contributors;
+    collections.datasets = init_dataset_validity_periods(datasets)?;
+    collections.feed_infos = feed_infos;
     naptan::read_naptan(naptan_path, &mut collections)?;
     read_transxchange_archive(transxchange_path, &mut collections)?;
     Model::new(collections)
@@ -105,6 +194,206 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod get_service_validity_period {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn has_start_and_end() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <OperatingPeriod>
+                            <StartDate>2019-01-01</StartDate>
+                            <EndDate>2019-03-31</EndDate>
+                        </OperatingPeriod>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let ValidityPeriod {
+                start_date,
+                end_date,
+            } = get_service_validity_period(&root).unwrap();
+            assert_eq!(start_date, Date::from_ymd(2019, 1, 1));
+            assert_eq!(end_date, Date::from_ymd(2019, 3, 31));
+        }
+
+        #[test]
+        fn has_only_start() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <OperatingPeriod>
+                            <StartDate>2019-01-01</StartDate>
+                        </OperatingPeriod>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let ValidityPeriod {
+                start_date,
+                end_date,
+            } = get_service_validity_period(&root).unwrap();
+            assert_eq!(start_date, Date::from_ymd(2019, 1, 1));
+            assert_eq!(end_date, Date::from_ymd(2019, 6, 30));
+        }
+
+        #[test]
+        #[should_panic]
+        fn no_date() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <OperatingPeriod />
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            get_service_validity_period(&root).unwrap();
+        }
+
+        #[test]
+        #[should_panic]
+        fn invalid_start_date() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <OperatingPeriod>
+                            <StartDate>2019-42-01</StartDate>
+                        </OperatingPeriod>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            get_service_validity_period(&root).unwrap();
+        }
+
+        #[test]
+        #[should_panic]
+        fn invalid_end_date() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <OperatingPeriod>
+                            <StartDate>2019-01-01</StartDate>
+                            <EndDate>NotADate</EndDate>
+                        </OperatingPeriod>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            get_service_validity_period(&root).unwrap();
+        }
+    }
+
+    mod update_validity_period {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn no_existing_validity_period() {
+            let start_date = Date::from_ymd(2019, 1, 1);
+            let end_date = Date::from_ymd(2019, 6, 30);
+            let mut dataset = Dataset {
+                id: String::from("dataset_id"),
+                contributor_id: String::from("contributor_id"),
+                start_date: MAX_DATE,
+                end_date: MIN_DATE,
+                ..Default::default()
+            };
+            let service_validity_period = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            update_validity_period(&mut dataset, &service_validity_period);
+            assert_eq!(dataset.start_date, start_date);
+            assert_eq!(dataset.end_date, end_date);
+        }
+
+        #[test]
+        fn with_extended_validity_period() {
+            let start_date = Date::from_ymd(2019, 1, 1);
+            let end_date = Date::from_ymd(2019, 6, 30);
+            let mut dataset = Dataset {
+                id: String::from("dataset_id"),
+                contributor_id: String::from("contributor_id"),
+                start_date: Date::from_ymd(2019, 3, 1),
+                end_date: Date::from_ymd(2019, 4, 30),
+                ..Default::default()
+            };
+            let service_validity_period = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            update_validity_period(&mut dataset, &service_validity_period);
+            assert_eq!(dataset.start_date, start_date);
+            assert_eq!(dataset.end_date, end_date);
+        }
+
+        #[test]
+        fn with_included_validity_period() {
+            let start_date = Date::from_ymd(2019, 1, 1);
+            let end_date = Date::from_ymd(2019, 6, 30);
+            let mut dataset = Dataset {
+                id: String::from("dataset_id"),
+                contributor_id: String::from("contributor_id"),
+                start_date,
+                end_date,
+                ..Default::default()
+            };
+            let service_validity_period = ValidityPeriod {
+                start_date: Date::from_ymd(2019, 3, 1),
+                end_date: Date::from_ymd(2019, 4, 30),
+            };
+            update_validity_period(&mut dataset, &service_validity_period);
+            assert_eq!(dataset.start_date, start_date);
+            assert_eq!(dataset.end_date, end_date);
+        }
+    }
+
+    mod update_validity_period_from_transxchange {
+        use super::*;
+
+        #[test]
+        fn has_start_and_end() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <OperatingPeriod>
+                            <StartDate>2019-03-01</StartDate>
+                            <EndDate>2019-04-30</EndDate>
+                        </OperatingPeriod>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let ds1 = Dataset {
+                id: String::from("dataset_1"),
+                contributor_id: String::from("contributor_id"),
+                start_date: Date::from_ymd(2019, 1, 1),
+                end_date: Date::from_ymd(2019, 6, 30),
+                ..Default::default()
+            };
+            let ds2 = Dataset {
+                id: String::from("dataset_2"),
+                contributor_id: String::from("contributor_id"),
+                start_date: Date::from_ymd(2019, 3, 31),
+                end_date: Date::from_ymd(2019, 4, 1),
+                ..Default::default()
+            };
+            let mut datasets = CollectionWithId::new(vec![ds1, ds2]).unwrap();
+            let datasets = update_validity_period_from_transxchange(&mut datasets, &root).unwrap();
+            let mut datasets_iter = datasets.values();
+            let dataset = datasets_iter.next().unwrap();
+            assert_eq!(dataset.start_date, Date::from_ymd(2019, 1, 1));
+            assert_eq!(dataset.end_date, Date::from_ymd(2019, 6, 30));
+            let dataset = datasets_iter.next().unwrap();
+            assert_eq!(dataset.start_date, Date::from_ymd(2019, 3, 1));
+            assert_eq!(dataset.end_date, Date::from_ymd(2019, 4, 30));
+        }
+    }
 
     mod get_operator {
         use super::*;
