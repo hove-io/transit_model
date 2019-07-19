@@ -115,6 +115,7 @@ fn ntfs_stop_point_to_gtfs_stop(
         wheelchair_boarding: wheelchair,
         url: None,
         timezone: sp.timezone.clone(),
+        platform_code: sp.platform_code.clone(),
     }
 }
 
@@ -142,6 +143,7 @@ fn ntfs_stop_area_to_gtfs_stop(
         wheelchair_boarding: wheelchair,
         url: None,
         timezone: sa.timezone.clone(),
+        platform_code: None,
     }
 }
 
@@ -621,6 +623,7 @@ mod tests {
             wheelchair_boarding: Availability::Available,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
+            platform_code: None,
         };
 
         assert_eq!(
@@ -657,6 +660,7 @@ mod tests {
             wheelchair_boarding: Availability::InformationNotAvailable,
             url: None,
             timezone: None,
+            platform_code: None,
         };
 
         let comments = CollectionWithId::default();
@@ -741,6 +745,7 @@ mod tests {
             wheelchair_boarding: Availability::NotAvailable,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
+            platform_code: None,
         };
 
         assert_eq!(

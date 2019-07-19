@@ -1,5 +1,5 @@
-stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station
-stoparea:1,plop,48.844746,2.372987,1,
-stop:31,pouet,48.844746,2.372987,0,stoparea:1
-stop:32,pouet,48.844746,2.372987,0,stoparea:1
-stop:33,pouet,48.844746,2.372987,0,stoparea:1
+stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,platform_code
+stoparea:1,plop,48.844746,2.372987,1,,
+stop:31,pouet,48.844746,2.372987,0,stoparea:1,
+stop:32,pouet,48.844746,2.372987,0,stoparea:1,
+stop:33,pouet,48.844746,2.372987,0,stoparea:1,

@@ -121,6 +121,7 @@ struct Stop {
     timezone: Option<String>,
     #[serde(deserialize_with = "de_with_empty_default", default)]
     wheelchair_boarding: Availability,
+    platform_code: Option<String>,
 }
 
 #[derive(Derivative)]

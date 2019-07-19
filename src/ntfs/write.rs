@@ -489,6 +489,7 @@ pub fn write_stops(
             timezone: st.timezone.clone(),
             equipment_id: st.equipment_id.clone(),
             geometry_id: st.geometry_id.clone(),
+            platform_code: st.platform_code.clone(),
         })
         .with_context(ctx_from_path!(path))?;
     }
@@ -506,6 +507,7 @@ pub fn write_stops(
             timezone: sa.timezone.clone(),
             equipment_id: sa.equipment_id.clone(),
             geometry_id: sa.geometry_id.clone(),
+            platform_code: None,
         })
         .with_context(ctx_from_path!(path))?;
     }

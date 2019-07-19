@@ -1,7 +1,7 @@
-stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,equipment_id
-stop:area:1,whatever,48.8,2.3,1,,
-stop:area:2,whatever,48.8,2.3,1,,
-stop:point:1,whatever,48.8,2.3,0,stop:area:1,
-stop:point:2,whatever,48.8,2.3,0,stop:area:1,
-stop:zone:1,whatever,48.8,2.3,2,stop:area:2,
-stop:zone:2,whatever,48.8,2.3,2,stop:area:2,
+stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,equipment_id,platform_code
+stop:area:1,whatever,48.8,2.3,1,,,
+stop:area:2,whatever,48.8,2.3,1,,,
+stop:point:1,whatever,48.8,2.3,0,stop:area:1,,
+stop:point:2,whatever,48.8,2.3,0,stop:area:1,,
+stop:zone:1,whatever,48.8,2.3,2,stop:area:2,,
+stop:zone:2,whatever,48.8,2.3,2,stop:area:2,,
