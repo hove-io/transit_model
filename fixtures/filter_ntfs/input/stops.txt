@@ -1,5 +1,5 @@
-stop_id,stop_name,stop_lon,stop_lat,location_type,parent_station,platform_code
-stop1,stop1,1.1,2.2,0,Navitia:stop1,
-stop2,stop2,1.1,2.2,0,Navitia:stop2,
-Navitia:stop1,Navitia:stop2,1.1,2.2,1,,
-Navitia:stop2,Navitia:stop1,1.1,2.2,1,,
+stop_id,stop_name,stop_lon,stop_lat,location_type,parent_station
+stop1,stop1,1.1,2.2,0,Navitia:stop1
+stop2,stop2,1.1,2.2,0,Navitia:stop2
+Navitia:stop1,Navitia:stop2,1.1,2.2,1,
+Navitia:stop2,Navitia:stop1,1.1,2.2,1,

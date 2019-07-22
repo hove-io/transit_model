@@ -120,6 +120,7 @@ impl From<Stop> for objects::StopPoint {
             timezone: stop.timezone,
             visible: true,
             stop_type: StopType::Point,
+            platform_code: stop.platform_code,
             ..Default::default()
         }
     }

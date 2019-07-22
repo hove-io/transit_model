@@ -1,5 +1,5 @@
-stop_id,visible,stop_name,stop_lat,stop_lon,zone_id,location_type,parent_station,stop_timezone,equipment_id,contributor_id,geometry_id,platform_code
-sp_1,1,"sp name 1",48.84608210211328,2.372075915336609,,0,sa_1,Europe/Paris,,OIF,,
-sp_2,1,"sp name 2",48.845665532277096,2.371437549591065,,0,sa_1,Europe/Paris,,OIF,,
-sp_3,1,"sp name 3",48.845301913401144,2.369517087936402,,0,sa_1,Europe/Paris,,OIF,,
-sa_1,1,"sa name 1",48.844745,2.372986,,1,,Europe/Paris,,OIF,,
+stop_id,visible,stop_name,stop_lat,stop_lon,zone_id,location_type,parent_station,stop_timezone,equipment_id,contributor_id,geometry_id
+sp_1,1,"sp name 1",48.84608210211328,2.372075915336609,,0,sa_1,Europe/Paris,,OIF,
+sp_2,1,"sp name 2",48.845665532277096,2.371437549591065,,0,sa_1,Europe/Paris,,OIF,
+sp_3,1,"sp name 3",48.845301913401144,2.369517087936402,,0,sa_1,Europe/Paris,,OIF,
+sa_1,1,"sa name 1",48.844745,2.372986,,1,,Europe/Paris,,OIF,

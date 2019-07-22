@@ -1,17 +1,17 @@
-stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,fare_zone_id,platform_code
-GDL,Gare de Lyon,48.844746,2.372987,1,,,
-GDLR,Gare de Lyon (RER),48.844746,2.372987,0,GDL,ZoneParis,
-GDLM,Gare de Lyon (Metro),48.844746,2.372987,,GDL,ZoneParis,
-GDLB,Gare de Lyon (Bus),48.844746,2.372987,,GDL,ZoneParis,
-NAT,Nation,48.84849,2.396497,1,,,
-NATR,Nation (RER),48.84849,2.396497,0,NAT,ZoneParis,
-NATM,Nation (Metro),48.84849,2.396497,,NAT,ZoneParis,
-CDG,Charles de Gaulle,48.873965,2.295354,1,,,
-CDGR,Charles de Gaulle (RER),48.873965,2.295354,0,CDG,ZoneOffParis,
-CDGM,Charles de Gaulle (Metro),48.873965,2.295354,,CDG,ZoneOffParis,
-DEF,La Défense,48.891737,2.238964,1,,,
-DEFR,La Défense (RER),48.891737,2.238964,0,DEF,ZoneOffParis,
-CHA,Châtelet,48.858137,2.348145,1,,,
-CHAM,Châtelet (Metro),48.858137,2.348145,0,CHA,ZoneParis,
-MTP,Montparnasse,48.842481,2.321783,1,,,
-MTPB,Montparnasse (Bus),48.842481,2.321783,0,MTP,ZoneParis,
+stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station,fare_zone_id
+GDL,Gare de Lyon,48.844746,2.372987,1,,
+GDLR,Gare de Lyon (RER),48.844746,2.372987,0,GDL,ZoneParis
+GDLM,Gare de Lyon (Metro),48.844746,2.372987,,GDL,ZoneParis
+GDLB,Gare de Lyon (Bus),48.844746,2.372987,,GDL,ZoneParis
+NAT,Nation,48.84849,2.396497,1,,
+NATR,Nation (RER),48.84849,2.396497,0,NAT,ZoneParis
+NATM,Nation (Metro),48.84849,2.396497,,NAT,ZoneParis
+CDG,Charles de Gaulle,48.873965,2.295354,1,,
+CDGR,Charles de Gaulle (RER),48.873965,2.295354,0,CDG,ZoneOffParis
+CDGM,Charles de Gaulle (Metro),48.873965,2.295354,,CDG,ZoneOffParis
+DEF,La Défense,48.891737,2.238964,1,,
+DEFR,La Défense (RER),48.891737,2.238964,0,DEF,ZoneOffParis
+CHA,Châtelet,48.858137,2.348145,1,,
+CHAM,Châtelet (Metro),48.858137,2.348145,0,CHA,ZoneParis
+MTP,Montparnasse,48.842481,2.321783,1,,
+MTPB,Montparnasse (Bus),48.842481,2.321783,0,MTP,ZoneParis

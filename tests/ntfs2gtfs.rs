@@ -26,3 +26,17 @@ fn test_stop_zones_not_exported_and_cleaned() {
         compare_output_dir_with_expected(&path, None, "./fixtures/ntfs2gtfs/output");
     });
 }
+
+#[test]
+fn test_platforms_preserving() {
+    test_in_tmp_dir(|path| {
+        let input = "./fixtures/ntfs2gtfs/platforms/input";
+        let model = transit_model::ntfs::read(input).unwrap();
+        transit_model::gtfs::write(model, path).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec!["stops.txt"]),
+            "./fixtures/ntfs2gtfs/platforms/output",
+        );
+    });
+}
