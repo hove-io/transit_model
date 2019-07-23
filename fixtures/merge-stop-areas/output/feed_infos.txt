@@ -8,4 +8,4 @@ feed_publisher_url,
 feed_start_date,20170607
 fusio_url,http://vip-fusio-ihm.FR-IDF-OPEN.prod.canaltp.fr/
 fusio_version,1.10.89.209
-ntfs_version,0.9
+ntfs_version,0.9.1

@@ -115,6 +115,7 @@ fn ntfs_stop_point_to_gtfs_stop(
         wheelchair_boarding: wheelchair,
         url: None,
         timezone: sp.timezone.clone(),
+        platform_code: sp.platform_code.clone(),
     }
 }
 
@@ -142,6 +143,7 @@ fn ntfs_stop_area_to_gtfs_stop(
         wheelchair_boarding: wheelchair,
         url: None,
         timezone: sa.timezone.clone(),
+        platform_code: None,
     }
 }
 
@@ -594,7 +596,6 @@ mod tests {
             ]
             .into_iter()
             .collect(),
-            object_properties: BTreeSet::default(),
             comment_links,
             visible: true,
             coord: objects::Coord {
@@ -603,10 +604,10 @@ mod tests {
             },
             stop_area_id: "OIF:SA:8739322".to_string(),
             timezone: Some("Europe/Paris".to_string()),
-            geometry_id: None,
             equipment_id: Some("1".to_string()),
             fare_zone_id: Some("1".to_string()),
             stop_type: StopType::Point,
+            ..Default::default()
         };
 
         let expected = Stop {
@@ -622,6 +623,7 @@ mod tests {
             wheelchair_boarding: Availability::Available,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
+            platform_code: None,
         };
 
         assert_eq!(
@@ -635,20 +637,14 @@ mod tests {
         let stop = objects::StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
-            codes: BTreeSet::default(),
-            object_properties: BTreeSet::default(),
-            comment_links: BTreeSet::default(),
             visible: true,
             coord: objects::Coord {
                 lon: 2.073034,
                 lat: 48.799115,
             },
             stop_area_id: "OIF:SA:8739322".to_string(),
-            timezone: None,
-            geometry_id: None,
-            equipment_id: None,
-            fare_zone_id: None,
             stop_type: StopType::Point,
+            ..Default::default()
         };
 
         let expected = Stop {
@@ -664,6 +660,7 @@ mod tests {
             wheelchair_boarding: Availability::InformationNotAvailable,
             url: None,
             timezone: None,
+            platform_code: None,
         };
 
         let comments = CollectionWithId::default();
@@ -748,6 +745,7 @@ mod tests {
             wheelchair_boarding: Availability::NotAvailable,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
+            platform_code: None,
         };
 
         assert_eq!(
@@ -762,9 +760,6 @@ mod tests {
             objects::StopPoint {
                 id: "OIF:SP:36:2085".to_string(),
                 name: "Gare de Saint-Cyr l'École".to_string(),
-                codes: BTreeSet::default(),
-                object_properties: BTreeSet::default(),
-                comment_links: BTreeSet::default(),
                 visible: true,
                 coord: objects::Coord {
                     lon: 2.073034,
@@ -772,17 +767,13 @@ mod tests {
                 },
                 stop_area_id: "OIF:SA:8739322".to_string(),
                 timezone: Some("Europe/Paris".to_string()),
-                geometry_id: None,
-                equipment_id: None,
                 fare_zone_id: Some("1".to_string()),
                 stop_type: StopType::Point,
+                ..Default::default()
             },
             objects::StopPoint {
                 id: "OIF:SP:36:2127".to_string(),
                 name: "Division Leclerc".to_string(),
-                codes: BTreeSet::default(),
-                object_properties: BTreeSet::default(),
-                comment_links: BTreeSet::default(),
                 visible: true,
                 coord: objects::Coord {
                     lon: 2.073407,
@@ -790,10 +781,8 @@ mod tests {
                 },
                 stop_area_id: "OIF:SA:2:1468".to_string(),
                 timezone: Some("Europe/Paris".to_string()),
-                geometry_id: None,
-                equipment_id: None,
-                fare_zone_id: None,
                 stop_type: StopType::Point,
+                ..Default::default()
             },
         ])
         .unwrap();
@@ -912,19 +901,14 @@ mod tests {
             id: "sp:01".to_string(),
             name: "sp:01".to_string(),
             codes: sp_codes,
-            object_properties: KeysValues::default(),
-            comment_links: CommentLinksT::default(),
             visible: true,
             coord: Coord {
                 lon: 2.073,
                 lat: 48.799,
             },
             stop_area_id: "sa:01".to_string(),
-            timezone: None,
-            geometry_id: None,
-            equipment_id: None,
-            fare_zone_id: None,
             stop_type: StopType::Point,
+            ..Default::default()
         }])
         .unwrap();
         let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
@@ -1058,20 +1042,14 @@ mod tests {
         let stop_points = CollectionWithId::new(vec![StopPoint {
             id: "sp:01".to_string(),
             name: "sp_name_1".to_string(),
-            codes: KeysValues::default(),
-            object_properties: KeysValues::default(),
-            comment_links: CommentLinksT::default(),
             visible: true,
             coord: Coord {
                 lon: 2.37,
                 lat: 48.84,
             },
-            timezone: None,
-            geometry_id: None,
-            equipment_id: None,
             stop_area_id: "sa_1".to_string(),
-            fare_zone_id: None,
             stop_type: StopType::Point,
+            ..Default::default()
         }])
         .unwrap();
         let stop_times_vec = vec![

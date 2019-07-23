@@ -6,6 +6,6 @@ feed_license,DefaultDatasourceLicense
 feed_license_url,http://www.default-datasource-website.com
 feed_publisher_name,DefaultContributorName
 feed_start_date,20180101
-ntfs_version,0.9
+ntfs_version,0.9.1
 tartare_contributor_id,DefaultContributorId
 tartare_platform,dev

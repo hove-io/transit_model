@@ -47,7 +47,7 @@ mod wgs84;
 pub use wgs84::WGS84Coordinates;
 
 /// Current version of the NTFS format
-pub const NTFS_VERSION: &str = "0.9";
+pub const NTFS_VERSION: &str = "0.9.1";
 
 lazy_static::lazy_static! {
     /// Current datetime

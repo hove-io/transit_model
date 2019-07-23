@@ -125,3 +125,17 @@ fn test_minimal_ziped_sub_dir_gtfs() {
         compare_output_dir_with_expected(&path, None, "./fixtures/gtfs2ntfs/minimal/output");
     });
 }
+
+#[test]
+fn test_gtfs_with_platforms() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./fixtures/gtfs2ntfs/platforms/input";
+        let model = transit_model::gtfs::read_from_path(input_dir, None, None).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec!["stops.txt"]),
+            "./fixtures/gtfs2ntfs/platforms/output",
+        );
+    });
+}

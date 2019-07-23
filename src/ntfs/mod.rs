@@ -80,6 +80,7 @@ struct Stop {
     timezone: Option<String>,
     geometry_id: Option<String>,
     equipment_id: Option<String>,
+    platform_code: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -321,7 +322,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.9".to_string()),
+                    ("ntfs_version".to_string(), "0.9.1".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -506,9 +507,6 @@ mod tests {
             StopPoint {
                 id: "OIF:SP:36:2085".to_string(),
                 name: "Gare de Saint-Cyr l'École".to_string(),
-                codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
-                comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
                     lon: 2.073034,
@@ -516,17 +514,13 @@ mod tests {
                 },
                 stop_area_id: "OIF:SA:8739322".to_string(),
                 timezone: Some("Europe/Paris".to_string()),
-                geometry_id: None,
-                equipment_id: None,
                 fare_zone_id: Some("1".to_string()),
                 stop_type: StopType::Point,
+                ..Default::default()
             },
             StopPoint {
                 id: "OIF:SP:36:2127".to_string(),
                 name: "Division Leclerc".to_string(),
-                codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
-                comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
                     lon: 2.073407,
@@ -534,10 +528,8 @@ mod tests {
                 },
                 stop_area_id: "OIF:SA:2:1468".to_string(),
                 timezone: Some("Europe/Paris".to_string()),
-                geometry_id: None,
-                equipment_id: None,
-                fare_zone_id: None,
                 stop_type: StopType::Point,
+                ..Default::default()
             },
         ])
         .unwrap();
@@ -760,9 +752,6 @@ mod tests {
             StopPoint {
                 id: "sp_1".to_string(),
                 name: "sp_name_1".to_string(),
-                codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
-                comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
                     lon: 2.073034,
@@ -774,25 +763,20 @@ mod tests {
                 stop_area_id: "sa_1".to_string(),
                 fare_zone_id: Some("1".to_string()),
                 stop_type: StopType::Point,
+                ..Default::default()
             },
             // stop point with no parent station
             StopPoint {
                 id: "sa_2".to_string(),
                 name: "sa_name_2".to_string(),
-                codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
-                comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
                     lon: 2.173034,
                     lat: 47.899115,
                 },
-                timezone: None,
-                geometry_id: None,
-                equipment_id: None,
                 stop_area_id: "Navitia:sa_2".to_string(),
-                fare_zone_id: None,
                 stop_type: StopType::Point,
+                ..Default::default()
             },
         ])
         .unwrap();
@@ -887,12 +871,9 @@ mod tests {
                 lon: 2.073034,
                 lat: 48.799115,
             },
-            timezone: None,
-            geometry_id: None,
-            equipment_id: None,
             stop_area_id: "sa_1".to_string(),
-            fare_zone_id: None,
             stop_type: StopType::Point,
+            ..Default::default()
         }])
         .unwrap();
 

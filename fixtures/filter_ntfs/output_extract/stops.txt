@@ -1,5 +1,5 @@
-stop_id,stop_name,visible,fare_zone_id,stop_lon,stop_lat,location_type,parent_station,stop_timezone,geometry_id,equipment_id
-stop1,stop1,1,,1.1,2.2,0,Navitia:stop1,,,
-stop2,stop2,1,,1.1,2.2,0,Navitia:stop2,,,
-Navitia:stop1,Navitia:stop2,1,,1.1,2.2,1,,,,
-Navitia:stop2,Navitia:stop1,1,,1.1,2.2,1,,,,
+stop_id,stop_name,visible,fare_zone_id,stop_lon,stop_lat,location_type,parent_station,stop_timezone,geometry_id,equipment_id,platform_code
+stop1,stop1,1,,1.1,2.2,0,Navitia:stop1,,,,
+stop2,stop2,1,,1.1,2.2,0,Navitia:stop2,,,,
+Navitia:stop1,Navitia:stop2,1,,1.1,2.2,1,,,,,
+Navitia:stop2,Navitia:stop1,1,,1.1,2.2,1,,,,,

@@ -1,0 +1,4 @@
+stop_id,stop_code,stop_name,stop_desc,stop_lon,stop_lat,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding,platform_code
+sp:1,,Point 1,,2.37,48.84,,,0,sa:1,,0,A
+sp:2,,Point 2,,2.37,48.84,,,0,sa:1,,0,C
+sa:1,,Area 1,,2.37,48.84,,,1,,,0,

@@ -123,6 +123,19 @@ fn test_minimal_fares_stay_same() {
 }
 
 #[test]
+fn test_minimal_platforms_stay_same() {
+    let ntm = transit_model::ntfs::read("fixtures/ntfs2ntfs/platforms").unwrap();
+    test_in_tmp_dir(|output_dir| {
+        transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &output_dir,
+            Some(vec!["stops.txt"]),
+            "fixtures/ntfs2ntfs/platforms",
+        );
+    });
+}
+
+#[test]
 fn test_minimal_fares_stay_same_with_empty_of_fares() {
     let ntm = transit_model::ntfs::read("fixtures/ntfs2ntfs/empty_od_fares").unwrap();
     test_in_tmp_dir(|output_dir| {
