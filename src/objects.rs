@@ -850,7 +850,6 @@ impl GetObjectType for StopTime {
     }
 }
 
-/// Spatial Coordinates in WGS84 format (aka EPSG:4326)
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Default)]
 pub struct Coord {
     pub lon: f64,
@@ -859,6 +858,15 @@ pub struct Coord {
 
 // Mean Earth radius in meters
 const EARTH_RADIUS: f64 = 6_371_000.0;
+
+impl From<GeoPoint<f64>> for Coord {
+    fn from(point: GeoPoint<f64>) -> Self {
+        Coord {
+            lon: point.x(),
+            lat: point.y(),
+        }
+    }
+}
 
 impl Coord {
     /// Calculate the orthodromic distance in meters
@@ -896,15 +904,6 @@ impl Coord {
             cos_lat: lat_rad.cos(),
             lon_rad: self.lon.to_radians(),
             lat_rad,
-        }
-    }
-}
-
-impl From<GeoPoint<f64>> for Coord {
-    fn from(point: GeoPoint<f64>) -> Self {
-        Coord {
-            lon: point.x(),
-            lat: point.y(),
         }
     }
 }
