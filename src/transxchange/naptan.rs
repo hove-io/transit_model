@@ -21,7 +21,7 @@ use crate::{
     collection::CollectionWithId,
     model::Collections,
     objects::{Coord, StopArea as NTMStopArea, StopPoint as NTMStopPoint},
-    Result, WGS84Coordinates,
+    Result,
 };
 use failure::{format_err, ResultExt};
 use geo_types::Point;
@@ -46,15 +46,6 @@ pub struct Stop {
     indicator: String,
 }
 
-impl WGS84Coordinates for Stop {
-    fn coord(&self) -> Result<Coord> {
-        Ok(Coord {
-            lon: self.longitude,
-            lat: self.latitude,
-        })
-    }
-}
-
 #[derive(Debug, Deserialize)]
 pub struct StopInArea {
     #[serde(rename = "AtcoCode")]
@@ -75,24 +66,6 @@ pub struct StopArea {
     northing: f64,
 }
 
-const EPSG_27700: &str = "EPSG:27700";
-// FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
-const EPSG_4326: &str = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
-#[cfg(feature = "proj")]
-impl WGS84Coordinates for StopArea {
-    fn coord(&self) -> Result<Coord> {
-        let epsg_27700_point = Point::new(self.easting, self.northing);
-        let converter = Proj::new_known_crs(&EPSG_27700, &EPSG_4326, None).ok_or_else(|| {
-            format_err!(
-                "Proj cannot build a converter from '{}' to '{}'",
-                EPSG_27700,
-                EPSG_4326
-            )
-        })?;
-        converter.convert(epsg_27700_point).map(Coord::from)
-    }
-}
-
 fn read_stop_areas<R>(reader: R) -> Result<CollectionWithId<NTMStopArea>>
 where
     R: Read,
@@ -102,13 +75,19 @@ where
         .trim(csv::Trim::All)
         .from_reader(reader);
     let mut stop_areas = CollectionWithId::default();
+    let from = "EPSG:27700";
+    // FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
+    let to = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
+    let converter = Proj::new_known_crs(from, to, None)
+        .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))?;
     for record in reader.deserialize() {
         let stop_area: StopArea =
             record.with_context(|_| "Error parsing the CSV record into a StopArea")?;
+        let point = Point::new(stop_area.easting, stop_area.northing);
         let ntm_stop_area = NTMStopArea {
             id: stop_area.stop_area_code.clone(),
             name: stop_area.name.clone(),
-            coord: stop_area.coord()?,
+            coord: converter.convert(point).map(Coord::from)?,
             ..Default::default()
         };
         stop_areas.push(ntm_stop_area)?;
@@ -187,48 +166,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    mod stop {
-        use super::*;
-        use approx::assert_relative_eq;
-
-        #[test]
-        fn get_wgs84() {
-            let stop = Stop {
-                atco_code: String::from("4TC0_C0D3"),
-                name: String::from("This is a beautiful stop"),
-                longitude: -2.5876178397,
-                latitude: 51.4558382170,
-                indicator: String::from("Stop B"),
-            };
-            let wgs84 = stop.coord().unwrap();
-            assert_relative_eq!(wgs84.lon, -2.5876178397);
-            assert_relative_eq!(wgs84.lat, 51.4558382170);
-        }
-    }
-
-    mod stop_area {
-        use super::*;
-        use approx::assert_relative_eq;
-
-        // This test uses the Bristol Bus Station coordinates
-        // in EPSG:27700 format (Easting, Northing)
-        // https://epsg.io/map#srs=27700&x=358929&y=173523&z=20
-        // and in the corresponding EPSG:4326 format (aka WGS84)
-        // https://epsg.io/map#srs=4326&x=-2.592540&y=51.459184&z=20
-        #[test]
-        fn convert_wgs84() {
-            let stop_area = StopArea {
-                stop_area_code: String::from("010G0001"),
-                name: String::from("Bristol Bus Station"),
-                easting: 358929f64,
-                northing: 173523f64,
-            };
-            let wgs84 = stop_area.coord().unwrap();
-            assert_relative_eq!(wgs84.lon, -2.5925401721561157);
-            assert_relative_eq!(wgs84.lat, 51.45918359900175);
-        }
-    }
 
     mod read_stop_areas {
         use super::*;

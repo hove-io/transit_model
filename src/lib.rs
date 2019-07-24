@@ -43,8 +43,6 @@ pub mod transfers;
 #[cfg(feature = "transxchange")]
 pub mod transxchange;
 pub mod vptranslator;
-mod wgs84;
-pub use wgs84::WGS84Coordinates;
 
 /// Current version of the NTFS format
 pub const NTFS_VERSION: &str = "0.9.1";

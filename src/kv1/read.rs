@@ -20,13 +20,13 @@ use crate::{
     model::Collections,
     objects::*,
     read_utils::FileHandler,
-    Result, WGS84Coordinates,
+    Result,
 };
 use chrono::NaiveDate;
 use csv;
 use failure::{bail, format_err, ResultExt};
 use geo::algorithm::centroid::Centroid;
-use geo_types::{MultiPoint as GeoMultiPoint, Point as GeoPoint};
+use geo_types::MultiPoint as GeoMultiPoint;
 use lazy_static::lazy_static;
 use log::info;
 use proj::Proj;
@@ -179,24 +179,6 @@ struct Point {
     category: String,
 }
 
-const EPSG_28992: &str = "EPSG:28992";
-// FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
-const EPSG_4326: &str = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
-#[cfg(feature = "proj")]
-impl WGS84Coordinates for Point {
-    fn coord(&self) -> Result<Coord> {
-        let epsg_28992_point = GeoPoint::new(self.lon, self.lat);
-        let converter = Proj::new_known_crs(&EPSG_28992, &EPSG_4326, None).ok_or_else(|| {
-            format_err!(
-                "Proj cannot build a converter from '{}' to '{}'",
-                EPSG_28992,
-                EPSG_4326
-            )
-        })?;
-        converter.convert(epsg_28992_point).map(Coord::from)
-    }
-}
-
 #[derive(Deserialize, Debug)]
 struct UsrStopArea {
     #[serde(rename = "[UserStopAreaCode]")]
@@ -317,11 +299,20 @@ where
         .from_reader(file_reader);
 
     let mut point_map = BTreeMap::new();
+    let from = "EPSG:28992";
+    // FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
+    let to = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
+    let proj = match Proj::new_known_crs(&from, &to, None) {
+        Some(p) => p,
+        None => bail!("Proj cannot build a converter from {} to {}", from, to),
+    };
     for point in rdr.deserialize() {
         let point: Point = point.with_context(ctx_from_path!(path))?;
         if point.category == "SP" {
-            let wgs84_coords = point.coord()?;
-            point_map.insert(point.code, wgs84_coords);
+            let coords = proj
+                .convert((point.lon, point.lat).into())
+                .map(Coord::from)?;
+            point_map.insert(point.code, coords);
         }
     }
     Ok(point_map)
@@ -909,7 +900,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{CollectionWithId, Collections, Kv1Line};
     use crate::read_utils::PathFileHandler;
     use crate::test_utils::*;
 
@@ -999,28 +990,5 @@ mod tests {
 
         let mut collections = Collections::default();
         super::make_physical_and_commercial_modes(&mut collections, &kv1_lines).unwrap();
-    }
-
-    mod point {
-        use super::*;
-        use approx::assert_relative_eq;
-
-        // This test uses the Bristol Bus Station coordinates
-        // in EPSG:28992 format (Easting, Northing)
-        // https://epsg.io/map#srs=28992&x=211077&y=522887&z=20
-        // and in the corresponding EPSG:4326 format (aka WGS84)
-        // https://epsg.io/map#srs=4326&x=6.216616&y=52.690512&z=20
-        #[test]
-        fn convert_wgs84() {
-            let point = Point {
-                code: String::from("16000260"),
-                lon: 211077f64,
-                lat: 522887f64,
-                category: String::from("SP"),
-            };
-            let wgs84 = point.coord().unwrap();
-            assert_relative_eq!(wgs84.lon, 6.2166158860471405);
-            assert_relative_eq!(wgs84.lat, 52.69051160106322);
-        }
     }
 }
