@@ -23,7 +23,7 @@ use crate::{
     objects::{Coord, StopArea, StopPoint},
     Result,
 };
-use failure::{format_err, ResultExt};
+use failure::{bail, format_err, ResultExt};
 use geo_types::Point;
 use log::info;
 #[cfg(feature = "proj")]
@@ -95,7 +95,10 @@ where
     Ok(stop_areas)
 }
 
-fn read_stops_in_area<R>(reader: R) -> Result<HashMap<String, String>>
+fn read_stops_in_area<R>(
+    reader: R,
+    stop_areas: &CollectionWithId<StopArea>,
+) -> Result<HashMap<String, String>>
 where
     R: Read,
 {
@@ -109,11 +112,13 @@ where
         })
         .map(|record| {
             let stop_in_area = record?;
-            let key_value = (
-                stop_in_area.atco_code.clone(),
-                stop_in_area.stop_area_code.clone(),
-            );
-            Ok(key_value)
+            match stop_areas.get_idx(&stop_in_area.stop_area_code) {
+                Some(_) => Ok((
+                    stop_in_area.atco_code.clone(),
+                    stop_in_area.stop_area_code.clone(),
+                )),
+                None => bail!("Failed to find Stop Area '{}'", stop_in_area.stop_area_code),
+            }
         })
         .collect()
 }
@@ -156,13 +161,6 @@ where
     Ok(stop_points)
 }
 
-fn validate_stops(
-    _stop_areas: &CollectionWithId<StopArea>,
-    _stop_points: &CollectionWithId<StopPoint>,
-) -> Result<()> {
-    unimplemented!()
-}
-
 const STOP_AREAS_FILENAME: &str = "StopAreas.csv";
 const STOPS_IN_AREA_FILENAME: &str = "StopsInArea.csv";
 const STOPS_FILENAME: &str = "Stops.csv";
@@ -175,10 +173,10 @@ where
     info!("reading NaPTAN file for {}", STOP_AREAS_FILENAME);
     let stop_areas = read_stop_areas(zip_archive.by_name(STOP_AREAS_FILENAME)?)?;
     info!("reading NaPTAN file for {}", STOPS_IN_AREA_FILENAME);
-    let stops_in_area = read_stops_in_area(zip_archive.by_name(STOPS_IN_AREA_FILENAME)?)?;
+    let stops_in_area =
+        read_stops_in_area(zip_archive.by_name(STOPS_IN_AREA_FILENAME)?, &stop_areas)?;
     info!("reading NaPTAN file for {}", STOPS_FILENAME);
     let stop_points = read_stops(zip_archive.by_name(STOPS_FILENAME)?, &stops_in_area)?;
-    validate_stops(&stop_areas, &stop_points)?;
     collections.stop_areas.try_merge(stop_areas)?;
     collections.stop_points.try_merge(stop_points)?;
     Ok(())
@@ -242,7 +240,20 @@ mod tests {
             let csv_content = r#""StopAreaCode","AtcoCode"
 "010G0005","01000053220"
 "910GBDMNSTR","0100BDMNSTR0""#;
-            let stops_in_area = read_stops_in_area(csv_content.as_bytes()).unwrap();
+            let mut stop_areas = CollectionWithId::default();
+            stop_areas
+                .push(StopArea {
+                    id: String::from("010G0005"),
+                    ..Default::default()
+                })
+                .unwrap();
+            stop_areas
+                .push(StopArea {
+                    id: String::from("910GBDMNSTR"),
+                    ..Default::default()
+                })
+                .unwrap();
+            let stops_in_area = read_stops_in_area(csv_content.as_bytes(), &stop_areas).unwrap();
             assert_eq!(stops_in_area.len(), 2);
             let stop_area_code = stops_in_area.get("01000053220").unwrap();
             assert_eq!(stop_area_code, "010G0005");
@@ -251,12 +262,28 @@ mod tests {
         }
 
         #[test]
+        #[should_panic(expected = "Failed to find Stop Area \\'910GBDMNSTR\\'")]
+        fn missing_stop_area() {
+            let csv_content = r#""StopAreaCode","AtcoCode"
+"010G0005","01000053220"
+"910GBDMNSTR","0100BDMNSTR0""#;
+            let mut stop_areas = CollectionWithId::default();
+            stop_areas
+                .push(StopArea {
+                    id: String::from("010G0005"),
+                    ..Default::default()
+                })
+                .unwrap();
+            read_stops_in_area(csv_content.as_bytes(), &stop_areas).unwrap();
+        }
+
+        #[test]
         #[should_panic]
         fn no_atco_code() {
             let csv_content = r#""StopAreaCode"
 "010G0005"
 "910GBDMNSTR""#;
-            read_stops_in_area(csv_content.as_bytes()).unwrap();
+            read_stops_in_area(csv_content.as_bytes(), &CollectionWithId::default()).unwrap();
         }
     }
 
