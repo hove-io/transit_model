@@ -120,7 +120,7 @@ where
 
 fn read_stops<R>(
     reader: R,
-    _stops_in_area: &HashMap<String, String>,
+    stops_in_area: &HashMap<String, String>,
 ) -> Result<CollectionWithId<NTMStopPoint>>
 where
     R: Read,
@@ -129,10 +129,30 @@ where
         .delimiter(b',')
         .trim(csv::Trim::All)
         .from_reader(reader);
+    let mut stop_points = CollectionWithId::default();
     for record in reader.deserialize() {
-        let _stop: Stop = record.with_context(|_| "Error parsing the CSV record into a Stop")?;
+        let stop: Stop = record.with_context(|_| "Error parsing the CSV record into a Stop")?;
+        let stop_area_id = stops_in_area.get(&stop.atco_code).cloned().ok_or_else(|| {
+            format_err!(
+                "Failed to find the corresponding StopArea for the StopPoint '{}'",
+                stop.atco_code
+            )
+        })?;
+        let coord = Coord {
+            lon: stop.longitude,
+            lat: stop.latitude,
+        };
+        let stop_point = NTMStopPoint {
+            id: stop.atco_code.clone(),
+            name: stop.name.clone(),
+            coord,
+            stop_area_id,
+            platform_code: Some(stop.indicator.clone()),
+            ..Default::default()
+        };
+        stop_points.push(stop_point)?;
     }
-    unimplemented!()
+    Ok(stop_points)
 }
 
 fn validate_stops(
@@ -203,10 +223,11 @@ mod tests {
 
         #[test]
         #[should_panic]
-        fn missing_coords() {
-            let csv_content = r#""StopAreaCode","Name"
-"010G0001","Bristol Bus Station"
-"010G0002","Temple Meads""#;
+        fn duplicate_id() {
+            let csv_content = r#""StopAreaCode","Name","Easting","Northing"
+"010G0001","Bristol Bus Station",358929,173523
+"010G0001","Bristol Bus Station",358929,173523
+"010G0002","Temple Meads",359657,172418"#;
             read_stop_areas(csv_content.as_bytes()).unwrap();
         }
     }
@@ -235,6 +256,75 @@ mod tests {
 "010G0005"
 "910GBDMNSTR""#;
             read_stops_in_area(csv_content.as_bytes()).unwrap();
+        }
+    }
+
+    mod read_stops {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn parsing_works() {
+            let csv_content = r#""ATCOCode","CommonName","Indicator","Longitude","Latitude"
+"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
+            let mut stop_in_area = HashMap::new();
+            stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
+            stop_in_area.insert(String::from("0100053264"), String::from("stop-area-2"));
+            let stop_points = read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
+            assert_eq!(stop_points.len(), 2);
+            let stop_point = stop_points.get("0100053316").unwrap();
+            assert_eq!(stop_point.name, "Broad Walk Shops");
+            let stop_point = stop_points.get("0100053264").unwrap();
+            assert_eq!(stop_point.name, "Alberton Road");
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Failed to find the corresponding StopArea for the StopPoint \\'0100053264\\'"
+        )]
+        fn no_stop_area() {
+            let csv_content = r#""ATCOCode","CommonName","Indicator","Longitude","Latitude"
+"0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
+            let stop_in_area = HashMap::new();
+            read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
+        }
+
+        #[test]
+        #[should_panic]
+        fn no_atco_code() {
+            let csv_content = r#""CommonName","Indicator","Longitude","Latitude"
+"Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
+            let stop_in_area = HashMap::new();
+            read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Failed to find the corresponding StopArea for the StopPoint \\'\\'"
+        )]
+        fn no_id() {
+            let csv_content = r#""ATCOCode","CommonName","Indicator","Longitude","Latitude"
+,"Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+,"Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
+            let mut stop_in_area = HashMap::new();
+            stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
+            stop_in_area.insert(String::from("0100053264"), String::from("stop-area-2"));
+            read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
+        }
+
+        #[test]
+        #[should_panic]
+        fn duplicate_id() {
+            let csv_content = r#""ATCOCode","CommonName","Indicator","Longitude","Latitude"
+"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
+            let mut stop_in_area = HashMap::new();
+            stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
+            stop_in_area.insert(String::from("0100053264"), String::from("stop-area-2"));
+            read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
         }
     }
 }
