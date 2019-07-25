@@ -14,11 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use crate::collection::{CollectionWithId, Id};
-use crate::model::Collections;
-use crate::objects::{self, Contributor};
-use crate::utils::{add_prefix_to_collection, add_prefix_to_collection_with_id};
-use crate::Result;
+use crate::{
+    collection::{CollectionWithId, Id},
+    objects::{self, Contributor},
+    Result,
+};
 use failure::{format_err, ResultExt};
 use log::info;
 use serde::Deserialize;
@@ -72,28 +72,6 @@ pub fn read_config<P: AsRef<path::Path>>(
     let contributors = CollectionWithId::new(vec![contributor])?;
     let datasets = CollectionWithId::new(vec![dataset])?;
     Ok((contributors, datasets, feed_infos))
-}
-
-pub fn add_prefix(prefix: String, collections: &mut Collections) -> Result<()> {
-    let prefix = prefix + ":";
-    info!("Adding prefix: \"{}\"", &prefix);
-    add_prefix_to_collection_with_id(&mut collections.networks, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.companies, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.stop_points, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.stop_areas, &prefix)?;
-    add_prefix_to_collection(&mut collections.transfers, &prefix);
-    add_prefix_to_collection_with_id(&mut collections.routes, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.lines, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.contributors, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.datasets, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.vehicle_journeys, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.trip_properties, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.equipments, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.comments, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.geometries, &prefix)?;
-    add_prefix_to_collection_with_id(&mut collections.calendars, &prefix)?;
-
-    Ok(())
 }
 
 pub fn get_validity_period(

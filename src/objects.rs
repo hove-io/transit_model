@@ -18,9 +18,12 @@
 
 #![allow(missing_docs)]
 
-use crate::collection::{Id, Idx};
-use crate::common_format::Availability;
-use crate::utils::*;
+use crate::{
+    collection::{Id, Idx},
+    common_format::Availability,
+    utils::*,
+    AddPrefix,
+};
 use chrono;
 use chrono::NaiveDate;
 use derivative::Derivative;
@@ -32,10 +35,6 @@ use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::str::FromStr;
-
-pub trait AddPrefix {
-    fn add_prefix(&mut self, prefix: &str);
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]

@@ -22,6 +22,8 @@
 
 #[macro_use]
 pub(crate) mod utils;
+mod add_prefix;
+use add_prefix::AddPrefix;
 pub mod apply_rules;
 pub mod collection;
 pub(crate) mod common_format;

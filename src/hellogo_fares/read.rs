@@ -16,10 +16,12 @@
 
 use super::utils;
 use super::utils::FrameType;
-use crate::minidom_utils::{TryAttribute, TryOnlyChild};
-use crate::model::Collections;
-use crate::objects::*;
-use crate::Result;
+use crate::{
+    minidom_utils::{TryAttribute, TryOnlyChild},
+    model::Collections,
+    objects::*,
+    AddPrefix, Result,
+};
 use failure::{bail, format_err};
 use log::{info, warn};
 use minidom::Element;

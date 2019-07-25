@@ -16,13 +16,16 @@
 
 //! Definition of the navitia transit model.
 
-use crate::collection::{Collection, CollectionWithId, Id, Idx};
-use crate::objects::*;
-use crate::relations::{IdxSet, ManyToMany, OneToMany, Relation};
-use crate::{Error, Result};
+use crate::{
+    collection::{Collection, CollectionWithId, Id, Idx},
+    objects::*,
+    relations::{IdxSet, ManyToMany, OneToMany, Relation},
+    AddPrefix, Error, Result,
+};
 use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::format_err;
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
@@ -460,6 +463,41 @@ impl Collections {
         });
 
         Ok(())
+    }
+}
+
+impl AddPrefix for Collections {
+    fn add_prefix(&mut self, prefix: &str) {
+        let prefix = format!("{}:", prefix);
+        info!("Adding prefix: \"{}\"", &prefix);
+        self.contributors.add_prefix(&prefix);
+        self.datasets.add_prefix(&prefix);
+        self.networks.add_prefix(&prefix);
+        self.lines.add_prefix(&prefix);
+        self.routes.add_prefix(&prefix);
+        self.vehicle_journeys.add_prefix(&prefix);
+        self.stop_areas.add_prefix(&prefix);
+        self.stop_points.add_prefix(&prefix);
+        self.calendars.add_prefix(&prefix);
+        self.companies.add_prefix(&prefix);
+        self.comments.add_prefix(&prefix);
+        self.equipments.add_prefix(&prefix);
+        self.transfers.add_prefix(&prefix);
+        self.trip_properties.add_prefix(&prefix);
+        self.geometries.add_prefix(&prefix);
+        // TODO: Implement AddPrefix for AdminStation
+        // self.admin_station.add_prefix(&prefix);
+        // TODO: Implement AddPrefix for PriceV1
+        // self.prices_v1.add_prefix(&prefix);
+        // TODO: Implement AddPrefix for ODFareV1
+        // self.od_fares_v1.add_prefix(&prefix);
+        // TODO: Implement AddPrefix for FareV1
+        // self.fares_v1.add_prefix(&prefix);
+        self.tickets.add_prefix(&prefix);
+        self.ticket_prices.add_prefix(&prefix);
+        self.ticket_uses.add_prefix(&prefix);
+        self.ticket_use_perimeters.add_prefix(&prefix);
+        self.ticket_use_restrictions.add_prefix(&prefix);
     }
 }
 
