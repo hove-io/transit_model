@@ -23,9 +23,9 @@ use crate::{
     objects::{Coord, StopArea, StopPoint},
     Result,
 };
-use failure::{bail, format_err, ResultExt};
+use failure::{format_err, ResultExt};
 use geo_types::Point;
-use log::info;
+use log::{info, warn};
 #[cfg(feature = "proj")]
 use proj::Proj;
 use serde::Deserialize;
@@ -110,15 +110,25 @@ where
         .map(|record: csv::Result<NaPTANStopInArea>| {
             record.with_context(|_| "Error parsing the CSV record into a StopInArea")
         })
+        .filter(|record| {
+            match record {
+                Ok(stop_in_area) => stop_areas
+                    .get_idx(&stop_in_area.stop_area_code)
+                    .map(|_| true)
+                    .unwrap_or_else(|| {
+                        warn!("Failed to find Stop Area '{}'", stop_in_area.stop_area_code);
+                        false
+                    }),
+                // We want to keep record that are Err(_) so the `.collect()` below report errors
+                Err(_) => true,
+            }
+        })
         .map(|record| {
             let stop_in_area = record?;
-            match stop_areas.get_idx(&stop_in_area.stop_area_code) {
-                Some(_) => Ok((
-                    stop_in_area.atco_code.clone(),
-                    stop_in_area.stop_area_code.clone(),
-                )),
-                None => bail!("Failed to find Stop Area '{}'", stop_in_area.stop_area_code),
-            }
+            Ok((
+                stop_in_area.atco_code.clone(),
+                stop_in_area.stop_area_code.clone(),
+            ))
         })
         .collect()
 }
@@ -143,7 +153,8 @@ where
                 "Failed to find the corresponding StopArea for the StopPoint '{}'",
                 stop.atco_code
             )
-        })?;
+        });
+        let stop_area_id = skip_fail!(stop_area_id);
         let coord = Coord {
             lon: stop.longitude,
             lat: stop.latitude,
@@ -262,7 +273,6 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find Stop Area \\'910GBDMNSTR\\'")]
         fn missing_stop_area() {
             let csv_content = r#""StopAreaCode","AtcoCode"
 "010G0005","01000053220"
@@ -274,7 +284,10 @@ mod tests {
                     ..Default::default()
                 })
                 .unwrap();
-            read_stops_in_area(csv_content.as_bytes(), &stop_areas).unwrap();
+            let stops_in_area = read_stops_in_area(csv_content.as_bytes(), &stop_areas).unwrap();
+            assert_eq!(stops_in_area.len(), 1);
+            let stop_area_code = stops_in_area.get("01000053220").unwrap();
+            assert_eq!(stop_area_code, "010G0005");
         }
 
         #[test]
@@ -308,14 +321,16 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Failed to find the corresponding StopArea for the StopPoint \\'0100053264\\'"
-        )]
         fn no_stop_area() {
             let csv_content = r#""ATCOCode","CommonName","Indicator","Longitude","Latitude"
+"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
 "0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
-            let stop_in_area = HashMap::new();
-            read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
+            let mut stop_in_area = HashMap::new();
+            stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
+            let stop_points = read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
+            assert_eq!(stop_points.len(), 1);
+            let stop_point = stop_points.get("0100053316").unwrap();
+            assert_eq!(stop_point.name, "Broad Walk Shops");
         }
 
         #[test]
@@ -329,9 +344,6 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Failed to find the corresponding StopArea for the StopPoint \\'\\'"
-        )]
         fn no_id() {
             let csv_content = r#""ATCOCode","CommonName","Indicator","Longitude","Latitude"
 ,"Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
@@ -339,7 +351,8 @@ mod tests {
             let mut stop_in_area = HashMap::new();
             stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
             stop_in_area.insert(String::from("0100053264"), String::from("stop-area-2"));
-            read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
+            let stop_points = read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
+            assert_eq!(stop_points.len(), 0);
         }
 
         #[test]
