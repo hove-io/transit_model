@@ -1296,6 +1296,12 @@ pub struct PriceV1 {
     pub currency_type: Option<String>,
 }
 
+impl AddPrefix for PriceV1 {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct ODFareV1 {
     #[serde(rename = "Origin ID")]
@@ -1313,6 +1319,14 @@ pub struct ODFareV1 {
     pub ticket_id: String,
 }
 
+impl AddPrefix for ODFareV1 {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.ticket_id = prefix.to_string() + &self.ticket_id;
+        self.origin_stop_area_id = prefix.to_string() + &self.origin_stop_area_id;
+        self.destination_stop_area_id = prefix.to_string() + &self.destination_stop_area_id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct FareV1 {
     #[serde(rename = "avant changement")]
@@ -1327,6 +1341,12 @@ pub struct FareV1 {
     pub global_condition: String,
     #[serde(rename = "clef ticket")]
     pub ticket_id: String,
+}
+
+impl AddPrefix for FareV1 {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.ticket_id = prefix.to_string() + &self.ticket_id;
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]

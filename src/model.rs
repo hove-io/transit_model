@@ -486,12 +486,9 @@ impl AddPrefix for Collections {
         self.trip_properties.add_prefix(&prefix);
         self.geometries.add_prefix(&prefix);
         self.admin_stations.add_prefix(&prefix);
-        // TODO: Implement AddPrefix for PriceV1
-        // self.prices_v1.add_prefix(&prefix);
-        // TODO: Implement AddPrefix for ODFareV1
-        // self.od_fares_v1.add_prefix(&prefix);
-        // TODO: Implement AddPrefix for FareV1
-        // self.fares_v1.add_prefix(&prefix);
+        self.prices_v1.add_prefix(&prefix);
+        self.od_fares_v1.add_prefix(&prefix);
+        self.fares_v1.add_prefix(&prefix);
         self.tickets.add_prefix(&prefix);
         self.ticket_prices.add_prefix(&prefix);
         self.ticket_uses.add_prefix(&prefix);
