@@ -27,11 +27,13 @@ use transit_model::Result;
     about = "Convert a TransXChange to an NTFS."
 )]
 struct Opt {
-    /// input directory containing TransXChange files
+    /// input directory or ZIP file containing TransXChange files
+    /// the files must be UTF-8 encoded
     #[structopt(long, short, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// input directory containing NaPTAN files
+    /// input directory or ZIP file containing NaPTAN files
+    /// the files must be UTF-8 encoded
     #[structopt(long, short, parse(from_os_str), default_value = ".")]
     naptan: PathBuf,
 
