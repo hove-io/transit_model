@@ -485,8 +485,7 @@ impl AddPrefix for Collections {
         self.transfers.add_prefix(&prefix);
         self.trip_properties.add_prefix(&prefix);
         self.geometries.add_prefix(&prefix);
-        // TODO: Implement AddPrefix for AdminStation
-        // self.admin_station.add_prefix(&prefix);
+        self.admin_stations.add_prefix(&prefix);
         // TODO: Implement AddPrefix for PriceV1
         // self.prices_v1.add_prefix(&prefix);
         // TODO: Implement AddPrefix for ODFareV1

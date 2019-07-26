@@ -1269,6 +1269,13 @@ pub struct AdminStation {
     pub station_id: Option<String>,
 }
 
+impl AddPrefix for AdminStation {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.admin_id = prefix.to_string() + &self.admin_id;
+        self.stop_id = prefix.to_string() + &self.stop_id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PriceV1 {
     pub id: String,
