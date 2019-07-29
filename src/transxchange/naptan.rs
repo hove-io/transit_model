@@ -84,13 +84,21 @@ where
         let stop_area: NaPTANStopArea =
             record.with_context(|_| "Error parsing the CSV record into a StopArea")?;
         let point = Point::new(stop_area.easting, stop_area.northing);
-        let ntm_stop_area = StopArea {
-            id: stop_area.stop_area_code.clone(),
-            name: stop_area.name.clone(),
-            coord: converter.convert(point).map(Coord::from)?,
-            ..Default::default()
-        };
-        stop_areas.push(ntm_stop_area)?;
+        if let Ok(coord) = converter.convert(point).map(Coord::from) {
+            stop_areas.push(StopArea {
+                id: stop_area.stop_area_code.clone(),
+                name: stop_area.name.clone(),
+                coord,
+                ..Default::default()
+            })?;
+        } else {
+            warn!(
+                "Failed to convert point ({}, {}) from {} into WGS84",
+                point.x(),
+                point.y(),
+                from,
+            );
+        }
     }
     Ok(stop_areas)
 }
