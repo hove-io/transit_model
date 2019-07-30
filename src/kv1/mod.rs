@@ -49,7 +49,9 @@ where
     read::read_jopa_pujopass_line(file_handler, &mut collections)?;
 
     //add prefixes
-    prefix.map(|p| collections.add_prefix(p.as_str()));
+    if let Some(prefix) = prefix {
+        collections.add_prefix_with_sep(prefix.as_str(), ":");
+    }
 
     Ok(Model::new(collections)?)
 }

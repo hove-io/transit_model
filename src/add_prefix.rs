@@ -16,10 +16,17 @@
 
 //! A trait for every structure that needs to be updated with a prefix
 
-use crate::collection::{Collection, CollectionWithId, Id};
+use crate::{
+    collection::{Collection, CollectionWithId, Id},
+    model::Collections,
+};
 
 pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);
+    fn add_prefix_with_sep(&mut self, prefix: &str, sep: &str) {
+        let prefix = format!("{}{}", prefix, sep);
+        self.add_prefix(&prefix);
+    }
 }
 
 impl<T> AddPrefix for Collection<T>
@@ -42,6 +49,35 @@ where
         for index in indexes {
             self.index_mut(index).add_prefix(prefix);
         }
+    }
+}
+
+impl AddPrefix for Collections {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.contributors.add_prefix(&prefix);
+        self.datasets.add_prefix(&prefix);
+        self.networks.add_prefix(&prefix);
+        self.lines.add_prefix(&prefix);
+        self.routes.add_prefix(&prefix);
+        self.vehicle_journeys.add_prefix(&prefix);
+        self.stop_areas.add_prefix(&prefix);
+        self.stop_points.add_prefix(&prefix);
+        self.calendars.add_prefix(&prefix);
+        self.companies.add_prefix(&prefix);
+        self.comments.add_prefix(&prefix);
+        self.equipments.add_prefix(&prefix);
+        self.transfers.add_prefix(&prefix);
+        self.trip_properties.add_prefix(&prefix);
+        self.geometries.add_prefix(&prefix);
+        self.admin_stations.add_prefix(&prefix);
+        self.prices_v1.add_prefix(&prefix);
+        self.od_fares_v1.add_prefix(&prefix);
+        self.fares_v1.add_prefix(&prefix);
+        self.tickets.add_prefix(&prefix);
+        self.ticket_prices.add_prefix(&prefix);
+        self.ticket_uses.add_prefix(&prefix);
+        self.ticket_use_perimeters.add_prefix(&prefix);
+        self.ticket_use_restrictions.add_prefix(&prefix);
     }
 }
 

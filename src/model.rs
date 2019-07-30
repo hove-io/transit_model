@@ -20,12 +20,11 @@ use crate::{
     collection::{Collection, CollectionWithId, Id, Idx},
     objects::*,
     relations::{IdxSet, ManyToMany, OneToMany, Relation},
-    AddPrefix, Error, Result,
+    Error, Result,
 };
 use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::format_err;
-use log::info;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
@@ -463,37 +462,6 @@ impl Collections {
         });
 
         Ok(())
-    }
-}
-
-impl AddPrefix for Collections {
-    fn add_prefix(&mut self, prefix: &str) {
-        let prefix = format!("{}:", prefix);
-        info!("Adding prefix: \"{}\"", &prefix);
-        self.contributors.add_prefix(&prefix);
-        self.datasets.add_prefix(&prefix);
-        self.networks.add_prefix(&prefix);
-        self.lines.add_prefix(&prefix);
-        self.routes.add_prefix(&prefix);
-        self.vehicle_journeys.add_prefix(&prefix);
-        self.stop_areas.add_prefix(&prefix);
-        self.stop_points.add_prefix(&prefix);
-        self.calendars.add_prefix(&prefix);
-        self.companies.add_prefix(&prefix);
-        self.comments.add_prefix(&prefix);
-        self.equipments.add_prefix(&prefix);
-        self.transfers.add_prefix(&prefix);
-        self.trip_properties.add_prefix(&prefix);
-        self.geometries.add_prefix(&prefix);
-        self.admin_stations.add_prefix(&prefix);
-        self.prices_v1.add_prefix(&prefix);
-        self.od_fares_v1.add_prefix(&prefix);
-        self.fares_v1.add_prefix(&prefix);
-        self.tickets.add_prefix(&prefix);
-        self.ticket_prices.add_prefix(&prefix);
-        self.ticket_uses.add_prefix(&prefix);
-        self.ticket_use_perimeters.add_prefix(&prefix);
-        self.ticket_use_restrictions.add_prefix(&prefix);
     }
 }
 

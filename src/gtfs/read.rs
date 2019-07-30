@@ -1707,7 +1707,7 @@ mod tests {
             super::manage_shapes(&mut collections, &mut handler).unwrap();
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
 
-            collections.add_prefix("my_prefix");
+            collections.add_prefix_with_sep("my_prefix", ":");
 
             assert_eq!(
                 vec!["my_prefix:285", "my_prefix:584"],
