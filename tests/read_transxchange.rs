@@ -36,9 +36,12 @@ fn test_read_transxchange() {
             Some(vec![
                 "companies.txt",
                 "contributors.txt",
+                "commercial_modes.txt",
                 "datasets.txt",
                 "feed_infos.txt",
+                "lines.txt",
                 "networks.txt",
+                "physical_modes.txt",
                 "stops.txt",
             ]),
             "fixtures/transxchange2ntfs/output/ntfs",

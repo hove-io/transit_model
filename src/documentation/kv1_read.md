@@ -75,7 +75,7 @@ destination_id |  |  | `stop_id` of the stop_area of the last stop of the first 
 (1) The first trip of a route is the one with the smallest `trip_id` value.
 
 ### calendar.txt and calendar_dates.txt
-This document specifies a straightforward NTFS conversion using only `calendar_dates.txt` file. The resulting files may be different with the use of an optimizing processing, but the result should be functionnaly identical.
+This document specifies a straightforward NTFS conversion using only `calendar_dates.txt` file. The resulting files may be different with the use of an optimizing processing, but the result should be functionally identical.
 
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---

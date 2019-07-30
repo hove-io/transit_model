@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TransXChange xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.transxchange.org.uk/ http://www.transxchange.org.uk/schema/2.1/TransXChange_general.xsd" xmlns="http://www.transxchange.org.uk/">
+  <Operators>
+    <Operator id="O1">
+      <OperatorCode>SSWK</OperatorCode>
+      <OperatorShortName>Stagecoach South Kales</OperatorShortName>
+    </Operator>
+  </Operators>
+  <Services>
+    <Service>
+      <ServiceCode>SCAO813</ServiceCode>
+      <Lines>
+        <Line id="SL1">
+          <LineName>813</LineName>
+        </Line>
+      </Lines>
+      <OperatingPeriod>
+        <StartDate>2018-05-13</StartDate>
+      </OperatingPeriod>
+      <RegisteredOperatorRef>O1</RegisteredOperatorRef>
+      <Description>Pontypool Town Kall - Pontypool Kollege</Description>
+      <StandardService>
+        <Origin>Pontypool Town Kall</Origin>
+        <Destination>Pontypool Kollege</Destination>
+      </StandardService>
+    </Service>
+  </Services>
+</TransXChange>

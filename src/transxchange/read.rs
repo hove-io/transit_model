@@ -27,13 +27,32 @@ use chrono::{
     Duration,
 };
 use failure::format_err;
-use log::info;
+use lazy_static::lazy_static;
+use log::{info, warn};
 use minidom::Element;
 use std::{fs::File, io::Read, path::Path};
 use walkdir::WalkDir;
 use zip::ZipArchive;
 
+const UNDEFINED: &str = "Undefined";
 const EUROPE_LONDON_TIMEZONE: &str = "Europe/London";
+const DEFAULT_MODE: &str = "Bus";
+
+lazy_static! {
+    static ref MODES: std::collections::HashMap<&'static str, &'static str> = {
+        let mut modes_map = std::collections::HashMap::new();
+        modes_map.insert("air", "Air");
+        modes_map.insert("bus", DEFAULT_MODE);
+        modes_map.insert("coach", "Coach");
+        modes_map.insert("ferry", "Ferry");
+        modes_map.insert("underground", "Metro");
+        modes_map.insert("metro", "Metro");
+        modes_map.insert("rail", "Train");
+        modes_map.insert("tram", "Tramway");
+        modes_map.insert("trolleyBus", "Shuttle");
+        modes_map
+    };
+}
 
 fn get_service_validity_period(transxchange: &Element) -> Result<ValidityPeriod> {
     let operating_period = transxchange
@@ -136,7 +155,7 @@ fn load_network(transxchange: &Element) -> Result<Network> {
         .trim()
         .to_string();
     let name = if name.is_empty() {
-        String::from("Undefined")
+        String::from(UNDEFINED)
     } else {
         name
     };
@@ -168,15 +187,99 @@ fn load_companies(transxchange: &Element) -> Result<CollectionWithId<Company>> {
     Ok(companies)
 }
 
+fn load_commercial_physical_modes(
+    transxchange: &Element,
+) -> Result<(CommercialMode, PhysicalMode)> {
+    let mode = match transxchange
+        .try_only_child("Services")?
+        .try_only_child("Service")?
+        .try_only_child("Mode")
+        .map(Element::text)
+    {
+        Ok(mode) => MODES.get(mode.as_str()).unwrap_or(&DEFAULT_MODE),
+        Err(e) => {
+            warn!("{} - Default mode '{}' assigned", e, DEFAULT_MODE);
+            DEFAULT_MODE
+        }
+    };
+    let commercial_mode = CommercialMode {
+        id: mode.to_string(),
+        name: mode.to_string(),
+    };
+    let physical_mode = PhysicalMode {
+        id: mode.to_string(),
+        name: mode.to_string(),
+        ..Default::default()
+    };
+    Ok((commercial_mode, physical_mode))
+}
+
+fn load_lines(
+    transxchange: &Element,
+    network_id: &str,
+    commercial_mode_id: &str,
+) -> Result<CollectionWithId<Line>> {
+    let service = transxchange
+        .try_only_child("Services")?
+        .try_only_child("Service")?;
+    let service_id = service.try_only_child("ServiceCode")?.text();
+    let mut lines = CollectionWithId::default();
+    let name = if let Ok(description) = service.try_only_child("Description") {
+        description.text().trim().to_string()
+    } else {
+        String::from(UNDEFINED)
+    };
+    let standard_service = service.try_only_child("StandardService")?;
+    let forward_name = standard_service
+        .try_only_child("Destination")?
+        .text()
+        .trim()
+        .to_string();
+    let backward_name = standard_service
+        .try_only_child("Origin")?
+        .text()
+        .trim()
+        .to_string();
+    for line in service.try_only_child("Lines")?.children() {
+        if let Some(line_id) = line.attr("id") {
+            let id = format!("{}:{}", service_id, line_id);
+            let code = Some(line.try_only_child("LineName")?.text().trim().to_string());
+            let network_id = network_id.to_string();
+            let commercial_mode_id = commercial_mode_id.to_string();
+            let name = name.to_string();
+            let forward_name = Some(forward_name.clone());
+            let backward_name = Some(backward_name.clone());
+            let line = Line {
+                id,
+                code,
+                name,
+                forward_name,
+                backward_name,
+                network_id,
+                commercial_mode_id,
+                ..Default::default()
+            };
+            let _ = lines.push(line);
+        }
+    }
+    Ok(lines)
+}
+
 fn read_xml(transxchange: &Element, collections: &mut Collections) -> Result<()> {
+    let network = load_network(transxchange)?;
+    let companies = load_companies(transxchange)?;
+    let (commercial_mode, physical_mode) = load_commercial_physical_modes(transxchange)?;
+    let lines = load_lines(transxchange, &network.id, &commercial_mode.id)?;
+
+    // Insert in collections
     collections.datasets =
         update_validity_period_from_transxchange(&mut collections.datasets, transxchange)?;
-    let network = load_network(transxchange)?;
-    if collections.networks.get(&network.id).is_none() {
-        collections.networks.push(network)?;
-    }
-    let companies = load_companies(transxchange)?;
+    let _ = collections.networks.push(network);
     collections.companies.merge(companies);
+    // Ignore if `push` returns an error for duplicates
+    let _ = collections.commercial_modes.push(commercial_mode);
+    let _ = collections.physical_modes.push(physical_mode);
+    collections.lines.merge(lines);
     Ok(())
 }
 
@@ -189,8 +292,12 @@ where
             info!("reading TransXChange file {:?}", file_path);
             let mut file_content = String::new();
             file.read_to_string(&mut file_content)?;
-            let root: Element = file_content.parse()?;
-            read_xml(&root, collections)?;
+            match file_content.parse::<Element>() {
+                Ok(element) => read_xml(&element, collections)?,
+                Err(e) => {
+                    warn!("Failed to parse file '{:?}' as DOM: {}", file_path, e);
+                }
+            };
         }
         _ => info!("skipping file {:?}", file_path),
     };
@@ -681,6 +788,147 @@ mod tests {
             </root>"#;
             let root: Element = xml.parse().unwrap();
             load_companies(&root).unwrap();
+        }
+    }
+
+    mod load_commercial_physical_modes {
+        use super::*;
+
+        #[test]
+        fn has_commercial_physical_modes() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <Mode>bus</Mode>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let (commercial_mode, physical_mode) = load_commercial_physical_modes(&root).unwrap();
+
+            assert_eq!(commercial_mode.id, String::from("Bus"));
+            assert_eq!(commercial_mode.name, String::from("Bus"));
+
+            assert_eq!(physical_mode.id, String::from("Bus"));
+            assert_eq!(physical_mode.name, String::from("Bus"));
+        }
+
+        #[test]
+        fn default_mode() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <Mode>unicorn</Mode>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let (commercial_mode, physical_mode) = load_commercial_physical_modes(&root).unwrap();
+
+            assert_eq!(commercial_mode.id, String::from("Bus"));
+            assert_eq!(commercial_mode.name, String::from("Bus"));
+
+            assert_eq!(physical_mode.id, String::from("Bus"));
+            assert_eq!(physical_mode.name, String::from("Bus"));
+        }
+    }
+    mod load_lines {
+        use super::*;
+
+        #[test]
+        fn has_line() {
+            let xml = r#"<root>
+                <Operators>
+                    <Operator id="O1">
+                        <OperatorCode>SSWL</OperatorCode>
+                    </Operator>
+                </Operators>
+                <Services>
+                    <Service>
+                        <ServiceCode>SCBO001</ServiceCode>
+                        <Lines>
+                            <Line id="SL1">
+                                <LineName>1</LineName>
+                            </Line>
+                            <Line id="SL2">
+                                <LineName>2</LineName>
+                            </Line>
+                        </Lines>
+                        <Description>Cwmbran - Cwmbran via Thornhill</Description>
+                        <StandardService>
+                            <Origin>Cwmbran South</Origin>
+                            <Destination>Cwmbran North</Destination>
+                        </StandardService>
+                        <RegisteredOperatorRef>O1</RegisteredOperatorRef>
+                        <Mode>bus</Mode>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let lines = load_lines(&root, "SSWL", "Bus").unwrap();
+            let line = lines.get("SCBO001:SL1").unwrap();
+            assert_eq!(line.code, Some(String::from("1")));
+            assert_eq!(line.name, String::from("Cwmbran - Cwmbran via Thornhill"));
+            assert_eq!(line.forward_name, Some(String::from("Cwmbran North")));
+            // TODO: Fill up the forward direction
+            assert_eq!(line.forward_direction, None);
+            assert_eq!(line.backward_name, Some(String::from("Cwmbran South")));
+            // TODO: Fill up the backward direction
+            assert_eq!(line.backward_direction, None);
+            assert_eq!(line.network_id, String::from("SSWL"));
+            assert_eq!(line.commercial_mode_id, String::from("Bus"));
+
+            let line = lines.get("SCBO001:SL2").unwrap();
+            assert_eq!(line.code, Some(String::from("2")));
+            assert_eq!(line.name, String::from("Cwmbran - Cwmbran via Thornhill"));
+            assert_eq!(line.forward_name, Some(String::from("Cwmbran North")));
+            // TODO: Fill up the forward direction
+            assert_eq!(line.forward_direction, None);
+            assert_eq!(line.backward_name, Some(String::from("Cwmbran South")));
+            // TODO: Fill up the backward direction
+            assert_eq!(line.backward_direction, None);
+            assert_eq!(line.network_id, String::from("SSWL"));
+            assert_eq!(line.commercial_mode_id, String::from("Bus"));
+        }
+
+        #[test]
+        fn has_line_without_name() {
+            let xml = r#"<root>
+                <Operators>
+                    <Operator id="O1">
+                        <OperatorCode>SSWL</OperatorCode>
+                    </Operator>
+                </Operators>
+                <Services>
+                    <Service>
+                        <ServiceCode>SCBO001</ServiceCode>
+                        <Lines>
+                            <Line id="SL1">
+                                <LineName>1</LineName>
+                            </Line>
+                        </Lines>
+                        <StandardService>
+                            <Origin>Cwmbran South</Origin>
+                            <Destination>Cwmbran North</Destination>
+                        </StandardService>
+                        <RegisteredOperatorRef>O1</RegisteredOperatorRef>
+                        <Mode>bus</Mode>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let lines = load_lines(&root, "SSWL", "Bus").unwrap();
+            let line = lines.get("SCBO001:SL1").unwrap();
+            assert_eq!(line.code, Some(String::from("1")));
+            assert_eq!(line.name, String::from(UNDEFINED));
+            assert_eq!(line.forward_name, Some(String::from("Cwmbran North")));
+            // TODO: Fill up the forward direction
+            assert_eq!(line.forward_direction, None);
+            assert_eq!(line.backward_name, Some(String::from("Cwmbran South")));
+            // TODO: Fill up the backward direction
+            assert_eq!(line.backward_direction, None);
+            assert_eq!(line.network_id, String::from("SSWL"));
+            assert_eq!(line.commercial_mode_id, String::from("Bus"));
         }
     }
 }
