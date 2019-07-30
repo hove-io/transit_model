@@ -117,6 +117,18 @@ fn read_stops_in_area<R>(
 where
     R: Read,
 {
+    fn is_valid_stop_area(
+        stop_in_area: &NaPTANStopInArea,
+        stop_areas: &CollectionWithId<StopArea>,
+    ) -> bool {
+        stop_areas
+            .get_idx(&stop_in_area.stop_area_code)
+            .map(|_| true)
+            .unwrap_or_else(|| {
+                warn!("Failed to find Stop Area '{}'", stop_in_area.stop_area_code);
+                false
+            })
+    }
     csv::ReaderBuilder::new()
         .delimiter(b',')
         .trim(csv::Trim::All)
@@ -127,13 +139,7 @@ where
         })
         .filter(|record| {
             match record {
-                Ok(stop_in_area) => stop_areas
-                    .get_idx(&stop_in_area.stop_area_code)
-                    .map(|_| true)
-                    .unwrap_or_else(|| {
-                        warn!("Failed to find Stop Area '{}'", stop_in_area.stop_area_code);
-                        false
-                    }),
+                Ok(stop_in_area) => is_valid_stop_area(stop_in_area, stop_areas),
                 // We want to keep record that are Err(_) so the `.collect()` below report errors
                 Err(_) => true,
             }
