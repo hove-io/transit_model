@@ -16,10 +16,12 @@
 
 //! Definition of the navitia transit model.
 
-use crate::collection::{Collection, CollectionWithId, Id, Idx};
-use crate::objects::*;
-use crate::relations::{IdxSet, ManyToMany, OneToMany, Relation};
-use crate::{Error, Result};
+use crate::{
+    collection::{Collection, CollectionWithId, Id, Idx},
+    objects::*,
+    relations::{IdxSet, ManyToMany, OneToMany, Relation},
+    Error, Result,
+};
 use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::format_err;

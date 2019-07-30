@@ -14,8 +14,10 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use crate::collection::{Collection, CollectionWithId, Id};
-use crate::objects::{AddPrefix, Date};
+use crate::{
+    collection::{Collection, CollectionWithId, Id},
+    objects::Date,
+};
 use chrono::NaiveDate;
 use csv;
 use failure::ResultExt;
@@ -295,32 +297,6 @@ where
         .collect::<Result<_, _>>()
         .with_context(ctx_from_path!(path))?;
     Ok(Collection::new(vec))
-}
-
-pub fn add_prefix_to_collection_with_id<T>(
-    collection: &mut CollectionWithId<T>,
-    prefix: &str,
-) -> crate::Result<()>
-where
-    T: AddPrefix + Id<T>,
-{
-    let mut objects = collection.take();
-    for obj in &mut objects {
-        obj.add_prefix(prefix);
-    }
-
-    *collection = CollectionWithId::new(objects)?;
-
-    Ok(())
-}
-
-pub fn add_prefix_to_collection<T>(collection: &mut Collection<T>, prefix: &str)
-where
-    T: AddPrefix,
-{
-    for obj in &mut collection.values_mut() {
-        obj.add_prefix(prefix);
-    }
 }
 
 macro_rules! skip_fail {

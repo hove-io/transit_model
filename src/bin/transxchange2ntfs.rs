@@ -62,7 +62,7 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let model = transit_model::transxchange::read(opt.input, opt.naptan, opt.config)?;
+    let model = transit_model::transxchange::read(opt.input, opt.naptan, opt.config, opt.prefix)?;
 
     transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
     Ok(())

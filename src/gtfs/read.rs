@@ -21,8 +21,10 @@ use super::{
 use crate::collection::{Collection, CollectionWithId, Id};
 use crate::common_format::Availability;
 use crate::model::Collections;
-use crate::objects::{self, CommentLinksT, Coord, KeysValues, StopType, TransportType};
-use crate::objects::{StopTime as NtfsStopTime, Time, VehicleJourney};
+use crate::objects::{
+    self, CommentLinksT, Coord, KeysValues, StopTime as NtfsStopTime, StopType, Time,
+    TransportType, VehicleJourney,
+};
 use crate::read_utils::{read_collection, read_objects, FileHandler};
 use crate::utils::*;
 use crate::Result;
@@ -1045,14 +1047,16 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::collection::{Collection, CollectionWithId, Id};
-    use crate::common_format;
-    use crate::gtfs::add_prefix;
-    use crate::gtfs::read::EquipmentList;
-    use crate::model::Collections;
-    use crate::objects::*;
-    use crate::read_utils::{self, PathFileHandler};
-    use crate::test_utils::*;
+    use crate::{
+        collection::{Collection, CollectionWithId, Id},
+        common_format,
+        gtfs::read::EquipmentList,
+        model::Collections,
+        objects::*,
+        read_utils::{self, PathFileHandler},
+        test_utils::*,
+        AddPrefix,
+    };
     use chrono;
     use geo_types::Geometry as GeoGeometry;
     use std::collections::BTreeSet;
@@ -1703,7 +1707,7 @@ mod tests {
             super::manage_shapes(&mut collections, &mut handler).unwrap();
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
 
-            add_prefix("my_prefix".to_string(), &mut collections).unwrap();
+            collections.add_prefix_with_sep("my_prefix", ":");
 
             assert_eq!(
                 vec!["my_prefix:285", "my_prefix:584"],

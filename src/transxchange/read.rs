@@ -20,7 +20,7 @@ use crate::{
     model::{Collections, Model},
     objects::*,
     transxchange::naptan,
-    Result,
+    AddPrefix, Result,
 };
 use chrono::{
     naive::{MAX_DATE, MIN_DATE},
@@ -166,7 +166,12 @@ where
 }
 
 /// Read TransXChange format into a Navitia Transit Model
-pub fn read<P>(transxchange_path: P, naptan_path: P, config_path: Option<P>) -> Result<Model>
+pub fn read<P>(
+    transxchange_path: P,
+    naptan_path: P,
+    config_path: Option<P>,
+    prefix: Option<String>,
+) -> Result<Model>
 where
     P: AsRef<Path>,
 {
@@ -188,6 +193,9 @@ where
     collections.feed_infos = feed_infos;
     naptan::read_naptan(naptan_path, &mut collections)?;
     read_transxchange_archive(transxchange_path, &mut collections)?;
+    if let Some(prefix) = prefix {
+        collections.add_prefix(prefix.as_str());
+    }
     Model::new(collections)
 }
 

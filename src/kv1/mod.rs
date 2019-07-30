@@ -18,10 +18,10 @@
 
 mod read;
 
-use crate::model::{Collections, Model};
-use crate::read_utils;
-use crate::read_utils::add_prefix;
-use crate::Result;
+use crate::{
+    model::{Collections, Model},
+    read_utils, AddPrefix, Result,
+};
 use std::fs::File;
 use std::path::Path;
 
@@ -50,7 +50,7 @@ where
 
     //add prefixes
     if let Some(prefix) = prefix {
-        add_prefix(prefix, &mut collections)?;
+        collections.add_prefix_with_sep(prefix.as_str(), ":");
     }
 
     Ok(Model::new(collections)?)

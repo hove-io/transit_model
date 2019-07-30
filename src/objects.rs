@@ -18,9 +18,12 @@
 
 #![allow(missing_docs)]
 
-use crate::collection::{Id, Idx};
-use crate::common_format::Availability;
-use crate::utils::*;
+use crate::{
+    collection::{Id, Idx},
+    common_format::Availability,
+    utils::*,
+    AddPrefix,
+};
 use chrono;
 use chrono::NaiveDate;
 use derivative::Derivative;
@@ -32,10 +35,6 @@ use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::str::FromStr;
-
-pub trait AddPrefix {
-    fn add_prefix(&mut self, prefix: &str);
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -1270,6 +1269,13 @@ pub struct AdminStation {
     pub station_id: Option<String>,
 }
 
+impl AddPrefix for AdminStation {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.admin_id = prefix.to_string() + &self.admin_id;
+        self.stop_id = prefix.to_string() + &self.stop_id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PriceV1 {
     pub id: String,
@@ -1290,6 +1296,12 @@ pub struct PriceV1 {
     pub currency_type: Option<String>,
 }
 
+impl AddPrefix for PriceV1 {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct ODFareV1 {
     #[serde(rename = "Origin ID")]
@@ -1307,6 +1319,14 @@ pub struct ODFareV1 {
     pub ticket_id: String,
 }
 
+impl AddPrefix for ODFareV1 {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.ticket_id = prefix.to_string() + &self.ticket_id;
+        self.origin_stop_area_id = prefix.to_string() + &self.origin_stop_area_id;
+        self.destination_stop_area_id = prefix.to_string() + &self.destination_stop_area_id;
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct FareV1 {
     #[serde(rename = "avant changement")]
@@ -1321,6 +1341,12 @@ pub struct FareV1 {
     pub global_condition: String,
     #[serde(rename = "clef ticket")]
     pub ticket_id: String,
+}
+
+impl AddPrefix for FareV1 {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.ticket_id = prefix.to_string() + &self.ticket_id;
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]

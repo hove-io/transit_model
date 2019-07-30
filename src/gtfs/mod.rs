@@ -19,19 +19,17 @@
 mod read;
 mod write;
 
-use crate::collection::CollectionWithId;
-use crate::collection::Idx;
-use crate::common_format;
-use crate::common_format::{manage_calendars, Availability};
-use crate::gtfs::read::EquipmentList;
-use crate::model::{Collections, Model};
-use crate::objects;
-use crate::objects::Time;
-use crate::objects::{StopPoint, StopType};
-use crate::read_utils;
-use crate::read_utils::add_prefix;
-use crate::utils::*;
-use crate::Result;
+use crate::{
+    collection::{CollectionWithId, Idx},
+    common_format::{manage_calendars, write_calendar_dates, Availability},
+    gtfs::read::EquipmentList,
+    model::{Collections, Model},
+    objects,
+    objects::{StopPoint, StopType, Time},
+    read_utils,
+    utils::*,
+    AddPrefix, Result,
+};
 use derivative::Derivative;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -275,7 +273,7 @@ where
 
     //add prefixes
     if let Some(prefix) = prefix {
-        add_prefix(prefix, &mut collections)?;
+        collections.add_prefix_with_sep(prefix.as_str(), ":");
     }
 
     Ok(Model::new(collections)?)
@@ -418,7 +416,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
 
     write::write_transfers(path, &model.transfers)?;
     write::write_agencies(path, &model.networks)?;
-    common_format::write_calendar_dates(path, &model.calendars)?;
+    write_calendar_dates(path, &model.calendars)?;
     write::write_stops(
         path,
         &model.stop_points,
