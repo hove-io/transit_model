@@ -20,7 +20,7 @@
 use crate::{
     collection::CollectionWithId,
     model::Collections,
-    objects::{Coord, StopArea as NTMStopArea, StopPoint as NTMStopPoint},
+    objects::{Coord, StopArea, StopPoint},
     Result,
 };
 use failure::{format_err, ResultExt};
@@ -33,7 +33,7 @@ use std::{collections::HashMap, fs::File, io::Read, path::Path};
 use zip::ZipArchive;
 
 #[derive(Debug, Deserialize)]
-pub struct Stop {
+pub struct NaPTANStop {
     #[serde(rename = "ATCOCode")]
     atco_code: String,
     #[serde(rename = "CommonName")]
@@ -47,7 +47,7 @@ pub struct Stop {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct StopInArea {
+pub struct NaPTANStopInArea {
     #[serde(rename = "AtcoCode")]
     atco_code: String,
     #[serde(rename = "StopAreaCode")]
@@ -55,7 +55,7 @@ pub struct StopInArea {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct StopArea {
+pub struct NaPTANStopArea {
     #[serde(rename = "StopAreaCode")]
     stop_area_code: String,
     #[serde(rename = "Name")]
@@ -66,7 +66,7 @@ pub struct StopArea {
     northing: f64,
 }
 
-fn read_stop_areas<R>(reader: R) -> Result<CollectionWithId<NTMStopArea>>
+fn read_stop_areas<R>(reader: R) -> Result<CollectionWithId<StopArea>>
 where
     R: Read,
 {
@@ -81,10 +81,10 @@ where
     let converter = Proj::new_known_crs(from, to, None)
         .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))?;
     for record in reader.deserialize() {
-        let stop_area: StopArea =
+        let stop_area: NaPTANStopArea =
             record.with_context(|_| "Error parsing the CSV record into a StopArea")?;
         let point = Point::new(stop_area.easting, stop_area.northing);
-        let ntm_stop_area = NTMStopArea {
+        let ntm_stop_area = StopArea {
             id: stop_area.stop_area_code.clone(),
             name: stop_area.name.clone(),
             coord: converter.convert(point).map(Coord::from)?,
@@ -104,7 +104,7 @@ where
         .trim(csv::Trim::All)
         .from_reader(reader)
         .deserialize()
-        .map(|record: csv::Result<StopInArea>| {
+        .map(|record: csv::Result<NaPTANStopInArea>| {
             record.with_context(|_| "Error parsing the CSV record into a StopInArea")
         })
         .map(|record| {
@@ -121,7 +121,7 @@ where
 fn read_stops<R>(
     reader: R,
     stops_in_area: &HashMap<String, String>,
-) -> Result<CollectionWithId<NTMStopPoint>>
+) -> Result<CollectionWithId<StopPoint>>
 where
     R: Read,
 {
@@ -131,7 +131,8 @@ where
         .from_reader(reader);
     let mut stop_points = CollectionWithId::default();
     for record in reader.deserialize() {
-        let stop: Stop = record.with_context(|_| "Error parsing the CSV record into a Stop")?;
+        let stop: NaPTANStop =
+            record.with_context(|_| "Error parsing the CSV record into a Stop")?;
         let stop_area_id = stops_in_area.get(&stop.atco_code).cloned().ok_or_else(|| {
             format_err!(
                 "Failed to find the corresponding StopArea for the StopPoint '{}'",
@@ -142,7 +143,7 @@ where
             lon: stop.longitude,
             lat: stop.latitude,
         };
-        let stop_point = NTMStopPoint {
+        let stop_point = StopPoint {
             id: stop.atco_code.clone(),
             name: stop.name.clone(),
             coord,
@@ -156,8 +157,8 @@ where
 }
 
 fn validate_stops(
-    _stop_areas: &CollectionWithId<NTMStopArea>,
-    _stop_points: &CollectionWithId<NTMStopPoint>,
+    _stop_areas: &CollectionWithId<StopArea>,
+    _stop_points: &CollectionWithId<StopPoint>,
 ) -> Result<()> {
     unimplemented!()
 }

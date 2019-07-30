@@ -39,6 +39,10 @@ struct Opt {
     #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
 
+    /// config file
+    #[structopt(short, long, parse(from_os_str))]
+    config: Option<PathBuf>,
+
     /// prefix
     #[structopt(short, long)]
     prefix: Option<String>,
@@ -58,7 +62,7 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let model = transit_model::transxchange::read(opt.input, opt.naptan)?;
+    let model = transit_model::transxchange::read(opt.input, opt.naptan, opt.config)?;
 
     transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
     Ok(())
