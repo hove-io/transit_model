@@ -21,6 +21,7 @@ use crate::{
     collection::CollectionWithId,
     model::Collections,
     objects::{Coord, StopArea, StopPoint},
+    read_utils::{self, FileHandler},
     Result,
 };
 use failure::{format_err, ResultExt};
@@ -30,7 +31,6 @@ use log::{info, warn};
 use proj::Proj;
 use serde::Deserialize;
 use std::{collections::HashMap, fs::File, io::Read, path::Path};
-use zip::ZipArchive;
 
 #[derive(Debug, Deserialize)]
 pub struct NaPTANStop {
@@ -199,22 +199,40 @@ where
 const STOP_AREAS_FILENAME: &str = "StopAreas.csv";
 const STOPS_IN_AREA_FILENAME: &str = "StopsInArea.csv";
 const STOPS_FILENAME: &str = "Stops.csv";
-pub fn read_naptan<P>(naptan_path: P, collections: &mut Collections) -> Result<()>
+
+fn read<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
-    P: AsRef<Path>,
+    for<'a> &'a mut H: read_utils::FileHandler,
 {
-    let zip_file = File::open(naptan_path)?;
-    let mut zip_archive = ZipArchive::new(zip_file)?;
     info!("reading NaPTAN file for {}", STOP_AREAS_FILENAME);
-    let stop_areas = read_stop_areas(zip_archive.by_name(STOP_AREAS_FILENAME)?)?;
+    let (reader, _) = file_handler.get_file(STOP_AREAS_FILENAME)?;
+    let stop_areas = read_stop_areas(reader)?;
     info!("reading NaPTAN file for {}", STOPS_IN_AREA_FILENAME);
-    let stops_in_area =
-        read_stops_in_area(zip_archive.by_name(STOPS_IN_AREA_FILENAME)?, &stop_areas)?;
+    let (reader, _) = file_handler.get_file(STOPS_IN_AREA_FILENAME)?;
+    let stops_in_area = read_stops_in_area(reader, &stop_areas)?;
     info!("reading NaPTAN file for {}", STOPS_FILENAME);
-    let stop_points = read_stops(zip_archive.by_name(STOPS_FILENAME)?, &stops_in_area)?;
+    let (reader, _) = file_handler.get_file(STOPS_FILENAME)?;
+    let stop_points = read_stops(reader, &stops_in_area)?;
     collections.stop_areas.try_merge(stop_areas)?;
     collections.stop_points.try_merge(stop_points)?;
     Ok(())
+}
+
+pub fn read_from_zip<P>(path: P, collections: &mut Collections) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let reader = File::open(path.as_ref())?;
+    let mut file_handle = read_utils::ZipHandler::new(reader, path)?;
+    read(&mut file_handle, collections)
+}
+
+pub fn read_from_path<P>(path: P, collections: &mut Collections) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    let mut file_handle = read_utils::PathFileHandler::new(path.as_ref().to_path_buf());
+    read(&mut file_handle, collections)
 }
 
 #[cfg(test)]

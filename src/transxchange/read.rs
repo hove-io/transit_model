@@ -191,7 +191,11 @@ where
     collections.contributors = contributors;
     collections.datasets = init_dataset_validity_periods(datasets)?;
     collections.feed_infos = feed_infos;
-    naptan::read_naptan(naptan_path, &mut collections)?;
+    if naptan_path.as_ref().is_file() {
+        naptan::read_from_zip(naptan_path, &mut collections)?;
+    } else {
+        naptan::read_from_path(naptan_path, &mut collections)?;
+    };
     read_transxchange_archive(transxchange_path, &mut collections)?;
     if let Some(prefix) = prefix {
         collections.add_prefix(prefix.as_str());
