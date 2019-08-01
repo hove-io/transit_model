@@ -131,7 +131,7 @@ fn load_company(operator: &Element) -> Result<Company> {
     Ok(company)
 }
 
-fn read_transxchange(transxchange: &Element, collections: &mut Collections) -> Result<()> {
+fn read_xml(transxchange: &Element, collections: &mut Collections) -> Result<()> {
     collections.datasets =
         update_validity_period_from_transxchange(&mut collections.datasets, transxchange)?;
     let operator = get_operator(transxchange)?;
@@ -142,22 +142,17 @@ fn read_transxchange(transxchange: &Element, collections: &mut Collections) -> R
     unimplemented!()
 }
 
-fn read_transxchange_file<F>(
-    file_path: &Path,
-    mut file: F,
-    collections: &mut Collections,
-) -> Result<()>
+fn read_file<F>(file_path: &Path, mut file: F, collections: &mut Collections) -> Result<()>
 where
     F: Read,
 {
-    let file_extension = file_path.extension();
-    match file_extension {
+    match file_path.extension() {
         Some(ext) if ext == "xml" => {
             info!("reading TransXChange file {:?}", file_path);
             let mut file_content = String::new();
             file.read_to_string(&mut file_content)?;
             let root: Element = file_content.parse()?;
-            read_transxchange(&root, collections)?;
+            read_xml(&root, collections)?;
         }
         _ => info!("skipping file {:?}", file_path),
     };
@@ -172,7 +167,7 @@ where
     let mut zip_archive = ZipArchive::new(zip_file)?;
     for index in 0..zip_archive.len() {
         let file = zip_archive.by_index(index)?;
-        read_transxchange_file(file.sanitized_name().as_path(), file, collections)?;
+        read_file(file.sanitized_name().as_path(), file, collections)?;
     }
     Ok(())
 }
@@ -187,7 +182,7 @@ where
         .filter(|e| e.file_type().is_file())
     {
         let file = File::open(entry.path())?;
-        read_transxchange_file(entry.path(), file, collections)?;
+        read_file(entry.path(), file, collections)?;
     }
     Ok(())
 }
