@@ -185,6 +185,10 @@ where
                 // If the stop point don't have a corresponding stop area
                 // create the stop area based on stop point information
                 let id = format!("Navitia:{}", stop.atco_code);
+                info!(
+                    "Creating StopArea {} for corresponding StopPoint {}",
+                    id, stop.atco_code
+                );
                 stop_areas.push(StopArea {
                     id: id.clone(),
                     name: stop.name.clone(),
