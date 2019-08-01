@@ -29,6 +29,7 @@ use chrono::{
 use log::info;
 use minidom::Element;
 use std::{fs::File, io::Read, path::Path};
+use walkdir::WalkDir;
 use zip::ZipArchive;
 
 const EUROPE_LONDON_TIMEZONE: &str = "Europe/London";
@@ -130,7 +131,7 @@ fn load_company(operator: &Element) -> Result<Company> {
     Ok(company)
 }
 
-fn read_transxchange(transxchange: &Element, collections: &mut Collections) -> Result<()> {
+fn read_xml(transxchange: &Element, collections: &mut Collections) -> Result<()> {
     collections.datasets =
         update_validity_period_from_transxchange(&mut collections.datasets, transxchange)?;
     let operator = get_operator(transxchange)?;
@@ -141,26 +142,47 @@ fn read_transxchange(transxchange: &Element, collections: &mut Collections) -> R
     unimplemented!()
 }
 
-fn read_transxchange_archive<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
+fn read_file<F>(file_path: &Path, mut file: F, collections: &mut Collections) -> Result<()>
+where
+    F: Read,
+{
+    match file_path.extension() {
+        Some(ext) if ext == "xml" => {
+            info!("reading TransXChange file {:?}", file_path);
+            let mut file_content = String::new();
+            file.read_to_string(&mut file_content)?;
+            let root: Element = file_content.parse()?;
+            read_xml(&root, collections)?;
+        }
+        _ => info!("skipping file {:?}", file_path),
+    };
+    Ok(())
+}
+
+fn read_from_zip<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
 where
     P: AsRef<Path>,
 {
     let zip_file = File::open(transxchange_path)?;
     let mut zip_archive = ZipArchive::new(zip_file)?;
     for index in 0..zip_archive.len() {
-        let mut zip_file = zip_archive.by_index(index)?;
-        match zip_file.sanitized_name().extension() {
-            Some(ext) if ext == "xml" => {
-                info!("reading TransXChange file {:?}", zip_file.sanitized_name());
-                let mut file_content = String::new();
-                zip_file.read_to_string(&mut file_content)?;
-                let root: Element = file_content.parse()?;
-                read_transxchange(&root, collections)?;
-            }
-            _ => {
-                info!("skipping file in zip: {:?}", zip_file.sanitized_name());
-            }
-        }
+        let file = zip_archive.by_index(index)?;
+        read_file(file.sanitized_name().as_path(), file, collections)?;
+    }
+    Ok(())
+}
+
+fn read_from_path<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
+where
+    P: AsRef<Path>,
+{
+    for entry in WalkDir::new(transxchange_path)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file())
+    {
+        let file = File::open(entry.path())?;
+        read_file(entry.path(), file, collections)?;
     }
     Ok(())
 }
@@ -196,7 +218,12 @@ where
     } else {
         naptan::read_from_path(naptan_path, &mut collections)?;
     };
-    read_transxchange_archive(transxchange_path, &mut collections)?;
+    if transxchange_path.as_ref().is_file() {
+        read_from_zip(transxchange_path, &mut collections)?;
+    } else {
+        read_from_path(transxchange_path, &mut collections)?;
+    };
+
     if let Some(prefix) = prefix {
         collections.add_prefix(prefix.as_str());
     }
