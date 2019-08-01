@@ -139,7 +139,7 @@ fn read_xml(transxchange: &Element, collections: &mut Collections) -> Result<()>
     collections.networks.push(network)?;
     let company = load_company(operator)?;
     collections.companies.push(company)?;
-    unimplemented!()
+    Ok(())
 }
 
 fn read_file<F>(file_path: &Path, mut file: F, collections: &mut Collections) -> Result<()>
@@ -225,7 +225,7 @@ where
     };
 
     if let Some(prefix) = prefix {
-        collections.add_prefix(prefix.as_str());
+        collections.add_prefix_with_sep(prefix.as_str(), ":");
     }
     Model::new(collections)
 }

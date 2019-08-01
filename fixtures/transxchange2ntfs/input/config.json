@@ -1,0 +1,18 @@
+{
+	"contributor": {
+		"contributor_id": "UK",
+		"contributor_name": "UK",
+		"contributor_license": "license",
+		"contributor_website": "http://www.datasource-website.com"
+	},
+	"dataset": {
+		"dataset_id": "UK"
+	},
+	"feed_infos": {
+		"feed_publisher_name": "UK",
+		"feed_license": "license",
+		"feed_license_url": "http://www.datasource-website.com",
+		"tartare_platform": "dev",
+		"tartare_contributor_id": "UK"
+	}
+}
