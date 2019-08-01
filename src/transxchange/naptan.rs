@@ -154,10 +154,12 @@ where
         .collect()
 }
 
+// Create stop points and create missing stop areas for stop points without
+// a corresponding stop area in NaPTAN dataset
 fn read_stops<R>(
     reader: R,
     stops_in_area: &HashMap<String, String>,
-) -> Result<CollectionWithId<StopPoint>>
+) -> Result<(CollectionWithId<StopPoint>, CollectionWithId<StopArea>)>
 where
     R: Read,
 {
@@ -166,22 +168,31 @@ where
         .trim(csv::Trim::All)
         .from_reader(reader);
     let mut stop_points = CollectionWithId::default();
+    let mut stop_areas = CollectionWithId::default();
     for record in reader.deserialize() {
         let stop: NaPTANStop =
             record.with_context(|_| "Error parsing the CSV record into a Stop")?;
         if stop.status != "act" {
             continue;
         }
-        let stop_area_id = stops_in_area.get(&stop.atco_code).cloned().ok_or_else(|| {
-            format_err!(
-                "Failed to find the corresponding StopArea for the StopPoint '{}'",
-                stop.atco_code
-            )
-        });
-        let stop_area_id = skip_fail!(stop_area_id);
         let coord = Coord {
             lon: stop.longitude,
             lat: stop.latitude,
+        };
+        let stop_area_id = match stops_in_area.get(&stop.atco_code).cloned() {
+            Some(stop_area_id) => stop_area_id,
+            None => {
+                // If the stop point don't have a corresponding stop area
+                // create the stop area based on stop point information
+                let id = format!("Navitia:{}", stop.atco_code);
+                stop_areas.push(StopArea {
+                    id: id.clone(),
+                    name: stop.name.clone(),
+                    coord,
+                    ..Default::default()
+                })?;
+                id
+            }
         };
         let stop_point = StopPoint {
             id: stop.atco_code.clone(),
@@ -193,7 +204,7 @@ where
         };
         stop_points.push(stop_point)?;
     }
-    Ok(stop_points)
+    Ok((stop_points, stop_areas))
 }
 
 const STOP_AREAS_FILENAME: &str = "StopAreas.csv";
@@ -212,9 +223,11 @@ where
     let stops_in_area = read_stops_in_area(reader, &stop_areas)?;
     info!("reading NaPTAN file for {}", STOPS_FILENAME);
     let (reader, _) = file_handler.get_file(STOPS_FILENAME)?;
-    let stop_points = read_stops(reader, &stops_in_area)?;
+    let (stop_points, additional_stop_areas) = read_stops(reader, &stops_in_area)?;
+
     collections.stop_areas.try_merge(stop_areas)?;
     collections.stop_points.try_merge(stop_points)?;
+    collections.stop_areas.try_merge(additional_stop_areas)?;
     Ok(())
 }
 
@@ -356,28 +369,19 @@ mod tests {
 "0100053308","Counterslip","SW-bound",-2.5876736730,51.4557030625,"del""#;
             let mut stop_in_area = HashMap::new();
             stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
-            stop_in_area.insert(String::from("0100053264"), String::from("stop-area-2"));
             stop_in_area.insert(String::from("0100053308"), String::from("stop-area-3"));
-            let stop_points = read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
+            let (stop_points, stop_areas) =
+                read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
+
             assert_eq!(stop_points.len(), 2);
             let stop_point = stop_points.get("0100053316").unwrap();
             assert_eq!(stop_point.name, "Broad Walk Shops");
             let stop_point = stop_points.get("0100053264").unwrap();
             assert_eq!(stop_point.name, "Alberton Road");
-        }
 
-        #[test]
-        fn no_stop_area() {
-            let csv_content =
-                r#""ATCOCode","CommonName","Indicator","Longitude","Latitude","Status"
-"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170,"act"
-"0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765,"act""#;
-            let mut stop_in_area = HashMap::new();
-            stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
-            let stop_points = read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
-            assert_eq!(stop_points.len(), 1);
-            let stop_point = stop_points.get("0100053316").unwrap();
-            assert_eq!(stop_point.name, "Broad Walk Shops");
+            assert_eq!(stop_areas.len(), 1);
+            let stop_area = stop_areas.get("Navitia:0100053264").unwrap();
+            assert_eq!(stop_area.name, "Alberton Road");
         }
 
         #[test]
@@ -388,19 +392,6 @@ mod tests {
 "Alberton Road","NE-bound",-2.5407019785,51.4889912765,"act""#;
             let stop_in_area = HashMap::new();
             read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
-        }
-
-        #[test]
-        fn no_id() {
-            let csv_content =
-                r#""ATCOCode","CommonName","Indicator","Longitude","Latitude","Status"
-,"Broad Walk Shops","Stop B",-2.5876178397,51.4558382170,"act"
-,"Alberton Road","NE-bound",-2.5407019785,51.4889912765,"act""#;
-            let mut stop_in_area = HashMap::new();
-            stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
-            stop_in_area.insert(String::from("0100053264"), String::from("stop-area-2"));
-            let stop_points = read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
-            assert_eq!(stop_points.len(), 0);
         }
 
         #[test]
