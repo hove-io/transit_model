@@ -142,7 +142,7 @@ fn read_transxchange(transxchange: &Element, collections: &mut Collections) -> R
     unimplemented!()
 }
 
-fn read_transxchange_from_zip<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
+fn read_from_zip<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
 where
     P: AsRef<Path>,
 {
@@ -168,7 +168,7 @@ where
     Ok(())
 }
 
-fn read_transxchange_from_path<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
+fn read_from_path<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
 where
     P: AsRef<Path>,
 {
@@ -228,9 +228,9 @@ where
         naptan::read_from_path(naptan_path, &mut collections)?;
     };
     if transxchange_path.as_ref().is_file() {
-        read_transxchange_from_zip(transxchange_path, &mut collections)?;
+        read_from_zip(transxchange_path, &mut collections)?;
     } else {
-        read_transxchange_from_path(transxchange_path, &mut collections)?;
+        read_from_path(transxchange_path, &mut collections)?;
     };
 
     if let Some(prefix) = prefix {
