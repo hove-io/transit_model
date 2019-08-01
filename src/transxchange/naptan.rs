@@ -95,6 +95,7 @@ where
             stop_areas.push(StopArea {
                 id: stop_area.stop_area_code.clone(),
                 name: stop_area.name.clone(),
+                visible: true,
                 coord,
                 ..Default::default()
             })?;
@@ -202,6 +203,7 @@ where
         let stop_point = StopPoint {
             id: stop.atco_code.clone(),
             name: stop.name.clone(),
+            visible: true,
             coord,
             stop_area_id,
             platform_code: Some(stop.indicator.clone()),
