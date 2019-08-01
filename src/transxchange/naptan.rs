@@ -188,6 +188,7 @@ where
                 stop_areas.push(StopArea {
                     id: id.clone(),
                     name: stop.name.clone(),
+                    visible: true,
                     coord,
                     ..Default::default()
                 })?;
