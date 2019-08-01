@@ -71,11 +71,11 @@ NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 line_id | *Services/Service/ServiceCode* | This field is prefixed.
 line_code | *Services/Service/Lines/Line/LineName* |
-line_name | *Services/Service/Description* | If no *Description* is found, the value is computed as "backward_line_name - forward_line_name" 
+line_name | *Services/Service/Description* | If no *Description* is found, then this field is computed using the name of the first associated Route in the forward direction. If several forward routes exist, the one with the smallest `route_id` is used.
 forward_line_name | *Services/Service/StandardService/Destination* | 
-forward_direction | *???* | 
+forward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the forward direction. If several forward routes exist, the one with the smallest `route_id` is used.
 backward_line_name | *Services/Service/StandardService/Origin* | 
-backward_direction | *???* | 
+backward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the backward direction. If several backward routes exist, the one with the smallest `route_id` is used.
 network_id | *Services/Service/RegisteredOperatorRef* | The referenced *Operators/Operator/OperatorCode* value is taken into account. This field is prefixed. Link to the file [networks.txt](#networkstxt).
 commercial_mode_id | *Services/Service/Mode* | This field is not prefixed. Link to the file commercial_modes.txt of the NTFS. See the mapping rule below.
 
@@ -92,8 +92,17 @@ tram | Tramway | Tramway| Tramway| Tramway
 trolleyBus | Shuttle | Shuttle | Shuttle | Shuttle
 
 ### routes.txt
-A Route is created from a line and a direction of journey patterns (*StandardService/JourneyPattern/Direction*/).
-Routes might not be specified at all in the xml --> reconstruct routes after trips?
+A Route is created from a line and a direction of journey patterns (*StandardService/JourneyPattern/Direction*).
+
+NTFS field | TransXChange element | Mapping rule/Comment
+--- | --- | ---
+route_id | *Services/Service/ServiceCode*, *StandardService/JourneyPattern/Direction* | This field is prefixed and formed by the concatenation of *Services/Service/ServiceCode* and *StandardService/JourneyPattern/Direction* separated by a `:`. Ex. "\<prefix>:1_58_BC:inbound".
+route_name |  | "[first stop of the first trip] - [last stop of the first trip]" (1)
+direction_type | *StandardService/JourneyPattern/Direction* | The value is set to `inbound` or `clockwise` when the specified value for the direction is `inboundAndOutbound` or `circular`, respectively.
+line_id | *Services/Service/ServiceCode* | This field is prefixed. Link to the file [lines.txt](#linestxt).
+destination_id | *???* | `stop_id` of the stop_area of the last stop of the first trip. (1)
+
+(1) The first trip of a route is the one with the smallest `trip_id` value.
 
 ### calendar_dates.txt
 The validity period of a service is stated in *Services/Service/OperatingPeriod*. In case the validity period is open ended (the *EndDate* is not specified), the default value [*StartDate* + 180 days] should be used.
