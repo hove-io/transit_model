@@ -13,6 +13,10 @@
       <OperatorCode>SSWL</OperatorCode>
       <OperatorShortName>Stagecoach South Wales</OperatorShortName>
     </Operator>
+    <Operator id="O2">
+      <OperatorCode>ANSL</OperatorCode>
+      <OperatorShortName>Phil Anslow</OperatorShortName>
+    </Operator>
   </Operators>
   <Services>
     <Service>
