@@ -30,7 +30,7 @@ use failure::format_err;
 use lazy_static::lazy_static;
 use log::{info, warn};
 use minidom::Element;
-use std::{fs::File, io::Read, path::Path};
+use std::{convert::TryFrom, fs::File, io::Read, path::Path};
 use walkdir::WalkDir;
 use zip::ZipArchive;
 
@@ -52,6 +52,16 @@ lazy_static! {
         modes_map.insert("trolleyBus", "Shuttle");
         modes_map
     };
+}
+
+fn get_by_reference<'a>(
+    element: &'a Element,
+    child_name: &str,
+    reference: &str,
+) -> Result<&'a Element> {
+    element.try_only_child_with_filter(child_name, |e| {
+        e.attr("id").filter(|id| *id == reference).is_some()
+    })
 }
 
 fn get_service_validity_period(transxchange: &Element) -> Result<ValidityPeriod> {
@@ -121,32 +131,17 @@ fn update_validity_period_from_transxchange(
     CollectionWithId::new(datasets)
 }
 
-fn get_operator<'a>(transxchange: &'a Element, operator_ref: &str) -> Result<&'a Element> {
-    let is_operator_ref = |operator: &&Element| {
-        operator
-            .attr("id")
-            .filter(|id| *id == operator_ref)
-            .is_some()
-    };
-    transxchange
-        .try_only_child("Operators")?
-        .children()
-        .find(is_operator_ref)
-        .ok_or_else(|| {
-            format_err!(
-                "Failed to find the operator for reference '{}'",
-                operator_ref
-            )
-        })
-}
-
 fn load_network(transxchange: &Element) -> Result<Network> {
     let operator_ref = transxchange
         .try_only_child("Services")?
         .try_only_child("Service")?
         .try_only_child("RegisteredOperatorRef")?
         .text();
-    let operator = get_operator(transxchange, &operator_ref)?;
+    let operator = get_by_reference(
+        transxchange.try_only_child("Operators")?,
+        "Operator",
+        &operator_ref,
+    )?;
     let id = operator.try_only_child("OperatorCode")?.text();
     let name = operator
         .try_only_child("TradingName")
@@ -265,11 +260,233 @@ fn load_lines(
     Ok(lines)
 }
 
-fn read_xml(transxchange: &Element, collections: &mut Collections) -> Result<()> {
+fn create_route(_transxchange: &Element, _vehicle_journey: &Element) -> Result<Route> {
+    // TODO: Implement routes
+    // The fake ID helps pass the integration tests for now. Can be remove once real implementation is done
+    Ok(Route {
+        line_id: String::from("SCAO812:SL1"),
+        ..Default::default()
+    })
+}
+
+fn generate_calendar_dates(
+    _operating_profile: &Element,
+    _validity_period: ValidityPeriod,
+) -> Result<Calendar> {
+    // TODO: calendar dates
+    Ok(Calendar {
+        id: String::from("default-service"),
+        ..Default::default()
+    })
+}
+
+// Get Wait or Run time from ISO 8601 duration
+fn parse_duration_in_seconds(duration_iso8601: &str) -> Result<Time> {
+    let std_duration = time_parse::duration::parse_nom(duration_iso8601)?;
+    let duration_seconds = Duration::from_std(std_duration)?.num_seconds();
+    let time = Time::new(0, 0, u32::try_from(duration_seconds)?);
+    Ok(time)
+}
+fn get_duration_from(element: &Element, name: &str) -> Time {
+    element
+        .try_only_child(name)
+        .map(Element::text)
+        .and_then(|s| parse_duration_in_seconds(&s))
+        .unwrap_or_default()
+}
+fn get_pickup_and_dropoff_types(element: &Element, name: &str) -> (u8, u8) {
+    element
+        .try_only_child(name)
+        .map(Element::text)
+        .map(|a| match a.as_str() {
+            "pickUp" => (0, 1),
+            "setDown" => (1, 0),
+            _ => (0, 0),
+        })
+        .unwrap_or((0, 0))
+}
+fn create_calendar_dates(transxchange: &Element, vehicle_journey: &Element) -> Result<Calendar> {
+    let operating_profile = vehicle_journey
+        .try_only_child("OperatingProfile")
+        .or_else(|_| {
+            transxchange
+                .try_only_child("Services")?
+                .try_only_child("Service")?
+                .try_only_child("OperatingProfile")
+        })?;
+    let validity_period = get_service_validity_period(transxchange)?;
+    generate_calendar_dates(&operating_profile, validity_period)
+}
+
+fn calculate_stop_times(
+    stop_points: &CollectionWithId<StopPoint>,
+    journey_pattern_section: &Element,
+    first_departure_time: &Time,
+) -> Result<Vec<StopTime>> {
+    let mut stop_times = vec![];
+    let mut next_arrival_time = *first_departure_time;
+    let mut stop_point_previous_wait_to = Time::default();
+    let mut sequence = 1; // use loop index instead of JourneyPatternTimingLinkId (not always continuous)
+
+    for journey_pattern_timing_link in journey_pattern_section.children() {
+        let stop_point = journey_pattern_timing_link.try_only_child("From")?;
+        let stop_point_ref = stop_point.try_only_child("StopPointRef")?.text();
+        let stop_point_idx = stop_points
+            .get_idx(&stop_point_ref)
+            .ok_or_else(|| format_err!("stop_id={:?} not found", stop_point_ref))?;
+        let stop_point_wait_from = get_duration_from(&stop_point, "WaitTime");
+        let run_time = get_duration_from(&journey_pattern_timing_link, "RunTime");
+        let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&stop_point, "Activity");
+        let arrival_time = next_arrival_time;
+        let departure_time = arrival_time + stop_point_wait_from + stop_point_previous_wait_to;
+
+        stop_times.push(StopTime {
+            stop_point_idx,
+            sequence,
+            arrival_time,
+            departure_time,
+            boarding_duration: 0,
+            alighting_duration: 0,
+            pickup_type,
+            drop_off_type,
+            datetime_estimated: false,
+            local_zone_id: None,
+        });
+
+        next_arrival_time = departure_time + run_time;
+        stop_point_previous_wait_to = get_duration_from(
+            journey_pattern_timing_link.try_only_child("To")?,
+            "WaitTime",
+        );
+        sequence = sequence + 1;
+    }
+    let stop_point = journey_pattern_section
+        .children()
+        .last()
+        .ok_or_else(|| format_err!("Failed to find the last JourneyPatternSection"))?
+        .try_only_child("To")?;
+    let stop_point_ref = stop_point.try_only_child("StopPointRef")?.text();
+    let stop_point_idx = stop_points
+        .get_idx(&stop_point_ref)
+        .ok_or_else(|| format_err!("stop_id={} not found", stop_point_ref))?;
+    let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&stop_point, "Activity");
+
+    stop_times.push(StopTime {
+        stop_point_idx,
+        sequence,
+        arrival_time: next_arrival_time,
+        departure_time: next_arrival_time,
+        boarding_duration: 0,
+        alighting_duration: 0,
+        pickup_type,
+        drop_off_type,
+        datetime_estimated: false,
+        local_zone_id: None,
+    });
+    Ok(stop_times)
+}
+
+fn create_stop_times(
+    stop_points: &CollectionWithId<StopPoint>,
+    transxchange: &Element,
+    vehicle_journey: &Element,
+) -> Result<Vec<StopTime>> {
+    let journey_pattern_ref = vehicle_journey.try_only_child("JourneyPatternRef")?.text();
+    let journey_pattern = get_by_reference(
+        transxchange
+            .try_only_child("Services")?
+            .try_only_child("Service")?
+            .try_only_child("StandardService")?,
+        "JourneyPattern",
+        &journey_pattern_ref,
+    )?;
+    let journey_pattern_section_ref = journey_pattern
+        .try_only_child("JourneyPatternSectionRefs")?
+        .text();
+    let journey_pattern_section = get_by_reference(
+        transxchange.try_only_child("JourneyPatternSections")?,
+        "JourneyPatternSection",
+        &journey_pattern_section_ref,
+    )?;
+    let departure_time: Time = vehicle_journey
+        .try_only_child("DepartureTime")?
+        .text()
+        .parse()?;
+    calculate_stop_times(&stop_points, &journey_pattern_section, &departure_time)
+}
+
+fn load_routes_vehicle_journeys_calendars(
+    collections: &Collections,
+    transxchange: &Element,
+    dataset_id: &str,
+    physical_mode_id: &str,
+) -> Result<(
+    CollectionWithId<Route>,
+    CollectionWithId<VehicleJourney>,
+    CollectionWithId<Calendar>,
+)> {
+    let mut routes = CollectionWithId::default();
+    let mut vehicle_journeys = CollectionWithId::default();
+    let mut calendars = CollectionWithId::default();
+
+    for vehicle_journey in transxchange.try_only_child("VehicleJourneys")?.children() {
+        let service_ref = vehicle_journey.try_only_child("ServiceRef")?.text();
+        let line_ref = vehicle_journey.try_only_child("LineRef")?.text();
+        let vehicle_journey_code = vehicle_journey.try_only_child("VehicleJourneyCode")?.text();
+        let id = format!("{}:{}:{}", service_ref, line_ref, vehicle_journey_code);
+        let calendar = create_calendar_dates(transxchange, vehicle_journey)?;
+        let service_id = calendar.id.clone();
+        let stop_times =
+            match create_stop_times(&collections.stop_points, transxchange, vehicle_journey) {
+                Ok(val) => val,
+                Err(e) => {
+                    warn!("{} / vehiclejourney {} skipped", e, id);
+                    continue;
+                }
+            };
+
+        let operator_ref = vehicle_journey.try_only_child("OperatorRef")?.text();
+        let operator = get_by_reference(
+            transxchange.try_only_child("Operators")?,
+            "Operator",
+            &operator_ref,
+        )?;
+        let company_id = operator.try_only_child("OperatorCode")?.text();
+        let route = create_route(transxchange, vehicle_journey)?;
+        let route_id = route.id.clone();
+        // TODO: Fill up the headsign
+        let headsign = None;
+
+        // Insert only at the last moment
+        calendars.push(calendar)?;
+        // Ignore duplicate insert (it means the route has already been created)
+        let _ = routes.push(route);
+        vehicle_journeys.push(VehicleJourney {
+            id,
+            stop_times,
+            route_id,
+            physical_mode_id: physical_mode_id.to_string(),
+            dataset_id: dataset_id.to_string(),
+            service_id,
+            company_id,
+            headsign,
+            ..Default::default()
+        })?;
+    }
+    Ok((routes, vehicle_journeys, calendars))
+}
+
+fn read_xml(transxchange: &Element, collections: &mut Collections, dataset_id: &str) -> Result<()> {
     let network = load_network(transxchange)?;
     let companies = load_companies(transxchange)?;
     let (commercial_mode, physical_mode) = load_commercial_physical_modes(transxchange)?;
     let lines = load_lines(transxchange, &network.id, &commercial_mode.id)?;
+    let (routes, vehicle_journeys, calendars) = load_routes_vehicle_journeys_calendars(
+        collections,
+        transxchange,
+        dataset_id,
+        &physical_mode.id,
+    )?;
 
     // Insert in collections
     collections.datasets =
@@ -280,10 +497,18 @@ fn read_xml(transxchange: &Element, collections: &mut Collections) -> Result<()>
     let _ = collections.commercial_modes.push(commercial_mode);
     let _ = collections.physical_modes.push(physical_mode);
     collections.lines.merge(lines);
+    collections.routes.try_merge(routes)?;
+    collections.vehicle_journeys.try_merge(vehicle_journeys)?;
+    collections.calendars.try_merge(calendars)?;
     Ok(())
 }
 
-fn read_file<F>(file_path: &Path, mut file: F, collections: &mut Collections) -> Result<()>
+fn read_file<F>(
+    file_path: &Path,
+    mut file: F,
+    collections: &mut Collections,
+    dataset_id: &str,
+) -> Result<()>
 where
     F: Read,
 {
@@ -293,7 +518,7 @@ where
             let mut file_content = String::new();
             file.read_to_string(&mut file_content)?;
             match file_content.parse::<Element>() {
-                Ok(element) => read_xml(&element, collections)?,
+                Ok(element) => read_xml(&element, collections, dataset_id)?,
                 Err(e) => {
                     warn!("Failed to parse file '{:?}' as DOM: {}", file_path, e);
                 }
@@ -304,7 +529,11 @@ where
     Ok(())
 }
 
-fn read_from_zip<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
+fn read_from_zip<P>(
+    transxchange_path: P,
+    collections: &mut Collections,
+    dataset_id: &str,
+) -> Result<()>
 where
     P: AsRef<Path>,
 {
@@ -312,12 +541,21 @@ where
     let mut zip_archive = ZipArchive::new(zip_file)?;
     for index in 0..zip_archive.len() {
         let file = zip_archive.by_index(index)?;
-        read_file(file.sanitized_name().as_path(), file, collections)?;
+        read_file(
+            file.sanitized_name().as_path(),
+            file,
+            collections,
+            dataset_id,
+        )?;
     }
     Ok(())
 }
 
-fn read_from_path<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
+fn read_from_path<P>(
+    transxchange_path: P,
+    collections: &mut Collections,
+    dataset_id: &str,
+) -> Result<()>
 where
     P: AsRef<Path>,
 {
@@ -327,7 +565,7 @@ where
         .filter(|e| e.file_type().is_file())
     {
         let file = File::open(entry.path())?;
-        read_file(entry.path(), file, collections)?;
+        read_file(entry.path(), file, collections, dataset_id)?;
     }
     Ok(())
 }
@@ -351,6 +589,7 @@ where
     let (contributor, mut dataset, feed_infos) = crate::read_utils::read_config(config_path)?;
     collections.contributors = CollectionWithId::from(contributor);
     init_dataset_validity_period(&mut dataset);
+    let dataset_id = dataset.id.clone();
     collections.datasets = CollectionWithId::from(dataset);
     collections.feed_infos = feed_infos;
     if naptan_path.as_ref().is_file() {
@@ -359,9 +598,9 @@ where
         naptan::read_from_path(naptan_path, &mut collections)?;
     };
     if transxchange_path.as_ref().is_file() {
-        read_from_zip(transxchange_path, &mut collections)?;
+        read_from_zip(transxchange_path, &mut collections, &dataset_id)?;
     } else {
-        read_from_path(transxchange_path, &mut collections)?;
+        read_from_path(transxchange_path, &mut collections, &dataset_id)?;
     };
 
     if let Some(prefix) = prefix {
@@ -574,13 +813,12 @@ mod tests {
         }
     }
 
-    mod get_operator {
+    mod get_by_reference {
         use super::*;
 
         #[test]
         fn has_operator() {
             let xml = r#"<root>
-                <Operators>
                     <Operator id="op1">
                         <OperatorCode>SOME_CODE</OperatorCode>
                         <TradingName>Some name</TradingName>
@@ -589,10 +827,9 @@ mod tests {
                         <OperatorCode>OTHER_CODE</OperatorCode>
                         <TradingName>Other name</TradingName>
                     </Operator>
-                </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let operator = get_operator(&root, &String::from("op1")).unwrap();
+            let operator = get_by_reference(&root, "Operator", "op1").unwrap();
             let id = operator.try_only_child("OperatorCode").unwrap().text();
             assert_eq!(id, "SOME_CODE");
             let name = operator.try_only_child("TradingName").unwrap().text();
@@ -600,22 +837,14 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find the operator for reference \\'op3\\'")]
+        #[should_panic(expected = "Failed to find a child \\'Operator\\' in element \\'root\\'")]
         fn no_operator() {
             let xml = r#"<root>
-                <Operators>
-                    <Operator id="op1">
-                        <OperatorCode>SOME_CODE</OperatorCode>
-                        <TradingName>Some name</TradingName>
-                    </Operator>
-                    <Operator id="op2">
-                        <OperatorCode>OTHER_CODE</OperatorCode>
-                        <TradingName>Other name</TradingName>
-                    </Operator>
-                </Operators>
+                <Operator id="op1" />
+                <Operator id="op2" />
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            get_operator(&root, &String::from("op3")).unwrap();
+            get_by_reference(&root, "Operator", "op3").unwrap();
         }
     }
 
@@ -827,6 +1056,7 @@ mod tests {
             assert_eq!(physical_mode.name, String::from("Bus"));
         }
     }
+
     mod load_lines {
         use super::*;
 
@@ -924,6 +1154,196 @@ mod tests {
             assert_eq!(line.backward_direction, None);
             assert_eq!(line.network_id, String::from("SSWL"));
             assert_eq!(line.commercial_mode_id, String::from("Bus"));
+        }
+    }
+
+    mod parse_duration_in_seconds {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn parse_duration() {
+            let time = parse_duration_in_seconds("PT1H30M5S").unwrap();
+            assert_eq!(time, Time::new(1, 30, 5));
+        }
+
+        #[test]
+        #[should_panic]
+        fn invalid_duration() {
+            parse_duration_in_seconds("NotAValidISO8601Duration").unwrap();
+        }
+    }
+
+    mod get_duration_from {
+        use super::*;
+
+        #[test]
+        fn get_duration() {
+            let xml = r#"<root>
+                <duration>PT30S</duration>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let time = get_duration_from(&root, "duration");
+            assert_eq!(time, Time::new(0, 0, 30));
+        }
+
+        #[test]
+        fn no_child() {
+            let xml = r#"<root />"#;
+            let root: Element = xml.parse().unwrap();
+            let time = get_duration_from(&root, "duration");
+            assert_eq!(time, Time::new(0, 0, 0));
+        }
+    }
+
+    mod get_pickup_and_dropoff_types {
+        use super::*;
+
+        #[test]
+        fn get_pickup() {
+            let xml = r#"<root>
+                <activity>pickUp</activity>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
+            assert_eq!(pickup_type, 0);
+            assert_eq!(drop_off_type, 1);
+        }
+
+        #[test]
+        fn get_setdown() {
+            let xml = r#"<root>
+                <activity>setDown</activity>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
+            assert_eq!(pickup_type, 1);
+            assert_eq!(drop_off_type, 0);
+        }
+
+        #[test]
+        fn get_pickupandsetdown() {
+            let xml = r#"<root>
+                <activity>pickUpAndSetDown</activity>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
+            assert_eq!(pickup_type, 0);
+            assert_eq!(drop_off_type, 0);
+        }
+
+        #[test]
+        fn no_child() {
+            let xml = r#"<root />"#;
+            let root: Element = xml.parse().unwrap();
+            let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
+            assert_eq!(pickup_type, 0);
+            assert_eq!(drop_off_type, 0);
+        }
+    }
+
+    mod calculate_stop_times {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn generate_stop_times() {
+            let stop_points = CollectionWithId::new(vec![
+                StopPoint {
+                    id: String::from("sp:1"),
+                    ..Default::default()
+                },
+                StopPoint {
+                    id: String::from("sp:2"),
+                    ..Default::default()
+                },
+                StopPoint {
+                    id: String::from("sp:3"),
+                    ..Default::default()
+                },
+            ])
+            .unwrap();
+            let xml = r#"<root>
+                <child>
+                    <From>
+                        <StopPointRef>sp:1</StopPointRef>
+                        <WaitTime>PT60S</WaitTime>
+                    </From>
+                    <To>
+                        <StopPointRef>sp:2</StopPointRef>
+                    </To>
+                    <RunTime>PT10M</RunTime>
+                </child>
+                <child>
+                    <From>
+                        <StopPointRef>sp:2</StopPointRef>
+                        <WaitTime>PT1M30S</WaitTime>
+                    </From>
+                    <To>
+                        <StopPointRef>sp:3</StopPointRef>
+                        <WaitTime>PT2M</WaitTime>
+                    </To>
+                    <RunTime>PT5M</RunTime>
+                </child>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let stop_times =
+                calculate_stop_times(&stop_points, &root, &Time::new(0, 0, 0)).unwrap();
+            let stop_time = &stop_times[0];
+            assert_eq!(
+                stop_time.stop_point_idx,
+                stop_points.get_idx("sp:1").unwrap()
+            );
+            assert_eq!(stop_time.sequence, 1);
+            assert_eq!(stop_time.arrival_time, Time::new(0, 0, 0));
+            assert_eq!(stop_time.departure_time, Time::new(0, 1, 0));
+
+            let stop_time = &stop_times[1];
+            assert_eq!(
+                stop_time.stop_point_idx,
+                stop_points.get_idx("sp:2").unwrap()
+            );
+            assert_eq!(stop_time.sequence, 2);
+            assert_eq!(stop_time.arrival_time, Time::new(0, 11, 0));
+            assert_eq!(stop_time.departure_time, Time::new(0, 12, 30));
+
+            let stop_time = &stop_times[2];
+            assert_eq!(
+                stop_time.stop_point_idx,
+                stop_points.get_idx("sp:3").unwrap()
+            );
+            assert_eq!(stop_time.sequence, 3);
+            assert_eq!(stop_time.arrival_time, Time::new(0, 17, 30));
+            assert_eq!(stop_time.departure_time, Time::new(0, 17, 30));
+        }
+
+        #[test]
+        #[should_panic(expected = "stop_id=\\\"sp:1\\\" not found")]
+        fn stop_point_not_found() {
+            let stop_points = CollectionWithId::new(vec![]).unwrap();
+            let xml = r#"<root>
+                <child>
+                    <From>
+                        <StopPointRef>sp:1</StopPointRef>
+                        <WaitTime>PT60S</WaitTime>
+                    </From>
+                    <To>
+                        <StopPointRef>sp:2</StopPointRef>
+                    </To>
+                    <RunTime>PT10M</RunTime>
+                </child>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            calculate_stop_times(&stop_points, &root, &Time::new(0, 0, 0)).unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to find the last JourneyPatternSection")]
+        fn no_section() {
+            let stop_points = CollectionWithId::new(vec![]).unwrap();
+            let xml = r#"<root />"#;
+            let root: Element = xml.parse().unwrap();
+            calculate_stop_times(&stop_points, &root, &Time::new(0, 0, 0)).unwrap();
         }
     }
 }
