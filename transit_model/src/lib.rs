@@ -55,7 +55,7 @@ lazy_static::lazy_static! {
 }
 
 #[cfg(test)]
-#[path = "../model-builder/src/builder.rs"]
+#[path = "../../model-builder/src/builder.rs"]
 pub mod model_builder;
 
 /// The error type used by the crate.

@@ -1,0 +1,57 @@
+[package]
+authors = ["Kisio Digital <team.coretools@kisio.org>", "Guillaume Pinot <texitoi@texitoi.eu>"]
+name = "transit_model"
+version = "0.5.1"
+license = "AGPL-3.0"
+description = "Transit data management"
+repository = "https://github.com/CanalTP/transit_model"
+keywords = ["ntfs", "gtfs", "netex", "navitia", "transit"]
+edition = "2018"
+
+[badges]
+travis-ci = { repository = "CanalTP/transit_model" }
+
+[dependencies]
+chrono = "0.4.0"
+csv = "1.0.0"
+derivative = "1"
+env_logger = "0.5"
+failure = "0.1.1"
+geo = "0.12.1"
+geo-types = "0.4.2"
+iso4217 = "0.3.2"
+lazy_static = "1.2.0"
+log = "0.4"
+minidom = "0.9.0"
+num-traits = "0.2.6"
+pretty_assertions = "0.6.1"
+proj = { version = "0.9.3", optional = true }
+regex = "1.1.2"
+reqwest = "0.9"
+rust_decimal = "1.0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+structopt = "0.2"
+tempdir = "0.3.7"
+transit_model_procmacro = { version = "0.1.0", path = "../transit_model_procmacro" }
+walkdir = "2.1.4"
+wkt = "0.5.0"
+zip = "0.3.2"
+
+[features]
+transxchange = ["proj"]
+
+[[bin]]
+name = "kv12ntfs"
+path = "src/bin/kv12ntfs.rs"
+required-features = ["proj"]
+
+[[bin]]
+name = "transxchange2ntfs"
+path = "src/bin/transxchange2ntfs.rs"
+required-features = ["transxchange"]
+
+[dev-dependencies]
+approx = "0.3.2"
+rust_decimal_macros = "1.0.1"
+transit_model_builder= { version = "0.2", path = "../model-builder" }
