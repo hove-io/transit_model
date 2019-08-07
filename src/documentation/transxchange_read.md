@@ -24,11 +24,16 @@ is a UK nationwide system for uniquely identifying all the points of access to p
 
 NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
-network_id | *Operators/Operator/OperatorCode* | This field is prefixed.
+network_id | *Operators/Operator/OperatorCode* | This field is prefixed. If more than one operators are specified, the operator referenced by *Services/Service/RegisteredOperatorRef* is used to create the network.
 network_name | *Operators/Operator/TradingName* | If the element is not present, the *Operators/Operator/OperatorShortName* is used instead.
+network_url | *Operators/Operator/WebSite* | 
 network_timezone | | Fixed value `Europe/London`.
+network_phone | *Operators/Operator/ContactTelephoneNumber* | 
 
 ### companies.txt
+
+TransXChange includes a basic representation of an *Operator* without explicitly making the distinction between the transport network and the operator company, as it is the case in NTFS. If a *VehicleJourney* uses a reference of an *OperatorRef* different from the *Services/Service/RegisteredOperatorRef*, this *Operator* is used to create the company.
+
 NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 company_id | *Operators/Operator/OperatorCode* | This field is prefixed.
@@ -91,6 +96,8 @@ rail | Train | Train | Train | Train
 tram | Tramway | Tramway| Tramway| Tramway
 trolleyBus | Shuttle | Shuttle | Shuttle | Shuttle
 
+If *Services/Service/Mode* is not specified or the value is unknown (a different value than those listed above), the default mode `Bus` is used.
+
 ### routes.txt
 A Route is created from a line and a direction of journey patterns (*StandardService/JourneyPattern/Direction*).
 
@@ -100,14 +107,14 @@ route_id | *Services/Service/ServiceCode*, *StandardService/JourneyPattern/Direc
 route_name |  | "[first stop of the first trip] - [last stop of the first trip]" (1)
 direction_type | *StandardService/JourneyPattern/Direction* | The value is set to `inbound` or `clockwise` when the specified value for the direction is `inboundAndOutbound` or `circular`, respectively.
 line_id | *Services/Service/ServiceCode* | This field is prefixed. Link to the file [lines.txt](#linestxt).
-destination_id | *???* | `stop_id` of the stop_area of the last stop of the first trip. (1)
+destination_id |  | `stop_id` of the stop_area of the last stop of the first trip (1). Link to the file [stops.txt](#stopstxt).
 
-(1) The first trip of a route is the one with the smallest `trip_id` value.
+(1) The first trip (in alphabetical order) of a route is the one with the smallest `trip_id` value.
 
 ### calendar_dates.txt
 The validity period of a service is stated in *Services/Service/OperatingPeriod*. In case the validity period is open ended (the *EndDate* is not specified), the default value [*StartDate* + 180 days] should be used.
 
-Service days are calculated from the *VehicleJourneys/VehicleJourney/OperatingProfile* (if not specified, the operation days are inherited from *Service/OperatingProfile*). The corresponding days of the week are activated according to the pattern given by *RegularDayType/DaysOfWeek*. If no particular day of the week is explicitly specified, all days of the week (Monday to Sunday) are considered by default.
+Service days are calculated from the *VehicleJourneys/VehicleJourney/OperatingProfile* (if not specified, the operation days are inherited from *Service/OperatingProfile*). The corresponding days of the week are activated according to the pattern given by *RegularDayType/DaysOfWeek*. In particular, it is allowed any meaningful combination of the following possible values: `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`, `MondayToFriday`, `MondayToSaturday`, `MondayToSunday`, `NotSaturday`, `Weekend`. If no particular day of the week is explicitly specified, all days of the week (Monday to Sunday) are considered by default.
 
 The element *SpecialDaysOperation* may also be present specifying a *DateRange* with the specific dates of (non) operation. The days on which the service does (*DaysOfOperation*) or does not (*DaysOfNonOperation*) run are specified separately. Note that special days of operation are additional to the regular operating period (inclusion); inversely, special days of non operation further restrict the regular operating period (exclusion).
 
@@ -116,16 +123,43 @@ Similarly, the element *BankHolidaysOperation* may be also be present, specifyin
 Note that special days override any Bank holiday day types.
 
 ### trips.txt
-A trip is to be created from a VehicleJourney and then link to the JourneyPattern that specifies the sequence of stops and time intervals for the trip.
+A trip is created for each *VehicleJourneys/VehicleJourney*. The referenced *JourneyPattern* is used to link the trip to the corresponding route via the *Services/Service/StandardService/JourneyPattern/Direction*. 
+The referenced *JourneyPatternSections* are then used to retrieve the sequence of stops and scheduled stop times of the trip.
 
-JourneyPattern or VehicleJourney/DestinationDisplay = trip_headsign
+NTFS field | TransXChange element | Mapping rule/Comment
+--- | --- | ---
+route_id | *Services/Service/ServiceCode*, *StandardService/JourneyPattern/Direction* | This field is prefixed and formed by the concatenation of the two elements separated by a `:`. Link to the file [routes.txt](#routestxt).
+service_id | *VehicleJourney/ServiceRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed and formed by the concatenation of the two elements separated by a `:`. Link to the file [calendar_dates.txt](#calendar_datestxt). See above for the details about the services dates attached to a trip.
+trip_id | *VehicleJourney/ServiceRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed and formed by the concatenation of the two elements separated by a `:` in order to guarantee uniqueness.
+trip_headsign | *JourneyPatternTimingLink/DestinationDisplay* or *VehicleJourneyTimingLink/DestinationDisplay* | In case both elements are specified, the *VehicleJourney* overrides the *JourneyPattern*. In case none of the elements is specified, *Services/Service/StandardService/JourneyPattern/DestinationDisplay* should be used. Otherwise, the field is left empty.
+company_id | *VehicleJourney/OperatorRef* | This field is prefixed. Link to the file [companies.txt](#companiestxt). The referenced *Operators/Operator/OperatorCode* is used. If no *OperatorRef* is specified for the trip, the associated *Services/Service/RegisteredOperatorRef* is used to retrieve the company for the trip.
+physical_mode_id | *Services/Service/Mode* | This field is not prefixed. Link to the file physical_modes.txt of the NTFS. See above for the mapping of transport modes.
+trip_properties.wheelchair_accessible | *VehicleJourney/Operational/VehicleType/WheelchairAccessible* | The value is `1` when the trip is accesible, `2` when the trip is not accessible and `0` when the field is not specified.
 
 ### stop_times.txt
 
 NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | --- 
-trip_id | *???* | This field is prefixed. Link to the file [trips.txt](#tripstxt).
+trip_id | *VehicleJourneys/VehicleJourney/ServiceRef*, *VehicleJourneys/VehicleJourney/VehicleJourneyCode* | This field is prefixed. Link to the file [trips.txt](#tripstxt).
 arrival_time | | *VehicleJourney/DepartureTime* + *JourneyPatternSection/RunTime*
 departure_time | | *VehicleJourney/DepartureTime* + *JourneyPatternSection/RunTime* +  *JourneyPatternSection/WaitingTime* (if a waiting time is defined, otherwise it is considered 0)
 stop_id | *???* | This field is prefixed. Link to the file [stops.txt](#stopstxt).
 stop_sequence | *???* |
+stop_headsign | *JourneyPatternTimingLink/DynamicDestinationDisplay* |
+
+### comments.txt
+Comments for trips (ex. Trip operated by ...)
+
+NTFS field | TransXChange element | Mapping rule/Comment
+--- | --- | ---
+comment_id | *???* | This field is prefixed. 
+comment_name | *???* |
+
+### comment_links.txt
+
+NTFS field | TransXChange element | Mapping rule/Comment
+--- | --- | ---
+object_id | *???* | This field is prefixed. Link to the file [trips.txt](#tripstxt).
+object_type |  | Fixed value `trip`.
+comment_id | *???* | This field is prefixed. Link to the file [comments.txt](#commentstxt).
+
