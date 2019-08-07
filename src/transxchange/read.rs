@@ -26,6 +26,7 @@ use chrono::{
     naive::{MAX_DATE, MIN_DATE},
     Duration,
 };
+use failure::format_err;
 use log::info;
 use minidom::Element;
 use std::{fs::File, io::Read, path::Path};
@@ -101,16 +102,44 @@ fn update_validity_period_from_transxchange(
     CollectionWithId::new(datasets)
 }
 
-fn get_operator(root: &Element) -> Result<&Element> {
-    root.try_only_child("Operators")?.try_only_child("Operator")
+fn get_operator<'a>(transxchange: &'a Element, operator_ref: &str) -> Result<&'a Element> {
+    let is_operator_ref = |operator: &&Element| {
+        operator
+            .attr("id")
+            .filter(|id| *id == operator_ref)
+            .is_some()
+    };
+    transxchange
+        .try_only_child("Operators")?
+        .children()
+        .find(is_operator_ref)
+        .ok_or_else(|| {
+            format_err!(
+                "Failed to find the operator for reference '{}'",
+                operator_ref
+            )
+        })
 }
 
-fn load_network(operator: &Element) -> Result<Network> {
+fn load_network(transxchange: &Element) -> Result<Network> {
+    let operator_ref = transxchange
+        .try_only_child("Services")?
+        .try_only_child("Service")?
+        .try_only_child("RegisteredOperatorRef")?
+        .text();
+    let operator = get_operator(transxchange, &operator_ref)?;
     let id = operator.try_only_child("OperatorCode")?.text();
     let name = operator
         .try_only_child("TradingName")
         .or_else(|_| operator.try_only_child("OperatorShortName"))?
-        .text();
+        .text()
+        .trim()
+        .to_string();
+    let name = if name.is_empty() {
+        String::from("Undefined")
+    } else {
+        name
+    };
     let network = Network {
         id,
         name,
@@ -120,25 +149,34 @@ fn load_network(operator: &Element) -> Result<Network> {
     Ok(network)
 }
 
-fn load_company(operator: &Element) -> Result<Company> {
-    let id = operator.try_only_child("OperatorCode")?.text();
-    let name = operator.try_only_child("OperatorShortName")?.text();
-    let company = Company {
-        id,
-        name,
-        ..Default::default()
-    };
-    Ok(company)
+fn load_companies(transxchange: &Element) -> Result<CollectionWithId<Company>> {
+    let mut companies = CollectionWithId::default();
+    for operator in transxchange.try_only_child("Operators")?.children() {
+        let id = operator.try_only_child("OperatorCode")?.text();
+        let name = operator
+            .try_only_child("OperatorShortName")?
+            .text()
+            .trim()
+            .to_string();
+        let company = Company {
+            id,
+            name,
+            ..Default::default()
+        };
+        companies.push(company)?;
+    }
+    Ok(companies)
 }
 
 fn read_xml(transxchange: &Element, collections: &mut Collections) -> Result<()> {
     collections.datasets =
         update_validity_period_from_transxchange(&mut collections.datasets, transxchange)?;
-    let operator = get_operator(transxchange)?;
-    let network = load_network(operator)?;
-    collections.networks.push(network)?;
-    let company = load_company(operator)?;
-    collections.companies.push(company)?;
+    let network = load_network(transxchange)?;
+    if collections.networks.get(&network.id).is_none() {
+        collections.networks.push(network)?;
+    }
+    let companies = load_companies(transxchange)?;
+    collections.companies.merge(companies);
     Ok(())
 }
 
@@ -441,47 +479,41 @@ mod tests {
         fn has_operator() {
             let xml = r#"<root>
                 <Operators>
-                    <Operator />
+                    <Operator id="op1">
+                        <OperatorCode>SOME_CODE</OperatorCode>
+                        <TradingName>Some name</TradingName>
+                    </Operator>
+                    <Operator id="op2">
+                        <OperatorCode>OTHER_CODE</OperatorCode>
+                        <TradingName>Other name</TradingName>
+                    </Operator>
                 </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let operator = get_operator(&root).unwrap();
-            assert_eq!(operator.name(), "Operator");
+            let operator = get_operator(&root, &String::from("op1")).unwrap();
+            let id = operator.try_only_child("OperatorCode").unwrap().text();
+            assert_eq!(id, "SOME_CODE");
+            let name = operator.try_only_child("TradingName").unwrap().text();
+            assert_eq!(name, "Some name");
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a child \\'Operators\\' in element \\'root\\'")]
-        fn no_operators() {
-            let xml = r#"<root />"#;
-            let root: Element = xml.parse().unwrap();
-            get_operator(&root).unwrap();
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to find a child \\'Operator\\' in element \\'Operators\\'"
-        )]
+        #[should_panic(expected = "Failed to find the operator for reference \\'op3\\'")]
         fn no_operator() {
             let xml = r#"<root>
-                <Operators />
-            </root>"#;
-            let root: Element = xml.parse().unwrap();
-            get_operator(&root).unwrap();
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to find a unique child \\'Operator\\' in element \\'Operators\\'"
-        )]
-        fn multiple_operator() {
-            let xml = r#"<root>
                 <Operators>
-                    <Operator />
-                    <Operator />
+                    <Operator id="op1">
+                        <OperatorCode>SOME_CODE</OperatorCode>
+                        <TradingName>Some name</TradingName>
+                    </Operator>
+                    <Operator id="op2">
+                        <OperatorCode>OTHER_CODE</OperatorCode>
+                        <TradingName>Other name</TradingName>
+                    </Operator>
                 </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            get_operator(&root).unwrap();
+            get_operator(&root, &String::from("op3")).unwrap();
         }
     }
 
@@ -491,34 +523,61 @@ mod tests {
         #[test]
         fn has_network() {
             let xml = r#"<root>
-                <OperatorCode>SOME_CODE</OperatorCode>
-                <TradingName>Some name</TradingName>
+                <Services>
+                    <Service>
+                        <RegisteredOperatorRef>op1</RegisteredOperatorRef>
+                    </Service>
+                </Services>
+                <Operators>
+                    <Operator id="op1">
+                        <OperatorCode>SOME_CODE</OperatorCode>
+                        <TradingName>Some name</TradingName>
+                    </Operator>
+                    <Operator id="op2">
+                        <OperatorCode>OTHER_CODE</OperatorCode>
+                        <TradingName>Other name</TradingName>
+                    </Operator>
+                </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
             let network = load_network(&root).unwrap();
-            assert_eq!(network.id, String::from("SOME_CODE"));
             assert_eq!(network.name, String::from("Some name"));
         }
 
         #[test]
         fn no_trading_name() {
             let xml = r#"<root>
-                <OperatorCode>SOME_CODE</OperatorCode>
-                <OperatorShortName>Some name</OperatorShortName>
+                <Services>
+                    <Service>
+                        <RegisteredOperatorRef>op1</RegisteredOperatorRef>
+                    </Service>
+                </Services>
+                <Operators>
+                    <Operator id="op1">
+                        <OperatorCode>SOME_CODE</OperatorCode>
+                        <OperatorShortName>Some name</OperatorShortName>
+                    </Operator>
+                </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
             let network = load_network(&root).unwrap();
-            assert_eq!(network.id, String::from("SOME_CODE"));
             assert_eq!(network.name, String::from("Some name"));
         }
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'OperatorCode\\' in element \\'root\\'"
+            expected = "Failed to find a child \\'RegisteredOperatorRef\\' in element \\'Service\\'"
         )]
-        fn no_id() {
+        fn no_operator_ref() {
             let xml = r#"<root>
-                <TradingName>Some name</TradingName>
+                <Services>
+                    <Service />
+                </Services>
+                <Operators>
+                    <Operator>
+                        <TradingName>Some name</TradingName>
+                    </Operator>
+                </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
             load_network(&root).unwrap();
@@ -526,54 +585,102 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'OperatorShortName\\' in element \\'root\\'"
+            expected = "Failed to find a child \\'OperatorCode\\' in element \\'Operator\\'"
+        )]
+        fn no_id() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <RegisteredOperatorRef>op1</RegisteredOperatorRef>
+                    </Service>
+                </Services>
+                <Operators>
+                    <Operator id="op1">
+                        <TradingName>Some name</TradingName>
+                    </Operator>
+                </Operators>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            load_network(&root).unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Failed to find a child \\'OperatorShortName\\' in element \\'Operator\\'"
         )]
         fn no_name() {
             let xml = r#"<root>
-                <OperatorCode>SOME_CODE</OperatorCode>
+                <Services>
+                    <Service>
+                        <RegisteredOperatorRef>op1</RegisteredOperatorRef>
+                    </Service>
+                </Services>
+                <Operators>
+                    <Operator id="op1">
+                        <OperatorCode>SOME_CODE</OperatorCode>
+                    </Operator>
+                </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
             load_network(&root).unwrap();
         }
     }
 
-    mod load_company {
+    mod load_companies {
         use super::*;
 
         #[test]
         fn has_company() {
             let xml = r#"<root>
-                <OperatorCode>SOME_CODE</OperatorCode>
-                <OperatorShortName>Some name</OperatorShortName>
+                <Operators>
+                    <Operator>
+                        <OperatorCode>SOME_CODE</OperatorCode>
+                        <OperatorShortName>Some name</OperatorShortName>
+                    </Operator>
+                    <Operator>
+                        <OperatorCode>OTHER_CODE</OperatorCode>
+                        <OperatorShortName>Other name</OperatorShortName>
+                    </Operator>
+                </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let company = load_company(&root).unwrap();
-            assert_eq!(company.id, String::from("SOME_CODE"));
+            let companies = load_companies(&root).unwrap();
+            let company = companies.get("SOME_CODE").unwrap();
             assert_eq!(company.name, String::from("Some name"));
+            let company = companies.get("OTHER_CODE").unwrap();
+            assert_eq!(company.name, String::from("Other name"));
         }
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'OperatorCode\\' in element \\'root\\'"
+            expected = "Failed to find a child \\'OperatorCode\\' in element \\'Operator\\'"
         )]
         fn no_id() {
             let xml = r#"<root>
-                <OperatorShortName>Some name</OperatorShortName>
+                <Operators>
+                    <Operator>
+                        <OperatorShortName>Some name</OperatorShortName>
+                    </Operator>
+                </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            load_company(&root).unwrap();
+            load_companies(&root).unwrap();
         }
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'OperatorShortName\\' in element \\'root\\'"
+            expected = "Failed to find a child \\'OperatorShortName\\' in element \\'Operator\\'"
         )]
         fn no_name() {
             let xml = r#"<root>
-                <OperatorCode>SOME_CODE</OperatorCode>
+                <Operators>
+                    <Operator>
+                        <OperatorCode>SOME_CODE</OperatorCode>
+                    </Operator>
+                </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            load_company(&root).unwrap();
+            load_companies(&root).unwrap();
         }
     }
 }
