@@ -1,7 +1,7 @@
 # GTFS reading specification
 
 ## Purpose
-This document aims to describe how the [GTFS format](https://developers.google.com/transit/gtfs/reference) is read in the Navitia Transit Model. To improve readability of this document, the specification will describe the transformation of a GTFS feed into a [NTFS feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/) (which is a bunch of csv files accordingly to the memory Navitia Transit Model).
+This document aims to describe how the [GTFS format](https://developers.google.com/transit/gtfs/reference) is read in the Navitia Transit Model. To improve readability of this document, the specification will describe the transformation of a GTFS feed into a [NTFS feed](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md) (which is a bunch of csv files accordingly to the memory Navitia Transit Model).
 
 ## Introduction
 ### Prepending data

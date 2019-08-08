@@ -1,6 +1,6 @@
 # Converting NTFS fares from V2 to V1 model
 ## Introduction
-This document describes how [NTFS fare model](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fare_extension.md) are converted to the [deprecated fare model](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fare_extension_fr_deprecated.md).
+This document describes how [NTFS fare model](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fare_extension.md) are converted to the [deprecated fare model](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fare_extension_fr_deprecated.md).
 
 This conversion is only used for a limited timeframe until main navitia product can read the new model.
 The only possible conversions are:

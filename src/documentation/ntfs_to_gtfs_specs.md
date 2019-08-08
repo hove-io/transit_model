@@ -1,6 +1,6 @@
 # NTFS to GTFS conversion
 ## Introduction
-This document describes how a [NTFS feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/) is transformed into a [GTFS feed ](https://developers.google.com/transit/gtfs/reference/) in Navitia Transit Model.
+This document describes how a [NTFS feed](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md) is transformed into a [GTFS feed ](https://developers.google.com/transit/gtfs/reference/) in Navitia Transit Model.
 
 The resulting GTFS feed is composed of the following objects:
 - [agency](#agencytxt)

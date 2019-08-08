@@ -1,7 +1,7 @@
 # TransXChange reading specification
 ## Introduction
 This document describes how a TransXChange feed is read in Navitia Transit model (NTM)
-and transformed into a [NTFS feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
+and transformed into a [NTFS feed](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
 
 For the sake of simplicity, the NTM properties that are not specified in the source
 data are not described below.

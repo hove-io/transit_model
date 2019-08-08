@@ -378,7 +378,7 @@ fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()>
 ///
 /// `collections` will be enrich with all the fares in the form of NTFS fares
 /// model (see
-/// https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fare_extension.md)
+/// https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fare_extension.md)
 pub fn enrich_with_hellogo_fares<P: AsRef<Path>>(
     collections: &mut Collections,
     fares_path: P,
