@@ -1272,9 +1272,9 @@ mod tests {
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(4, collections.lines.len());
             assert_eq!(
@@ -1341,9 +1341,9 @@ mod tests {
             let mut collections = Collections::default();
             let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
 
@@ -1384,9 +1384,9 @@ mod tests {
             let mut collections = Collections::default();
             let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(
@@ -1456,9 +1456,9 @@ mod tests {
             let mut collections = Collections::default();
             let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             super::read_routes(&mut handler, &mut collections).unwrap();
         });
     }
@@ -1487,9 +1487,9 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             super::read_routes(&mut handler, &mut collections).unwrap();
         });
     }
@@ -1522,9 +1522,9 @@ mod tests {
             let mut collections = Collections::default();
             let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             super::read_routes(&mut handler, &mut collections).unwrap();
 
             assert_eq!(3, collections.lines.len());
@@ -1565,9 +1565,9 @@ mod tests {
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             super::read_routes(&mut handler, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
@@ -1598,9 +1598,9 @@ mod tests {
             create_file_with_content(path, "routes.txt", routes_content);
             create_file_with_content(path, "trips.txt", trips_content);
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             super::read_routes(&mut handler, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
@@ -1632,9 +1632,9 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(1, collections.lines.len());
             assert_eq!(1, collections.routes.len());
@@ -1689,9 +1689,9 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             let (stop_areas, stop_points) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.equipments = CollectionWithId::new(equipments.into_equipments()).unwrap();
@@ -1869,9 +1869,9 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
             super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
@@ -1910,9 +1910,9 @@ mod tests {
             let mut collections = Collections::default();
             let (networks, _) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
             super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
@@ -1943,9 +1943,9 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
             super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
@@ -1977,9 +1977,9 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
             super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(2, collections.vehicle_journeys.len());
@@ -2156,9 +2156,9 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
@@ -2239,9 +2239,9 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
@@ -2503,14 +2503,14 @@ mod tests {
             create_file_with_content(path, "calendar_dates.txt", calendar_dates_content);
 
             let mut collections = Collections::default();
-            let (_, mut datasets, _) = read_utils::read_config(None::<&str>).unwrap();
+            let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
 
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
-            read_utils::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
+            read_utils::set_dataset_validity_period(&mut dataset, &collections.calendars).unwrap();
 
             assert_eq!(
-                datasets.into_vec(),
-                vec![Dataset {
+                dataset,
+                Dataset {
                     id: "default_dataset".to_string(),
                     contributor_id: "default_contributor".to_string(),
                     start_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
@@ -2519,7 +2519,7 @@ mod tests {
                     extrapolation: false,
                     desc: None,
                     system: None,
-                }]
+                }
             );
         });
     }
@@ -2534,14 +2534,14 @@ mod tests {
             create_file_with_content(path, "calendar.txt", calendars_content);
 
             let mut collections = Collections::default();
-            let (_, mut datasets, _) = read_utils::read_config(None::<&str>).unwrap();
+            let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
 
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
-            read_utils::set_dataset_validity_period(&mut datasets, &collections.calendars).unwrap();
+            read_utils::set_dataset_validity_period(&mut dataset, &collections.calendars).unwrap();
 
             assert_eq!(
-                datasets.into_vec(),
-                vec![Dataset {
+                dataset,
+                Dataset {
                     id: "default_dataset".to_string(),
                     contributor_id: "default_contributor".to_string(),
                     start_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
@@ -2550,7 +2550,7 @@ mod tests {
                     extrapolation: false,
                     desc: None,
                     system: None,
-                }]
+                }
             );
         });
     }
@@ -2623,9 +2623,9 @@ mod tests {
             create_file_with_content(path, "trips.txt", trips_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
             super::read_routes(&mut handler, &mut collections).unwrap();
             // physical mode file should contain only three modes
@@ -2729,9 +2729,9 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
@@ -2801,9 +2801,9 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
 
             let mut collections = Collections::default();
-            let (contributors, datasets, _) = read_utils::read_config(None::<&str>).unwrap();
-            collections.contributors = contributors;
-            collections.datasets = datasets;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();

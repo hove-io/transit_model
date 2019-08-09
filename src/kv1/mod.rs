@@ -19,6 +19,7 @@
 mod read;
 
 use crate::{
+    collection::CollectionWithId,
     model::{Collections, Model},
     read_utils, AddPrefix, Result,
 };
@@ -37,11 +38,11 @@ where
 
     read::read_operday(file_handler, &mut collections)?;
 
-    let (contributors, mut datasets, feed_infos) = read_utils::read_config(config_path)?;
-    read_utils::set_dataset_validity_period(&mut datasets, &collections.calendars)?;
+    let (contributor, mut dataset, feed_infos) = read_utils::read_config(config_path)?;
+    read_utils::set_dataset_validity_period(&mut dataset, &collections.calendars)?;
 
-    collections.contributors = contributors;
-    collections.datasets = datasets;
+    collections.contributors = CollectionWithId::new(vec![contributor])?;
+    collections.datasets = CollectionWithId::new(vec![dataset])?;
     collections.feed_infos = feed_infos;
 
     read::read_usrstop_point(file_handler, &mut collections)?;
