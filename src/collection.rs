@@ -78,6 +78,23 @@ pub struct Collection<T> {
     objects: Vec<T>,
 }
 
+/// Creates a `Collection` from one element.
+///
+/// # Examples
+///
+/// ```
+/// # use transit_model::collection::*;
+/// let collection: Collection<i32> = Collection::from(42);
+/// assert_eq!(collection.len(), 1);
+/// let integer = collection.into_iter().next().unwrap();
+/// assert_eq!(integer, 42);
+/// ```
+impl<T> From<T> for Collection<T> {
+    fn from(object: T) -> Self {
+        Collection::new(vec![object])
+    }
+}
+
 impl<T: PartialEq> PartialEq for Collection<T> {
     fn eq(&self, other: &Collection<T>) -> bool {
         self.objects == other.objects
@@ -359,6 +376,31 @@ where
 pub struct CollectionWithId<T> {
     collection: Collection<T>,
     id_to_idx: HashMap<String, Idx<T>>,
+}
+
+/// Creates a `CollectionWithId` from one element.
+///
+/// # Examples
+///
+/// ```
+/// # use transit_model::collection::*;
+/// #[derive(PartialEq, Debug)]
+/// struct Obj(&'static str);
+/// impl Id<Obj> for Obj {
+///     fn id(&self) -> &str { self.0 }
+///     fn set_id(&mut self, id: String) { unimplemented!(); }
+/// }
+/// let collection: CollectionWithId<Obj> = CollectionWithId::from(Obj("some_id"));
+/// assert_eq!(collection.len(), 1);
+/// let obj = collection.into_iter().next().unwrap();
+/// assert_eq!(obj.id(), "some_id");
+/// ```
+impl<T: Id<T>> From<T> for CollectionWithId<T> {
+    fn from(object: T) -> Self {
+        // This cannot fail since there will be a unique identifier in the
+        // collection hence no identifier's collision.
+        CollectionWithId::new(vec![object]).unwrap()
+    }
 }
 
 impl<T: Id<T>> CollectionWithId<T> {
