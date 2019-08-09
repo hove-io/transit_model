@@ -305,7 +305,7 @@ mod tests {
         };
 
         let mut collections = Collections::default();
-        collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
+        collections.datasets = CollectionWithId::from(dataset);
 
         test_in_tmp_dir(|path| {
             write::write_feed_infos(
@@ -855,7 +855,7 @@ mod tests {
         ])
         .unwrap();
 
-        let stop_points = CollectionWithId::new(vec![StopPoint {
+        let stop_points = CollectionWithId::from(StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
             codes: btree_set_from_vec(vec![(
@@ -875,10 +875,9 @@ mod tests {
             stop_area_id: "sa_1".to_string(),
             stop_type: StopType::Point,
             ..Default::default()
-        }])
-        .unwrap();
+        });
 
-        let stop_areas = CollectionWithId::new(vec![StopArea {
+        let stop_areas = CollectionWithId::from(StopArea {
             id: "sa_1".to_string(),
             name: "sa_name_1".to_string(),
             codes: btree_set_from_vec(vec![(
@@ -898,10 +897,9 @@ mod tests {
             timezone: None,
             geometry_id: None,
             equipment_id: None,
-        }])
-        .unwrap();
+        });
 
-        let lines = CollectionWithId::new(vec![Line {
+        let lines = CollectionWithId::from(Line {
             id: "OIF:002002003:3OIF829".to_string(),
             name: "3".to_string(),
             code: None,
@@ -929,10 +927,9 @@ mod tests {
             geometry_id: None,
             opening_time: None,
             closing_time: None,
-        }])
-        .unwrap();
+        });
 
-        let routes = CollectionWithId::new(vec![Route {
+        let routes = CollectionWithId::from(Route {
             id: "OIF:002002002:CEN".to_string(),
             name: "Hôtels - Hôtels".to_string(),
             direction_type: None,
@@ -948,10 +945,9 @@ mod tests {
             line_id: "OIF:002002002:BDEOIF829".to_string(),
             geometry_id: None,
             destination_id: None,
-        }])
-        .unwrap();
+        });
 
-        let vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+        let vehicle_journeys = CollectionWithId::from(VehicleJourney {
             id: "VJ:1".to_string(),
             codes: btree_set_from_vec(vec![(
                 "object_system:6".to_string(),
@@ -983,10 +979,9 @@ mod tests {
                 datetime_estimated: false,
                 local_zone_id: None,
             }],
-        }])
-        .unwrap();
+        });
 
-        let networks = CollectionWithId::new(vec![Network {
+        let networks = CollectionWithId::from(Network {
             id: "OIF:102".to_string(),
             name: "SAVAC".to_string(),
             url: None,
@@ -996,8 +991,7 @@ mod tests {
             address: None,
             sort_order: None,
             codes: KeysValues::default(),
-        }])
-        .unwrap();
+        });
 
         let mut stop_time_ids = HashMap::new();
         stop_time_ids.insert(

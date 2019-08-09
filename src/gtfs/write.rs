@@ -566,7 +566,7 @@ mod tests {
         ])
         .unwrap();
 
-        let equipments = CollectionWithId::new(vec![objects::Equipment {
+        let equipments = CollectionWithId::from(objects::Equipment {
             id: "1".to_string(),
             wheelchair_boarding: Availability::Available,
             sheltered: Availability::InformationNotAvailable,
@@ -578,8 +578,7 @@ mod tests {
             audible_announcement: Availability::Available,
             appropriate_escort: Availability::Available,
             appropriate_signage: Availability::Available,
-        }])
-        .unwrap();
+        });
 
         let mut comment_links = BTreeSet::new();
         comment_links.insert(comments.get_idx("1").unwrap());
@@ -690,7 +689,7 @@ mod tests {
         ])
         .unwrap();
 
-        let equipments = CollectionWithId::new(vec![objects::Equipment {
+        let equipments = CollectionWithId::from(objects::Equipment {
             id: "1".to_string(),
             wheelchair_boarding: Availability::NotAvailable,
             sheltered: Availability::InformationNotAvailable,
@@ -702,8 +701,7 @@ mod tests {
             audible_announcement: Availability::Available,
             appropriate_escort: Availability::Available,
             appropriate_signage: Availability::Available,
-        }])
-        .unwrap();
+        });
 
         let mut comment_links = BTreeSet::new();
         comment_links.insert(comments.get_idx("1").unwrap());
@@ -785,7 +783,7 @@ mod tests {
             },
         ])
         .unwrap();
-        let routes = CollectionWithId::new(vec![objects::Route {
+        let routes = CollectionWithId::from(objects::Route {
             id: "OIF:078078001:1".to_string(),
             name: "Hôtels - Hôtels".to_string(),
             direction_type: Some("forward".to_string()),
@@ -795,10 +793,9 @@ mod tests {
             line_id: "OIF:002002002:BDEOIF829".to_string(),
             geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
             destination_id: Some("OIF,OIF:SA:4:126".to_string()),
-        }])
-        .unwrap();
+        });
 
-        let tps = CollectionWithId::new(vec![objects::TripProperty {
+        let tps = CollectionWithId::from(objects::TripProperty {
             id: "1".to_string(),
             wheelchair_accessible: Availability::Available,
             bike_accepted: Availability::NotAvailable,
@@ -808,8 +805,7 @@ mod tests {
             appropriate_escort: Availability::Available,
             appropriate_signage: Availability::Available,
             school_vehicle_type: objects::TransportType::Regular,
-        }])
-        .unwrap();
+        });
         let vj = objects::VehicleJourney {
             id: "OIF:87604986-1_11595-1".to_string(),
             codes: BTreeSet::default(),
@@ -876,7 +872,7 @@ mod tests {
         let mut sa_codes: BTreeSet<(String, String)> = BTreeSet::new();
         sa_codes.insert(("sa name 1".to_string(), "sa_code_1".to_string()));
         sa_codes.insert(("sa name 2".to_string(), "sa_code_2".to_string()));
-        let stop_areas = CollectionWithId::new(vec![StopArea {
+        let stop_areas = CollectionWithId::from(StopArea {
             id: "sa:01".to_string(),
             name: "sa:01".to_string(),
             codes: sa_codes,
@@ -890,13 +886,12 @@ mod tests {
             timezone: None,
             geometry_id: None,
             equipment_id: None,
-        }])
-        .unwrap();
+        });
         let mut sp_codes: BTreeSet<(String, String)> = BTreeSet::new();
         sp_codes.insert(("sp name 1".to_string(), "sp_code_1".to_string()));
         sp_codes.insert(("sp name 2".to_string(), "sp_code_2".to_string()));
         sp_codes.insert(("sp name 3".to_string(), "sp_code_3".to_string()));
-        let stop_points = CollectionWithId::new(vec![StopPoint {
+        let stop_points = CollectionWithId::from(StopPoint {
             id: "sp:01".to_string(),
             name: "sp:01".to_string(),
             codes: sp_codes,
@@ -908,8 +903,7 @@ mod tests {
             stop_area_id: "sa:01".to_string(),
             stop_type: StopType::Point,
             ..Default::default()
-        }])
-        .unwrap();
+        });
         let tmp_dir = tempdir().expect("create temp dir");
         write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
         let output_file_path = tmp_dir.path().join("stop_extensions.txt");
@@ -931,8 +925,8 @@ mod tests {
 
     #[test]
     fn ntfs_object_code_to_stop_extensions_nothing_generated() {
-        let stop_areas = CollectionWithId::new(vec![]).unwrap();
-        let stop_points = CollectionWithId::new(vec![]).unwrap();
+        let stop_areas = CollectionWithId::default();
+        let stop_points = CollectionWithId::default();
         let tmp_dir = tempdir().expect("create temp dir");
         write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
         let output_file_path = tmp_dir.path().join("stop_extensions.txt");
@@ -1038,7 +1032,7 @@ mod tests {
 
     #[test]
     fn ntfs_vehicle_journeys_to_stop_times() {
-        let stop_points = CollectionWithId::new(vec![StopPoint {
+        let stop_points = CollectionWithId::from(StopPoint {
             id: "sp:01".to_string(),
             name: "sp_name_1".to_string(),
             visible: true,
@@ -1049,8 +1043,7 @@ mod tests {
             stop_area_id: "sa_1".to_string(),
             stop_type: StopType::Point,
             ..Default::default()
-        }])
-        .unwrap();
+        });
         let stop_times_vec = vec![
             StopTime {
                 stop_point_idx: stop_points.get_idx("sp:01").unwrap(),
@@ -1077,7 +1070,7 @@ mod tests {
                 local_zone_id: Some(3),
             },
         ];
-        let vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+        let vehicle_journeys = CollectionWithId::from(VehicleJourney {
             id: "vj:01".to_string(),
             codes: BTreeSet::new(),
             object_properties: KeysValues::default(),
@@ -1092,8 +1085,7 @@ mod tests {
             trip_property_id: None,
             geometry_id: None,
             stop_times: stop_times_vec,
-        }])
-        .unwrap();
+        });
         let mut stop_times_headsigns = HashMap::new();
         stop_times_headsigns.insert(
             (vehicle_journeys.get_idx("vj:01").unwrap(), 1),

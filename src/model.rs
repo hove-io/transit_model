@@ -520,13 +520,13 @@ impl Model {
     /// # use transit_model::objects::Transfer;
     /// let mut collections = Collections::default();
     /// // This transfer is invalid as there is no stop points in collections
-    /// collections.transfers = Collection::new(vec![Transfer {
+    /// collections.transfers = Collection::from(Transfer {
     ///     from_stop_id: "invalid".into(),
     ///     to_stop_id: "also_invalid".into(),
     ///     min_transfer_time: None,
     ///     real_min_transfer_time: None,
     ///     equipment_id: None,
-    /// }]);
+    /// });
     /// assert!(Model::new(collections).is_err());
     /// ```
     pub fn new(c: Collections) -> Result<Self> {

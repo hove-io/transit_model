@@ -394,7 +394,7 @@ fn do_write_fares_v1_from_v2(base_path: &path::Path, fares: &Fares) -> Result<()
     do_write_fares_v1(
         base_path,
         &Collection::new(prices_v1.into_iter().collect()),
-        &Collection::new(vec![]),
+        &Collection::default(),
         &Collection::new(fares_v1.into_iter().collect()),
     )
 }
