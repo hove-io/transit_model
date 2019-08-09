@@ -25,12 +25,15 @@
         <Line id="SL1">
           <LineName>812</LineName>
         </Line>
+        <Line id="SL2">
+          <LineName>811</LineName>
+        </Line>
       </Lines>
       <OperatingPeriod>
         <StartDate>2018-05-13</StartDate>
       </OperatingPeriod>
       <RegisteredOperatorRef>O1</RegisteredOperatorRef>
-      <Mode>bus</Mode>
+      <Mode>ferry</Mode>
       <Description>Pontypool Town Hall - Pontypool College  </Description>
       <StandardService>
         <Origin>Pontypool Town Hall</Origin>

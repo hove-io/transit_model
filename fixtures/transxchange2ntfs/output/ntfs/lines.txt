@@ -1,0 +1,4 @@
+line_id,line_code,line_name,forward_line_name,forward_direction,backward_line_name,backward_direction,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+prefix:SCAO812:SL1,812,Pontypool Town Hall - Pontypool College,Pontypool College,,Pontypool Town Hall,,,,,prefix:SSWL,Ferry,,,
+prefix:SCAO812:SL2,811,Pontypool Town Hall - Pontypool College,Pontypool College,,Pontypool Town Hall,,,,,prefix:SSWL,Ferry,,,
+prefix:SCAO813:SL1,813,Pontypool Town Kall - Pontypool Kollege,Pontypool Kollege,,Pontypool Town Kall,,,,,prefix:SSWK,Bus,,,
