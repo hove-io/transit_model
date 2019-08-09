@@ -235,21 +235,16 @@ pub fn read<P>(
 where
     P: AsRef<Path>,
 {
-    fn init_dataset_validity_periods(
-        mut datasets: CollectionWithId<Dataset>,
-    ) -> Result<CollectionWithId<Dataset>> {
-        let mut datasets = datasets.take();
-        for dataset in &mut datasets {
-            dataset.start_date = MAX_DATE;
-            dataset.end_date = MIN_DATE;
-        }
-        CollectionWithId::new(datasets)
+    fn init_dataset_validity_period(dataset: &mut Dataset) {
+        dataset.start_date = MAX_DATE;
+        dataset.end_date = MIN_DATE;
     }
 
     let mut collections = Collections::default();
-    let (contributors, datasets, feed_infos) = crate::read_utils::read_config(config_path)?;
-    collections.contributors = contributors;
-    collections.datasets = init_dataset_validity_periods(datasets)?;
+    let (contributor, mut dataset, feed_infos) = crate::read_utils::read_config(config_path)?;
+    collections.contributors = CollectionWithId::new(vec![contributor])?;
+    init_dataset_validity_period(&mut dataset);
+    collections.datasets = CollectionWithId::new(vec![dataset])?;
     collections.feed_infos = feed_infos;
     if naptan_path.as_ref().is_file() {
         naptan::read_from_zip(naptan_path, &mut collections)?;

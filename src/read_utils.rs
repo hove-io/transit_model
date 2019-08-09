@@ -45,8 +45,8 @@ struct Config {
 pub fn read_config<P: AsRef<path::Path>>(
     config_path: Option<P>,
 ) -> Result<(
-    CollectionWithId<objects::Contributor>,
-    CollectionWithId<objects::Dataset>,
+    objects::Contributor,
+    objects::Dataset,
     BTreeMap<String, String>,
 )> {
     let contributor;
@@ -69,9 +69,7 @@ pub fn read_config<P: AsRef<path::Path>>(
         dataset = objects::Dataset::default();
     }
 
-    let contributors = CollectionWithId::new(vec![contributor])?;
-    let datasets = CollectionWithId::new(vec![dataset])?;
-    Ok((contributors, datasets, feed_infos))
+    Ok((contributor, dataset, feed_infos))
 }
 
 pub fn get_validity_period(
@@ -92,19 +90,14 @@ pub fn get_validity_period(
 }
 
 pub fn set_dataset_validity_period(
-    datasets: &mut CollectionWithId<objects::Dataset>,
+    dataset: &mut objects::Dataset,
     calendars: &CollectionWithId<objects::Calendar>,
 ) -> Result<()> {
     let validity_period = get_validity_period(calendars);
 
     if let Some(vp) = validity_period {
-        let mut objects = datasets.take();
-        for d in &mut objects {
-            d.start_date = vp.start_date;
-            d.end_date = vp.end_date;
-        }
-
-        *datasets = CollectionWithId::new(objects)?;
+        dataset.start_date = vp.start_date;
+        dataset.end_date = vp.end_date;
     }
 
     Ok(())
