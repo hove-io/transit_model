@@ -22,7 +22,6 @@ pub mod filter;
 mod read;
 mod write;
 
-use self::tempdir::TempDir;
 use crate::common_format;
 use crate::model::{Collections, Model};
 use crate::objects::*;
@@ -33,7 +32,7 @@ use chrono::NaiveDateTime;
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::path;
-use tempdir;
+use tempfile::tempdir;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
@@ -233,9 +232,10 @@ pub fn write_to_zip<P: AsRef<path::Path>>(
 ) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to ZIP File {:?}", path);
-    let input_tmp_dir = TempDir::new("write_ntfs_for_zip")?;
+    let input_tmp_dir = tempdir()?;
     write(model, input_tmp_dir.path(), current_datetime)?;
     zip_to(input_tmp_dir.path(), path)?;
+    input_tmp_dir.close()?;
     Ok(())
 }
 
