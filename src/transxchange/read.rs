@@ -349,9 +349,9 @@ where
 
     let mut collections = Collections::default();
     let (contributor, mut dataset, feed_infos) = crate::read_utils::read_config(config_path)?;
-    collections.contributors = CollectionWithId::new(vec![contributor])?;
+    collections.contributors = CollectionWithId::from(contributor);
     init_dataset_validity_period(&mut dataset);
-    collections.datasets = CollectionWithId::new(vec![dataset])?;
+    collections.datasets = CollectionWithId::from(dataset);
     collections.feed_infos = feed_infos;
     if naptan_path.as_ref().is_file() {
         naptan::read_from_zip(naptan_path, &mut collections)?;

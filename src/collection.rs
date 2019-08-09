@@ -213,7 +213,7 @@ impl<T> Collection<T> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c = Collection::new(vec![]);
+    /// let mut c = Collection::default();
     /// let foo_idx = c.push(Obj("foo"));
     /// let bar_idx = c.push(Obj("bar"));
     /// assert_eq!(&c[foo_idx], &Obj("foo"));
@@ -238,8 +238,8 @@ impl<T> Collection<T> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c1 = Collection::new(vec![Obj("foo")]);
-    /// let c2 = Collection::new(vec![Obj("bar")]);
+    /// let mut c1 = Collection::from(Obj("foo"));
+    /// let c2 = Collection::from(Obj("bar"));
     /// c1.merge(c2);
     /// assert_eq!(c1.len(), 2);
     /// # Ok(())
@@ -281,7 +281,7 @@ impl<T> Collection<T> {
     /// # use transit_model::collection::*;
     /// # fn run() -> transit_model::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj;
-    /// let mut c: Collection<Obj> = Collection::new(vec![]);
+    /// let mut c: Collection<Obj> = Collection::default();
     /// assert!(c.is_empty());
     /// # Ok(())
     /// # }
@@ -660,7 +660,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
     /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c: CollectionWithId<Obj> = CollectionWithId::new(vec![])?;
+    /// let mut c: CollectionWithId<Obj> = CollectionWithId::default();
     /// assert!(c.is_empty());
     /// # Ok(())
     /// # }
@@ -690,7 +690,7 @@ impl<T: Id<T> + WithId> CollectionWithId<T> {
     /// #         r
     /// #     }
     /// # }
-    /// let mut c = CollectionWithId::new(vec![Obj("1".into())])?;
+    /// let mut c = CollectionWithId::from(Obj("1".into()));
     /// let obj = c.get_or_create("2");
     /// assert_eq!(obj.0, "2");
     /// # Ok(())
@@ -722,7 +722,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// #         r
     /// #     }
     /// # }
-    /// let mut c = CollectionWithId::new(vec![Obj("1".into(), "foo".into())])?;
+    /// let mut c = CollectionWithId::from(Obj("1".into(), "foo".into()));
     /// let obj = c.get_or_create_with("2", || Obj("bob".into(), "bar".into()));
     /// assert_eq!(obj.0, "2");
     /// assert_eq!(obj.1, "bar");
