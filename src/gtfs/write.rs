@@ -479,7 +479,6 @@ pub fn write_shapes(
 
 #[cfg(test)]
 mod tests {
-    use self::tempdir::TempDir;
     use super::*;
     use crate::collection::CollectionWithId;
     use crate::common_format::write_calendar_dates;
@@ -491,7 +490,7 @@ mod tests {
     use std::collections::BTreeSet;
     use std::fs::File;
     use std::io::Read;
-    use tempdir;
+    use tempfile::tempdir;
 
     #[test]
     fn write_agency() {
@@ -911,7 +910,7 @@ mod tests {
             ..Default::default()
         }])
         .unwrap();
-        let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
+        let tmp_dir = tempdir().expect("create temp dir");
         write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
         let output_file_path = tmp_dir.path().join("stop_extensions.txt");
         let mut output_file = File::open(output_file_path.clone())
@@ -934,7 +933,7 @@ mod tests {
     fn ntfs_object_code_to_stop_extensions_nothing_generated() {
         let stop_areas = CollectionWithId::new(vec![]).unwrap();
         let stop_points = CollectionWithId::new(vec![]).unwrap();
-        let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
+        let tmp_dir = tempdir().expect("create temp dir");
         write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
         let output_file_path = tmp_dir.path().join("stop_extensions.txt");
         assert!(!output_file_path.exists());
@@ -1019,7 +1018,7 @@ mod tests {
             },
         ])
         .unwrap();
-        let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
+        let tmp_dir = tempdir().expect("create temp dir");
         write_calendar_dates(tmp_dir.path(), &calendar).unwrap();
         assert!(!tmp_dir.path().join("calendar_dates.txt").exists());
 
@@ -1100,7 +1099,7 @@ mod tests {
             (vehicle_journeys.get_idx("vj:01").unwrap(), 1),
             "somewhere".to_string(),
         );
-        let tmp_dir = TempDir::new("transit_model_tests").expect("create temp dir");
+        let tmp_dir = tempdir().expect("create temp dir");
         write_stop_times(
             tmp_dir.path(),
             &vehicle_journeys,
