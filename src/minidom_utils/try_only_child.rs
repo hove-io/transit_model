@@ -26,12 +26,26 @@ use minidom::Element;
 /// fail)
 pub trait TryOnlyChild {
     /// Try to get an unique child from its name and return a [Result](crate::Result)
-    fn try_only_child<'a>(&'a self, child_name: &str) -> Result<&'a Element>;
+    /// A filter can be apply on the kind of children you want to select
+    fn try_only_child_with_filter<'a, P>(&'a self, child_name: &str, filter: P) -> Result<&'a Self>
+    where
+        P: Fn(&'a Self) -> bool;
+
+    /// Try to get an unique child from its name and return a [Result](crate::Result)
+    fn try_only_child<'a>(&'a self, child_name: &str) -> Result<&'a Self> {
+        self.try_only_child_with_filter(child_name, |_| true)
+    }
 }
 
 impl TryOnlyChild for Element {
-    fn try_only_child<'a>(&'a self, child_name: &str) -> Result<&'a Element> {
-        let mut child_iterator = self.children().filter(|child| child.name() == child_name);
+    fn try_only_child_with_filter<'a, P>(&'a self, child_name: &str, filter: P) -> Result<&'a Self>
+    where
+        P: Fn(&'a Self) -> bool,
+    {
+        let mut child_iterator = self
+            .children()
+            .filter(|child| child.name() == child_name)
+            .filter(|child| filter(*child));
         if let Some(child) = child_iterator.next() {
             if child_iterator.next().is_none() {
                 return Ok(child);
@@ -61,10 +75,15 @@ mod tests {
     #[test]
     fn only_one_child() {
         let xml: &'static str = r#"<root>
+                <child type="ugly" />
                 <child />
             </root>"#;
         let root: Element = xml.parse().unwrap();
-        let child = root.try_only_child("child").unwrap();
+        let child = root
+            .try_only_child_with_filter("child", |e| {
+                e.attr("type").map(|id| id == "ugly").unwrap_or(false)
+            })
+            .unwrap();
         assert_eq!(child.name(), "child");
     }
 
@@ -73,17 +92,20 @@ mod tests {
     fn no_child() {
         let xml: &'static str = r#"<root />"#;
         let root: Element = xml.parse().unwrap();
-        root.try_only_child("child").unwrap();
+        root.try_only_child_with_filter("child", |_| true).unwrap();
     }
 
     #[test]
     #[should_panic(expected = "Failed to find a unique child \\'child\\' in element \\'root\\'")]
     fn no_unique_child() {
         let xml: &'static str = r#"<root>
-                <child />
-                <child />
+                <child type="nice"/>
+                <child type="nice"/>
             </root>"#;
         let root: Element = xml.parse().unwrap();
-        root.try_only_child("child").unwrap();
+        root.try_only_child_with_filter("child", |e| {
+            e.attr("type").map(|id| id == "nice").unwrap_or(false)
+        })
+        .unwrap();
     }
 }
