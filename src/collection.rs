@@ -54,7 +54,7 @@ impl<T> Idx<T> {
     fn new(idx: usize) -> Self {
         Idx(idx as u32, PhantomData)
     }
-    fn get(&self) -> usize {
+    fn get(self) -> usize {
         self.0 as usize
     }
 }

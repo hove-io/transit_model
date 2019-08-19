@@ -723,16 +723,16 @@ impl Time {
     pub fn new(h: u32, m: u32, s: u32) -> Time {
         Time(h * 60 * 60 + m * 60 + s)
     }
-    pub fn hours(&self) -> u32 {
+    pub fn hours(self) -> u32 {
         self.0 / 60 / 60
     }
-    pub fn minutes(&self) -> u32 {
+    pub fn minutes(self) -> u32 {
         self.0 / 60 % 60
     }
-    pub fn seconds(&self) -> u32 {
+    pub fn seconds(self) -> u32 {
         self.0 % 60
     }
-    pub fn total_seconds(&self) -> u32 {
+    pub fn total_seconds(self) -> u32 {
         self.0
     }
 }

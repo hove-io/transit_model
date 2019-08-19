@@ -63,7 +63,7 @@ fn run() -> Result<()> {
 
     let model = transit_model::ntfs::read(opt.input)?;
     let mut collections = model.into_collections();
-    collections.restrict_period(&opt.start_validity_date, &opt.end_validity_date)?;
+    collections.restrict_period(opt.start_validity_date, opt.end_validity_date)?;
     collections.sanitize()?;
     let model = Model::new(collections)?;
     transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;

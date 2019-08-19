@@ -206,20 +206,20 @@ impl Collections {
     }
 
     /// Restrict the validity period of the current `Collections` with the start_date and end_date
-    pub fn restrict_period(&mut self, start_date: &NaiveDate, end_date: &NaiveDate) -> Result<()> {
+    pub fn restrict_period(&mut self, start_date: NaiveDate, end_date: NaiveDate) -> Result<()> {
         let mut calendars = self.calendars.take();
         for calendar in calendars.iter_mut() {
             calendar.dates = calendar
                 .dates
                 .iter()
                 .cloned()
-                .filter(|date| date >= start_date && date <= end_date)
+                .filter(|date| *date >= start_date && *date <= end_date)
                 .collect();
         }
         let mut data_sets = self.datasets.take();
         for data_set in data_sets.iter_mut() {
-            data_set.start_date = cmp::max(*start_date, data_set.start_date);
-            data_set.end_date = cmp::min(*end_date, data_set.end_date);
+            data_set.start_date = cmp::max(start_date, data_set.start_date);
+            data_set.end_date = cmp::min(end_date, data_set.end_date);
         }
         self.datasets = CollectionWithId::new(data_sets)?;
         self.calendars = CollectionWithId::new(calendars)?;

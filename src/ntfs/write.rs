@@ -236,8 +236,8 @@ fn get_prices<'a>(
 ) -> Vec<&'a TicketPrice> {
     ticket_prices
         .values()
-        .filter(|ticket_price| &ticket_price.ticket_id == ticket_id)
-        .filter(|ticket_price| &ticket_price.currency == "EUR")
+        .filter(|ticket_price| ticket_price.ticket_id == ticket_id)
+        .filter(|ticket_price| ticket_price.currency == "EUR")
         .collect()
 }
 
