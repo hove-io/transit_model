@@ -154,10 +154,18 @@ fn load_network(transxchange: &Element) -> Result<Network> {
     } else {
         name
     };
+    let timezone = Some(String::from(EUROPE_LONDON_TIMEZONE));
+    let url = operator.try_only_child("WebSite").map(Element::text).ok();
+    let phone = operator
+        .try_only_child("ContactTelephoneNumber")
+        .map(Element::text)
+        .ok();
     let network = Network {
         id,
         name,
-        timezone: Some(String::from(EUROPE_LONDON_TIMEZONE)),
+        timezone,
+        url,
+        phone,
         ..Default::default()
     };
     Ok(network)
@@ -871,6 +879,8 @@ mod tests {
                     <Operator id="op1">
                         <OperatorCode>SOME_CODE</OperatorCode>
                         <TradingName>Some name</TradingName>
+                        <WebSite>www.example.com</WebSite>
+                        <ContactTelephoneNumber>123-456-7890</ContactTelephoneNumber>
                     </Operator>
                     <Operator id="op2">
                         <OperatorCode>OTHER_CODE</OperatorCode>
@@ -881,6 +891,8 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let network = load_network(&root).unwrap();
             assert_eq!(network.name, String::from("Some name"));
+            assert_eq!(network.url, Some(String::from("www.example.com")));
+            assert_eq!(network.phone, Some(String::from("123-456-7890")));
         }
 
         #[test]

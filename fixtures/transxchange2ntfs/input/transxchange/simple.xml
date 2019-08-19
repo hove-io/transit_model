@@ -44,6 +44,8 @@
     <Operator id="O1">
       <OperatorCode>SSWL</OperatorCode>
       <OperatorShortName>Stagecoach South Wales</OperatorShortName>
+      <WebSite>www.example.com</WebSite>
+      <ContactTelephoneNumber>123-456-7890</ContactTelephoneNumber>
     </Operator>
     <Operator id="O2">
       <OperatorCode>ANSL</OperatorCode>
