@@ -31,6 +31,11 @@
       <LineRef>SL1</LineRef>
       <VehicleJourneyCode>VJ1</VehicleJourneyCode>
       <OperatingProfile>
+        <RegularDayType>
+          <DaysOfWeek>
+            <MondayToFriday />
+          </DaysOfWeek>
+        </RegularDayType>
       </OperatingProfile>
       <JourneyPatternRef>JP1</JourneyPatternRef>
       <DepartureTime>08:45:00</DepartureTime>

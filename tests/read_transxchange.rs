@@ -34,6 +34,7 @@ fn test_read_transxchange() {
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec![
+                "calendar.txt",
                 "companies.txt",
                 "contributors.txt",
                 "commercial_modes.txt",
