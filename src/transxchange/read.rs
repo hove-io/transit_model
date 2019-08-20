@@ -26,7 +26,7 @@ use chrono::{
     naive::{MAX_DATE, MIN_DATE},
     Duration,
 };
-use failure::format_err;
+use failure::{bail, format_err};
 use lazy_static::lazy_static;
 use log::{info, warn};
 use minidom::Element;
@@ -615,8 +615,10 @@ where
     };
     if transxchange_path.as_ref().is_file() {
         read_from_zip(transxchange_path, &mut collections, &dataset_id)?;
-    } else {
+    } else if transxchange_path.as_ref().is_dir() {
         read_from_path(transxchange_path, &mut collections, &dataset_id)?;
+    } else {
+        bail!("Invalid input data: must be an existing directory or a ZIP archive");
     };
 
     if let Some(prefix) = prefix {
