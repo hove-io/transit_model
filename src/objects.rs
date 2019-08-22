@@ -717,7 +717,7 @@ impl Error for TimeError {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Time(u32);
 impl Time {
     pub fn new(h: u32, m: u32, s: u32) -> Time {
