@@ -81,7 +81,6 @@
       <ServiceRef>SCAO812</ServiceRef>
       <LineRef>SL1</LineRef>
       <VehicleJourneyCode>VJ1</VehicleJourneyCode>
-      <OperatorRef>O1</OperatorRef>
       <OperatingProfile>
       </OperatingProfile>
       <JourneyPatternRef>JP1</JourneyPatternRef>
