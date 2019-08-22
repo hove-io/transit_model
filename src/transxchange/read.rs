@@ -445,7 +445,15 @@ fn load_routes_vehicle_journeys_calendars(
                 }
             };
 
-        let operator_ref = vehicle_journey.try_only_child("OperatorRef")?.text();
+        let operator_ref = vehicle_journey
+            .try_only_child("OperatorRef")
+            .or_else(|_| {
+                transxchange
+                    .try_only_child("Services")?
+                    .try_only_child("Service")?
+                    .try_only_child("RegisteredOperatorRef")
+            })?
+            .text();
         let operator = get_by_reference(
             transxchange.try_only_child("Operators")?,
             "Operator",
