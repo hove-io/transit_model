@@ -75,6 +75,7 @@
         <Destination>Pontypool College</Destination>
         <JourneyPattern id="JP1">
           <JourneyPatternSectionRefs>JPS1</JourneyPatternSectionRefs>
+          <Direction>inboundAndOutbound</Direction>
         </JourneyPattern>
       </StandardService>
     </Service>

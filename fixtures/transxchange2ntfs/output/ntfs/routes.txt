@@ -1,0 +1,2 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+prefix:SCAO812:SL1:inbound,Town Hall - Race Club,inbound,prefix:SCAO812:SL1,,prefix:Navitia:5340AWB30904
