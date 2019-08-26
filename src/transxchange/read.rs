@@ -26,7 +26,7 @@ use chrono::{
     naive::{NaiveDate, MAX_DATE, MIN_DATE},
     Datelike, Duration,
 };
-use failure::format_err;
+use failure::{bail, format_err};
 use lazy_static::lazy_static;
 use log::{info, warn};
 use minidom::Element;
@@ -280,11 +280,62 @@ fn load_lines(
     Ok(lines)
 }
 
-fn create_route(_transxchange: &Element, _vehicle_journey: &Element) -> Result<Route> {
-    // TODO: Implement routes
-    // The fake ID helps pass the integration tests for now. Can be remove once real implementation is done
+fn create_route(
+    collections: &Collections,
+    transxchange: &Element,
+    vehicle_journey: &Element,
+    lines: &CollectionWithId<Line>,
+    stop_times: &Vec<StopTime>,
+) -> Result<Route> {
+    let service = transxchange
+        .try_only_child("Services")?
+        .try_only_child("Service")?;
+    let standard_service = service.try_only_child("StandardService")?;
+    let journey_pattern_ref = vehicle_journey.try_only_child("JourneyPatternRef")?.text();
+    let direction_type =
+        match get_by_reference(standard_service, "JourneyPattern", &journey_pattern_ref)?
+            .try_only_child("Direction")?
+            .text()
+            .as_str()
+        {
+            "inboundAndOutbound" => "inbound",
+            "circular" => "clockwise",
+            direction => direction,
+        }
+        .to_string();
+    let service_code = service.try_only_child("ServiceCode")?.text();
+    let line_ref = vehicle_journey.try_only_child("LineRef")?.text();
+    let line_id = format!("{}:{}", service_code, line_ref);
+    if lines.get(&line_id).is_none() {
+        bail!(
+            "Failed to create route because line {} doesn't exist.",
+            line_id
+        );
+    }
+    let id = format!("{}:{}", line_id, direction_type);
+    let (first_stop_time, last_stop_time) = stop_times
+        .first()
+        .and_then(|f| stop_times.last().map(|l| (f, l)))
+        .ok_or_else(|| format_err!("Failed to find any StopTime to create the route {}", id))?;
+    let first_stop_point = &collections.stop_points[first_stop_time.stop_point_idx];
+    let last_stop_point = &collections.stop_points[last_stop_time.stop_point_idx];
+    let first_stop_area = collections.stop_areas.get(&first_stop_point.stop_area_id);
+    let first_stop_area_name = first_stop_area
+        .map(|stop_area| stop_area.name.clone())
+        .unwrap_or_else(|| String::from("Unknown Stop Area"));
+    let last_stop_area = collections.stop_areas.get(&last_stop_point.stop_area_id);
+    let last_stop_area_name = last_stop_area
+        .map(|stop_area| stop_area.name.clone())
+        .unwrap_or_else(|| String::from("Unknown Stop Area"));
+    let name = format!("{} - {}", first_stop_area_name, last_stop_area_name);
+    let direction_type = Some(direction_type);
+    let destination_id = last_stop_area.map(|stop_area| stop_area.id.clone());
     Ok(Route {
-        line_id: String::from("SCAO812:SL1"),
+        id,
+        name,
+        direction_type,
+        line_id,
+        destination_id,
         ..Default::default()
     })
 }
@@ -561,6 +612,7 @@ fn create_stop_times(
 fn load_routes_vehicle_journeys_calendars(
     collections: &Collections,
     transxchange: &Element,
+    lines: &CollectionWithId<Line>,
     dataset_id: &str,
     physical_mode_id: &str,
 ) -> Result<(
@@ -611,7 +663,13 @@ fn load_routes_vehicle_journeys_calendars(
             &operator_ref,
         )?;
         let company_id = operator.try_only_child("OperatorCode")?.text();
-        let route = create_route(transxchange, vehicle_journey)?;
+        let route = create_route(
+            collections,
+            transxchange,
+            vehicle_journey,
+            lines,
+            &stop_times,
+        )?;
         let route_id = route.id.clone();
         // TODO: Fill up the headsign
         let headsign = None;
@@ -643,6 +701,7 @@ fn read_xml(transxchange: &Element, collections: &mut Collections, dataset_id: &
     let (routes, vehicle_journeys, calendars) = load_routes_vehicle_journeys_calendars(
         collections,
         transxchange,
+        &lines,
         dataset_id,
         &physical_mode.id,
     )?;
