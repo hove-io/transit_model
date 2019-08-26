@@ -35,6 +35,7 @@ use std::{
     convert::TryFrom,
     fs::File,
     io::Read,
+    ops::Add,
     path::Path,
 };
 use walkdir::WalkDir;
@@ -75,15 +76,20 @@ fn get_service_validity_period(transxchange: &Element) -> Result<ValidityPeriod>
         .try_only_child("Services")?
         .try_only_child("Service")?
         .try_only_child("OperatingPeriod")?;
+    let today = chrono::offset::Utc::today().naive_utc();
+    let max_date = today.add(Duration::days(2 * 365));
     let start_date: Date = operating_period
         .try_only_child("StartDate")?
         .text()
         .parse()?;
-    let end_date: Date = operating_period
-        .try_only_child("EndDate")
-        .map(Element::text)
-        .map(|end_date_text| end_date_text.parse())
-        .unwrap_or_else(|_| Ok(start_date + Duration::days(180)))?;
+    let mut end_date: Date = if let Ok(end_date) = operating_period.try_only_child("EndDate") {
+        end_date.text().parse()?
+    } else {
+        chrono::naive::MAX_DATE
+    };
+    if end_date > max_date {
+        end_date = max_date;
+    }
     Ok(ValidityPeriod {
         start_date,
         end_date,
@@ -808,7 +814,38 @@ mod tests {
                 end_date,
             } = get_service_validity_period(&root).unwrap();
             assert_eq!(start_date, Date::from_ymd(2019, 1, 1));
-            assert_eq!(end_date, Date::from_ymd(2019, 6, 30));
+            assert_eq!(
+                end_date,
+                chrono::Utc::today()
+                    .naive_utc()
+                    .add(Duration::days(2 * 365))
+            );
+        }
+
+        #[test]
+        fn has_far_end() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <OperatingPeriod>
+                            <StartDate>2000-01-01</StartDate>
+                            <EndDate>9999-03-31</EndDate>
+                        </OperatingPeriod>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let ValidityPeriod {
+                start_date,
+                end_date,
+            } = get_service_validity_period(&root).unwrap();
+            assert_eq!(start_date, Date::from_ymd(2000, 1, 1));
+            assert_eq!(
+                end_date,
+                chrono::Utc::today()
+                    .naive_utc()
+                    .add(Duration::days(2 * 365))
+            );
         }
 
         #[test]
