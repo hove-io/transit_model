@@ -552,7 +552,7 @@ fn calculate_stop_times(
             journey_pattern_timing_link.try_only_child("To")?,
             "WaitTime",
         );
-        sequence = sequence + 1;
+        sequence += 1;
     }
     let stop_point = journey_pattern_section
         .children()
@@ -640,13 +640,10 @@ fn load_routes_vehicle_journeys_calendars(
         };
         let service_id = calendar.id.clone();
         let stop_times =
-            match create_stop_times(&collections.stop_points, transxchange, vehicle_journey) {
-                Ok(val) => val,
-                Err(e) => {
-                    warn!("{} / vehiclejourney {} skipped", e, id);
-                    continue;
-                }
-            };
+            skip_fail!(
+                create_stop_times(&collections.stop_points, transxchange, vehicle_journey)
+                    .map_err(|e| format_err!("{} / vehiclejourney {} skipped", e, id))
+            );
 
         let operator_ref = vehicle_journey
             .try_only_child("OperatorRef")
