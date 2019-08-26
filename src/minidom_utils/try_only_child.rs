@@ -48,7 +48,7 @@ impl TryOnlyChild for Element {
             .filter(|child| filter(*child));
         if let Some(child) = child_iterator.next() {
             if child_iterator.next().is_none() {
-                return Ok(child);
+                Ok(child)
             } else {
                 bail!(
                     "Failed to find a unique child '{}' in element '{}'",

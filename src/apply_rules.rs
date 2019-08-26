@@ -617,7 +617,8 @@ fn update_position(p: &mut PropertyRule, field: &mut Coord, report: &mut Report)
     }
 }
 
-type FnUpdater = Box<Fn(&mut Collections, &mut PropertyRule, &mut Report) -> bool + Send + Sync>;
+type FnUpdater =
+    Box<dyn Fn(&mut Collections, &mut PropertyRule, &mut Report) -> bool + Send + Sync>;
 
 lazy_static! {
     static ref PROPERTY_UPDATER: HashMap<(ObjectType, &'static str), FnUpdater> = {
