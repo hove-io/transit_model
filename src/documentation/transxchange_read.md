@@ -1,28 +1,28 @@
 # TransXChange reading specification
 ## Introduction
-This document describes how a TransXChange feed is read in Navitia Transit model (NTM) 
+This document describes how a TransXChange feed is read in Navitia Transit model (NTM)
 and transformed into a [NTFS feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fr.md).
 
-For the sake of simplicity, the NTM properties that are not specified in the source 
+For the sake of simplicity, the NTM properties that are not specified in the source
 data are not described below.
 
-In order to guarantee that the NTFS objects identifiers are unique and stable, each 
-object id is prefixed with a unique prefix (specified for each datasource), following 
+In order to guarantee that the NTFS objects identifiers are unique and stable, each
+object id is prefixed with a unique prefix (specified for each datasource), following
 the general pattern `<prefix>:<id>`.
 
 ## Input data description
-Each file of a TransXChange dataset represents a transit line for a *specific 
-operating period*. Several files of the same archive might need to be read in order 
+Each file of a TransXChange dataset represents a transit line for a *specific
+operating period*. Several files of the same archive might need to be read in order
 to consolidate all the trips associated to a transit NTFS line.
 
-An additional data source is necessary in order to retrieve the information relative to the 
-stops used in the TransXChange feed. The National Public Transport Access Nodes ([NaPTAN](http://naptan.app.dft.gov.uk/DataRequest/Naptan.ashx?format=csv)) database 
+An additional data source is necessary in order to retrieve the information relative to the
+stops used in the TransXChange feed. The National Public Transport Access Nodes ([NaPTAN](http://naptan.app.dft.gov.uk/DataRequest/Naptan.ashx?format=csv)) database
 is a UK nationwide system for uniquely identifying all the points of access to public transport in the UK.
 
-This version of the connector handles TranXChange files with a single *Service* 
-specifying one or more *Lines*. Multiple *Service*s will be possibly considered in a 
-later version. Also, on-demand-transport services as well as frequency-based trips 
-are not handled; therefore, any input feed that contains a *Service/FlexibleService* 
+This version of the connector handles TranXChange files with a single *Service*
+specifying one or more *Lines*. Multiple *Service*s will be possibly considered in a
+later version. Also, on-demand-transport services as well as frequency-based trips
+are not handled; therefore, any input feed that contains a *Service/FlexibleService*
 or a *VehicleJourney/Frequency* will be ignored.
 
 ## Mapping between TransXChange elements and NTFS objects
@@ -32,9 +32,9 @@ NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 network_id | *Operators/Operator/OperatorCode* | This field is prefixed. If more than one operators are specified, the operator referenced by *Services/Service/RegisteredOperatorRef* is used to create the network.
 network_name | *Operators/Operator/TradingName* | If the element is not present, the *Operators/Operator/OperatorShortName* is used instead.
-network_url | *Operators/Operator/WebSite* | 
+network_url | *Operators/Operator/WebSite* |
 network_timezone | | Fixed value `Europe/London`.
-network_phone | *Operators/Operator/ContactTelephoneNumber* | 
+network_phone | *Operators/Operator/ContactTelephoneNumber* |
 
 ### companies.txt
 
@@ -46,10 +46,10 @@ company_id | *Operators/Operator/OperatorCode* | This field is prefixed.
 company_name | *Operators/Operator/OperatorShortName* |
 
 ### stops.txt
-For each *AnnotatedStopPointRef* identified in the TransXChange feed, the coordinates 
+For each *AnnotatedStopPointRef* identified in the TransXChange feed, the coordinates
 of the stop_point are retrieved from the **Stops.csv** file of the NaPTAN dataset.
 
-The stop_areas are referenced in the **StopsInArea.csv** file and then detailed in 
+The stop_areas are referenced in the **StopsInArea.csv** file and then detailed in
 the **StopAreas.csv** file of the NaPTAN dataset.
 
 #### For stop_points
@@ -59,8 +59,8 @@ NTFS field | TransXChange element | NaPTAN file | NaPTAN field | Mapping rule/Co
 stop_id | *StopPoints/AnnotatedStopPointRef/StopPointRef* | Stops.csv | *ATCOCode* | This field is prefixed.
 stop_name | | Stops.csv | *CommonName* | The stop name is also available in TransXChange *StopPoints/AnnotatedStopPointRef/CommonName*, but the NaPTAN value is considered to be the reference.
 location_type | | Stops.csv | | Fixed value `0`.
-stop_lat | | Stops.csv | *Latitude* | 
-stop_lon | | Stops.csv | *Longitude* | 
+stop_lat | | Stops.csv | *Latitude* |
+stop_lon | | Stops.csv | *Longitude* |
 parent_station | | StopsInArea.csv | *StopAreaCode* | This field is prefixed. The field *AtcoCode* is used as a matching key with the *ATCOCode* of the associated stop_point.
 platform_code | | Stops.csv | *Indicator* |
 
@@ -83,11 +83,11 @@ NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 line_id | *Services/Service/ServiceCode*, *Services/Service/Line{id}* | This field is prefixed and formed by the concatenation of the two fields separated by a `:`. Ex. "\<prefix>:1_58_BC:SL1".
 line_code | *Services/Service/Lines/Line/LineName* |
-line_name | *Services/Service/Description* | If no *Description* is found, then this field is computed using the name of the first associated Route in the forward direction. If several forward routes exist, the one with the smallest `route_id` is used.
-forward_line_name | *Services/Service/StandardService/Destination* | 
-forward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the forward direction. If several forward routes exist, the one with the smallest `route_id` is used.
-backward_line_name | *Services/Service/StandardService/Origin* | 
-backward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the backward direction. If several backward routes exist, the one with the smallest `route_id` is used.
+line_name | *Services/Service/Description* | If no *Description* is found, then this field is computed using the name of the first associated Route in the forward direction. If several forward routes exist, the one with the smallest `route_id` is used (in alphabetical order).
+forward_line_name | *Services/Service/StandardService/Destination* |
+forward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the forward direction. If several forward routes exist, the one with the smallest `route_id` (in alphabetical order) is used.
+backward_line_name | *Services/Service/StandardService/Origin* |
+backward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the backward direction. If several backward routes exist, the one with the smallest `route_id` is used (in alphabetical order).
 network_id | *Services/Service/RegisteredOperatorRef* | The referenced *Operators/Operator/OperatorCode* value is taken into account. This field is prefixed. Link to the file [networks.txt](#networkstxt).
 commercial_mode_id | *Services/Service/Mode* | This field is not prefixed. Link to the file commercial_modes.txt of the NTFS. See the mapping rule below.
 
@@ -130,10 +130,10 @@ Similarly, the element *BankHolidaysOperation* may be also be present, specifyin
 Note that special days override any Bank holiday day types.
 
 ### trips.txt
-A trip is created for each *VehicleJourneys/VehicleJourney*. The referenced 
-*JourneyPattern* is used to link the trip to the corresponding NTFS route via the 
+A trip is created for each *VehicleJourneys/VehicleJourney*. The referenced
+*JourneyPattern* is used to link the trip to the corresponding NTFS route via the
 *Services/Service/StandardService/JourneyPattern/Direction*.
-The referenced *JourneyPatternSections* are then used to retrieve the sequence of 
+The referenced *JourneyPatternSections* are then used to retrieve the sequence of
 stops and scheduled stop times of the trip.
 
 NTFS field | TransXChange element | Mapping rule/Comment
@@ -147,30 +147,30 @@ physical_mode_id | *Services/Service/Mode* | This field is not prefixed. Link to
 trip_properties.wheelchair_accessible | *VehicleJourney/Operational/VehicleType/WheelchairAccessible* | The value is `1` when the trip is accesible, `2` when the trip is not accessible and `0` when the field is not specified.
 
 ### stop_times.txt
-The passing times at each stoppoint of a trip are specified as an ordered list of 
+The passing times at each stoppoint of a trip are specified as an ordered list of
 links between the stoppoints (*JourneyPatternTimingLink*s) in the *JourneyPatternSection* attached to the associated *JourneyPattern*.
 
-In some (rare) cases, a *VehicleJourney* might specify explicitly some timing links 
-that are different from the underlying *JourneyPattern*. In this case, a 
+In some (rare) cases, a *VehicleJourney* might specify explicitly some timing links
+that are different from the underlying *JourneyPattern*. In this case, a
 *VehicleJourneyTimingLink* overrides any common property it shares with a *JourneyPatternTimingLink*.
 
 #### Computing passing times at each stoppoint
-The arrival/departure time for the first stoppoint of a trip is explicitly specified 
-in *VehicleJourney/DepartureTime*. For each subsequent stoppoint, the passing time is 
-calculated from the cumulative sum of the current *JourneyPatternTimingLink* values 
+The arrival/departure time for the first stoppoint of a trip is explicitly specified
+in *VehicleJourney/DepartureTime*. For each subsequent stoppoint, the passing time is
+calculated from the cumulative sum of the current *JourneyPatternTimingLink* values
 for all preceding stops in the journey link sequence as follows:
-- arrival_time at stoppoint<sub>n</sub> = departure_time from stop<sub>n-1</sub> + (*RunTime* for inbound link from stop<sub>n-1</sub>)
-- departure_time at stop<sub>n</sub> = arrival_time at stop<sub>n</sub> + *WaitTime* for destination end of inbound link from stop<sub>n-1</sub>) + *WaitTime* for origin of outbound link to stop<sub>n+1</sub>
+- arrival_time at stoppoint<sub>n</sub> = [departure_time from stop<sub>n-1</sub>] + [*RunTime* for inbound link from stop<sub>n-1</sub>]
+- departure_time at stop<sub>n</sub> = [arrival_time at stop<sub>n</sub>] + [*WaitTime* for destination end of inbound link from stop<sub>n-1</sub>] + [*WaitTime* for origin of outbound link to stop<sub>n+1</sub>]
 
 If *WaitTime* is not specified, the default waiting time at a stoppoint is considered `0`.
 
 Note that *RunTime* and *WaitTime* are given as [durations](https://en.wikipedia.org/wiki/ISO_8601#Durations).
 
-Except from the first stoppoint of the trip, the arrival end (*JourneyPatternTimingLink/To*) 
-of each *JourneyPatternTimingLink* specifies the stoppoint id, its sequence as well as the pickup/dropoff method.
+Except fot the last stop_point of the trip, the departure (*JourneyPatternTimingLink/From*)
+of each *JourneyPatternTimingLink* specifies the stoppoint id, its sequence as well as the pickup/dropoff method. The last stop_point id specified by the last arrival (*JourneyPatternTimingLink/To*).
 
 NTFS field | TransXChange element | Mapping rule/Comment
---- | --- | --- 
+--- | --- | ---
 trip_id | *VehicleJourney/ServiceRef*, *VehicleJourney/LineRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed. Link to the file [trips.txt](#tripstxt).
 arrival_time | *JourneyPatternTimingLink/RunTime* | See computing rule above.
 departure_time | *JourneyPatternTimingLink/RunTime*, *JourneyPatternTimingLink/To/WaitTime* | See computing rule above.
@@ -184,7 +184,7 @@ Only comments on trips are handled in the present version.
 
 NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
-comment_id | *VehicleJourney/VehicleJourneyCode*, *VehicleJourney/Note/NoteCode* | This field is prefixed and formed by the concatenation of the two fields separated by a `:`. 
+comment_id | *VehicleJourney/VehicleJourneyCode*, *VehicleJourney/Note/NoteCode* | This field is prefixed and formed by the concatenation of the two fields separated by a `:`.
 comment_name | *VehicleJourney/Note/NoteText* |
 
 ### comment_links.txt
@@ -194,4 +194,3 @@ NTFS field | TransXChange element | Mapping rule/Comment
 object_id | *VehicleJourney/ServiceRef*, *VehicleJourney/LineRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed. Link to the file [trips.txt](#tripstxt).
 object_type |  | Fixed value `trip`.
 comment_id | *VehicleJourney/VehicleJourneyCode*, *VehicleJourney/Note/NoteCode* | This field is prefixed. Link to the file [comments.txt](#commentstxt).
-
