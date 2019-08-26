@@ -23,14 +23,21 @@ use crate::{
     AddPrefix, Result,
 };
 use chrono::{
-    naive::{MAX_DATE, MIN_DATE},
-    Duration,
+    naive::{NaiveDate, MAX_DATE, MIN_DATE},
+    Datelike, Duration,
 };
 use failure::format_err;
 use lazy_static::lazy_static;
 use log::{info, warn};
 use minidom::Element;
-use std::{convert::TryFrom, fs::File, io::Read, path::Path};
+use std::{
+    collections::{BTreeSet, HashSet},
+    convert::TryFrom,
+    fs::File,
+    io::Read,
+    ops::Add,
+    path::Path,
+};
 use walkdir::WalkDir;
 use zip::ZipArchive;
 
@@ -69,15 +76,20 @@ fn get_service_validity_period(transxchange: &Element) -> Result<ValidityPeriod>
         .try_only_child("Services")?
         .try_only_child("Service")?
         .try_only_child("OperatingPeriod")?;
+    let today = chrono::offset::Utc::today().naive_utc();
+    let max_date = today.add(Duration::days(2 * 365));
     let start_date: Date = operating_period
         .try_only_child("StartDate")?
         .text()
         .parse()?;
-    let end_date: Date = operating_period
-        .try_only_child("EndDate")
-        .map(Element::text)
-        .map(|end_date_text| end_date_text.parse())
-        .unwrap_or_else(|_| Ok(start_date + Duration::days(180)))?;
+    let mut end_date: Date = if let Ok(end_date) = operating_period.try_only_child("EndDate") {
+        end_date.text().parse()?
+    } else {
+        chrono::naive::MAX_DATE
+    };
+    if end_date > max_date {
+        end_date = max_date;
+    }
     Ok(ValidityPeriod {
         start_date,
         end_date,
@@ -277,43 +289,138 @@ fn create_route(_transxchange: &Element, _vehicle_journey: &Element) -> Result<R
     })
 }
 
-fn generate_calendar_dates(
-    _operating_profile: &Element,
-    _validity_period: ValidityPeriod,
-) -> Result<Calendar> {
-    // TODO: calendar dates
-    Ok(Calendar {
-        id: String::from("default-service"),
-        ..Default::default()
-    })
+struct NaiveDateRange {
+    current: NaiveDate,
+    end: NaiveDate,
 }
 
-// Get Wait or Run time from ISO 8601 duration
-fn parse_duration_in_seconds(duration_iso8601: &str) -> Result<Time> {
-    let std_duration = time_parse::duration::parse_nom(duration_iso8601)?;
-    let duration_seconds = Duration::from_std(std_duration)?.num_seconds();
-    let time = Time::new(0, 0, u32::try_from(duration_seconds)?);
-    Ok(time)
+impl NaiveDateRange {
+    fn new(start: NaiveDate, end: NaiveDate) -> NaiveDateRange {
+        if start <= end {
+            NaiveDateRange {
+                current: start,
+                end,
+            }
+        } else {
+            // If end date is smaller, then invert start and end
+            NaiveDateRange {
+                current: end,
+                end: start,
+            }
+        }
+    }
 }
-fn get_duration_from(element: &Element, name: &str) -> Time {
-    element
-        .try_only_child(name)
-        .map(Element::text)
-        .and_then(|s| parse_duration_in_seconds(&s))
-        .unwrap_or_default()
+
+impl Iterator for NaiveDateRange {
+    type Item = NaiveDate;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current <= self.end {
+            let date = self.current;
+            self.current = self.current.succ();
+            Some(date)
+        } else {
+            None
+        }
+    }
 }
-fn get_pickup_and_dropoff_types(element: &Element, name: &str) -> (u8, u8) {
-    element
-        .try_only_child(name)
-        .map(Element::text)
-        .map(|a| match a.as_str() {
-            "pickUp" => (0, 1),
-            "setDown" => (1, 0),
-            _ => (0, 0),
-        })
-        .unwrap_or((0, 0))
+
+fn generate_calendar_dates(
+    operating_profile: &Element,
+    validity_period: ValidityPeriod,
+) -> Result<BTreeSet<Date>> {
+    let mut dates = BTreeSet::new();
+    let mut days = HashSet::new();
+    let regular_day_type = operating_profile.try_only_child("RegularDayType")?;
+    if let Ok(days_of_week) = regular_day_type.try_only_child("DaysOfWeek") {
+        use chrono::Weekday::*;
+        if days_of_week.children().count() == 0 {
+            days.insert(Mon);
+            days.insert(Tue);
+            days.insert(Wed);
+            days.insert(Thu);
+            days.insert(Fri);
+            days.insert(Sat);
+            days.insert(Sun);
+        } else {
+            for element in days_of_week.children() {
+                match element.name() {
+                    "Monday" => {
+                        days.insert(Mon);
+                    }
+                    "Tuesday" => {
+                        days.insert(Tue);
+                    }
+                    "Wednesday" => {
+                        days.insert(Wed);
+                    }
+                    "Thursday" => {
+                        days.insert(Thu);
+                    }
+                    "Friday" => {
+                        days.insert(Fri);
+                    }
+                    "Saturday" => {
+                        days.insert(Sat);
+                    }
+                    "Sunday" => {
+                        days.insert(Sun);
+                    }
+                    "MondayToFriday" => {
+                        days.insert(Mon);
+                        days.insert(Tue);
+                        days.insert(Wed);
+                        days.insert(Thu);
+                        days.insert(Fri);
+                    }
+                    "MondayToSaturday" => {
+                        days.insert(Mon);
+                        days.insert(Tue);
+                        days.insert(Wed);
+                        days.insert(Thu);
+                        days.insert(Fri);
+                        days.insert(Sat);
+                    }
+                    "MondayToSunday" => {
+                        days.insert(Mon);
+                        days.insert(Tue);
+                        days.insert(Wed);
+                        days.insert(Thu);
+                        days.insert(Fri);
+                        days.insert(Sat);
+                        days.insert(Sun);
+                    }
+                    "NotSaturday" => {
+                        days.insert(Mon);
+                        days.insert(Tue);
+                        days.insert(Wed);
+                        days.insert(Thu);
+                        days.insert(Fri);
+                        days.insert(Sun);
+                    }
+                    "Weekend" => {
+                        days.insert(Sat);
+                        days.insert(Sun);
+                    }
+                    unknown_tag => warn!("Tag '{}' is not a valid tag for DaysOfWeek", unknown_tag),
+                };
+            }
+        }
+    }
+    for date in NaiveDateRange::new(validity_period.start_date, validity_period.end_date) {
+        if days.contains(&date.weekday()) {
+            // TODO: Handle exceptions (see SpecialDaysOperation)
+            // TODO: Handle bank holidays (see BankHolidaysOperation)
+            dates.insert(date);
+        }
+    }
+    Ok(dates)
 }
-fn create_calendar_dates(transxchange: &Element, vehicle_journey: &Element) -> Result<Calendar> {
+
+fn create_calendar_dates(
+    transxchange: &Element,
+    vehicle_journey: &Element,
+) -> Result<BTreeSet<Date>> {
     let operating_profile = vehicle_journey
         .try_only_child("OperatingProfile")
         .or_else(|_| {
@@ -324,6 +431,34 @@ fn create_calendar_dates(transxchange: &Element, vehicle_journey: &Element) -> R
         })?;
     let validity_period = get_service_validity_period(transxchange)?;
     generate_calendar_dates(&operating_profile, validity_period)
+}
+
+// Get Wait or Run time from ISO 8601 duration
+fn parse_duration_in_seconds(duration_iso8601: &str) -> Result<Time> {
+    let std_duration = time_parse::duration::parse_nom(duration_iso8601)?;
+    let duration_seconds = Duration::from_std(std_duration)?.num_seconds();
+    let time = Time::new(0, 0, u32::try_from(duration_seconds)?);
+    Ok(time)
+}
+
+fn get_duration_from(element: &Element, name: &str) -> Time {
+    element
+        .try_only_child(name)
+        .map(Element::text)
+        .and_then(|s| parse_duration_in_seconds(&s))
+        .unwrap_or_default()
+}
+
+fn get_pickup_and_dropoff_types(element: &Element, name: &str) -> (u8, u8) {
+    element
+        .try_only_child(name)
+        .map(Element::text)
+        .map(|a| match a.as_str() {
+            "pickUp" => (0, 1),
+            "setDown" => (1, 0),
+            _ => (0, 0),
+        })
+        .unwrap_or((0, 0))
 }
 
 fn calculate_stop_times(
@@ -442,7 +577,15 @@ fn load_routes_vehicle_journeys_calendars(
         let line_ref = vehicle_journey.try_only_child("LineRef")?.text();
         let vehicle_journey_code = vehicle_journey.try_only_child("VehicleJourneyCode")?.text();
         let id = format!("{}:{}:{}", service_ref, line_ref, vehicle_journey_code);
-        let calendar = create_calendar_dates(transxchange, vehicle_journey)?;
+        let dates = create_calendar_dates(transxchange, vehicle_journey)?;
+        if dates.is_empty() {
+            warn!("No calendar date, skipping Vehicle Journey {}", id);
+            continue;
+        }
+        let calendar = Calendar {
+            id: format!("CD:{}", id),
+            dates,
+        };
         let service_id = calendar.id.clone();
         let stop_times =
             match create_stop_times(&collections.stop_points, transxchange, vehicle_journey) {
@@ -671,7 +814,38 @@ mod tests {
                 end_date,
             } = get_service_validity_period(&root).unwrap();
             assert_eq!(start_date, Date::from_ymd(2019, 1, 1));
-            assert_eq!(end_date, Date::from_ymd(2019, 6, 30));
+            assert_eq!(
+                end_date,
+                chrono::Utc::today()
+                    .naive_utc()
+                    .add(Duration::days(2 * 365))
+            );
+        }
+
+        #[test]
+        fn has_far_end() {
+            let xml = r#"<root>
+                <Services>
+                    <Service>
+                        <OperatingPeriod>
+                            <StartDate>2000-01-01</StartDate>
+                            <EndDate>9999-03-31</EndDate>
+                        </OperatingPeriod>
+                    </Service>
+                </Services>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let ValidityPeriod {
+                start_date,
+                end_date,
+            } = get_service_validity_period(&root).unwrap();
+            assert_eq!(start_date, Date::from_ymd(2000, 1, 1));
+            assert_eq!(
+                end_date,
+                chrono::Utc::today()
+                    .naive_utc()
+                    .add(Duration::days(2 * 365))
+            );
         }
 
         #[test]
@@ -1364,6 +1538,154 @@ mod tests {
             let xml = r#"<root />"#;
             let root: Element = xml.parse().unwrap();
             calculate_stop_times(&stop_points, &root, &Time::new(0, 0, 0)).unwrap();
+        }
+    }
+
+    mod generate_calendar_dates {
+        use super::*;
+
+        #[test]
+        fn all_work_week() {
+            let xml = r#"<root>
+                <RegularDayType>
+                    <DaysOfWeek>
+                        <MondayToFriday />
+                    </DaysOfWeek>
+                </RegularDayType>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let start_date = NaiveDate::from_ymd(2019, 08, 12);
+            let end_date = NaiveDate::from_ymd(2019, 08, 20);
+            let validity = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            let dates = generate_calendar_dates(&root, validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 12)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 13)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 14)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 15)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 16)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 19)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 20)));
+        }
+
+        #[test]
+        fn not_saturday() {
+            let xml = r#"<root>
+                <RegularDayType>
+                    <DaysOfWeek>
+                        <NotSaturday />
+                    </DaysOfWeek>
+                </RegularDayType>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let start_date = NaiveDate::from_ymd(2019, 08, 17);
+            let end_date = NaiveDate::from_ymd(2019, 08, 19);
+            let validity = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            let dates = generate_calendar_dates(&root, validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 18)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 19)));
+        }
+
+        #[test]
+        fn inverted_start_end() {
+            let xml = r#"<root>
+                <RegularDayType>
+                    <DaysOfWeek>
+                        <Weekend />
+                        <Monday />
+                    </DaysOfWeek>
+                </RegularDayType>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let start_date = NaiveDate::from_ymd(2019, 08, 19);
+            let end_date = NaiveDate::from_ymd(2019, 08, 17);
+            let validity = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            let dates = generate_calendar_dates(&root, validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 17)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 18)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 19)));
+        }
+
+        #[test]
+        fn unknown_tag() {
+            let xml = r#"<root>
+                <RegularDayType>
+                    <DaysOfWeek>
+                        <MondayToSaturday />
+                        <MondayToSunday />
+                        <UnknownTag />
+                    </DaysOfWeek>
+                </RegularDayType>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let start_date = NaiveDate::from_ymd(2019, 08, 12);
+            let end_date = NaiveDate::from_ymd(2019, 08, 20);
+            let validity = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            let dates = generate_calendar_dates(&root, validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 12)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 13)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 14)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 15)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 16)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 17)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 18)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 19)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 20)));
+        }
+
+        #[test]
+        fn no_tag() {
+            let xml = r#"<root>
+                <RegularDayType>
+                    <DaysOfWeek />
+                </RegularDayType>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let start_date = NaiveDate::from_ymd(2019, 08, 12);
+            let end_date = NaiveDate::from_ymd(2019, 08, 20);
+            let validity = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            let dates = generate_calendar_dates(&root, validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 12)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 13)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 14)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 15)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 16)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 17)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 18)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 19)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 20)));
+        }
+
+        #[test]
+        fn holidays_only() {
+            let xml = r#"<root>
+                <RegularDayType>
+                    <HolidaysOnly />
+                </RegularDayType>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let start_date = NaiveDate::from_ymd(2019, 08, 12);
+            let end_date = NaiveDate::from_ymd(2019, 08, 20);
+            let validity = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            let dates = generate_calendar_dates(&root, validity).unwrap();
+            assert!(dates.is_empty());
         }
     }
 }

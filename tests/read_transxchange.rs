@@ -34,6 +34,8 @@ fn test_read_transxchange() {
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec![
+                // TODO: Uncomment when limitation of date is encoded in the binary
+                // "calendar.txt",
                 "companies.txt",
                 "contributors.txt",
                 "commercial_modes.txt",

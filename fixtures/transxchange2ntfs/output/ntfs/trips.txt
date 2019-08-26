@@ -1,2 +1,2 @@
 trip_id,route_id,physical_mode_id,dataset_id,service_id,trip_headsign,block_id,company_id,trip_property_id,geometry_id
-prefix:SCAO812:SL1:VJ1,prefix:default_route,Ferry,prefix:UK,prefix:default-service,,,prefix:SSWL,,
+prefix:SCAO812:SL1:VJ1,prefix:default_route,Ferry,prefix:UK,prefix:CD:SCAO812:SL1:VJ1,,,prefix:SSWL,,
