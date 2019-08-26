@@ -18,6 +18,7 @@ to consolidate all the trips associated to a transit NTFS line.
 An additional data source is necessary in order to retrieve the information relative to the
 stops used in the TransXChange feed. The National Public Transport Access Nodes ([NaPTAN](http://naptan.app.dft.gov.uk/DataRequest/Naptan.ashx?format=csv)) database
 is a UK nationwide system for uniquely identifying all the points of access to public transport in the UK.
+As `EndDate` validity of a Service may not be provided or specifying a date in a very far future (more than 50 years), this convertor requires a specified end date to compute calendars.
 
 This version of the connector handles TranXChange files with a single *Service*
 specifying one or more *Lines*. Multiple *Service*s will be possibly considered in a
@@ -118,8 +119,8 @@ destination_id |  | `stop_id` of the stop_area of the last stop of the first tri
 
 (1) The first trip (in alphabetical order) of a route is the one with the smallest `trip_id` value.
 
-### calendar_dates.txt
-The validity period of a service is stated in *Services/Service/OperatingPeriod*. In case the validity period is open ended (the *EndDate* is not specified), the default value [*StartDate* + 180 days] should be used.
+### calendar.txt and calendar_dates.txt
+The validity period of a service is stated in *Services/Service/OperatingPeriod*. In case the validity period is open ended (the *EndDate* is not specified), the end date is defined by a mandatory parameter of this converter.
 
 Service days are calculated from the *VehicleJourneys/VehicleJourney/OperatingProfile* (if not specified, the operation days are inherited from *Service/OperatingProfile*). The corresponding days of the week are activated according to the pattern given by *RegularDayType/DaysOfWeek*. In particular, it is allowed any meaningful combination of the following possible values: `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`, `MondayToFriday`, `MondayToSaturday`, `MondayToSunday`, `NotSaturday`, `Weekend`. If no particular day of the week is explicitly specified, all days of the week (Monday to Sunday) are considered by default.
 
@@ -139,7 +140,7 @@ stops and scheduled stop times of the trip.
 NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 route_id | *Services/Service/ServiceCode*, *Services/Service/Line{id}*, *StandardService/JourneyPattern/Direction* | This field is prefixed and formed by the concatenation of the three elements separated by a `:`. Link to the file [routes.txt](#routestxt).
-service_id | *VehicleJourney/ServiceRef*, *VehicleJourney/LineRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed and formed by the concatenation of the three elements separated by a `:`. Link to the file [calendar_dates.txt](#calendar_datestxt). See above for the details about the services dates attached to a trip.
+service_id | *VehicleJourney/ServiceRef*, *VehicleJourney/LineRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed and formed by the concatenation of the three elements separated by a `:` and a prefix `CD`. Ex: "<prefix>:CD:1_58_BC:SL1:VJ1". Link to the file [calendar_dates.txt](#calendar_datestxt). See above for the details about the services dates attached to a trip.
 trip_id | *VehicleJourney/ServiceRef*, *VehicleJourney/LineRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed and formed by the concatenation of the three elements separated by a `:` in order to guarantee uniqueness.
 trip_headsign | *JourneyPatternTimingLink/DestinationDisplay* or *VehicleJourneyTimingLink/DestinationDisplay* | In case both elements are specified, the *VehicleJourney* overrides the *JourneyPattern*. In case none of the elements is specified, *Services/Service/StandardService/JourneyPattern/DestinationDisplay* should be used. Otherwise, the field is left empty.
 company_id | *VehicleJourney/OperatorRef* | This field is prefixed. Link to the file [companies.txt](#companiestxt). The referenced *Operators/Operator/OperatorCode* is used. If no *OperatorRef* is specified for the trip, the associated *Services/Service/RegisteredOperatorRef* is used to retrieve the company for the trip.
