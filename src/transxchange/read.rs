@@ -814,8 +814,10 @@ where
     };
     if transxchange_path.as_ref().is_file() {
         read_from_zip(transxchange_path, &mut collections, &dataset_id)?;
-    } else {
+    } else if transxchange_path.as_ref().is_dir() {
         read_from_path(transxchange_path, &mut collections, &dataset_id)?;
+    } else {
+        bail!("Invalid input data: must be an existing directory or a ZIP archive");
     };
 
     if let Some(prefix) = prefix {

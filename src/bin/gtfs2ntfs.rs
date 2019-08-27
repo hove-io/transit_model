@@ -15,6 +15,7 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::NaiveDateTime;
+use failure::bail;
 use log::info;
 use std::path::PathBuf;
 use structopt;
@@ -65,8 +66,10 @@ fn run() -> Result<()> {
         transit_model::gtfs::read_from_url(&url, opt.config_path, opt.prefix)?
     } else if opt.input.is_file() {
         transit_model::gtfs::read_from_zip(opt.input, opt.config_path, opt.prefix)?
-    } else {
+    } else if opt.input.is_dir() {
         transit_model::gtfs::read_from_path(opt.input, opt.config_path, opt.prefix)?
+    } else {
+        bail!("Invalid input data: must be an existing directory, a ZIP archive or an URL");
     };
 
     transit_model::ntfs::write(&objects, opt.output, opt.current_datetime)?;
