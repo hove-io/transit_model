@@ -16,9 +16,10 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 use pretty_assertions::assert_eq;
+use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::{prelude::*, BufReader};
 use std::path;
 use std::path::Path;
 use tempfile::tempdir;
@@ -30,6 +31,17 @@ pub fn get_file_content<P: AsRef<Path>>(path: P) -> String {
     output_file.read_to_string(&mut output_contents).unwrap();
 
     output_contents
+}
+pub fn get_lines_content<P: AsRef<Path>>(path: P) -> HashSet<String> {
+    let path = path.as_ref();
+    let file = File::open(path).unwrap_or_else(|_| panic!("file {:?} not found", path));
+    let reader = BufReader::new(file);
+    let mut set = HashSet::new();
+    for result_line in reader.lines() {
+        let line = result_line.expect(&format!("Cannot parse as a line in file {:?}", path));
+        set.insert(line);
+    }
+    set
 }
 
 pub fn compare_output_dir_with_expected<P: AsRef<Path>>(
@@ -47,10 +59,10 @@ pub fn compare_output_dir_with_expected<P: AsRef<Path>>(
     };
     for filename in files {
         let output_file_path = output_dir.join(filename.clone());
-        let output_contents = get_file_content(output_file_path);
+        let output_contents = get_lines_content(output_file_path);
 
         let expected_file_path = format!("{}/{}", work_dir_expected, filename);
-        let expected_contents = get_file_content(expected_file_path);
+        let expected_contents = get_lines_content(expected_file_path);
 
         assert_eq!(output_contents, expected_contents);
     }
