@@ -960,6 +960,24 @@ pub struct StopArea {
     pub equipment_id: Option<String>,
 }
 impl_id!(StopArea);
+
+impl From<StopPoint> for StopArea {
+    fn from(stop_point: StopPoint) -> Self {
+        StopArea {
+            id: format!("Navitia:{}", stop_point.id),
+            name: stop_point.name,
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            visible: stop_point.visible,
+            coord: stop_point.coord,
+            timezone: stop_point.timezone,
+            geometry_id: stop_point.geometry_id,
+            equipment_id: stop_point.equipment_id,
+        }
+    }
+}
+
 impl AddPrefix for StopArea {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
