@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopTime};
+use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopLocationType, StopTime};
 use crate::collection::{Collection, CollectionWithId, Id, Idx};
 use crate::model::Collections;
 use crate::ntfs::{has_fares_v1, has_fares_v2};
@@ -474,8 +474,8 @@ pub fn write_stops(
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for st in stop_points.values() {
         let location_type = match st.stop_type {
-            StopType::Point => 0,
-            StopType::Zone => 2,
+            StopType::Point => StopLocationType::StopPoint,
+            StopType::Zone => StopLocationType::GeographicArea,
         };
         wtr.serialize(Stop {
             id: st.id.clone(),
@@ -504,7 +504,7 @@ pub fn write_stops(
             lon: sa.coord.lon,
             fare_zone_id: None,
             zone_id: None,
-            location_type: 1,
+            location_type: StopLocationType::StopArea,
             parent_station: None,
             timezone: sa.timezone.clone(),
             equipment_id: sa.equipment_id.clone(),

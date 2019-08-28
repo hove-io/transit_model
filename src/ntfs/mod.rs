@@ -29,6 +29,7 @@ use crate::read_utils;
 use crate::utils::*;
 use crate::Result;
 use chrono::NaiveDateTime;
+use derivative::Derivative;
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::path;
@@ -55,6 +56,24 @@ struct StopTime {
     stop_time_id: Option<String>,
 }
 
+#[derivative(Default)]
+#[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq)]
+enum StopLocationType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    StopPoint,
+    #[serde(rename = "1")]
+    StopArea,
+    #[serde(rename = "2")]
+    GeographicArea,
+    #[serde(rename = "3")]
+    EntranceExit,
+    #[serde(rename = "4")]
+    PathwayInterconnectionNode,
+    #[serde(rename = "5")]
+    BoardingArea,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Stop {
     #[serde(rename = "stop_id")]
@@ -73,8 +92,8 @@ struct Stop {
     lon: f64,
     #[serde(rename = "stop_lat")]
     lat: f64,
-    #[serde(deserialize_with = "de_with_empty_default")]
-    location_type: i32,
+    #[serde(default, deserialize_with = "de_with_empty_default")]
+    location_type: StopLocationType,
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
     timezone: Option<String>,

@@ -85,6 +85,10 @@ enum StopLocationType {
     StopArea,
     #[serde(rename = "2")]
     StopEntrance,
+    #[serde(rename = "3")]
+    GenericNode,
+    #[serde(rename = "4")]
+    BoardingArea,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
