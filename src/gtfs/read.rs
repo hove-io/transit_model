@@ -579,10 +579,15 @@ where
                 stop_area.equipment_id = equipment_id;
                 stop_areas.push(stop_area);
             }
-            StopLocationType::StopEntrance => warn!(
-                "stop location type {:?} not handled for the moment, skipping",
-                StopLocationType::StopEntrance
-            ),
+            StopLocationType::StopEntrance => {
+                warn!("stop location_type = 2 not handled for the moment, skipping",)
+            }
+            StopLocationType::GenericNode => {
+                warn!("stop location_type = 3 not handled for the moment, skipping",)
+            }
+            StopLocationType::BoardingArea => {
+                warn!("stop location_type = 4 not handled for the moment, skipping",)
+            }
         }
     }
     let stoppoints = CollectionWithId::new(stop_points)?;
