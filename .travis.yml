@@ -1,6 +1,5 @@
 dist: xenial
 language: rust
-cache: cargo
 rust:
 - stable
 - beta
