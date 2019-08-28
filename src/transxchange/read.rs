@@ -628,7 +628,18 @@ fn load_routes_vehicle_journeys_calendars(
         let service_ref = vehicle_journey.try_only_child("ServiceRef")?.text();
         let line_ref = vehicle_journey.try_only_child("LineRef")?.text();
         let vehicle_journey_code = vehicle_journey.try_only_child("VehicleJourneyCode")?.text();
-        let id = format!("{}:{}:{}", service_ref, line_ref, vehicle_journey_code);
+        let id = {
+            let mut seq = 1;
+            let partial_id = format!("{}:{}:{}", service_ref, line_ref, vehicle_journey_code);
+            while collections
+                .vehicle_journeys
+                .get(&format!("{}:{}", partial_id, seq))
+                .is_some()
+            {
+                seq += 1;
+            }
+            format!("{}:{}", partial_id, seq)
+        };
         let dates = create_calendar_dates(transxchange, vehicle_journey)?;
         if dates.is_empty() {
             warn!("No calendar date, skipping Vehicle Journey {}", id);
@@ -712,7 +723,7 @@ fn read_xml(transxchange: &Element, collections: &mut Collections, dataset_id: &
     let _ = collections.commercial_modes.push(commercial_mode);
     let _ = collections.physical_modes.push(physical_mode);
     collections.lines.merge(lines);
-    collections.routes.try_merge(routes)?;
+    collections.routes.merge(routes);
     collections.vehicle_journeys.try_merge(vehicle_journeys)?;
     collections.calendars.try_merge(calendars)?;
     Ok(())
