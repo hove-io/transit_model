@@ -35,7 +35,6 @@ use std::{
     convert::TryFrom,
     fs::File,
     io::Read,
-    ops::Add,
     path::Path,
 };
 use walkdir::WalkDir;
@@ -71,13 +70,14 @@ fn get_by_reference<'a>(
     })
 }
 
-fn get_service_validity_period(transxchange: &Element) -> Result<ValidityPeriod> {
+fn get_service_validity_period(
+    transxchange: &Element,
+    max_end_date: NaiveDate,
+) -> Result<ValidityPeriod> {
     let operating_period = transxchange
         .try_only_child("Services")?
         .try_only_child("Service")?
         .try_only_child("OperatingPeriod")?;
-    let today = chrono::offset::Utc::today().naive_utc();
-    let max_date = today.add(Duration::days(2 * 365));
     let start_date: Date = operating_period
         .try_only_child("StartDate")?
         .text()
@@ -87,8 +87,8 @@ fn get_service_validity_period(transxchange: &Element) -> Result<ValidityPeriod>
     } else {
         chrono::naive::MAX_DATE
     };
-    if end_date > max_date {
-        end_date = max_date;
+    if end_date > max_end_date {
+        end_date = max_end_date;
     }
     Ok(ValidityPeriod {
         start_date,
@@ -134,8 +134,9 @@ fn update_validity_period(dataset: &mut Dataset, service_validity_period: &Valid
 fn update_validity_period_from_transxchange(
     datasets: &mut CollectionWithId<Dataset>,
     transxchange: &Element,
+    max_end_date: NaiveDate,
 ) -> Result<CollectionWithId<Dataset>> {
-    let service_validity_period = get_service_validity_period(transxchange)?;
+    let service_validity_period = get_service_validity_period(transxchange, max_end_date)?;
     let mut datasets = datasets.take();
     for dataset in &mut datasets {
         update_validity_period(dataset, &service_validity_period);
@@ -471,6 +472,7 @@ fn generate_calendar_dates(
 fn create_calendar_dates(
     transxchange: &Element,
     vehicle_journey: &Element,
+    max_end_date: NaiveDate,
 ) -> Result<BTreeSet<Date>> {
     let operating_profile = vehicle_journey
         .try_only_child("OperatingProfile")
@@ -480,7 +482,7 @@ fn create_calendar_dates(
                 .try_only_child("Service")?
                 .try_only_child("OperatingProfile")
         })?;
-    let validity_period = get_service_validity_period(transxchange)?;
+    let validity_period = get_service_validity_period(transxchange, max_end_date)?;
     generate_calendar_dates(&operating_profile, validity_period)
 }
 
@@ -615,6 +617,7 @@ fn load_routes_vehicle_journeys_calendars(
     lines: &CollectionWithId<Line>,
     dataset_id: &str,
     physical_mode_id: &str,
+    max_end_date: NaiveDate,
 ) -> Result<(
     CollectionWithId<Route>,
     CollectionWithId<VehicleJourney>,
@@ -643,7 +646,7 @@ fn load_routes_vehicle_journeys_calendars(
             }
             vj_id
         };
-        let dates = create_calendar_dates(transxchange, vehicle_journey)?;
+        let dates = create_calendar_dates(transxchange, vehicle_journey, max_end_date)?;
         if dates.is_empty() {
             warn!("No calendar date, skipping Vehicle Journey {}", id);
             continue;
@@ -704,7 +707,12 @@ fn load_routes_vehicle_journeys_calendars(
     Ok((routes, vehicle_journeys, calendars))
 }
 
-fn read_xml(transxchange: &Element, collections: &mut Collections, dataset_id: &str) -> Result<()> {
+fn read_xml(
+    transxchange: &Element,
+    collections: &mut Collections,
+    dataset_id: &str,
+    max_end_date: NaiveDate,
+) -> Result<()> {
     let network = load_network(transxchange)?;
     let companies = load_companies(transxchange)?;
     let (commercial_mode, physical_mode) = load_commercial_physical_modes(transxchange)?;
@@ -715,11 +723,15 @@ fn read_xml(transxchange: &Element, collections: &mut Collections, dataset_id: &
         &lines,
         dataset_id,
         &physical_mode.id,
+        max_end_date,
     )?;
 
     // Insert in collections
-    collections.datasets =
-        update_validity_period_from_transxchange(&mut collections.datasets, transxchange)?;
+    collections.datasets = update_validity_period_from_transxchange(
+        &mut collections.datasets,
+        transxchange,
+        max_end_date,
+    )?;
     let _ = collections.networks.push(network);
     collections.companies.merge(companies);
     // Ignore if `push` returns an error for duplicates
@@ -737,6 +749,7 @@ fn read_file<F>(
     mut file: F,
     collections: &mut Collections,
     dataset_id: &str,
+    max_end_date: NaiveDate,
 ) -> Result<()>
 where
     F: Read,
@@ -747,7 +760,7 @@ where
             let mut file_content = String::new();
             file.read_to_string(&mut file_content)?;
             match file_content.parse::<Element>() {
-                Ok(element) => read_xml(&element, collections, dataset_id)?,
+                Ok(element) => read_xml(&element, collections, dataset_id, max_end_date)?,
                 Err(e) => {
                     warn!("Failed to parse file '{:?}' as DOM: {}", file_path, e);
                 }
@@ -762,6 +775,7 @@ fn read_from_zip<P>(
     transxchange_path: P,
     collections: &mut Collections,
     dataset_id: &str,
+    max_end_date: NaiveDate,
 ) -> Result<()>
 where
     P: AsRef<Path>,
@@ -775,6 +789,7 @@ where
             file,
             collections,
             dataset_id,
+            max_end_date,
         )?;
     }
     Ok(())
@@ -784,6 +799,7 @@ fn read_from_path<P>(
     transxchange_path: P,
     collections: &mut Collections,
     dataset_id: &str,
+    max_end_date: NaiveDate,
 ) -> Result<()>
 where
     P: AsRef<Path>,
@@ -794,7 +810,7 @@ where
         .filter(|e| e.file_type().is_file())
     {
         let file = File::open(entry.path())?;
-        read_file(entry.path(), file, collections, dataset_id)?;
+        read_file(entry.path(), file, collections, dataset_id, max_end_date)?;
     }
     Ok(())
 }
@@ -805,6 +821,7 @@ pub fn read<P>(
     naptan_path: P,
     config_path: Option<P>,
     prefix: Option<String>,
+    max_end_date: NaiveDate,
 ) -> Result<Model>
 where
     P: AsRef<Path>,
@@ -827,9 +844,19 @@ where
         naptan::read_from_path(naptan_path, &mut collections)?;
     };
     if transxchange_path.as_ref().is_file() {
-        read_from_zip(transxchange_path, &mut collections, &dataset_id)?;
+        read_from_zip(
+            transxchange_path,
+            &mut collections,
+            &dataset_id,
+            max_end_date,
+        )?;
     } else if transxchange_path.as_ref().is_dir() {
-        read_from_path(transxchange_path, &mut collections, &dataset_id)?;
+        read_from_path(
+            transxchange_path,
+            &mut collections,
+            &dataset_id,
+            max_end_date,
+        )?;
     } else {
         bail!("Invalid input data: must be an existing directory or a ZIP archive");
     };
@@ -861,10 +888,11 @@ mod tests {
                 </Services>
             </root>"#;
             let root: Element = xml.parse().unwrap();
+            let max_end_date = Date::from_ymd(2021, 1, 1);
             let ValidityPeriod {
                 start_date,
                 end_date,
-            } = get_service_validity_period(&root).unwrap();
+            } = get_service_validity_period(&root, max_end_date).unwrap();
             assert_eq!(start_date, Date::from_ymd(2019, 1, 1));
             assert_eq!(end_date, Date::from_ymd(2019, 3, 31));
         }
@@ -881,17 +909,13 @@ mod tests {
                 </Services>
             </root>"#;
             let root: Element = xml.parse().unwrap();
+            let max_end_date = Date::from_ymd(2021, 1, 1);
             let ValidityPeriod {
                 start_date,
                 end_date,
-            } = get_service_validity_period(&root).unwrap();
+            } = get_service_validity_period(&root, max_end_date).unwrap();
             assert_eq!(start_date, Date::from_ymd(2019, 1, 1));
-            assert_eq!(
-                end_date,
-                chrono::Utc::today()
-                    .naive_utc()
-                    .add(Duration::days(2 * 365))
-            );
+            assert_eq!(end_date, max_end_date);
         }
 
         #[test]
@@ -907,17 +931,13 @@ mod tests {
                 </Services>
             </root>"#;
             let root: Element = xml.parse().unwrap();
+            let max_end_date = Date::from_ymd(2021, 1, 1);
             let ValidityPeriod {
                 start_date,
                 end_date,
-            } = get_service_validity_period(&root).unwrap();
+            } = get_service_validity_period(&root, max_end_date).unwrap();
             assert_eq!(start_date, Date::from_ymd(2000, 1, 1));
-            assert_eq!(
-                end_date,
-                chrono::Utc::today()
-                    .naive_utc()
-                    .add(Duration::days(2 * 365))
-            );
+            assert_eq!(end_date, max_end_date);
         }
 
         #[test]
@@ -931,7 +951,8 @@ mod tests {
                 </Services>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            get_service_validity_period(&root).unwrap();
+            let max_end_date = Date::from_ymd(2021, 1, 1);
+            get_service_validity_period(&root, max_end_date).unwrap();
         }
 
         #[test]
@@ -947,7 +968,8 @@ mod tests {
                 </Services>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            get_service_validity_period(&root).unwrap();
+            let max_end_date = Date::from_ymd(2021, 1, 1);
+            get_service_validity_period(&root, max_end_date).unwrap();
         }
 
         #[test]
@@ -964,7 +986,8 @@ mod tests {
                 </Services>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            get_service_validity_period(&root).unwrap();
+            let max_end_date = Date::from_ymd(2021, 1, 1);
+            get_service_validity_period(&root, max_end_date).unwrap();
         }
     }
 
@@ -1049,6 +1072,7 @@ mod tests {
                 </Services>
             </root>"#;
             let root: Element = xml.parse().unwrap();
+            let max_end_date = Date::from_ymd(2021, 1, 1);
             let ds1 = Dataset {
                 id: String::from("dataset_1"),
                 contributor_id: String::from("contributor_id"),
@@ -1064,7 +1088,9 @@ mod tests {
                 ..Default::default()
             };
             let mut datasets = CollectionWithId::new(vec![ds1, ds2]).unwrap();
-            let datasets = update_validity_period_from_transxchange(&mut datasets, &root).unwrap();
+            let datasets =
+                update_validity_period_from_transxchange(&mut datasets, &root, max_end_date)
+                    .unwrap();
             let mut datasets_iter = datasets.values();
             let dataset = datasets_iter.next().unwrap();
             assert_eq!(dataset.start_date, Date::from_ymd(2019, 1, 1));
