@@ -16,7 +16,7 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 use pretty_assertions::assert_eq;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 use std::fs;
 use std::fs::File;
 use std::io::{prelude::*, BufReader};
@@ -32,11 +32,11 @@ pub fn get_file_content<P: AsRef<Path>>(path: P) -> String {
 
     output_contents
 }
-pub fn get_lines_content<P: AsRef<Path>>(path: P) -> HashSet<String> {
+pub fn get_lines_content<P: AsRef<Path>>(path: P) -> BTreeSet<String> {
     let path = path.as_ref();
     let file = File::open(path).unwrap_or_else(|_| panic!("file {:?} not found", path));
     let reader = BufReader::new(file);
-    let mut set = HashSet::new();
+    let mut set = BTreeSet::new();
     for result_line in reader.lines() {
         let line = result_line.expect(&format!("Cannot parse as a line in file {:?}", path));
         set.insert(line);
