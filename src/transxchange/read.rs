@@ -630,15 +630,18 @@ fn load_routes_vehicle_journeys_calendars(
         let vehicle_journey_code = vehicle_journey.try_only_child("VehicleJourneyCode")?.text();
         let id = {
             let mut seq = 1;
-            let partial_id = format!("{}:{}:{}", service_ref, line_ref, vehicle_journey_code);
-            while collections
-                .vehicle_journeys
-                .get(&format!("{}:{}", partial_id, seq))
-                .is_some()
-            {
+            let mut vj_id;
+            loop {
+                vj_id = format!(
+                    "{}:{}:{}:{}",
+                    service_ref, line_ref, vehicle_journey_code, seq
+                );
+                if collections.vehicle_journeys.get(&vj_id).is_none() {
+                    break;
+                }
                 seq += 1;
             }
-            format!("{}:{}", partial_id, seq)
+            vj_id
         };
         let dates = create_calendar_dates(transxchange, vehicle_journey)?;
         if dates.is_empty() {
