@@ -14,12 +14,9 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#[cfg(feature = "proj")]
 use transit_model;
-#[cfg(feature = "proj")]
 use transit_model::test_utils::*;
 
-#[cfg(feature = "proj")]
 #[test]
 fn test_read_kv1() {
     let ntm = transit_model::kv1::read_from_path(

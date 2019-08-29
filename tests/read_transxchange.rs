@@ -14,12 +14,9 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-#[cfg(feature = "transxchange")]
 use transit_model;
-#[cfg(feature = "transxchange")]
 use transit_model::test_utils::*;
 
-#[cfg(feature = "transxchange")]
 #[test]
 fn test_read_transxchange() {
     let ntm = transit_model::transxchange::read(

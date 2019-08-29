@@ -33,24 +33,31 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 structopt = "0.2"
 tempfile = "3"
-time-parse = { version = "0.1.1", optional = true }
+time-parse = "0.1.1"
 transit_model_procmacro = { version = "0.1.0", path = "./transit_model_procmacro" }
 walkdir = "2.1.4"
 wkt = "0.5.0"
 zip = "0.3.2"
-
-[features]
-transxchange = ["proj", "time-parse"]
 
 [[bin]]
 name = "kv12ntfs"
 path = "src/bin/kv12ntfs.rs"
 required-features = ["proj"]
 
+[[test]]
+name = "kv12ntfs"
+path = "tests/read_kv1.rs"
+required-features = ["proj"]
+
 [[bin]]
 name = "transxchange2ntfs"
 path = "src/bin/transxchange2ntfs.rs"
-required-features = ["transxchange"]
+required-features = ["proj"]
+
+[[test]]
+name = "transxchange2ntfs"
+path = "tests/read_transxchange.rs"
+required-features = ["proj"]
 
 [dev-dependencies]
 approx = "0.3.2"
