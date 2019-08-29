@@ -21,7 +21,7 @@ matrix:
   allow_failures:
   - rust: nightly
 script:
-- cargo test --verbose --features proj,transxchange
+- cargo test --verbose --features proj
 - cd model-builder && cargo test --verbose
 deploy:
   provider: cargo

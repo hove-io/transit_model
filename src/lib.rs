@@ -42,7 +42,7 @@ pub mod relations;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
-#[cfg(feature = "transxchange")]
+#[cfg(feature = "proj")]
 pub mod transxchange;
 pub mod vptranslator;
 
