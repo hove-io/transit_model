@@ -24,6 +24,7 @@ fn test_read_transxchange() {
         "fixtures/transxchange2ntfs/input/naptan",
         Some("fixtures/transxchange2ntfs/input/config.json"),
         Some("prefix".into()),
+        chrono::NaiveDate::from_ymd(2021, 12, 31),
     )
     .unwrap();
     test_in_tmp_dir(|output_dir| {
@@ -31,8 +32,7 @@ fn test_read_transxchange() {
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec![
-                // TODO: Uncomment when limitation of date is encoded in the binary
-                // "calendar.txt",
+                "calendar.txt",
                 "companies.txt",
                 "contributors.txt",
                 "commercial_modes.txt",

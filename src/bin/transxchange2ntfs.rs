@@ -14,7 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use chrono::NaiveDateTime;
+use chrono::{NaiveDate, NaiveDateTime};
 use log::info;
 use std::path::PathBuf;
 use structopt;
@@ -57,6 +57,10 @@ struct Opt {
         raw(default_value = "&transit_model::CURRENT_DATETIME")
     )]
     current_datetime: NaiveDateTime,
+
+    /// limit the data in the future
+    #[structopt(short, long, parse(try_from_str))]
+    max_end_date: NaiveDate,
 }
 
 fn run() -> Result<()> {
@@ -64,7 +68,13 @@ fn run() -> Result<()> {
 
     let opt = Opt::from_args();
 
-    let model = transit_model::transxchange::read(opt.input, opt.naptan, opt.config, opt.prefix)?;
+    let model = transit_model::transxchange::read(
+        opt.input,
+        opt.naptan,
+        opt.config,
+        opt.prefix,
+        opt.max_end_date,
+    )?;
 
     transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
     Ok(())
