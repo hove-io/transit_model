@@ -1,6 +1,6 @@
-# Writing NTFS fares
+# Writing deprecated NTFS fares
 ## Introduction
-This document describes how fares specified in Navitia Transit Model are transformed into a [NTFS fare feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fare_extension_fr.md).
+This document describes how fares specified in Navitia Transit Model are transformed into a [NTFS fare feed](https://github.com/CanalTP/navitia/blob/dev/documentation/ntfs/ntfs_fare_extension_fr_deprecated.md).
 
 In this initial version:
 - only tickets on origin-destination stops are taken into account
