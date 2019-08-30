@@ -1,3 +1,4 @@
 trip_id,route_id,physical_mode_id,dataset_id,service_id,trip_headsign,block_id,company_id,trip_property_id,geometry_id
+prefix:SCAO811:SL2:VJ2:1,prefix:SCAO812:SL2:inbound,Ferry,prefix:UK,prefix:CD:SCAO811:SL2:VJ2:1,,,prefix:SSWL,,
 prefix:SCAO812:SL1:VJ1:1,prefix:SCAO812:SL1:inbound,Ferry,prefix:UK,prefix:CD:SCAO812:SL1:VJ1:1,,,prefix:SSWL,,
-prefix:SCAO812:SL1:VJ2:1,prefix:SCAO812:SL1:inbound,Ferry,prefix:UK,prefix:CD:SCAO812:SL1:VJ1:1,,,prefix:SSWL,,
+prefix:SCAO813:SL1:VJ1:1,prefix:SCAO813:SL1:clockwise,Bus,prefix:UK,prefix:CD:SCAO813:SL1:VJ1:1,,,prefix:SSWK,,
