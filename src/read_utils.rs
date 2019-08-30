@@ -25,7 +25,6 @@ use serde::Deserialize;
 use serde_json;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
-use std::io::Read;
 use std::path;
 use std::path::{Path, PathBuf};
 use std::result::Result as StdResult;
@@ -218,12 +217,4 @@ where
 {
     let vec = read_objects(file_handler, file_name)?;
     CollectionWithId::new(vec)
-}
-
-/// Read an URL and get a cursor on the hosted file
-pub fn read_url(url: &str) -> Result<std::io::Cursor<Vec<u8>>> {
-    let mut res = reqwest::get(url)?;
-    let mut body = Vec::new();
-    res.read_to_end(&mut body)?;
-    Ok(std::io::Cursor::new(body))
 }

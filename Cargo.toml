@@ -27,7 +27,6 @@ num-traits = "0.2.6"
 pretty_assertions = "0.6.1"
 proj = { version = "0.9.3", optional = true }
 regex = "1.1.2"
-reqwest = "0.9"
 rust_decimal = "1.0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -52,4 +51,3 @@ required-features = ["proj"]
 [dev-dependencies]
 approx = "0.3.2"
 rust_decimal_macros = "1.0.1"
-transit_model_builder = { path = "./model-builder" }

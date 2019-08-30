@@ -93,22 +93,3 @@ pub fn read_from_zip<P: AsRef<Path>>(
     let mut file_handle = read_utils::ZipHandler::new(reader, p)?;
     read(&mut file_handle, config_path, prefix)
 }
-
-/// Imports a `Model` from a url hosting a zip file containing the KV1.
-///
-/// The `config_path` argument allows you to give a path to a file
-/// containing a json representing the contributor and dataset used
-/// for this KV1. If not given, default values will be created.
-///
-/// The `prefix` argument is a string that will be prepended to every
-/// identifiers, allowing to namespace the dataset. By default, no
-/// prefix will be added to the identifiers.
-pub fn read_from_url<P: AsRef<Path>>(
-    url: &str,
-    config_path: Option<P>,
-    prefix: Option<String>,
-) -> Result<Model> {
-    let reader = read_utils::read_url(&url)?;
-    let mut file_handle = read_utils::ZipHandler::new(reader, &url)?;
-    read(&mut file_handle, config_path, prefix)
-}
