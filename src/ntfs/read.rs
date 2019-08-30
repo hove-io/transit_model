@@ -88,15 +88,18 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
                     } else {
                         (StopType::Point, true)
                     };
-
-                if stop.parent_station.is_none() {
-                    let mut new_stop_area = stop.clone();
-                    new_stop_area.visible = area_visibility;
-                    new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
-                    stop.parent_station = Some(new_stop_area.id.clone());
-                    stop_areas.push(StopArea::from(new_stop_area));
-                }
-                stop_points.push(StopPoint::from_with_type(stop, stop_type));
+                let stop_point = if stop.parent_station.is_none() {
+                    stop.parent_station = Some(String::from("default_id"));
+                    let mut stop_point = StopPoint::from_with_type(stop, stop_type);
+                    let mut stop_area = StopArea::from(stop_point.clone());
+                    stop_point.stop_area_id = stop_area.id.clone();
+                    stop_area.visible = area_visibility;
+                    stop_areas.push(stop_area);
+                    stop_point
+                } else {
+                    StopPoint::from_with_type(stop, stop_type)
+                };
+                stop_points.push(stop_point);
             }
             StopLocationType::StopArea => stop_areas.push(StopArea::from(stop)),
             StopLocationType::EntranceExit => {

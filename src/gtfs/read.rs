@@ -561,14 +561,16 @@ where
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
             StopLocationType::StopPoint => {
-                if stop.parent_station.is_none() {
-                    let mut new_stop_area = stop.clone();
-                    new_stop_area.id = format!("Navitia:{}", new_stop_area.id);
-                    new_stop_area.code = None;
-                    stop.parent_station = Some(new_stop_area.id.clone());
-                    stop_areas.push(objects::StopArea::from(new_stop_area));
-                }
-                let mut stop_point = <objects::StopPoint>::from(stop);
+                let mut stop_point = if stop.parent_station.is_none() {
+                    stop.parent_station = Some(String::from("default_id"));
+                    let mut stop_point = objects::StopPoint::from(stop);
+                    let stop_area = objects::StopArea::from(stop_point.clone());
+                    stop_point.stop_area_id = stop_area.id.clone();
+                    stop_areas.push(stop_area);
+                    stop_point
+                } else {
+                    objects::StopPoint::from(stop)
+                };
                 stop_point.comment_links = comment_links;
                 stop_point.equipment_id = equipment_id;
                 stop_points.push(stop_point);

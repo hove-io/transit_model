@@ -180,34 +180,30 @@ where
             lon: stop.longitude,
             lat: stop.latitude,
         };
-        let stop_area_id = match stops_in_area.get(&stop.atco_code).cloned() {
-            Some(stop_area_id) => stop_area_id,
-            None => {
-                // If the stop point don't have a corresponding stop area
-                // create the stop area based on stop point information
-                let id = format!("Navitia:{}", stop.atco_code);
-                info!(
-                    "Creating StopArea {} for corresponding StopPoint {}",
-                    id, stop.atco_code
-                );
-                stop_areas.push(StopArea {
-                    id: id.clone(),
-                    name: stop.name.clone(),
-                    visible: true,
-                    coord,
-                    ..Default::default()
-                })?;
-                id
-            }
-        };
-        let stop_point = StopPoint {
+        let mut stop_point = StopPoint {
             id: stop.atco_code.clone(),
             name: stop.name.clone(),
             visible: true,
             coord,
-            stop_area_id,
+            stop_area_id: String::from("default_id"),
             platform_code: Some(stop.indicator.clone()),
             ..Default::default()
+        };
+        let stop_point = match stops_in_area.get(&stop.atco_code) {
+            Some(stop_area_id) => StopPoint {
+                stop_area_id: stop_area_id.clone(),
+                ..stop_point
+            },
+            None => {
+                let stop_area = StopArea::from(stop_point.clone());
+                info!(
+                    "Created StopArea {} for corresponding StopPoint {}",
+                    stop_area.id, stop.atco_code
+                );
+                stop_point.stop_area_id = stop_area.id.clone();
+                stop_areas.push(stop_area)?;
+                stop_point
+            }
         };
         stop_points.push(stop_point)?;
     }
