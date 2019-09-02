@@ -37,6 +37,7 @@ transit_model_procmacro = { version = "0.1.0", path = "./transit_model_procmacro
 walkdir = "2.1.4"
 wkt = "0.5.0"
 zip = "0.3.2"
+reqwest = { version = "0.9.20", optional = true }
 
 [[test]]
 name = "kv12ntfs"
@@ -51,3 +52,7 @@ required-features = ["proj"]
 [dev-dependencies]
 approx = "0.3.2"
 rust_decimal_macros = "1.0.1"
+
+[features]
+default = []
+url = ["reqwest"]

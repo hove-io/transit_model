@@ -218,3 +218,16 @@ where
     let vec = read_objects(file_handler, file_name)?;
     CollectionWithId::new(vec)
 }
+
+#[cfg(feature = "url")]
+use reqwest;
+
+/// Read an URL and get a cursor on the hosted file
+#[cfg(feature = "url")]
+pub fn read_url(url: &str) -> Result<std::io::Cursor<Vec<u8>>> {
+    use std::io::Read;
+    let mut res = reqwest::get(url)?;
+    let mut body = Vec::new();
+    res.read_to_end(&mut body)?;
+    Ok(std::io::Cursor::new(body))
+}
