@@ -29,6 +29,8 @@ pub mod collection;
 pub(crate) mod common_format;
 #[macro_use]
 pub mod objects;
+#[doc(hidden)]
+pub mod file_handler;
 pub mod gtfs;
 pub mod hellogo_fares;
 #[cfg(feature = "proj")]

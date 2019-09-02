@@ -20,12 +20,13 @@ use super::{
 };
 use crate::collection::{Collection, CollectionWithId, Id};
 use crate::common_format::Availability;
+use crate::file_handler::FileHandler;
 use crate::model::Collections;
 use crate::objects::{
     self, CommentLinksT, Coord, KeysValues, StopTime as NtfsStopTime, StopType, Time,
     TransportType, VehicleJourney,
 };
-use crate::read_utils::{read_collection, read_objects, FileHandler};
+use crate::read_utils::{read_collection, read_objects};
 use crate::utils::*;
 use crate::Result;
 use csv;

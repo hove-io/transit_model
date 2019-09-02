@@ -22,6 +22,7 @@ mod write;
 use crate::{
     collection::{CollectionWithId, Idx},
     common_format::{manage_calendars, write_calendar_dates, Availability},
+    file_handler,
     gtfs::read::EquipmentList,
     model::{Collections, Model},
     objects,
@@ -236,13 +237,14 @@ struct Shape {
     sequence: u32,
 }
 
-fn read<H>(
+/// Read GTFS
+pub fn read<H>(
     file_handler: &mut H,
     config_path: Option<impl AsRef<Path>>,
     prefix: Option<String>,
 ) -> Result<Model>
 where
-    for<'a> &'a mut H: read_utils::FileHandler,
+    for<'a> &'a mut H: file_handler::FileHandler,
 {
     let mut collections = Collections::default();
     let mut equipments = EquipmentList::default();
@@ -298,7 +300,7 @@ pub fn read_from_path<P: AsRef<Path>>(
     config_path: Option<P>,
     prefix: Option<String>,
 ) -> Result<Model> {
-    let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
+    let mut file_handle = file_handler::PathFileHandler::new(p.as_ref().to_path_buf());
     read(&mut file_handle, config_path, prefix)
 }
 
@@ -317,7 +319,7 @@ pub fn read_from_zip<P: AsRef<Path>>(
     prefix: Option<String>,
 ) -> Result<Model> {
     let reader = File::open(p.as_ref())?;
-    let mut file_handle = read_utils::ZipHandler::new(reader, p)?;
+    let mut file_handle = file_handler::ZipHandler::new(reader, p)?;
     read(&mut file_handle, config_path, prefix)
 }
 

@@ -23,9 +23,9 @@ mod read;
 mod write;
 
 use crate::common_format;
+use crate::file_handler;
 use crate::model::{Collections, Model};
 use crate::objects::*;
-use crate::read_utils;
 use crate::utils::*;
 use crate::Result;
 use chrono::NaiveDateTime;
@@ -148,7 +148,7 @@ fn has_fares_v1(collections: &Collections) -> bool {
 /// files in the given directory.
 pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let path = path.as_ref();
-    let mut file_handle = read_utils::PathFileHandler::new(path.to_path_buf());
+    let mut file_handle = file_handler::PathFileHandler::new(path.to_path_buf());
 
     info!("Loading NTFS from {:?}", path);
     let mut collections = Collections::default();

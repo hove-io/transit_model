@@ -15,9 +15,9 @@
 // <http://www.gnu.org/licenses/>.
 
 use crate::collection::*;
+use crate::file_handler::FileHandler;
 use crate::model::Collections;
 use crate::objects::{self, Date, ExceptionType};
-use crate::read_utils::FileHandler;
 use crate::utils::*;
 use crate::utils::{de_from_date_string, ser_from_naive_date};
 use crate::vptranslator::translate;
