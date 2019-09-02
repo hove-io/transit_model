@@ -33,9 +33,11 @@ members = [
 ]
 
 [features]
+default = []
 xmllint = ["proj"]
 gtfs = []
 parser = []
+url = ["reqwest"]
 
 [dependencies]
 anyhow = "1"
@@ -68,6 +70,7 @@ walkdir = "2"
 wkt = "0.10"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
 git-version = "0.3"
+reqwest = { version = "0.9.20", optional = true }
 
 [[test]]
 name = "write_netex_france"

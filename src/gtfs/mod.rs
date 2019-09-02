@@ -506,6 +506,35 @@ impl Reader {
         let mut file_handler = ZipHandler::new(reader, source_name)?;
         read_file_handler(&mut file_handler, self.configuration)
     }
+
+    /// Imports a `Model` from a url hosting a zip file containing the [GTFS](http://gtfs.org/).
+    ///
+    /// The `config_path` argument allows you to give a path to a file
+    /// containing a json representing the contributor and dataset used
+    /// for this GTFS. If not given, default values will be created.
+    ///
+    /// The `prefix` argument is a string that will be prepended to every
+    /// identifiers, allowing to namespace the dataset. By default, no
+    /// prefix will be added to the identifiers.
+    #[cfg(feature = "url")]
+    pub fn read_from_url<P: AsRef<Path>>(self, url: &str) -> Result<Model> {
+        let reader = read_url(&url)?;
+        let mut file_handler = ZipHandler::new(reader, &url)?;
+        read_file_handler(&mut file_handler, self.configuration)
+    }
+}
+
+#[cfg(feature = "url")]
+use reqwest;
+
+/// Read an URL and get a cursor on the hosted file
+#[cfg(feature = "url")]
+pub fn read_url(url: &str) -> Result<std::io::Cursor<Vec<u8>>> {
+    use std::io::Read;
+    let mut res = reqwest::get(url)?;
+    let mut body = Vec::new();
+    res.read_to_end(&mut body)?;
+    Ok(std::io::Cursor::new(body))
 }
 
 #[derive(PartialOrd, Ord, Debug, Clone, Eq, PartialEq, Hash)]
