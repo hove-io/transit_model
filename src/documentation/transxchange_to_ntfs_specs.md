@@ -21,12 +21,15 @@ is a UK nationwide system for uniquely identifying all the points of access to p
 As `EndDate` validity of a Service may not be provided or specifying a date in a very far future (more than 50 years), this convertor requires a specified end date to compute calendars.
 
 This version of the connector handles TranXChange files with a single *Service*
-specifying one or more *Lines*. Multiple *Service*s will be possibly considered in a
+specifying one or more *Lines* (if a file specifies more than one *Service*, the reading of the transxchange file abort).  
+Multiple *Service*s will be possibly considered in a
 later version. Also, on-demand-transport services as well as frequency-based trips
 are not handled; therefore, any input feed that contains a *Service/FlexibleService*
 or a *VehicleJourney/Frequency* will be ignored.
 
 ## Mapping between TransXChange elements and NTFS objects
+To ease the deterministic reading of a TransXCange archive, the files are read in alphabetical order.
+
 ### networks.txt
 
 NTFS field | TransXChange element | Mapping rule/Comment
@@ -84,11 +87,10 @@ NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 line_id | *Services/Service/ServiceCode*, *Services/Service/Line{id}* | This field is prefixed and formed by the concatenation of the two fields separated by a `:`. Ex. "\<prefix>:1_58_BC:SL1".
 line_code | *Services/Service/Lines/Line/LineName* |
-line_name | *Services/Service/Description* | If no *Description* is found, then this field is computed using the name of the first associated Route in the forward direction. If several forward routes exist, the one with the smallest `route_id` is used (in alphabetical order).
+line_name | *Services/Service/Description* | If no *Description* is found, then this field is computed using the name of the first associated Route in the forward direction. 
 forward_line_name | *Services/Service/StandardService/Destination* |
-forward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the forward direction. If several forward routes exist, the one with the smallest `route_id` (in alphabetical order) is used.
-backward_line_name | *Services/Service/StandardService/Origin* |
-backward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the backward direction. If several backward routes exist, the one with the smallest `route_id` is used (in alphabetical order).
+forward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the forward direction. backward_line_name | *Services/Service/StandardService/Origin* |
+backward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the backward direction. 
 network_id | *Services/Service/RegisteredOperatorRef* | The referenced *Operators/Operator/OperatorCode* value is taken into account. This field is prefixed. Link to the file [networks.txt](#networkstxt).
 commercial_mode_id | *Services/Service/Mode* | This field is not prefixed. Link to the file commercial_modes.txt of the NTFS. See the mapping rule below.
 
@@ -117,7 +119,7 @@ direction_type | *StandardService/JourneyPattern/Direction* | The value is set t
 line_id | *Services/Service/ServiceCode*, *Services/Service/Line{id}* | This field is prefixed. Link to the file [lines.txt](#linestxt).
 destination_id |  | `stop_id` of the stop_area of the last stop of the first trip (1). Link to the file [stops.txt](#stopstxt).
 
-(1) The first trip (in alphabetical order) of a route is the one with the smallest `trip_id` value.
+(1) The first trip of a route is the first one encontered in the TransXChange file.
 
 ### calendar.txt and calendar_dates.txt
 The validity period of a service is stated in *Services/Service/OperatingPeriod*. In case the validity period is open ended (the *EndDate* is not specified), the end date is defined by a mandatory parameter of this converter.
