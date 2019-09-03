@@ -650,6 +650,69 @@ impl<T: Id<T>> CollectionWithId<T> {
         }
     }
 
+    /// Merge all elements of an `Iterator` into the current `CollectionWithId`.
+    /// If any identifier of an inserted element is already in the collection,
+    /// the closure is called, with first parameter being the element with this
+    /// identifier already in the collection, and the second parameter is the
+    /// element to be inserted.
+    /// ```
+    /// # use transit_model::collection::*;
+    /// #[derive(Debug, Default)]
+    /// struct ObjectId<'a> {
+    ///    id: &'a str,
+    ///    name: &'a str,
+    /// }
+    /// impl Id<ObjectId<'_>> for ObjectId<'_> {
+    ///    fn id(&self) -> &str {
+    ///        self.id
+    ///    }
+    ///    fn set_id(&mut self, _id: String) {
+    ///        unimplemented!()
+    ///    }
+    /// }
+    ///
+    /// let mut collection = CollectionWithId::default();
+    /// let _ = collection.push(ObjectId {
+    ///     id: "foo",
+    ///     name: "Bob",
+    /// });
+    /// let vec = vec![ObjectId {
+    ///     id: "bar",
+    ///     name: "SpongeBob SquarePants",
+    /// }];
+    /// // Merge without collision of identifiers
+    /// collection.merge_with(vec, |_, _| {
+    ///   // Should never come here
+    ///   assert!(false);
+    /// });
+    /// assert!(collection.get("bar").is_some());
+    ///
+    /// let vec = vec![ObjectId {
+    ///     id: "foo",
+    ///     name: "Bob Marley",
+    /// }];
+    /// // Merge with collision of identifiers
+    /// collection.merge_with(vec, |source, to_merge| {
+    ///     source.name = to_merge.name;
+    /// });
+    /// let foo = collection.get("foo").unwrap();
+    /// assert_eq!(foo.name, "Bob Marley");
+    /// ```
+    pub fn merge_with<I, F>(&mut self, iterator: I, mut f: F)
+    where
+        F: FnMut(&mut T, &T),
+        I: IntoIterator<Item = T>,
+    {
+        for e in iterator {
+            if let Some(mut source) = self.get_mut(e.id()) {
+                use std::ops::DerefMut;
+                f(source.deref_mut(), &e);
+                continue;
+            }
+            self.push(e).unwrap();
+        }
+    }
+
     // Return true if the collection has no objects.
     ///
     /// # Examples
