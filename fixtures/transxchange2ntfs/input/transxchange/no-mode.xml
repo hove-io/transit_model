@@ -2,8 +2,10 @@
 <TransXChange xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.transxchange.org.uk/ http://www.transxchange.org.uk/schema/2.1/TransXChange_general.xsd" xmlns="http://www.transxchange.org.uk/">
   <Operators>
     <Operator id="O1">
-      <OperatorCode>SSWK</OperatorCode>
-      <OperatorShortName>Stagecoach South Kales</OperatorShortName>
+      <OperatorCode>SSWL</OperatorCode>
+      <OperatorShortName>Stagecoach South Wales</OperatorShortName>
+      <WebSite>www.example.com</WebSite>
+      <ContactTelephoneNumber>123-456-7890</ContactTelephoneNumber>
     </Operator>
   </Operators>
   <Services>

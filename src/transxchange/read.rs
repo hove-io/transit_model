@@ -20,7 +20,7 @@ use crate::{
     model::{Collections, Model},
     objects::*,
     transxchange::naptan,
-    AddPrefix, Result,
+    AddPrefix, MergeWith, Result,
 };
 use chrono::{
     naive::{NaiveDate, MAX_DATE, MIN_DATE},
@@ -158,15 +158,11 @@ fn load_network(transxchange: &Element) -> Result<Network> {
     let id = operator.try_only_child("OperatorCode")?.text();
     let name = operator
         .try_only_child("TradingName")
-        .or_else(|_| operator.try_only_child("OperatorShortName"))?
-        .text()
+        .or_else(|_| operator.try_only_child("OperatorShortName"))
+        .map(Element::text)
+        .unwrap_or_else(|_| String::from(UNDEFINED))
         .trim()
         .to_string();
-    let name = if name.is_empty() {
-        String::from(UNDEFINED)
-    } else {
-        name
-    };
     let timezone = Some(String::from(EUROPE_LONDON_TIMEZONE));
     let url = operator.try_only_child("WebSite").map(Element::text).ok();
     let phone = operator
@@ -189,8 +185,9 @@ fn load_companies(transxchange: &Element) -> Result<CollectionWithId<Company>> {
     for operator in transxchange.try_only_child("Operators")?.children() {
         let id = operator.try_only_child("OperatorCode")?.text();
         let name = operator
-            .try_only_child("OperatorShortName")?
-            .text()
+            .try_only_child("OperatorShortName")
+            .map(Element::text)
+            .unwrap_or_else(|_| String::from(UNDEFINED))
             .trim()
             .to_string();
         let company = Company {
@@ -732,8 +729,26 @@ fn read_xml(
         transxchange,
         max_end_date,
     )?;
-    let _ = collections.networks.push(network);
-    collections.companies.merge(companies);
+    collections.networks.merge_with(
+        std::iter::once(network),
+        |collections_networks, conflict| {
+            use std::ops::Deref;
+            if let Some(mut network) = collections_networks.get_mut(&conflict.id) {
+                if network.name == UNDEFINED.to_string() {
+                    network.name = conflict.name.clone();
+                }
+            }
+        },
+    );
+    collections
+        .companies
+        .merge_with(companies, |collections_companies, conflict| {
+            if let Some(mut company) = collections_companies.get_mut(&conflict.id) {
+                if company.name == UNDEFINED.to_string() {
+                    company.name = conflict.name.clone();
+                }
+            }
+        });
     // Ignore if `push` returns an error for duplicates
     let _ = collections.commercial_modes.push(commercial_mode);
     let _ = collections.physical_modes.push(physical_mode);
@@ -1228,9 +1243,6 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Failed to find a child \\'OperatorShortName\\' in element \\'Operator\\'"
-        )]
         fn no_name() {
             let xml = r#"<root>
                 <Services>
@@ -1245,7 +1257,8 @@ mod tests {
                 </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            load_network(&root).unwrap();
+            let network = load_network(&root).unwrap();
+            assert_eq!(network.name, UNDEFINED.to_string())
         }
     }
 
@@ -1291,9 +1304,6 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Failed to find a child \\'OperatorShortName\\' in element \\'Operator\\'"
-        )]
         fn no_name() {
             let xml = r#"<root>
                 <Operators>
@@ -1303,7 +1313,9 @@ mod tests {
                 </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            load_companies(&root).unwrap();
+            let companies = load_companies(&root).unwrap();
+            let company = companies.get("SOME_CODE").unwrap();
+            assert_eq!(company.name, UNDEFINED.to_string())
         }
     }
 
