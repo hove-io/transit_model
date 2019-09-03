@@ -25,7 +25,6 @@ pub(crate) mod utils;
 mod add_prefix;
 use add_prefix::AddPrefix;
 pub mod apply_rules;
-pub mod collection;
 pub(crate) mod common_format;
 #[macro_use]
 pub mod objects;
@@ -65,3 +64,5 @@ pub type Error = failure::Error;
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub use crate::model::Model;
+
+pub use ::collection;

@@ -19,7 +19,7 @@
 #![allow(missing_docs)]
 
 use crate::{
-    collection::{Id, Idx},
+    collection::{Id, Idx, WithId},
     common_format::Availability,
     utils::*,
     AddPrefix,
@@ -125,10 +125,6 @@ macro_rules! impl_comment_links {
             }
         }
     };
-}
-
-pub trait WithId {
-    fn with_id(id: &str) -> Self;
 }
 
 macro_rules! impl_with_id {
