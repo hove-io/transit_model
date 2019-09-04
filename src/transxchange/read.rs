@@ -486,6 +486,24 @@ fn create_calendar_dates(
     generate_calendar_dates(&operating_profile, validity_period)
 }
 
+fn find_duplicate_calendar<'a>(
+    collections: &'a Collections,
+    calendars: &'a CollectionWithId<Calendar>,
+    dates: &BTreeSet<NaiveDate>,
+) -> Option<&'a Calendar> {
+    for c in collections.calendars.values() {
+        if c.dates == *dates {
+            return Some(c);
+        }
+    }
+    for c in calendars.values() {
+        if c.dates == *dates {
+            return Some(c);
+        }
+    }
+    None
+}
+
 // Get Wait or Run time from ISO 8601 duration
 fn parse_duration_in_seconds(duration_iso8601: &str) -> Result<Time> {
     let std_duration = time_parse::duration::parse_nom(duration_iso8601)?;
@@ -651,11 +669,14 @@ fn load_routes_vehicle_journeys_calendars(
             warn!("No calendar date, skipping Vehicle Journey {}", id);
             continue;
         }
+        let dup_calendar = find_duplicate_calendar(collections, &calendars, &dates);
         let calendar = Calendar {
             id: format!("CD:{}", id),
             dates,
         };
-        let service_id = calendar.id.clone();
+        let service_id = dup_calendar
+            .map(|c| c.id.clone())
+            .unwrap_or_else(|| calendar.id.clone());
         let stop_times =
             skip_fail!(
                 create_stop_times(&collections.stop_points, transxchange, vehicle_journey)
@@ -688,8 +709,10 @@ fn load_routes_vehicle_journeys_calendars(
         // TODO: Fill up the headsign
         let headsign = None;
 
-        // Insert only at the last moment
-        calendars.push(calendar)?;
+        // Insert only at the last moment and if no duplicate calendar exist
+        if dup_calendar.is_none() {
+            calendars.push(calendar)?;
+        }
         // Ignore duplicate insert (it means the route has already been created)
         let _ = routes.push(route);
         vehicle_journeys.push(VehicleJourney {
@@ -1784,6 +1807,65 @@ mod tests {
             };
             let dates = generate_calendar_dates(&root, validity).unwrap();
             assert!(dates.is_empty());
+        }
+    }
+
+    mod find_duplicate_calendar {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn generate_date_set(year: i32, month: u32, day: u32) -> BTreeSet<NaiveDate> {
+            let date = NaiveDate::from_ymd(year, month, day);
+            let mut dates = BTreeSet::new();
+            dates.insert(date);
+            dates
+        }
+
+        fn init() -> (Collections, CollectionWithId<Calendar>) {
+            let mut collections = Collections::default();
+            collections
+                .calendars
+                .push(Calendar {
+                    id: String::from("calendar:1"),
+                    dates: generate_date_set(2018, 1, 1),
+                })
+                .unwrap();
+
+            let mut calendars = CollectionWithId::default();
+            calendars
+                .push(Calendar {
+                    id: String::from("calendar:2"),
+                    dates: generate_date_set(2019, 6, 15),
+                })
+                .unwrap();
+            (collections, calendars)
+        }
+
+        #[test]
+        fn no_duplicate() {
+            let (collections, calendars) = init();
+            let dates = generate_date_set(2020, 12, 31);
+
+            let duplicate = find_duplicate_calendar(&collections, &calendars, &dates);
+            assert_eq!(duplicate, None);
+        }
+
+        #[test]
+        fn duplicate_in_collections() {
+            let (collections, calendars) = init();
+            let dates = generate_date_set(2018, 1, 1);
+
+            let calendar = find_duplicate_calendar(&collections, &calendars, &dates).unwrap();
+            assert_eq!(&calendar.id, "calendar:1");
+        }
+
+        #[test]
+        fn duplicate_in_calendars() {
+            let (collections, calendars) = init();
+            let dates = generate_date_set(2019, 6, 15);
+
+            let calendar = find_duplicate_calendar(&collections, &calendars, &dates).unwrap();
+            assert_eq!(&calendar.id, "calendar:2");
         }
     }
 }

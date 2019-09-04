@@ -1,4 +1,7 @@
 stop_id,trip_id,stop_sequence,arrival_time,departure_time,boarding_duration,alighting_duration,pickup_type,drop_off_type,datetime_estimated,local_zone_id,stop_headsign,stop_time_id
 prefix:5340AWB30742,prefix:SCAO812:SL1:VJ1:1,1,08:45:00,08:50:00,0,0,0,1,0,,,
+prefix:5340AWB30742,prefix:SCAO812:SL1:VJ2:1,1,08:45:00,08:50:00,0,0,0,1,0,,,
 prefix:5340AWB30747,prefix:SCAO812:SL1:VJ1:1,2,09:00:00,09:02:00,0,0,0,0,0,,,
+prefix:5340AWB30747,prefix:SCAO812:SL1:VJ2:1,2,09:00:00,09:02:00,0,0,0,0,0,,,
 prefix:5340AWB30904,prefix:SCAO812:SL1:VJ1:1,3,09:10:00,09:10:00,0,0,1,0,0,,,
+prefix:5340AWB30904,prefix:SCAO812:SL1:VJ2:1,3,09:10:00,09:10:00,0,0,1,0,0,,,
