@@ -599,35 +599,6 @@ fn calculate_stop_times(
     Ok(stop_times)
 }
 
-fn create_stop_times(
-    stop_points: &CollectionWithId<StopPoint>,
-    transxchange: &Element,
-    vehicle_journey: &Element,
-) -> Result<Vec<StopTime>> {
-    let journey_pattern_ref = vehicle_journey.try_only_child("JourneyPatternRef")?.text();
-    let journey_pattern = get_by_reference(
-        transxchange
-            .try_only_child("Services")?
-            .try_only_child("Service")?
-            .try_only_child("StandardService")?,
-        "JourneyPattern",
-        &journey_pattern_ref,
-    )?;
-    let journey_pattern_section_ref = journey_pattern
-        .try_only_child("JourneyPatternSectionRefs")?
-        .text();
-    let journey_pattern_section = get_by_reference(
-        transxchange.try_only_child("JourneyPatternSections")?,
-        "JourneyPatternSection",
-        &journey_pattern_section_ref,
-    )?;
-    let departure_time: Time = vehicle_journey
-        .try_only_child("DepartureTime")?
-        .text()
-        .parse()?;
-    calculate_stop_times(&stop_points, &journey_pattern_section, &departure_time)
-}
-
 fn load_routes_vehicle_journeys_calendars(
     collections: &Collections,
     transxchange: &Element,
@@ -640,6 +611,33 @@ fn load_routes_vehicle_journeys_calendars(
     CollectionWithId<VehicleJourney>,
     CollectionWithId<Calendar>,
 )> {
+    fn get_journey_pattern<'a>(
+        transxchange: &'a Element,
+        vehicle_journey: &Element,
+    ) -> Result<&'a Element> {
+        let journey_pattern_ref = vehicle_journey.try_only_child("JourneyPatternRef")?.text();
+        get_by_reference(
+            transxchange
+                .try_only_child("Services")?
+                .try_only_child("Service")?
+                .try_only_child("StandardService")?,
+            "JourneyPattern",
+            &journey_pattern_ref,
+        )
+    }
+    fn get_journey_pattern_section<'a>(
+        transxchange: &'a Element,
+        journey_pattern: &Element,
+    ) -> Result<&'a Element> {
+        let journey_pattern_section_ref = journey_pattern
+            .try_only_child("JourneyPatternSectionRefs")?
+            .text();
+        get_by_reference(
+            transxchange.try_only_child("JourneyPatternSections")?,
+            "JourneyPatternSection",
+            &journey_pattern_section_ref,
+        )
+    }
     let mut routes = CollectionWithId::default();
     let mut vehicle_journeys = CollectionWithId::default();
     let mut calendars = CollectionWithId::default();
@@ -676,11 +674,19 @@ fn load_routes_vehicle_journeys_calendars(
         let service_id = dup_calendar
             .map(|c| c.id.clone())
             .unwrap_or_else(|| calendar.id.clone());
-        let stop_times =
-            skip_fail!(
-                create_stop_times(&collections.stop_points, transxchange, vehicle_journey)
-                    .map_err(|e| format_err!("{} / vehiclejourney {} skipped", e, id))
-            );
+        let journey_pattern = skip_fail!(get_journey_pattern(transxchange, vehicle_journey));
+        let journey_pattern_section =
+            skip_fail!(get_journey_pattern_section(transxchange, journey_pattern));
+        let departure_time: Time = skip_fail!(vehicle_journey
+            .try_only_child("DepartureTime")?
+            .text()
+            .parse());
+        let stop_times = skip_fail!(calculate_stop_times(
+            &collections.stop_points,
+            &journey_pattern_section,
+            &departure_time
+        )
+        .map_err(|e| format_err!("{} / vehiclejourney {} skipped", e, id)));
 
         let operator_ref = vehicle_journey
             .try_only_child("OperatorRef")
@@ -705,8 +711,11 @@ fn load_routes_vehicle_journeys_calendars(
             &stop_times,
         )?;
         let route_id = route.id.clone();
-        // TODO: Fill up the headsign
-        let headsign = None;
+        let headsign = journey_pattern
+            .try_only_child("DestinationDisplay")
+            .map(Element::text)
+            .map(|head_sign| head_sign.trim().to_string())
+            .ok();
 
         // Insert only at the last moment and if no duplicate calendar exist
         if dup_calendar.is_none() {

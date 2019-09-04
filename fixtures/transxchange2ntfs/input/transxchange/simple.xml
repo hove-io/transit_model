@@ -75,6 +75,7 @@
         <Origin>Pontypool Town Hall</Origin>
         <Destination>Pontypool College</Destination>
         <JourneyPattern id="JP1">
+          <DestinationDisplay>Upper Race, Race Club, opp</DestinationDisplay>
           <JourneyPatternSectionRefs>JPS1</JourneyPatternSectionRefs>
           <Direction>inboundAndOutbound</Direction>
         </JourneyPattern>
