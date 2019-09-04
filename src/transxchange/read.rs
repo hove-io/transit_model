@@ -31,7 +31,7 @@ use lazy_static::lazy_static;
 use log::{info, warn};
 use minidom::Element;
 use std::{
-    collections::{BTreeSet, HashSet},
+    collections::{BTreeMap, BTreeSet, HashSet},
     convert::TryFrom,
     fs::File,
     io::Read,
@@ -814,8 +814,19 @@ where
 {
     let zip_file = File::open(transxchange_path)?;
     let mut zip_archive = ZipArchive::new(zip_file)?;
-    for index in 0..zip_archive.len() {
-        let file = zip_archive.by_index(index)?;
+    // The filenames should be sorted before processing as per the specification
+    // Path is used as the key so the entries will be ordered by filename
+    let entries: BTreeMap<std::path::PathBuf, usize> = (0..zip_archive.len())
+        .into_iter()
+        .filter_map(|index| {
+            zip_archive
+                .by_index(index)
+                .map(|file| (file.sanitized_name(), index))
+                .ok()
+        })
+        .collect();
+    for index in entries.values() {
+        let file = zip_archive.by_index(*index)?;
         read_file(
             file.sanitized_name().as_path(),
             file,
@@ -836,13 +847,17 @@ fn read_from_path<P>(
 where
     P: AsRef<Path>,
 {
-    for entry in WalkDir::new(transxchange_path)
+    let mut paths: Vec<_> = WalkDir::new(transxchange_path)
         .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_file())
-    {
-        let file = File::open(entry.path())?;
-        read_file(entry.path(), file, collections, dataset_id, max_end_date)?;
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.file_type().is_file())
+        .map(walkdir::DirEntry::into_path)
+        .collect();
+    // The filenames should be sorted before processing as per the specification
+    paths.sort();
+    for path in paths {
+        let file = File::open(&path)?;
+        read_file(&path, file, collections, dataset_id, max_end_date)?;
     }
     Ok(())
 }
