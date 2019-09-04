@@ -887,6 +887,7 @@ where
     if let Some(prefix) = prefix {
         collections.add_prefix_with_sep(prefix.as_str(), ":");
     }
+    collections.sanitize()?;
     Model::new(collections)
 }
 

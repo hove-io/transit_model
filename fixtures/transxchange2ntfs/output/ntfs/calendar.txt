@@ -1,2 +1,4 @@
 service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+prefix:CD:SCAO811:SL2:VJ2:1,0,0,0,0,0,1,1,20180513,20211226
 prefix:CD:SCAO812:SL1:VJ1:1,1,1,1,1,1,0,0,20180514,20211231
+prefix:CD:SCAO813:SL1:VJ1:1,1,1,1,1,1,0,0,20180514,20181109

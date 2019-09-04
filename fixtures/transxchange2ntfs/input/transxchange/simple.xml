@@ -62,6 +62,9 @@
         <Line id="SL2">
           <LineName>811</LineName>
         </Line>
+        <Line id="SL3">
+          <LineName>810</LineName>
+        </Line>
       </Lines>
       <OperatingPeriod>
         <StartDate>2018-05-13</StartDate>
@@ -95,13 +98,13 @@
       <DepartureTime>08:45:00</DepartureTime>
     </VehicleJourney>
     <VehicleJourney SequenceNumber="2">
-      <ServiceRef>SCAO812</ServiceRef>
-      <LineRef>SL1</LineRef>
+      <ServiceRef>SCAO811</ServiceRef>
+      <LineRef>SL2</LineRef>
       <VehicleJourneyCode>VJ2</VehicleJourneyCode>
       <OperatingProfile>
         <RegularDayType>
           <DaysOfWeek>
-            <MondayToFriday />
+            <Weekend />
           </DaysOfWeek>
         </RegularDayType>
       </OperatingProfile>
