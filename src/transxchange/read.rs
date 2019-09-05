@@ -40,7 +40,9 @@ use std::{
 use walkdir::WalkDir;
 use zip::ZipArchive;
 
-const UNDEFINED: &str = "Undefined";
+// An XML tag that doesn't exist or a XML tag whose content is empty,
+// should be considered the same
+const UNDEFINED: &str = "";
 const EUROPE_LONDON_TIMEZONE: &str = "Europe/London";
 const DEFAULT_MODE: &str = "Bus";
 
@@ -320,11 +322,11 @@ fn create_route(
     let first_stop_area = collections.stop_areas.get(&first_stop_point.stop_area_id);
     let first_stop_area_name = first_stop_area
         .map(|stop_area| stop_area.name.clone())
-        .unwrap_or_else(|| String::from("Unknown Stop Area"));
+        .unwrap_or_else(|| UNDEFINED.to_string());
     let last_stop_area = collections.stop_areas.get(&last_stop_point.stop_area_id);
     let last_stop_area_name = last_stop_area
         .map(|stop_area| stop_area.name.clone())
-        .unwrap_or_else(|| String::from("Unknown Stop Area"));
+        .unwrap_or_else(|| UNDEFINED.to_string());
     let name = format!("{} - {}", first_stop_area_name, last_stop_area_name);
     let direction_type = Some(direction_type);
     let destination_id = last_stop_area.map(|stop_area| stop_area.id.clone());
