@@ -22,6 +22,7 @@ fn test_read_transxchange() {
     let ntm = transit_model::transxchange::read(
         "tests/fixtures/transxchange2ntfs/input/transxchange",
         "tests/fixtures/transxchange2ntfs/input/naptan",
+        Some("tests/fixtures/transxchange2ntfs/input/bank-holiday.json"),
         Some("tests/fixtures/transxchange2ntfs/input/config.json"),
         Some("prefix".into()),
         chrono::NaiveDate::from_ymd(2021, 12, 31),
@@ -33,6 +34,7 @@ fn test_read_transxchange() {
             &output_dir,
             Some(vec![
                 "calendar.txt",
+                "calendar_dates.txt",
                 "companies.txt",
                 "contributors.txt",
                 "commercial_modes.txt",
