@@ -44,8 +44,6 @@ pub struct NaPTANStop {
     latitude: f64,
     #[serde(rename = "Indicator")]
     indicator: String,
-    #[serde(rename = "Status")]
-    status: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -66,8 +64,6 @@ pub struct NaPTANStopArea {
     easting: f64,
     #[serde(rename = "Northing")]
     northing: f64,
-    #[serde(rename = "Status")]
-    status: String,
 }
 
 fn read_stop_areas<R>(reader: R) -> Result<CollectionWithId<StopArea>>
@@ -87,9 +83,6 @@ where
     for record in reader.deserialize() {
         let stop_area: NaPTANStopArea =
             record.with_context(|_| "Error parsing the CSV record into a StopArea")?;
-        if stop_area.status != "act" {
-            continue;
-        }
         let point = Point::new(stop_area.easting, stop_area.northing);
         if let Ok(coord) = converter.convert(point).map(Coord::from) {
             stop_areas.push(StopArea {
@@ -173,9 +166,6 @@ where
     for record in reader.deserialize() {
         let stop: NaPTANStop =
             record.with_context(|_| "Error parsing the CSV record into a Stop")?;
-        if stop.status != "act" {
-            continue;
-        }
         let coord = Coord {
             lon: stop.longitude,
             lat: stop.latitude,
@@ -261,10 +251,9 @@ mod tests {
 
         #[test]
         fn parsing_works() {
-            let csv_content = r#""StopAreaCode","Name","Easting","Northing","Status"
-"010G0001","Bristol Bus Station",358929,173523,"act"
-"010G0002","Temple Meads",359657,172418,"act"
-"010G0003","Old Market Street",359670,173162,"del""#;
+            let csv_content = r#""StopAreaCode","Name","Easting","Northing"
+"010G0001","Bristol Bus Station",358929,173523
+"010G0002","Temple Meads",359657,172418"#;
             let stop_areas = read_stop_areas(csv_content.as_bytes()).unwrap();
             assert_eq!(stop_areas.len(), 2);
             let stop_area = stop_areas.get("010G0001").unwrap();
@@ -276,27 +265,27 @@ mod tests {
         #[test]
         #[should_panic]
         fn no_stop_area_code() {
-            let csv_content = r#""Name","Easting","Northing","Status"
-"Temple Meads",359657,172418,"act""#;
+            let csv_content = r#""Name","Easting","Northing"
+"Temple Meads",359657,172418"#;
             read_stop_areas(csv_content.as_bytes()).unwrap();
         }
 
         #[test]
         #[should_panic]
         fn empty_stop_area_code() {
-            let csv_content = r#""StopAreaCode","Name","Easting","Northing","Status"
-,"Bristol Bus Station",358929,173523,"act"
-,"Temple Meads",359657,172418,"act""#;
+            let csv_content = r#""StopAreaCode","Name","Easting","Northing"
+,"Bristol Bus Station",358929,173523
+,"Temple Meads",359657,172418"#;
             read_stop_areas(csv_content.as_bytes()).unwrap();
         }
 
         #[test]
         #[should_panic]
         fn duplicate_id() {
-            let csv_content = r#""StopAreaCode","Name","Easting","Northing","Status"
-"010G0001","Bristol Bus Station",358929,173523,"act"
-"010G0001","Bristol Bus Station",358929,173523,"act"
-"010G0002","Temple Meads",359657,172418,"act""#;
+            let csv_content = r#""StopAreaCode","Name","Easting","Northing"
+"010G0001","Bristol Bus Station",358929,173523
+"010G0001","Bristol Bus Station",358929,173523
+"010G0002","Temple Meads",359657,172418"#;
             read_stop_areas(csv_content.as_bytes()).unwrap();
         }
     }
@@ -365,11 +354,9 @@ mod tests {
 
         #[test]
         fn parsing_works() {
-            let csv_content =
-                r#""ATCOCode","CommonName","Indicator","Longitude","Latitude","Status"
-"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170,"act"
-"0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765,"act"
-"0100053308","Counterslip","SW-bound",-2.5876736730,51.4557030625,"del""#;
+            let csv_content = r#""ATCOCode","CommonName","Indicator","Longitude","Latitude"
+"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
             let mut stop_in_area = HashMap::new();
             stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
             stop_in_area.insert(String::from("0100053308"), String::from("stop-area-3"));
@@ -390,9 +377,9 @@ mod tests {
         #[test]
         #[should_panic]
         fn no_atco_code() {
-            let csv_content = r#""CommonName","Indicator","Longitude","Latitude","Status"
-"Broad Walk Shops","Stop B",-2.5876178397,51.4558382170,"act"
-"Alberton Road","NE-bound",-2.5407019785,51.4889912765,"act""#;
+            let csv_content = r#""CommonName","Indicator","Longitude","Latitude"
+"Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
             let stop_in_area = HashMap::new();
             read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
         }
@@ -400,11 +387,10 @@ mod tests {
         #[test]
         #[should_panic]
         fn duplicate_id() {
-            let csv_content =
-                r#""ATCOCode","CommonName","Indicator","Longitude","Latitude","Status"
-"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170,"act"
-"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170,"act"
-"0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765,"act""#;
+            let csv_content = r#""ATCOCode","CommonName","Indicator","Longitude","Latitude"
+"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
             let mut stop_in_area = HashMap::new();
             stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
             stop_in_area.insert(String::from("0100053264"), String::from("stop-area-2"));
