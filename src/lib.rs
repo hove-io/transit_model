@@ -37,7 +37,6 @@ mod minidom_utils;
 pub mod model;
 pub mod ntfs;
 mod read_utils;
-pub mod relations;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
@@ -66,3 +65,4 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub use crate::model::Model;
 
 pub use ::collection;
+pub use ::relations;

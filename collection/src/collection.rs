@@ -800,7 +800,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-     /// # use collection::{CollectionWithId, Id, WithId};
+    /// use collection::{CollectionWithId, Id, WithId};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(String, String);
