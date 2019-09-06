@@ -88,7 +88,7 @@ pub struct Collection<T> {
 /// # Examples
 ///
 /// ```
-/// # use crate::collection::*;
+/// # use collection::*;
 /// let collection: Collection<i32> = Collection::from(42);
 /// assert_eq!(collection.len(), 1);
 /// let integer = collection.into_iter().next().unwrap();
@@ -112,7 +112,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// let _: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// ```
     pub fn new(v: Vec<T>) -> Self {
@@ -124,7 +124,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// assert_eq!(c.len(), 6);
     /// ```
@@ -137,7 +137,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// let (k, v): (Idx<i32>, &i32) = c.iter().nth(4).unwrap();
     /// assert_eq!(v, &5);
@@ -155,7 +155,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// let values: Vec<&i32> = c.values().collect();
     /// assert_eq!(values, &[&1, &1, &2, &3, &5, &8]);
@@ -169,7 +169,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// let mut c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// for elem in c.values_mut() {
     ///     *elem *= 2;
@@ -185,7 +185,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # use std::collections::BTreeSet;
     /// # fn get_transit_indices(c: &Collection<&'static str>) -> BTreeSet<Idx<&'static str>> {
     /// #     c.iter()
@@ -213,7 +213,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -238,7 +238,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -263,7 +263,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// let mut c = Collection::new(vec![Obj("foo"), Obj("bar")]);
@@ -283,7 +283,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj;
     /// let mut c: Collection<Obj> = Collection::default();
@@ -301,7 +301,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # use std::collections::HashSet;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
@@ -388,7 +388,7 @@ pub struct CollectionWithId<T> {
 /// # Examples
 ///
 /// ```
-/// # use crate::collection::*;
+/// # use collection::*;
 /// #[derive(PartialEq, Debug)]
 /// struct Obj(&'static str);
 /// impl Id<Obj> for Obj {
@@ -415,7 +415,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -452,7 +452,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # use std::collections::HashMap;
     /// # fn run() -> Result<()> {
     /// #[derive(PartialEq, Debug)]
@@ -478,7 +478,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -494,7 +494,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// ```
     ///
     /// ```should_panic
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -519,7 +519,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -542,7 +542,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -576,7 +576,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # use std::collections::HashSet;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
@@ -606,7 +606,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -634,7 +634,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -661,7 +661,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// identifier already in the collection, and the second parameter is the
     /// element to be inserted.
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// #[derive(Debug, Default)]
     /// struct ObjectId<'a> {
     ///    id: &'a str,
@@ -723,7 +723,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -745,7 +745,7 @@ impl<T: Id<T> + WithId> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # use crate::WithId;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(String);
@@ -777,7 +777,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # use crate::WithId;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(String, String);
@@ -819,7 +819,7 @@ impl<T: Id<T>> iter::Extend<T> for CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -851,7 +851,7 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -874,7 +874,7 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -895,7 +895,7 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
@@ -917,7 +917,7 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use crate::collection::*;
+    /// # use collection::*;
     /// # fn run() -> crate::Result<()> {
     /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
     /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
