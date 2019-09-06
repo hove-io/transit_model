@@ -1,6 +1,6 @@
 [package]
 name = "relations"
-description = "Manage collection of objects"
+description = " Modeling the relations between objects"
 version = "0.1.0"
 authors = ["Kisio Digital <team.coretools@kisio.org>"]
 edition = "2018"

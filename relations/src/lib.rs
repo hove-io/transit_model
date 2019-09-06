@@ -22,6 +22,6 @@ pub type Error = failure::Error;
 /// The corresponding result type used by the crate.
 pub type Result<T> = std::result::Result<T, Error>;
 
-pub mod relations;
+mod relations;
 
 pub use crate::relations::*;
