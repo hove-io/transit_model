@@ -1,4 +1,4 @@
-line_id,line_code,line_name,forward_line_name,forward_direction,backward_line_name,backward_direction,line_color,line_text_color,line_sort,network_id,commercial_mode_id,contributor_id,geometry_id,line_opening_time,line_closing_time
-002002002:BDEOIF829,"BDE","BDE","Hôtels - Hôtels",SA:4:126,"Hôtels - Hôtels",SA:4:126,7D36F5,FFFFFF,1372,101,tram,OIF,,05:10:00,22:19:00
-002002002:CENOIF829,"CEN","Centaure","Villeneuve-le-Roi Gare RER",SA:8754527,"",,000000,FFFFFF,1403,101,tram,OIF,,18:02:00,32:35:00
-002002002:LICOIF829,"LIC","Licorne","Foyer Jean Rostand",SA:4:131,"",,000000,FFFFFF,1574,101,tram,OIF,,08:59:00,16:54:00
+line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort,network_id,commercial_mode_id,contributor_id,geometry_id,line_opening_time,line_closing_time
+002002002:BDEOIF829,"BDE","BDE","Hôtels - Hôtels","Hôtels - Hôtels",7D36F5,FFFFFF,1372,101,tram,OIF,,05:10:00,22:19:00
+002002002:CENOIF829,"CEN","Centaure","Villeneuve-le-Roi Gare RER","",000000,FFFFFF,1403,101,tram,OIF,,18:02:00,32:35:00
+002002002:LICOIF829,"LIC","Licorne","Foyer Jean Rostand","",000000,FFFFFF,1574,101,tram,OIF,,08:59:00,16:54:00

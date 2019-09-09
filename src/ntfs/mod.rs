@@ -342,7 +342,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.9.1".to_string()),
+                    ("ntfs_version".to_string(), "0.9.2".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -429,9 +429,9 @@ mod tests {
                 object_properties: KeysValues::default(),
                 comment_links: CommentLinksT::default(),
                 forward_name: Some("Hôtels - Hôtels".to_string()),
-                forward_direction: Some("OIF:SA:4:126".to_string()),
+                forward_direction: None,
                 backward_name: Some("Hôtels - Hôtels".to_string()),
-                backward_direction: Some("OIF:SA:4:126".to_string()),
+                backward_direction: None,
                 color: Some(Rgb {
                     red: 155,
                     green: 12,
