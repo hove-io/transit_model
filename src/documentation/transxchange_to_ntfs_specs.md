@@ -87,7 +87,7 @@ NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 line_id | *Services/Service/ServiceCode*, *Services/Service/Line{id}* | This field is prefixed and formed by the concatenation of the two fields separated by a `:`. Ex. "\<prefix>:1_58_BC:SL1".
 line_code | *Services/Service/Lines/Line/LineName* |
-line_name | *Services/Service/Description* | If no *Description* is found, then this field is computed using the name of the first associated Route in the forward direction. 
+line_name | *Services/Service/Description* | 
 forward_line_name | *Services/Service/StandardService/Destination* |
 forward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the forward direction. backward_line_name | *Services/Service/StandardService/Origin* |
 backward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the backward direction. 
