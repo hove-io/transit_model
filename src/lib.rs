@@ -25,7 +25,6 @@ pub(crate) mod utils;
 mod add_prefix;
 use add_prefix::AddPrefix;
 pub mod apply_rules;
-pub mod collection;
 pub(crate) mod common_format;
 #[macro_use]
 pub mod objects;
@@ -38,7 +37,6 @@ mod minidom_utils;
 pub mod model;
 pub mod ntfs;
 mod read_utils;
-pub mod relations;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
@@ -65,3 +63,6 @@ pub type Error = failure::Error;
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub use crate::model::Model;
+
+pub use ::collection;
+pub use ::relations;

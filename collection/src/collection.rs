@@ -17,9 +17,10 @@
 //! Collections of objects with typed indices and buildin identifier
 //! support.
 
-use crate::{objects::WithId, Result};
+use crate::Result;
 use derivative::Derivative;
 use failure::{bail, ensure};
+use log::warn;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry::*;
@@ -29,6 +30,10 @@ use std::marker::PhantomData;
 use std::ops;
 use std::result::Result as StdResult;
 use std::slice;
+
+pub trait WithId {
+    fn with_id(id: &str) -> Self;
+}
 
 /// An object that has a unique identifier.
 pub trait Id<T> {
@@ -83,9 +88,11 @@ pub struct Collection<T> {
 /// # Examples
 ///
 /// ```
-/// # use transit_model::collection::*;
+/// use collection::Collection;
+///
 /// let collection: Collection<i32> = Collection::from(42);
 /// assert_eq!(collection.len(), 1);
+///
 /// let integer = collection.into_iter().next().unwrap();
 /// assert_eq!(integer, 42);
 /// ```
@@ -107,7 +114,8 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
+    /// use collection::Collection;
+    ///
     /// let _: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// ```
     pub fn new(v: Vec<T>) -> Self {
@@ -119,7 +127,8 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
+    /// use collection::Collection;
+    ///
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// assert_eq!(c.len(), 6);
     /// ```
@@ -132,7 +141,8 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
+    /// use collection::{Collection, Idx};
+    ///
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// let (k, v): (Idx<i32>, &i32) = c.iter().nth(4).unwrap();
     /// assert_eq!(v, &5);
@@ -150,7 +160,8 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
+    /// use collection::Collection;
+    ///
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// let values: Vec<&i32> = c.values().collect();
     /// assert_eq!(values, &[&1, &1, &2, &3, &5, &8]);
@@ -164,7 +175,8 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
+    /// use collection::Collection;
+    ///
     /// let mut c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// for elem in c.values_mut() {
     ///     *elem *= 2;
@@ -180,8 +192,9 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # use std::collections::BTreeSet;
+    /// use collection::{Collection, Idx};
+    /// use std::collections::BTreeSet;
+    ///
     /// # fn get_transit_indices(c: &Collection<&'static str>) -> BTreeSet<Idx<&'static str>> {
     /// #     c.iter()
     /// #         .filter(|&(_, &v)| v != "bike" && v != "walking" && v != "car")
@@ -208,19 +221,16 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
+    /// use collection::{Collection, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
     /// let mut c = Collection::default();
     /// let foo_idx = c.push(Obj("foo"));
     /// let bar_idx = c.push(Obj("bar"));
     /// assert_eq!(&c[foo_idx], &Obj("foo"));
     /// assert_ne!(&c[foo_idx], &Obj("bar"));
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn push(&mut self, item: T) -> Idx<T> {
         let next_index = self.objects.len();
@@ -233,18 +243,15 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
+    /// use collection::Collection;
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
     /// let mut c1 = Collection::from(Obj("foo"));
     /// let c2 = Collection::from(Obj("bar"));
     /// c1.merge(c2);
     /// assert_eq!(c1.len(), 2);
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn merge(&mut self, other: Self) {
         for item in other {
@@ -258,16 +265,15 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// use collection::Collection;
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
     /// let mut c = Collection::new(vec![Obj("foo"), Obj("bar")]);
     /// let v = c.take();
     /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);
     /// assert_eq!(c.len(), 0);
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn take(&mut self) -> Vec<T> {
         ::std::mem::replace(&mut self.objects, Vec::new())
@@ -278,14 +284,13 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj;
+    /// use collection::Collection;
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj;
+    ///
     /// let mut c: Collection<Obj> = Collection::default();
     /// assert!(c.is_empty());
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn is_empty(&self) -> bool {
         self.objects.is_empty()
@@ -296,10 +301,12 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # use std::collections::HashSet;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
+    /// use collection::Collection;
+    /// use std::collections::HashSet;
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
     /// let mut c = Collection::new(vec![Obj("foo"), Obj("bar"), Obj("qux")]);
     /// let mut ids_to_keep: HashSet<String> = HashSet::new();
     /// ids_to_keep.insert("foo".to_string());
@@ -307,9 +314,6 @@ impl<T> Collection<T> {
     /// c.retain(|item| ids_to_keep.contains(item.0));
     /// assert_eq!(c.len(), 2);
     /// assert_eq!(c.values().map(|obj| obj.0).collect::<Vec<&str>>(), ["foo", "qux"]);
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn retain<F: FnMut(&T) -> bool>(&mut self, f: F) {
         let mut purged = self.take();
@@ -383,13 +387,16 @@ pub struct CollectionWithId<T> {
 /// # Examples
 ///
 /// ```
-/// # use transit_model::collection::*;
+/// use collection::{CollectionWithId, Id};
+///
 /// #[derive(PartialEq, Debug)]
 /// struct Obj(&'static str);
+///
 /// impl Id<Obj> for Obj {
 ///     fn id(&self) -> &str { self.0 }
 ///     fn set_id(&mut self, id: String) { unimplemented!(); }
 /// }
+///
 /// let collection: CollectionWithId<Obj> = CollectionWithId::from(Obj("some_id"));
 /// assert_eq!(collection.len(), 1);
 /// let obj = collection.into_iter().next().unwrap();
@@ -410,21 +417,20 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
+    /// use collection::{CollectionWithId, Id};
+    ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
+    ///
     /// impl Id<Obj> for Obj {
     ///     fn id(&self) -> &str { self.0 }
     ///     fn set_id(&mut self, id: String) { unimplemented!(); }
     /// }
-    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    ///
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// assert_eq!(c.len(), 2);
     /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
     /// assert!(CollectionWithId::new(vec![Obj("foo"), Obj("foo")]).is_err());
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     pub fn new(v: Vec<T>) -> Result<Self> {
         let mut id_to_idx = HashMap::default();
         for (i, obj) in v.iter().enumerate() {
@@ -447,20 +453,20 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # use std::collections::HashMap;
-    /// # fn run() -> transit_model::Result<()> {
+    /// use collection::{CollectionWithId, Id};
+    /// use std::collections::HashMap;
+    ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
+    ///
     /// impl Id<Obj> for Obj {
     ///     fn id(&self) -> &str { self.0 }
     ///     fn set_id(&mut self, id: String) { unimplemented!(); }
     /// }
-    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    ///
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// assert_eq!(c.len(), 2);
     /// assert_eq!(c.get_id_to_idx().len(), 2);
-    /// # Ok(())
-    /// # }
     pub fn get_id_to_idx(&self) -> &HashMap<String, Idx<T>> {
         &self.id_to_idx
     }
@@ -473,33 +479,37 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let idx = c.get_idx("foo").unwrap();
     /// c.index_mut(idx).0 = "baz";
     /// assert!(c.get("foo").is_none());
     /// assert_eq!(c.get("baz"), Some(&Obj("baz")));
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     ///
     /// ```should_panic
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let idx = c.get_idx("foo").unwrap();
     /// c.index_mut(idx).0 = "bar"; // panic
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn index_mut(&mut self, idx: Idx<T>) -> RefMut<'_, T> {
         RefMut {
@@ -514,18 +524,20 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// c.get_mut("foo").unwrap().0 = "baz";
     /// assert!(c.get("foo").is_none());
     /// assert_eq!(c.get("baz"), Some(&Obj("baz")));
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn get_mut(&mut self, id: &str) -> Option<RefMut<'_, T>> {
         self.get_idx(id).map(move |idx| self.index_mut(idx))
@@ -537,21 +549,24 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
-    /// let baz_idx = c.push(Obj("baz"))?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
+    /// let baz_idx = c.push(Obj("baz")).unwrap();
     /// assert_eq!(&c[baz_idx], &Obj("baz"));
     /// assert!(c.push(Obj("baz")).is_err());
-    /// let foobar_idx = c.push(Obj("foobar"))?;
+    ///
+    /// let foobar_idx = c.push(Obj("foobar")).unwrap();
     /// assert_eq!(&c[baz_idx], &Obj("baz"));
     /// assert_eq!(&c[foobar_idx], &Obj("foobar"));
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn push(&mut self, item: T) -> Result<Idx<T>> {
         let next_index = self.collection.objects.len();
@@ -571,13 +586,18 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # use std::collections::HashSet;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar"), Obj("qux")])?;
+    /// use collection::{CollectionWithId, Id};
+    /// use std::collections::HashSet;
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar"), Obj("qux")]).unwrap();
     /// let mut ids_to_keep: HashSet<String> = HashSet::new();
     /// ids_to_keep.insert("foo".to_string());
     /// ids_to_keep.insert("qux".to_string());
@@ -585,9 +605,6 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// assert_eq!(c.len(), 2);
     /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
     /// assert_eq!(c.get("qux"), Some(&Obj("qux")));
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn retain<F: FnMut(&T) -> bool>(&mut self, f: F) {
         let mut purged = self.take();
@@ -601,20 +618,23 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
-    /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
-    /// let mut c3 = CollectionWithId::new(vec![Obj("corge"), Obj("grault")])?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
+    /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")]).unwrap();
+    /// let mut c3 = CollectionWithId::new(vec![Obj("corge"), Obj("grault")]).unwrap();
     /// assert!(c1.try_merge(c2).is_err());
+    ///
     /// c1.try_merge(c3);
     /// assert_eq!(c1.len(), 4);
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn try_merge(&mut self, other: Self) -> Result<()> {
         for item in other {
@@ -629,18 +649,20 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
-    /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
+    /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")]).unwrap();
     /// c1.merge(c2);
     /// assert_eq!(c1.len(), 3);
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn merge(&mut self, other: Self) {
         for item in other {
@@ -656,13 +678,15 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// identifier already in the collection, and the second parameter is the
     /// element to be inserted.
     /// ```
-    /// # use transit_model::collection::*;
+    /// use collection::{CollectionWithId, Id};
+    ///
     /// #[derive(Debug, Default)]
-    /// struct ObjectId<'a> {
-    ///    id: &'a str,
-    ///    name: &'a str,
+    /// struct ObjectId {
+    ///    id: &'static str,
+    ///    name: &'static str,
     /// }
-    /// impl Id<ObjectId<'_>> for ObjectId<'_> {
+    ///
+    /// impl Id<ObjectId> for ObjectId {
     ///    fn id(&self) -> &str {
     ///        self.id
     ///    }
@@ -718,16 +742,18 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
     /// let mut c: CollectionWithId<Obj> = CollectionWithId::default();
     /// assert!(c.is_empty());
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn is_empty(&self) -> bool {
         self.collection.is_empty()
@@ -740,25 +766,27 @@ impl<T: Id<T> + WithId> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # use transit_model::objects::WithId;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(String);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { &self.0 }
-    /// # fn set_id(&mut self, id: String) { self.0 = id; }}
-    /// # impl WithId for Obj {
-    /// #     fn with_id(id: &str) -> Self {
-    /// #         let mut r = Obj("id".into());
-    /// #         r.0 = id.to_owned();
-    /// #         r
-    /// #     }
-    /// # }
+    /// # use collection::{CollectionWithId, Id, WithId};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(String);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { &self.0 }
+    ///     fn set_id(&mut self, id: String) { self.0 = id; }
+    /// }
+    ///
+    /// impl WithId for Obj {
+    ///     fn with_id(id: &str) -> Self {
+    ///         let mut r = Obj("id".into());
+    ///         r.0 = id.to_owned();
+    ///         r
+    ///     }
+    /// }
+    ///
     /// let mut c = CollectionWithId::from(Obj("1".into()));
     /// let obj = c.get_or_create("2");
     /// assert_eq!(obj.0, "2");
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn get_or_create<'a>(&'a mut self, id: &str) -> RefMut<'a, T> {
         self.get_or_create_with(id, || T::with_id(id))
@@ -772,26 +800,28 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # use transit_model::objects::WithId;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(String, String);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { &self.0 }
-    /// # fn set_id(&mut self, id: String) { self.0 = id; }}
-    /// # impl WithId for Obj {
-    /// #     fn with_id(id: &str) -> Self {
-    /// #         let mut r = Obj("id".into(), "name".into());
-    /// #         r.0 = id.to_owned();
-    /// #         r
-    /// #     }
-    /// # }
+    /// use collection::{CollectionWithId, Id, WithId};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(String, String);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { &self.0 }
+    ///     fn set_id(&mut self, id: String) { self.0 = id; }
+    /// }
+    ///
+    /// impl WithId for Obj {
+    ///     fn with_id(id: &str) -> Self {
+    ///         let mut r = Obj("id".into(), "name".into());
+    ///         r.0 = id.to_owned();
+    ///         r
+    ///     }
+    /// }
+    ///
     /// let mut c = CollectionWithId::from(Obj("1".into(), "foo".into()));
     /// let obj = c.get_or_create_with("2", || Obj("bob".into(), "bar".into()));
     /// assert_eq!(obj.0, "2");
     /// assert_eq!(obj.1, "bar");
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn get_or_create_with<'a, F>(&'a mut self, id: &str, mut f: F) -> RefMut<'a, T>
     where
@@ -814,22 +844,30 @@ impl<T: Id<T>> iter::Extend<T> for CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
-    /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")])?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
+    /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")]).unwrap();
     /// c1.extend(c2);
     /// assert_eq!(c1.len(), 3);
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         for item in iter {
-            skip_fail!(self.push(item));
+            match self.push(item) {
+                Ok(val) => val,
+                Err(e) => {
+                    warn!("{}", e);
+                    continue;
+                }
+            };
         }
     }
 }
@@ -840,18 +878,20 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let idx = c.get_idx("foo").unwrap();
     /// assert_eq!(&c[idx], &Obj("foo"));
     /// assert!(c.get_idx("baz").is_none());
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn get_idx(&self, id: &str) -> Option<Idx<T>> {
         self.id_to_idx.get(id).cloned()
@@ -863,17 +903,19 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
     /// assert!(c.get("baz").is_none());
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn get(&self, id: &str) -> Option<&T> {
         self.get_idx(id).map(|idx| &self[idx])
@@ -884,17 +926,19 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let v = c.into_vec();
     /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn into_vec(self) -> Vec<T> {
         self.collection.objects
@@ -906,18 +950,20 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use transit_model::collection::*;
-    /// # fn run() -> transit_model::Result<()> {
-    /// # #[derive(PartialEq, Debug)] struct Obj(&'static str);
-    /// # impl Id<Obj> for Obj { fn id(&self) -> &str { self.0 }
-    /// # fn set_id(&mut self, id: String) { unimplemented!(); }}
-    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")])?;
+    /// use collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let v = c.take();
     /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);
     /// assert_eq!(c.len(), 0);
-    /// # Ok(())
-    /// # }
-    /// # fn main() { run().unwrap() }
     /// ```
     pub fn take(&mut self) -> Vec<T> {
         self.id_to_idx.clear();

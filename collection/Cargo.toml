@@ -1,0 +1,15 @@
+[package]
+name = "collection"
+description = "Manage collection of objects"
+version = "0.1.0"
+authors = ["Kisio Digital <team.coretools@kisio.org>"]
+edition = "2018"
+license = "AGPL-3.0"
+repository = "https://github.com/CanalTP/transit_model"
+keywords = ["collection", "index"]
+
+[dependencies]
+derivative = "1.0"
+serde = { version = "1", features = ["derive"] }
+failure = "0.1.5"
+log = "0.4.8"

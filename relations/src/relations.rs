@@ -34,8 +34,8 @@
 //!
 //! ```no_run
 //! # use transit_model_procmacro::*;
-//! # use transit_model::relations::*;
-//! # use transit_model::collection::Idx;
+//! # use crate::relations::*;
+//! # use collection::Idx;
 //! # struct Bike;
 //! # struct Brand;
 //! # struct Owner;
@@ -109,8 +109,8 @@
 //!
 //! ```
 //! # use transit_model_procmacro::*;
-//! # use transit_model::relations::*;
-//! # use transit_model::collection::Idx;
+//! # use crate::relations::*;
+//! # use collection::Idx;
 //! # struct Bike;
 //! # struct Brand;
 //! # struct Owner;
@@ -159,8 +159,14 @@
 //! # fn main() {}
 //! ```
 
-use crate::collection::{CollectionWithId, Id, Idx};
-use crate::Result;
+/// The error type used by the crate.
+pub type Error = failure::Error;
+
+/// The corresponding result type used by the crate.
+pub type Result<T> = std::result::Result<T, Error>;
+
+use collection::{CollectionWithId, Id, Idx};
+
 use derivative::Derivative;
 use failure::{format_err, ResultExt};
 use std::collections::{BTreeMap, BTreeSet};
