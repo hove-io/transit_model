@@ -40,6 +40,7 @@ fn test_read_transxchange() {
                 "feed_infos.txt",
                 "lines.txt",
                 "networks.txt",
+                "object_codes.txt",
                 "physical_modes.txt",
                 "stops.txt",
                 "stop_times.txt",

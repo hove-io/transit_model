@@ -20,7 +20,7 @@
 use crate::{
     collection::CollectionWithId,
     model::Collections,
-    objects::{Coord, StopArea, StopPoint},
+    objects::{Coord, KeysValues, StopArea, StopPoint},
     read_utils::{self, FileHandler},
     Result,
 };
@@ -36,6 +36,8 @@ use std::{collections::HashMap, fs::File, io::Read, path::Path};
 pub struct NaPTANStop {
     #[serde(rename = "ATCOCode")]
     atco_code: String,
+    #[serde(rename = "NaptanCode")]
+    naptan_code: String,
     #[serde(rename = "CommonName")]
     name: String,
     #[serde(rename = "Longitude")]
@@ -170,9 +172,14 @@ where
             lon: stop.longitude,
             lat: stop.latitude,
         };
+        let mut codes = KeysValues::new();
+        if !stop.naptan_code.is_empty() {
+            codes.insert((String::from("NaptanCode"), stop.naptan_code.clone()));
+        }
         let mut stop_point = StopPoint {
             id: stop.atco_code.clone(),
             name: stop.name.clone(),
+            codes,
             visible: true,
             coord,
             stop_area_id: String::from("default_id"),
@@ -354,20 +361,26 @@ mod tests {
 
         #[test]
         fn parsing_works() {
-            let csv_content = r#""ATCOCode","CommonName","Indicator","Longitude","Latitude"
-"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
-"0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
+            let csv_content =
+                r#""ATCOCode","NaptanCode","CommonName","Indicator","Longitude","Latitude"
+"0100053316","bstjpdm","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"0100053264","bstmjdp","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
             let mut stop_in_area = HashMap::new();
             stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
             stop_in_area.insert(String::from("0100053308"), String::from("stop-area-3"));
             let (stop_points, stop_areas) =
                 read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
 
-            assert_eq!(stop_points.len(), 2);
             let stop_point = stop_points.get("0100053316").unwrap();
             assert_eq!(stop_point.name, "Broad Walk Shops");
+            assert!(stop_point
+                .codes
+                .contains(&(String::from("NaptanCode"), String::from("bstjpdm"))));
             let stop_point = stop_points.get("0100053264").unwrap();
             assert_eq!(stop_point.name, "Alberton Road");
+            assert!(stop_point
+                .codes
+                .contains(&(String::from("NaptanCode"), String::from("bstmjdp"))));
 
             assert_eq!(stop_areas.len(), 1);
             let stop_area = stop_areas.get("Navitia:0100053264").unwrap();
@@ -377,9 +390,9 @@ mod tests {
         #[test]
         #[should_panic]
         fn no_atco_code() {
-            let csv_content = r#""CommonName","Indicator","Longitude","Latitude"
-"Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
-"Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
+            let csv_content = r#""NaptanCode","CommonName","Indicator","Longitude","Latitude"
+"Broad Walk Shops","bstjpdm","Stop B",-2.5876178397,51.4558382170
+"bstmjdp","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
             let stop_in_area = HashMap::new();
             read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
         }
@@ -387,10 +400,11 @@ mod tests {
         #[test]
         #[should_panic]
         fn duplicate_id() {
-            let csv_content = r#""ATCOCode","CommonName","Indicator","Longitude","Latitude"
-"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
-"0100053316","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
-"0100053264","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
+            let csv_content =
+                r#""ATCOCode","NaptanCode","CommonName","Indicator","Longitude","Latitude"
+"0100053316","bstjpdm","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"0100053316","bstjpdm","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
+"0100053264","bstmjdp","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
             let mut stop_in_area = HashMap::new();
             stop_in_area.insert(String::from("0100053316"), String::from("stop-area-1"));
             stop_in_area.insert(String::from("0100053264"), String::from("stop-area-2"));
