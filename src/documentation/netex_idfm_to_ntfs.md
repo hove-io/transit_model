@@ -14,9 +14,9 @@ the general pattern `<prefix>:<id>`.
 This specifications assumes that all the requeried data (time tables for all the lines, stop points and stop areas, transfers, etc.) are provided in one ZIP archive (aka "FICHIERS OFFRE") described in the specification document "NT60-A150701-v1.11-BO-STIF_-_Specification_Technique_d_Interface_NeTEx_pour_la_publication_20190624.docx".
 
 The ZIP archive contains contains: 
+- a **arrets.xml** file
 - a **lignes.xml** file, containing the description of lines, networks and companies
 - a **correspondances.xml** file
-- a **arrets.xml** file
 - a folder for each operator (or company) containing:
   + a **calendriers.xml** file, containing the calendars (or validity patterns) used by trips in files **offre_**
   + a **commun.xml** file optionnal, containing the comments referenced by the operator objects (if needed)
@@ -24,26 +24,9 @@ The ZIP archive contains contains:
 
 In this document, versions of objects are not handled. The first encountered object description is considered when creating an object.
 
-## Mapping between Netex-IDFM elements and NTFS objects
 Each XML files contains a `PublicationDelivery` node, containing a `dataObjects` node. Descriptions below is considering nodes inside this `dataObjects` node.
 
-### networks.txt
-`networks` are provided in **lignes.xml** file in the nodes **CompositeFrame/frames/ServiceFrame/Network**. There could be multiple `ServiceFrame` to read.
-
-NTFS field | Netex-IDFM element | Mapping rule/Comment
---- | --- | ---
-network_id | *Network/@id* | This field is prefixed. 
-network_name | *Network/Name* | 
-network_timezone | | Fixed value `Europe/Paris`.
-
-### companies.txt
-`companies` are provided in the **lignes.xml** file in the node **CompositeFrame/frames/ResourceFrame/organisations/**. There could be multiple `Operator` to read.
-
-NTFS field | Netex-IDFM element | Mapping rule/Comment
---- | --- | ---
-company_id | *Operator/@id* | This field is prefixed. 
-company_name | *Operator/Name* | 
-
+## Reading of the "arrets.xml" file
 ### stops.txt
 `stops` are provided in the **arrets.xml** file in the node **CompositeFrame/frames/GeneralFrame/** (only one **CompositeFrame** is expected). 
 In this netex feed, a `Quay` in included in a "ZDL" `StopPlace`, this "ZDL" `StopPlace` could be included in a "LDA" `StopPlace`.
@@ -120,8 +103,28 @@ If the `Quay` node contains a `AccessibilityAssessment/MobilityImpairedAccess` n
   + Fixed value `0` (unknown) if `MobilityImpairedAccess` has any other value (`partial` or `unknown` for exemple).
 
 
+## Reading of the "lignes.xml" file
+
+### networks.txt
+`networks` are provided in the nodes **CompositeFrame/frames/ServiceFrame/Network**. There could be multiple `ServiceFrame` to read.
+
+NTFS field | Netex-IDFM element | Mapping rule/Comment
+--- | --- | ---
+network_id | *Network/@id* | This field is prefixed. 
+network_name | *Network/Name* | 
+network_timezone | | Fixed value `Europe/Paris`.
+
+### companies.txt
+`companies` are provided in the nodes **CompositeFrame/frames/ResourceFrame/organisations/Operator**. There could be multiple `ResourceFrame` to read.
+
+NTFS field | Netex-IDFM element | Mapping rule/Comment
+--- | --- | ---
+company_id | *Operator/@id* | This field is prefixed. 
+company_name | *Operator/Name* | 
+
+
 ### commercial_modes.txt and physical_modes.txt
-The transport mode in Netex-IDFM is only defined at the Line level, in the **lines.xml** file in the node **CompositeFrame/frames/ServiceFrame/lines/Line/**.
+The transport modes in Netex-IDFM are only defined at the Line level in the node **CompositeFrame/frames/ServiceFrame/lines/Line/**. There could be multiple `ServiceFrame` to read.
 `physical_mode_id` and `commercial_mode_id` are **not** prefixed.
 
 TransportMode in Netex-IDFM | physical_mode_id | physical_mode_name | commercial_mode_id | commercial_mode_name 
@@ -142,7 +145,7 @@ other | Bus | Bus | Bus | Bus
 
 
 ### lines.txt
-`lines` are provided in the **lignes.xml** file in the node **CompositeFrame/frames/ServiceFrame/lines/**. 
+`lines` are provided in the node **CompositeFrame/frames/ServiceFrame/lines/**. There could be multiple `ServiceFrame` to read.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
@@ -152,8 +155,14 @@ line_name | *Line/Name* |
 
 If the node `Line/PrivateCode` is available, the content of this node is added as an `object_code` for this line with `object_system` set at `PrivateCode`.
 
+## Reading of each folder
+In a **offre_** file, 2 **GeneralFrame** are expected in a **CompositeFrame/frames** node:
+* one with a `TypeOfFrameRef/@ref` containing the string `NETEX_STRUCTURE`
+* one with a `TypeOfFrameRef/@ref` containing the string `NETEX_HORAIRE`
+In the following chapters, the **CompositeFrame/frames/GeneralFrame/members** is ommited.
+
 ### routes.txt
-`routes` are provided in each **offre_** file of each folder in the node **GeneralFrame/members/**. There could be multiple `Route` to read.
+`routes` are provided in each **offre_** file in the nodes **Route**. 
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
@@ -164,7 +173,7 @@ destination_id |  | The `DirectionRef` of the Route doesn't link to a stop (neit
 line_id | *Line/LineRef/@ref* | This field is prefixed. 
 
 **ServiceJourneyPattern references**
-All ServiceJourneyPattern of a `route` are stored as complementary `object_codes`. ServiceJourneyPattern nodes are listed in the same parent node as Route ndoes.
+All ServiceJourneyPattern of a `route` are stored as complementary `object_codes`. ServiceJourneyPattern nodes are listed in the same parent node as Route nodes.
 A ServiceJourneyPattern references a Route using the `ServiceJourneyPattern/RouteRef/@ref` attribute.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
@@ -176,7 +185,7 @@ object_code | *ServiceJourneyPattern/id* | The value of this field is used witho
 
 
 ### trips.txt
-A `trip` is described in a `ServiceJourney` node in **GeneralFrame/members/** of each **offre_** file of each folder. 
+`trips` are described in each **offre_** file in the nodes **ServiceJourney**. 
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
@@ -212,27 +221,39 @@ wheelchair_accessible value:
 
 
 ### stop_times.txt
-A stop_time is specified by a `TimetabledPassingTime` node in `ServiceJourney/passingTimes`.
+`stop_times` of a trip are listed in the `passingTimes/TimetabledPassingTime` nodes of a `ServiceJourney` (cf. `trip` definition).
+
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 trip_id | *Line/@id* | The id of the line is used to create this object. This field is prefixed. 
-stop_sequence | | Auto-incremented field 
-starting with `0` for the first stop_time
+stop_sequence | | Auto-incremented field starting with `0` for the first stop_time
 stop_id | | See (1) below
 arrival_time | *TimetabledPassingTime/ArrivalTime* | If `TimetabledPassingTime/DepartureDayOffset` value is >0, arrival_time is incremented 24 hours for each day offset. 
 departure_time | *TimetabledPassingTime/DepartureTime* | If `TimetabledPassingTime/DepartureDayOffset` value is >0, departure_time is incremented 24 hours for each day offset. 
 boarding_duration | | Fixed value `0`
 alighting_duration | | Fixed value `0`
-pickup_type | | RoutingConstraintZone in offre_* files
-drop_off_type | | RoutingConstraintZone in offre_* files
-local_zone_id | | RoutingConstraintZone in offre_* files
-
+pickup_type | | See (2) below
+drop_off_type | | See (2) below
+local_zone_id | | See (3) below
 
 
 (1) Definition of the stop_id of a stop_time:
-1. In the `ServiceJourneyPattern` referenced by `ServiceJourney/JourneyPatternRef/@ref` of the `TimetabledPassingTime`, the `pointsInSequence/StopPointInJourneyPattern` node of the same position as the stop_time is used.
-2. The `ScheduledStopPointRef/@ref` attribute is the searched in the `PassengerStopAssignment` nodes of the same file (in the `PassengerStopAssignment/ScheduledStopPointRef/@ref`)
-3. The `PassengerStopAssignment/QuayRef/@ref` is the stop_id of the stop_point (with a prefix).
+
+1. Find the `ServiceJourneyPattern` referenced by `ServiceJourney/JourneyPatternRef/@ref` of the `TimetabledPassingTime`.
+2. The `ServiceJourneyPattern/pointsInSequence/StopPointInJourneyPattern` node of the same position as the stop_time is used.
+3. The `StopPointInJourneyPattern/ScheduledStopPointRef/@ref` attribute is searched in the `PassengerStopAssignment/ScheduledStopPointRef/@ref` attribute of all the `PassengerStopAssignment` nodes of the file
+4. The `PassengerStopAssignment/QuayRef/@ref` is the stop_id of the stop_point (with a prefix).
+
+(2) Definition of pickup_type and drop_off_type:
+In the `ServiceJourneyPattern/pointsInSequence/StopPointInJourneyPattern` corresponding to this `stop_time` (see `(1)`):
+* if the `ForBoarding` node is existing and with a `False` value, `pickup_type` is set to "1" (no boarding)
+* else `pickup_type` is set to "0" (regular boarding)
+`drop_off_type` is set using the same method and using the `ForAlighting` node.
+
+(3) Definition of local_zone_id
+The declaration of those zones is made in the nodes `RoutingConstraintZone` of the **offre_** file.
+The `local_zone_id` is specified with an auto-incremented integer. Each `RoutingConstraintZone/@id` is associated with a new integer. 
+This `RoutingConstraintZone` contains a list of `ScheduledStopPointRef` (in `RoutingConstraintZone/members/ScheduledStopPointRef/@ref`). If a stop_time corresponds to one of those `ScheduledStopPointRef`, the `local_zone_id` is set to the associated integer.
 
 ### calendar.txt and calendar_dates.txt
 Active days of `trips` are decribed in **calendriers.xml** of each folder in the `GeneralFrame` node.
@@ -258,7 +279,7 @@ Be careful : Definition of calendars and exceptions in calendar_dates may not be
 
 
 ### comments.txt
-`comments` are provided in **commun.xml** files of each subfolder in the nodes **GeneralFrame/members/Notice**.
+`comments` are provided in **commun.xml** file in the nodes **GeneralFrame/members/Notice**.
 
 NTFS field | Netex IDFM element | Mapping rule/Comment
 --- | --- | ---
