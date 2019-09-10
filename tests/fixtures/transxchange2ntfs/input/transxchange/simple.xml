@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TransXChange xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.transxchange.org.uk/ http://www.transxchange.org.uk/schema/2.1/TransXChange_general.xsd" CreationDateTime="2019-07-05T11:55:42" ModificationDateTime="2019-07-05T11:55:42" Modification="revise" RevisionNumber="1" FileName="NewMapsStagecoach812-Pontypool-PontypoolCollege1_TXC_2019705-1155_SCAO812.xml" SchemaVersion="2.1" RegistrationDocument="false" xmlns="http://www.transxchange.org.uk/">
+  <JourneyPatternSections>
+    <JourneyPatternSection id="JPS1">
+      <JourneyPatternTimingLink id="JPTL1">
+        <From SequenceNumber="1">
+          <StopPointRef>5340AWB30742</StopPointRef>
+          <WaitTime>PT5M</WaitTime>
+          <Activity>pickUp</Activity>
+        </From>
+        <To SequenceNumber="2">
+          <StopPointRef>5340AWB30747</StopPointRef>
+          <WaitTime>PT1M</WaitTime>
+          <Activity>pickUpAndSetDown</Activity>
+        </To>
+        <RouteLinkRef>RL1</RouteLinkRef>
+        <RunTime>PT10M</RunTime>
+      </JourneyPatternTimingLink>
+      <JourneyPatternTimingLink id="JPTL2">
+        <From SequenceNumber="1">
+          <StopPointRef>5340AWB30747</StopPointRef>
+          <WaitTime>PT60S</WaitTime>
+          <Activity>pickUpAndSetDown</Activity>
+        </From>
+        <To SequenceNumber="2">
+          <StopPointRef>5340AWB30904</StopPointRef>
+          <WaitTime>PT1M</WaitTime>
+          <Activity>setDown</Activity>
+        </To>
+        <RouteLinkRef>RL1</RouteLinkRef>
+        <RunTime>PT8M</RunTime>
+      </JourneyPatternTimingLink>
+    </JourneyPatternSection>
+  </JourneyPatternSections>
+  <StopPoints>
+    <AnnotatedStopPointRef>
+      <StopPointRef>5340AWB30742</StopPointRef>
+    </AnnotatedStopPointRef>
+    <AnnotatedStopPointRef>
+      <StopPointRef>5340AWB30904</StopPointRef>
+    </AnnotatedStopPointRef>
+  </StopPoints>
+  <Operators>
+    <Operator id="O1">
+      <OperatorCode>SSWL</OperatorCode>
+      <WebSite>www.example.com</WebSite>
+      <ContactTelephoneNumber>123-456-7890</ContactTelephoneNumber>
+    </Operator>
+    <Operator id="O2">
+      <OperatorCode>ANSL</OperatorCode>
+      <OperatorShortName>Phil Anslow</OperatorShortName>
+    </Operator>
+  </Operators>
+  <Services>
+    <Service>
+      <ServiceCode>SCAO812</ServiceCode>
+      <Lines>
+        <Line id="SL1">
+          <LineName>812</LineName>
+        </Line>
+        <Line id="SL2">
+          <LineName>811</LineName>
+        </Line>
+        <Line id="SL3">
+          <LineName>810</LineName>
+        </Line>
+      </Lines>
+      <OperatingPeriod>
+        <StartDate>2018-05-13</StartDate>
+      </OperatingPeriod>
+      <RegisteredOperatorRef>O1</RegisteredOperatorRef>
+      <Mode>ferry</Mode>
+      <Description>Pontypool Town Hall - Pontypool College  </Description>
+      <StandardService>
+        <Origin>Pontypool Town Hall</Origin>
+        <Destination>Pontypool College</Destination>
+        <JourneyPattern id="JP1">
+          <DestinationDisplay>Upper Race, Race Club, opp</DestinationDisplay>
+          <JourneyPatternSectionRefs>JPS1</JourneyPatternSectionRefs>
+          <Direction>inboundAndOutbound</Direction>
+        </JourneyPattern>
+      </StandardService>
+    </Service>
+  </Services>
+  <VehicleJourneys>
+    <VehicleJourney SequenceNumber="1">
+      <ServiceRef>SCAO812</ServiceRef>
+      <LineRef>SL1</LineRef>
+      <VehicleJourneyCode>VJ1</VehicleJourneyCode>
+      <OperatingProfile>
+        <RegularDayType>
+          <DaysOfWeek>
+            <MondayToFriday />
+          </DaysOfWeek>
+        </RegularDayType>
+      </OperatingProfile>
+      <JourneyPatternRef>JP1</JourneyPatternRef>
+      <DepartureTime>08:45:00</DepartureTime>
+    </VehicleJourney>
+    <VehicleJourney SequenceNumber="2">
+      <ServiceRef>SCAO811</ServiceRef>
+      <LineRef>SL2</LineRef>
+      <VehicleJourneyCode>VJ2</VehicleJourneyCode>
+      <OperatingProfile>
+        <RegularDayType>
+          <DaysOfWeek>
+            <Weekend />
+          </DaysOfWeek>
+        </RegularDayType>
+      </OperatingProfile>
+      <JourneyPatternRef>JP1</JourneyPatternRef>
+      <DepartureTime>08:45:00</DepartureTime>
+    </VehicleJourney>
+  </VehicleJourneys>
+</TransXChange>

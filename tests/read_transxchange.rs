@@ -20,9 +20,9 @@ use transit_model::test_utils::*;
 #[test]
 fn test_read_transxchange() {
     let ntm = transit_model::transxchange::read(
-        "fixtures/transxchange2ntfs/input/transxchange",
-        "fixtures/transxchange2ntfs/input/naptan",
-        Some("fixtures/transxchange2ntfs/input/config.json"),
+        "tests/fixtures/transxchange2ntfs/input/transxchange",
+        "tests/fixtures/transxchange2ntfs/input/naptan",
+        Some("tests/fixtures/transxchange2ntfs/input/config.json"),
         Some("prefix".into()),
         chrono::NaiveDate::from_ymd(2021, 12, 31),
     )
@@ -46,7 +46,7 @@ fn test_read_transxchange() {
                 "routes.txt",
                 "trips.txt",
             ]),
-            "fixtures/transxchange2ntfs/output/ntfs",
+            "tests/fixtures/transxchange2ntfs/output/ntfs",
         );
     });
 }

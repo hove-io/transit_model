@@ -45,7 +45,7 @@ mod tests {
                 "admin_stations.txt",
             ];
 
-            let input_dir = "fixtures/apply_rules/input";
+            let input_dir = "tests/fixtures/apply_rules/input";
 
             let mut cc_rules: Vec<PathBuf> = vec![];
             if !cc_rules_dir.is_empty() {
@@ -85,30 +85,30 @@ mod tests {
             "",
             "",
             "",
-            "./fixtures/apply_rules/output",
-            "./fixtures/apply_rules/output_report/report.json",
+            "./tests/fixtures/apply_rules/output",
+            "./tests/fixtures/apply_rules/output_report/report.json",
         );
     }
 
     #[test]
     fn test_apply_complementary_codes() {
         test_apply_rules(
-            "./fixtures/apply_rules/complementary_codes_rules.txt",
+            "./tests/fixtures/apply_rules/complementary_codes_rules.txt",
             "",
             "",
-            "./fixtures/apply_rules/output_apply_complementary_codes",
-            "./fixtures/apply_rules/output_report/report_apply_complementary_codes.json",
+            "./tests/fixtures/apply_rules/output_apply_complementary_codes",
+            "./tests/fixtures/apply_rules/output_report/report_apply_complementary_codes.json",
         );
     }
 
     #[test]
     fn test_apply_property() {
         test_apply_rules(
-            "./fixtures/apply_rules/complementary_codes_rules.txt",
-            "./fixtures/apply_rules/property_rules.txt",
+            "./tests/fixtures/apply_rules/complementary_codes_rules.txt",
+            "./tests/fixtures/apply_rules/property_rules.txt",
             "",
-            "./fixtures/apply_rules/output_apply_property",
-            "./fixtures/apply_rules/output_report/report_apply_property.json",
+            "./tests/fixtures/apply_rules/output_apply_property",
+            "./tests/fixtures/apply_rules/output_report/report_apply_property.json",
         );
     }
 
@@ -117,9 +117,9 @@ mod tests {
         test_apply_rules(
             "",
             "",
-            "./fixtures/apply_rules/ntw_consolidation.json",
-            "./fixtures/apply_rules/output_consolidation",
-            "./fixtures/apply_rules/output_report/report.json",
+            "./tests/fixtures/apply_rules/ntw_consolidation.json",
+            "./tests/fixtures/apply_rules/output_consolidation",
+            "./tests/fixtures/apply_rules/output_report/report.json",
         );
     }
 
@@ -129,20 +129,20 @@ mod tests {
         test_apply_rules(
             "",
             "",
-            "./fixtures/apply_rules/ntw_consolidation_unvalid.json",
-            "./fixtures/apply_rules/output_consolidation_unvalid",
-            "./fixtures/apply_rules/output_report/report.json",
+            "./tests/fixtures/apply_rules/ntw_consolidation_unvalid.json",
+            "./tests/fixtures/apply_rules/output_consolidation_unvalid",
+            "./tests/fixtures/apply_rules/output_report/report.json",
         );
     }
 
     #[test]
     fn test_ntw_consolidation_with_object_code() {
         test_apply_rules(
-            "./fixtures/apply_rules/complementary_codes_rules.txt",
-            "./fixtures/apply_rules/property_rules.txt",
-            "./fixtures/apply_rules/ntw_consolidation.json",
-            "./fixtures/apply_rules/output_consolidation_with_object_code",
-            "./fixtures/apply_rules/output_report/report_consolidation_with_object_code.json",
+            "./tests/fixtures/apply_rules/complementary_codes_rules.txt",
+            "./tests/fixtures/apply_rules/property_rules.txt",
+            "./tests/fixtures/apply_rules/ntw_consolidation.json",
+            "./tests/fixtures/apply_rules/output_consolidation_with_object_code",
+            "./tests/fixtures/apply_rules/output_report/report_consolidation_with_object_code.json",
         );
     }
 
@@ -151,9 +151,9 @@ mod tests {
         test_apply_rules(
             "",
             "",
-            "./fixtures/apply_rules/ntw_consolidation_2_ntw.json",
-            "./fixtures/apply_rules/output_consolidation_2_ntw",
-            "./fixtures/apply_rules/output_report/report.json",
+            "./tests/fixtures/apply_rules/ntw_consolidation_2_ntw.json",
+            "./tests/fixtures/apply_rules/output_consolidation_2_ntw",
+            "./tests/fixtures/apply_rules/output_report/report.json",
         );
     }
 
@@ -162,9 +162,9 @@ mod tests {
         test_apply_rules(
             "",
             "",
-            "./fixtures/apply_rules/ntw_consolidation_2_diff_ntw.json",
-            "./fixtures/apply_rules/output_consolidation_2_diff_ntw",
-            "./fixtures/apply_rules/output_report/report.json",
+            "./tests/fixtures/apply_rules/ntw_consolidation_2_diff_ntw.json",
+            "./tests/fixtures/apply_rules/output_consolidation_2_diff_ntw",
+            "./tests/fixtures/apply_rules/output_report/report.json",
         );
     }
 
@@ -173,9 +173,9 @@ mod tests {
         test_apply_rules(
             "",
             "",
-            "./fixtures/apply_rules/ntw_consolidation_unknown_id.json",
-            "./fixtures/apply_rules/output",
-            "./fixtures/apply_rules/output_report/report_consolidation_unknown_id.json",
+            "./tests/fixtures/apply_rules/ntw_consolidation_unknown_id.json",
+            "./tests/fixtures/apply_rules/output",
+            "./tests/fixtures/apply_rules/output_report/report_consolidation_unknown_id.json",
         );
     }
 
@@ -185,9 +185,9 @@ mod tests {
         test_apply_rules(
             "",
             "",
-            "./fixtures/apply_rules/ntw_consolidation_duplicate_id.json",
-            "./fixtures/apply_rules/output",
-            "./fixtures/apply_rules/output_report/report_consolidation_duplicate_id.json",
+            "./tests/fixtures/apply_rules/ntw_consolidation_duplicate_id.json",
+            "./tests/fixtures/apply_rules/output",
+            "./tests/fixtures/apply_rules/output_report/report_consolidation_duplicate_id.json",
         );
     }
 
@@ -197,9 +197,9 @@ mod tests {
         test_apply_rules(
             "",
             "",
-            "./fixtures/apply_rules/ntw_consolidation_unvalid_network.json",
-            "./fixtures/apply_rules/output",
-            "./fixtures/apply_rules/output_report/report_consolidation_duplicate_id.json",
+            "./tests/fixtures/apply_rules/ntw_consolidation_unvalid_network.json",
+            "./tests/fixtures/apply_rules/output",
+            "./tests/fixtures/apply_rules/output_report/report_consolidation_duplicate_id.json",
         );
     }
 
@@ -208,9 +208,9 @@ mod tests {
         test_apply_rules(
             "",
             "",
-            "./fixtures/apply_rules/ntw_consolidation_no_grouped_from.json",
-            "./fixtures/apply_rules/output",
-            "./fixtures/apply_rules/output_report/report_consolidation_no_grouped_from.json",
+            "./tests/fixtures/apply_rules/ntw_consolidation_no_grouped_from.json",
+            "./tests/fixtures/apply_rules/output",
+            "./tests/fixtures/apply_rules/output_report/report_consolidation_no_grouped_from.json",
         );
     }
 
@@ -219,9 +219,9 @@ mod tests {
         test_apply_rules(
             "",
             "",
-            "./fixtures/apply_rules/ntw_consolidation_empty_grouped_from.json",
-            "./fixtures/apply_rules/output",
-            "./fixtures/apply_rules/output_report/report_consolidation_empty_grouped_from.json",
+            "./tests/fixtures/apply_rules/ntw_consolidation_empty_grouped_from.json",
+            "./tests/fixtures/apply_rules/output",
+            "./tests/fixtures/apply_rules/output_report/report_consolidation_empty_grouped_from.json",
         );
     }
 }

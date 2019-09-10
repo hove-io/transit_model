@@ -36,7 +36,7 @@ where
 
 #[test]
 fn minimal() {
-    let ntm = transit_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+    let ntm = transit_model::ntfs::read("tests/fixtures/minimal_ntfs/").unwrap();
 
     assert_eq!(8, ntm.stop_areas.len());
     assert_eq!(12, ntm.stop_points.len());
@@ -89,7 +89,7 @@ fn minimal() {
 
 #[test]
 fn ntfs_stop_zones() {
-    let ntm = transit_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+    let ntm = transit_model::ntfs::read("tests/fixtures/minimal_ntfs/").unwrap();
     let stop_zone_1 = ntm.stop_points.get("MTPZ").unwrap();
     assert_eq!(stop_zone_1.stop_type, StopType::Zone);
     let stop_zone_2 = ntm.stop_points.get("CDGZ").unwrap();
@@ -98,59 +98,59 @@ fn ntfs_stop_zones() {
 
 #[test]
 fn ntfs_stops_output() {
-    let ntm = transit_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+    let ntm = transit_model::ntfs::read("tests/fixtures/minimal_ntfs/").unwrap();
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec!["stops.txt", "stop_times.txt"]),
-            "fixtures/ntfs2ntfs/stops",
+            "tests/fixtures/ntfs2ntfs/stops",
         );
     });
 }
 
 #[test]
 fn test_minimal_fares_stay_same() {
-    let ntm = transit_model::ntfs::read("fixtures/ntfs2ntfs/fares").unwrap();
+    let ntm = transit_model::ntfs::read("tests/fixtures/ntfs2ntfs/fares").unwrap();
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec!["stops.txt", "fares.csv", "od_fares.csv", "prices.csv"]),
-            "fixtures/ntfs2ntfs/fares",
+            "tests/fixtures/ntfs2ntfs/fares",
         );
     });
 }
 
 #[test]
 fn test_minimal_platforms_stay_same() {
-    let ntm = transit_model::ntfs::read("fixtures/ntfs2ntfs/platforms").unwrap();
+    let ntm = transit_model::ntfs::read("tests/fixtures/ntfs2ntfs/platforms").unwrap();
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec!["stops.txt"]),
-            "fixtures/ntfs2ntfs/platforms",
+            "tests/fixtures/ntfs2ntfs/platforms",
         );
     });
 }
 
 #[test]
 fn test_minimal_fares_stay_same_with_empty_of_fares() {
-    let ntm = transit_model::ntfs::read("fixtures/ntfs2ntfs/empty_od_fares").unwrap();
+    let ntm = transit_model::ntfs::read("tests/fixtures/ntfs2ntfs/empty_od_fares").unwrap();
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec!["fares.csv", "od_fares.csv", "prices.csv"]),
-            "fixtures/ntfs2ntfs/empty_od_fares",
+            "tests/fixtures/ntfs2ntfs/empty_od_fares",
         );
     });
 }
 
 #[test]
 fn ntfs() {
-    let pt_objects = transit_model::ntfs::read("fixtures/ntfs/").unwrap();
+    let pt_objects = transit_model::ntfs::read("tests/fixtures/ntfs/").unwrap();
 
     // comments
     use crate::CommentType::*;
@@ -204,7 +204,7 @@ fn ntfs() {
 
 #[test]
 fn optional_empty_collections_not_created() {
-    let ntm = transit_model::ntfs::read("fixtures/minimal_ntfs/").unwrap();
+    let ntm = transit_model::ntfs::read("tests/fixtures/minimal_ntfs/").unwrap();
     test_in_tmp_dir(|path| {
         transit_model::ntfs::write(&ntm, path, get_test_datetime()).unwrap();
 
