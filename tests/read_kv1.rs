@@ -20,13 +20,13 @@ use transit_model::test_utils::*;
 #[test]
 fn test_read_kv1() {
     let ntm = transit_model::kv1::read_from_path(
-        "fixtures/kv12ntfs/input",
-        Some("fixtures/kv12ntfs/config.json"),
+        "tests/fixtures/kv12ntfs/input",
+        Some("tests/fixtures/kv12ntfs/config.json"),
         Some("prefix".into()),
     )
     .unwrap();
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(&output_dir, None, "fixtures/kv12ntfs/output");
+        compare_output_dir_with_expected(&output_dir, None, "tests/fixtures/kv12ntfs/output");
     });
 }

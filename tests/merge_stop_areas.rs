@@ -22,11 +22,11 @@ use transit_model::test_utils::*;
 fn test_merge_stop_areas_multi_steps() {
     test_in_tmp_dir(|path| {
         let paths = vec![
-            Path::new("./fixtures/merge-stop-areas/rule1.csv").to_path_buf(),
-            Path::new("./fixtures/merge-stop-areas/rule2.csv").to_path_buf(),
+            Path::new("./tests/fixtures/merge-stop-areas/rule1.csv").to_path_buf(),
+            Path::new("./tests/fixtures/merge-stop-areas/rule2.csv").to_path_buf(),
         ];
         let objects =
-            transit_model::ntfs::read(Path::new("./fixtures/merge-stop-areas/ntfs-to-merge"))
+            transit_model::ntfs::read(Path::new("./tests/fixtures/merge-stop-areas/ntfs-to-merge"))
                 .unwrap();
         let report_path = path.join("report.json");
         let collections = transit_model::merge_stop_areas::merge_stop_areas(
@@ -52,7 +52,7 @@ fn test_merge_stop_areas_multi_steps() {
                 "ticket_use_restrictions.txt",
                 "report.json",
             ]),
-            "./fixtures/merge-stop-areas/output/",
+            "./tests/fixtures/merge-stop-areas/output/",
         );
     });
 }

@@ -23,7 +23,7 @@ use transit_model::test_utils::*;
 fn test_restrict_global() {
     test_in_tmp_dir(|path| {
         let objects =
-            transit_model::ntfs::read(Path::new("./fixtures/restrict-validity-period/input"))
+            transit_model::ntfs::read(Path::new("./tests/fixtures/restrict-validity-period/input"))
                 .unwrap();
         let mut collections = objects.into_collections();
         collections
@@ -56,7 +56,7 @@ fn test_restrict_global() {
                 "object_properties.txt",
                 "transfers.txt",
             ]),
-            "./fixtures/restrict-validity-period/output/",
+            "./tests/fixtures/restrict-validity-period/output/",
         );
     });
 }
@@ -65,7 +65,7 @@ fn test_restrict_global() {
 fn test_restrict_no_panic() {
     test_in_tmp_dir(|path| {
         let objects =
-            transit_model::ntfs::read(Path::new("./fixtures/restrict-validity-period/input"))
+            transit_model::ntfs::read(Path::new("./tests/fixtures/restrict-validity-period/input"))
                 .unwrap();
         let mut collections = objects.into_collections();
         collections

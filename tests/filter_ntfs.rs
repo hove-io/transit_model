@@ -21,7 +21,7 @@ use transit_model::test_utils::*;
 #[test]
 fn test_extract_network() {
     test_in_tmp_dir(|path| {
-        let input_dir = "fixtures/filter_ntfs/input";
+        let input_dir = "tests/fixtures/filter_ntfs/input";
 
         let model = filter::filter(
             transit_model::ntfs::read(input_dir).unwrap(),
@@ -30,14 +30,18 @@ fn test_extract_network() {
         )
         .unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(&path, None, "./fixtures/filter_ntfs/output_extract");
+        compare_output_dir_with_expected(
+            &path,
+            None,
+            "./tests/fixtures/filter_ntfs/output_extract",
+        );
     });
 }
 
 #[test]
 fn test_remove_network() {
     test_in_tmp_dir(|path| {
-        let input_dir = "fixtures/filter_ntfs/input";
+        let input_dir = "tests/fixtures/filter_ntfs/input";
 
         let model = filter::filter(
             transit_model::ntfs::read(input_dir).unwrap(),
@@ -46,14 +50,14 @@ fn test_remove_network() {
         )
         .unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(&path, None, "./fixtures/filter_ntfs/output_remove");
+        compare_output_dir_with_expected(&path, None, "./tests/fixtures/filter_ntfs/output_remove");
     });
 }
 
 #[test]
 #[should_panic(expected = "network unknown not found.")]
 fn test_extract_with_unknown_network() {
-    let input_dir = "fixtures/filter_ntfs/input";
+    let input_dir = "tests/fixtures/filter_ntfs/input";
     filter::filter(
         transit_model::ntfs::read(input_dir).unwrap(),
         filter::Action::Extract,
@@ -65,7 +69,7 @@ fn test_extract_with_unknown_network() {
 #[test]
 #[should_panic(expected = "the data does not contain services anymore.")]
 fn test_remove_all_networks() {
-    let input_dir = "fixtures/filter_ntfs/input";
+    let input_dir = "tests/fixtures/filter_ntfs/input";
     filter::filter(
         transit_model::ntfs::read(input_dir).unwrap(),
         filter::Action::Remove,

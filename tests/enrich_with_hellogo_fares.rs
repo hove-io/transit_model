@@ -23,13 +23,13 @@ use transit_model::test_utils::*;
 fn test_read_global_with_prefix() {
     test_in_tmp_dir(|path| {
         let objects = transit_model::ntfs::read(Path::new(
-            "./fixtures/enrich-with-hellogo-fares/input/ntfs_with_prefix",
+            "./tests/fixtures/enrich-with-hellogo-fares/input/ntfs_with_prefix",
         ))
         .unwrap();
         let mut collections = objects.into_collections();
         hellogo_fares::enrich_with_hellogo_fares(
             &mut collections,
-            Path::new("./fixtures/enrich-with-hellogo-fares/input/hellogo_fares_ok"),
+            Path::new("./tests/fixtures/enrich-with-hellogo-fares/input/hellogo_fares_ok"),
         )
         .unwrap();
         let new_model = Model::new(collections).unwrap();
@@ -43,7 +43,7 @@ fn test_read_global_with_prefix() {
                 "ticket_use_perimeters.txt",
                 "ticket_use_restrictions.txt",
             ]),
-            "./fixtures/enrich-with-hellogo-fares/output/ntfs_fares_with_prefix",
+            "./tests/fixtures/enrich-with-hellogo-fares/output/ntfs_fares_with_prefix",
         );
     });
 }
@@ -52,13 +52,13 @@ fn test_read_global_with_prefix() {
 fn test_read_global_without_prefix() {
     test_in_tmp_dir(|path| {
         let objects = transit_model::ntfs::read(Path::new(
-            "./fixtures/enrich-with-hellogo-fares/input/ntfs_without_prefix",
+            "./tests/fixtures/enrich-with-hellogo-fares/input/ntfs_without_prefix",
         ))
         .unwrap();
         let mut collections = objects.into_collections();
         hellogo_fares::enrich_with_hellogo_fares(
             &mut collections,
-            Path::new("./fixtures/enrich-with-hellogo-fares/input/hellogo_fares_ok"),
+            Path::new("./tests/fixtures/enrich-with-hellogo-fares/input/hellogo_fares_ok"),
         )
         .unwrap();
         let new_model = Model::new(collections).unwrap();
@@ -72,7 +72,7 @@ fn test_read_global_without_prefix() {
                 "ticket_use_perimeters.txt",
                 "ticket_use_restrictions.txt",
             ]),
-            "./fixtures/enrich-with-hellogo-fares/output/ntfs_fares_without_prefix",
+            "./tests/fixtures/enrich-with-hellogo-fares/output/ntfs_fares_without_prefix",
         );
     });
 }
@@ -81,13 +81,13 @@ fn test_read_global_without_prefix() {
 #[should_panic(expected = "Failed to find a \\'UnitPrice\\' frame in the Netex file")]
 fn test_read_ko_no_unit_price() {
     let objects = transit_model::ntfs::read(Path::new(
-        "./fixtures/enrich-with-hellogo-fares/input/ntfs_with_prefix",
+        "./tests/fixtures/enrich-with-hellogo-fares/input/ntfs_with_prefix",
     ))
     .unwrap();
     let mut collections = objects.into_collections();
     hellogo_fares::enrich_with_hellogo_fares(
         &mut collections,
-        Path::new("./fixtures/enrich-with-hellogo-fares/input/hellogo_fares_ko_no_unit"),
+        Path::new("./tests/fixtures/enrich-with-hellogo-fares/input/hellogo_fares_ko_no_unit"),
     )
     .unwrap();
 }
@@ -96,13 +96,13 @@ fn test_read_ko_no_unit_price() {
 #[should_panic(expected = "Failed to find a unique \\'UnitPrice\\' frame in the Netex file")]
 fn test_read_ko_several_unit_prices() {
     let objects = transit_model::ntfs::read(Path::new(
-        "./fixtures/enrich-with-hellogo-fares/input/ntfs_with_prefix",
+        "./tests/fixtures/enrich-with-hellogo-fares/input/ntfs_with_prefix",
     ))
     .unwrap();
     let mut collections = objects.into_collections();
     hellogo_fares::enrich_with_hellogo_fares(
         &mut collections,
-        Path::new("./fixtures/enrich-with-hellogo-fares/input/hellogo_fares_ko_several_unit"),
+        Path::new("./tests/fixtures/enrich-with-hellogo-fares/input/hellogo_fares_ko_several_unit"),
     )
     .unwrap();
 }

@@ -31,7 +31,7 @@ use transit_model::transfers::TransfersMode;
 #[should_panic(expected = "TGC already found")] // first collision is on contributor id
 fn merge_collections_with_collisions() {
     let mut collections = Collections::default();
-    let input_collisions = ["fixtures/ntfs", "fixtures/ntfs"];
+    let input_collisions = ["tests/fixtures/ntfs", "tests/fixtures/ntfs"];
     for input_directory in input_collisions.iter() {
         let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
         collections
@@ -43,7 +43,7 @@ fn merge_collections_with_collisions() {
 #[test]
 fn merge_collections_ok() {
     let mut collections = Collections::default();
-    let input_dirs = ["fixtures/ntfs", "fixtures/merge-ntfs/input"];
+    let input_dirs = ["tests/fixtures/ntfs", "tests/fixtures/merge-ntfs/input"];
     for input_directory in input_dirs.iter() {
         let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
 
@@ -200,8 +200,12 @@ fn merge_collections_with_transfers_ok() {
     let mut collections = Collections::default();
     test_in_tmp_dir(|path| {
         let report_path = path.join("report.json");
-        let input_dirs = ["fixtures/minimal_ntfs", "fixtures/merge-ntfs/input"];
-        let rule_paths = vec![Path::new("./fixtures/merge-ntfs/transfer_rules.csv").to_path_buf()];
+        let input_dirs = [
+            "tests/fixtures/minimal_ntfs",
+            "tests/fixtures/merge-ntfs/input",
+        ];
+        let rule_paths =
+            vec![Path::new("./tests/fixtures/merge-ntfs/transfer_rules.csv").to_path_buf()];
         for input_directory in input_dirs.iter() {
             let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
 
@@ -224,7 +228,7 @@ fn merge_collections_with_transfers_ok() {
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt", "report.json"]),
-            "./fixtures/merge-ntfs/output",
+            "./tests/fixtures/merge-ntfs/output",
         );
     });
 }
@@ -233,10 +237,13 @@ fn merge_collections_with_transfers_ok() {
 fn merge_collections_with_feed_infos() {
     let mut collections = Collections::default();
     test_in_tmp_dir(|path| {
-        let feed_infos_file = File::open("fixtures/merge-ntfs/feed_infos.json").unwrap();
+        let feed_infos_file = File::open("tests/fixtures/merge-ntfs/feed_infos.json").unwrap();
         let mut feed_infos: BTreeMap<String, String> =
             serde_json::from_reader(feed_infos_file).unwrap();
-        for input_directory in &["fixtures/minimal_ntfs", "fixtures/merge-ntfs/input"] {
+        for input_directory in &[
+            "tests/fixtures/minimal_ntfs",
+            "tests/fixtures/merge-ntfs/input",
+        ] {
             let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
             collections
                 .try_merge(to_append_model.into_collections())
@@ -248,7 +255,7 @@ fn merge_collections_with_feed_infos() {
         compare_output_dir_with_expected(
             &path,
             Some(vec!["feed_infos.txt"]),
-            "./fixtures/merge-ntfs/output_feedinfos",
+            "./tests/fixtures/merge-ntfs/output_feedinfos",
         );
     });
 }
@@ -257,7 +264,7 @@ fn merge_collections_with_feed_infos() {
 fn merge_collections_fares_v2() {
     let mut collections = Collections::default();
     test_in_tmp_dir(|path| {
-        let input_dirs = ["fixtures/ntfs", "fixtures/merge-ntfs/input"];
+        let input_dirs = ["tests/fixtures/ntfs", "tests/fixtures/merge-ntfs/input"];
         for input_directory in input_dirs.iter() {
             let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
 
@@ -279,7 +286,7 @@ fn merge_collections_fares_v2() {
                 "fares.csv",
                 "od_fares.csv",
             ]),
-            "./fixtures/merge-ntfs/output_merge_fares",
+            "./tests/fixtures/merge-ntfs/output_merge_fares",
         );
     });
 }
@@ -289,8 +296,8 @@ fn merge_collections_fares_v2() {
 fn merge_collections_fares_v2_with_collisions() {
     let mut collections = Collections::default();
     let input_dirs = [
-        "fixtures/ntfs",
-        "fixtures/merge-ntfs/input_farev2_conflicts",
+        "tests/fixtures/ntfs",
+        "tests/fixtures/merge-ntfs/input_farev2_conflicts",
     ];
     for input_directory in input_dirs.iter() {
         let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
@@ -307,8 +314,8 @@ fn merge_collections_fares_v2_not_convertible_in_v1() {
     let mut collections = Collections::default();
     test_in_tmp_dir(|path| {
         let input_dirs = [
-            "fixtures/minimal_ntfs",
-            "fixtures/merge-ntfs/input_faresv2_without_euro_currency",
+            "tests/fixtures/minimal_ntfs",
+            "tests/fixtures/merge-ntfs/input_faresv2_without_euro_currency",
         ];
         for input_directory in input_dirs.iter() {
             let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
@@ -325,7 +332,10 @@ fn merge_collections_fares_v2_not_convertible_in_v1() {
 fn merge_collections_fares_v2_with_ntfs_only_farev1() {
     let mut collections = Collections::default();
     test_in_tmp_dir(|path| {
-        let input_dirs = ["fixtures/ntfs", "fixtures/merge-ntfs/input_only_farev1"];
+        let input_dirs = [
+            "tests/fixtures/ntfs",
+            "tests/fixtures/merge-ntfs/input_only_farev1",
+        ];
         for input_directory in input_dirs.iter() {
             let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
 
@@ -347,7 +357,7 @@ fn merge_collections_fares_v2_with_ntfs_only_farev1() {
                 "fares.csv",
                 "od_fares.csv",
             ]),
-            "./fixtures/merge-ntfs/output_merge_fares_only_one_farev2",
+            "./tests/fixtures/merge-ntfs/output_merge_fares_only_one_farev2",
         );
     });
 }

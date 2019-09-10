@@ -1,0 +1,5 @@
+comment_id,comment_name,comment_type
+RERACOM1,"some information",information
+RERACOM2,"strange comment type",standard
+RERACOM3,"no comment type",
+RERACOM4,"on demand transport comment",on_demand_transport
