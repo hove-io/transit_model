@@ -38,7 +38,8 @@ pub fn get_lines_content<P: AsRef<Path>>(path: P) -> BTreeSet<String> {
     let reader = BufReader::new(file);
     let mut set = BTreeSet::new();
     for result_line in reader.lines() {
-        let line = result_line.expect(&format!("Cannot parse as a line in file {:?}", path));
+        let line =
+            result_line.unwrap_or_else(|_| panic!("Cannot parse as a line in file {:?}", path));
         set.insert(line);
     }
     set
