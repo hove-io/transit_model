@@ -285,7 +285,7 @@ fn create_route(
     transxchange: &Element,
     vehicle_journey: &Element,
     lines: &CollectionWithId<Line>,
-    stop_times: &Vec<StopTime>,
+    stop_times: &[StopTime],
 ) -> Result<Route> {
     let service = transxchange
         .try_only_child("Services")?
@@ -534,10 +534,10 @@ fn get_pickup_and_dropoff_types(element: &Element, name: &str) -> (u8, u8) {
 fn calculate_stop_times(
     stop_points: &CollectionWithId<StopPoint>,
     journey_pattern_section: &Element,
-    first_departure_time: &Time,
+    first_departure_time: Time,
 ) -> Result<Vec<StopTime>> {
     let mut stop_times = vec![];
-    let mut next_arrival_time = *first_departure_time;
+    let mut next_arrival_time = first_departure_time;
     let mut stop_point_previous_wait_to = Time::default();
     let mut sequence = 1; // use loop index instead of JourneyPatternTimingLinkId (not always continuous)
 
@@ -684,7 +684,7 @@ fn load_routes_vehicle_journeys_calendars(
         let stop_times = skip_fail!(calculate_stop_times(
             &collections.stop_points,
             &journey_pattern_section,
-            &departure_time
+            departure_time
         )
         .map_err(|e| format_err!("{} / vehiclejourney {} skipped", e, id)));
 
@@ -766,14 +766,14 @@ fn read_xml(
     collections
         .networks
         .merge_with(std::iter::once(network), |network, conflict| {
-            if network.name == UNDEFINED.to_string() {
+            if network.name == UNDEFINED {
                 network.name = conflict.name.clone();
             }
         });
     collections
         .companies
         .merge_with(companies, |company, conflict| {
-            if company.name == UNDEFINED.to_string() {
+            if company.name == UNDEFINED {
                 company.name = conflict.name.clone();
             }
         });
@@ -828,7 +828,6 @@ where
     // The filenames should be sorted before processing as per the specification
     // Path is used as the key so the entries will be ordered by filename
     let entries: BTreeMap<std::path::PathBuf, usize> = (0..zip_archive.len())
-        .into_iter()
         .filter_map(|index| {
             zip_archive
                 .by_index(index)
@@ -1635,8 +1634,7 @@ mod tests {
                 </child>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let stop_times =
-                calculate_stop_times(&stop_points, &root, &Time::new(0, 0, 0)).unwrap();
+            let stop_times = calculate_stop_times(&stop_points, &root, Time::new(0, 0, 0)).unwrap();
             let stop_time = &stop_times[0];
             assert_eq!(
                 stop_time.stop_point_idx,
@@ -1682,7 +1680,7 @@ mod tests {
                 </child>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            calculate_stop_times(&stop_points, &root, &Time::new(0, 0, 0)).unwrap();
+            calculate_stop_times(&stop_points, &root, Time::new(0, 0, 0)).unwrap();
         }
 
         #[test]
@@ -1691,7 +1689,7 @@ mod tests {
             let stop_points = CollectionWithId::new(vec![]).unwrap();
             let xml = r#"<root />"#;
             let root: Element = xml.parse().unwrap();
-            calculate_stop_times(&stop_points, &root, &Time::new(0, 0, 0)).unwrap();
+            calculate_stop_times(&stop_points, &root, Time::new(0, 0, 0)).unwrap();
         }
     }
 
