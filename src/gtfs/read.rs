@@ -1065,7 +1065,7 @@ mod tests {
         AddPrefix,
     };
     use chrono;
-    use geo_types::Geometry as GeoGeometry;
+    use geo_types::line_string;
     use std::collections::BTreeSet;
 
     fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
@@ -2589,11 +2589,11 @@ mod tests {
                 vec![
                     Geometry {
                         id: "1".to_string(),
-                        geometry: GeoGeometry::LineString(vec![(1.1, 2.2), (3.3, 4.4),].into()),
+                        geometry: line_string![(x: 1.1, y: 2.2), (x: 3.3, y: 4.4)].into(),
                     },
                     Geometry {
                         id: "2".to_string(),
-                        geometry: GeoGeometry::LineString(vec![(5.5, 6.6)].into()),
+                        geometry: line_string![(x: 5.5, y: 6.6)].into(),
                     },
                 ]
             );

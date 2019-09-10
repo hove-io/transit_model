@@ -271,7 +271,7 @@ mod tests {
     use crate::test_utils::*;
     use crate::utils::*;
     use chrono;
-    use geo_types::Geometry as GeoGeometry;
+    use geo_types::line_string;
     use serde;
     use std::collections::{BTreeMap, BTreeSet, HashMap};
     use std::fmt::Debug;
@@ -1240,15 +1240,13 @@ mod tests {
         test_serialize_deserialize_collection_with_id(vec![
             Geometry {
                 id: "geo-id-1".to_string(),
-                geometry: GeoGeometry::LineString(
-                    vec![(2.541951, 49.013402), (2.571294, 49.004725)].into(),
-                ),
+                geometry: line_string![(x: 2.541951, y: 49.013402), (x: 2.571294, y: 49.004725)]
+                    .into(),
             },
             Geometry {
                 id: "geo-id-2".to_string(),
-                geometry: GeoGeometry::LineString(
-                    vec![(2.548309, 49.009182), (2.549309, 49.009253)].into(),
-                ),
+                geometry: line_string![(x: 2.548309, y: 49.009182), (x: 2.549309, y: 49.009253)]
+                    .into(),
             },
         ]);
     }
