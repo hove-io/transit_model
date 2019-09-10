@@ -531,10 +531,31 @@ fn get_pickup_and_dropoff_types(element: &Element, name: &str) -> (u8, u8) {
         .unwrap_or((0, 0))
 }
 
+fn get_stop_point_activity<'a>(
+    journey_pattern_timing_link: &'a Element,
+    vehicle_journey_timing_links: &'a [&Element],
+    stop_point: &'a Element,
+    direction: &str,
+) -> &'a Element {
+    vehicle_journey_timing_links
+        .iter()
+        .find(|vjtl| {
+            vjtl.try_only_child("JourneyPatternTimingLinkRef")
+                .map(Element::text)
+                .ok()
+                == journey_pattern_timing_link
+                    .attr("id")
+                    .map(|s| s.to_string())
+        })
+        .and_then(|vjtl| vjtl.try_only_child(direction).ok())
+        .unwrap_or(stop_point)
+}
+
 fn calculate_stop_times(
     stop_points: &CollectionWithId<StopPoint>,
     journey_pattern_section: &Element,
     first_departure_time: Time,
+    vehicle_journey_timing_links: &[&Element],
 ) -> Result<Vec<StopTime>> {
     let mut stop_times = vec![];
     let mut next_arrival_time = first_departure_time;
@@ -549,7 +570,14 @@ fn calculate_stop_times(
             .ok_or_else(|| format_err!("stop_id={:?} not found", stop_point_ref))?;
         let stop_point_wait_from = get_duration_from(&stop_point, "WaitTime");
         let run_time = get_duration_from(&journey_pattern_timing_link, "RunTime");
-        let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&stop_point, "Activity");
+        let stop_point_activity = get_stop_point_activity(
+            &journey_pattern_timing_link,
+            &vehicle_journey_timing_links,
+            &stop_point,
+            "From",
+        );
+        let (pickup_type, drop_off_type) =
+            get_pickup_and_dropoff_types(&stop_point_activity, "Activity");
         let arrival_time = next_arrival_time;
         let departure_time = arrival_time + stop_point_wait_from + stop_point_previous_wait_to;
 
@@ -573,16 +601,23 @@ fn calculate_stop_times(
         );
         sequence += 1;
     }
-    let stop_point = journey_pattern_section
+    let journey_pattern_timing_link = journey_pattern_section
         .children()
         .last()
-        .ok_or_else(|| format_err!("Failed to find the last JourneyPatternSection"))?
-        .try_only_child("To")?;
+        .ok_or_else(|| format_err!("Failed to find the last JourneyPatternSection"))?;
+    let stop_point = journey_pattern_timing_link.try_only_child("To")?;
     let stop_point_ref = stop_point.try_only_child("StopPointRef")?.text();
     let stop_point_idx = stop_points
         .get_idx(&stop_point_ref)
         .ok_or_else(|| format_err!("stop_id={} not found", stop_point_ref))?;
-    let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&stop_point, "Activity");
+    let stop_point_activity = get_stop_point_activity(
+        &journey_pattern_timing_link,
+        &vehicle_journey_timing_links,
+        &stop_point,
+        "To",
+    );
+    let (pickup_type, drop_off_type) =
+        get_pickup_and_dropoff_types(&stop_point_activity, "Activity");
 
     stop_times.push(StopTime {
         stop_point_idx,
@@ -681,10 +716,15 @@ fn load_routes_vehicle_journeys_calendars(
             .try_only_child("DepartureTime")?
             .text()
             .parse());
+        let vehicle_journey_timing_links = vehicle_journey
+            .children()
+            .filter(|child| child.name() == "VehicleJourneyTimingLink")
+            .collect::<Vec<_>>();
         let stop_times = skip_fail!(calculate_stop_times(
             &collections.stop_points,
             &journey_pattern_section,
-            departure_time
+            departure_time,
+            &vehicle_journey_timing_links
         )
         .map_err(|e| format_err!("{} / vehiclejourney {} skipped", e, id)));
 
@@ -1634,7 +1674,8 @@ mod tests {
                 </child>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let stop_times = calculate_stop_times(&stop_points, &root, Time::new(0, 0, 0)).unwrap();
+            let stop_times =
+                calculate_stop_times(&stop_points, &root, Time::new(0, 0, 0), &Vec::new()).unwrap();
             let stop_time = &stop_times[0];
             assert_eq!(
                 stop_time.stop_point_idx,
@@ -1680,7 +1721,7 @@ mod tests {
                 </child>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            calculate_stop_times(&stop_points, &root, Time::new(0, 0, 0)).unwrap();
+            calculate_stop_times(&stop_points, &root, Time::new(0, 0, 0), &Vec::new()).unwrap();
         }
 
         #[test]
@@ -1689,7 +1730,7 @@ mod tests {
             let stop_points = CollectionWithId::new(vec![]).unwrap();
             let xml = r#"<root />"#;
             let root: Element = xml.parse().unwrap();
-            calculate_stop_times(&stop_points, &root, Time::new(0, 0, 0)).unwrap();
+            calculate_stop_times(&stop_points, &root, Time::new(0, 0, 0), &Vec::new()).unwrap();
         }
     }
 
