@@ -501,9 +501,11 @@ pub struct Line {
     pub name: String,
     #[serde(rename = "forward_line_name")]
     pub forward_name: Option<String>,
+    #[serde(skip)]
     pub forward_direction: Option<String>,
     #[serde(rename = "backward_line_name")]
     pub backward_name: Option<String>,
+    #[serde(skip)]
     pub backward_direction: Option<String>,
     #[serde(
         rename = "line_color",

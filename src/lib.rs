@@ -45,7 +45,7 @@ pub mod transxchange;
 pub mod vptranslator;
 
 /// Current version of the NTFS format
-pub const NTFS_VERSION: &str = "0.9.1";
+pub const NTFS_VERSION: &str = "0.9.2";
 
 lazy_static::lazy_static! {
     /// Current datetime
@@ -64,5 +64,5 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 pub use crate::model::Model;
 
-pub use ::collection;
-pub use ::relations;
+pub use collection;
+pub use relations;
