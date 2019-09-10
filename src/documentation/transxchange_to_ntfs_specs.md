@@ -89,8 +89,7 @@ line_id | *Services/Service/ServiceCode*, *Services/Service/Line{id}* | This fie
 line_code | *Services/Service/Lines/Line/LineName* |
 line_name | *Services/Service/Description* | 
 forward_line_name | *Services/Service/StandardService/Destination* |
-forward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the forward direction. backward_line_name | *Services/Service/StandardService/Origin* |
-backward_direction |  | This field should have the same value as the `destination_id` of the first associated Route in the backward direction. 
+backward_line_name | *Services/Service/StandardService/Origin* |
 network_id | *Services/Service/RegisteredOperatorRef* | The referenced *Operators/Operator/OperatorCode* value is taken into account. This field is prefixed. Link to the file [networks.txt](#networkstxt).
 commercial_mode_id | *Services/Service/Mode* | This field is not prefixed. Link to the file commercial_modes.txt of the NTFS. See the mapping rule below.
 
