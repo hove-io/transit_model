@@ -1,0 +1,4 @@
+object_type,object_id,object_system,object_code
+stop_point,prefix:5340AWB30742,NaptanCode,tordjta
+stop_point,prefix:5340AWB30747,NaptanCode,toragam
+stop_point,prefix:5340AWB30904,NaptanCode,tordtad
