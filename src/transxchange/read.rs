@@ -601,26 +601,26 @@ fn calculate_stop_times(
         );
         sequence += 1;
     }
-    let journey_pattern_timing_link = journey_pattern_section
+    let last_journey_pattern_timing_link = journey_pattern_section
         .children()
         .last()
         .ok_or_else(|| format_err!("Failed to find the last JourneyPatternSection"))?;
-    let stop_point = journey_pattern_timing_link.try_only_child("To")?;
-    let stop_point_ref = stop_point.try_only_child("StopPointRef")?.text();
-    let stop_point_idx = stop_points
-        .get_idx(&stop_point_ref)
-        .ok_or_else(|| format_err!("stop_id={} not found", stop_point_ref))?;
-    let stop_point_activity = get_stop_point_activity(
-        &journey_pattern_timing_link,
+    let last_stop_point = last_journey_pattern_timing_link.try_only_child("To")?;
+    let last_stop_point_ref = last_stop_point.try_only_child("StopPointRef")?.text();
+    let last_stop_point_idx = stop_points
+        .get_idx(&last_stop_point_ref)
+        .ok_or_else(|| format_err!("stop_id={} not found", last_stop_point_ref))?;
+    let last_stop_point_activity = get_stop_point_activity(
+        &last_journey_pattern_timing_link,
         &vehicle_journey_timing_links,
-        &stop_point,
+        &last_stop_point,
         "To",
     );
     let (pickup_type, drop_off_type) =
-        get_pickup_and_dropoff_types(&stop_point_activity, "Activity");
+        get_pickup_and_dropoff_types(&last_stop_point_activity, "Activity");
 
     stop_times.push(StopTime {
-        stop_point_idx,
+        stop_point_idx: last_stop_point_idx,
         sequence,
         arrival_time: next_arrival_time,
         departure_time: next_arrival_time,
