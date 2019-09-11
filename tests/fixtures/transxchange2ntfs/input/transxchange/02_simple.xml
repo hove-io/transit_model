@@ -108,7 +108,7 @@
           <JourneyPatternSectionRefs>JPS1</JourneyPatternSectionRefs>
           <Direction>inboundAndOutbound</Direction>
         </JourneyPattern>
-	<JourneyPattern id="JP15">
+        <JourneyPattern id="JP15">
           <DestinationDisplay>Upper Race, Race Club, opp</DestinationDisplay>
           <JourneyPatternSectionRefs>JPS15</JourneyPatternSectionRefs>
           <Direction>inboundAndOutbound</Direction>
@@ -127,6 +127,11 @@
             <MondayToFriday />
           </DaysOfWeek>
         </RegularDayType>
+        <BankHolidayOperation>
+          <DaysOfNonOperation>
+            <HolidayMondays />
+          </DaysOfNonOperation>
+        </BankHolidayOperation>
       </OperatingProfile>
       <JourneyPatternRef>JP1</JourneyPatternRef>
       <DepartureTime>08:45:00</DepartureTime>
@@ -155,6 +160,11 @@
             <MondayToFriday />
           </DaysOfWeek>
         </RegularDayType>
+        <BankHolidayOperation>
+          <DaysOfNonOperation>
+            <HolidayMondays />
+          </DaysOfNonOperation>
+        </BankHolidayOperation>
       </OperatingProfile>
       <JourneyPatternRef>JP15</JourneyPatternRef>
       <DepartureTime>18:45:00</DepartureTime>

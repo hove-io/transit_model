@@ -19,19 +19,19 @@ use crate::{
     minidom_utils::TryOnlyChild,
     model::{Collections, Model},
     objects::*,
-    transxchange::naptan,
+    transxchange::{bank_holidays, bank_holidays::BankHoliday, naptan},
     AddPrefix, Result,
 };
 use chrono::{
     naive::{NaiveDate, MAX_DATE, MIN_DATE},
-    Datelike, Duration,
+    Duration,
 };
 use failure::{bail, format_err};
 use lazy_static::lazy_static;
 use log::{info, warn};
 use minidom::Element;
 use std::{
-    collections::{BTreeMap, BTreeSet, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap},
     convert::TryFrom,
     fs::File,
     io::Read,
@@ -340,137 +340,34 @@ fn create_route(
     })
 }
 
-struct NaiveDateRange {
-    current: NaiveDate,
-    end: NaiveDate,
-}
-
-impl NaiveDateRange {
-    fn new(start: NaiveDate, end: NaiveDate) -> NaiveDateRange {
-        if start <= end {
-            NaiveDateRange {
-                current: start,
-                end,
-            }
-        } else {
-            // If end date is smaller, then invert start and end
-            NaiveDateRange {
-                current: end,
-                end: start,
-            }
-        }
-    }
-}
-
-impl Iterator for NaiveDateRange {
-    type Item = NaiveDate;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current <= self.end {
-            let date = self.current;
-            self.current = self.current.succ();
-            Some(date)
-        } else {
-            None
-        }
-    }
-}
-
 fn generate_calendar_dates(
     operating_profile: &Element,
-    validity_period: ValidityPeriod,
+    bank_holidays: &HashMap<BankHoliday, Vec<Date>>,
+    validity_period: &ValidityPeriod,
 ) -> Result<BTreeSet<Date>> {
-    let mut dates = BTreeSet::new();
-    let mut days = HashSet::new();
-    let regular_day_type = operating_profile.try_only_child("RegularDayType")?;
-    if let Ok(days_of_week) = regular_day_type.try_only_child("DaysOfWeek") {
-        use chrono::Weekday::*;
-        if days_of_week.children().count() == 0 {
-            days.insert(Mon);
-            days.insert(Tue);
-            days.insert(Wed);
-            days.insert(Thu);
-            days.insert(Fri);
-            days.insert(Sat);
-            days.insert(Sun);
-        } else {
-            for element in days_of_week.children() {
-                match element.name() {
-                    "Monday" => {
-                        days.insert(Mon);
-                    }
-                    "Tuesday" => {
-                        days.insert(Tue);
-                    }
-                    "Wednesday" => {
-                        days.insert(Wed);
-                    }
-                    "Thursday" => {
-                        days.insert(Thu);
-                    }
-                    "Friday" => {
-                        days.insert(Fri);
-                    }
-                    "Saturday" => {
-                        days.insert(Sat);
-                    }
-                    "Sunday" => {
-                        days.insert(Sun);
-                    }
-                    "MondayToFriday" => {
-                        days.insert(Mon);
-                        days.insert(Tue);
-                        days.insert(Wed);
-                        days.insert(Thu);
-                        days.insert(Fri);
-                    }
-                    "MondayToSaturday" => {
-                        days.insert(Mon);
-                        days.insert(Tue);
-                        days.insert(Wed);
-                        days.insert(Thu);
-                        days.insert(Fri);
-                        days.insert(Sat);
-                    }
-                    "MondayToSunday" => {
-                        days.insert(Mon);
-                        days.insert(Tue);
-                        days.insert(Wed);
-                        days.insert(Thu);
-                        days.insert(Fri);
-                        days.insert(Sat);
-                        days.insert(Sun);
-                    }
-                    "NotSaturday" => {
-                        days.insert(Mon);
-                        days.insert(Tue);
-                        days.insert(Wed);
-                        days.insert(Thu);
-                        days.insert(Fri);
-                        days.insert(Sun);
-                    }
-                    "Weekend" => {
-                        days.insert(Sat);
-                        days.insert(Sun);
-                    }
-                    unknown_tag => warn!("Tag '{}' is not a valid tag for DaysOfWeek", unknown_tag),
-                };
-            }
-        }
-    }
-    for date in NaiveDateRange::new(validity_period.start_date, validity_period.end_date) {
-        if days.contains(&date.weekday()) {
-            // TODO: Handle exceptions (see SpecialDaysOperation)
-            // TODO: Handle bank holidays (see BankHolidaysOperation)
-            dates.insert(date);
-        }
-    }
+    use crate::transxchange::operating_profile::OperatingProfile;
+    let operating_profile = OperatingProfile::from(operating_profile);
+    let mut bank_holidays = bank_holidays.clone();
+    let new_year_days = bank_holidays::get_fixed_days(1, 1, validity_period);
+    bank_holidays.insert(BankHoliday::NewYear, new_year_days);
+    let january_second_days = bank_holidays::get_fixed_days(2, 1, validity_period);
+    bank_holidays.insert(BankHoliday::JanuarySecond, january_second_days);
+    let saint_andrews_days = bank_holidays::get_fixed_days(30, 11, validity_period);
+    bank_holidays.insert(BankHoliday::SaintAndrews, saint_andrews_days);
+    let christmas_days = bank_holidays::get_fixed_days(25, 12, validity_period);
+    bank_holidays.insert(BankHoliday::Christmas, christmas_days);
+    let boxing_days = bank_holidays::get_fixed_days(26, 12, validity_period);
+    bank_holidays.insert(BankHoliday::BoxingDay, boxing_days);
+    let dates: BTreeSet<Date> = operating_profile
+        .iter_with_bank_holidays_between(&bank_holidays, validity_period)
+        .collect();
     Ok(dates)
 }
 
 fn create_calendar_dates(
     transxchange: &Element,
     vehicle_journey: &Element,
+    bank_holidays: &HashMap<BankHoliday, Vec<Date>>,
     max_end_date: NaiveDate,
 ) -> Result<BTreeSet<Date>> {
     let operating_profile = vehicle_journey
@@ -482,7 +379,7 @@ fn create_calendar_dates(
                 .try_only_child("OperatingProfile")
         })?;
     let validity_period = get_service_validity_period(transxchange, max_end_date)?;
-    generate_calendar_dates(&operating_profile, validity_period)
+    generate_calendar_dates(&operating_profile, bank_holidays, &validity_period)
 }
 
 fn find_duplicate_calendar<'a>(
@@ -637,6 +534,7 @@ fn calculate_stop_times(
 fn load_routes_vehicle_journeys_calendars(
     collections: &Collections,
     transxchange: &Element,
+    bank_holidays: &HashMap<BankHoliday, Vec<Date>>,
     lines: &CollectionWithId<Line>,
     dataset_id: &str,
     physical_mode_id: &str,
@@ -696,7 +594,8 @@ fn load_routes_vehicle_journeys_calendars(
             }
             vj_id
         };
-        let dates = create_calendar_dates(transxchange, vehicle_journey, max_end_date)?;
+        let dates =
+            create_calendar_dates(transxchange, vehicle_journey, bank_holidays, max_end_date)?;
         if dates.is_empty() {
             warn!("No calendar date, skipping Vehicle Journey {}", id);
             continue;
@@ -781,6 +680,7 @@ fn load_routes_vehicle_journeys_calendars(
 fn read_xml(
     transxchange: &Element,
     collections: &mut Collections,
+    bank_holidays: &HashMap<BankHoliday, Vec<Date>>,
     dataset_id: &str,
     max_end_date: NaiveDate,
 ) -> Result<()> {
@@ -791,6 +691,7 @@ fn read_xml(
     let (routes, vehicle_journeys, calendars) = load_routes_vehicle_journeys_calendars(
         collections,
         transxchange,
+        bank_holidays,
         &lines,
         dataset_id,
         &physical_mode.id,
@@ -830,6 +731,7 @@ fn read_xml(
 fn read_file<F>(
     file_path: &Path,
     mut file: F,
+    bank_holidays: &HashMap<BankHoliday, Vec<Date>>,
     collections: &mut Collections,
     dataset_id: &str,
     max_end_date: NaiveDate,
@@ -843,7 +745,13 @@ where
             let mut file_content = String::new();
             file.read_to_string(&mut file_content)?;
             match file_content.parse::<Element>() {
-                Ok(element) => read_xml(&element, collections, dataset_id, max_end_date)?,
+                Ok(element) => read_xml(
+                    &element,
+                    collections,
+                    bank_holidays,
+                    dataset_id,
+                    max_end_date,
+                )?,
                 Err(e) => {
                     warn!("Failed to parse file '{:?}' as DOM: {}", file_path, e);
                 }
@@ -856,6 +764,7 @@ where
 
 fn read_from_zip<P>(
     transxchange_path: P,
+    bank_holidays: &HashMap<BankHoliday, Vec<Date>>,
     collections: &mut Collections,
     dataset_id: &str,
     max_end_date: NaiveDate,
@@ -880,6 +789,7 @@ where
         read_file(
             file.sanitized_name().as_path(),
             file,
+            bank_holidays,
             collections,
             dataset_id,
             max_end_date,
@@ -890,6 +800,7 @@ where
 
 fn read_from_path<P>(
     transxchange_path: P,
+    bank_holidays: &HashMap<BankHoliday, Vec<Date>>,
     collections: &mut Collections,
     dataset_id: &str,
     max_end_date: NaiveDate,
@@ -907,7 +818,14 @@ where
     paths.sort();
     for path in paths {
         let file = File::open(&path)?;
-        read_file(&path, file, collections, dataset_id, max_end_date)?;
+        read_file(
+            &path,
+            file,
+            bank_holidays,
+            collections,
+            dataset_id,
+            max_end_date,
+        )?;
     }
     Ok(())
 }
@@ -916,6 +834,7 @@ where
 pub fn read<P>(
     transxchange_path: P,
     naptan_path: P,
+    bank_holidays_path: Option<P>,
     config_path: Option<P>,
     prefix: Option<String>,
     max_end_date: NaiveDate,
@@ -940,9 +859,15 @@ where
     } else {
         naptan::read_from_path(naptan_path, &mut collections)?;
     };
+    let bank_holidays = if let Some(bank_holidays_path) = bank_holidays_path {
+        bank_holidays::get_bank_holiday(bank_holidays_path)?
+    } else {
+        Default::default()
+    };
     if transxchange_path.as_ref().is_file() {
         read_from_zip(
             transxchange_path,
+            &bank_holidays,
             &mut collections,
             &dataset_id,
             max_end_date,
@@ -950,6 +875,7 @@ where
     } else if transxchange_path.as_ref().is_dir() {
         read_from_path(
             transxchange_path,
+            &bank_holidays,
             &mut collections,
             &dataset_id,
             max_end_date,
@@ -1747,20 +1673,80 @@ mod tests {
                 </RegularDayType>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let start_date = NaiveDate::from_ymd(2019, 08, 12);
-            let end_date = NaiveDate::from_ymd(2019, 08, 20);
+            let bank_holidays = HashMap::new();
+            let start_date = NaiveDate::from_ymd(2019, 1, 1);
+            let end_date = NaiveDate::from_ymd(2019, 1, 8);
             let validity = ValidityPeriod {
                 start_date,
                 end_date,
             };
-            let dates = generate_calendar_dates(&root, validity).unwrap();
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 12)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 13)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 14)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 15)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 16)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 19)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 20)));
+            let dates = generate_calendar_dates(&root, &bank_holidays, &validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 1)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 2)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 3)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 4)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 7)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 8)));
+        }
+
+        #[test]
+        fn with_included_bank_holidays() {
+            let xml = r#"<root>
+                <RegularDayType>
+                    <DaysOfWeek>
+                        <MondayToFriday />
+                    </DaysOfWeek>
+                </RegularDayType>
+                <BankHolidayOperation>
+                    <DaysOfOperation>
+                        <NewYearsDay />
+                    </DaysOfOperation>
+                </BankHolidayOperation>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let bank_holidays = HashMap::new();
+            // 1st of January 2017 was a Sunday
+            let start_date = NaiveDate::from_ymd(2017, 1, 1);
+            let end_date = NaiveDate::from_ymd(2017, 1, 8);
+            let validity = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            let dates = generate_calendar_dates(&root, &bank_holidays, &validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2017, 1, 1)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2017, 1, 2)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2017, 1, 3)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2017, 1, 4)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2017, 1, 5)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2017, 1, 6)));
+        }
+
+        #[test]
+        fn with_excluded_bank_holidays() {
+            let xml = r#"<root>
+                <RegularDayType>
+                    <DaysOfWeek>
+                        <Weekend />
+                    </DaysOfWeek>
+                </RegularDayType>
+                <BankHolidayOperation>
+                    <DaysOfNonOperation>
+                        <NewYearsDay />
+                    </DaysOfNonOperation>
+                </BankHolidayOperation>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let bank_holidays = HashMap::new();
+            // 1st of January 2017 was a Sunday
+            let start_date = NaiveDate::from_ymd(2017, 1, 1);
+            let end_date = NaiveDate::from_ymd(2017, 1, 8);
+            let validity = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            let dates = generate_calendar_dates(&root, &bank_holidays, &validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2017, 1, 7)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2017, 1, 8)));
         }
 
         #[test]
@@ -1773,15 +1759,16 @@ mod tests {
                 </RegularDayType>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let start_date = NaiveDate::from_ymd(2019, 08, 17);
-            let end_date = NaiveDate::from_ymd(2019, 08, 19);
+            let bank_holidays = HashMap::new();
+            let start_date = NaiveDate::from_ymd(2019, 1, 4);
+            let end_date = NaiveDate::from_ymd(2019, 1, 6);
             let validity = ValidityPeriod {
                 start_date,
                 end_date,
             };
-            let dates = generate_calendar_dates(&root, validity).unwrap();
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 18)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 19)));
+            let dates = generate_calendar_dates(&root, &bank_holidays, &validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 4)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 6)));
         }
 
         #[test]
@@ -1795,16 +1782,17 @@ mod tests {
                 </RegularDayType>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let start_date = NaiveDate::from_ymd(2019, 08, 19);
-            let end_date = NaiveDate::from_ymd(2019, 08, 17);
+            let bank_holidays = HashMap::new();
+            let start_date = NaiveDate::from_ymd(2019, 1, 1);
+            let end_date = NaiveDate::from_ymd(2019, 1, 8);
             let validity = ValidityPeriod {
                 start_date,
                 end_date,
             };
-            let dates = generate_calendar_dates(&root, validity).unwrap();
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 17)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 18)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 19)));
+            let dates = generate_calendar_dates(&root, &bank_holidays, &validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 5)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 6)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 7)));
         }
 
         #[test]
@@ -1819,22 +1807,22 @@ mod tests {
                 </RegularDayType>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let start_date = NaiveDate::from_ymd(2019, 08, 12);
-            let end_date = NaiveDate::from_ymd(2019, 08, 20);
+            let bank_holidays = HashMap::new();
+            let start_date = NaiveDate::from_ymd(2019, 1, 1);
+            let end_date = NaiveDate::from_ymd(2019, 1, 8);
             let validity = ValidityPeriod {
                 start_date,
                 end_date,
             };
-            let dates = generate_calendar_dates(&root, validity).unwrap();
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 12)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 13)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 14)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 15)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 16)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 17)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 18)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 19)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 20)));
+            let dates = generate_calendar_dates(&root, &bank_holidays, &validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 1)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 2)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 3)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 4)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 5)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 6)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 7)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 8)));
         }
 
         #[test]
@@ -1845,22 +1833,22 @@ mod tests {
                 </RegularDayType>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let start_date = NaiveDate::from_ymd(2019, 08, 12);
-            let end_date = NaiveDate::from_ymd(2019, 08, 20);
+            let bank_holidays = HashMap::new();
+            let start_date = NaiveDate::from_ymd(2019, 1, 1);
+            let end_date = NaiveDate::from_ymd(2019, 1, 8);
             let validity = ValidityPeriod {
                 start_date,
                 end_date,
             };
-            let dates = generate_calendar_dates(&root, validity).unwrap();
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 12)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 13)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 14)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 15)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 16)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 17)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 18)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 19)));
-            assert!(dates.contains(&NaiveDate::from_ymd(2019, 08, 20)));
+            let dates = generate_calendar_dates(&root, &bank_holidays, &validity).unwrap();
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 1)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 2)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 3)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 4)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 5)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 6)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 7)));
+            assert!(dates.contains(&NaiveDate::from_ymd(2019, 1, 8)));
         }
 
         #[test]
@@ -1871,13 +1859,14 @@ mod tests {
                 </RegularDayType>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let start_date = NaiveDate::from_ymd(2019, 08, 12);
-            let end_date = NaiveDate::from_ymd(2019, 08, 20);
+            let bank_holidays = HashMap::new();
+            let start_date = NaiveDate::from_ymd(2019, 1, 1);
+            let end_date = NaiveDate::from_ymd(2019, 1, 8);
             let validity = ValidityPeriod {
                 start_date,
                 end_date,
             };
-            let dates = generate_calendar_dates(&root, validity).unwrap();
+            let dates = generate_calendar_dates(&root, &bank_holidays, &validity).unwrap();
             assert!(dates.is_empty());
         }
     }
