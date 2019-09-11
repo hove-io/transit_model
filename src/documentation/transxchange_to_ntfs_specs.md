@@ -143,10 +143,9 @@ NTFS field | TransXChange element | Mapping rule/Comment
 route_id | *Services/Service/ServiceCode*, *Services/Service/Line{id}*, *StandardService/JourneyPattern/Direction* | This field is prefixed and formed by the concatenation of the three elements separated by a `:`. Link to the file [routes.txt](#routestxt).
 service_id | *VehicleJourney/ServiceRef*, *VehicleJourney/LineRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed and formed by the concatenation of the three elements and an index/integer (in fourth element), separated by a `:`, and a prefix `CD`. Ex: "<prefix>:CD:1_58_BC:SL1:VJ1:1". If the validity pattern (set of dates identified by a `service_id` in [`calendar.txt`](#calendartxt) and [`calendar_dates.txt`](#calendar_datestxt)) already exists, then the existing one is used instead of creating a new validity pattern (with a new `service_id`). See above for the details about the services dates attached to a trip.
 trip_id | *VehicleJourney/ServiceRef*, *VehicleJourney/LineRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed and formed by the concatenation (separated by a `:`) of the three elements below, and an index/integer (in fourth element) in order to guarantee uniqueness.
-trip_headsign | *JourneyPatternTimingLink/DestinationDisplay* or *VehicleJourneyTimingLink/DestinationDisplay* | In case both elements are specified, the *VehicleJourney* overrides the *JourneyPattern*. In case none of the elements is specified, *Services/Service/StandardService/JourneyPattern/DestinationDisplay* should be used. Otherwise, the field is left empty.
+trip_headsign | *Services/Service/StandardService/JourneyPattern/DestinationDisplay* | 
 company_id | *VehicleJourney/OperatorRef* | This field is prefixed. Link to the file [companies.txt](#companiestxt). The referenced *Operators/Operator/OperatorCode* is used. If no *OperatorRef* is specified for the trip, the associated *Services/Service/RegisteredOperatorRef* is used to retrieve the company for the trip.
 physical_mode_id | *Services/Service/Mode* | This field is not prefixed. Link to the file physical_modes.txt of the NTFS. See above for the mapping of transport modes.
-trip_properties.wheelchair_accessible | *VehicleJourney/Operational/VehicleType/WheelchairAccessible* | The value is `1` when the trip is accesible, `2` when the trip is not accessible and `0` when the field is not specified.
 
 ### stop_times.txt
 The passing times at each stoppoint of a trip are specified as an ordered list of
@@ -175,24 +174,44 @@ NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 trip_id | *VehicleJourney/ServiceRef*, *VehicleJourney/LineRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed. Link to the file [trips.txt](#tripstxt).
 arrival_time | *JourneyPatternTimingLink/RunTime* | See computing rule above.
-departure_time | *JourneyPatternTimingLink/RunTime*, *JourneyPatternTimingLink/To/WaitTime* | See computing rule above.
-stop_id | *JourneyPatternTimingLink/To/StopPointRef* | This field is prefixed. Link to the file [stops.txt](#stopstxt).
-stop_sequence | *JourneyPatternTimingLink/To{SequenceNumber}* | The value should be `1` for the first stoppoint of the trip.
-pickup_type | *JourneyPatternTimingLink/To/Activity* | `1` when the input value is `setDown`, `0` otherwise.
-drop_off_type | *JourneyPatternTimingLink/To/Activity* | `1` when the input value is `pickUp`, `0` otherwise.
+departure_time | *JourneyPatternTimingLink/RunTime*, *JourneyPatternTimingLink/From/WaitTime* | See computing rule above.
+stop_id | *JourneyPatternTimingLink/From/StopPointRef* | This field is prefixed. Link to the file [stops.txt](#stopstxt).
+stop_sequence | *JourneyPatternTimingLink/From{SequenceNumber}* | The value should be `1` for the first stoppoint of the trip.
+pickup_type | *JourneyPatternTimingLink/From/Activity* | `1` when the input value is `setDown`, `0` otherwise.
+drop_off_type | *JourneyPatternTimingLink/From/Activity* | `1` when the input value is `pickUp`, `0` otherwise.
+
+## Possible evolutions
+The following points might be possibly included in a later version of the connector:
+
+**Provide comments for trips**
+
+Two additional files for comments are to be created:
 
 ### comments.txt
-Only comments on trips are handled in the present version.
-
 NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 comment_id | *VehicleJourney/VehicleJourneyCode*, *VehicleJourney/Note/NoteCode* | This field is prefixed and formed by the concatenation of the two fields separated by a `:`.
 comment_name | *VehicleJourney/Note/NoteText* |
 
 ### comment_links.txt
-
 NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 object_id | *VehicleJourney/ServiceRef*, *VehicleJourney/LineRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed. Link to the file [trips.txt](#tripstxt).
 object_type |  | Fixed value `trip`.
 comment_id | *VehicleJourney/VehicleJourneyCode*, *VehicleJourney/Note/NoteCode* | This field is prefixed. Link to the file [comments.txt](#commentstxt).
+
+**Improve definition for trip_headsign**
+
+In case one of the elements *JourneyPatternTimingLink/DestinationDisplay* or *VehicleJourneyTimingLink/DestinationDisplay* is present, it is used for the trip_headsing field. In case both elements are specified, the *VehicleJourney* overrides the *JourneyPattern*. In case none of the elements is specified, *Services/Service/StandardService/JourneyPattern/DestinationDisplay* should be used. Otherwise, the field is left empty.
+
+**Provide accessibility info for trips**
+
+The wheelchair_accessible property is created in the trip_properties.txt file after the element *VehicleJourney/Operational/VehicleType/WheelchairAccessible*. The value of wheelchair_accessible is `1` when the trip is accesible, `2` when the trip is not accessible and `0` when the field is not specified.
+
+**Take into account *SpecialDaysOperation***
+
+Specific service dates are not yet handled, they could be added in a later version according to the details provided above.
+
+**Handle overloads on waiting times when not stoping at a stop**
+
+The accumulated waiting times at a stop are to be taken into account in case a stop is skipped in a journey pattern (i.e. *JourneyPatternTimingLink/From/Activity* equals to `pass`).
