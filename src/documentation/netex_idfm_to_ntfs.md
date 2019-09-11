@@ -192,10 +192,12 @@ NTFS field | Netex-IDFM element | Mapping rule/Comment
 route_id | *ServiceJourney/JourneyPatternRef/@ref* | route_id of the Route containing the JourneyPatternRef as an object_code.
 service_id |  | ??? Using DayTypeRef ??? 
 trip_id | *ServiceJourney/@id* | This field is prefixed. 
-trip_headsign |  | This field is not yet defined.
+trip_headsign | *ServiceJourney/DestinationDisplayRef* | Content of the `DestinationDisplay/FrontText` node. If not available, the name of the `stop_point` of the last `stop_time` is used.
+trip_short_name | *ServiceJourney/DestinationDisplayRef* | Content of the `DestinationDisplay/PublicCode` node. If not available, this field is empty.
 company_id | *ServiceJourney/OperatorRef* | if *ServiceJourney/OperatorRef* is not defined, use *Line/OperatorRef* in *lines.xml* file (cf. lines.txt). This field is prefixed.
 physical_mode_id | *Line/TransportMode* | see physical_modes definition
 trip_property_id |  | see trip_properties.txt
+
 
 **comment_links for a trip**
 If one (or more) `noticeAssignments/NoticeAssignment/NoticeRef` is available in the `ServiceJourney`, a `comment_link` will be created as follow.
