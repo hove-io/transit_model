@@ -18,13 +18,11 @@ use super::{
     Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
     Trip,
 };
-use crate::collection::{Collection, CollectionWithId, Id, Idx};
 use crate::common_format::Availability;
 use crate::model::{GetCorresponding, Model};
 use crate::objects;
 use crate::objects::Transfer as NtfsTransfer;
 use crate::objects::*;
-use crate::relations::IdxSet;
 use crate::Result;
 use csv;
 use failure::ResultExt;
@@ -33,6 +31,8 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path;
+use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
+use transit_model_relations::IdxSet;
 
 pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) -> Result<()> {
     if transfers.is_empty() {
@@ -480,7 +480,6 @@ pub fn write_shapes(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::collection::CollectionWithId;
     use crate::common_format::write_calendar_dates;
     use crate::gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType};
     use crate::objects::Transfer as NtfsTransfer;
@@ -491,6 +490,7 @@ mod tests {
     use std::fs::File;
     use std::io::Read;
     use tempfile::tempdir;
+    use transit_model_collection::CollectionWithId;
 
     #[test]
     fn write_agency() {

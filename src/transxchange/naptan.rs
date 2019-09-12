@@ -18,7 +18,6 @@
 //! https://en.wikipedia.org/wiki/NaPTAN
 
 use crate::{
-    collection::CollectionWithId,
     model::Collections,
     objects::{Coord, KeysValues, StopArea, StopPoint},
     read_utils::{self, FileHandler},
@@ -31,6 +30,7 @@ use log::{info, warn};
 use proj::Proj;
 use serde::Deserialize;
 use std::{collections::HashMap, fs::File, io::Read, path::Path};
+use transit_model_collection::CollectionWithId;
 
 #[derive(Debug, Deserialize)]
 pub struct NaPTANStop {

@@ -18,7 +18,6 @@ use super::{
     Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
     TransferType, Trip,
 };
-use crate::collection::{Collection, CollectionWithId, Id};
 use crate::common_format::Availability;
 use crate::model::Collections;
 use crate::objects::{
@@ -36,6 +35,7 @@ use log::{info, warn};
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::result::Result as StdResult;
+use transit_model_collection::{Collection, CollectionWithId, Id};
 
 fn default_agency_id() -> String {
     "default_agency_id".to_string()
@@ -1055,7 +1055,6 @@ where
 #[cfg(test)]
 mod tests {
     use crate::{
-        collection::{Collection, CollectionWithId, Id},
         common_format,
         gtfs::read::EquipmentList,
         model::Collections,
@@ -1067,6 +1066,7 @@ mod tests {
     use chrono;
     use geo_types::line_string;
     use std::collections::BTreeSet;
+    use transit_model_collection::{Collection, CollectionWithId, Id};
 
     fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
         let mut extracted_props: Vec<S> = c.values().map(|l| f(l)).collect();

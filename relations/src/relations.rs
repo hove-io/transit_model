@@ -34,8 +34,8 @@
 //!
 //! ```no_run
 //! # use transit_model_procmacro::*;
-//! # use crate::relations::*;
-//! # use collection::Idx;
+//! # use transit_model_relations::*;
+//! # use transit_model_collection::Idx;
 //! # struct Bike;
 //! # struct Brand;
 //! # struct Owner;
@@ -109,8 +109,8 @@
 //!
 //! ```
 //! # use transit_model_procmacro::*;
-//! # use crate::relations::*;
-//! # use collection::Idx;
+//! # use transit_model_relations::*;
+//! # use transit_model_collection::Idx;
 //! # struct Bike;
 //! # struct Brand;
 //! # struct Owner;
@@ -165,7 +165,7 @@ pub type Error = failure::Error;
 /// The corresponding result type used by the crate.
 pub type Result<T> = std::result::Result<T, Error>;
 
-use collection::{CollectionWithId, Id, Idx};
+use transit_model_collection::{CollectionWithId, Id, Idx};
 
 use derivative::Derivative;
 use failure::{format_err, ResultExt};

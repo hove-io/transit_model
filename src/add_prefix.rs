@@ -16,10 +16,8 @@
 
 //! A trait for every structure that needs to be updated with a prefix
 
-use crate::{
-    collection::{Collection, CollectionWithId, Id},
-    model::Collections,
-};
+use crate::model::Collections;
+use transit_model_collection::{Collection, CollectionWithId, Id};
 
 pub trait AddPrefix {
     fn add_prefix(&mut self, prefix: &str);

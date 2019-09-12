@@ -14,10 +14,10 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use transit_model::collection::{CollectionWithId, Id, Idx};
 use transit_model::model::GetCorresponding;
-use transit_model::relations::IdxSet;
 use transit_model::{Model, Result};
+use transit_model_collection::{CollectionWithId, Id, Idx};
+use transit_model_relations::IdxSet;
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
 where

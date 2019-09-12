@@ -18,7 +18,6 @@ use csv;
 use std::path;
 
 use super::{Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime};
-use crate::collection::*;
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
 use crate::objects::*;
@@ -28,6 +27,7 @@ use failure::{bail, ensure, format_err, ResultExt};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use transit_model_collection::*;
 
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {

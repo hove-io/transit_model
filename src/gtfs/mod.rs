@@ -20,7 +20,6 @@ mod read;
 mod write;
 
 use crate::{
-    collection::{CollectionWithId, Idx},
     common_format::{manage_calendars, write_calendar_dates, Availability},
     gtfs::read::EquipmentList,
     model::{Collections, Model},
@@ -36,6 +35,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fs::File;
 use std::path::Path;
+use transit_model_collection::{CollectionWithId, Idx};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Agency {

@@ -15,7 +15,6 @@
 // <http://www.gnu.org/licenses/>.
 
 use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopLocationType, StopTime};
-use crate::collection::{Collection, CollectionWithId, Id, Idx};
 use crate::model::Collections;
 use crate::ntfs::{has_fares_v1, has_fares_v2};
 use crate::objects::*;
@@ -29,6 +28,7 @@ use serde;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
 use std::path;
+use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
 
 impl TryFrom<(&Ticket, &TicketPrice)> for PriceV1 {
     type Error = failure::Error;

@@ -16,7 +16,6 @@
 
 //! See function apply_rules
 
-use crate::collection::{CollectionWithId, Id, Idx};
 use crate::model::Collections;
 use crate::utils::{Report, ReportType};
 use crate::Result;
@@ -24,7 +23,6 @@ use crate::{
     objects::{
         Codes, Coord, Geometry, Line, Network, ObjectType as ModelObjectType, VehicleJourney,
     },
-    relations::IdxSet,
     Model,
 };
 use csv;
@@ -39,6 +37,8 @@ use std::fs;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use transit_model_collection::{CollectionWithId, Id, Idx};
+use transit_model_relations::IdxSet;
 use wkt::{self, conversion::try_into_geometry};
 
 #[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Hash)]

@@ -18,7 +18,6 @@
 
 use serde_json;
 
-use crate::collection::{Collection, CollectionWithId};
 use crate::model::Collections;
 use crate::objects::{CommentLinksT, KeysValues};
 use crate::objects::{RestrictionType, StopArea};
@@ -32,6 +31,7 @@ use std::fs;
 use std::path;
 use std::path::PathBuf;
 use std::result::Result as StdResult;
+use transit_model_collection::{Collection, CollectionWithId};
 
 #[derive(Deserialize, Debug)]
 struct StopAreaMergeRule {

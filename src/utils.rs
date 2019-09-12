@@ -14,10 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use crate::{
-    collection::{Collection, CollectionWithId, Id},
-    objects::Date,
-};
+use crate::objects::Date;
 use chrono::NaiveDate;
 use csv;
 use failure::ResultExt;
@@ -28,6 +25,7 @@ use serde::Serialize;
 use std::fs;
 use std::io::{Read, Write};
 use std::path;
+use transit_model_collection::{Collection, CollectionWithId, Id};
 use walkdir::WalkDir;
 use wkt::{self, conversion::try_into_geometry, ToWkt};
 use zip;
