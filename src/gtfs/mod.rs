@@ -271,7 +271,7 @@ where
     collections.comments = comments;
     read::manage_stop_times(&mut collections, file_handler)?;
     read::manage_frequencies(&mut collections, file_handler)?;
-
+    collections.pathways = read_utils::read_opt_collection(file_handler, "pathways.txt")?;
     collections.sanitize()?;
 
     //add prefixes
@@ -423,6 +423,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
         &model.stop_time_headsigns,
     )?;
     write::write_shapes(path, &model.geometries)?;
+    write_collection_with_id(path, "pathways.txt", &model.pathways)?;
 
     Ok(())
 }

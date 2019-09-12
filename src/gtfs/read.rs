@@ -448,7 +448,6 @@ pub fn read_agency<H>(
 where
     for<'a> &'a mut H: FileHandler,
 {
-    info!("Reading agency.txt");
     let filename = "agency.txt";
     let gtfs_agencies = read_objects::<_, Agency>(file_handler, filename)?;
     let networks = gtfs_agencies

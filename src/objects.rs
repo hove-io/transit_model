@@ -1057,6 +1057,56 @@ impl GetObjectType for StopPoint {
     }
 }
 
+#[derivative(Default)]
+#[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum PathwayMode {
+    #[derivative(Default)]
+    #[serde(rename = "1")]
+    Walkway,
+    #[serde(rename = "2")]
+    Stairs,
+    #[serde(rename = "3")]
+    MovingSidewalk,
+    #[serde(rename = "4")]
+    Escalator,
+    #[serde(rename = "5")]
+    Elevator,
+    #[serde(rename = "6")]
+    FareGate,
+    #[serde(rename = "7")]
+    ExitGate,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+pub struct Pathway {
+    #[serde(rename = "pathway_id")]
+    pub id: String,
+    pub from_stop_id: String,
+    pub to_stop_id: String,
+    pub pathway_mode: PathwayMode,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub is_bidirectional: bool,
+    #[serde(default, deserialize_with = "de_option_positive_decimal")]
+    pub length: Option<Decimal>,
+    pub traversal_time: Option<u32>,
+    #[serde(default, deserialize_with = "de_option_non_null_integer")]
+    pub stair_count: Option<i16>,
+    pub max_slope: Option<f32>,
+    #[serde(default, deserialize_with = "de_option_positive_float")]
+    pub min_width: Option<f32>,
+    pub signposted_as: Option<String>,
+    pub reversed_signposted_as: Option<String>,
+}
+
+impl AddPrefix for Pathway {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+        self.from_stop_id = prefix.to_string() + &self.from_stop_id;
+        self.to_stop_id = prefix.to_string() + &self.to_stop_id;
+    }
+}
+impl_id!(Pathway);
+
 pub type Date = chrono::NaiveDate;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
