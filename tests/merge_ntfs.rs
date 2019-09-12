@@ -18,14 +18,14 @@ use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::path::Path;
 use transit_model;
-use transit_model::collection::CollectionWithId;
-use transit_model::collection::Idx;
 use transit_model::model::Collections;
 use transit_model::model::Model;
 use transit_model::objects::{Comment, StopPoint, VehicleJourney};
 use transit_model::test_utils::*;
 use transit_model::transfers;
 use transit_model::transfers::TransfersMode;
+use transit_model_collection::CollectionWithId;
+use transit_model_collection::Idx;
 
 #[test]
 #[should_panic(expected = "TGC already found")] // first collision is on contributor id

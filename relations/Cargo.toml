@@ -1,5 +1,5 @@
 [package]
-name = "relations"
+name = "transit_model_relations"
 description = " Modeling the relations between objects"
 version = "0.1.0"
 authors = ["Kisio Digital <team.coretools@kisio.org>"]
@@ -11,5 +11,5 @@ keywords = ["relations", "collection"]
 [dependencies]
 derivative = "1.0.3"
 failure = "0.1.5"
-collection = { path = "../collection" }
+transit_model_collection = { path = "../collection" }
 transit_model_procmacro = { path = "../transit_model_procmacro" }

@@ -16,7 +16,6 @@
 
 //! See function generates_transfers
 
-use crate::collection::{Collection, CollectionWithId, Idx};
 use crate::model::Model;
 use crate::objects::{Contributor, StopPoint, Transfer};
 use crate::utils::{Report, ReportType};
@@ -31,6 +30,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
+use transit_model_collection::{Collection, CollectionWithId, Idx};
 
 #[derive(Deserialize, Debug)]
 struct Rule {

@@ -19,12 +19,12 @@
 mod read;
 
 use crate::{
-    collection::CollectionWithId,
     model::{Collections, Model},
     read_utils, AddPrefix, Result,
 };
 use std::fs::File;
 use std::path::Path;
+use transit_model_collection::CollectionWithId;
 
 fn read<H>(
     file_handler: &mut H,

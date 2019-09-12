@@ -15,7 +15,6 @@
 // <http://www.gnu.org/licenses/>.
 
 use crate::{
-    collection::{CollectionWithId, Id},
     objects::{self, Contributor},
     Result,
 };
@@ -28,6 +27,7 @@ use std::fs::File;
 use std::path;
 use std::path::{Path, PathBuf};
 use std::result::Result as StdResult;
+use transit_model_collection::{CollectionWithId, Id};
 
 #[derive(Deserialize, Debug)]
 struct ConfigDataset {

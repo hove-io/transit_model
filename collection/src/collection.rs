@@ -88,7 +88,7 @@ pub struct Collection<T> {
 /// # Examples
 ///
 /// ```
-/// use collection::Collection;
+/// use transit_model_collection::Collection;
 ///
 /// let collection: Collection<i32> = Collection::from(42);
 /// assert_eq!(collection.len(), 1);
@@ -114,7 +114,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::Collection;
+    /// use transit_model_collection::Collection;
     ///
     /// let _: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// ```
@@ -127,7 +127,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::Collection;
+    /// use transit_model_collection::Collection;
     ///
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// assert_eq!(c.len(), 6);
@@ -141,7 +141,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{Collection, Idx};
+    /// use transit_model_collection::{Collection, Idx};
     ///
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// let (k, v): (Idx<i32>, &i32) = c.iter().nth(4).unwrap();
@@ -160,7 +160,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::Collection;
+    /// use transit_model_collection::Collection;
     ///
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// let values: Vec<&i32> = c.values().collect();
@@ -175,7 +175,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::Collection;
+    /// use transit_model_collection::Collection;
     ///
     /// let mut c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// for elem in c.values_mut() {
@@ -192,7 +192,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{Collection, Idx};
+    /// use transit_model_collection::{Collection, Idx};
     /// use std::collections::BTreeSet;
     ///
     /// # fn get_transit_indices(c: &Collection<&'static str>) -> BTreeSet<Idx<&'static str>> {
@@ -221,7 +221,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{Collection, Id};
+    /// use transit_model_collection::{Collection, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -243,7 +243,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::Collection;
+    /// use transit_model_collection::Collection;
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -265,7 +265,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::Collection;
+    /// use transit_model_collection::Collection;
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -284,7 +284,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::Collection;
+    /// use transit_model_collection::Collection;
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj;
@@ -301,7 +301,7 @@ impl<T> Collection<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::Collection;
+    /// use transit_model_collection::Collection;
     /// use std::collections::HashSet;
     ///
     /// #[derive(PartialEq, Debug)]
@@ -322,7 +322,7 @@ impl<T> Collection<T> {
     }
 }
 
-/// The type returned by `Collection::iter`.
+/// The type returned by `transit_model_collection::iter`.
 pub type Iter<'a, T> =
     iter::Map<iter::Enumerate<slice::Iter<'a, T>>, fn((usize, &T)) -> (Idx<T>, &T)>;
 
@@ -387,7 +387,7 @@ pub struct CollectionWithId<T> {
 /// # Examples
 ///
 /// ```
-/// use collection::{CollectionWithId, Id};
+/// use transit_model_collection::{CollectionWithId, Id};
 ///
 /// #[derive(PartialEq, Debug)]
 /// struct Obj(&'static str);
@@ -417,7 +417,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -453,7 +453,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     /// use std::collections::HashMap;
     ///
     /// #[derive(PartialEq, Debug)]
@@ -479,7 +479,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -497,7 +497,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// ```
     ///
     /// ```should_panic
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -524,7 +524,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -549,7 +549,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -586,7 +586,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     /// use std::collections::HashSet;
     ///
     /// #[derive(PartialEq, Debug)]
@@ -618,7 +618,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -649,7 +649,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -678,7 +678,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// identifier already in the collection, and the second parameter is the
     /// element to be inserted.
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(Debug, Default)]
     /// struct ObjectId {
@@ -742,7 +742,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -766,7 +766,7 @@ impl<T: Id<T> + WithId> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// # use collection::{CollectionWithId, Id, WithId};
+    /// # use transit_model_collection::{CollectionWithId, Id, WithId};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(String);
@@ -800,7 +800,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id, WithId};
+    /// use transit_model_collection::{CollectionWithId, Id, WithId};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(String, String);
@@ -844,7 +844,7 @@ impl<T: Id<T>> iter::Extend<T> for CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -878,7 +878,7 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -903,7 +903,7 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -926,7 +926,7 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);
@@ -950,7 +950,7 @@ impl<T> CollectionWithId<T> {
     /// # Examples
     ///
     /// ```
-    /// use collection::{CollectionWithId, Id};
+    /// use transit_model_collection::{CollectionWithId, Id};
     ///
     /// #[derive(PartialEq, Debug)]
     /// struct Obj(&'static str);

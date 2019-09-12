@@ -16,11 +16,11 @@
 
 use std::collections::HashMap;
 use transit_model;
-use transit_model::collection::{CollectionWithId, Id, Idx};
 use transit_model::model::{GetCorresponding, Model};
 use transit_model::objects::*;
-use transit_model::relations::IdxSet;
 use transit_model::test_utils::*;
+use transit_model_collection::{CollectionWithId, Id, Idx};
+use transit_model_relations::IdxSet;
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
 where

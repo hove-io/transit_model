@@ -15,7 +15,6 @@
 // <http://www.gnu.org/licenses/>.
 
 use crate::{
-    collection::{CollectionWithId, Id},
     common_format::{Availability, CalendarDate},
     model::Collections,
     objects::*,
@@ -33,6 +32,7 @@ use proj::Proj;
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::result::Result as StdResult;
+use transit_model_collection::{CollectionWithId, Id};
 
 /// Deserialize kv1 string date (Y-m-d) to NaiveDate
 fn de_from_date_string<'de, D>(deserializer: D) -> StdResult<Date, D::Error>

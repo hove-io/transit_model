@@ -1,5 +1,5 @@
 [package]
-name = "collection"
+name = "transit_model_collection"
 description = "Manage collection of objects"
 version = "0.1.0"
 authors = ["Kisio Digital <team.coretools@kisio.org>"]

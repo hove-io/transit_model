@@ -263,8 +263,6 @@ mod tests {
 
     use super::Collections;
     use super::{read, write};
-    use crate::collection::*;
-    use crate::collection::{Collection, CollectionWithId};
     use crate::common_format;
     use crate::objects::*;
     use crate::read_utils::PathFileHandler;
@@ -275,6 +273,8 @@ mod tests {
     use serde;
     use std::collections::{BTreeMap, BTreeSet, HashMap};
     use std::fmt::Debug;
+    use transit_model_collection::*;
+    use transit_model_collection::{Collection, CollectionWithId};
 
     fn test_serialize_deserialize_collection_with_id<T>(objects: Vec<T>)
     where

@@ -18,12 +18,7 @@
 
 #![allow(missing_docs)]
 
-use crate::{
-    collection::{Id, Idx, WithId},
-    common_format::Availability,
-    utils::*,
-    AddPrefix,
-};
+use crate::{common_format::Availability, utils::*, AddPrefix};
 use chrono;
 use chrono::NaiveDate;
 use derivative::Derivative;
@@ -35,6 +30,7 @@ use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::str::FromStr;
+use transit_model_collection::{Id, Idx, WithId};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]

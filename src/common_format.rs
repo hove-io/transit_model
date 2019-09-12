@@ -14,7 +14,6 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use crate::collection::*;
 use crate::model::Collections;
 use crate::objects::{self, Date, ExceptionType};
 use crate::read_utils::FileHandler;
@@ -30,6 +29,7 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::path;
+use transit_model_collection::*;
 
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
 #[derivative(Default)]

@@ -16,12 +16,7 @@
 
 //! Definition of the navitia transit model.
 
-use crate::{
-    collection::{Collection, CollectionWithId, Id, Idx},
-    objects::*,
-    relations::{IdxSet, ManyToMany, OneToMany, Relation},
-    Error, Result,
-};
+use crate::{objects::*, Error, Result};
 use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::format_err;
@@ -30,7 +25,9 @@ use std::cmp;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops;
 use std::result::Result as StdResult;
+use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
 use transit_model_procmacro::*;
+use transit_model_relations::{IdxSet, ManyToMany, OneToMany, Relation};
 
 /// The set of collections representing the model.
 #[derive(Derivative, Serialize, Deserialize, Debug)]
@@ -516,7 +513,7 @@ impl Model {
     ///
     /// ```
     /// # use transit_model::model::*;
-    /// # use transit_model::collection::Collection;
+    /// # use transit_model_collection::Collection;
     /// # use transit_model::objects::Transfer;
     /// let mut collections = Collections::default();
     /// // This transfer is invalid as there is no stop points in collections

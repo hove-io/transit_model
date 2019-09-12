@@ -15,7 +15,6 @@
 // <http://www.gnu.org/licenses/>.
 
 use crate::{
-    collection::CollectionWithId,
     minidom_utils::TryOnlyChild,
     model::{Collections, Model},
     objects::*,
@@ -37,6 +36,7 @@ use std::{
     io::Read,
     path::Path,
 };
+use transit_model_collection::CollectionWithId;
 use walkdir::WalkDir;
 use zip::ZipArchive;
 
