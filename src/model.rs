@@ -68,6 +68,7 @@ pub struct Collections {
     pub ticket_prices: Collection<TicketPrice>,
     pub ticket_use_perimeters: Collection<TicketUsePerimeter>,
     pub ticket_use_restrictions: Collection<TicketUseRestriction>,
+    pub pathways: CollectionWithId<Pathway>,
 }
 
 impl Collections {

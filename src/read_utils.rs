@@ -196,12 +196,39 @@ where
     O: for<'de> serde::Deserialize<'de>,
 {
     let (reader, path) = file_handler.get_file(file_name)?;
-
+    let file_name = path.file_name();
+    let basename = file_name.map_or(path.to_string_lossy(), |b| b.to_string_lossy());
+    info!("Reading {}", basename);
     let mut rdr = csv::Reader::from_reader(reader);
     Ok(rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
         .with_context(ctx_from_path!(path))?)
+}
+
+pub fn read_opt_objects<H, O>(file_handler: &mut H, file_name: &str) -> Result<Vec<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de>,
+{
+    let (reader, path) = file_handler.get_file_if_exists(file_name)?;
+    let file_name = path.file_name();
+    let basename = file_name.map_or(path.to_string_lossy(), |b| b.to_string_lossy());
+
+    match reader {
+        None => {
+            info!("Skipping {}", basename);
+            Ok(vec![])
+        }
+        Some(reader) => {
+            info!("Reading {}", basename);
+            let mut rdr = csv::Reader::from_reader(reader);
+            Ok(rdr
+                .deserialize()
+                .collect::<StdResult<_, _>>()
+                .with_context(ctx_from_path!(path))?)
+        }
+    }
 }
 
 /// Read a CollectionId from a zip in a file_handler
@@ -211,6 +238,18 @@ where
     O: for<'de> serde::Deserialize<'de> + Id<O>,
 {
     let vec = read_objects(file_handler, file_name)?;
+    CollectionWithId::new(vec)
+}
+
+pub fn read_opt_collection<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+) -> Result<CollectionWithId<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de> + Id<O>,
+{
+    let vec = read_opt_objects(file_handler, file_name)?;
     CollectionWithId::new(vec)
 }
 
