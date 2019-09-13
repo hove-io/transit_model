@@ -1,6 +1,6 @@
 # TransXChange reading specification
 ## Introduction
-This document describes how a TransXChange feed is read in Navitia Transit model (NTM)
+This document describes how a [TransXChange](http://naptan.dft.gov.uk/transxchange/schema/2.4/doc/TransXChangeSchemaGuide-2.4-v-52.pdf) feed is read in Navitia Transit model (NTM)
 and transformed into a [NTFS feed](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
 
 For the sake of simplicity, the NTM properties that are not specified in the source
@@ -125,9 +125,9 @@ The validity period of a service is stated in *Services/Service/OperatingPeriod*
 
 Service days are calculated from the *VehicleJourneys/VehicleJourney/OperatingProfile* (if not specified, the operation days are inherited from *Service/OperatingProfile*). The corresponding days of the week are activated according to the pattern given by *RegularDayType/DaysOfWeek*. In particular, it is allowed any meaningful combination of the following possible values: `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`, `MondayToFriday`, `MondayToSaturday`, `MondayToSunday`, `NotSaturday`, `Weekend`. If no particular day of the week is explicitly specified, all days of the week (Monday to Sunday) are considered by default.
 
-The element *SpecialDaysOperation* may also be present specifying a *DateRange* with the specific dates of (non) operation. The days on which the service does (*DaysOfOperation*) or does not (*DaysOfNonOperation*) run are specified separately. Note that special days of operation are additional to the regular operating period (inclusion); inversely, special days of non operation further restrict the regular operating period (exclusion).
+The element *SpecialDaysOfOperation* may also be present specifying a *DateRange* with the specific dates of (non) operation. The days on which the service does (*DaysOfOperation*) or does not (*DaysOfNonOperation*) run are specified separately. Note that special days of operation are additional to the regular operating period (inclusion); inversely, special days of non operation further restrict the regular operating period (exclusion).
 
-Similarly, the element *BankHolidaysOperation* may be also be present, specifying how the service operates on a bank holiday. The possible values are the following: `AllBankHolidays`, `AllHolidaysExceptChristmas`, `ChristmasDay`, `Christmas`, `BoxingDay`, `NewYearsDay`, `Jan2ndScotland`, `GoodFriday`, `EasterMonday`, `MayDay`, `SpringBank`, `AugustBankHolidayScotland`, `LateSummerBankHolidayNotScotland`, `StAndrewsDay`.
+Similarly, the element *BankHolidayOperation* may be also be present, specifying how the service operates on a bank holiday. The possible values are the following: `AllBankHolidays`, `AllHolidaysExceptChristmas`, `ChristmasDay`, `Christmas`, `BoxingDay`, `NewYearsDay`, `Jan2ndScotland`, `GoodFriday`, `EasterMonday`, `MayDay`, `SpringBank`, `AugustBankHolidayScotland`, `LateSummerBankHolidayNotScotland`, `StAndrewsDay`.
 
 Note that special days override any Bank holiday day types.
 
@@ -151,7 +151,7 @@ physical_mode_id | *Services/Service/Mode* | This field is not prefixed. Link to
 The passing times at each stoppoint of a trip are specified as an ordered list of
 links between the stoppoints (*JourneyPatternTimingLink*s) in the *JourneyPatternSection* attached to the associated *JourneyPattern*.
 
-In some (rare) cases, a *VehicleJourney* might specify explicitly some timing links
+In some cases, a *VehicleJourney* might specify explicitly some timing links
 that are different from the underlying *JourneyPattern*. In this case, a
 *VehicleJourneyTimingLink* overrides any common property it shares with a *JourneyPatternTimingLink*.
 
@@ -183,35 +183,33 @@ drop_off_type | *JourneyPatternTimingLink/From/Activity* | `1` when the input va
 ## Possible evolutions
 The following points might be possibly included in a later version of the connector:
 
-**Provide comments for trips**
-
+### Provide comments for trips
 Two additional files for comments are to be created:
 
-### comments.txt
+**comments.txt**
 NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 comment_id | *VehicleJourney/VehicleJourneyCode*, *VehicleJourney/Note/NoteCode* | This field is prefixed and formed by the concatenation of the two fields separated by a `:`.
 comment_name | *VehicleJourney/Note/NoteText* |
 
-### comment_links.txt
+**comment_links.txt**
 NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 object_id | *VehicleJourney/ServiceRef*, *VehicleJourney/LineRef*, *VehicleJourney/VehicleJourneyCode* | This field is prefixed. Link to the file [trips.txt](#tripstxt).
 object_type |  | Fixed value `trip`.
 comment_id | *VehicleJourney/VehicleJourneyCode*, *VehicleJourney/Note/NoteCode* | This field is prefixed. Link to the file [comments.txt](#commentstxt).
 
-**Improve definition for trip_headsign**
-
-In case one of the elements *JourneyPatternTimingLink/DestinationDisplay* or *VehicleJourneyTimingLink/DestinationDisplay* is present, it is used for the trip_headsing field. In case both elements are specified, the *VehicleJourney* overrides the *JourneyPattern*. In case none of the elements is specified, *Services/Service/StandardService/JourneyPattern/DestinationDisplay* should be used. Otherwise, the field is left empty.
-
-**Provide accessibility info for trips**
-
+### Provide accessibility info for trips
 The wheelchair_accessible property is created in the trip_properties.txt file after the element *VehicleJourney/Operational/VehicleType/WheelchairAccessible*. The value of wheelchair_accessible is `1` when the trip is accesible, `2` when the trip is not accessible and `0` when the field is not specified.
 
-**Take into account *SpecialDaysOperation***
+### Take into account exceptional service dates
+The current version handles only regular days and bank holidays that are explicitily specified as normal elements of an *OperatingProfile*. Special or periodic service dates (e.g. *SpecialDaysOfOperation*, *PeriodicDayType*, *ServicedOrganisationDayType*) are not yet handled, they might be added in a later version.
 
-Specific service dates are not yet handled, they could be added in a later version according to the details provided above.
+### Handle shared attributes of *JourneyPattern* and *VehicleJourney*
+The current version does not take into account the common properties of a *VehicleJourney* shared with the associated *JourneyPattern*. In particular, waiting times or the activity at a timing link that are explicitly specified in the scope of a *VehicleJourneyTimingLink* are not yet handled and might be added in a later version.
 
-**Handle overloads on waiting times when not stoping at a stop**
+### Handle implicit references of a *JourneyPattern* in a *VehicleJourney*
+The current version only handles vehicle journeys that explicitly reference a single journey pattern and its timing links. In a later version, the following advanced cases might be considered:
 
-The accumulated waiting times at a stop are to be taken into account in case a stop is skipped in a journey pattern (i.e. *JourneyPatternTimingLink/From/Activity* equals to `pass`).
+- a vehicle journey that references all the links of another vehicle journey (which, in turn, references a journey pattern)
+- a vehicle journey that references more than one journey patterns.
