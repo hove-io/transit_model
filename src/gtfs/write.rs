@@ -626,6 +626,7 @@ mod tests {
             wheelchair_boarding: Availability::Available,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
+            level_id: None,
             platform_code: None,
         };
 
@@ -647,6 +648,7 @@ mod tests {
             },
             stop_area_id: "OIF:SA:8739322".to_string(),
             stop_type: StopType::Point,
+            level_id: Some("level1".to_string()),
             ..Default::default()
         };
 
@@ -663,6 +665,7 @@ mod tests {
             wheelchair_boarding: Availability::InformationNotAvailable,
             url: None,
             timezone: None,
+            level_id: Some("level1".to_string()),
             platform_code: None,
         };
 
@@ -732,6 +735,7 @@ mod tests {
             timezone: Some("Europe/Paris".to_string()),
             geometry_id: None,
             equipment_id: Some("1".to_string()),
+            level_id: None,
         };
 
         let expected = Stop {
@@ -747,6 +751,7 @@ mod tests {
             wheelchair_boarding: Availability::NotAvailable,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
+            level_id: None,
             platform_code: None,
         };
 
@@ -890,6 +895,7 @@ mod tests {
             },
             timezone: None,
             geometry_id: None,
+            level_id: Some("level0".to_string()),
             equipment_id: None,
         });
         let mut sp_codes: BTreeSet<(String, String)> = BTreeSet::new();
