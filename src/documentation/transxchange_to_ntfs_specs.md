@@ -129,6 +129,8 @@ The element *SpecialDaysOfOperation* may also be present specifying a *DateRange
 
 Similarly, the element *BankHolidayOperation* may be also be present, specifying how the service operates on a bank holiday. The possible values are the following: `AllBankHolidays`, `AllHolidaysExceptChristmas`, `ChristmasDay`, `Christmas`, `BoxingDay`, `NewYearsDay`, `Jan2ndScotland`, `GoodFriday`, `EasterMonday`, `MayDay`, `SpringBank`, `AugustBankHolidayScotland`, `LateSummerBankHolidayNotScotland`, `StAndrewsDay`.
 
+Bank holidays for England and Wales are taken into account as defined [here](https://www.gov.uk/bank-holidays/england-and-wales.json).
+
 Note that special days override any Bank holiday day types.
 
 ### trips.txt
