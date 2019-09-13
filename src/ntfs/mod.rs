@@ -101,6 +101,7 @@ struct Stop {
     timezone: Option<String>,
     geometry_id: Option<String>,
     equipment_id: Option<String>,
+    level_id: Option<String>,
     platform_code: Option<String>,
 }
 

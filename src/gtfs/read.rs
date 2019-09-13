@@ -103,6 +103,7 @@ impl From<Stop> for objects::StopArea {
             timezone: stop.timezone,
             visible: true,
             geometry_id: None,
+            level_id: stop.level_id,
             equipment_id: None,
         }
     }
@@ -126,6 +127,7 @@ impl From<Stop> for objects::StopPoint {
             visible: true,
             stop_type: StopType::Point,
             platform_code: stop.platform_code,
+            level_id: stop.level_id,
             ..Default::default()
         }
     }
