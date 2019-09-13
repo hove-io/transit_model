@@ -46,8 +46,8 @@ NTFS field | Netex-IDFM element | Mapping rule/Comment
 stop_id | *StopPlace/@id* | This field is prefixed. 
 stop_name | *StopPlace/Name* | 
 location_type | | Fixed value `1` (stop_area)
-stop_lat | Quay/Centroid/Location | see (1) below
-stop_lon | Quay/Centroid/Location | see (1) below
+stop_lat | | see (1) below
+stop_lon | | see (1) below
 
 (1) Definition of stop_lat et stop_lon:
 As this Netex feed does not provide coordinates for the stop_areas, the stop_lat et stop_lon fields will be set with the coordinate of the centroid of all included stop_points.
@@ -102,12 +102,14 @@ A ZDL `StopPlace` includes the references of it's ZDE in `StopPlace/quays/QuayRe
 
 **Definition of the Accessibility of a stop_point**
 
-If the `Quay` node contains a `AccessibilityAssessment/MobilityImpairedAccess` node, an equipement will be generated with:
+If the `Quay` node contains a `AccessibilityAssessment/MobilityImpairedAccess` node, an equipment will be generated with:
 - a self generated and prefixed `equipment_id`,
 - a `wheelchair_boarding` property set to: 
   + Fixed value `1` (accessible) if `MobilityImpairedAccess` has the value `true`,
   + Fixed value `2` (not accessible) if `MobilityImpairedAccess` has the value `false`,
   + Fixed value `0` (unknown) if `MobilityImpairedAccess` has any other value (`partial` or `unknown` for example).
+
+The equipments.txt file will contain at most 3 lines for each possible accessibility definition.
 
 
 ## Reading of the "lignes.xml" file
@@ -144,7 +146,7 @@ metro | Metro | Métro | Metro | Métro
 rail | LocalTrain | Train régional / TER | LocalTrain | Train régional / TER
 trolleyBus | Tramway | Tramway | TrolleyBus | TrolleyBus
 tram | Tramway | Tramway | Tramway | Tramway
-water | Boat | Navette maritime/fluviale | Boat | Navette maritime/fluviale
+water | Boat | Navette maritime / fluviale | Boat | Navette maritime / fluviale
 cableway | Tramway | Tramway | CableWay | CableWay
 funicular | Funicular | Funiculaire | Funicular | Funiculaire
 lift | Bus | Bus | Bus | Bus
@@ -161,7 +163,7 @@ network_id | *Network/@id* | id of the network containing a reference to this li
 line_code | *Line/ShortName* | 
 line_name | *Line/Name* | 
 
-If the node `Line/PrivateCode` is available, the content of this node is added as an `object_code` for this line with `object_system` set at `PrivateCode`.
+If the node `Line/PrivateCode` is available, the content of this node is added as an `object_code` for this line with `object_system` set at `Netex_PrivateCode`.
 
 If a node `Line/keyList/keyValue/Key` contains the value `Accessibility`, a `trip_property` will be specified for all the trips of the line (see trip_properties.txt).
 
@@ -180,18 +182,17 @@ route_id | *Route/@id* | This field is prefixed.
 route_name | *Route/Name* | 
 direction_type | *Route/DirectionType* | The value of this field is used without transformation.
 destination_id |  | The `DirectionRef` of the Route doesn't link to a stop (neither stop_point nor stop_area), thus its value is not used.
-line_id | *Line/LineRef/@ref* | This field is prefixed. 
+line_id | *Route/LineRef/@ref* | This field is prefixed. 
 
 **ServiceJourneyPattern references**
 All ServiceJourneyPattern of a `route` are stored as complementary `object_codes`. ServiceJourneyPattern nodes are listed in the same parent node as Route nodes.
-A ServiceJourneyPattern references a Route using the `ServiceJourneyPattern/RouteRef/@ref` attribute.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 object_type |  | fixed value `route` 
-object_id | *Route/@id* | This field is prefixed. 
-object_system |  | fixed value `ServiceJourneyPattern`
-object_code | *ServiceJourneyPattern/id* | The value of this field is used without transformation.
+object_id | *ServiceJourneyPattern/RouteRef/@ref* | This field is prefixed. 
+object_system |  | fixed value `Netex_ServiceJourneyPattern`
+object_code | *ServiceJourneyPattern/@id* | The value of this field is used without transformation.
 
 
 ### trips.txt
@@ -270,27 +271,27 @@ The `local_zone_id` is specified with an auto-incremented integer. Each `Routing
 This `RoutingConstraintZone` contains a list of `ScheduledStopPointRef` (in `RoutingConstraintZone/members/ScheduledStopPointRef/@ref`). If a stop_time corresponds to one of those `ScheduledStopPointRef`, the `local_zone_id` is set to the associated integer.
 
 ### calendar.txt and calendar_dates.txt
-Active days of `trips` are decribed in **calendriers.xml** of each folder in the `GeneralFrame` node.
-A ValidityPattern is created for each `members/DayType` of the file.
+Active days of `trips` are decribed in **calendriers.xml** of each folder in the `GeneralFrame/members/DayType` node (with the use of `DayTypeAssignment` and `OperatingPeriod`).
 
-* `ValidBetween/FromDate` and `ValidBetween/ToDate` provide start and end dates of each calendar defined in this file (both dates are included). Those dates are restrinctions to be applied to all calendars of this file.
-* A `members/DayType` nodes (referenced by trips), describing the basically active days of a week
-* `members/DayTypeAssignment` nodes, describing exceptions (added or removed days or periods)
-* `members/OperatingPeriod` nodes, describing periods referenced in `DayTypeAssignment`
+A `trip` references one or several `DayType` in `ServiceJourney/dayTypes/DayTypeRef/@ref`.
+The `service_id` property of the calendar in the NTFS is specified by an auto-incremented integer (this field is prefixed).
 
-Here is 3 possible modelizations in Netex-IDFM of a calendar running from 2016-07-01 to 2016-07-31 except on sundays and on 2016-07-14:
-![](./netex_idfm_to_ntfs_calendars.png "Definition of calendars in Netex-IDFM specs")
+Active dates of the calendar are specified by:
+- `DayType` nodes describing the active days of a week
+  + days of the week are listed in `DayType/properties/PropertyOfDay/DaysOfWeek nodes`. 
+  + Expected values MUST be one of `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`.
+- `OperatingPeriod` nodes describing periods (basically a begining date and an end date) referenced in `DayTypeAssignment`
+- `DayTypeAssignment` nodes with 2 possible uses:
+  + Activate or deactivate a specific day on a DayType (with the nodes `IsAvailable` and `Date`)
+  + Apply the active days of the referenced DayType on an `OperatingPeriod`
 
-In the NTFS, the `service_id` is set to the `members/DayType/@id` attribute (this field is prefixed).
+All resulting calendars are to be restricted between `ValidBetween/FromDate` and `ValidBetween/ToDate` specified at the top level of the file in `GeneralFrame`.
 
-Active dates are defined by: 
-- Active days described in `members/DayType/properties/PropertyOfDay/DaysOfWeek`. Expected values MUST be one of `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`.
-- One or several `members/DayTypeAssignment`
-  + if the `DayTypeAssignment` contains an attribute `isAvailable` (that should be set at `False`), an inactive date is declared by `DayTypeAssignment/Date`
-  + else an active period referenced by `DayTypeAssignment/OperatingPeriodRef/@ref`. This `OperatingPeriod` is to be used with `DayType` to list effective active dates
-The result is to be restricted between `ValidBetween/FromDate` and `ValidBetween/ToDate` specified at the top level of the file in `GeneralFrame`.
 
 Be careful: Definition of calendars and exceptions in calendar_dates may not be the same definition as the one in the Netex-IDFM files, but the resulting active dates will be the same.
+
+Here is 3 possible modelizations in Netex-IDFM of a calendar running from 2016-07-01 to 2016-07-31 from monday to saturday except on 2016-07-14:
+![](./netex_idfm_to_ntfs_calendars.png "Definition of calendars in Netex-IDFM specs")
 
 
 ### comments.txt
