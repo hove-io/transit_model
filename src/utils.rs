@@ -186,8 +186,8 @@ where
         Ok(number)
     } else {
         Err(D::Error::invalid_value(
-            Other("strictly negative integer number"),
-            &"positive integer number",
+            Other("strictly negative float number"),
+            &"positive float number",
         ))
     }
 }
@@ -242,10 +242,7 @@ where
     match option {
         Some(number) if number != 0 => Ok(option),
         None => Ok(None),
-        _ => Err(D::Error::invalid_value(
-            Other("0"),
-            &"non null number",
-        )),
+        _ => Err(D::Error::invalid_value(Other("0"), &"non null number")),
     }
 }
 

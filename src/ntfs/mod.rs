@@ -174,6 +174,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.ticket_use_perimeters = make_opt_collection(path, "ticket_use_perimeters.txt")?;
     collections.ticket_use_restrictions = make_opt_collection(path, "ticket_use_restrictions.txt")?;
     collections.pathways = make_opt_collection_with_id(path, "pathways.txt")?;
+    collections.levels = make_opt_collection_with_id(path, "levels.txt")?;
     manage_calendars(&mut file_handle, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
@@ -243,6 +244,7 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_object_properties(path, model)?;
     write::write_fares_v1(path, &model)?;
     write_collection_with_id(path, "pathways.txt", &model.pathways)?;
+    write_collection_with_id(path, "levels.txt", &model.levels)?;
 
     Ok(())
 }

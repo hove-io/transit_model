@@ -1113,6 +1113,22 @@ impl AddPrefix for Pathway {
 }
 impl_id!(Pathway);
 
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+pub struct Level {
+    #[serde(rename = "level_id")]
+    pub id: String,
+    pub level_index: f32,
+    pub level_name: Option<String>,
+}
+
+impl AddPrefix for Level {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+impl_id!(Level);
+
+
 pub type Date = chrono::NaiveDate;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
