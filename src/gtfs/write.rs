@@ -115,6 +115,7 @@ fn ntfs_stop_point_to_gtfs_stop(
         wheelchair_boarding: wheelchair,
         url: None,
         timezone: sp.timezone.clone(),
+        level_id: sp.level_id.clone(),
         platform_code: sp.platform_code.clone(),
     }
 }
@@ -143,6 +144,7 @@ fn ntfs_stop_area_to_gtfs_stop(
         wheelchair_boarding: wheelchair,
         url: None,
         timezone: sa.timezone.clone(),
+        level_id: sa.level_id.clone(),
         platform_code: None,
     }
 }

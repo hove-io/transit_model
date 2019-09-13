@@ -45,6 +45,7 @@ impl From<Stop> for StopArea {
             timezone: stop.timezone,
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
+            level_id: stop.level_id,
         }
     }
 }

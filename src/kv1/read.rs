@@ -407,6 +407,7 @@ where
             timezone: None,
             geometry_id: None,
             equipment_id: None,
+            level_id: None,
         };
         collections.stop_areas.push(stop_area)?;
     }

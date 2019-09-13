@@ -967,6 +967,7 @@ pub struct StopArea {
     pub timezone: Option<String>,
     pub geometry_id: Option<String>,
     pub equipment_id: Option<String>,
+    pub level_id: Option<String>,
 }
 impl_id!(StopArea);
 
@@ -983,6 +984,7 @@ impl From<StopPoint> for StopArea {
             timezone: stop_point.timezone,
             geometry_id: stop_point.geometry_id,
             equipment_id: stop_point.equipment_id,
+            level_id: stop_point.level_id,
         }
     }
 }
@@ -1033,6 +1035,7 @@ pub struct StopPoint {
     pub equipment_id: Option<String>,
     pub fare_zone_id: Option<String>,
     pub zone_id: Option<String>,
+    pub level_id: Option<String>,
     pub platform_code: Option<String>,
     #[serde(skip)]
     pub stop_type: StopType,
@@ -1127,7 +1130,6 @@ impl AddPrefix for Level {
     }
 }
 impl_id!(Level);
-
 
 pub type Date = chrono::NaiveDate;
 

@@ -120,6 +120,7 @@ struct Stop {
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
     timezone: Option<String>,
+    level_id: Option<String>,
     #[serde(deserialize_with = "de_with_empty_default", default)]
     wheelchair_boarding: Availability,
     platform_code: Option<String>,
