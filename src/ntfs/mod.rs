@@ -823,6 +823,7 @@ mod tests {
                 timezone: None,
                 geometry_id: None,
                 equipment_id: None,
+                level_id: None,
             },
             StopArea {
                 id: "sa_1".to_string(),
@@ -838,6 +839,7 @@ mod tests {
                 timezone: Some("Europe/Paris".to_string()),
                 geometry_id: Some("geometry_3".to_string()),
                 equipment_id: Some("equipment_1".to_string()),
+                level_id: Some("level2".to_string()),
             },
         ])
         .unwrap();
@@ -923,6 +925,7 @@ mod tests {
             timezone: None,
             geometry_id: None,
             equipment_id: None,
+            level_id: Some("level1".to_string()),
         });
 
         let lines = CollectionWithId::from(Line {
