@@ -77,6 +77,7 @@ impl AddPrefix for Collections {
         self.ticket_use_perimeters.add_prefix(&prefix);
         self.ticket_use_restrictions.add_prefix(&prefix);
         self.pathways.add_prefix(&prefix);
+        self.levels.add_prefix(&prefix);
     }
 }
 

@@ -272,6 +272,7 @@ where
     read::manage_stop_times(&mut collections, file_handler)?;
     read::manage_frequencies(&mut collections, file_handler)?;
     collections.pathways = read_utils::read_opt_collection(file_handler, "pathways.txt")?;
+    collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
     collections.sanitize()?;
 
     //add prefixes
@@ -424,6 +425,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
     )?;
     write::write_shapes(path, &model.geometries)?;
     write_collection_with_id(path, "pathways.txt", &model.pathways)?;
+    write_collection_with_id(path, "levels.txt", &model.levels)?;
 
     Ok(())
 }
