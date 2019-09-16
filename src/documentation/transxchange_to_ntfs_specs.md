@@ -125,13 +125,9 @@ The validity period of a service is stated in *Services/Service/OperatingPeriod*
 
 Service days are calculated from the *VehicleJourneys/VehicleJourney/OperatingProfile* (if not specified, the operation days are inherited from *Service/OperatingProfile*). The corresponding days of the week are activated according to the pattern given by *RegularDayType/DaysOfWeek*. In particular, it is allowed any meaningful combination of the following possible values: `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`, `MondayToFriday`, `MondayToSaturday`, `MondayToSunday`, `NotSaturday`, `Weekend`. If no particular day of the week is explicitly specified, all days of the week (Monday to Sunday) are considered by default.
 
-The element *SpecialDaysOfOperation* may also be present specifying a *DateRange* with the specific dates of (non) operation. The days on which the service does (*DaysOfOperation*) or does not (*DaysOfNonOperation*) run are specified separately. Note that special days of operation are additional to the regular operating period (inclusion); inversely, special days of non operation further restrict the regular operating period (exclusion).
-
-Similarly, the element *BankHolidayOperation* may be also be present, specifying how the service operates on a bank holiday. The possible values are the following: `AllBankHolidays`, `AllHolidaysExceptChristmas`, `ChristmasDay`, `Christmas`, `BoxingDay`, `NewYearsDay`, `Jan2ndScotland`, `GoodFriday`, `EasterMonday`, `MayDay`, `SpringBank`, `AugustBankHolidayScotland`, `LateSummerBankHolidayNotScotland`, `StAndrewsDay`.
+The element *BankHolidayOperation* may be also be present, specifying how the service operates on a bank holiday. The possible values are the following: `AllBankHolidays`, `AllHolidaysExceptChristmas`, `ChristmasDay`, `Christmas`, `BoxingDay`, `NewYearsDay`, `Jan2ndScotland`, `GoodFriday`, `EasterMonday`, `MayDay`, `SpringBank`, `AugustBankHolidayScotland`, `LateSummerBankHolidayNotScotland`, `StAndrewsDay`.
 
 Bank holidays for England and Wales are taken into account as defined [here](https://www.gov.uk/bank-holidays/england-and-wales.json).
-
-Note that special days override any Bank holiday day types.
 
 ### trips.txt
 A trip is created for each *VehicleJourneys/VehicleJourney*. The referenced
@@ -179,8 +175,8 @@ arrival_time | *JourneyPatternTimingLink/RunTime* | See computing rule above.
 departure_time | *JourneyPatternTimingLink/RunTime*, *JourneyPatternTimingLink/From/WaitTime* | See computing rule above.
 stop_id | *JourneyPatternTimingLink/From/StopPointRef* | This field is prefixed. Link to the file [stops.txt](#stopstxt).
 stop_sequence | *JourneyPatternTimingLink/From{SequenceNumber}* | The value should be `1` for the first stoppoint of the trip.
-pickup_type | *JourneyPatternTimingLink/From/Activity* | `1` when the input value is `setDown`, `0` otherwise.
-drop_off_type | *JourneyPatternTimingLink/From/Activity* | `1` when the input value is `pickUp`, `0` otherwise.
+pickup_type | *JourneyPatternTimingLink/From/Activity* | `1` when the input value is `setDown`, `0` otherwise. Note that if the attribute *Activity* is explicitly specified at the level of *VehicleJourneyTimingLink* and its value is `setDown`, then it overrides the property specified at the *JourneyPattern* level.
+drop_off_type | *JourneyPatternTimingLink/From/Activity* | `1` when the input value is `pickUp`, `0` otherwise. Note that if the attribute *Activity* is explicitly specified at the level of *VehicleJourneyTimingLink* and its value is `pickUp`, then it overrides the property specified at the *JourneyPattern* level.
 
 ## Possible evolutions
 The following points might be possibly included in a later version of the connector:
@@ -205,10 +201,14 @@ comment_id | *VehicleJourney/VehicleJourneyCode*, *VehicleJourney/Note/NoteCode*
 The wheelchair_accessible property is created in the trip_properties.txt file after the element *VehicleJourney/Operational/VehicleType/WheelchairAccessible*. The value of wheelchair_accessible is `1` when the trip is accesible, `2` when the trip is not accessible and `0` when the field is not specified.
 
 ### Take into account exceptional service dates
-The current version handles only regular days and bank holidays that are explicitily specified as normal elements of an *OperatingProfile*. Special or periodic service dates (e.g. *SpecialDaysOfOperation*, *PeriodicDayType*, *ServicedOrganisationDayType*) are not yet handled, they might be added in a later version.
+The element *SpecialDaysOfOperation* may also be present within an *OperatingProfile* specifying a *DateRange* with the specific dates of (non) operation. The days on which the service does (*DaysOfOperation*) or does not (*DaysOfNonOperation*) run are specified separately. Note that special days of operation are additional to the regular operating period (inclusion); inversely, special days of non operation further restrict the regular operating period (exclusion). Note also that special days override any Bank holiday day types.
+
+However, the current version handles only regular days and bank holidays that are explicitily specified as normal elements of an *OperatingProfile*. Special or periodic service dates (e.g. *SpecialDaysOfOperation*, *PeriodicDayType*, *ServicedOrganisationDayType*) are not yet handled, they might be added in a later version.
 
 ### Handle shared attributes of *JourneyPattern* and *VehicleJourney*
-The current version does not take into account the common properties of a *VehicleJourney* shared with the associated *JourneyPattern*. In particular, waiting times or the activity at a timing link that are explicitly specified in the scope of a *VehicleJourneyTimingLink* are not yet handled and might be added in a later version.
+The current version does not take into account the common properties of a *VehicleJourney* shared with the associated *JourneyPattern*. In particular, waiting times at a timing link that are explicitly specified in the scope of a *VehicleJourneyTimingLink* are not yet handled and might be added in a later version.
+
+Similarly, the case where the *Activity* attribute at the *VehicleJourney* level has the value `pass` is not yet handled; for the moment, the activity specified in the *JourneyPattern* level is taken into account.
 
 ### Handle implicit references of a *JourneyPattern* in a *VehicleJourney*
 The current version only handles vehicle journeys that explicitly reference a single journey pattern and its timing links. In a later version, the following advanced cases might be considered:
