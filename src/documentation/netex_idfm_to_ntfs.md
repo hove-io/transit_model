@@ -34,7 +34,7 @@ This connector assumes that all the "ZDL" `StopPlace` are included in one (and o
 For french readers: 
 - "ZDE" stands for "Zone D'Embarquement" (a boarding position)
 - "ZDL" stands for "Zone De Lieux" (a group of boarding position with the same transport mode)
-- "LDA" stands for "Lieu D'Arrêt" (a large group of boarding position with serveral transport modes known with a global name)
+- "LDA" stands for "Lieu D'Arrêt" (a large group of boarding position with several transport modes known with a global name)
 
 ### For stop_areas
 `stop_area` objects are `StopPlace` nodes of the **arrets.xml** file created in this order:
@@ -205,7 +205,7 @@ service_id |  | Defined using `ServiceJourney/DayTypeRef`, see (calendar.txt and
 trip_id | *ServiceJourney/@id* | This field is prefixed. 
 trip_headsign | *ServiceJourney/DestinationDisplayRef* | Content of the `DestinationDisplay/FrontText` node. If not available, the name of the `stop_point` of the last `stop_time` is used.
 trip_short_name | *ServiceJourney/DestinationDisplayRef* | Content of the `DestinationDisplay/PublicCode` node. If not available, this field is empty.
-company_id | *ServiceJourney/OperatorRef* | if *ServiceJourney/OperatorRef* is not defined, use *Line/OperatorRef* in [*lines.xml*](#linestxt) file. This field is prefixed.f* in *lines.xml* file (cf. lines
+company_id | *ServiceJourney/OperatorRef* | if *ServiceJourney/OperatorRef* is not defined, use *Line/OperatorRef* in [*lines.xml*](#linestxt) file. This field is prefixed.
 physical_mode_id | *Line/TransportMode* | see physical_modes definition
 trip_property_id |  | see [trip_properties.txt](#trip_propertiestxt)
 
