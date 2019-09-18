@@ -149,10 +149,47 @@ fn ntfs_stop_area_to_gtfs_stop(
     }
 }
 
+fn ntfs_stop_location_to_gtfs_stop(
+    sl: &objects::StopLocation,
+    comments: &CollectionWithId<objects::Comment>,
+    equipments: &CollectionWithId<objects::Equipment>,
+) -> Stop {
+    let wheelchair = sl
+        .equipment_id
+        .clone()
+        .and_then(|eq_id| equipments.get(&eq_id))
+        .map(|eq| eq.wheelchair_boarding)
+        .unwrap_or_else(Availability::default);
+    let location_type = match sl.stop_type {
+        Some(objects::StopType::StopEntrance) => StopLocationType::StopEntrance,
+        Some(objects::StopType::GenericNode) => StopLocationType::GenericNode,
+        Some(objects::StopType::BoardingArea) => StopLocationType::BoardingArea,
+        _ => StopLocationType::StopPoint,
+    };
+
+    Stop {
+        id: sl.id.clone(),
+        name: sl.name.clone(),
+        lat: sl.coord.lat,
+        lon: sl.coord.lon,
+        fare_zone_id: None,
+        location_type: location_type,
+        parent_station: sl.parent_id.clone(),
+        code: None,
+        desc: get_first_comment_name(sl, comments),
+        wheelchair_boarding: wheelchair,
+        url: None,
+        timezone: sl.timezone.clone(),
+        level_id: sl.level_id.clone(),
+        platform_code: None,
+    }
+}
+
 pub fn write_stops(
     path: &path::Path,
     stop_points: &CollectionWithId<objects::StopPoint>,
     stop_areas: &CollectionWithId<objects::StopArea>,
+    stop_locations: &CollectionWithId<objects::StopLocation>,
     comments: &CollectionWithId<objects::Comment>,
     equipments: &CollectionWithId<objects::Equipment>,
 ) -> Result<()> {
@@ -165,6 +202,10 @@ pub fn write_stops(
     }
     for sa in stop_areas.values() {
         wtr.serialize(ntfs_stop_area_to_gtfs_stop(sa, comments, equipments))
+            .with_context(ctx_from_path!(path))?;
+    }
+    for sl in stop_locations.values() {
+        wtr.serialize(ntfs_stop_location_to_gtfs_stop(sl, comments, equipments))
             .with_context(ctx_from_path!(path))?;
     }
 

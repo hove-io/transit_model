@@ -73,12 +73,41 @@ impl StopPoint {
     }
 }
 
+impl StopLocation {
+    fn from_ntfs_stop(stop: Stop) -> StopLocation {
+        let stop_type = match stop.location_type {
+            StopLocationType::EntranceExit => Some(StopType::StopEntrance),
+            StopLocationType::PathwayInterconnectionNode => Some(StopType::GenericNode),
+            StopLocationType::BoardingArea => Some(StopType::BoardingArea),
+            _ => None,
+        };
+
+        StopLocation {
+            id: stop.id,
+            name: stop.name,
+            comment_links: CommentLinksT::default(),
+            visible: false,
+            coord: Coord {
+                lon: stop.lon,
+                lat: stop.lat,
+            },
+            parent_id: stop.parent_station,
+            timezone: stop.timezone,
+            geometry_id: None,
+            equipment_id: None,
+            stop_type: stop_type,
+            level_id: stop.level_id,
+        }
+    }
+}
+
 pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<()> {
     info!("Reading stops.txt");
     let path = path.join("stops.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
+    let mut stop_locations = vec![];
     for stop in rdr.deserialize() {
         let mut stop: Stop = stop.with_context(ctx_from_path!(path))?;
         match stop.location_type {
@@ -103,19 +132,12 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
                 stop_points.push(stop_point);
             }
             StopLocationType::StopArea => stop_areas.push(StopArea::from(stop)),
-            StopLocationType::EntranceExit => {
-                warn!("stop.location_type = 3 not yet supported, skipping.")
-            }
-            StopLocationType::PathwayInterconnectionNode => {
-                warn!("stop.location_type = 4 not yet supported, skipping.")
-            }
-            StopLocationType::BoardingArea => {
-                warn!("stop.location_type = 5 not yet supported, skipping.")
-            }
+            _ => stop_locations.push(StopLocation::from_ntfs_stop(stop)),
         }
     }
     collections.stop_areas = CollectionWithId::new(stop_areas)?;
     collections.stop_points = CollectionWithId::new(stop_points)?;
+    collections.stop_locations = CollectionWithId::new(stop_locations)?;
     Ok(())
 }
 

@@ -466,6 +466,7 @@ pub fn write_stops(
     path: &path::Path,
     stop_points: &CollectionWithId<StopPoint>,
     stop_areas: &CollectionWithId<StopArea>,
+    stop_locations: &CollectionWithId<StopLocation>,
 ) -> Result<()> {
     info!("Writing stops.txt");
     let path = path.join("stops.txt");
@@ -474,6 +475,9 @@ pub fn write_stops(
         let location_type = match st.stop_type {
             StopType::Point => StopLocationType::StopPoint,
             StopType::Zone => StopLocationType::GeographicArea,
+            StopType::StopEntrance => StopLocationType::EntranceExit,
+            StopType::GenericNode => StopLocationType::PathwayInterconnectionNode,
+            StopType::BoardingArea => StopLocationType::BoardingArea,
         };
         wtr.serialize(Stop {
             id: st.id.clone(),
@@ -509,6 +513,34 @@ pub fn write_stops(
             equipment_id: sa.equipment_id.clone(),
             geometry_id: sa.geometry_id.clone(),
             level_id: sa.level_id.clone(),
+            platform_code: None,
+        })
+        .with_context(ctx_from_path!(path))?;
+    }
+
+    for sl in stop_locations.values() {
+        let location_type = match sl.stop_type {
+            Some(StopType::Point) => StopLocationType::StopPoint,
+            Some(StopType::Zone) => StopLocationType::GeographicArea,
+            Some(StopType::StopEntrance) => StopLocationType::EntranceExit,
+            Some(StopType::GenericNode) => StopLocationType::PathwayInterconnectionNode,
+            Some(StopType::BoardingArea) => StopLocationType::BoardingArea,
+            _ => StopLocationType::StopPoint,
+        };
+        wtr.serialize(Stop {
+            id: sl.id.clone(),
+            visible: sl.visible,
+            name: sl.name.clone(),
+            lat: sl.coord.lat,
+            lon: sl.coord.lon,
+            fare_zone_id: None,
+            zone_id: None,
+            location_type,
+            parent_station: sl.parent_id.clone(),
+            timezone: sl.timezone.clone(),
+            equipment_id: sl.equipment_id.clone(),
+            geometry_id: sl.geometry_id.clone(),
+            level_id: sl.level_id.clone(),
             platform_code: None,
         })
         .with_context(ctx_from_path!(path))?;

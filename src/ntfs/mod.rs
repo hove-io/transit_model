@@ -239,7 +239,12 @@ pub fn write<P: AsRef<path::Path>>(
     )?;
     write::write_collection(path, "frequencies.txt", &model.frequencies)?;
     write_calendar_dates(path, &model.calendars)?;
-    write::write_stops(path, &model.stop_points, &model.stop_areas)?;
+    write::write_stops(
+        path,
+        &model.stop_points,
+        &model.stop_areas,
+        &model.stop_locations,
+    )?;
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
@@ -844,8 +849,10 @@ mod tests {
         ])
         .unwrap();
 
+        let stop_locations: CollectionWithId<StopLocation> = CollectionWithId::default();
+
         test_in_tmp_dir(|path| {
-            write::write_stops(path, &stop_points, &stop_areas).unwrap();
+            write::write_stops(path, &stop_points, &stop_areas, &stop_locations).unwrap();
 
             let mut collections = Collections::default();
             read::manage_stops(&mut collections, path).unwrap();
@@ -927,6 +934,8 @@ mod tests {
             equipment_id: None,
             level_id: Some("level1".to_string()),
         });
+
+        let stop_locations: CollectionWithId<StopLocation> = CollectionWithId::default();
 
         let lines = CollectionWithId::from(Line {
             id: "OIF:002002003:3OIF829".to_string(),
@@ -1036,6 +1045,7 @@ mod tests {
         ser_collections.comments = comments;
         ser_collections.stop_areas = stop_areas;
         ser_collections.stop_points = stop_points;
+        ser_collections.stop_locations = stop_locations;
         ser_collections.lines = lines;
         ser_collections.routes = routes;
         ser_collections.vehicle_journeys = vehicle_journeys;
@@ -1049,6 +1059,7 @@ mod tests {
                 path,
                 &ser_collections.stop_points,
                 &ser_collections.stop_areas,
+                &ser_collections.stop_locations,
             )
             .unwrap();
             write_collection_with_id(path, "routes.txt", &ser_collections.routes).unwrap();
