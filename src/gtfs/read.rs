@@ -135,6 +135,34 @@ impl From<Stop> for objects::StopPoint {
     }
 }
 
+impl objects::StopLocation {
+    fn from_gtfs_stop(stop: Stop) -> objects::StopLocation {
+        let stop_type = match stop.location_type {
+            StopLocationType::StopEntrance => Some(objects::StopType::StopEntrance),
+            StopLocationType::GenericNode => Some(objects::StopType::GenericNode),
+            StopLocationType::BoardingArea => Some(objects::StopType::BoardingArea),
+            _ => None,
+        };
+
+        objects::StopLocation {
+            id: stop.id,
+            name: stop.name,
+            comment_links: CommentLinksT::default(),
+            visible: false,
+            coord: Coord {
+                lon: stop.lon,
+                lat: stop.lat,
+            },
+            parent_id: stop.parent_station,
+            timezone: stop.timezone,
+            geometry_id: None,
+            equipment_id: None,
+            level_id: stop.level_id,
+            stop_type: stop_type,
+        }
+    }
+}
+
 impl RouteType {
     fn to_gtfs_value(&self) -> String {
         match *self {
@@ -546,6 +574,7 @@ pub fn read_stops<H>(
 ) -> Result<(
     CollectionWithId<objects::StopArea>,
     CollectionWithId<objects::StopPoint>,
+    CollectionWithId<objects::StopLocation>,
 )>
 where
     for<'a> &'a mut H: FileHandler,
@@ -564,6 +593,7 @@ where
 
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
+    let mut stop_locations = vec![];
     for mut stop in gtfs_stops {
         let comment_links = manage_comment_from_stop(comments, &stop);
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
@@ -589,20 +619,18 @@ where
                 stop_area.equipment_id = equipment_id;
                 stop_areas.push(stop_area);
             }
-            StopLocationType::StopEntrance => {
-                warn!("stop location_type = 2 not handled for the moment, skipping",)
-            }
-            StopLocationType::GenericNode => {
-                warn!("stop location_type = 3 not handled for the moment, skipping",)
-            }
-            StopLocationType::BoardingArea => {
-                warn!("stop location_type = 4 not handled for the moment, skipping",)
+            _ => {
+                let mut stop_location = objects::StopLocation::from_gtfs_stop(stop);
+                stop_location.comment_links = comment_links;
+                stop_location.equipment_id = equipment_id;
+                stop_locations.push(stop_location);
             }
         }
     }
     let stoppoints = CollectionWithId::new(stop_points)?;
     let stopareas = CollectionWithId::new(stop_areas)?;
-    Ok((stopareas, stoppoints))
+    let stoplocations = CollectionWithId::new(stop_locations)?;
+    Ok((stopareas, stoppoints, stoplocations))
 }
 
 pub fn read_transfers<H>(
@@ -1156,10 +1184,11 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
 
-            let (stop_areas, stop_points) =
+            let (stop_areas, stop_points, stop_locations) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_areas.len());
             assert_eq!(1, stop_points.len());
+            assert_eq!(0, stop_locations.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
             assert_eq!("Navitia:id1", stop_area.id);
 
@@ -1188,10 +1217,11 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             // let stop_file = File::open(path.join("stops.txt")).unwrap();
-            let (stop_areas, stop_points) =
+            let (stop_areas, stop_points, stop_locations) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
+            collections.stop_locations = stop_locations;
             super::manage_shapes(&mut collections, &mut handler).unwrap();
             let stop_area = collections.stop_areas.iter().next().unwrap().1;
             assert_eq!("stoparea01", stop_area.id);
@@ -1222,7 +1252,7 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
-            let (stop_areas, stop_points) =
+            let (stop_areas, stop_points, stop_locations) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             //validate stop_point code
             assert_eq!(1, stop_points.len());
@@ -1247,6 +1277,7 @@ mod tests {
             let code = codes_iterator.next().unwrap();
             assert_eq!("source", code.0);
             assert_eq!("stoparea_id", code.1);
+            assert_eq!(0, stop_locations.len());
         });
     }
 
@@ -1261,7 +1292,7 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
-            let (stop_areas, _) =
+            let (stop_areas, _, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
@@ -1711,12 +1742,13 @@ mod tests {
             let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            let (stop_areas, stop_points) =
+            let (stop_areas, stop_points, stop_locations) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.equipments = CollectionWithId::new(equipments.into_equipments()).unwrap();
             collections.transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
+            collections.stop_locations = stop_locations;
 
             let (networks, companies) = super::read_agency(&mut handler).unwrap();
             collections.networks = networks;
@@ -2046,7 +2078,7 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (stop_areas, stop_points) =
+            let (stop_areas, stop_points, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             let equipments_collection =
                 CollectionWithId::new(equipments.into_equipments()).unwrap();
@@ -2111,7 +2143,7 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) =
+            let (_, stop_points, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             let equipments_collection =
                 CollectionWithId::new(equipments.into_equipments()).unwrap();
@@ -2181,7 +2213,7 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) =
+            let (_, stop_points, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
@@ -2264,7 +2296,7 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) =
+            let (_, stop_points, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
@@ -2331,7 +2363,7 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) =
+            let (_, stop_points, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
 
             let transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
@@ -2668,7 +2700,7 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
-            let (stop_areas, stop_points) =
+            let (stop_areas, stop_points, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_points.len());
             assert_eq!(1, stop_areas.len());
@@ -2691,7 +2723,7 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
-            let (_, stop_points) =
+            let (_, stop_points, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(3, stop_points.len());
             let longitudes: Vec<f64> = stop_points
@@ -2754,7 +2786,7 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) =
+            let (_, stop_points, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
@@ -2826,7 +2858,7 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points) =
+            let (_, stop_points, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 

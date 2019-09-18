@@ -260,10 +260,12 @@ where
     let (networks, companies) = read::read_agency(file_handler)?;
     collections.networks = networks;
     collections.companies = companies;
-    let (stop_areas, stop_points) = read::read_stops(file_handler, &mut comments, &mut equipments)?;
+    let (stop_areas, stop_points, stop_locations) =
+        read::read_stops(file_handler, &mut comments, &mut equipments)?;
     collections.transfers = read::read_transfers(file_handler, &stop_points)?;
     collections.stop_areas = stop_areas;
     collections.stop_points = stop_points;
+    collections.stop_locations = stop_locations;
 
     read::manage_shapes(&mut collections, file_handler)?;
 
@@ -406,6 +408,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
         path,
         &model.stop_points,
         &model.stop_areas,
+        &model.stop_locations,
         &model.comments,
         &model.equipments,
     )?;

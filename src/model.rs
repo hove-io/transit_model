@@ -70,6 +70,7 @@ pub struct Collections {
     pub ticket_use_restrictions: Collection<TicketUseRestriction>,
     pub pathways: CollectionWithId<Pathway>,
     pub levels: CollectionWithId<Level>,
+    pub stop_locations: CollectionWithId<StopLocation>,
 }
 
 impl Collections {

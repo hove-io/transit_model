@@ -1015,6 +1015,9 @@ pub enum StopType {
     #[derivative(Default)]
     Point,
     Zone,
+    StopEntrance,
+    GenericNode,
+    BoardingArea,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
@@ -1063,6 +1066,34 @@ impl_with_id!(StopPoint);
 impl GetObjectType for StopPoint {
     fn get_object_type() -> ObjectType {
         ObjectType::StopPoint
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct StopLocation {
+    pub id: String,
+    pub name: String,
+    #[serde(skip)]
+    pub comment_links: CommentLinksT,
+    pub visible: bool,
+    pub coord: Coord,
+    pub parent_id: Option<String>,
+    pub timezone: Option<String>,
+    pub geometry_id: Option<String>,
+    pub equipment_id: Option<String>,
+    pub level_id: Option<String>,
+    #[serde(skip)]
+    pub stop_type: Option<StopType>,
+}
+impl_id!(StopLocation);
+impl_comment_links!(StopLocation);
+
+impl AddPrefix for StopLocation {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+        if self.parent_id.is_some() {
+            self.parent_id = Some(prefix.to_string() + self.parent_id.as_ref().unwrap());
+        }
     }
 }
 
