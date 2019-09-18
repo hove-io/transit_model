@@ -35,6 +35,8 @@ pub mod kv1;
 pub mod merge_stop_areas;
 mod minidom_utils;
 pub mod model;
+#[cfg(feature = "proj")]
+pub mod netex_idf;
 pub mod ntfs;
 mod read_utils;
 #[doc(hidden)]
