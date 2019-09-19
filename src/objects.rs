@@ -991,6 +991,7 @@ impl AddPrefix for StopArea {
             .as_ref()
             .map(|id| prefix.to_string() + &id);
         self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
+        self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
     }
 }
 impl_codes!(StopArea);
@@ -1050,6 +1051,7 @@ impl AddPrefix for StopPoint {
             .as_ref()
             .map(|id| prefix.to_string() + &id);
         self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
+        self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
     }
 }
 impl_codes!(StopPoint);
@@ -1085,9 +1087,13 @@ impl_comment_links!(StopLocation);
 impl AddPrefix for StopLocation {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
-        if self.parent_id.is_some() {
-            self.parent_id = Some(prefix.to_string() + self.parent_id.as_ref().unwrap());
-        }
+        self.parent_id = self.parent_id.as_ref().map(|id| prefix.to_string() + &id);
+        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
+        self.equipment_id = self
+            .equipment_id
+            .as_ref()
+            .map(|id| prefix.to_string() + &id);
+        self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
     }
 }
 
