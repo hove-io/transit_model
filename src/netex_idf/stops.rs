@@ -17,13 +17,13 @@
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
-    objects::{Coord, Properties, StopArea},
+    objects::{Codes, Coord, Properties, StopArea},
     Result,
 };
 use failure::{format_err, ResultExt};
-use log::info;
+use log::{info, warn};
 use minidom::Element;
-use std::{fs::File, io::Read};
+use std::{collections::HashMap, fs::File, io::Read};
 use transit_model_collection::CollectionWithId;
 
 fn load_stop_areas(elem: &Element) -> Result<CollectionWithId<StopArea>> {
@@ -35,18 +35,24 @@ fn load_stop_areas(elem: &Element) -> Result<CollectionWithId<StopArea>> {
         .children()
         .flat_map(|e| e.children())
         .filter(|e| e.name() == "members");
+
+    let mut map_lda_zde: HashMap<String, String> = HashMap::default();
     for member in members {
         let stop_places = member.children().filter(|e| e.name() == "StopPlace");
 
+        // add stop areas
         for stop_place in stop_places {
-            if let Ok(_parent_site_ref) = stop_place.try_only_child("ParentSiteRef") {
-                // mapping quays/QuayRef/@ref <-> ParentSiteRef/Name
+            let id = stop_place.try_attribute("id")?;
+
+            // ZDL with ParentSiteRef
+            if let Ok(parent_site_ref) = stop_place.try_only_child("ParentSiteRef") {
+                map_lda_zde.insert(parent_site_ref.try_attribute("ref")?, id);
                 continue;
             }
 
-            // add stop area
+            // LDA or ZDE wihtout ParentSiteRef
             let mut stop_area = StopArea {
-                id: stop_place.try_attribute("id")?,
+                id,
                 name: stop_place.try_only_child("Name")?.text().trim().to_string(),
                 visible: true,
                 coord: Coord { lon: 0., lat: 0. },
@@ -63,6 +69,18 @@ fn load_stop_areas(elem: &Element) -> Result<CollectionWithId<StopArea>> {
                 .insert(("Netex_StopType".to_string(), type_of_place_ref));
 
             stop_areas.push(stop_area)?;
+        }
+    }
+
+    // add object codes to stop areas
+    for (lda_id, zde_id) in map_lda_zde {
+        if let Some(mut sa) = stop_areas.get_mut(&lda_id) {
+            sa.codes_mut().insert(("Netex_ZDL".to_string(), zde_id));
+        } else {
+            warn!(
+                "parent LDA (stop area) {} for ZDE {} not found",
+                lda_id, zde_id
+            );
         }
     }
 
@@ -175,6 +193,26 @@ mod tests {
                 ("Netex_StopType", "ZDL"),
             ],
             object_properties
+        );
+
+        let object_codes: Vec<(_, Vec<_>)> = stop_areas
+            .values()
+            .map(|sa| (sa.id.as_ref(), sa.codes.iter().cloned().collect()))
+            .collect();
+
+        assert_eq!(
+            vec![
+                (
+                    "FR:78686:LDA:422420:STIF",
+                    vec![(
+                        "Netex_ZDL".to_string(),
+                        "FR:78423:ZDL:57857:STIF".to_string()
+                    )]
+                ),
+                ("FR:28140:LDA:74325:STIF", vec![]),
+                ("FR:0:ZDL:50057134:STIF", vec![])
+            ],
+            object_codes
         );
     }
 }
