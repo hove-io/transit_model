@@ -17,5 +17,6 @@
 //! Module to handle Netex IDF profile
 
 mod read;
+mod stops;
 
 pub use read::read;
