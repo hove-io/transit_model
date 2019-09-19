@@ -68,6 +68,7 @@ impl StopPoint {
             zone_id: stop.zone_id,
             stop_type,
             platform_code: stop.platform_code,
+            level_id: stop.level_id,
             ..Default::default()
         }
     }
@@ -93,8 +94,8 @@ impl StopLocation {
             },
             parent_id: stop.parent_station,
             timezone: stop.timezone,
-            geometry_id: None,
-            equipment_id: None,
+            geometry_id: stop.geometry_id,
+            equipment_id: stop.equipment_id,
             stop_type: stop_type,
             level_id: stop.level_id,
         }
