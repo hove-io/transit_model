@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use super::stops;
 use crate::{
     model::{Collections, Model},
     AddPrefix, Result,
@@ -22,7 +23,7 @@ use std::path::Path;
 use transit_model_collection::CollectionWithId;
 
 /// Read Netex IDF format into a Navitia Transit Model
-pub fn read<P>(_netex_idf_path: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
+pub fn read<P>(netex_idf_path: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
 where
     P: AsRef<Path>,
 {
@@ -32,7 +33,8 @@ where
     collections.datasets = CollectionWithId::from(dataset);
     collections.feed_infos = feed_infos;
 
-    // read netex files
+    let path = netex_idf_path.as_ref();
+    stops::from_path(&path.join("arrets.xml"), &mut collections)?;
 
     if let Some(prefix) = prefix {
         collections.add_prefix_with_sep(prefix.as_str(), ":");
