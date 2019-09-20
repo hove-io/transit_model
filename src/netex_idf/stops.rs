@@ -14,62 +14,82 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use super::EUROPE_PARIS_TIMEZONE;
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
-    objects::{Codes, Coord, Properties, StopArea},
+    objects::{Codes, Coord, Properties, StopArea, StopPoint, StopType},
     Result,
 };
-use failure::{format_err, ResultExt};
+use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use minidom::Element;
+use proj::Proj;
 use std::{collections::HashMap, fs::File, io::Read};
 use transit_model_collection::CollectionWithId;
 
-fn load_stop_areas(elem: &Element) -> Result<CollectionWithId<StopArea>> {
+fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionWithId<StopPoint>)> {
     let mut stop_areas = CollectionWithId::default();
-    let members = elem
+    let mut stop_points = CollectionWithId::default();
+    let member_children: Vec<_> = elem
         .try_only_child("dataObjects")?
         .try_only_child("CompositeFrame")?
         .try_only_child("frames")?
         .children()
         .flat_map(|e| e.children())
-        .filter(|e| e.name() == "members");
+        .filter(|e| e.name() == "members")
+        .flat_map(|e| e.children())
+        .collect();
 
     let mut map_lda_zde: HashMap<String, String> = HashMap::default();
-    for member in members {
-        let stop_places = member.children().filter(|e| e.name() == "StopPlace");
+    let mut map_quay_lda: HashMap<String, String> = HashMap::default();
 
-        // add stop areas
-        for stop_place in stop_places {
-            let id = stop_place.try_attribute("id")?;
+    for stop_place in member_children.iter().filter(|e| e.name() == "StopPlace") {
+        let id = stop_place.try_attribute("id")?;
 
-            // ZDL with ParentSiteRef
-            if let Ok(parent_site_ref) = stop_place.try_only_child("ParentSiteRef") {
-                map_lda_zde.insert(parent_site_ref.try_attribute("ref")?, id);
-                continue;
+        // ZDL with ParentSiteRef
+        if let Ok(parent_site_ref) = stop_place.try_only_child("ParentSiteRef") {
+            let parent_site_ref: String = parent_site_ref.try_attribute("ref")?;
+            map_lda_zde.insert(parent_site_ref.clone(), id);
+
+            for quay_ref in stop_place.try_only_child("quays")?.children() {
+                map_quay_lda.insert(quay_ref.try_attribute("ref")?, parent_site_ref.clone());
             }
 
-            // LDA or ZDE wihtout ParentSiteRef
-            let mut stop_area = StopArea {
-                id,
-                name: stop_place.try_only_child("Name")?.text().trim().to_string(),
-                visible: true,
-                coord: Coord { lon: 0., lat: 0. },
-                ..Default::default()
-            };
-
-            // add object properties
-            let type_of_place_ref: String = stop_place
-                .try_only_child("placeTypes")?
-                .try_only_child("TypeOfPlaceRef")?
-                .try_attribute("ref")?;
-            stop_area
-                .properties_mut()
-                .insert(("Netex_StopType".to_string(), type_of_place_ref));
-
-            stop_areas.push(stop_area)?;
+            continue;
         }
+
+        if stop_place
+            .try_only_child("placeTypes")?
+            .try_only_child("TypeOfPlaceRef")?
+            .try_attribute::<String>("ref")?
+            == "ZDL"
+        {
+            for quay_ref in stop_place.try_only_child("quays")?.children() {
+                map_quay_lda.insert(quay_ref.try_attribute("ref")?, id.clone());
+            }
+        }
+
+        // add stop areas
+        // LDA or ZDL without ParentSiteRef
+        let mut stop_area = StopArea {
+            id,
+            name: stop_place.try_only_child("Name")?.text().trim().to_string(),
+            visible: true,
+            coord: Coord { lon: 0., lat: 0. },
+            ..Default::default()
+        };
+
+        // add object properties
+        let type_of_place_ref: String = stop_place
+            .try_only_child("placeTypes")?
+            .try_only_child("TypeOfPlaceRef")?
+            .try_attribute("ref")?;
+        stop_area
+            .properties_mut()
+            .insert(("Netex_StopType".to_string(), type_of_place_ref));
+
+        stop_areas.push(stop_area)?;
     }
 
     // add object codes to stop areas
@@ -84,7 +104,69 @@ fn load_stop_areas(elem: &Element) -> Result<CollectionWithId<StopArea>> {
         }
     }
 
-    Ok(stop_areas)
+    // add stop points
+    let from = "EPSG:2154";
+    let to = "+proj=longlat +datum=WGS84 +no_defs";
+    let proj = Proj::new_known_crs(&from, &to, None)
+        .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))?;
+
+    fn parse_coords(quay: &Element) -> Result<(f64, f64)> {
+        let gml_pos = quay
+            .try_only_child("Centroid")?
+            .try_only_child("Location")?
+            .try_only_child("pos")?
+            .text()
+            .trim()
+            .to_string();
+
+        let coords: Vec<&str> = gml_pos.split_whitespace().collect();
+        if coords.len() != 2 {
+            bail!("longitude and latitude not found");
+        }
+
+        Ok((coords[0].parse()?, coords[1].parse()?))
+    }
+
+    for quay in member_children.iter().filter(|e| e.name() == "Quay") {
+        let id: String = quay.try_attribute("id")?;
+        let coords = skip_fail!(parse_coords(quay).map_err(|e| format_err!(
+            "unable to parse coordinates of quay {}: {}",
+            id,
+            e
+        )));
+
+        let mut stop_point = StopPoint {
+            id: quay.try_attribute("id")?,
+            name: quay.try_only_child("Name")?.text().trim().to_string(),
+            visible: true,
+            coord: proj.convert((coords.0, coords.1).into()).map(Coord::from)?,
+            stop_area_id: "default_id".to_string(),
+            timezone: Some(EUROPE_PARIS_TIMEZONE.to_string()),
+            stop_type: StopType::Point,
+            ..Default::default()
+        };
+
+        let stop_point = if let Some(stop_area_id) =
+            map_quay_lda.get(&id).and_then(|stop_area_id| {
+                stop_areas
+                    .get(&stop_area_id)
+                    .map(|_| stop_area_id.to_string())
+            }) {
+            StopPoint {
+                stop_area_id,
+                ..stop_point
+            }
+        } else {
+            let stop_area = StopArea::from(stop_point.clone());
+            stop_point.stop_area_id = stop_area.id.clone();
+            stop_areas.push(stop_area)?;
+            stop_point
+        };
+
+        stop_points.push(stop_point)?;
+    }
+
+    Ok((stop_areas, stop_points))
 }
 
 pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Result<()> {
@@ -95,11 +177,12 @@ pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Resul
     file.read_to_string(&mut file_content)?;
     let elem = file_content.parse::<Element>();
 
-    let stop_areas = elem
+    let (stop_areas, stop_points) = elem
         .map_err(|e| format_err!("Failed to parse file '{:?}': {}", path, e))
-        .and_then(|ref e| load_stop_areas(e))?;
+        .and_then(|ref e| load_stops(e))?;
 
     collections.stop_areas.try_merge(stop_areas)?;
+    collections.stop_points.try_merge(stop_points)?;
 
     Ok(())
 }
@@ -147,8 +230,8 @@ mod tests {
                             </AccessibilityAssessment>
                             <ParentSiteRef ref="FR:78686:LDA:422420:STIF" />
                             <quays>
-                                <QuayRef ref="FR:78423:ZDE:20880:STIF" />
-                                <QuayRef ref="FR:78423:ZDE:20894:STIF" />
+                                <QuayRef ref="FR:94017:ZDE:50125579:STIF" />
+                                <QuayRef ref="FR:92050:ZDE:50028126:STIF" />
                             </quays>
                         </StopPlace>
                         <StopPlace id="FR:0:ZDL:50057134:STIF">
@@ -160,10 +243,41 @@ mod tests {
                                 <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
                             </AccessibilityAssessment>
                             <quays>
-                                <QuayRef ref="FR:93061:ZDE:50105305:STIF" />
-                                <QuayRef ref="FR:93061:ZDE:50105266:STIF" />
+                                <QuayRef ref="FR:77035:ZDE:50021889:STIF" />
                             </quays>
                         </StopPlace>
+                        <Quay id="FR:94017:ZDE:50125579:STIF">
+                            <Name>RABELAIS</Name>
+                            <Centroid>
+                                <Location>
+                                    <gml:pos srsName="EPSG:2154">666944.0 6856019.0</gml:pos>
+                                </Location>
+                            </Centroid>
+                        </Quay>
+                        <Quay id="FR:92050:ZDE:50028126:STIF">
+                            <Name>FERNAND LEGER</Name>
+                            <Centroid>
+                                <Location>
+                                    <gml:pos srsName="EPSG:2154">666944.0 6856019.0</gml:pos>
+                                </Location>
+                            </Centroid>
+                        </Quay>
+                        <Quay id="FR:77035:ZDE:50021889:STIF">
+                            <Name>Launoy</Name>
+                            <Centroid>
+                                <Location>
+                                    <gml:pos srsName="EPSG:2154">700290.0 6796273.0</gml:pos>
+                                </Location>
+                            </Centroid>
+                        </Quay>
+                        <Quay id="FR:78034:ZDE:50067439:STIF">
+                            <Name>Centre Village</Name>
+                            <Centroid>
+                                <Location>
+                                    <gml:pos srsName="EPSG:2154">700290.0 6796273.0</gml:pos>
+                                </Location>
+                            </Centroid>
+                        </Quay>
 					</members>
 				</GeneralFrame>
             </frames>
@@ -171,12 +285,17 @@ mod tests {
 	</dataObjects>
 </root>"#;
         let root: Element = xml.parse().unwrap();
-        let stop_areas = load_stop_areas(&root).unwrap();
-        assert_eq!(3, stop_areas.len());
+        let (stop_areas, stop_points) = load_stops(&root).unwrap();
+        assert_eq!(4, stop_areas.len());
 
         let names: Vec<_> = stop_areas.values().map(|sa| &sa.name).collect();
         assert_eq!(
-            vec!["Viroflay Gare Rive Droite", "Prairie", "CONVENTION"],
+            vec![
+                "Viroflay Gare Rive Droite",
+                "Prairie",
+                "CONVENTION",
+                "Centre Village"
+            ],
             names
         );
 
@@ -210,9 +329,34 @@ mod tests {
                     )]
                 ),
                 ("FR:28140:LDA:74325:STIF", vec![]),
-                ("FR:0:ZDL:50057134:STIF", vec![])
+                ("FR:0:ZDL:50057134:STIF", vec![]),
+                ("Navitia:FR:78034:ZDE:50067439:STIF", vec![])
             ],
             object_codes
+        );
+
+        let stop_points: Vec<_> = stop_points
+            .values()
+            .cloned()
+            .map(|sp| (sp.name, sp.stop_area_id))
+            .collect();
+        assert_eq!(
+            vec![
+                (
+                    "RABELAIS".to_string(),
+                    "FR:78686:LDA:422420:STIF".to_string()
+                ),
+                (
+                    "FERNAND LEGER".to_string(),
+                    "FR:78686:LDA:422420:STIF".to_string()
+                ),
+                ("Launoy".to_string(), "FR:0:ZDL:50057134:STIF".to_string()),
+                (
+                    "Centre Village".to_string(),
+                    "Navitia:FR:78034:ZDE:50067439:STIF".to_string()
+                ),
+            ],
+            stop_points
         );
     }
 }
