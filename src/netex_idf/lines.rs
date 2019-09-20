@@ -24,14 +24,21 @@ use crate::{
 use failure::{format_err, ResultExt};
 use log::info;
 use minidom::Element;
-use std::{fs::File, io::Read};
+use std::{collections::HashMap, fs::File, io::Read};
 use transit_model_collection::CollectionWithId;
+
+type MapLineNetwork = HashMap<String, String>;
 
 fn load_networks_companies(
     elem: &Element,
-) -> Result<(CollectionWithId<Network>, CollectionWithId<Company>)> {
+) -> Result<(
+    CollectionWithId<Network>,
+    CollectionWithId<Company>,
+    MapLineNetwork,
+)> {
     let mut networks = CollectionWithId::default();
     let mut companies = CollectionWithId::default();
+    let mut map_line_network: MapLineNetwork = HashMap::new();
     for frame in elem
         .try_only_child("dataObjects")?
         .try_only_child("CompositeFrame")?
@@ -42,13 +49,21 @@ fn load_networks_companies(
             let id = network.try_attribute("id")?;
             let name = network.try_only_child("Name")?.text().parse()?;
             let timezone = Some(String::from(EUROPE_PARIS_TIMEZONE));
-            let network = Network {
+            networks.push(Network {
                 id,
                 name,
                 timezone,
                 ..Default::default()
-            };
-            networks.push(network)?;
+            })?;
+
+            let lines_ref = network
+                .try_only_child("members")?
+                .children()
+                .filter(|e| e.name() == "LineRef");
+            for line_ref in lines_ref {
+                map_line_network
+                    .insert(line_ref.try_attribute("ref")?, network.try_attribute("id")?);
+            }
         }
         if let Ok(company) = frame
             .try_only_child("organisations")
@@ -56,15 +71,14 @@ fn load_networks_companies(
         {
             let id = company.try_attribute("id")?;
             let name = company.try_only_child("Name")?.text().parse()?;
-            let company = Company {
+            companies.push(Company {
                 id,
                 name,
                 ..Default::default()
-            };
-            companies.push(company)?;
+            })?;
         }
     }
-    Ok((networks, companies))
+    Ok((networks, companies, map_line_network))
 }
 
 pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Result<()> {
@@ -75,7 +89,7 @@ pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Resul
     file.read_to_string(&mut file_content)?;
     let elem = file_content.parse::<Element>();
 
-    let (networks, companies) = elem
+    let (networks, companies, _map_line_network) = elem
         .map_err(|e| format_err!("Failed to parse file '{:?}': {}", path, e))
         .and_then(|ref e| load_networks_companies(e))?;
 
@@ -159,7 +173,7 @@ mod tests {
    </dataObjects>
 </root>"#;
         let root: Element = xml.parse().unwrap();
-        let (networks, companies) = load_networks_companies(&root).unwrap();
+        let (networks, companies, _) = load_networks_companies(&root).unwrap();
         let networks_names: Vec<_> = networks.values().map(|n| &n.name).collect();
         assert_eq!(vec!["VEOLIA RAMBOUILLET"], networks_names);
         let companies_names: Vec<_> = companies.values().map(|c| &c.name).collect();
