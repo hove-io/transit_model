@@ -38,7 +38,7 @@ fn load_networks_companies(
         .try_only_child("frames")?
         .children()
     {
-        if let Some(network) = frame.try_only_child("Network").ok() {
+        if let Ok(network) = frame.try_only_child("Network") {
             let id = network.try_attribute("id")?;
             let name = network.try_only_child("Name")?.text().parse()?;
             let timezone = Some(String::from(EUROPE_PARIS_TIMEZONE));
@@ -50,10 +50,9 @@ fn load_networks_companies(
             };
             networks.push(network)?;
         }
-        if let Some(company) = frame
+        if let Ok(company) = frame
             .try_only_child("organisations")
             .and_then(|org| org.try_only_child("Operator"))
-            .ok()
         {
             let id = company.try_attribute("id")?;
             let name = company.try_only_child("Name")?.text().parse()?;
