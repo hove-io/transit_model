@@ -15,16 +15,15 @@
 // <http://www.gnu.org/licenses/>.
 
 use crate::{
-    minidom_utils::TryOnlyChild,
+    minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
-    objects::{Coord, StopArea},
+    objects::{Coord, Properties, StopArea},
     Result,
 };
 use failure::{format_err, ResultExt};
 use log::info;
 use minidom::Element;
-use std::fs::File;
-use std::io::Read;
+use std::{fs::File, io::Read};
 use transit_model_collection::CollectionWithId;
 
 fn load_stop_areas(elem: &Element) -> Result<CollectionWithId<StopArea>> {
@@ -34,25 +33,36 @@ fn load_stop_areas(elem: &Element) -> Result<CollectionWithId<StopArea>> {
         .try_only_child("CompositeFrame")?
         .try_only_child("frames")?
         .children()
-        .flat_map(|e| e.children().filter(|e| e.name() == "members"));
+        .flat_map(|e| e.children())
+        .filter(|e| e.name() == "members");
     for member in members {
         let stop_places = member.children().filter(|e| e.name() == "StopPlace");
 
         for stop_place in stop_places {
             if let Ok(_parent_site_ref) = stop_place.try_only_child("ParentSiteRef") {
                 // mapping quays/QuayRef/@ref <-> ParentSiteRef/Name
-            } else {
-                if let Some(id) = stop_place.attr("id") {
-                    let stop_area = StopArea {
-                        id: id.to_string(),
-                        name: stop_place.try_only_child("Name")?.text().trim().to_string(),
-                        visible: true,
-                        coord: Coord { lon: 0., lat: 0. },
-                        ..Default::default()
-                    };
-                    stop_areas.push(stop_area)?;
-                }
+                continue;
             }
+
+            // add stop area
+            let mut stop_area = StopArea {
+                id: stop_place.try_attribute("id")?,
+                name: stop_place.try_only_child("Name")?.text().trim().to_string(),
+                visible: true,
+                coord: Coord { lon: 0., lat: 0. },
+                ..Default::default()
+            };
+
+            // add object properties
+            let type_of_place_ref: String = stop_place
+                .try_only_child("placeTypes")?
+                .try_only_child("TypeOfPlaceRef")?
+                .try_attribute("ref")?;
+            stop_area
+                .properties_mut()
+                .insert(("Netex_StopType".to_string(), type_of_place_ref));
+
+            stop_areas.push(stop_area)?;
         }
     }
 
@@ -150,6 +160,21 @@ mod tests {
         assert_eq!(
             vec!["Viroflay Gare Rive Droite", "Prairie", "CONVENTION"],
             names
+        );
+
+        let object_properties: Vec<_> = stop_areas
+            .values()
+            .flat_map(|sa| &sa.object_properties)
+            .map(|op| (op.0.as_ref(), op.1.as_ref()))
+            .collect();
+
+        assert_eq!(
+            vec![
+                ("Netex_StopType", "LDA"),
+                ("Netex_StopType", "LDA"),
+                ("Netex_StopType", "ZDL"),
+            ],
+            object_properties
         );
     }
 }
