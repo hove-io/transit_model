@@ -36,7 +36,9 @@ transit_model_procmacro = { version = "0.1", path = "./transit_model_procmacro" 
 walkdir = "2.1"
 wkt = "0.5"
 zip = "0.5"
+# transit_model_collection = "0.1"
 transit_model_collection = { path = "./collection" }
+# transit_model_relations = "0.1"
 transit_model_relations = { path = "./relations" }
 
 [[test]]
