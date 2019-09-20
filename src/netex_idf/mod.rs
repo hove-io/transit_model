@@ -16,7 +16,10 @@
 
 //! Module to handle Netex IDF profile
 
+mod lines;
 mod read;
 mod stops;
+
+pub(crate) const EUROPE_PARIS_TIMEZONE: &str = "Europe/Paris";
 
 pub use read::read;
