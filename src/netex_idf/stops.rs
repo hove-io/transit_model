@@ -18,19 +18,32 @@ use super::EUROPE_PARIS_TIMEZONE;
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
-    objects::{Codes, Coord, Properties, StopArea, StopPoint, StopType},
+    objects::{Codes, Coord, StopArea, StopPoint, StopType},
     Result,
 };
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use minidom::Element;
 use proj::Proj;
-use std::{collections::HashMap, fs::File, io::Read};
+use std::{
+    collections::{BTreeSet, HashMap},
+    fs::File,
+    io::Read,
+};
 use transit_model_collection::CollectionWithId;
 
+// load a stop area with wrong coordinates
+// coordinates will be copmuted with centroid of stop points
 fn load_stop_area(stop_place_elem: &Element, id: String) -> Result<StopArea> {
-    // LDA or ZDL without ParentSiteRef
-    let mut stop_area = StopArea {
+    // add object property
+    let mut object_properties = BTreeSet::default();
+    let type_of_place_ref: String = stop_place_elem
+        .try_only_child("placeTypes")?
+        .try_only_child("TypeOfPlaceRef")?
+        .try_attribute("ref")?;
+    object_properties.insert(("Netex_StopType".to_string(), type_of_place_ref));
+
+    Ok(StopArea {
         id,
         name: stop_place_elem
             .try_only_child("Name")?
@@ -38,30 +51,19 @@ fn load_stop_area(stop_place_elem: &Element, id: String) -> Result<StopArea> {
             .trim()
             .to_string(),
         visible: true,
-        coord: Coord { lon: 0., lat: 0. },
+        object_properties,
         ..Default::default()
-    };
-
-    // add object properties
-    let type_of_place_ref: String = stop_place_elem
-        .try_only_child("placeTypes")?
-        .try_only_child("TypeOfPlaceRef")?
-        .try_attribute("ref")?;
-    stop_area
-        .properties_mut()
-        .insert(("Netex_StopType".to_string(), type_of_place_ref));
-
-    Ok(stop_area)
+    })
 }
 
 // A stop area is a LDA or a ZDE without ParentSiteRef
 fn load_stop_areas<'a>(
-    members: &[&'a Element],
+    stop_places: impl Iterator<Item = &'a &'a Element>,
     map_lda_zde: &mut HashMap<String, String>,
     map_quay_lda: &mut HashMap<String, String>,
 ) -> Result<CollectionWithId<StopArea>> {
     let mut stop_areas = CollectionWithId::default();
-    for stop_place in members.iter().filter(|e| e.name() == "StopPlace") {
+    for stop_place in stop_places {
         let id = stop_place.try_attribute("id")?;
 
         // ZDL with ParentSiteRef
@@ -127,7 +129,7 @@ fn load_coords(quay: &Element) -> Result<(f64, f64)> {
 }
 
 fn load_stop_points<'a>(
-    members: &[&'a Element],
+    quays: impl Iterator<Item = &'a &'a Element>,
     stop_areas: &mut CollectionWithId<StopArea>,
     map_quay_lda: &mut HashMap<String, String>,
 ) -> Result<CollectionWithId<StopPoint>> {
@@ -138,7 +140,7 @@ fn load_stop_points<'a>(
     let proj = Proj::new_known_crs(&from, &to, None)
         .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))?;
 
-    for quay in members.iter().filter(|e| e.name() == "Quay") {
+    for quay in quays {
         let id: String = quay.try_attribute("id")?;
         let coords = skip_fail!(load_coords(quay).map_err(|e| format_err!(
             "unable to parse coordinates of quay {}: {}",
@@ -196,10 +198,18 @@ fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionW
     // relation between a stop point (quay) and its parent stop area (lda)
     let mut map_quay_lda: HashMap<String, String> = HashMap::default();
 
-    let mut stop_areas = load_stop_areas(&member_children, &mut map_lda_zde, &mut map_quay_lda)?;
+    let mut stop_areas = load_stop_areas(
+        member_children.iter().filter(|e| e.name() == "StopPlace"),
+        &mut map_lda_zde,
+        &mut map_quay_lda,
+    )?;
     add_stop_area_codes(&mut stop_areas, map_lda_zde);
 
-    let stop_points = load_stop_points(&member_children, &mut stop_areas, &mut map_quay_lda)?;
+    let stop_points = load_stop_points(
+        member_children.iter().filter(|e| e.name() == "Quay"),
+        &mut stop_areas,
+        &mut map_quay_lda,
+    )?;
 
     Ok((stop_areas, stop_points))
 }
@@ -257,7 +267,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_load_coords() {
         let xml = r#"
 <Quay>
