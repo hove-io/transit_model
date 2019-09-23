@@ -50,18 +50,17 @@ fn load_networks_companies(
             };
             networks.push(network)?;
         }
-        if let Ok(company) = frame
-            .try_only_child("organisations")
-            .and_then(|org| org.try_only_child("Operator"))
-        {
-            let id = company.try_attribute("id")?;
-            let name = company.try_only_child("Name")?.text().parse()?;
-            let company = Company {
-                id,
-                name,
-                ..Default::default()
-            };
-            companies.push(company)?;
+
+        if let Ok(organisations) = frame.try_only_child("organisations") {
+            for operator in organisations.children().filter(|e| e.name() == "Operator") {
+                let id = operator.try_attribute("id")?;
+                let name = operator.try_only_child("Name")?.text().parse()?;
+                companies.push(Company {
+                    id,
+                    name,
+                    ..Default::default()
+                })?;
+            }
         }
     }
     Ok((networks, companies))
@@ -152,6 +151,19 @@ mod tests {
                   <Operator version="any" id="STIF:CODIFLIGNE:Operator:013">
                      <Name>TRANSDEV IDF RAMBOUILLET</Name>
                   </Operator>
+                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:014">
+                     <Name>TRANSDEV IDF RAMBOUILLET 2</Name>
+                  </Operator>
+               </organisations>
+            </ResourceFrame>
+            <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:2">
+               <typesOfValue>
+                  <TypeOfLine version="any" id="STIF:CODIFLIGNE:seasonal2"/>
+               </typesOfValue>
+               <organisations>
+                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:015">
+                     <Name>TRANSDEV IDF RAMBOUILLET 3</Name>
+                  </Operator>                  
                </organisations>
             </ResourceFrame>
          </frames>
@@ -163,6 +175,13 @@ mod tests {
         let networks_names: Vec<_> = networks.values().map(|n| &n.name).collect();
         assert_eq!(vec!["VEOLIA RAMBOUILLET"], networks_names);
         let companies_names: Vec<_> = companies.values().map(|c| &c.name).collect();
-        assert_eq!(vec!["TRANSDEV IDF RAMBOUILLET"], companies_names);
+        assert_eq!(
+            vec![
+                "TRANSDEV IDF RAMBOUILLET",
+                "TRANSDEV IDF RAMBOUILLET 2",
+                "TRANSDEV IDF RAMBOUILLET 3"
+            ],
+            companies_names
+        );
     }
 }
