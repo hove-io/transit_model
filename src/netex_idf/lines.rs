@@ -38,19 +38,17 @@ fn load_networks_companies(
         .try_only_child("frames")?
         .children()
     {
-        if let Ok(network) = frame.try_only_child("Network") {
+        for network in frame.children().filter(|e| e.name() == "Network") {
             let id = network.try_attribute("id")?;
             let name = network.try_only_child("Name")?.text().parse()?;
             let timezone = Some(String::from(EUROPE_PARIS_TIMEZONE));
-            let network = Network {
+            networks.push(Network {
                 id,
                 name,
                 timezone,
                 ..Default::default()
-            };
-            networks.push(network)?;
+            })?;
         }
-
         if let Ok(organisations) = frame.try_only_child("organisations") {
             for operator in organisations.children().filter(|e| e.name() == "Operator") {
                 let id = operator.try_attribute("id")?;
@@ -104,6 +102,20 @@ mod tests {
                      <LineRef ref="STIF:CODIFLIGNE:Line:C00164"/>
                   </members>
                </Network>
+               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:120">
+                  <Name>VEOLIA RAMBOUILLET 2</Name>
+                  <members>
+                     <LineRef ref="STIF:CODIFLIGNE:Line:C00165"/>
+                  </members>
+               </Network>
+            </ServiceFrame>
+            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:121">
+               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:121">
+                  <Name>VEOLIA RAMBOUILLET 3</Name>
+                  <members>
+                     <LineRef ref="STIF:CODIFLIGNE:Line:C00166"/>
+                  </members>
+               </Network>
             </ServiceFrame>
             <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:lineid">
                <lines>
@@ -135,6 +147,40 @@ mod tests {
                      <ShortName>01</ShortName>
                      <TransportMode>bus</TransportMode>
                      <PrivateCode>013013001</PrivateCode>
+                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
+                     <TypeOfLineRef version="any" ref="null"/>
+                     <Presentation>
+                        <infoLinks/>
+                     </Presentation>
+                  </Line>
+                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00165">
+                     <keyList>
+                        <KeyValue>
+                           <Key>Accessibility</Key>
+                           <Value>0</Value>
+                        </KeyValue>
+                     </keyList>
+                     <Name>04</Name>
+                     <ShortName>04</ShortName>
+                     <TransportMode>bus</TransportMode>
+                     <PrivateCode>013013004</PrivateCode>
+                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
+                     <TypeOfLineRef version="any" ref="null"/>
+                     <Presentation>
+                        <infoLinks/>
+                     </Presentation>
+                  </Line>
+                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00166">
+                     <keyList>
+                        <KeyValue>
+                           <Key>Accessibility</Key>
+                           <Value>0</Value>
+                        </KeyValue>
+                     </keyList>
+                     <Name>05</Name>
+                     <ShortName>05</ShortName>
+                     <TransportMode>bus</TransportMode>
+                     <PrivateCode>013013005</PrivateCode>
                      <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
                      <TypeOfLineRef version="any" ref="null"/>
                      <Presentation>
@@ -173,7 +219,14 @@ mod tests {
         let root: Element = xml.parse().unwrap();
         let (networks, companies) = load_networks_companies(&root).unwrap();
         let networks_names: Vec<_> = networks.values().map(|n| &n.name).collect();
-        assert_eq!(vec!["VEOLIA RAMBOUILLET"], networks_names);
+        assert_eq!(
+            vec![
+                "VEOLIA RAMBOUILLET",
+                "VEOLIA RAMBOUILLET 2",
+                "VEOLIA RAMBOUILLET 3"
+            ],
+            networks_names
+        );
         let companies_names: Vec<_> = companies.values().map(|c| &c.name).collect();
         assert_eq!(
             vec![
