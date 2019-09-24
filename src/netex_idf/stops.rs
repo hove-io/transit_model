@@ -18,33 +18,52 @@ use super::EUROPE_PARIS_TIMEZONE;
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
-    objects::{Codes, Coord, Properties, StopArea, StopPoint, StopType},
+    objects::{Codes, Coord, StopArea, StopPoint, StopType},
     Result,
 };
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use minidom::Element;
 use proj::Proj;
-use std::{collections::HashMap, fs::File, io::Read};
+use std::{
+    collections::{BTreeSet, HashMap},
+    fs::File,
+    io::Read,
+};
 use transit_model_collection::CollectionWithId;
 
-fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionWithId<StopPoint>)> {
+// load a stop area with wrong coordinates
+// coordinates will be copmuted with centroid of stop points
+fn load_stop_area(stop_place_elem: &Element, id: String) -> Result<StopArea> {
+    // add object property
+    let mut object_properties = BTreeSet::default();
+    let type_of_place_ref: String = stop_place_elem
+        .try_only_child("placeTypes")?
+        .try_only_child("TypeOfPlaceRef")?
+        .try_attribute("ref")?;
+    object_properties.insert(("Netex_StopType".to_string(), type_of_place_ref));
+
+    Ok(StopArea {
+        id,
+        name: stop_place_elem
+            .try_only_child("Name")?
+            .text()
+            .trim()
+            .to_string(),
+        visible: true,
+        object_properties,
+        ..Default::default()
+    })
+}
+
+// A stop area is a LDA or a ZDE without ParentSiteRef
+fn load_stop_areas<'a>(
+    stop_places: impl Iterator<Item = &'a &'a Element>,
+    map_lda_zde: &mut HashMap<String, String>,
+    map_quay_lda: &mut HashMap<String, String>,
+) -> Result<CollectionWithId<StopArea>> {
     let mut stop_areas = CollectionWithId::default();
-    let mut stop_points = CollectionWithId::default();
-    let member_children: Vec<_> = elem
-        .try_only_child("dataObjects")?
-        .try_only_child("CompositeFrame")?
-        .try_only_child("frames")?
-        .children()
-        .flat_map(|e| e.children())
-        .filter(|e| e.name() == "members")
-        .flat_map(|e| e.children())
-        .collect();
-
-    let mut map_lda_zde: HashMap<String, String> = HashMap::default();
-    let mut map_quay_lda: HashMap<String, String> = HashMap::default();
-
-    for stop_place in member_children.iter().filter(|e| e.name() == "StopPlace") {
+    for stop_place in stop_places {
         let id = stop_place.try_attribute("id")?;
 
         // ZDL with ParentSiteRef
@@ -70,29 +89,16 @@ fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionW
             }
         }
 
-        // add stop areas
-        // LDA or ZDL without ParentSiteRef
-        let mut stop_area = StopArea {
-            id,
-            name: stop_place.try_only_child("Name")?.text().trim().to_string(),
-            visible: true,
-            coord: Coord { lon: 0., lat: 0. },
-            ..Default::default()
-        };
-
-        // add object properties
-        let type_of_place_ref: String = stop_place
-            .try_only_child("placeTypes")?
-            .try_only_child("TypeOfPlaceRef")?
-            .try_attribute("ref")?;
-        stop_area
-            .properties_mut()
-            .insert(("Netex_StopType".to_string(), type_of_place_ref));
-
-        stop_areas.push(stop_area)?;
+        stop_areas.push(load_stop_area(stop_place, id)?)?;
     }
 
-    // add object codes to stop areas
+    Ok(stop_areas)
+}
+
+fn add_stop_area_codes(
+    stop_areas: &mut CollectionWithId<StopArea>,
+    map_lda_zde: HashMap<String, String>,
+) {
     for (lda_id, zde_id) in map_lda_zde {
         if let Some(mut sa) = stop_areas.get_mut(&lda_id) {
             sa.codes_mut().insert(("Netex_ZDL".to_string(), zde_id));
@@ -103,33 +109,40 @@ fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionW
             );
         }
     }
+}
 
+fn load_coords(quay: &Element) -> Result<(f64, f64)> {
+    let gml_pos = quay
+        .try_only_child("Centroid")?
+        .try_only_child("Location")?
+        .try_only_child("pos")?
+        .text()
+        .trim()
+        .to_string();
+
+    let coords: Vec<&str> = gml_pos.split_whitespace().collect();
+    if coords.len() != 2 {
+        bail!("longitude and latitude not found");
+    }
+
+    Ok((coords[0].parse()?, coords[1].parse()?))
+}
+
+fn load_stop_points<'a>(
+    quays: impl Iterator<Item = &'a &'a Element>,
+    stop_areas: &mut CollectionWithId<StopArea>,
+    map_quay_lda: &mut HashMap<String, String>,
+) -> Result<CollectionWithId<StopPoint>> {
+    let mut stop_points = CollectionWithId::default();
     // add stop points
     let from = "EPSG:2154";
     let to = "+proj=longlat +datum=WGS84 +no_defs";
     let proj = Proj::new_known_crs(&from, &to, None)
         .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))?;
 
-    fn parse_coords(quay: &Element) -> Result<(f64, f64)> {
-        let gml_pos = quay
-            .try_only_child("Centroid")?
-            .try_only_child("Location")?
-            .try_only_child("pos")?
-            .text()
-            .trim()
-            .to_string();
-
-        let coords: Vec<&str> = gml_pos.split_whitespace().collect();
-        if coords.len() != 2 {
-            bail!("longitude and latitude not found");
-        }
-
-        Ok((coords[0].parse()?, coords[1].parse()?))
-    }
-
-    for quay in member_children.iter().filter(|e| e.name() == "Quay") {
+    for quay in quays {
         let id: String = quay.try_attribute("id")?;
-        let coords = skip_fail!(parse_coords(quay).map_err(|e| format_err!(
+        let coords = skip_fail!(load_coords(quay).map_err(|e| format_err!(
             "unable to parse coordinates of quay {}: {}",
             id,
             e
@@ -166,6 +179,38 @@ fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionW
         stop_points.push(stop_point)?;
     }
 
+    Ok(stop_points)
+}
+
+fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionWithId<StopPoint>)> {
+    let member_children: Vec<_> = elem
+        .try_only_child("dataObjects")?
+        .try_only_child("CompositeFrame")?
+        .try_only_child("frames")?
+        .children()
+        .flat_map(|e| e.children())
+        .filter(|e| e.name() == "members")
+        .flat_map(|e| e.children())
+        .collect();
+
+    // for stop areas's object codes
+    let mut map_lda_zde: HashMap<String, String> = HashMap::default();
+    // relation between a stop point (quay) and its parent stop area (lda)
+    let mut map_quay_lda: HashMap<String, String> = HashMap::default();
+
+    let mut stop_areas = load_stop_areas(
+        member_children.iter().filter(|e| e.name() == "StopPlace"),
+        &mut map_lda_zde,
+        &mut map_quay_lda,
+    )?;
+    add_stop_area_codes(&mut stop_areas, map_lda_zde);
+
+    let stop_points = load_stop_points(
+        member_children.iter().filter(|e| e.name() == "Quay"),
+        &mut stop_areas,
+        &mut map_quay_lda,
+    )?;
+
     Ok((stop_areas, stop_points))
 }
 
@@ -192,6 +237,52 @@ mod tests {
     use super::*;
 
     #[test]
+    #[should_panic(expected = "longitude and latitude not found")]
+    fn test_load_coords_with_one_coord() {
+        let xml = r#"
+<Quay>
+    <Centroid>
+        <Location>
+            <gml:pos srsName="EPSG:2154">666944.0</gml:pos>
+        </Location>
+    </Centroid>
+</Quay>"#;
+        let root: Element = xml.parse().unwrap();
+        load_coords(&root).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_load_unvalid_coords() {
+        let xml = r#"
+<Quay>
+    <Centroid>
+        <Location>
+            <gml:pos srsName="EPSG:2154">666944.0 ABC</gml:pos>
+        </Location>
+    </Centroid>
+</Quay>"#;
+        let root: Element = xml.parse().unwrap();
+        load_coords(&root).unwrap();
+    }
+
+    #[test]
+    fn test_load_coords() {
+        let xml = r#"
+<Quay>
+    <Centroid>
+        <Location>
+            <gml:pos srsName="EPSG:2154">666944.0 6856019.0</gml:pos>
+        </Location>
+    </Centroid>
+</Quay>"#;
+        let root: Element = xml.parse().unwrap();
+        let coords = load_coords(&root).unwrap();
+
+        assert_eq!((666944.0, 6856019.0), coords);
+    }
+
+    #[test]
     fn test_load_stop_areas() {
         let xml = r#"
 <root>
@@ -205,9 +296,6 @@ mod tests {
 							<placeTypes>
 								<TypeOfPlaceRef ref="LDA"/>
 							</placeTypes>
-							<AccessibilityAssessment>
-								<MobilityImpairedAccess>partial</MobilityImpairedAccess>
-							</AccessibilityAssessment>
 							<StopPlaceType>railStation</StopPlaceType>
 						</StopPlace>
 						<StopPlace  id="FR:28140:LDA:74325:STIF">
@@ -215,9 +303,6 @@ mod tests {
 							<placeTypes>
 								<TypeOfPlaceRef ref="LDA"/>
 							</placeTypes>
-							<AccessibilityAssessment>
-								<MobilityImpairedAccess>unknown</MobilityImpairedAccess>
-							</AccessibilityAssessment>
 							<StopPlaceType>onstreetBus</StopPlaceType>
 						</StopPlace>
                         <StopPlace id="FR:78423:ZDL:57857:STIF">>
@@ -225,9 +310,6 @@ mod tests {
                             <placeTypes>
                                 <TypeOfPlaceRef ref="ZDL"/>
                             </placeTypes>
-                            <AccessibilityAssessment>
-                                <MobilityImpairedAccess>partial</MobilityImpairedAccess>
-                            </AccessibilityAssessment>
                             <ParentSiteRef ref="FR:78686:LDA:422420:STIF" />
                             <quays>
                                 <QuayRef ref="FR:94017:ZDE:50125579:STIF" />
@@ -239,9 +321,6 @@ mod tests {
                             <placeTypes>
                                 <TypeOfPlaceRef ref="ZDL"/>
                             </placeTypes>
-                            <AccessibilityAssessment>
-                                <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
-                            </AccessibilityAssessment>
                             <quays>
                                 <QuayRef ref="FR:77035:ZDE:50021889:STIF" />
                             </quays>
