@@ -1,0 +1,9 @@
+stop_id,stop_name,visible,fare_zone_id,zone_id,stop_lon,stop_lat,location_type,parent_station,stop_timezone,geometry_id,equipment_id,platform_code
+prefix:FR:94033:ZDE:14690:STIF,Général de Gaulle,1,,,2.485314914971249,48.85260364789397,0,prefix:FR:94033:LDA:415674:STIF,Europe/Paris,,,
+prefix:FR:91272:ZDE:50076652:STIF,Lycée  RER,1,,,2.0991173260750045,48.70065818579249,0,prefix:FR:91272:ZDL:50076060:STIF,Europe/Paris,,,
+prefix:FR:91272:ZDE:50076651:STIF,Lycée RER,1,,,2.0990373039633234,48.700343421202106,0,prefix:FR:91272:ZDL:50076060:STIF,Europe/Paris,,,
+prefix:FR:94033:ZDE:36493:STIF,Général de Gaulle,1,,,2.4847859314617384,48.85234955516834,0,prefix:FR:94033:LDA:415674:STIF,Europe/Paris,,,
+prefix:FR:75115:ZDE:50121556:STIF,VIOLET,1,,,2.2899928475299345,48.84477786353687,0,prefix:Navitia:FR:75115:ZDE:50121556:STIF,Europe/Paris,,,
+prefix:FR:94033:LDA:415674:STIF,Place du Général de Gaulle,1,,,0.0,0.0,1,,,,,
+prefix:FR:91272:ZDL:50076060:STIF,Lycée RER,1,,,0.0,0.0,1,,,,,
+prefix:Navitia:FR:75115:ZDE:50121556:STIF,VIOLET,1,,,2.2899928475299345,48.84477786353687,1,,Europe/Paris,,,

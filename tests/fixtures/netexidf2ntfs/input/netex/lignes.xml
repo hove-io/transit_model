@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xsi:schemaLocation="http://www.netex.org.uk/netex"
+                     xmlns="http://www.netex.org.uk/netex"
+                     xmlns:xlink="http://www.w3.org/1999/xlink"
+                     xmlns:ifopt="http://www.ifopt.org.uk/ifopt"
+                     xmlns:gml="http://www.opengis.net/gml/3.2"
+                     xmlns:core="http://www.govtalk.gov.uk/core"
+                     xmlns:siri="http://www.siri.org.uk/siri"
+                     version="1.04:FR100-NETEX-1.6-1.8">
+   <PublicationTimestamp>2018-11-08T15:32:14Z</PublicationTimestamp>
+   <ParticipantRef>FR100_OFFRE</ParticipantRef>
+   <dataObjects>
+      <CompositeFrame id="FR100:CompositeFrame:NETEX_IDF-20181108T153214Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
+         <TypeOfFrameRef ref="FR100:TypeOfFrame:NETEX_IDF:"/>
+         <frames>
+            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:119">
+               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:119">
+                  <Name>VEOLIA RAMBOUILLET</Name>
+                  <members>
+                     <LineRef ref="STIF:CODIFLIGNE:Line:C00163"/>
+                     <LineRef ref="STIF:CODIFLIGNE:Line:C00164"/>
+                  </members>
+               </Network>
+               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:120">
+                  <Name>VEOLIA RAMBOUILLET 2</Name>
+                  <members>
+                     <LineRef ref="STIF:CODIFLIGNE:Line:C00165"/>
+                  </members>
+               </Network>
+            </ServiceFrame>
+            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:121">
+               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:121">
+                  <Name>VEOLIA RAMBOUILLET 3</Name>
+                  <members>
+                     <LineRef ref="STIF:CODIFLIGNE:Line:C00166"/>
+                  </members>
+               </Network>
+            </ServiceFrame>
+            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:lineid">
+               <lines>
+                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00164">
+                     <keyList>
+                        <KeyValue>
+                           <Key>Accessibility</Key>
+                           <Value>0</Value>
+                        </KeyValue>
+                     </keyList>
+                     <Name>03</Name>
+                     <ShortName>03</ShortName>
+                     <TransportMode>bus</TransportMode>
+                     <PrivateCode>013013003</PrivateCode>
+                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
+                     <TypeOfLineRef version="any" ref="null"/>
+                     <Presentation>
+                        <infoLinks/>
+                     </Presentation>
+                  </Line>
+                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00163">
+                     <keyList>
+                        <KeyValue>
+                           <Key>Accessibility</Key>
+                           <Value>0</Value>
+                        </KeyValue>
+                     </keyList>
+                     <Name>01</Name>
+                     <ShortName>01</ShortName>
+                     <TransportMode>bus</TransportMode>
+                     <PrivateCode>013013001</PrivateCode>
+                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
+                     <TypeOfLineRef version="any" ref="null"/>
+                     <Presentation>
+                        <infoLinks/>
+                     </Presentation>
+                  </Line>
+                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00165">
+                     <keyList>
+                        <KeyValue>
+                           <Key>Accessibility</Key>
+                           <Value>0</Value>
+                        </KeyValue>
+                     </keyList>
+                     <Name>04</Name>
+                     <ShortName>04</ShortName>
+                     <TransportMode>bus</TransportMode>
+                     <PrivateCode>013013004</PrivateCode>
+                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
+                     <TypeOfLineRef version="any" ref="null"/>
+                     <Presentation>
+                        <infoLinks/>
+                     </Presentation>
+                  </Line>
+                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00166">
+                     <keyList>
+                        <KeyValue>
+                           <Key>Accessibility</Key>
+                           <Value>0</Value>
+                        </KeyValue>
+                     </keyList>
+                     <Name>05</Name>
+                     <ShortName>05</ShortName>
+                     <TransportMode>bus</TransportMode>
+                     <PrivateCode>013013005</PrivateCode>
+                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
+                     <TypeOfLineRef version="any" ref="null"/>
+                     <Presentation>
+                        <infoLinks/>
+                     </Presentation>
+                  </Line>
+               </lines>
+            </ServiceFrame>
+            <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:1">
+               <typesOfValue>
+                  <TypeOfLine version="any" id="STIF:CODIFLIGNE:seasonal"/>
+               </typesOfValue>
+               <organisations>
+                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:013">
+                     <Name>TRANSDEV IDF RAMBOUILLET</Name>
+                  </Operator>
+                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:014">
+                     <Name>TRANSDEV IDF RAMBOUILLET 2</Name>
+                  </Operator>
+               </organisations>
+            </ResourceFrame>
+            <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:2">
+               <typesOfValue>
+                  <TypeOfLine version="any" id="STIF:CODIFLIGNE:seasonal2"/>
+               </typesOfValue>
+               <organisations>
+                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:015">
+                     <Name>TRANSDEV IDF RAMBOUILLET 3</Name>
+                  </Operator>
+               </organisations>
+            </ResourceFrame>
+         </frames>
+      </CompositeFrame>
+   </dataObjects>
+</PublicationDelivery>

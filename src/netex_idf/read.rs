@@ -48,6 +48,8 @@ where
     if let Some(prefix) = prefix {
         collections.add_prefix_with_sep(prefix.as_str(), ":");
     }
-    collections.sanitize()?;
+
+    // TODO: uncomment once we have all netex  parsed
+    // collections.sanitize()?;
     Model::new(collections)
 }
