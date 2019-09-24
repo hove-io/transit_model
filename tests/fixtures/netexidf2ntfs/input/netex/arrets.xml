@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xsi:schemaLocation="http://www.netex.org.uk/netex"
+                     xmlns="http://www.netex.org.uk/netex"
+                     xmlns:xlink="http://www.w3.org/1999/xlink"
+                     xmlns:ifopt="http://www.ifopt.org.uk/ifopt"
+                     xmlns:gml="http://www.opengis.net/gml/3.2"
+                     xmlns:core="http://www.govtalk.gov.uk/core"
+                     xmlns:siri="http://www.siri.org.uk/siri"
+                     version="1.04:FR100-NETEX-1.6-1.8">
+    <PublicationTimestamp>2018-11-08T15:32:28Z</PublicationTimestamp>
+    <ParticipantRef>FR100_OFFRE</ParticipantRef>
+    <dataObjects>
+        <CompositeFrame id="FR100:CompositeFrame:NETEX_IDF-20181108T153228Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
+            <TypeOfFrameRef ref="FR100:TypeOfFrame:NETEX_IDF:"/>
+            <frames>
+                <GeneralFrame id="FR100:GeneralFrame:NETEX_COMMUN-20181108T153228Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
+                    <TypeOfFrameRef ref="FR100:TypeOfFrame:NETEX_COMMUN:"/>
+                    <members>
+                        <ValueSet version="any" id="NETEX_ARRET_STIF:ValueSet:VS01">
+                            <values>
+                                <PurposeOfGrouping version="any" id="NETEX_ARRET_STIF:PurposeOfGrouping:groupOfStopPlace">
+                                    <Name>Group of Stop Place</Name>
+                                    <classes>
+                                    <ClassRef nameOfClass="StopPlace"/>
+                                    </classes>
+                                </PurposeOfGrouping>
+                            </values>
+                        </ValueSet>
+                    </members>
+                </GeneralFrame>
+                <GeneralFrame id="FR100:GeneralFrame:NETEX_ARRET_STIF-20181108T153228Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
+                    <TypeOfFrameRef ref="FR100:TypeOfFrame:NETEX_ARRET_STIF:"/>
+                    <members>
+                        <StopPlace version="655323" created="2015-04-16T12:04:08.0Z" changed="2015-04-16T12:04:08.0Z" id="FR:94033:LDA:415674:STIF">
+                            <Name>Place du Général de Gaulle</Name>
+                            <placeTypes>
+                                <TypeOfPlaceRef ref="LDA"/>
+                            </placeTypes>
+                            <PostalAddress version="any" id="STIF-REFLEX:PostalAddress:415674">
+                                <Town>Fontenay-sous-Bois</Town>
+                                <PostalRegion>94033</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:415674">
+                                <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                            </AccessibilityAssessment>
+                            <StopPlaceType>onstreetBus</StopPlaceType>
+                        </StopPlace>
+                        <StopPlace version="43272" created="2014-12-29T03:12:51.0Z" changed="2014-12-29T03:12:51.0Z" id="FR:94033:ZDL:43272:STIF">
+                            <keyList>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>OBJECT_STATUS</Key>
+                                    <Value>REFERENCE_OBJECT</Value>
+                                </KeyValue>
+                            </keyList>
+                            <Name>Place du Général de Gaulle</Name>
+                            <placeTypes>
+                                <TypeOfPlaceRef ref="ZDL"/>
+                            </placeTypes>
+                            <PostalAddress version="any" id="STIF-REFLEX:PostalAddress:43272">
+                                <Town>Fontenay-sous-Bois</Town>
+                                <PostalRegion>94033</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:43272">
+                                <MobilityImpairedAccess>partial</MobilityImpairedAccess>
+                            </AccessibilityAssessment>
+                            <ParentSiteRef ref="FR:94033:LDA:415674:STIF" version="655323"/>
+                            <StopPlaceType>onstreetBus</StopPlaceType>
+                            <quays>
+                                <QuayRef ref="FR:94033:ZDE:14690:STIF" version="926175"/>
+                                <QuayRef ref="FR:94033:ZDE:36493:STIF" version="36493"/>
+                            </quays>
+                        </StopPlace>
+                         <StopPlace dataSourceRef="STIF-REFLEX:Operator:24" version="677344" created="2015-05-19T02:05:11.0Z" changed="2015-05-19T02:05:11.0Z" id="FR:91272:ZDL:50076060:STIF">
+                            <keyList>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>OBJECT_STATUS</Key>
+                                    <Value>LOCAL_OBJECT</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>REFERENCE_OBJECT_ID</Key>
+                                    <Value>FR:91272:ZDL:47051:STIF</Value>
+                                </KeyValue>
+                            </keyList>
+                            <Name>Lycée RER</Name>
+                            <placeTypes>
+                                <TypeOfPlaceRef ref="ZDL"/>
+                            </placeTypes>
+                            <PostalAddress version="any" id="STIF-REFLEX:PostalAddress:50076060">
+                                <Town>Gif-sur-Yvette</Town>
+                                <PostalRegion>91272</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:50076060">
+                                <MobilityImpairedAccess>partial</MobilityImpairedAccess>
+                            </AccessibilityAssessment>
+                            <StopPlaceType>onstreetBus</StopPlaceType>
+                            <quays>
+                                <QuayRef ref="FR:91272:ZDE:50076652:STIF" version="734762"/>
+                                <QuayRef ref="FR:91272:ZDE:50076651:STIF" version="732658"/>
+                            </quays>
+                        </StopPlace>
+                        <Quay xmlns:gml="http://www.opengis.net/gml/3.2" version="926175" created="2014-12-29T03:12:51.0Z" changed="2018-03-27T02:03:12.0Z" id="FR:94033:ZDE:14690:STIF">
+                            <keyList>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>OBJECT_STATUS</Key>
+                                    <Value>REFERENCE_OBJECT</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>LINE_ID</Key>
+                                    <Value>100100301</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>LINE_ID</Key>
+                                    <Value>100100118</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>LINE_ID</Key>
+                                    <Value>100100122</Value>
+                                </KeyValue>
+                            </keyList>
+                            <Name>Général de Gaulle</Name>
+                            <Centroid>
+                                <Location>
+                                    <gml:pos srsName="EPSG:2154">662233.0 6861519.0</gml:pos>
+                                </Location>
+                            </Centroid>
+                            <PostalAddress version="any" id="STIF-REFLEX:PostalAddress:14690">
+                                <Town>Fontenay-sous-Bois</Town>
+                                <PostalRegion>94033</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:14690">
+                                <MobilityImpairedAccess>partial</MobilityImpairedAccess>
+                            </AccessibilityAssessment>
+                        </Quay>
+                        <Quay xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="STIF-REFLEX:Operator:24" version="734762" created="2015-05-19T02:05:10.0Z" changed="2015-10-28T09:10:39.0Z" id="FR:91272:ZDE:50076652:STIF">
+                            <keyList>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>OBJECT_STATUS</Key>
+                                    <Value>LOCAL_OBJECT</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>REFERENCE_OBJECT_ID</Key>
+                                    <Value>FR:91272:ZDE:4719:STIF</Value>
+                                </KeyValue>
+                            </keyList>
+                            <Name>Lycée  RER</Name>
+                            <Centroid>
+                                <Location>
+                                    <gml:pos srsName="EPSG:2154">633702.487 6844879.73</gml:pos>
+                                </Location>
+                            </Centroid>
+                            <PostalAddress version="any" id="STIF-REFLEX:PostalAddress:50076652">
+                                <Town>Gif-sur-Yvette</Town>
+                                <PostalRegion>91272</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:50076652">
+                                <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                            </AccessibilityAssessment>
+                        </Quay>
+                        <Quay xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="STIF-REFLEX:Operator:24" version="732658" created="2015-05-19T02:05:11.0Z" changed="2015-10-27T09:10:21.0Z" id="FR:91272:ZDE:50076651:STIF">
+                            <keyList>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>OBJECT_STATUS</Key>
+                                    <Value>LOCAL_OBJECT</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>REFERENCE_OBJECT_ID</Key>
+                                    <Value>FR:91272:ZDE:4718:STIF</Value>
+                                </KeyValue>
+                            </keyList>
+                            <Name>Lycée RER</Name>
+                            <Centroid>
+                                <Location>
+                                    <gml:pos srsName="EPSG:2154">633696.199 6844844.804</gml:pos>
+                                </Location>
+                            </Centroid>
+                            <PostalAddress version="any" id="STIF-REFLEX:PostalAddress:50076651">
+                                <Town>Gif-sur-Yvette</Town>
+                                <PostalRegion>91272</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:50076651">
+                                <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                            </AccessibilityAssessment>
+                        </Quay>
+                        <Quay xmlns:gml="http://www.opengis.net/gml/3.2" version="36493" created="2014-12-29T03:12:51.0Z" changed="2014-12-29T03:12:51.0Z" id="FR:94033:ZDE:36493:STIF">
+                            <keyList>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>OBJECT_STATUS</Key>
+                                    <Value>REFERENCE_OBJECT</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>LINE_ID</Key>
+                                    <Value>100100301</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>LINE_ID</Key>
+                                    <Value>100100118</Value>
+                                </KeyValue>
+                            </keyList>
+                            <Name>Général de Gaulle</Name>
+                            <Centroid>
+                                <Location>
+                                    <gml:pos srsName="EPSG:2154">662194.0 6861491.0</gml:pos>
+                                </Location>
+                            </Centroid>
+                            <PostalAddress version="any" id="STIF-REFLEX:PostalAddress:36493">
+                                <Town>Fontenay-sous-Bois</Town>
+                                <PostalRegion>94033</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:36493">
+                                <MobilityImpairedAccess>partial</MobilityImpairedAccess>
+                            </AccessibilityAssessment>
+                        </Quay>
+                        <Quay xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="STIF-REFLEX:Operator:59" version="958567" created="2018-04-12T10:04:31.0Z" changed="2018-04-12T10:04:31.0Z" id="FR:75115:ZDE:50121556:STIF">
+                            <keyList>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>OBJECT_STATUS</Key>
+                                    <Value>LOCAL_OBJECT</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>REFERENCE_OBJECT_ID</Key>
+                                    <Value>FR:75115:ZDE:25755:STIF</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>LINE_ID</Key>
+                                    <Value>100100088</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>LINE_ID</Key>
+                                    <Value>100100070</Value>
+                                </KeyValue>
+                            </keyList>
+                            <Name>VIOLET</Name>
+                            <Centroid>
+                                <Location>
+                                    <gml:pos srsName="EPSG:2154">647893.0 6860760.0</gml:pos>
+                                </Location>
+                            </Centroid>
+                            <PostalAddress version="any" id="STIF-REFLEX:PostalAddress:50121556">
+                                <Town>Paris 15e</Town>
+                                <PostalRegion>75115</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:50121556">
+                                <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                            </AccessibilityAssessment>
+                        </Quay>
+				    </members>
+                </GeneralFrame>
+            </frames>
+        </CompositeFrame>
+   </dataObjects>
+</PublicationDelivery>
