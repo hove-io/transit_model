@@ -213,3 +213,44 @@ where
     let vec = read_objects(file_handler, file_name)?;
     CollectionWithId::new(vec)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Read;
+
+    #[test]
+    fn path_file_handler() {
+        let mut file_handler = PathFileHandler::new(PathBuf::from("tests/fixtures/file-handler"));
+
+        let (mut hello, _) = file_handler.get_file("hello.txt").unwrap();
+        let mut hello_str = String::new();
+        hello.read_to_string(&mut hello_str).unwrap();
+        assert_eq!(hello_str, "hello\n");
+
+        let (mut world, _) = file_handler.get_file("folder/world.txt").unwrap();
+        let mut world_str = String::new();
+        world.read_to_string(&mut world_str).unwrap();
+        assert_eq!(world_str, "world\n");
+    }
+
+    #[test]
+    fn zip_file_handler() {
+        let mut file_handler =
+            ZipHandler::new(PathBuf::from("tests/fixtures/file-handler.zip")).unwrap();
+
+        {
+            let (mut hello, _) = file_handler.get_file("hello.txt").unwrap();
+            let mut hello_str = String::new();
+            hello.read_to_string(&mut hello_str).unwrap();
+            assert_eq!(hello_str, "hello\n");
+        }
+
+        {
+            let (mut world, _) = file_handler.get_file("world.txt").unwrap();
+            let mut world_str = String::new();
+            world.read_to_string(&mut world_str).unwrap();
+            assert_eq!(world_str, "world\n");
+        }
+    }
+}
