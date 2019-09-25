@@ -46,10 +46,20 @@ name = "kv12ntfs"
 path = "tests/read_kv1.rs"
 required-features = ["proj"]
 
+[[bench]]
+name = "read_kv1"
+path = "benches/read_kv1.rs"
+required-features = ["proj"]
+
 [[test]]
 name = "transxchange2ntfs"
 path = "tests/read_transxchange.rs"
 required-features = ["proj"]
+
+[[bench]]
+name = "read_transxchange"
+path = "benches/read_transxchange.rs"
+required-features = ["transxchange"]
 
 [dev-dependencies]
 approx = "0.3"
