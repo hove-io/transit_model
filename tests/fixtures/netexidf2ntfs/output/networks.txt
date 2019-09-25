@@ -1,4 +1,2 @@
 network_id,network_name,network_url,network_timezone,network_lang,network_phone,network_address,network_sort_order
 prefix:STIF:CODIFLIGNE:PTNetwork:119,VEOLIA RAMBOUILLET,,Europe/Paris,,,,
-prefix:STIF:CODIFLIGNE:PTNetwork:120,VEOLIA RAMBOUILLET 2,,Europe/Paris,,,,
-prefix:STIF:CODIFLIGNE:PTNetwork:121,VEOLIA RAMBOUILLET 3,,Europe/Paris,,,,
