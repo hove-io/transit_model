@@ -76,13 +76,6 @@ impl StopPoint {
 
 impl StopLocation {
     fn from_ntfs_stop(stop: Stop) -> StopLocation {
-        let stop_type = match stop.location_type {
-            StopLocationType::EntranceExit => Some(StopType::StopEntrance),
-            StopLocationType::PathwayInterconnectionNode => Some(StopType::GenericNode),
-            StopLocationType::BoardingArea => Some(StopType::BoardingArea),
-            _ => None,
-        };
-
         StopLocation {
             id: stop.id,
             name: stop.name,
@@ -96,21 +89,30 @@ impl StopLocation {
             timezone: stop.timezone,
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
-            stop_type: stop_type,
+            stop_type: stop.location_type.clone().into(),
             level_id: stop.level_id,
         }
     }
 }
 
-pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    info!("Reading stops.txt");
+fn read_stops(path: &path::Path) -> Result<Vec<Stop>> {
     let path = path.join("stops.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let stops: Vec<Stop> = rdr
+        .deserialize()
+        .collect::<std::result::Result<Vec<Stop>, _>>()
+        .with_context(ctx_from_path!(path))?;
+    Ok(stops)
+}
+
+pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<()> {
+    info!("Reading stops.txt");
+    let ntfs_stops = read_stops(&path)?;
+
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
     let mut stop_locations = vec![];
-    for stop in rdr.deserialize() {
-        let mut stop: Stop = stop.with_context(ctx_from_path!(path))?;
+    for mut stop in ntfs_stops {
         match stop.location_type {
             StopLocationType::StopPoint | StopLocationType::GeographicArea => {
                 let (stop_type, area_visibility) =
@@ -572,6 +574,50 @@ pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {
         }
     }
     Ok(())
+}
+
+pub fn read_pathways(path: &path::Path) -> Result<CollectionWithId<Pathway>> {
+    let file = "pathways.txt";
+    let pathway_path = path.join(file);
+    if !pathway_path.exists() {
+        info!("Skipping {}", file);
+        return Ok(CollectionWithId::new(vec![])?);
+    }
+
+    info!("Reading {}", file);
+    let ntfs_stops = read_stops(&path)?;
+    let mut stops: HashMap<String, Stop> = HashMap::new();
+
+    for ntfs_stop in ntfs_stops {
+        stops.insert(ntfs_stop.id.clone(), ntfs_stop);
+    }
+
+    let mut pathways = vec![];
+    let mut rdr =
+        csv::Reader::from_path(&pathway_path).with_context(ctx_from_path!(pathway_path))?;
+
+    for pathway in rdr.deserialize() {
+        let mut pathway: Pathway = skip_fail!(pathway);
+        let from_stop_point =
+            skip_fail!(stops.get(&pathway.from_stop_id).ok_or_else(|| format_err!(
+                "Problem reading {:?}: from_stop_id={:?} not found",
+                file,
+                pathway.from_stop_id
+            )));
+
+        let to_stop_point = skip_fail!(stops.get(&pathway.to_stop_id).ok_or_else(|| format_err!(
+            "Problem reading {:?}: from_stop_id={:?} not found",
+            file,
+            pathway.to_stop_id
+        )));
+
+        pathway.from_stop_type = from_stop_point.location_type.clone().into();
+        pathway.to_stop_type = to_stop_point.location_type.clone().into();
+
+        pathways.push(pathway)
+    }
+
+    Ok(CollectionWithId::new(pathways)?)
 }
 
 #[cfg(test)]

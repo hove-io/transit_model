@@ -1122,7 +1122,11 @@ pub struct Pathway {
     #[serde(rename = "pathway_id")]
     pub id: String,
     pub from_stop_id: String,
+    #[serde(skip)]
+    pub from_stop_type: Option<StopType>,
     pub to_stop_id: String,
+    #[serde(skip)]
+    pub to_stop_type: Option<StopType>,
     pub pathway_mode: PathwayMode,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     pub is_bidirectional: bool,

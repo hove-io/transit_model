@@ -21,7 +21,7 @@ use super::{
 use crate::common_format::Availability;
 use crate::model::Collections;
 use crate::objects::{
-    self, CommentLinksT, Coord, KeysValues, StopTime as NtfsStopTime, StopType, Time,
+    self, CommentLinksT, Coord, KeysValues, Pathway, StopTime as NtfsStopTime, StopType, Time,
     TransportType, VehicleJourney,
 };
 use crate::read_utils::{read_collection, read_objects, FileHandler};
@@ -135,13 +135,6 @@ impl From<Stop> for objects::StopPoint {
 
 impl objects::StopLocation {
     fn from_gtfs_stop(stop: Stop) -> objects::StopLocation {
-        let stop_type = match stop.location_type {
-            StopLocationType::StopEntrance => Some(objects::StopType::StopEntrance),
-            StopLocationType::GenericNode => Some(objects::StopType::GenericNode),
-            StopLocationType::BoardingArea => Some(objects::StopType::BoardingArea),
-            _ => None,
-        };
-
         objects::StopLocation {
             id: stop.id,
             name: stop.name,
@@ -156,7 +149,7 @@ impl objects::StopLocation {
             geometry_id: None,
             equipment_id: None,
             level_id: stop.level_id,
-            stop_type: stop_type,
+            stop_type: stop.location_type.into(),
         }
     }
 }
@@ -565,7 +558,24 @@ fn get_equipment_id_and_populate_equipments(
     }
 }
 
-pub fn read_stops<H>(
+fn read_stops<H>(file_handler: &mut H) -> Result<Vec<Stop>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let file = "stops.txt";
+
+    let (reader, path) = file_handler.get_file(file)?;
+    let mut rdr = csv::ReaderBuilder::new()
+        .trim(csv::Trim::All)
+        .from_reader(reader);
+    let gtfs_stops: Vec<Stop> = rdr
+        .deserialize()
+        .collect::<StdResult<_, _>>()
+        .with_context(ctx_from_path!(path))?;
+    Ok(gtfs_stops)
+}
+
+pub fn manage_stops<H>(
     file_handler: &mut H,
     comments: &mut CollectionWithId<objects::Comment>,
     equipments: &mut EquipmentList,
@@ -578,16 +588,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     info!("Reading stops.txt");
-    let file = "stops.txt";
-
-    let (reader, path) = file_handler.get_file(file)?;
-    let mut rdr = csv::ReaderBuilder::new()
-        .trim(csv::Trim::All)
-        .from_reader(reader);
-    let gtfs_stops: Vec<Stop> = rdr
-        .deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
+    let gtfs_stops = read_stops(file_handler)?;
 
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
@@ -629,6 +630,54 @@ where
     let stopareas = CollectionWithId::new(stop_areas)?;
     let stoplocations = CollectionWithId::new(stop_locations)?;
     Ok((stopareas, stoppoints, stoplocations))
+}
+
+pub fn read_pathways<H>(file_handler: &mut H) -> Result<CollectionWithId<objects::Pathway>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let file = "pathways.txt";
+    let gtfs_stops = read_stops(file_handler)?;
+    let mut stops: HashMap<String, Stop> = HashMap::new();
+
+    for gtfs_stop in gtfs_stops {
+        stops.insert(gtfs_stop.id.clone(), gtfs_stop);
+    }
+
+    let (reader, path) = file_handler.get_file_if_exists(file)?;
+    match reader {
+        None => {
+            info!("Skipping {}", file);
+            Ok(CollectionWithId::new(vec![])?)
+        }
+        Some(reader) => {
+            info!("Reading {}", file);
+            let mut rdr = csv::Reader::from_reader(reader);
+            let mut pathways = vec![];
+            for pathway in rdr.deserialize() {
+                let mut pathway: Pathway = skip_fail!(pathway.with_context(ctx_from_path!(path)));
+                let from_stop_point =
+                    skip_fail!(stops.get(&pathway.from_stop_id).ok_or_else(|| format_err!(
+                        "Problem reading {:?}: from_stop_id={:?} not found",
+                        file,
+                        pathway.from_stop_id
+                    )));
+
+                let to_stop_point =
+                    skip_fail!(stops.get(&pathway.to_stop_id).ok_or_else(|| format_err!(
+                        "Problem reading {:?}: from_stop_id={:?} not found",
+                        file,
+                        pathway.to_stop_id
+                    )));
+
+                pathway.from_stop_type = from_stop_point.location_type.clone().into();
+                pathway.to_stop_type = to_stop_point.location_type.clone().into();
+
+                pathways.push(pathway)
+            }
+            Ok(CollectionWithId::new(pathways)?)
+        }
+    }
 }
 
 pub fn read_transfers<H>(
@@ -1183,7 +1232,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
 
             let (stop_areas, stop_points, stop_locations) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_areas.len());
             assert_eq!(1, stop_points.len());
             assert_eq!(0, stop_locations.len());
@@ -1216,7 +1265,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             // let stop_file = File::open(path.join("stops.txt")).unwrap();
             let (stop_areas, stop_points, stop_locations) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
             collections.stop_locations = stop_locations;
@@ -1251,7 +1300,7 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points, stop_locations) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             //validate stop_point code
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
@@ -1283,7 +1332,7 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, _, _) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -1733,7 +1782,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             let (stop_areas, stop_points, stop_locations) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.equipments = CollectionWithId::new(equipments.into_equipments()).unwrap();
             collections.transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
             collections.stop_areas = stop_areas;
@@ -2069,7 +2118,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (stop_areas, stop_points, _) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             let equipments_collection =
                 CollectionWithId::new(equipments.into_equipments()).unwrap();
             assert_eq!(2, stop_areas.len());
@@ -2134,7 +2183,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             let equipments_collection =
                 CollectionWithId::new(equipments.into_equipments()).unwrap();
             assert_eq!(2, stop_points.len());
@@ -2204,7 +2253,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -2287,7 +2336,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -2354,7 +2403,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
 
             let transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
             assert_eq!(
@@ -2691,7 +2740,7 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points, _) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_points.len());
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -2714,7 +2763,7 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (_, stop_points, _) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(3, stop_points.len());
             let longitudes: Vec<f64> = stop_points
                 .values()
@@ -2777,7 +2826,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -2849,7 +2898,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();

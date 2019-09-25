@@ -193,17 +193,21 @@ pub fn write_stops(
     comments: &CollectionWithId<objects::Comment>,
     equipments: &CollectionWithId<objects::Equipment>,
 ) -> Result<()> {
-    info!("Writing stops.txt");
-    let path = path.join("stops.txt");
+    let file = "stops.txt";
+    info!("Writing {}", file);
+    let path = path.join(file);
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    info!("Writing {} from StopPoint", file);
     for sp in stop_points.values() {
         wtr.serialize(ntfs_stop_point_to_gtfs_stop(sp, comments, equipments))
             .with_context(ctx_from_path!(path))?;
     }
+    info!("Writing {} from StopArea", file);
     for sa in stop_areas.values() {
         wtr.serialize(ntfs_stop_area_to_gtfs_stop(sa, comments, equipments))
             .with_context(ctx_from_path!(path))?;
     }
+    info!("Writing {} from StopLocation", file);
     for sl in stop_locations.values() {
         wtr.serialize(ntfs_stop_location_to_gtfs_stop(sl, comments, equipments))
             .with_context(ctx_from_path!(path))?;

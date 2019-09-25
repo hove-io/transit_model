@@ -76,6 +76,20 @@ enum StopLocationType {
     BoardingArea,
 }
 
+impl Into<Option<StopType>> for StopLocationType {
+    fn into(self) -> Option<StopType> {
+        let stop_type = match self {
+            StopLocationType::StopPoint => Some(StopType::Point),
+            StopLocationType::StopArea => Some(StopType::Zone),
+            StopLocationType::EntranceExit => Some(StopType::StopEntrance),
+            StopLocationType::PathwayInterconnectionNode => Some(StopType::GenericNode),
+            StopLocationType::BoardingArea => Some(StopType::BoardingArea),
+            _ => None,
+        };
+        stop_type
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Stop {
     #[serde(rename = "stop_id")]
@@ -174,7 +188,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.ticket_prices = make_opt_collection(path, "ticket_prices.txt")?;
     collections.ticket_use_perimeters = make_opt_collection(path, "ticket_use_perimeters.txt")?;
     collections.ticket_use_restrictions = make_opt_collection(path, "ticket_use_restrictions.txt")?;
-    collections.pathways = make_opt_collection_with_id(path, "pathways.txt")?;
+    collections.pathways = read::read_pathways(path)?;
     collections.levels = make_opt_collection_with_id(path, "levels.txt")?;
     manage_calendars(&mut file_handle, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
