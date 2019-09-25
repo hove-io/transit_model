@@ -90,6 +90,19 @@ enum StopLocationType {
     BoardingArea,
 }
 
+impl Into<Option<StopType>> for StopLocationType {
+    fn into(self) -> Option<objects::StopType> {
+        let stop_type = match self {
+            StopLocationType::StopPoint => objects::StopType::Point,
+            StopLocationType::StopArea => objects::StopType::Zone,
+            StopLocationType::StopEntrance => objects::StopType::StopEntrance,
+            StopLocationType::GenericNode => objects::StopType::GenericNode,
+            StopLocationType::BoardingArea => objects::StopType::BoardingArea,
+        };
+        Some(stop_type)
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Stop {
     #[serde(rename = "stop_id", deserialize_with = "de_without_slashes")]
@@ -261,7 +274,7 @@ where
     collections.networks = networks;
     collections.companies = companies;
     let (stop_areas, stop_points, stop_locations) =
-        read::read_stops(file_handler, &mut comments, &mut equipments)?;
+        read::manage_stops(file_handler, &mut comments, &mut equipments)?;
     collections.transfers = read::read_transfers(file_handler, &stop_points)?;
     collections.stop_areas = stop_areas;
     collections.stop_points = stop_points;
@@ -274,7 +287,7 @@ where
     collections.comments = comments;
     read::manage_stop_times(&mut collections, file_handler)?;
     read::manage_frequencies(&mut collections, file_handler)?;
-    collections.pathways = read_utils::read_opt_collection(file_handler, "pathways.txt")?;
+    collections.pathways = read::read_pathways(file_handler)?;
     collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
     collections.sanitize()?;
 

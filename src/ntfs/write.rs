@@ -468,8 +468,9 @@ pub fn write_stops(
     stop_areas: &CollectionWithId<StopArea>,
     stop_locations: &CollectionWithId<StopLocation>,
 ) -> Result<()> {
-    info!("Writing stops.txt");
-    let path = path.join("stops.txt");
+    let file = "stops.txt";
+    info!("Writing {}", file);
+    let path = path.join(file);
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for st in stop_points.values() {
         let location_type = match st.stop_type {

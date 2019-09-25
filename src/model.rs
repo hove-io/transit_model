@@ -284,6 +284,7 @@ impl Collections {
         let mut data_sets_used: HashSet<String> = HashSet::new();
         let mut physical_modes_used: HashSet<String> = HashSet::new();
         let mut comments_used: HashSet<String> = HashSet::new();
+        let mut level_id_used: HashSet<String> = HashSet::new();
 
         let vj_id_to_old_idx = self.vehicle_journeys.get_id_to_idx().clone();
         let comment_id_to_old_idx = self.comments.get_id_to_idx().clone();
@@ -338,6 +339,74 @@ impl Collections {
             .collect::<Vec<_>>();
         let mut stop_area_ids_used: HashSet<String> = HashSet::new();
         let mut equipments_used: HashSet<String> = HashSet::new();
+
+        let stop_locations = self
+            .stop_locations
+            .take()
+            .into_iter()
+            .filter(|sl| {
+                if let Some(stop_type) = &sl.stop_type {
+                    if *stop_type == StopType::StopEntrance || *stop_type == StopType::GenericNode {
+                        if let Some(stop_area_id) = &sl.parent_id {
+                            stop_area_ids_used.insert(stop_area_id.clone());
+                        }
+                    }
+                    if *stop_type == StopType::BoardingArea {
+                        if let Some(stop_point_id) = &sl.parent_id {
+                            stop_points_used.insert(stop_point_id.clone());
+                            if let Some(stop_area_id) = self
+                                .stop_points
+                                .get(&stop_point_id)
+                                .map(|sp| sp.stop_area_id.clone())
+                            {
+                                stop_area_ids_used.insert(stop_area_id);
+                            }
+                        }
+                    }
+                    if let Some(level_id) = &sl.level_id {
+                        level_id_used.insert(level_id.clone());
+                    }
+                    update_comments_used(&mut comments_used, &sl.comment_links, &self.comments);
+                    return true;
+                }
+                false
+            })
+            .collect::<Vec<_>>();
+
+        let pathways = self
+            .pathways
+            .take()
+            .into_iter()
+            .filter(|pw| {
+                if pw.from_stop_type == Some(StopType::BoardingArea)
+                    || pw.from_stop_type == Some(StopType::Point)
+                {
+                    stop_points_used.insert(pw.from_stop_id.clone());
+                    if let Some(stop_area_id) = self
+                        .stop_points
+                        .get(&pw.from_stop_id)
+                        .map(|sp| sp.stop_area_id.clone())
+                    {
+                        stop_area_ids_used.insert(stop_area_id);
+                    }
+                }
+                if pw.to_stop_type == Some(StopType::BoardingArea)
+                    || pw.to_stop_type == Some(StopType::Point)
+                {
+                    stop_points_used.insert(pw.to_stop_id.clone());
+                    if let Some(stop_area_id) = self
+                        .stop_points
+                        .get(&pw.to_stop_id)
+                        .map(|sp| sp.stop_area_id.clone())
+                    {
+                        stop_area_ids_used.insert(stop_area_id);
+                    }
+                }
+                true
+            })
+            .collect::<Vec<_>>();
+        self.pathways = CollectionWithId::new(pathways)?;
+
         let mut stop_points = self
             .stop_points
             .take()
@@ -351,6 +420,9 @@ impl Collections {
                     if let Some(equipment_id) = &sp.equipment_id {
                         equipments_used.insert(equipment_id.clone());
                     }
+                    if let Some(level_id) = &sp.level_id {
+                        level_id_used.insert(level_id.clone());
+                    }
                     update_comments_used(&mut comments_used, &sp.comment_links, &self.comments);
                     true
                 } else {
@@ -359,6 +431,7 @@ impl Collections {
                 }
             })
             .collect::<Vec<_>>();
+
         let mut networks_used: HashSet<String> = HashSet::new();
         let mut commercial_modes_used: HashSet<String> = HashSet::new();
         let mut lines = self
@@ -405,6 +478,9 @@ impl Collections {
                     if let Some(geo_id) = &sa.geometry_id {
                         geometries_used.insert(geo_id.clone());
                     }
+                    if let Some(level_id) = &sa.level_id {
+                        level_id_used.insert(level_id.clone());
+                    }
                     update_comments_used(&mut comments_used, &sa.comment_links, &self.comments);
                     true
                 } else {
@@ -445,6 +521,7 @@ impl Collections {
         update_comments_idx(&mut vjs, &comment_old_idx_to_new_idx);
         let vehicle_journeys_used: HashSet<String> = vjs.iter().map(|vj| vj.id.clone()).collect();
         self.vehicle_journeys = CollectionWithId::new(vjs)?;
+        self.stop_locations = CollectionWithId::new(stop_locations)?;
 
         let vj_old_idx_to_new_idx: HashMap<Idx<VehicleJourney>, Idx<VehicleJourney>> = self
             .vehicle_journeys
@@ -522,7 +599,8 @@ impl Collections {
         });
         self.frequencies
             .retain(|frequency| vehicle_journeys_used.contains(&frequency.vehicle_journey_id));
-
+        self.levels
+            .retain(|level| level_id_used.contains(&level.id));
         Ok(())
     }
 }
