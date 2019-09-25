@@ -1,3 +1,4 @@
 object_type,object_id,object_property_name,object_property_value
 stop_area,prefix:FR:94033:LDA:415674:STIF,Netex_StopType,LDA
 stop_area,prefix:FR:91272:ZDL:50076060:STIF,Netex_StopType,ZDL
+stop_area,prefix:will_be_removed_by_sanitize,Netex_StopType,ZDL

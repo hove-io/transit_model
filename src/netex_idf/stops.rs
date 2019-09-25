@@ -22,7 +22,7 @@ use crate::{
     Result,
 };
 use failure::{bail, format_err, ResultExt};
-use log::{info, warn};
+use log::{debug, info, warn};
 use minidom::Element;
 use proj::Proj;
 use std::{
@@ -128,6 +128,37 @@ fn load_coords(quay: &Element) -> Result<(f64, f64)> {
     Ok((coords[0].parse()?, coords[1].parse()?))
 }
 
+use geo::algorithm::centroid::Centroid;
+use geo_types::MultiPoint;
+
+fn update_stop_area_coords(
+    stop_areas: &mut CollectionWithId<StopArea>,
+    stop_points: &CollectionWithId<StopPoint>,
+) {
+    let mut updated_stop_areas = stop_areas.take();
+    for stop_area in &mut updated_stop_areas {
+        if let Some(coord) = stop_points
+            .values()
+            .filter(|sp| sp.stop_area_id == stop_area.id)
+            .map(|sp| (sp.coord.lon, sp.coord.lat))
+            .collect::<MultiPoint<_>>()
+            .centroid()
+            .map(|c| Coord {
+                lon: c.x(),
+                lat: c.y(),
+            })
+        {
+            stop_area.coord = coord;
+        } else {
+            debug!("failed to calculate a centroid of stop area {} because it does not refer to any corresponding stop point", stop_area.id);
+        }
+    }
+
+    // this does not fail as updated_stop_areas comes from a CollectionWithId
+    // and stop area ids have not been modified
+    *stop_areas = CollectionWithId::new(updated_stop_areas).unwrap();
+}
+
 fn load_stop_points<'a>(
     quays: impl Iterator<Item = &'a &'a Element>,
     stop_areas: &mut CollectionWithId<StopArea>,
@@ -210,6 +241,8 @@ fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionW
         &mut stop_areas,
         &mut map_quay_lda,
     )?;
+
+    update_stop_area_coords(&mut stop_areas, &stop_points);
 
     Ok((stop_areas, stop_points))
 }

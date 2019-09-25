@@ -99,6 +99,33 @@
                                 <QuayRef ref="FR:91272:ZDE:50076651:STIF" version="732658"/>
                             </quays>
                         </StopPlace>
+                        <StopPlace dataSourceRef="STIF-REFLEX:Operator:59" version="902482" created="2015-02-20T04:02:10.0Z" changed="2017-12-19T10:12:38.0Z" id="will_be_removed_by_sanitize">
+                            <keyList>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>OBJECT_STATUS</Key>
+                                    <Value>LOCAL_OBJECT</Value>
+                                </KeyValue>
+                                <KeyValue typeOfKey="OBJET_QUALIFIER">
+                                    <Key>REFERENCE_OBJECT_ID</Key>
+                                    <Value>FR:93001:ZDL:50958:STIF</Value>
+                                </KeyValue>
+                            </keyList>
+                            <Name>LES ROSES</Name>
+                            <placeTypes>
+                                <TypeOfPlaceRef ref="ZDL"/>
+                            </placeTypes>
+                            <PostalAddress version="any" id="STIF-REFLEX:PostalAddress:50032747">
+                                <Town>Aubervilliers</Town>
+                                <PostalRegion>93001</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:50032747">
+                                <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                            </AccessibilityAssessment>
+                            <StopPlaceType>onstreetBus</StopPlaceType>
+                            <quays>
+                                <QuayRef ref="FR:93001:ZDE:50105224:STIF" version="850264"/>
+                            </quays>
+                        </StopPlace>
                         <Quay xmlns:gml="http://www.opengis.net/gml/3.2" version="926175" created="2014-12-29T03:12:51.0Z" changed="2018-03-27T02:03:12.0Z" id="FR:94033:ZDE:14690:STIF">
                             <keyList>
                                 <KeyValue typeOfKey="OBJET_QUALIFIER">
