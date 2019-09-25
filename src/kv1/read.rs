@@ -520,13 +520,8 @@ fn make_trip_properties(
             TripProperty {
                 id: id_incr.to_string(),
                 wheelchair_accessible: avaibility,
-                bike_accepted: Availability::InformationNotAvailable,
-                air_conditioned: Availability::InformationNotAvailable,
-                visual_announcement: Availability::InformationNotAvailable,
-                audible_announcement: Availability::InformationNotAvailable,
-                appropriate_escort: Availability::InformationNotAvailable,
-                appropriate_signage: Availability::InformationNotAvailable,
                 school_vehicle_type: TransportType::Regular,
+                ..Default::default()
             }
         });
 

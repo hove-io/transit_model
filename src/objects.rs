@@ -1158,7 +1158,7 @@ impl AddPrefix for Comment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Default)]
 pub struct Equipment {
     #[serde(rename = "equipment_id")]
     pub id: String,
@@ -1224,7 +1224,7 @@ pub enum TransportType {
     RegularAndSchool,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
 pub struct TripProperty {
     #[serde(rename = "trip_property_id")]
     pub id: String,
