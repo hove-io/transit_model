@@ -315,6 +315,9 @@ impl Collections {
             .filter(|sp| {
                 if stop_points_used.contains(&sp.id) {
                     stop_area_ids_used.insert(sp.stop_area_id.clone());
+                    if let Some(geo_id) = &sp.geometry_id {
+                        geometries_used.insert(geo_id.clone());
+                    }
                     if let Some(equipment_id) = &sp.equipment_id {
                         equipments_used.insert(equipment_id.clone());
                     }
@@ -363,6 +366,9 @@ impl Collections {
             .into_iter()
             .filter(|sp| {
                 if stop_area_ids_used.contains(&sp.id) {
+                    if let Some(geo_id) = &sp.geometry_id {
+                        geometries_used.insert(geo_id.clone());
+                    }
                     update_comments_used(&mut comments_used, &sp.comment_links, &self.comments);
                     return true;
                 }
