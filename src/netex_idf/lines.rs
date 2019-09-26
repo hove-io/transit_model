@@ -189,6 +189,8 @@ mod tests {
 
     #[test]
     fn test_make_networks_companies() {
+        // Test several networks in the same frame, or in several frames
+        // Same thing for operators (= companies)
         let xml = r#"
 <root>
    <dataObjects>
@@ -242,21 +244,21 @@ mod tests {
         let (networks, companies, _) = make_networks_companies(&root).unwrap();
         let networks_names: Vec<_> = networks.values().map(|n| &n.name).collect();
         assert_eq!(
+            networks_names,
             vec![
                 "VEOLIA RAMBOUILLET",
                 "VEOLIA RAMBOUILLET 2",
                 "VEOLIA RAMBOUILLET 3"
-            ],
-            networks_names
+            ]
         );
         let companies_names: Vec<_> = companies.values().map(|c| &c.name).collect();
         assert_eq!(
+            companies_names,
             vec![
                 "TRANSDEV IDF RAMBOUILLET",
                 "TRANSDEV IDF RAMBOUILLET 2",
                 "TRANSDEV IDF RAMBOUILLET 3"
-            ],
-            companies_names
+            ]
         );
     }
 
@@ -361,6 +363,9 @@ mod tests {
         let lines_netex_idf = load_netex_lines(&root, &map_line_network, &companies).unwrap();
         let lines = make_lines(&lines_netex_idf).unwrap();
         let lines_names: Vec<_> = lines.values().map(|l| &l.name).collect();
-        assert_eq!(vec!["Line 01", "Line 04",], lines_names);
+        // Test explanation
+        // Line 03 - Orphan line; not referenced by any network -> line skipped
+        // Line 05 - Unknown company -> line skipped
+        assert_eq!(lines_names, vec!["Line 01", "Line 04"]);
     }
 }
