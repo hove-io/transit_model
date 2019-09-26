@@ -84,6 +84,22 @@ Default ones are provided by the command but you can pass a json file that conta
 target/release/gtfs2ntfs -h
 ```
 
+You can also make binaries available as global binaries in your system.
+First, add `${HOME}/.cargo/bin` to your `PATH`.
+```
+export PATH=${PATH}:${HOME}/.cargo/bin
+```
+
+Then install them with the following command
+```
+cargo install --path . -f
+```
+
+You should then be able to run them with
+```
+gtfs2ntfs -h
+```
+
 ### Example
 
 ```bash
