@@ -16,9 +16,10 @@
 
 use super::EUROPE_PARIS_TIMEZONE;
 use crate::{
+    common_format::Availability,
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
-    objects::{Codes, Coord, StopArea, StopPoint, StopType},
+    objects::{Codes, Coord, Equipment, StopArea, StopPoint, StopType},
     Result,
 };
 use failure::{bail, format_err, ResultExt};
@@ -159,13 +160,46 @@ fn update_stop_area_coords(
     *stop_areas = CollectionWithId::new(updated_stop_areas).unwrap();
 }
 
+fn avaibility(quay: &Element) -> Result<Availability> {
+    let avaibility = match quay
+        .try_only_child("AccessibilityAssessment")?
+        .try_only_child("MobilityImpairedAccess")?
+        .text()
+        .trim()
+    {
+        "true" => Availability::Available,
+        "false" => Availability::NotAvailable,
+        _ => Availability::InformationNotAvailable,
+    };
+
+    Ok(avaibility)
+}
+
+fn get_or_create_equipment<'a>(
+    quay: &Element,
+    equipments: &'a mut HashMap<Availability, Equipment>,
+    id_incr: &mut u8,
+) -> Result<&'a mut Equipment> {
+    let avaibility = avaibility(quay)?;
+    let equipment = equipments.entry(avaibility).or_insert_with(|| {
+        *id_incr += 1;
+        Equipment {
+            id: id_incr.to_string(),
+            wheelchair_boarding: avaibility,
+            ..Default::default()
+        }
+    });
+    Ok(equipment)
+}
+
 fn load_stop_points<'a>(
     quays: impl Iterator<Item = &'a &'a Element>,
     stop_areas: &mut CollectionWithId<StopArea>,
     map_quay_lda: &mut HashMap<String, String>,
-) -> Result<CollectionWithId<StopPoint>> {
+) -> Result<(CollectionWithId<StopPoint>, CollectionWithId<Equipment>)> {
     let mut stop_points = CollectionWithId::default();
-    // add stop points
+    let mut equipments: HashMap<Availability, Equipment> = HashMap::new();
+    let mut id_incr = 0u8;
     let from = "EPSG:2154";
     let to = "+proj=longlat +datum=WGS84 +no_defs";
     let proj = Proj::new_known_crs(&from, &to, None)
@@ -190,7 +224,7 @@ fn load_stop_points<'a>(
             ..Default::default()
         };
 
-        let stop_point = if let Some(stop_area_id) =
+        let mut stop_point = if let Some(stop_area_id) =
             map_quay_lda.get(&id).and_then(|stop_area_id| {
                 stop_areas
                     .get(&stop_area_id)
@@ -207,13 +241,25 @@ fn load_stop_points<'a>(
             stop_point
         };
 
+        let associated_equipment = get_or_create_equipment(quay, &mut equipments, &mut id_incr)?;
+        stop_point.equipment_id = Some(associated_equipment.id.clone());
+
         stop_points.push(stop_point)?;
     }
 
-    Ok(stop_points)
+    let mut equipments: Vec<_> = equipments.into_iter().map(|(_, e)| e).collect();
+    equipments.sort_unstable_by(|tp1, tp2| tp1.id.cmp(&tp2.id));
+
+    Ok((stop_points, CollectionWithId::new(equipments)?))
 }
 
-fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionWithId<StopPoint>)> {
+fn load_stops(
+    elem: &Element,
+) -> Result<(
+    CollectionWithId<StopArea>,
+    CollectionWithId<StopPoint>,
+    CollectionWithId<Equipment>,
+)> {
     let member_children: Vec<_> = elem
         .try_only_child("dataObjects")?
         .try_only_child("CompositeFrame")?
@@ -236,7 +282,7 @@ fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionW
     )?;
     add_stop_area_codes(&mut stop_areas, map_lda_zde);
 
-    let stop_points = load_stop_points(
+    let (stop_points, equipments) = load_stop_points(
         member_children.iter().filter(|e| e.name() == "Quay"),
         &mut stop_areas,
         &mut map_quay_lda,
@@ -244,7 +290,7 @@ fn load_stops(elem: &Element) -> Result<(CollectionWithId<StopArea>, CollectionW
 
     update_stop_area_coords(&mut stop_areas, &stop_points);
 
-    Ok((stop_areas, stop_points))
+    Ok((stop_areas, stop_points, equipments))
 }
 
 pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Result<()> {
@@ -255,12 +301,13 @@ pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Resul
     file.read_to_string(&mut file_content)?;
     let elem = file_content.parse::<Element>();
 
-    let (stop_areas, stop_points) = elem
+    let (stop_areas, stop_points, equipments) = elem
         .map_err(|e| format_err!("Failed to parse file '{:?}': {}", path, e))
         .and_then(|ref e| load_stops(e))?;
 
     collections.stop_areas.try_merge(stop_areas)?;
     collections.stop_points.try_merge(stop_points)?;
+    collections.equipments.try_merge(equipments)?;
 
     Ok(())
 }
@@ -269,10 +316,12 @@ pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Resul
 mod tests {
     use super::*;
 
-    #[test]
-    #[should_panic(expected = "longitude and latitude not found")]
-    fn test_load_coords_with_one_coord() {
-        let xml = r#"
+    mod test_coords {
+        use super::{load_coords, Element};
+        #[test]
+        #[should_panic(expected = "longitude and latitude not found")]
+        fn test_load_coords_with_one_coord() {
+            let xml = r#"
 <Quay>
     <Centroid>
         <Location>
@@ -280,14 +329,14 @@ mod tests {
         </Location>
     </Centroid>
 </Quay>"#;
-        let root: Element = xml.parse().unwrap();
-        load_coords(&root).unwrap();
-    }
+            let root: Element = xml.parse().unwrap();
+            load_coords(&root).unwrap();
+        }
 
-    #[test]
-    #[should_panic]
-    fn test_load_unvalid_coords() {
-        let xml = r#"
+        #[test]
+        #[should_panic]
+        fn test_load_unvalid_coords() {
+            let xml = r#"
 <Quay>
     <Centroid>
         <Location>
@@ -295,13 +344,13 @@ mod tests {
         </Location>
     </Centroid>
 </Quay>"#;
-        let root: Element = xml.parse().unwrap();
-        load_coords(&root).unwrap();
-    }
+            let root: Element = xml.parse().unwrap();
+            load_coords(&root).unwrap();
+        }
 
-    #[test]
-    fn test_load_coords() {
-        let xml = r#"
+        #[test]
+        fn test_load_coords() {
+            let xml = r#"
 <Quay>
     <Centroid>
         <Location>
@@ -309,9 +358,73 @@ mod tests {
         </Location>
     </Centroid>
 </Quay>"#;
-        let root: Element = xml.parse().unwrap();
-        let coords = load_coords(&root).unwrap();
+            let root: Element = xml.parse().unwrap();
+            let coords = load_coords(&root).unwrap();
 
-        assert_eq!((666944.0, 6856019.0), coords);
+            assert_eq!((666944.0, 6856019.0), coords);
+        }
+    }
+
+    mod test_avaibility {
+        use super::*;
+
+        #[test]
+        fn test_available() {
+            let xml = r#"
+<Quay>
+    <AccessibilityAssessment>
+        <MobilityImpairedAccess>true</MobilityImpairedAccess>
+    </AccessibilityAssessment>
+</Quay>"#;
+
+            let quay: Element = xml.parse().unwrap();
+            let avaibility = avaibility(&quay).unwrap();
+
+            assert_eq!(Availability::Available, avaibility);
+        }
+
+        #[test]
+        fn test_not_available() {
+            let xml = r#"
+<Quay>
+    <AccessibilityAssessment>
+        <MobilityImpairedAccess>false</MobilityImpairedAccess>
+    </AccessibilityAssessment>
+</Quay>"#;
+
+            let quay: Element = xml.parse().unwrap();
+            let avaibility = avaibility(&quay).unwrap();
+
+            assert_eq!(Availability::NotAvailable, avaibility);
+        }
+
+        #[test]
+        fn test_information_not_available() {
+            let xml = r#"
+<Quay>
+    <AccessibilityAssessment>
+        <MobilityImpairedAccess>whatever</MobilityImpairedAccess>
+    </AccessibilityAssessment>
+</Quay>"#;
+
+            let quay: Element = xml.parse().unwrap();
+            let avaibility = avaibility(&quay).unwrap();
+
+            assert_eq!(Availability::InformationNotAvailable, avaibility);
+        }
+
+        #[test]
+        #[should_panic]
+        fn test_fail() {
+            let xml = r#"
+<Quay>
+    <AccessibilityAssessment>
+        NoMobilityImpairedAccessNode
+    </AccessibilityAssessment>
+</Quay>"#;
+
+            let quay: Element = xml.parse().unwrap();
+            avaibility(&quay).unwrap();
+        }
     }
 }

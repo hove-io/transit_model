@@ -156,7 +156,7 @@
                                 <PostalRegion>94033</PostalRegion>
                             </PostalAddress>
                             <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:14690">
-                                <MobilityImpairedAccess>partial</MobilityImpairedAccess>
+                                <MobilityImpairedAccess>true</MobilityImpairedAccess>
                             </AccessibilityAssessment>
                         </Quay>
                         <Quay xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="STIF-REFLEX:Operator:24" version="734762" created="2015-05-19T02:05:10.0Z" changed="2015-10-28T09:10:39.0Z" id="FR:91272:ZDE:50076652:STIF">
@@ -181,7 +181,7 @@
                                 <PostalRegion>91272</PostalRegion>
                             </PostalAddress>
                             <AccessibilityAssessment version="any" id="STIF-REFLEX:AccessibilityAssessment:50076652">
-                                <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                                <MobilityImpairedAccess>false</MobilityImpairedAccess>
                             </AccessibilityAssessment>
                         </Quay>
                         <Quay xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="STIF-REFLEX:Operator:24" version="732658" created="2015-05-19T02:05:11.0Z" changed="2015-10-27T09:10:21.0Z" id="FR:91272:ZDE:50076651:STIF">
