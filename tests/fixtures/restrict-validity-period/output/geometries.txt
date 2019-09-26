@@ -2,3 +2,4 @@ geometry_id,geometry_wkt
 geo:1:kept,"LINESTRING(10.1 20.2,30.3 40.4)"
 geo:2:kept,"POLYGON((0 0,20 40,40 0,0 0),(5 5,20 30,30 5,5 5))"
 geo:3:kept,"MULTILINESTRING((10.1 20.2,30.3 40.4),(50.5 60.6,70.7 80.8))"
+geo:7:kept,"MULTILINESTRING((12 34,56 78),(91 10,12 13))"
