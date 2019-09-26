@@ -33,6 +33,7 @@ fn test_read_write_netex_idf() {
                 "contributors.txt",
                 "datasets.txt",
                 "feed_infos.txt",
+                "lines.txt",
                 "object_codes.txt",
                 "object_properties.txt",
                 "stops.txt",

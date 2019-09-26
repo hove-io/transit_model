@@ -1,4 +1,2 @@
 company_id,company_name,company_address,company_url,company_mail,company_phone
 prefix:STIF:CODIFLIGNE:Operator:013,TRANSDEV IDF RAMBOUILLET,,,,
-prefix:STIF:CODIFLIGNE:Operator:014,TRANSDEV IDF RAMBOUILLET 2,,,,
-prefix:STIF:CODIFLIGNE:Operator:015,TRANSDEV IDF RAMBOUILLET 3,,,,
