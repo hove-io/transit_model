@@ -104,14 +104,17 @@ pub fn set_dataset_validity_period(
 
 pub trait FileHandler
 where
-    Self: std::marker::Sized,
+    Self: IntoIterator + Sized,
 {
     type Reader: std::io::Read;
 
-    fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)>;
+    fn get_file_if_exists<P: AsRef<Path>>(
+        self,
+        filename: P,
+    ) -> Result<(Option<Self::Reader>, PathBuf)>;
 
-    fn get_file(self, name: &str) -> Result<(Self::Reader, PathBuf)> {
-        let (reader, path) = self.get_file_if_exists(name)?;
+    fn get_file<P: AsRef<Path>>(self, filename: P) -> Result<(Self::Reader, PathBuf)> {
+        let (reader, path) = self.get_file_if_exists(filename)?;
         Ok((
             reader.ok_or_else(|| format_err!("file {:?} not found", path))?,
             path,
@@ -130,10 +133,35 @@ impl<P: AsRef<Path>> PathFileHandler<P> {
     }
 }
 
+impl<'a, P: AsRef<Path>> IntoIterator for &'a mut PathFileHandler<P> {
+    type Item = PathBuf;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        use walkdir::WalkDir;
+        let files: Vec<_> = WalkDir::new(&self.base_path)
+            .into_iter()
+            .flat_map(|result| result.ok())
+            .flat_map(|dir_entry| {
+                dir_entry
+                    .path()
+                    .strip_prefix(&self.base_path)
+                    .map(PathBuf::from)
+                    .ok()
+            })
+            .filter(|path_buf| path_buf.components().count() > 0)
+            .collect();
+        files.into_iter()
+    }
+}
+
 impl<'a, P: AsRef<Path>> FileHandler for &'a mut PathFileHandler<P> {
     type Reader = File;
-    fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
-        let f = self.base_path.as_ref().join(name);
+    fn get_file_if_exists<Q: AsRef<Path>>(
+        self,
+        filename: Q,
+    ) -> Result<(Option<Self::Reader>, PathBuf)> {
+        let f = self.base_path.as_ref().join(filename);
         if f.exists() {
             Ok((Some(File::open(&f).with_context(ctx_from_path!(&f))?), f))
         } else {
@@ -151,38 +179,61 @@ impl<'a, P: AsRef<Path>> FileHandler for &'a mut PathFileHandler<P> {
 pub struct ZipHandler {
     archive: zip::ZipArchive<File>,
     archive_path: PathBuf,
-    index_by_name: BTreeMap<String, usize>,
+    index_by_name: BTreeMap<PathBuf, usize>,
 }
 
 impl ZipHandler {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let file = File::open(path.as_ref())?;
+        let archive_path = path.as_ref().to_path_buf();
+        let file = File::open(&archive_path)?;
         let mut archive = zip::ZipArchive::new(file)?;
+        let index_by_name = Self::files_by_path(&mut archive);
         Ok(ZipHandler {
-            index_by_name: Self::files_by_name(&mut archive),
             archive,
-            archive_path: path.as_ref().to_path_buf(),
+            archive_path,
+            index_by_name,
         })
     }
 
-    fn files_by_name(archive: &mut zip::ZipArchive<File>) -> BTreeMap<String, usize> {
+    fn files_by_path(archive: &mut zip::ZipArchive<File>) -> BTreeMap<PathBuf, usize> {
         (0..archive.len())
-            .filter_map(|i| {
-                let file = archive.by_index(i).ok()?;
-                // we get the name of the file, not regarding its path in the ZipArchive
-                let real_name = Path::new(file.name()).file_name()?;
-                let real_name: String = real_name.to_str()?.into();
-                Some((real_name, i))
+            .flat_map(|index| {
+                archive
+                    .by_index(index)
+                    .map(|zip_file| zip_file.sanitized_name())
+                    .ok()
+                    .map(|filename| (filename, index))
             })
             .collect()
     }
 }
 
+impl<'a> IntoIterator for &'a mut ZipHandler {
+    type Item = PathBuf;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        use zip::read::ZipFile;
+        let files: Vec<_> = (0..self.archive.len())
+            .flat_map(|index| {
+                self.archive
+                    .by_index(index)
+                    .map(|zip_file: ZipFile| zip_file.sanitized_name())
+                    .ok()
+            })
+            .collect();
+        files.into_iter()
+    }
+}
+
 impl<'a> FileHandler for &'a mut ZipHandler {
     type Reader = zip::read::ZipFile<'a>;
-    fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
-        let p = self.archive_path.join(name);
-        match self.index_by_name.get(name) {
+    fn get_file_if_exists<P: AsRef<Path>>(
+        self,
+        filename: P,
+    ) -> Result<(Option<Self::Reader>, PathBuf)> {
+        let p = self.archive_path.join(&filename);
+        match self.index_by_name.get(&filename.as_ref().to_path_buf()) {
             None => Ok((None, p)),
             Some(i) => Ok((Some(self.archive.by_index(*i)?), p)),
         }
@@ -275,6 +326,17 @@ mod tests {
     }
 
     #[test]
+    fn path_file_handler_iterator() {
+        let mut file_handler = PathFileHandler::new(PathBuf::from("tests/fixtures/file-handler"));
+        let files: Vec<_> = file_handler.into_iter().collect();
+
+        assert_eq!(files.len(), 3);
+        assert!(files.contains(&PathBuf::from("hello.txt")));
+        assert!(files.contains(&PathBuf::from("folder")));
+        assert!(files.contains(&PathBuf::from("folder/world.txt")));
+    }
+
+    #[test]
     fn zip_file_handler() {
         let mut file_handler =
             ZipHandler::new(PathBuf::from("tests/fixtures/file-handler.zip")).unwrap();
@@ -287,10 +349,22 @@ mod tests {
         }
 
         {
-            let (mut world, _) = file_handler.get_file("world.txt").unwrap();
+            let (mut world, _) = file_handler.get_file("folder/world.txt").unwrap();
             let mut world_str = String::new();
             world.read_to_string(&mut world_str).unwrap();
             assert_eq!("world\n", world_str);
         }
+    }
+
+    #[test]
+    fn zip_file_handler_iterator() {
+        let mut file_handler =
+            ZipHandler::new(PathBuf::from("tests/fixtures/file-handler.zip")).unwrap();
+        let files: Vec<_> = file_handler.into_iter().collect();
+
+        assert_eq!(files.len(), 3);
+        assert!(files.contains(&PathBuf::from("hello.txt")));
+        assert!(files.contains(&PathBuf::from("folder")));
+        assert!(files.contains(&PathBuf::from("folder/world.txt")));
     }
 }
