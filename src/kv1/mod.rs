@@ -22,7 +22,6 @@ use crate::{
     model::{Collections, Model},
     read_utils, AddPrefix, Result,
 };
-use std::fs::File;
 use std::path::Path;
 use transit_model_collection::CollectionWithId;
 
@@ -85,11 +84,10 @@ pub fn read_from_path<P: AsRef<Path>>(
 /// identifiers, allowing to namespace the dataset. By default, no
 /// prefix will be added to the identifiers.
 pub fn read_from_zip<P: AsRef<Path>>(
-    p: P,
+    path: P,
     config_path: Option<P>,
     prefix: Option<String>,
 ) -> Result<Model> {
-    let reader = File::open(p.as_ref())?;
-    let mut file_handle = read_utils::ZipHandler::new(reader, p)?;
-    read(&mut file_handle, config_path, prefix)
+    let mut file_handler = read_utils::ZipHandler::new(path)?;
+    read(&mut file_handler, config_path, prefix)
 }

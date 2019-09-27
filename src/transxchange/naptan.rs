@@ -29,7 +29,7 @@ use log::{info, warn};
 #[cfg(feature = "proj")]
 use proj::Proj;
 use serde::Deserialize;
-use std::{collections::HashMap, fs::File, io::Read, path::Path};
+use std::{collections::HashMap, io::Read, path::Path};
 use transit_model_collection::CollectionWithId;
 
 #[derive(Debug, Deserialize)]
@@ -235,9 +235,8 @@ pub fn read_from_zip<P>(path: P, collections: &mut Collections) -> Result<()>
 where
     P: AsRef<Path>,
 {
-    let reader = File::open(path.as_ref())?;
-    let mut file_handle = read_utils::ZipHandler::new(reader, path)?;
-    read(&mut file_handle, collections)
+    let mut file_handler = read_utils::ZipHandler::new(path)?;
+    read(&mut file_handler, collections)
 }
 
 pub fn read_from_path<P>(path: P, collections: &mut Collections) -> Result<()>
