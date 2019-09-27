@@ -7,7 +7,7 @@ NAT,Nation,48.84849,2.396497,1,,,
 NATR,Nation (RER),48.84849,2.396497,0,NAT,,
 NATM,Nation (Metro),48.84849,2.396497,2,NAT,,geo:7:kept
 CDG,Charles de Gaulle,48.873965,2.295354,1,,,
-CDGR,Charles de Gaulle (RER),48.873965,2.295354,0,CDG,,
+CDGR,Charles de Gaulle (RER),48.873965,2.295354,2,CDG,,geo:8:removed
 CDGM,Charles de Gaulle (Metro),48.973965,2.795354,,CDG,,
 DEF,La Défense,48.891737,2.238964,1,,,
 DEFR,La Défense (RER),48.891737,2.238964,0,DEF,,
