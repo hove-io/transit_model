@@ -18,13 +18,14 @@ use super::EUROPE_PARIS_TIMEZONE;
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
-    objects::{CommercialMode, Company, Line, Network},
+    objects::{CommercialMode, Company, Line, Network, PhysicalMode},
     Result,
 };
-use failure::{bail, ResultExt};
+use failure::{bail, format_err, ResultExt};
+use lazy_static::lazy_static;
 use log::{info, warn};
 use minidom::Element;
-use std::{collections::HashMap, fs::File, io::Read};
+use std::{collections::BTreeSet, collections::HashMap, fs::File, io::Read};
 use transit_model_collection::{CollectionWithId, Id};
 
 #[derive(Debug, Default)]
@@ -35,13 +36,117 @@ struct LineNetexIDF {
     private_code: Option<String>,
     network_id: String,
     company_id: String,
-    commercial_mode_id: String,
-    physical_mode_id: String,
+    mode: String,
     wheelchair_accessible: bool,
 }
 impl_id!(LineNetexIDF);
 
 type MapLineNetwork = HashMap<String, String>;
+
+#[derive(Debug)]
+struct ModeNetexIDF {
+    // Tuple (mode_id, mode_name)
+    physical_mode: (&'static str, &'static str),
+    commercial_mode: (&'static str, &'static str),
+}
+
+lazy_static! {
+    static ref MODES: HashMap<&'static str, ModeNetexIDF> = {
+        let mut m = HashMap::new();
+        m.insert(
+            "air",
+            ModeNetexIDF {
+                physical_mode: ("Air", "Avion"),
+                commercial_mode: ("Air", "Avion"),
+            },
+        );
+        m.insert(
+            "bus",
+            ModeNetexIDF {
+                physical_mode: ("Bus", "Bus"),
+                commercial_mode: ("Bus", "Bus"),
+            },
+        );
+        m.insert(
+            "coach",
+            ModeNetexIDF {
+                physical_mode: ("Coach", "Autocar"),
+                commercial_mode: ("Coach", "Autocar"),
+            },
+        );
+        m.insert(
+            "ferry",
+            ModeNetexIDF {
+                physical_mode: ("Ferry", "Ferry"),
+                commercial_mode: ("Ferry", "Ferry"),
+            },
+        );
+        m.insert(
+            "metro",
+            ModeNetexIDF {
+                physical_mode: ("Metro", "Métro"),
+                commercial_mode: ("Metro", "Métro"),
+            },
+        );
+        m.insert(
+            "rail",
+            ModeNetexIDF {
+                physical_mode: ("LocalTrain", "Train régional / TER"),
+                commercial_mode: ("LocalTrain", "Train régional / TER"),
+            },
+        );
+        m.insert(
+            "trolleyBus",
+            ModeNetexIDF {
+                physical_mode: ("Tramway", "Tramway"),
+                commercial_mode: ("TrolleyBus", "TrolleyBus"),
+            },
+        );
+        m.insert(
+            "tram",
+            ModeNetexIDF {
+                physical_mode: ("Tramway", "Tramway"),
+                commercial_mode: ("Tramway", "Tramway"),
+            },
+        );
+        m.insert(
+            "water",
+            ModeNetexIDF {
+                physical_mode: ("Boat", "Navette maritime / fluviale"),
+                commercial_mode: ("Boat", "Navette maritime / fluviale"),
+            },
+        );
+        m.insert(
+            "cableway",
+            ModeNetexIDF {
+                physical_mode: ("Tramway", "Tramway"),
+                commercial_mode: ("CableWay", "CableWay"),
+            },
+        );
+        m.insert(
+            "funicular",
+            ModeNetexIDF {
+                physical_mode: ("Funicular", "Funiculaire"),
+                commercial_mode: ("Funicular", "Funiculaire"),
+            },
+        );
+        m.insert(
+            "lift",
+            ModeNetexIDF {
+                physical_mode: ("Bus", "Bus"),
+                commercial_mode: ("Bus", "Bus"),
+            },
+        );
+        m.insert(
+            "other",
+            ModeNetexIDF {
+                physical_mode: ("Bus", "Bus"),
+                commercial_mode: ("Bus", "Bus"),
+            },
+        );
+        m
+    };
+}
 
 fn load_netex_lines(
     elem: &Element,
@@ -75,6 +180,11 @@ fn load_netex_lines(
                     warn!("Failed to find company {} for line {}", company_id, id);
                     continue;
                 };
+                let mode: String = line.try_only_child("TransportMode")?.text().parse()?;
+                MODES
+                    .get::<str>(&mode)
+                    .ok_or_else(|| format_err!("Unknown mode '{}' found for line {}", mode, id))?;
+
                 lines_netex_idf.push(LineNetexIDF {
                     id,
                     name,
@@ -82,9 +192,8 @@ fn load_netex_lines(
                     private_code,
                     network_id,
                     company_id,
-                    commercial_mode_id: String::from("Bus"), // TODO
-                    physical_mode_id: String::from("Bus"),   // TODO
-                    wheelchair_accessible: false,            // TODO
+                    mode,
+                    wheelchair_accessible: false, // TODO
                 })?;
             }
         }
@@ -95,12 +204,22 @@ fn load_netex_lines(
 fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<CollectionWithId<Line>> {
     let mut lines = CollectionWithId::default();
     for ln in lines_netex_idf.values() {
+        let commercial_mode_id = if let Some(commercial_mode_id) =
+            MODES.get::<str>(&ln.mode).map(|m| {
+                let (cid, _) = m.commercial_mode;
+                cid.to_string()
+            }) {
+            commercial_mode_id
+        } else {
+            warn!("commercial_mode_id not found for {}", ln.mode);
+            continue;
+        };
         lines.push(Line {
             id: ln.id.clone(),
             name: ln.name.clone(),
             code: ln.code.clone(),
             network_id: ln.network_id.clone(),
-            commercial_mode_id: ln.commercial_mode_id.clone(),
+            commercial_mode_id,
             ..Default::default()
         })?;
     }
@@ -158,6 +277,41 @@ fn make_networks_companies(
     Ok((networks, companies, map_line_network))
 }
 
+fn make_physical_and_commercial_modes(
+    lines_netex_idf: &CollectionWithId<LineNetexIDF>,
+) -> Result<(
+    CollectionWithId<PhysicalMode>,
+    CollectionWithId<CommercialMode>,
+)> {
+    let mut physical_modes = CollectionWithId::default();
+    let mut commercial_modes = CollectionWithId::default();
+    let modes: BTreeSet<_> = lines_netex_idf.values().map(|l| &l.mode).collect();
+    for m in modes {
+        let (physical_mode_id, physical_mode_name, commercial_mode_id, commercial_mode_name) =
+            if let Some((pi, pn, ci, cn)) = MODES.get::<str>(&m).map(|m| {
+                let (pi, pn) = m.physical_mode;
+                let (ci, cn) = m.commercial_mode;
+                (pi, pn, ci, cn)
+            }) {
+                (pi, pn, ci, cn)
+            } else {
+                warn!("{} not found", m);
+                continue;
+            };
+        physical_modes.push(PhysicalMode {
+            id: physical_mode_id.to_string(),
+            name: physical_mode_name.to_string(),
+            ..Default::default()
+        })?;
+        commercial_modes.push(CommercialMode {
+            id: commercial_mode_id.to_string(),
+            name: commercial_mode_name.to_string(),
+            ..Default::default()
+        })?;
+    }
+    Ok((physical_modes, commercial_modes))
+}
+
 pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Result<()> {
     info!("Reading {:?}", path);
 
@@ -169,13 +323,12 @@ pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Resul
         let (networks, companies, map_line_network) = make_networks_companies(&elem)?;
         let lines_netex_idf = load_netex_lines(&elem, &map_line_network, &companies)?;
         let lines = make_lines(&lines_netex_idf)?;
+        let (physical_modes, commercial_modes) =
+            make_physical_and_commercial_modes(&lines_netex_idf)?;
         collections.networks.try_merge(networks)?;
         collections.companies.try_merge(companies)?;
-        // TODO - to remove
-        collections.commercial_modes.push(CommercialMode {
-            id: String::from("Bus"),
-            name: String::from("Bus"),
-        })?;
+        collections.physical_modes.try_merge(physical_modes)?;
+        collections.commercial_modes.try_merge(commercial_modes)?;
         collections.lines.try_merge(lines)?;
     } else {
         bail!("Failed to parse file {:?}", path);
