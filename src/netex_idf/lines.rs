@@ -29,7 +29,7 @@ use std::{collections::BTreeSet, collections::HashMap, fs::File, io::Read};
 use transit_model_collection::{CollectionWithId, Id};
 
 #[derive(Debug, Default)]
-struct LineNetexIDF {
+pub struct LineNetexIDF {
     id: String,
     name: String,
     code: Option<String>,
@@ -207,14 +207,16 @@ fn make_physical_and_commercial_modes(
     Ok((physical_modes, commercial_modes))
 }
 
-pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Result<()> {
+pub fn from_path(
+    path: &std::path::Path,
+    collections: &mut Collections,
+) -> Result<CollectionWithId<LineNetexIDF>> {
     info!("Reading {:?}", path);
-
     let mut file = File::open(&path).with_context(ctx_from_path!(path))?;
     let mut file_content = String::new();
     file.read_to_string(&mut file_content)?;
 
-    if let Ok(elem) = file_content.parse::<Element>() {
+    let lines_netex_idf = if let Ok(elem) = file_content.parse::<Element>() {
         let (networks, companies, map_line_network) = make_networks_companies(&elem)?;
         let lines_netex_idf = load_netex_lines(&elem, &map_line_network, &companies)?;
         let lines = make_lines(&lines_netex_idf)?;
@@ -225,10 +227,11 @@ pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Resul
         collections.physical_modes.try_merge(physical_modes)?;
         collections.commercial_modes.try_merge(commercial_modes)?;
         collections.lines.try_merge(lines)?;
+        lines_netex_idf
     } else {
         bail!("Failed to parse file {:?}", path);
-    }
-    Ok(())
+    };
+    Ok(lines_netex_idf)
 }
 
 #[cfg(test)]
