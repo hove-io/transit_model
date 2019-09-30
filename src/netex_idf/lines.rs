@@ -99,16 +99,13 @@ fn load_netex_lines(
 fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<CollectionWithId<Line>> {
     let mut lines = CollectionWithId::default();
     for ln in lines_netex_idf.values() {
-        let commercial_mode_id = if let Some(commercial_mode_id) =
-            MODES.get::<str>(&ln.mode).map(|m| {
+        let commercial_mode_id = skip_fail!(MODES
+            .get::<str>(&ln.mode)
+            .map(|m| {
                 let (cid, _) = m.commercial_mode;
                 cid.to_string()
-            }) {
-            commercial_mode_id
-        } else {
-            warn!("{} not found", ln.mode);
-            continue;
-        };
+            })
+            .ok_or_else(|| format_err!("{} not found", ln.mode)));
         lines.push(Line {
             id: ln.id.clone(),
             name: ln.name.clone(),
@@ -183,16 +180,14 @@ fn make_physical_and_commercial_modes(
     let modes: BTreeSet<_> = lines_netex_idf.values().map(|l| &l.mode).collect();
     for m in modes {
         let (physical_mode_id, physical_mode_name, commercial_mode_id, commercial_mode_name) =
-            if let Some((pi, pn, ci, cn)) = MODES.get::<str>(&m).map(|m| {
-                let (pi, pn) = m.physical_mode;
-                let (ci, cn) = m.commercial_mode;
-                (pi, pn, ci, cn)
-            }) {
-                (pi, pn, ci, cn)
-            } else {
-                warn!("{} not found", m);
-                continue;
-            };
+            skip_fail!(MODES
+                .get::<str>(&m)
+                .map(|m| {
+                    let (pi, pn) = m.physical_mode;
+                    let (ci, cn) = m.commercial_mode;
+                    (pi, pn, ci, cn)
+                })
+                .ok_or_else(|| format_err!("{} not found", m)));
         physical_modes.push(PhysicalMode {
             id: physical_mode_id.to_string(),
             name: physical_mode_name.to_string(),
@@ -201,7 +196,6 @@ fn make_physical_and_commercial_modes(
         commercial_modes.push(CommercialMode {
             id: commercial_mode_id.to_string(),
             name: commercial_mode_name.to_string(),
-            ..Default::default()
         })?;
     }
     Ok((physical_modes, commercial_modes))
