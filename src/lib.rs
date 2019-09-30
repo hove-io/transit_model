@@ -37,6 +37,7 @@ mod minidom_utils;
 pub mod model;
 #[cfg(feature = "proj")]
 pub mod netex_idf;
+mod netex_utils;
 pub mod ntfs;
 mod read_utils;
 #[doc(hidden)]

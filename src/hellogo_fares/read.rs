@@ -14,11 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::utils;
-use super::utils::FrameType;
+use super::{utils, utils::FrameType};
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
+    netex_utils,
     objects::*,
     AddPrefix, Result,
 };
@@ -169,7 +169,7 @@ fn get_line_id(fare_frame: &Element, service_frame: &Element) -> Result<String> 
                     .map(|id| id == line_ref)
                     .unwrap_or(false)
             })
-            .map(|line| utils::get_value_in_keylist(line, "KV1PlanningLijnNummer"))
+            .map(|line| netex_utils::get_value_in_keylist(line, "KV1PlanningLijnNummer"))
             .collect::<Result<_>>()?;
         if values.len() == 1 {
             Ok(values[0].clone())
@@ -300,9 +300,9 @@ fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()>
                     continue;
                 };
                 let boarding_fee: Decimal =
-                    utils::get_value_in_keylist(fare_frame, "EntranceRateWrtCurrency")?;
+                    netex_utils::get_value_in_keylist(fare_frame, "EntranceRateWrtCurrency")?;
                 let rounding_rule: Decimal =
-                    utils::get_value_in_keylist(fare_frame, "RoundingWrtCurrencyRule")?;
+                    netex_utils::get_value_in_keylist(fare_frame, "RoundingWrtCurrencyRule")?;
                 let rounding_rule = rounding_rule.normalize().scale();
                 let currency = utils::get_currency(fare_frame)?;
                 let distance_matrix_elements = utils::get_distance_matrix_elements(fare_frame)?;
