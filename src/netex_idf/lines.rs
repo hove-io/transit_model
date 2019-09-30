@@ -211,7 +211,7 @@ fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<Collec
             }) {
             commercial_mode_id
         } else {
-            warn!("commercial_mode_id not found for {}", ln.mode);
+            warn!("{} not found", ln.mode);
             continue;
         };
         lines.push(Line {
