@@ -183,7 +183,7 @@ fn load_netex_lines(
                 let mode: String = line.try_only_child("TransportMode")?.text().parse()?;
                 MODES
                     .get::<str>(&mode)
-                    .ok_or_else(|| format_err!("Unknown mode '{}' found for line {}", mode, id))?;
+                    .ok_or_else(|| format_err!("Unknown mode {} found for line {}", mode, id))?;
 
                 lines_netex_idf.push(LineNetexIDF {
                     id,
@@ -520,5 +520,48 @@ mod tests {
         // Line 03 - Orphan line; not referenced by any network -> line skipped
         // Line 05 - Unknown company -> line skipped
         assert_eq!(lines_names, vec!["Line 01", "Line 04"]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Unknown mode UNKNOWN found for line STIF:CODIFLIGNE:Line:C00163")]
+    fn test_load_netex_lines_unknown_mode() {
+        let xml = r#"
+<root>
+   <dataObjects>
+      <CompositeFrame id="FR100:CompositeFrame:NETEX_IDF-20181108T153214Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
+         <frames>
+            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:119">
+               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:119">
+                  <Name>VEOLIA RAMBOUILLET</Name>
+                  <members>
+                     <LineRef ref="STIF:CODIFLIGNE:Line:C00163"/>
+                  </members>
+               </Network>
+            </ServiceFrame>
+            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:lineid">
+               <lines>
+                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00163">
+                     <Name>Line 01</Name>
+                     <ShortName>01</ShortName>
+                     <TransportMode>UNKNOWN</TransportMode>
+                     <PrivateCode>013013001</PrivateCode>
+                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
+                  </Line>
+               </lines>
+            </ServiceFrame>
+            <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:1">
+               <organisations>
+                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:013">
+                     <Name>TRANSDEV IDF RAMBOUILLET</Name>
+                  </Operator>
+               </organisations>
+            </ResourceFrame>
+         </frames>
+      </CompositeFrame>
+   </dataObjects>
+</root>"#;
+        let root: Element = xml.parse().unwrap();
+        let (_networks, companies, map_line_network) = make_networks_companies(&root).unwrap();
+        load_netex_lines(&root, &map_line_network, &companies).unwrap();
     }
 }
