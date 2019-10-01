@@ -872,9 +872,8 @@ pub fn apply_rules(
     info!("Applying rules...");
     let mut report = Report::default();
 
-    if networks_consolidation_file.is_some() {
-        let networks_consolidation =
-            read_networks_consolidation_file(networks_consolidation_file.unwrap())?;
+    if let Some(networks_consolidation_file) = networks_consolidation_file {
+        let networks_consolidation = read_networks_consolidation_file(networks_consolidation_file)?;
         let networks_consolidation = check_networks_consolidation(
             &mut report,
             &collections.networks,
