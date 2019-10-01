@@ -17,6 +17,7 @@
 //! Module to handle Netex IDF profile
 
 mod lines;
+mod modes;
 mod read;
 mod stops;
 

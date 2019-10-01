@@ -14,29 +14,29 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use super::modes::MODES;
 use super::EUROPE_PARIS_TIMEZONE;
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
-    objects::{CommercialMode, Company, Line, Network},
+    objects::{CommercialMode, Company, Line, Network, PhysicalMode},
     Result,
 };
-use failure::{bail, ResultExt};
+use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use minidom::Element;
-use std::{collections::HashMap, fs::File, io::Read};
+use std::{collections::BTreeSet, collections::HashMap, fs::File, io::Read};
 use transit_model_collection::{CollectionWithId, Id};
 
 #[derive(Debug, Default)]
-struct LineNetexIDF {
+pub struct LineNetexIDF {
     id: String,
     name: String,
     code: Option<String>,
     private_code: Option<String>,
     network_id: String,
     company_id: String,
-    commercial_mode_id: String,
-    physical_mode_id: String,
+    mode: String,
     wheelchair_accessible: bool,
 }
 impl_id!(LineNetexIDF);
@@ -75,6 +75,11 @@ fn load_netex_lines(
                     warn!("Failed to find company {} for line {}", company_id, id);
                     continue;
                 };
+                let mode: String = line.try_only_child("TransportMode")?.text().parse()?;
+                MODES
+                    .get(mode.as_str())
+                    .ok_or_else(|| format_err!("Unknown mode {} found for line {}", mode, id))?;
+
                 lines_netex_idf.push(LineNetexIDF {
                     id,
                     name,
@@ -82,9 +87,8 @@ fn load_netex_lines(
                     private_code,
                     network_id,
                     company_id,
-                    commercial_mode_id: String::from("Bus"), // TODO
-                    physical_mode_id: String::from("Bus"),   // TODO
-                    wheelchair_accessible: false,            // TODO
+                    mode,
+                    wheelchair_accessible: false, // TODO
                 })?;
             }
         }
@@ -95,12 +99,16 @@ fn load_netex_lines(
 fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<CollectionWithId<Line>> {
     let mut lines = CollectionWithId::default();
     for ln in lines_netex_idf.values() {
+        let commercial_mode_id = skip_fail!(MODES
+            .get(ln.mode.as_str())
+            .map(|m| { m.commercial_mode.0.to_string() })
+            .ok_or_else(|| format_err!("{} not found", ln.mode)));
         lines.push(Line {
             id: ln.id.clone(),
             name: ln.name.clone(),
             code: ln.code.clone(),
             network_id: ln.network_id.clone(),
-            commercial_mode_id: ln.commercial_mode_id.clone(),
+            commercial_mode_id,
             ..Default::default()
         })?;
     }
@@ -158,29 +166,66 @@ fn make_networks_companies(
     Ok((networks, companies, map_line_network))
 }
 
-pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Result<()> {
-    info!("Reading {:?}", path);
+fn make_physical_and_commercial_modes(
+    lines_netex_idf: &CollectionWithId<LineNetexIDF>,
+) -> Result<(
+    CollectionWithId<PhysicalMode>,
+    CollectionWithId<CommercialMode>,
+)> {
+    let mut physical_modes = CollectionWithId::default();
+    let mut commercial_modes = CollectionWithId::default();
+    let modes: BTreeSet<_> = lines_netex_idf.values().map(|l| &l.mode).collect();
+    for m in modes {
+        let (physical_mode_id, physical_mode_name, commercial_mode_id, commercial_mode_name) =
+            skip_fail!(MODES
+                .get(m.as_str())
+                .map(|m| {
+                    (
+                        m.physical_mode.0,
+                        m.physical_mode.1,
+                        m.commercial_mode.0,
+                        m.commercial_mode.1,
+                    )
+                })
+                .ok_or_else(|| format_err!("{} not found", m)));
+        physical_modes.push(PhysicalMode {
+            id: physical_mode_id.to_string(),
+            name: physical_mode_name.to_string(),
+            ..Default::default()
+        })?;
+        commercial_modes.push(CommercialMode {
+            id: commercial_mode_id.to_string(),
+            name: commercial_mode_name.to_string(),
+        })?;
+    }
+    Ok((physical_modes, commercial_modes))
+}
 
+pub fn from_path(
+    path: &std::path::Path,
+    collections: &mut Collections,
+) -> Result<CollectionWithId<LineNetexIDF>> {
+    info!("Reading {:?}", path);
     let mut file = File::open(&path).with_context(ctx_from_path!(path))?;
     let mut file_content = String::new();
     file.read_to_string(&mut file_content)?;
 
-    if let Ok(elem) = file_content.parse::<Element>() {
+    let lines_netex_idf = if let Ok(elem) = file_content.parse::<Element>() {
         let (networks, companies, map_line_network) = make_networks_companies(&elem)?;
         let lines_netex_idf = load_netex_lines(&elem, &map_line_network, &companies)?;
         let lines = make_lines(&lines_netex_idf)?;
+        let (physical_modes, commercial_modes) =
+            make_physical_and_commercial_modes(&lines_netex_idf)?;
         collections.networks.try_merge(networks)?;
         collections.companies.try_merge(companies)?;
-        // TODO - to remove
-        collections.commercial_modes.push(CommercialMode {
-            id: String::from("Bus"),
-            name: String::from("Bus"),
-        })?;
+        collections.physical_modes.try_merge(physical_modes)?;
+        collections.commercial_modes.try_merge(commercial_modes)?;
         collections.lines.try_merge(lines)?;
+        lines_netex_idf
     } else {
         bail!("Failed to parse file {:?}", path);
-    }
-    Ok(())
+    };
+    Ok(lines_netex_idf)
 }
 
 #[cfg(test)]
@@ -367,5 +412,48 @@ mod tests {
         // Line 03 - Orphan line; not referenced by any network -> line skipped
         // Line 05 - Unknown company -> line skipped
         assert_eq!(lines_names, vec!["Line 01", "Line 04"]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Unknown mode UNKNOWN found for line STIF:CODIFLIGNE:Line:C00163")]
+    fn test_load_netex_lines_unknown_mode() {
+        let xml = r#"
+<root>
+   <dataObjects>
+      <CompositeFrame id="FR100:CompositeFrame:NETEX_IDF-20181108T153214Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
+         <frames>
+            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:119">
+               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:119">
+                  <Name>VEOLIA RAMBOUILLET</Name>
+                  <members>
+                     <LineRef ref="STIF:CODIFLIGNE:Line:C00163"/>
+                  </members>
+               </Network>
+            </ServiceFrame>
+            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:lineid">
+               <lines>
+                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00163">
+                     <Name>Line 01</Name>
+                     <ShortName>01</ShortName>
+                     <TransportMode>UNKNOWN</TransportMode>
+                     <PrivateCode>013013001</PrivateCode>
+                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
+                  </Line>
+               </lines>
+            </ServiceFrame>
+            <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:1">
+               <organisations>
+                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:013">
+                     <Name>TRANSDEV IDF RAMBOUILLET</Name>
+                  </Operator>
+               </organisations>
+            </ResourceFrame>
+         </frames>
+      </CompositeFrame>
+   </dataObjects>
+</root>"#;
+        let root: Element = xml.parse().unwrap();
+        let (_networks, companies, map_line_network) = make_networks_companies(&root).unwrap();
+        load_netex_lines(&root, &map_line_network, &companies).unwrap();
     }
 }
