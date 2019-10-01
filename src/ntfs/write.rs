@@ -429,8 +429,7 @@ pub fn write_collection_with_id<T>(
     collection: &CollectionWithId<T>,
 ) -> Result<()>
 where
-    T: Id<T>,
-    T: serde::Serialize,
+    T: Id<T> + serde::Serialize,
 {
     if collection.is_empty() {
         return Ok(());
