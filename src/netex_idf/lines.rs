@@ -77,7 +77,7 @@ fn load_netex_lines(
                 };
                 let mode: String = line.try_only_child("TransportMode")?.text().parse()?;
                 MODES
-                    .get(&mode.as_str())
+                    .get(mode.as_str())
                     .ok_or_else(|| format_err!("Unknown mode {} found for line {}", mode, id))?;
 
                 lines_netex_idf.push(LineNetexIDF {
@@ -100,7 +100,7 @@ fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<Collec
     let mut lines = CollectionWithId::default();
     for ln in lines_netex_idf.values() {
         let commercial_mode_id = skip_fail!(MODES
-            .get(&ln.mode.as_str())
+            .get(ln.mode.as_str())
             .map(|m| { m.commercial_mode.0.to_string() })
             .ok_or_else(|| format_err!("{} not found", ln.mode)));
         lines.push(Line {
@@ -178,7 +178,7 @@ fn make_physical_and_commercial_modes(
     for m in modes {
         let (physical_mode_id, physical_mode_name, commercial_mode_id, commercial_mode_name) =
             skip_fail!(MODES
-                .get(&m.as_str())
+                .get(m.as_str())
                 .map(|m| {
                     (
                         m.physical_mode.0,
