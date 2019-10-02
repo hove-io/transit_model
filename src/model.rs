@@ -320,31 +320,28 @@ impl Collections {
             .take()
             .into_iter()
             .filter(|sl| {
-                if let Some(stop_type) = &sl.stop_type {
-                    if *stop_type == StopType::StopEntrance || *stop_type == StopType::GenericNode {
-                        if let Some(stop_area_id) = &sl.parent_id {
-                            stop_area_ids_used.insert(stop_area_id.clone());
-                        }
+                if sl.stop_type == StopType::StopEntrance || sl.stop_type == StopType::GenericNode {
+                    if let Some(stop_area_id) = &sl.parent_id {
+                        stop_area_ids_used.insert(stop_area_id.clone());
                     }
-                    if *stop_type == StopType::BoardingArea {
-                        if let Some(stop_point_id) = &sl.parent_id {
-                            stop_points_used.insert(stop_point_id.clone());
-                            if let Some(stop_area_id) = self
-                                .stop_points
-                                .get(&stop_point_id)
-                                .map(|sp| sp.stop_area_id.clone())
-                            {
-                                stop_area_ids_used.insert(stop_area_id);
-                            }
-                        }
-                    }
-                    if let Some(level_id) = &sl.level_id {
-                        level_id_used.insert(level_id.clone());
-                    }
-                    update_comments_used(&mut comments_used, &sl.comment_links, &self.comments);
-                    return true;
                 }
-                false
+                if sl.stop_type == StopType::BoardingArea {
+                    if let Some(stop_point_id) = &sl.parent_id {
+                        stop_points_used.insert(stop_point_id.clone());
+                        if let Some(stop_area_id) = self
+                            .stop_points
+                            .get(&stop_point_id)
+                            .map(|sp| sp.stop_area_id.clone())
+                        {
+                            stop_area_ids_used.insert(stop_area_id);
+                        }
+                    }
+                }
+                if let Some(level_id) = &sl.level_id {
+                    level_id_used.insert(level_id.clone());
+                }
+                update_comments_used(&mut comments_used, &sl.comment_links, &self.comments);
+                return true;
             })
             .collect::<Vec<_>>();
 
@@ -353,8 +350,8 @@ impl Collections {
             .take()
             .into_iter()
             .filter(|pw| {
-                if pw.from_stop_type == Some(StopType::BoardingArea)
-                    || pw.from_stop_type == Some(StopType::Point)
+                if pw.from_stop_type == StopType::BoardingArea
+                    || pw.from_stop_type == StopType::Point
                 {
                     stop_points_used.insert(pw.from_stop_id.clone());
                     if let Some(stop_area_id) = self
@@ -365,9 +362,7 @@ impl Collections {
                         stop_area_ids_used.insert(stop_area_id);
                     }
                 }
-                if pw.to_stop_type == Some(StopType::BoardingArea)
-                    || pw.to_stop_type == Some(StopType::Point)
-                {
+                if pw.to_stop_type == StopType::BoardingArea || pw.to_stop_type == StopType::Point {
                     stop_points_used.insert(pw.to_stop_id.clone());
                     if let Some(stop_area_id) = self
                         .stop_points
