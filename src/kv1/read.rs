@@ -453,13 +453,10 @@ where
     Ok(CollectionWithId::new(lines)?)
 }
 
-fn make_networks_and_companies<H>(
+fn make_networks_and_companies(
     collections: &mut Collections,
     lines: &CollectionWithId<Kv1Line>,
-) -> Result<()>
-where
-    for<'a> &'a mut H: FileHandler,
-{
+) -> Result<()> {
     info!("Generating networks and companies");
     let network_ids: HashSet<&str> = lines.values().map(|l| l.data_owner_code.as_ref()).collect();
     for n_id in network_ids {
@@ -563,15 +560,12 @@ where
     Ok(map)
 }
 
-fn make_vjs_and_stop_times<H>(
+fn make_vjs_and_stop_times(
     collections: &mut Collections,
     jopas: &[Jopa],
     map_pujopass: &PujoJopaMap,
     lines: &CollectionWithId<Kv1Line>,
-) -> Result<()>
-where
-    for<'a> &'a mut H: FileHandler,
-{
+) -> Result<()> {
     info!("Generating vehicle journeys and stop times");
     let map_jopas: JopaMap = jopas
         .iter()
