@@ -72,13 +72,12 @@ pub fn write_agencies(
 fn get_first_comment_name<T: objects::CommentLinks>(
     obj: &T,
     comments: &CollectionWithId<objects::Comment>,
-) -> String {
+) -> Option<String> {
     comments
         .iter_from(obj.comment_links())
         .map(|c| &c.name)
         .min()
         .cloned()
-        .unwrap_or_else(|| "".into())
 }
 
 /// Get the first code where object_system="gtfs_stop_code"
@@ -105,8 +104,8 @@ fn ntfs_stop_point_to_gtfs_stop(
     Stop {
         id: sp.id.clone(),
         name: sp.name.clone(),
-        lat: sp.coord.lat,
-        lon: sp.coord.lon,
+        lat: sp.coord.lat.to_string(),
+        lon: sp.coord.lon.to_string(),
         fare_zone_id: sp.fare_zone_id.clone(),
         location_type: StopLocationType::StopPoint,
         parent_station: Some(sp.stop_area_id.clone()),
@@ -134,8 +133,8 @@ fn ntfs_stop_area_to_gtfs_stop(
     Stop {
         id: sa.id.clone(),
         name: sa.name.clone(),
-        lat: sa.coord.lat,
-        lon: sa.coord.lon,
+        lat: sa.coord.lat.to_string(),
+        lon: sa.coord.lon.to_string(),
         fare_zone_id: None,
         location_type: StopLocationType::StopArea,
         parent_station: None,
@@ -160,20 +159,15 @@ fn ntfs_stop_location_to_gtfs_stop(
         .and_then(|eq_id| equipments.get(&eq_id))
         .map(|eq| eq.wheelchair_boarding)
         .unwrap_or_else(Availability::default);
-    let location_type = match sl.stop_type {
-        Some(objects::StopType::StopEntrance) => StopLocationType::StopEntrance,
-        Some(objects::StopType::GenericNode) => StopLocationType::GenericNode,
-        Some(objects::StopType::BoardingArea) => StopLocationType::BoardingArea,
-        _ => StopLocationType::StopPoint,
-    };
 
+    let (lon, lat) = sl.coord.into();
     Stop {
         id: sl.id.clone(),
         name: sl.name.clone(),
-        lat: sl.coord.lat,
-        lon: sl.coord.lon,
+        lat: lat,
+        lon: lon,
         fare_zone_id: None,
-        location_type: location_type,
+        location_type: StopLocationType::from(sl.stop_type.clone()),
         parent_station: sl.parent_id.clone(),
         code: None,
         desc: get_first_comment_name(sl, comments),
@@ -661,13 +655,13 @@ mod tests {
         let expected = Stop {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
-            lat: 48.799115,
-            lon: 2.073034,
+            lat: 48.799115.to_string(),
+            lon: 2.073034.to_string(),
             fare_zone_id: Some("1".to_string()),
             location_type: StopLocationType::StopPoint,
             parent_station: Some("OIF:SA:8739322".to_string()),
             code: Some("1234".to_string()),
-            desc: "bar".to_string(),
+            desc: Some("bar".to_string()),
             wheelchair_boarding: Availability::Available,
             url: None,
             timezone: Some("Europe/Paris".to_string()),
@@ -700,13 +694,13 @@ mod tests {
         let expected = Stop {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
-            lat: 48.799115,
-            lon: 2.073034,
+            lat: 48.799115.to_string(),
+            lon: 2.073034.to_string(),
             fare_zone_id: None,
             location_type: StopLocationType::StopPoint,
             parent_station: Some("OIF:SA:8739322".to_string()),
             code: None,
-            desc: "".to_string(),
+            desc: None,
             wheelchair_boarding: Availability::InformationNotAvailable,
             url: None,
             timezone: None,
@@ -786,13 +780,13 @@ mod tests {
         let expected = Stop {
             id: "sa_1".to_string(),
             name: "sa_name_1".to_string(),
-            lat: 48.799115,
-            lon: 2.073034,
+            lat: 48.799115.to_string(),
+            lon: 2.073034.to_string(),
             fare_zone_id: None,
             location_type: StopLocationType::StopArea,
             parent_station: None,
             code: Some("1234".to_string()),
-            desc: "bar".to_string(),
+            desc: Some("bar".to_string()),
             wheelchair_boarding: Availability::NotAvailable,
             url: None,
             timezone: Some("Europe/Paris".to_string()),

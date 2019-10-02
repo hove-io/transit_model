@@ -21,8 +21,8 @@ use super::{
 use crate::common_format::Availability;
 use crate::model::Collections;
 use crate::objects::{
-    self, CommentLinksT, Coord, KeysValues, Pathway, StopTime as NtfsStopTime, StopType, Time,
-    TransportType, VehicleJourney,
+    self, CommentLinksT, Coord, KeysValues, Pathway, StopLocation, StopTime as NtfsStopTime,
+    StopType, Time, TransportType, VehicleJourney,
 };
 use crate::read_utils::{read_collection, read_objects, FileHandler};
 use crate::utils::*;
@@ -91,16 +91,14 @@ impl From<Stop> for objects::StopArea {
         if let Some(c) = stop.code {
             codes.insert(("gtfs_stop_code".to_string(), c));
         }
+        let coord: Coord = Coord::from((stop.lon, stop.lat));
         objects::StopArea {
             id: stop.id,
             name: stop.name,
             codes,
             object_properties: KeysValues::default(),
             comment_links: objects::CommentLinksT::default(),
-            coord: Coord {
-                lon: stop.lon,
-                lat: stop.lat,
-            },
+            coord: coord,
             timezone: stop.timezone,
             visible: true,
             geometry_id: None,
@@ -109,6 +107,40 @@ impl From<Stop> for objects::StopArea {
         }
     }
 }
+
+impl Into<Result<objects::StopArea>> for Stop {
+    fn into(self) -> Result<objects::StopArea> {
+        let mut stop_codes: KeysValues = BTreeSet::new();
+        if let Some(c) = self.code {
+            stop_codes.insert(("gtfs_stop_code".to_string(), c));
+        }
+
+        if self.name.is_empty() {
+            warn!("stop_id: {}: for station stop_name is required", self.id);
+        }
+
+        let coord: Coord = Coord::from((self.lon, self.lat));
+        if coord == Coord::default() {
+            warn!("stop_id: {}: for station coordinates are required", self.id);
+        }
+
+        let stop_area = objects::StopArea {
+            id: self.id,
+            name: self.name,
+            codes: stop_codes,
+            object_properties: KeysValues::default(),
+            comment_links: objects::CommentLinksT::default(),
+            coord: coord,
+            timezone: self.timezone,
+            visible: true,
+            geometry_id: None,
+            level_id: self.level_id,
+            equipment_id: None,
+        };
+        Ok(stop_area)
+    }
+}
+
 impl From<Stop> for objects::StopPoint {
     fn from(stop: Stop) -> objects::StopPoint {
         let mut codes = KeysValues::default();
@@ -116,14 +148,12 @@ impl From<Stop> for objects::StopPoint {
         if let Some(c) = stop.code {
             codes.insert(("gtfs_stop_code".to_string(), c));
         }
+        let coord: Coord = Coord::from((stop.lon, stop.lat));
         objects::StopPoint {
             id: stop.id,
             name: stop.name,
             codes,
-            coord: Coord {
-                lon: stop.lon,
-                lat: stop.lat,
-            },
+            coord: coord,
             stop_area_id: stop.parent_station.unwrap(),
             timezone: stop.timezone,
             visible: true,
@@ -135,24 +165,97 @@ impl From<Stop> for objects::StopPoint {
     }
 }
 
-impl objects::StopLocation {
-    fn from_gtfs_stop(stop: Stop) -> objects::StopLocation {
-        objects::StopLocation {
+impl Into<Result<objects::StopPoint>> for Stop {
+    fn into(self) -> Result<objects::StopPoint> {
+        let mut stop_codes: KeysValues = BTreeSet::new();
+        if let Some(c) = self.code {
+            stop_codes.insert(("gtfs_stop_code".to_string(), c));
+        }
+        if self.name.is_empty() {
+            warn!("stop_id: {}: for platform name is required", self.id);
+        };
+
+        let coord: Coord = Coord::from((self.lon, self.lat));
+        if coord == Coord::default() {
+            warn!(
+                "stop_id: {}: for platform coordinates are required",
+                self.id
+            );
+        }
+        let stop_point = objects::StopPoint {
+            id: self.id,
+            name: self.name,
+            codes: stop_codes,
+            coord: coord,
+            stop_area_id: self
+                .parent_station
+                .unwrap_or_else(|| String::from("default_id")),
+            timezone: self.timezone,
+            visible: true,
+            stop_type: StopType::Point,
+            platform_code: self.platform_code,
+            level_id: self.level_id,
+            ..Default::default()
+        };
+        Ok(stop_point)
+    }
+}
+
+impl StopLocation {
+    fn from_gtfs_stop(stop: Stop) -> Result<StopLocation> {
+        let coord: Coord = Coord::from((stop.lon, stop.lat));
+
+        if stop.location_type == StopLocationType::StopEntrance {
+            if coord == Coord::default() {
+                return Err(format_err!(
+                    "stop_id: {}: for entrances/exits coordinates is required",
+                    stop.id
+                ));
+            }
+            if stop.parent_station.is_none() {
+                return Err(format_err!(
+                    "stop_id: {}: for entrances/exits parent_station is required",
+                    stop.id
+                ));
+            }
+            if stop.name.is_empty() {
+                return Err(format_err!(
+                    "stop_id: {}: for entrances/exits stop_name is required",
+                    stop.id
+                ));
+            }
+        }
+        if stop.location_type == StopLocationType::GenericNode {
+            if stop.parent_station.is_none() {
+                return Err(format_err!(
+                    "stop_id: {}: for generic node parent_station is required",
+                    stop.id
+                ));
+            }
+        }
+        if stop.location_type == StopLocationType::BoardingArea {
+            if stop.parent_station.is_none() {
+                return Err(format_err!(
+                    "stop_id: {}: for boarding area parent_station is required",
+                    stop.id
+                ));
+            }
+        }
+
+        let stop_location = StopLocation {
             id: stop.id,
             name: stop.name,
             comment_links: CommentLinksT::default(),
             visible: false,
-            coord: Coord {
-                lon: stop.lon,
-                lat: stop.lat,
-            },
+            coord: coord,
             parent_id: stop.parent_station,
             timezone: stop.timezone,
             geometry_id: None,
             equipment_id: None,
             level_id: stop.level_id,
             stop_type: stop.location_type.into(),
-        }
+        };
+        Ok(stop_location)
     }
 }
 
@@ -494,13 +597,13 @@ fn manage_comment_from_stop(
     stop: &Stop,
 ) -> CommentLinksT {
     let mut comment_links: CommentLinksT = CommentLinksT::default();
-    if !stop.desc.is_empty() {
+    if stop.desc.is_some() {
         let comment_id = "stop:".to_string() + &stop.id;
         let comment = objects::Comment {
             id: comment_id,
             comment_type: objects::CommentType::Information,
             label: None,
-            name: stop.desc.to_string(),
+            name: stop.desc.as_ref().unwrap().to_string(),
             url: None,
         };
         let idx = comments.push(comment).unwrap();
@@ -595,33 +698,32 @@ where
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
     let mut stop_locations = vec![];
-    for mut stop in gtfs_stops {
+    for stop in gtfs_stops {
         let comment_links = manage_comment_from_stop(comments, &stop);
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
             StopLocationType::StopPoint => {
-                let mut stop_point = if stop.parent_station.is_none() {
-                    stop.parent_station = Some(String::from("default_id"));
-                    let mut stop_point = objects::StopPoint::from(stop);
+                let mut stop_point: objects::StopPoint = skip_fail!(stop.clone().into());
+                if stop.parent_station.is_none() {
                     let stop_area = objects::StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
                     stop_areas.push(stop_area);
-                    stop_point
+                    stop_point.clone()
                 } else {
-                    objects::StopPoint::from(stop)
+                    skip_fail!(stop.into())
                 };
                 stop_point.comment_links = comment_links;
                 stop_point.equipment_id = equipment_id;
                 stop_points.push(stop_point);
             }
             StopLocationType::StopArea => {
-                let mut stop_area = objects::StopArea::from(stop);
+                let mut stop_area: objects::StopArea = skip_fail!(stop.into());
                 stop_area.comment_links = comment_links;
                 stop_area.equipment_id = equipment_id;
                 stop_areas.push(stop_area);
             }
             _ => {
-                let mut stop_location = objects::StopLocation::from_gtfs_stop(stop);
+                let mut stop_location = skip_fail!(objects::StopLocation::from_gtfs_stop(stop));
                 stop_location.comment_links = comment_links;
                 stop_location.equipment_id = equipment_id;
                 stop_locations.push(stop_location);
@@ -646,7 +748,7 @@ where
         stops.insert(gtfs_stop.id.clone(), gtfs_stop);
     }
 
-    let (reader, path) = file_handler.get_file_if_exists(file)?;
+    let (reader, _path) = file_handler.get_file_if_exists(file)?;
     match reader {
         None => {
             info!("Skipping {}", file);
@@ -657,7 +759,8 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             let mut pathways = vec![];
             for pathway in rdr.deserialize() {
-                let mut pathway: Pathway = skip_fail!(pathway.with_context(ctx_from_path!(path)));
+                let mut pathway: Pathway = skip_fail!(pathway.map_err(|e| format_err!("{}", e)));
+
                 let from_stop_point =
                     skip_fail!(stops.get(&pathway.from_stop_id).ok_or_else(|| format_err!(
                         "Problem reading {:?}: from_stop_id={:?} not found",

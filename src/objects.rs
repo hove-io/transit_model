@@ -864,6 +864,40 @@ pub struct Coord {
     pub lat: f64,
 }
 
+impl From<(String, String)> for Coord {
+    fn from((str_lon, str_lat): (String, String)) -> Self {
+        Self {
+            lon: if str_lon.is_empty() {
+                <f64>::default()
+            } else {
+                str_lon.parse::<f64>().unwrap()
+            },
+            lat: if str_lat.is_empty() {
+                <f64>::default()
+            } else {
+                str_lat.parse::<f64>().unwrap()
+            },
+        }
+    }
+}
+
+impl Into<(String, String)> for Coord {
+    fn into(self) -> (String, String) {
+        (
+            if self.lon == <f64>::default() {
+                "".to_string()
+            } else {
+                self.lon.to_string()
+            },
+            if self.lat == <f64>::default() {
+                "".to_string()
+            } else {
+                self.lat.to_string()
+            },
+        )
+    }
+}
+
 // Mean Earth radius in meters
 const EARTH_RADIUS: f64 = 6_371_000.0;
 
@@ -1085,7 +1119,7 @@ pub struct StopLocation {
     pub equipment_id: Option<String>,
     pub level_id: Option<String>,
     #[serde(skip)]
-    pub stop_type: Option<StopType>,
+    pub stop_type: StopType,
 }
 impl_id!(StopLocation);
 impl_comment_links!(StopLocation);
@@ -1129,12 +1163,15 @@ pub struct Pathway {
     pub id: String,
     pub from_stop_id: String,
     #[serde(skip)]
-    pub from_stop_type: Option<StopType>,
+    pub from_stop_type: StopType,
     pub to_stop_id: String,
     #[serde(skip)]
-    pub to_stop_type: Option<StopType>,
+    pub to_stop_type: StopType,
     pub pathway_mode: PathwayMode,
-    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    #[serde(
+        deserialize_with = "de_from_u8_with_check",
+        serialize_with = "ser_from_bool"
+    )]
     pub is_bidirectional: bool,
     #[serde(default, deserialize_with = "de_option_positive_decimal")]
     pub length: Option<Decimal>,

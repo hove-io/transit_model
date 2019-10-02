@@ -90,8 +90,8 @@ enum StopLocationType {
     BoardingArea,
 }
 
-impl Into<Option<StopType>> for StopLocationType {
-    fn into(self) -> Option<objects::StopType> {
+impl Into<StopType> for StopLocationType {
+    fn into(self) -> objects::StopType {
         let stop_type = match self {
             StopLocationType::StopPoint => objects::StopType::Point,
             StopLocationType::StopArea => objects::StopType::Zone,
@@ -99,7 +99,20 @@ impl Into<Option<StopType>> for StopLocationType {
             StopLocationType::GenericNode => objects::StopType::GenericNode,
             StopLocationType::BoardingArea => objects::StopType::BoardingArea,
         };
-        Some(stop_type)
+        stop_type
+    }
+}
+
+impl From<StopType> for StopLocationType {
+    fn from(stop_type: StopType) -> StopLocationType {
+        let stop_location_type = match stop_type {
+            objects::StopType::Point => StopLocationType::StopPoint,
+            objects::StopType::Zone => StopLocationType::StopArea,
+            objects::StopType::StopEntrance => StopLocationType::StopEntrance,
+            objects::StopType::GenericNode => StopLocationType::GenericNode,
+            objects::StopType::BoardingArea => StopLocationType::BoardingArea,
+        };
+        stop_location_type
     }
 }
 
@@ -109,20 +122,18 @@ struct Stop {
     id: String,
     #[serde(rename = "stop_code")]
     code: Option<String>,
-    #[serde(rename = "stop_name")]
+    #[serde(rename = "stop_name")] //Conditionally Required
     name: String,
-    #[serde(default, rename = "stop_desc")]
-    desc: String,
     #[serde(
-        rename = "stop_lon",
-        deserialize_with = "de_location_trim_with_default"
+        default,
+        rename = "stop_desc",
+        deserialize_with = "de_option_empty_string"
     )]
-    lon: f64,
-    #[serde(
-        rename = "stop_lat",
-        deserialize_with = "de_location_trim_with_default"
-    )]
-    lat: f64,
+    desc: Option<String>,
+    #[serde(rename = "stop_lon")]
+    lon: String,
+    #[serde(rename = "stop_lat")]
+    lat: String,
     #[serde(rename = "zone_id")]
     fare_zone_id: Option<String>,
     #[serde(rename = "stop_url")]
@@ -130,7 +141,7 @@ struct Stop {
     #[serde(default, deserialize_with = "de_with_empty_default")]
     location_type: StopLocationType,
     #[serde(default, deserialize_with = "de_option_without_slashes")]
-    parent_station: Option<String>,
+    parent_station: Option<String>, //Conditionally Required
     #[serde(rename = "stop_timezone")]
     timezone: Option<String>,
     level_id: Option<String>,
