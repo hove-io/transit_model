@@ -1,0 +1,7 @@
+trip_id,route_id,physical_mode_id,dataset_id,service_id,trip_headsign,block_id,company_id,trip_property_id,geometry_id
+M1F1,M1F,Metro,TGDS,Week,,,TGC,,
+M1B1,M1B,Metro,TGDS,Week,,,TGC,,
+B42F1,B42F,Bus,TGDS,Week,,,TGC,,
+B42B1,B42B,Bus,TGDS,Week,,,TGC,,
+RERAF1,RERAF,RapidTransit,TGDS,Week,,,TGC,,
+RERAB1,RERAB,Bus,TGDS,Week,,,TGC,,

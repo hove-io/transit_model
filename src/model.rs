@@ -41,6 +41,7 @@ pub struct Collections {
     pub lines: CollectionWithId<Line>,
     pub routes: CollectionWithId<Route>,
     pub vehicle_journeys: CollectionWithId<VehicleJourney>,
+    pub frequencies: Collection<Frequency>,
     pub physical_modes: CollectionWithId<PhysicalMode>,
     pub stop_areas: CollectionWithId<StopArea>,
     pub stop_points: CollectionWithId<StopPoint>,
@@ -81,6 +82,7 @@ impl Collections {
             lines,
             routes,
             mut vehicle_journeys,
+            frequencies,
             physical_modes,
             stop_areas,
             stop_points,
@@ -111,6 +113,7 @@ impl Collections {
         self.commercial_modes.merge(commercial_modes);
         self.lines.try_merge(lines)?;
         self.routes.try_merge(routes)?;
+        self.frequencies.merge(frequencies);
         self.physical_modes.extend(physical_modes);
         self.stop_areas.try_merge(stop_areas)?;
         self.prices_v1.merge(prices_v1);
@@ -403,6 +406,7 @@ impl Collections {
         update_comments_idx(&mut routes, &comment_old_idx_to_new_idx);
         self.routes = CollectionWithId::new(routes)?;
         update_comments_idx(&mut vjs, &comment_old_idx_to_new_idx);
+        let vehicle_journeys_used: HashSet<String> = vjs.iter().map(|vj| vj.id.clone()).collect();
         self.vehicle_journeys = CollectionWithId::new(vjs)?;
 
         let vj_old_idx_to_new_idx: HashMap<Idx<VehicleJourney>, Idx<VehicleJourney>> = self
@@ -463,6 +467,8 @@ impl Collections {
         self.transfers.retain(|t| {
             stop_points_used.contains(&t.from_stop_id) && stop_points_used.contains(&t.to_stop_id)
         });
+        self.frequencies
+            .retain(|frequency| vehicle_journeys_used.contains(&frequency.trip_id));
 
         Ok(())
     }
