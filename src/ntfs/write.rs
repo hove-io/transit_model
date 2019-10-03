@@ -422,46 +422,6 @@ pub fn write_fares_v1(base_path: &path::Path, collections: &Collections) -> Resu
     Ok(())
 }
 
-pub fn write_collection_with_id<T>(
-    path: &path::Path,
-    file: &str,
-    collection: &CollectionWithId<T>,
-) -> Result<()>
-where
-    T: Id<T> + serde::Serialize,
-{
-    if collection.is_empty() {
-        return Ok(());
-    }
-    info!("Writing {}", file);
-    let path = path.join(file);
-    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
-    for obj in collection.values() {
-        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
-    }
-    wtr.flush().with_context(ctx_from_path!(path))?;
-
-    Ok(())
-}
-
-pub fn write_collection<T>(path: &path::Path, file: &str, collection: &Collection<T>) -> Result<()>
-where
-    T: serde::Serialize,
-{
-    if collection.is_empty() {
-        return Ok(());
-    }
-    info!("Writing {}", file);
-    let path = path.join(file);
-    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
-    for obj in collection.values() {
-        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
-    }
-    wtr.flush().with_context(ctx_from_path!(path))?;
-
-    Ok(())
-}
-
 pub fn write_stops(
     path: &path::Path,
     stop_points: &CollectionWithId<StopPoint>,
@@ -473,22 +433,21 @@ pub fn write_stops(
     let path = path.join(file);
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for st in stop_points.values() {
-        let location_type = match st.stop_type {
-            StopType::Point => StopLocationType::StopPoint,
-            StopType::Zone => StopLocationType::GeographicArea,
-            StopType::StopEntrance => StopLocationType::EntranceExit,
-            StopType::GenericNode => StopLocationType::PathwayInterconnectionNode,
-            StopType::BoardingArea => StopLocationType::BoardingArea,
-        };
+        let location_type: StopLocationType;
+        if st.stop_type == StopType::Zone {
+            location_type = StopLocationType::GeographicArea;
+        } else {
+            location_type = StopLocationType::from(st.stop_type.clone());
+        }
         wtr.serialize(Stop {
             id: st.id.clone(),
             visible: st.visible,
             name: st.name.clone(),
-            lat: st.coord.lat,
-            lon: st.coord.lon,
+            lat: st.coord.lat.to_string(),
+            lon: st.coord.lon.to_string(),
             fare_zone_id: st.fare_zone_id.clone(),
             zone_id: st.zone_id.clone(),
-            location_type,
+            location_type: location_type,
             parent_station: stop_areas.get(&st.stop_area_id).map(|sa| sa.id.clone()),
             timezone: st.timezone.clone(),
             equipment_id: st.equipment_id.clone(),
@@ -504,8 +463,8 @@ pub fn write_stops(
             id: sa.id.clone(),
             visible: sa.visible,
             name: sa.name.clone(),
-            lat: sa.coord.lat,
-            lon: sa.coord.lon,
+            lat: sa.coord.lat.to_string(),
+            lon: sa.coord.lon.to_string(),
             fare_zone_id: None,
             zone_id: None,
             location_type: StopLocationType::StopArea,
@@ -520,23 +479,16 @@ pub fn write_stops(
     }
 
     for sl in stop_locations.values() {
-        let location_type = match sl.stop_type {
-            Some(StopType::Point) => StopLocationType::StopPoint,
-            Some(StopType::Zone) => StopLocationType::GeographicArea,
-            Some(StopType::StopEntrance) => StopLocationType::EntranceExit,
-            Some(StopType::GenericNode) => StopLocationType::PathwayInterconnectionNode,
-            Some(StopType::BoardingArea) => StopLocationType::BoardingArea,
-            _ => StopLocationType::StopPoint,
-        };
+        let (lon, lat) = sl.coord.into();
         wtr.serialize(Stop {
             id: sl.id.clone(),
             visible: sl.visible,
             name: sl.name.clone(),
-            lat: sl.coord.lat,
-            lon: sl.coord.lon,
+            lat: lat,
+            lon: lon,
             fare_zone_id: None,
             zone_id: None,
-            location_type,
+            location_type: StopLocationType::from(sl.stop_type.clone()),
             parent_station: sl.parent_id.clone(),
             timezone: sl.timezone.clone(),
             equipment_id: sl.equipment_id.clone(),

@@ -31,6 +31,13 @@ use transit_model_collection::*;
 
 impl From<Stop> for StopArea {
     fn from(stop: Stop) -> StopArea {
+        if stop.name.is_empty() {
+            warn!("stop_id: {}: for station stop_name is required", stop.id);
+        }
+        let coord = Coord::from((stop.lon, stop.lat));
+        if coord == Coord::default() {
+            warn!("stop_id: {}: for station coordinates are required", stop.id);
+        }
         StopArea {
             id: stop.id,
             name: stop.name,
@@ -38,10 +45,7 @@ impl From<Stop> for StopArea {
             object_properties: KeysValues::default(),
             comment_links: CommentLinksT::default(),
             visible: stop.visible,
-            coord: Coord {
-                lon: stop.lon,
-                lat: stop.lat,
-            },
+            coord: coord,
             timezone: stop.timezone,
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
@@ -49,24 +53,59 @@ impl From<Stop> for StopArea {
         }
     }
 }
-impl StopPoint {
-    fn from_with_type(stop: Stop, stop_type: StopType) -> StopPoint {
+
+impl Into<Result<StopArea>> for Stop {
+    fn into(self) -> Result<StopArea> {
+        if self.name.is_empty() {
+            warn!("stop_id: {}: for platform stop_name is required", self.id);
+        }
+
+        let coord = Coord::from((self.lon, self.lat));
+        if coord == Coord::default() {
+            warn!(
+                "stop_id: {}: for platform coordinates are required",
+                self.id
+            );
+        }
+        let stop_area = StopArea {
+            id: self.id,
+            name: self.name,
+            codes: KeysValues::default(),
+            object_properties: KeysValues::default(),
+            comment_links: CommentLinksT::default(),
+            visible: self.visible,
+            coord: coord,
+            timezone: self.timezone,
+            geometry_id: self.geometry_id,
+            equipment_id: self.equipment_id,
+            level_id: self.level_id,
+        };
+        Ok(stop_area)
+    }
+}
+
+impl From<Stop> for StopPoint {
+    fn from(stop: Stop) -> StopPoint {
         let id = stop.id;
+        if stop.name.is_empty() {
+            warn!("stop_id: {}: for plateform stop_name is required", id);
+        }
+        let coord = Coord::from((stop.lon, stop.lat));
+        if coord == Coord::default() {
+            warn!("stop_id: {}: for plateform coordinates are required", id);
+        }
         StopPoint {
             id,
             name: stop.name,
             visible: stop.visible,
-            coord: Coord {
-                lon: stop.lon,
-                lat: stop.lat,
-            },
+            coord: coord,
             stop_area_id: stop.parent_station.unwrap(),
             timezone: stop.timezone,
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
             fare_zone_id: stop.fare_zone_id,
             zone_id: stop.zone_id,
-            stop_type,
+            stop_type: stop.location_type.into(),
             platform_code: stop.platform_code,
             level_id: stop.level_id,
             ..Default::default()
@@ -74,24 +113,95 @@ impl StopPoint {
     }
 }
 
+impl Into<Result<StopPoint>> for Stop {
+    fn into(self) -> Result<StopPoint> {
+        if self.name.is_empty() {
+            warn!("stop_id: {}: for platform name is required", self.id);
+        };
+
+        let coord: Coord = Coord::from((self.lon, self.lat));
+        if coord == Coord::default() {
+            warn!(
+                "stop_id: {}: for platform coordinates are required",
+                self.id
+            );
+        }
+        let stop_point = StopPoint {
+            id: self.id,
+            name: self.name,
+            visible: self.visible,
+            coord: coord,
+            stop_area_id: self
+                .parent_station
+                .unwrap_or_else(|| String::from("default_id")),
+            timezone: self.timezone,
+            geometry_id: self.geometry_id,
+            equipment_id: self.equipment_id,
+            fare_zone_id: self.fare_zone_id,
+            zone_id: self.zone_id,
+            stop_type: self.location_type.into(),
+            platform_code: self.platform_code,
+            level_id: self.level_id,
+            ..Default::default()
+        };
+        Ok(stop_point)
+    }
+}
+
 impl StopLocation {
-    fn from_ntfs_stop(stop: Stop) -> StopLocation {
-        StopLocation {
+    fn from_ntfs_stop(stop: Stop) -> Result<StopLocation> {
+        let coord: Coord = Coord::from((stop.lon, stop.lat));
+
+        if stop.location_type == StopLocationType::EntranceExit {
+            if coord == Coord::default() {
+                return Err(format_err!(
+                    "stop_id: {}: for entrances/exits coordinates is required",
+                    stop.id
+                ));
+            }
+            if stop.parent_station.is_none() {
+                return Err(format_err!(
+                    "stop_id: {}: for entrances/exits parent_station is required",
+                    stop.id
+                ));
+            }
+            if stop.name.is_empty() {
+                return Err(format_err!(
+                    "stop_id: {}: for entrances/exits stop_name is required",
+                    stop.id
+                ));
+            }
+        }
+        if stop.location_type == StopLocationType::PathwayInterconnectionNode {
+            if stop.parent_station.is_none() {
+                return Err(format_err!(
+                    "stop_id: {}: for generic node parent_station is required",
+                    stop.id
+                ));
+            }
+        }
+        if stop.location_type == StopLocationType::BoardingArea {
+            if stop.parent_station.is_none() {
+                return Err(format_err!(
+                    "stop_id: {}: for boarding area parent_station is required",
+                    stop.id
+                ));
+            }
+        }
+        let stop_location = StopLocation {
             id: stop.id,
             name: stop.name,
             comment_links: CommentLinksT::default(),
             visible: false,
-            coord: Coord {
-                lon: stop.lon,
-                lat: stop.lat,
-            },
+            coord: coord,
             parent_id: stop.parent_station,
             timezone: stop.timezone,
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
             stop_type: stop.location_type.clone().into(),
             level_id: stop.level_id,
-        }
+        };
+        Ok(stop_location)
     }
 }
 
@@ -112,30 +222,25 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
     let mut stop_locations = vec![];
-    for mut stop in ntfs_stops {
+    for stop in ntfs_stops {
         match stop.location_type {
             StopLocationType::StopPoint | StopLocationType::GeographicArea => {
-                let (stop_type, area_visibility) =
-                    if stop.location_type == StopLocationType::GeographicArea {
-                        (StopType::Zone, false)
-                    } else {
-                        (StopType::Point, true)
-                    };
-                let stop_point = if stop.parent_station.is_none() {
-                    stop.parent_station = Some(String::from("default_id"));
-                    let mut stop_point = StopPoint::from_with_type(stop, stop_type);
+                let mut stop_point: StopPoint = skip_fail!(stop.clone().into());
+                if stop.parent_station.is_none() {
                     let mut stop_area = StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
-                    stop_area.visible = area_visibility;
+                    stop_area.visible = stop.location_type.clone() == StopLocationType::StopPoint;
                     stop_areas.push(stop_area);
-                    stop_point
+                    stop_point.clone()
                 } else {
-                    StopPoint::from_with_type(stop, stop_type)
+                    skip_fail!(stop.into())
                 };
                 stop_points.push(stop_point);
             }
             StopLocationType::StopArea => stop_areas.push(StopArea::from(stop)),
-            _ => stop_locations.push(StopLocation::from_ntfs_stop(stop)),
+            _ => {
+                stop_locations.push(skip_fail!(StopLocation::from_ntfs_stop(stop)));
+            }
         }
     }
     collections.stop_areas = CollectionWithId::new(stop_areas)?;

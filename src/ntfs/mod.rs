@@ -76,17 +76,30 @@ enum StopLocationType {
     BoardingArea,
 }
 
-impl Into<Option<StopType>> for StopLocationType {
-    fn into(self) -> Option<StopType> {
+impl Into<StopType> for StopLocationType {
+    fn into(self) -> StopType {
         let stop_type = match self {
-            StopLocationType::StopPoint => Some(StopType::Point),
-            StopLocationType::StopArea => Some(StopType::Zone),
-            StopLocationType::EntranceExit => Some(StopType::StopEntrance),
-            StopLocationType::PathwayInterconnectionNode => Some(StopType::GenericNode),
-            StopLocationType::BoardingArea => Some(StopType::BoardingArea),
-            _ => None,
+            StopLocationType::StopPoint => StopType::Point,
+            StopLocationType::StopArea => StopType::Zone,
+            StopLocationType::GeographicArea => StopType::Zone,
+            StopLocationType::EntranceExit => StopType::StopEntrance,
+            StopLocationType::PathwayInterconnectionNode => StopType::GenericNode,
+            StopLocationType::BoardingArea => StopType::BoardingArea,
         };
         stop_type
+    }
+}
+
+impl From<StopType> for StopLocationType {
+    fn from(stop_type: StopType) -> StopLocationType {
+        let stop_location_type = match stop_type {
+            StopType::Point => StopLocationType::StopPoint,
+            StopType::Zone => StopLocationType::StopArea,
+            StopType::StopEntrance => StopLocationType::EntranceExit,
+            StopType::GenericNode => StopLocationType::PathwayInterconnectionNode,
+            StopType::BoardingArea => StopLocationType::BoardingArea,
+        };
+        stop_location_type
     }
 }
 
@@ -105,9 +118,9 @@ struct Stop {
     fare_zone_id: Option<String>,
     zone_id: Option<String>,
     #[serde(rename = "stop_lon")]
-    lon: f64,
+    lon: String,
     #[serde(rename = "stop_lat")]
-    lat: f64,
+    lat: String,
     #[serde(default, deserialize_with = "de_with_empty_default")]
     location_type: StopLocationType,
     parent_station: Option<String>,
