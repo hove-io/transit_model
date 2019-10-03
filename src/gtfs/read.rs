@@ -1054,19 +1054,18 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::{
         common_format,
-        gtfs::read::EquipmentList,
-        model::Collections,
-        objects::*,
+        objects::{
+            Calendar, Comment, CommentType, Dataset, Equipment, Geometry, Rgb, StopTime, Transfer,
+        },
         read_utils::{self, PathFileHandler},
         test_utils::*,
         AddPrefix,
     };
-    use chrono;
     use geo_types::line_string;
-    use std::collections::BTreeSet;
-    use transit_model_collection::{Collection, CollectionWithId, Id};
+    use pretty_assertions::assert_eq;
 
     fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
         let mut extracted_props: Vec<S> = c.values().map(|l| f(l)).collect();
@@ -1225,16 +1224,16 @@ mod tests {
             let stop_point = stop_points.iter().next().unwrap().1;
             assert_eq!(1, stop_point.codes.len());
             let code = stop_point.codes.iter().next().unwrap();
-            assert_eq!(code.0, "gtfs_stop_code");
-            assert_eq!(code.1, "1234");
+            assert_eq!("gtfs_stop_code", code.0);
+            assert_eq!("1234", code.1);
 
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
             assert_eq!(1, stop_area.codes.len());
             let code = stop_area.codes.iter().next().unwrap();
-            assert_eq!(code.0, "gtfs_stop_code");
-            assert_eq!(code.1, "5678");
+            assert_eq!("gtfs_stop_code", code.0);
+            assert_eq!("5678", code.1);
         });
     }
 
@@ -1285,14 +1284,14 @@ mod tests {
             super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(4, collections.lines.len());
             assert_eq!(
-                extract(|l| &l.network_id, &collections.lines),
-                &["agency_1", "agency_2", "agency_3", "agency_4"]
+                vec!["agency_1", "agency_2", "agency_3", "agency_4"],
+                extract(|l| &l.network_id, &collections.lines)
             );
             assert_eq!(3, collections.commercial_modes.len());
 
             assert_eq!(
-                extract(|cm| &cm.name, &collections.commercial_modes),
-                &["Bus", "Train", "Unknown mode"]
+                vec!["Bus", "Train", "Unknown mode"],
+                extract(|cm| &cm.name, &collections.commercial_modes)
             );
 
             let lines_commercial_modes_id: Vec<String> = collections
@@ -1306,15 +1305,15 @@ mod tests {
 
             assert_eq!(2, collections.physical_modes.len());
             assert_eq!(
-                extract(|pm| &pm.name, &collections.physical_modes),
-                &["Bus", "Train"]
+                vec!["Bus", "Train"],
+                extract(|pm| &pm.name, &collections.physical_modes)
             );
 
             assert_eq!(5, collections.routes.len());
 
             assert_eq!(
-                extract_ids(&collections.routes),
-                &["route_1", "route_1_R", "route_2", "route_3", "route_4"]
+                vec!["route_1", "route_1_R", "route_2", "route_3", "route_4"],
+                extract_ids(&collections.routes)
             );
         });
     }
@@ -1357,8 +1356,8 @@ mod tests {
             assert_eq!(5, collections.routes.len());
 
             assert_eq!(
-                extract(|l| &l.network_id, &collections.lines),
-                &["id_agency", "id_agency", "id_agency"]
+                vec!["id_agency", "id_agency", "id_agency"],
+                extract(|l| &l.network_id, &collections.lines)
             );
         });
     }
@@ -1397,8 +1396,7 @@ mod tests {
             super::read_routes(&mut handler, &mut collections).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(
-                extract(|l| (&l.color, &l.text_color), &collections.lines),
-                &[
+                vec![
                     (
                         &None,
                         &Some(Rgb {
@@ -1427,7 +1425,8 @@ mod tests {
                             blue: 0
                         })
                     )
-                ]
+                ],
+                extract(|l| (&l.color, &l.text_color), &collections.lines)
             );
         });
     }
@@ -1536,18 +1535,18 @@ mod tests {
 
             assert_eq!(3, collections.lines.len());
             assert_eq!(
-                extract(|l| &l.network_id, &collections.lines),
-                &["agency_1", "agency_2", "id_agency"]
+                vec!["agency_1", "agency_2", "id_agency"],
+                extract(|l| &l.network_id, &collections.lines)
             );
             assert_eq!(
-                extract_ids(&collections.lines),
-                &["route_1", "route_3", "route_5"]
+                vec!["route_1", "route_3", "route_5"],
+                extract_ids(&collections.lines)
             );
             assert_eq!(5, collections.routes.len());
 
             assert_eq!(
-                extract(|r| &r.line_id, &collections.routes),
-                &["route_1", "route_1", "route_3", "route_3", "route_5"]
+                vec!["route_1", "route_1", "route_3", "route_3", "route_5"],
+                extract(|r| &r.line_id, &collections.routes)
             );
         });
     }
@@ -1581,8 +1580,8 @@ mod tests {
 
             assert_eq!(5, collections.routes.len());
             assert_eq!(
-                extract_ids(&collections.routes),
-                &["route_1", "route_1_R", "route_2", "route_3", "route_3_R"]
+                vec!["route_1", "route_1_R", "route_2", "route_3", "route_3_R"],
+                extract_ids(&collections.routes)
             );
         });
     }
@@ -1611,15 +1610,15 @@ mod tests {
             super::read_routes(&mut handler, &mut collections).unwrap();
 
             assert_eq!(2, collections.lines.len());
-            assert_eq!(extract_ids(&collections.lines), &["route_1", "route_3"]);
+            assert_eq!(vec!["route_1", "route_3"], extract_ids(&collections.lines));
             assert_eq!(
-                extract_ids(&collections.routes),
-                &["route_1", "route_2", "route_3"]
+                vec!["route_1", "route_2", "route_3"],
+                extract_ids(&collections.routes)
             );
 
             assert_eq!(
-                extract(|r| &r.line_id, &collections.routes),
-                &["route_1", "route_1", "route_3"]
+                vec!["route_1", "route_1", "route_3"],
+                extract(|r| &r.line_id, &collections.routes)
             );
         });
     }
@@ -1885,8 +1884,8 @@ mod tests {
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
             assert_eq!(
-                extract(|vj| &vj.company_id, &collections.vehicle_journeys),
-                &["agency_1", "agency_2", "agency_3"]
+                vec!["agency_1", "agency_2", "agency_3"],
+                extract(|vj| &vj.company_id, &collections.vehicle_journeys)
             );
             assert_eq!(1, collections.trip_properties.len());
         });
@@ -1926,8 +1925,8 @@ mod tests {
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
             assert_eq!(
-                extract(|vj| &vj.company_id, &collections.vehicle_journeys),
-                &["id_agency", "id_agency", "id_agency"]
+                vec!["id_agency", "id_agency", "id_agency"],
+                extract(|vj| &vj.company_id, &collections.vehicle_journeys)
             );
             assert_eq!(1, collections.trip_properties.len());
         });
@@ -1959,12 +1958,12 @@ mod tests {
             assert_eq!(3, collections.routes.len());
 
             assert_eq!(
-                extract(|r| &r.direction_type, &collections.routes),
-                &[
+                vec![
                     &Some("forward".to_string()),
                     &Some("forward".to_string()),
                     &Some("forward".to_string())
-                ]
+                ],
+                extract(|r| &r.direction_type, &collections.routes)
             );
         });
     }
@@ -2018,7 +2017,7 @@ mod tests {
             })
             .is_err());
         let id = c.get_idx("foo").unwrap();
-        assert_eq!(id, c.iter().next().unwrap().0);
+        assert_eq!(c.iter().next().unwrap().0, id);
     }
 
     #[test]
@@ -2054,7 +2053,6 @@ mod tests {
                 extract(|sa| &sa.equipment_id, &stop_areas)
             );
             assert_eq!(
-                equipments_collection.into_vec(),
                 vec![
                     Equipment {
                         id: "0".to_string(),
@@ -2082,7 +2080,8 @@ mod tests {
                         appropriate_escort: common_format::Availability::InformationNotAvailable,
                         appropriate_signage: common_format::Availability::InformationNotAvailable,
                     },
-                ]
+                ],
+                equipments_collection.into_vec()
             );
         });
     }
@@ -2117,7 +2116,6 @@ mod tests {
             );
 
             assert_eq!(
-                equipments_collection.into_vec(),
                 vec![Equipment {
                     id: "0".to_string(),
                     wheelchair_boarding: common_format::Availability::Available,
@@ -2130,7 +2128,8 @@ mod tests {
                     audible_announcement: common_format::Availability::InformationNotAvailable,
                     appropriate_escort: common_format::Availability::InformationNotAvailable,
                     appropriate_signage: common_format::Availability::InformationNotAvailable,
-                }]
+                }],
+                equipments_collection.into_vec()
             );
         });
     }
@@ -2177,7 +2176,6 @@ mod tests {
             super::manage_stop_times(&mut collections, &mut handler).unwrap();
 
             assert_eq!(
-                collections.vehicle_journeys.into_vec()[0].stop_times,
                 vec![
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:01").unwrap(),
@@ -2215,7 +2213,8 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: None,
                     },
-                ]
+                ],
+                collections.vehicle_journeys.into_vec()[0].stop_times
             );
         });
     }
@@ -2260,7 +2259,6 @@ mod tests {
             super::manage_stop_times(&mut collections, &mut handler).unwrap();
 
             assert_eq!(
-                collections.vehicle_journeys.into_vec()[0].stop_times,
                 vec![
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:01").unwrap(),
@@ -2286,7 +2284,8 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: None,
                     },
-                ]
+                ],
+                collections.vehicle_journeys.into_vec()[0].stop_times
             );
             let headsigns: Vec<String> =
                 collections.stop_time_headsigns.values().cloned().collect();
@@ -2324,7 +2323,6 @@ mod tests {
 
             let transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
             assert_eq!(
-                transfers.values().collect::<Vec<_>>(),
                 vec![
                     &Transfer {
                         from_stop_id: "sp:01".to_string(),
@@ -2389,7 +2387,8 @@ mod tests {
                         real_min_transfer_time: Some(120),
                         equipment_id: None,
                     },
-                ]
+                ],
+                transfers.values().collect::<Vec<_>>()
             );
         });
     }
@@ -2411,11 +2410,11 @@ mod tests {
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
             assert_eq!(
-                collections.calendars.into_vec(),
                 vec![Calendar {
                     id: "1".to_string(),
                     dates,
-                },]
+                },],
+                collections.calendars.into_vec()
             );
         });
     }
@@ -2437,11 +2436,11 @@ mod tests {
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 2, 12));
             assert_eq!(
-                collections.calendars.into_vec(),
                 vec![Calendar {
                     id: "1".to_string(),
                     dates,
-                }]
+                }],
+                collections.calendars.into_vec()
             );
         });
     }
@@ -2470,7 +2469,6 @@ mod tests {
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 7));
             assert_eq!(
-                collections.calendars.into_vec(),
                 vec![
                     Calendar {
                         id: "1".to_string(),
@@ -2480,7 +2478,8 @@ mod tests {
                         id: "2".to_string(),
                         dates: BTreeSet::new(),
                     },
-                ]
+                ],
+                collections.calendars.into_vec()
             );
         });
     }
@@ -2516,7 +2515,6 @@ mod tests {
             read_utils::set_dataset_validity_period(&mut dataset, &collections.calendars).unwrap();
 
             assert_eq!(
-                dataset,
                 Dataset {
                     id: "default_dataset".to_string(),
                     contributor_id: "default_contributor".to_string(),
@@ -2526,7 +2524,8 @@ mod tests {
                     extrapolation: false,
                     desc: None,
                     system: None,
-                }
+                },
+                dataset
             );
         });
     }
@@ -2547,7 +2546,6 @@ mod tests {
             read_utils::set_dataset_validity_period(&mut dataset, &collections.calendars).unwrap();
 
             assert_eq!(
-                dataset,
                 Dataset {
                     id: "default_dataset".to_string(),
                     contributor_id: "default_contributor".to_string(),
@@ -2557,7 +2555,8 @@ mod tests {
                     extrapolation: false,
                     desc: None,
                     system: None,
-                }
+                },
+                dataset
             );
         });
     }
@@ -2585,7 +2584,6 @@ mod tests {
             geometries.sort_unstable_by_key(|s| s.id.clone());
 
             assert_eq!(
-                geometries,
                 vec![
                     Geometry {
                         id: "1".to_string(),
@@ -2595,7 +2593,8 @@ mod tests {
                         id: "2".to_string(),
                         geometry: line_string![(x: 5.5, y: 6.6)].into(),
                     },
-                ]
+                ],
+                geometries
             );
         });
     }
@@ -2607,7 +2606,7 @@ mod tests {
             let mut collections = Collections::default();
             super::manage_shapes(&mut collections, &mut handler).unwrap();
             let geometries = collections.geometries.into_vec();
-            assert_eq!(geometries, vec![]);
+            assert_eq!(Vec::<Geometry>::new(), geometries);
         });
     }
 
@@ -2640,8 +2639,8 @@ mod tests {
             assert_eq!(4, collections.lines.len());
             assert_eq!(4, collections.commercial_modes.len());
             assert_eq!(
-                extract_ids(&collections.physical_modes),
-                &["Funicular", "SuspendedCableCar", "Train"]
+                vec!["Funicular", "SuspendedCableCar", "Train"],
+                extract_ids(&collections.physical_modes)
             );
         });
     }
@@ -2687,13 +2686,13 @@ mod tests {
                 .map(|sp| &sp.coord.lon)
                 .cloned()
                 .collect();
-            assert_eq!(longitudes, &[24.156, 26.123, 25.558]);
+            assert_eq!(vec![24.156, 26.123, 25.558], longitudes);
             let latitudes: Vec<f64> = stop_points
                 .values()
                 .map(|sp| &sp.coord.lat)
                 .cloned()
                 .collect();
-            assert_eq!(latitudes, &[65.444, 66.666, 0.00]);
+            assert_eq!(vec![65.444, 66.666, 0.00], latitudes);
         });
     }
 
@@ -2750,11 +2749,6 @@ mod tests {
             super::manage_stop_times(&mut collections, &mut handler).unwrap();
 
             assert_eq!(
-                collections.vehicle_journeys.into_vec()[0]
-                    .stop_times
-                    .iter()
-                    .map(|st| (st.arrival_time, st.departure_time))
-                    .collect::<Vec<_>>(),
                 vec![
                     (Time::new(6, 0, 0), Time::new(6, 0, 0)),
                     (Time::new(7, 0, 0), Time::new(7, 0, 0)),
@@ -2764,7 +2758,12 @@ mod tests {
                     (Time::new(11, 0, 0), Time::new(11, 0, 0)),
                     (Time::new(12, 0, 0), Time::new(12, 0, 0)),
                     (Time::new(13, 0, 0), Time::new(13, 0, 0)),
-                ]
+                ],
+                collections.vehicle_journeys.into_vec()[0]
+                    .stop_times
+                    .iter()
+                    .map(|st| (st.arrival_time, st.departure_time))
+                    .collect::<Vec<_>>()
             );
         });
     }
@@ -2823,7 +2822,7 @@ mod tests {
 
             // the first stop time of the vj has no departure/arrival, it's an error
             let err = val.unwrap_err();
-            assert_eq!(format!("{}", err), "the first stop time of the vj '1' has no departure/arrival, the stop_times.txt file is not valid");
+            assert_eq!( "the first stop time of the vj '1' has no departure/arrival, the stop_times.txt file is not valid",format!("{}", err));
         });
     }
 }

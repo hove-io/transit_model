@@ -651,8 +651,8 @@ impl Model {
     ///    .insert("foo".to_string(), "bar".to_string());
     /// let feeds: Vec<(_, _)> = collections.feed_infos.into_iter().collect();
     /// assert_eq!(
-    ///    feeds,
-    ///    vec![("foo".to_string(), "bar".to_string())]
+    ///    vec![("foo".to_string(), "bar".to_string())],
+    ///    feeds
     /// );
     /// # Ok(())
     /// # }

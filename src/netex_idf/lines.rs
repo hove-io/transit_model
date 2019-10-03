@@ -230,6 +230,7 @@ pub fn from_path(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_make_networks_companies() {
@@ -298,21 +299,21 @@ mod tests {
         let (networks, companies, _) = make_networks_companies(&frames).unwrap();
         let networks_names: Vec<_> = networks.values().map(|n| &n.name).collect();
         assert_eq!(
-            networks_names,
             vec![
                 "VEOLIA RAMBOUILLET",
                 "VEOLIA RAMBOUILLET 2",
                 "VEOLIA RAMBOUILLET 3"
-            ]
+            ],
+            networks_names
         );
         let companies_names: Vec<_> = companies.values().map(|c| &c.name).collect();
         assert_eq!(
-            companies_names,
             vec![
                 "TRANSDEV IDF RAMBOUILLET",
                 "TRANSDEV IDF RAMBOUILLET 2",
                 "TRANSDEV IDF RAMBOUILLET 3"
-            ]
+            ],
+            companies_names
         );
     }
 
@@ -428,7 +429,7 @@ mod tests {
         // Test explanation
         // Line 03 - Orphan line; not referenced by any network -> line skipped
         // Line 05 - Unknown company -> line skipped
-        assert_eq!(lines_names, vec!["Line 01", "Line 04"]);
+        assert_eq!(vec!["Line 01", "Line 04"], lines_names);
     }
 
     #[test]

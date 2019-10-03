@@ -323,7 +323,9 @@ mod tests {
     use super::*;
 
     mod test_coords {
-        use super::{load_coords, Element};
+        use super::*;
+        use pretty_assertions::assert_eq;
+
         #[test]
         #[should_panic(expected = "longitude and latitude not found")]
         fn test_load_coords_with_one_coord() {
@@ -373,6 +375,7 @@ mod tests {
 
     mod test_avaibility {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn test_available() {

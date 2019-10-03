@@ -480,15 +480,18 @@ pub fn write_shapes(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common_format::write_calendar_dates;
-    use crate::gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType};
-    use crate::objects::Transfer as NtfsTransfer;
-    use crate::objects::{Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime};
+    use crate::{
+        common_format::write_calendar_dates,
+        gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType},
+        objects::{
+            Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime,
+            Transfer as NtfsTransfer,
+        },
+    };
     use chrono;
     use geo_types::{line_string, point};
-    use std::collections::BTreeSet;
-    use std::fs::File;
-    use std::io::Read;
+    use pretty_assertions::assert_eq;
+    use std::{collections::BTreeSet, fs::File, io::Read};
     use tempfile::tempdir;
     use transit_model_collection::CollectionWithId;
 

@@ -169,6 +169,7 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     fn compute_between(start_date: Date, end_date: Date) -> Vec<u8> {
         let mut dates = BTreeSet::new();
@@ -180,72 +181,72 @@ mod tests {
     #[test]
     fn one_week() {
         assert_eq!(
-            compute_between(Date::from_ymd(2012, 7, 2), Date::from_ymd(2012, 7, 8)).len(),
-            1
+            1,
+            compute_between(Date::from_ymd(2012, 7, 2), Date::from_ymd(2012, 7, 8)).len()
         );
     }
 
     #[test]
     fn partial_one_week() {
         assert_eq!(
-            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 15)).len(),
-            2
+            2,
+            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 15)).len()
         );
     }
 
     #[test]
     fn one_week_partial() {
         assert_eq!(
-            compute_between(Date::from_ymd(2012, 7, 2), Date::from_ymd(2012, 7, 13)).len(),
-            2
+            2,
+            compute_between(Date::from_ymd(2012, 7, 2), Date::from_ymd(2012, 7, 13)).len()
         );
     }
 
     #[test]
     fn partial_one_week_partial_with_nb_partial_6() {
         assert_eq!(
-            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 17)).len(),
-            3
+            3,
+            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 17)).len()
         );
     }
 
     #[test]
     fn partial_one_week_partial_with_nb_partial_7() {
         assert_eq!(
-            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 18)).len(),
-            3
+            3,
+            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 18)).len()
         );
     }
 
     #[test]
     fn partial_one_week_partial_with_nb_partial_8() {
         assert_eq!(
-            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 19)).len(),
-            3
+            3,
+            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 19)).len()
         );
     }
 
     #[test]
     fn prev_monday_from_monday() {
         assert_eq!(
-            get_prev_monday(Date::from_ymd(2012, 7, 2)),
-            Date::from_ymd(2012, 7, 2)
+            Date::from_ymd(2012, 7, 2),
+            get_prev_monday(Date::from_ymd(2012, 7, 2))
         );
     }
 
     #[test]
     fn prev_monday_from_thursday() {
         assert_eq!(
-            get_prev_monday(Date::from_ymd(2012, 7, 5)),
-            Date::from_ymd(2012, 7, 2)
+            Date::from_ymd(2012, 7, 2),
+            get_prev_monday(Date::from_ymd(2012, 7, 5))
         );
     }
 
     #[test]
     fn prev_monday_from_sunday() {
         assert_eq!(
-            get_prev_monday(Date::from_ymd(2012, 7, 8)),
-            Date::from_ymd(2012, 7, 2)
+            Date::from_ymd(2012, 7, 2),
+            get_prev_monday(Date::from_ymd(2012, 7, 8))
         );
     }
 
@@ -273,15 +274,15 @@ mod tests {
 
         dates.insert(Date::from_ymd(2012, 7, 2));
         let res = translate(&dates);
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b1000000);
+        assert_eq!(0b1000000, get_week_from_weekday(res.operating_days));
 
         assert!(res.exceptions.is_empty());
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 2),
                 end_date: Date::from_ymd(2012, 7, 2),
-            }
+            },
+            res.validity_period.unwrap()
         );
     }
 
@@ -292,14 +293,14 @@ mod tests {
             &format!("{}{}", "0011101", "000"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b0011101);
+        assert_eq!(0b0011101, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 18),
                 end_date: Date::from_ymd(2012, 7, 22),
-            }
+            },
+            res.validity_period.unwrap()
         );
     }
 
@@ -310,14 +311,14 @@ mod tests {
             &format!("{}{}", "0000010", "00"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b0000010);
+        assert_eq!(0b0000010, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 21),
                 end_date: Date::from_ymd(2012, 7, 21),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -328,7 +329,7 @@ mod tests {
             &format!("{}", "0000000"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b0000000);
+        assert_eq!(0b0000000, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert!(res.validity_period.is_none());
     }
@@ -340,14 +341,14 @@ mod tests {
             &format!("{}{}", "0000000", "0001000"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b0001000);
+        assert_eq!(0b0001000, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 12),
                 end_date: Date::from_ymd(2012, 7, 12),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -358,14 +359,14 @@ mod tests {
             &format!("{}{}", "0000000", "1000000"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b1000000);
+        assert_eq!(0b1000000, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 9),
                 end_date: Date::from_ymd(2012, 7, 9),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -376,14 +377,14 @@ mod tests {
             &format!("{}{}", "0000001", "0000000"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b0000001);
+        assert_eq!(0b0000001, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 8),
                 end_date: Date::from_ymd(2012, 7, 8),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -395,14 +396,14 @@ mod tests {
             &format!("{}{}", "0000000", "0001111"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b0001111);
+        assert_eq!(0b0001111, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 12),
                 end_date: Date::from_ymd(2012, 7, 15),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -413,14 +414,14 @@ mod tests {
             &format!("{}{}{}", "1111111", "1111111", "1111111"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b1111111);
+        assert_eq!(0b1111111, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 2),
                 end_date: Date::from_ymd(2012, 7, 22),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -431,21 +432,21 @@ mod tests {
             &format!("{}{}{}", "1100111", "1100011", "1100111"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b1100111);
-        assert_eq!(res.exceptions.len(), 1);
+        assert_eq!(0b1100111, get_week_from_weekday(res.operating_days));
+        assert_eq!(1, res.exceptions.len());
         assert_eq!(
-            res.exceptions.iter().next().unwrap(),
             &ExceptionDate {
                 date: Date::from_ymd(2012, 07, 13),
                 exception_type: ExceptionType::Remove,
-            }
+            },
+            res.exceptions.iter().next().unwrap()
         );
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 2),
                 end_date: Date::from_ymd(2012, 7, 22),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -456,21 +457,21 @@ mod tests {
             &format!("{}{}{}", "1100111", "1101111", "1100111"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b1100111);
-        assert_eq!(res.exceptions.len(), 1);
+        assert_eq!(0b1100111, get_week_from_weekday(res.operating_days));
+        assert_eq!(1, res.exceptions.len());
         assert_eq!(
-            res.exceptions.iter().next().unwrap(),
             &ExceptionDate {
                 date: Date::from_ymd(2012, 07, 12),
                 exception_type: ExceptionType::Add,
-            }
+            },
+            res.exceptions.iter().next().unwrap()
         );
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 2),
                 end_date: Date::from_ymd(2012, 7, 22),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -481,36 +482,36 @@ mod tests {
             &format!("{}{}{}", "1011111", "1101111", "1110111"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b1111111);
-        assert_eq!(res.exceptions.len(), 3);
+        assert_eq!(0b1111111, get_week_from_weekday(res.operating_days));
+        assert_eq!(3, res.exceptions.len());
 
         assert_eq!(
-            res.exceptions[0],
             ExceptionDate {
                 date: Date::from_ymd(2012, 7, 3),
                 exception_type: ExceptionType::Remove,
-            }
+            },
+            res.exceptions[0]
         );
         assert_eq!(
-            res.exceptions[1],
             ExceptionDate {
                 date: Date::from_ymd(2012, 7, 11),
                 exception_type: ExceptionType::Remove,
-            }
+            },
+            res.exceptions[1]
         );
         assert_eq!(
-            res.exceptions[2],
             ExceptionDate {
                 date: Date::from_ymd(2012, 7, 19),
                 exception_type: ExceptionType::Remove,
-            }
+            },
+            res.exceptions[2]
         );
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 2),
                 end_date: Date::from_ymd(2012, 7, 22),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -521,35 +522,35 @@ mod tests {
             &format!("{}{}{}", "0100000", "0010000", "0001000"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b0000000);
-        assert_eq!(res.exceptions.len(), 3);
+        assert_eq!(0b0000000, get_week_from_weekday(res.operating_days));
+        assert_eq!(3, res.exceptions.len());
         assert_eq!(
-            res.exceptions[0],
             ExceptionDate {
                 date: Date::from_ymd(2012, 7, 3),
                 exception_type: ExceptionType::Add,
-            }
+            },
+            res.exceptions[0]
         );
         assert_eq!(
-            res.exceptions[1],
             ExceptionDate {
                 date: Date::from_ymd(2012, 7, 11),
                 exception_type: ExceptionType::Add,
-            }
+            },
+            res.exceptions[1]
         );
         assert_eq!(
-            res.exceptions[2],
             ExceptionDate {
                 date: Date::from_ymd(2012, 7, 19),
                 exception_type: ExceptionType::Add,
-            }
+            },
+            res.exceptions[2]
         );
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 3),
                 end_date: Date::from_ymd(2012, 7, 19),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -560,14 +561,14 @@ mod tests {
             &format!("{}{}{}", "0000111", "0001111", "0001110"),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b0001111);
+        assert_eq!(0b0001111, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2012, 7, 6),
                 end_date: Date::from_ymd(2012, 7, 21),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 
@@ -582,49 +583,49 @@ mod tests {
             ),
         ));
 
-        assert_eq!(get_week_from_weekday(res.operating_days), 0b1111100);
-        assert_eq!(res.exceptions.len(), 5);
+        assert_eq!(0b1111100, get_week_from_weekday(res.operating_days));
+        assert_eq!(5, res.exceptions.len());
         assert_eq!(
-            res.exceptions[0],
             ExceptionDate {
                 date: Date::from_ymd(2015, 5, 1),
                 exception_type: ExceptionType::Remove,
-            }
+            },
+            res.exceptions[0]
         );
         assert_eq!(
-            res.exceptions[1],
             ExceptionDate {
                 date: Date::from_ymd(2015, 5, 8),
                 exception_type: ExceptionType::Remove,
-            }
+            },
+            res.exceptions[1]
         );
         assert_eq!(
-            res.exceptions[2],
             ExceptionDate {
                 date: Date::from_ymd(2015, 5, 14),
                 exception_type: ExceptionType::Remove,
-            }
+            },
+            res.exceptions[2]
         );
         assert_eq!(
-            res.exceptions[3],
             ExceptionDate {
                 date: Date::from_ymd(2015, 5, 30),
                 exception_type: ExceptionType::Add,
-            }
+            },
+            res.exceptions[3]
         );
         assert_eq!(
-            res.exceptions[4],
             ExceptionDate {
                 date: Date::from_ymd(2015, 5, 25),
                 exception_type: ExceptionType::Remove,
-            }
+            },
+            res.exceptions[4]
         );
         assert_eq!(
-            res.validity_period.unwrap(),
             ValidityPeriod {
                 start_date: Date::from_ymd(2015, 4, 27),
                 end_date: Date::from_ymd(2015, 5, 30),
-            }
+            },
+            res.validity_period.unwrap()
         )
     }
 }
