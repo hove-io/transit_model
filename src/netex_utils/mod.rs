@@ -14,6 +14,7 @@ pub enum FrameType {
     Service,
     Fare,
 }
+pub type Frames<'a> = HashMap<FrameType, Vec<&'a Element>>;
 
 impl Display for FrameType {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
@@ -39,9 +40,7 @@ impl FromStr for FrameType {
     }
 }
 
-pub fn parse_frames_by_type<'a>(
-    frames: &'a Element,
-) -> Result<HashMap<FrameType, Vec<&'a Element>>> {
+pub fn parse_frames_by_type<'a>(frames: &'a Element) -> Result<Frames<'a>> {
     frames
         .children()
         .try_fold(HashMap::new(), |mut map, frame| {
@@ -51,10 +50,7 @@ pub fn parse_frames_by_type<'a>(
         })
 }
 
-pub fn get_only_frame<'a>(
-    frames: &'a HashMap<FrameType, Vec<&'a Element>>,
-    frame_type: FrameType,
-) -> Result<&'a Element> {
+pub fn get_only_frame<'a>(frames: &'a Frames<'a>, frame_type: FrameType) -> Result<&'a Element> {
     let frame = frames
         .get(&frame_type)
         .ok_or_else(|| format_err!("Failed to find a '{}' frame in the Netex file", frame_type))?;

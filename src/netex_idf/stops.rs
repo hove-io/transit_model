@@ -20,7 +20,7 @@ use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
-    netex_utils::FrameType,
+    netex_utils::{FrameType, Frames},
     objects::{Codes, Coord, Equipment, StopArea, StopPoint, StopType},
     Result,
 };
@@ -256,7 +256,7 @@ fn load_stop_points<'a>(
 }
 
 fn load_stops(
-    frames: &HashMap<FrameType, Vec<&Element>>,
+    frames: &Frames,
 ) -> Result<(
     CollectionWithId<StopArea>,
     CollectionWithId<StopPoint>,

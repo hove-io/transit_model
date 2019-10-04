@@ -20,7 +20,7 @@ use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
-    netex_utils::FrameType,
+    netex_utils::{FrameType, Frames},
     objects::{CommercialMode, Company, Line, Network, PhysicalMode},
     Result,
 };
@@ -46,7 +46,7 @@ impl_id!(LineNetexIDF);
 type MapLineNetwork = HashMap<String, String>;
 
 fn load_netex_lines(
-    frames: &HashMap<FrameType, Vec<&Element>>,
+    frames: &Frames,
     map_line_network: &MapLineNetwork,
     companies: &CollectionWithId<Company>,
 ) -> Result<CollectionWithId<LineNetexIDF>> {
@@ -113,7 +113,7 @@ fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<Collec
 }
 
 fn make_networks_companies(
-    frames: &HashMap<FrameType, Vec<&Element>>,
+    frames: &Frames,
 ) -> Result<(
     CollectionWithId<Network>,
     CollectionWithId<Company>,

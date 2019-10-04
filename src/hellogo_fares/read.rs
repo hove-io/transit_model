@@ -19,7 +19,7 @@ use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
-    netex_utils::FrameType,
+    netex_utils::{FrameType, Frames},
     objects::*,
     AddPrefix, Result,
 };
@@ -28,7 +28,7 @@ use log::{info, warn};
 use minidom::Element;
 use rust_decimal::Decimal;
 use std::{
-    collections::{BTreeSet, HashMap},
+    collections::BTreeSet,
     convert::{From, TryFrom},
     fs,
     io::Read,
@@ -123,7 +123,7 @@ fn get_prefix(collections: &Collections) -> Option<String> {
         })
 }
 
-fn get_unit_price_frame<'a>(frames: &'a HashMap<FrameType, Vec<&Element>>) -> Result<&'a Element> {
+fn get_unit_price_frame<'a>(frames: &'a Frames<'a>) -> Result<&'a Element> {
     if let Some(fare_frames) = frames.get(&FrameType::Fare) {
         let mut iterator = fare_frames.iter().filter(|fare_frame| {
             utils::get_fare_frame_type(fare_frame)
@@ -463,6 +463,7 @@ mod tests {
 
     mod unit_price_frame {
         use super::*;
+        use std::collections::HashMap;
 
         #[test]
         fn has_unit_price_frame() {
