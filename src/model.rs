@@ -468,7 +468,7 @@ impl Collections {
             stop_points_used.contains(&t.from_stop_id) && stop_points_used.contains(&t.to_stop_id)
         });
         self.frequencies
-            .retain(|frequency| vehicle_journeys_used.contains(&frequency.trip_id));
+            .retain(|frequency| vehicle_journeys_used.contains(&frequency.vehicle_journey_id));
 
         Ok(())
     }

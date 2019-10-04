@@ -242,7 +242,7 @@ fn preserve_frequencies() {
 fn sanitize_frequencies() {
     let mut collections = Collections::default();
     let frequency = Frequency {
-        trip_id: String::from("trip_id_which_doesn_t_exist"),
+        vehicle_journey_id: String::from("vehicle_journey_id_which_doesn_t_exist"),
         start_time: Time::new(0, 0, 0),
         end_time: Time::new(0, 0, 0),
         headway_secs: 0,
