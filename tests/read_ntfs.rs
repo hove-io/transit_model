@@ -16,7 +16,7 @@
 
 use std::collections::HashMap;
 use transit_model;
-use transit_model::model::{GetCorresponding, Model};
+use transit_model::model::{Collections, GetCorresponding, Model};
 use transit_model::objects::*;
 use transit_model::test_utils::*;
 use transit_model_collection::{CollectionWithId, Id, Idx};
@@ -223,4 +223,31 @@ fn optional_empty_collections_not_created() {
         assert!(!entries.contains("object_codes.txt"));
         assert!(!entries.contains("admin_stations.txt"));
     });
+}
+
+#[test]
+fn preserve_frequencies() {
+    let ntm = transit_model::ntfs::read("tests/fixtures/ntfs/").unwrap();
+    test_in_tmp_dir(|output_dir| {
+        transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &output_dir,
+            Some(vec!["frequencies.txt", "stop_times.txt", "trips.txt"]),
+            "tests/fixtures/ntfs2ntfs/frequencies",
+        );
+    });
+}
+
+#[test]
+fn sanitize_frequencies() {
+    let mut collections = Collections::default();
+    let frequency = Frequency {
+        vehicle_journey_id: String::from("vehicle_journey_id_which_doesn_t_exist"),
+        start_time: Time::new(0, 0, 0),
+        end_time: Time::new(0, 0, 0),
+        headway_secs: 0,
+    };
+    collections.frequencies.push(frequency);
+    collections.sanitize().unwrap();
+    assert_eq!(collections.frequencies.len(), 0);
 }

@@ -684,6 +684,15 @@ impl GetObjectType for VehicleJourney {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Frequency {
+    #[serde(rename = "trip_id")]
+    pub vehicle_journey_id: String,
+    pub start_time: Time,
+    pub end_time: Time,
+    pub headway_secs: u32,
+}
+
 #[derive(Debug)]
 pub enum TimeError {
     WrongFormat,

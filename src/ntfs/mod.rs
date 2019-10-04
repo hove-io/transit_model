@@ -159,6 +159,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.lines = make_collection_with_id(path, "lines.txt")?;
     collections.routes = make_collection_with_id(path, "routes.txt")?;
     collections.vehicle_journeys = make_collection_with_id(path, "trips.txt")?;
+    collections.frequencies = make_opt_collection(path, "frequencies.txt")?;
     collections.physical_modes = make_collection_with_id(path, "physical_modes.txt")?;
     collections.companies = make_collection_with_id(path, "companies.txt")?;
     collections.equipments = make_opt_collection_with_id(path, "equipments.txt")?;
@@ -231,6 +232,7 @@ pub fn write<P: AsRef<path::Path>>(
         &model.stop_time_headsigns,
         &model.stop_time_ids,
     )?;
+    write::write_collection(path, "frequencies.txt", &model.frequencies)?;
     common_format::write_calendar_dates(path, &model.calendars)?;
     write::write_stops(path, &model.stop_points, &model.stop_areas)?;
     write::write_comments(path, model)?;
