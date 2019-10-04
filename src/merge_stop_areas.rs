@@ -183,6 +183,7 @@ fn apply_rules(
     let mut geometries_updated = collections.geometries.take();
     let mut lines_updated = collections.lines.take();
     let mut ticket_use_restrictions_updated = collections.ticket_use_restrictions.take();
+    let mut routes_updated = collections.routes.take();
     let mut stop_areas_to_remove: HashSet<String> = HashSet::new();
     let mut stop_area_ids = collections
         .stop_areas
@@ -225,6 +226,13 @@ fn apply_rules(
                 }
             }
         }
+        for route in &mut routes_updated {
+            if let Some(ref mut destination_id) = route.destination_id {
+                if rule.to_merge_stop_area_ids.contains(&destination_id) {
+                    *destination_id = rule.master_stop_area_id.clone();
+                }
+            }
+        }
         let mut comment_links = CommentLinksT::default();
         let mut object_codes = KeysValues::default();
         let mut object_properties = KeysValues::default();
@@ -255,6 +263,7 @@ fn apply_rules(
     collections.stop_areas = CollectionWithId::new(stop_areas_updated)?;
     collections.lines = CollectionWithId::new(lines_updated)?;
     collections.ticket_use_restrictions = Collection::new(ticket_use_restrictions_updated);
+    collections.routes = CollectionWithId::new(routes_updated)?;
     Ok(collections)
 }
 

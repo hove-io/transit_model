@@ -51,6 +51,7 @@ fn test_merge_stop_areas_multi_steps() {
                 "stops.txt",
                 "ticket_use_restrictions.txt",
                 "report.json",
+                "routes.txt",
             ]),
             "./tests/fixtures/merge-stop-areas/output/",
         );
