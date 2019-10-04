@@ -1,0 +1,3 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+route:01,Hôtels - Hôtels,,line:01,,SA:01
+route:02,Hôtels - Hôtels,,line:01,,SA:01
