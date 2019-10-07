@@ -1,0 +1,4 @@
+pathway_id,from_stop_id,to_stop_id,pathway_mode,is_bidirectional
+1,entrance:1,node:1,1,0
+2,node:1,boarding:1,2,1
+

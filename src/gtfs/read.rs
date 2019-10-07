@@ -1243,7 +1243,10 @@ mod tests {
         objects::{
             Calendar, Comment, CommentType, Dataset, Equipment, Geometry, Rgb, StopTime, Transfer,
         },
-        read_utils::{self, PathFileHandler},
+        gtfs::read::EquipmentList,
+        model::Collections,
+        objects::*,
+        read_utils::{self, PathFileHandler, read_opt_collection},
         test_utils::*,
         AddPrefix,
     };
@@ -3011,5 +3014,87 @@ mod tests {
             let err = val.unwrap_err();
             assert_eq!( "the first stop time of the vj '1' has no departure/arrival, the stop_times.txt file is not valid",format!("{}", err));
         });
+    }
+    #[test]
+    fn stop_location_on_stops() {
+        let stops_content =
+            "stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
+             stoppoint_id,1234,my stop name,0.1,1.2,0,stop_area_id\n\
+             stoparea_id,5678,stop area name,0.1,1.2,1,\n\
+             entrance_id,,entrance name,0.1,1.2,2,stop_area_id\n\
+             node_id,,node name,0.1,1.2,3,stop_area_id\n\
+             boarding_id,,boarding name,0.1,1.2,4,stoppoint_id";
+        test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            create_file_with_content(path, "stops.txt", stops_content);
+            let mut equipments = EquipmentList::default();
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let (_, _, mut stop_locations) =
+                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+            let stop_entrance = stop_locations
+                .clone()
+                .take()
+                .into_iter()
+                .filter(|sl| sl.stop_type == StopType::StopEntrance)
+                .collect::<Vec<_>>();
+            assert_eq!(1, stop_entrance.len());
+            let stop_node = stop_locations
+                .clone()
+                .take()
+                .into_iter()
+                .filter(|sl| sl.stop_type == StopType::GenericNode)
+                .collect::<Vec<_>>();
+            assert_eq!(1, stop_node.len());
+            let stop_boarding = stop_locations
+                .take()
+                .into_iter()
+                .filter(|sl| sl.stop_type == StopType::GenericNode)
+                .collect::<Vec<_>>();
+            assert_eq!(1, stop_boarding.len());
+        });
+    }
+    #[test]
+    fn filter_pathway() {
+        let stops_content =
+            "stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type,parent_station,level_id\n\
+             stoppoint_id,1234,my stop name,0.1,1.2,0,stop_area_id,2\n\
+             stoparea_id,5678,stop area name,0.1,1.2,1,,\n\
+             entrance_id,,entrance name,0.1,1.2,2,stop_area_id,1\n\
+             node_id,,node name,0.1,1.2,3,stop_area_id,2\n\
+             boarding_id,,boarding name,0.1,1.2,4,stoppoint_id,";
+        let pathway_content = "pathway_id,from_stop_id,to_stop_id,pathway_mode,is_bidirectional\n\
+                               1;stoppoint_id,stoparea_id,8,0\n\
+                               2,stoppoint_id,stoparea_id,1,3\n\
+                               3,stoppoint_id,stoparea_id_0,2,0\n\
+                               4,stoppoint_id,stoparea_id,1,0";
+        test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            create_file_with_content(path, "stops.txt", stops_content);
+            create_file_with_content(path, "pathways.txt", pathway_content);
+            let pathways = super::read_pathways(&mut handler).unwrap();
+            assert_eq!(1, pathways.len());
+        })
+    }
+    #[test]
+    fn read_levels() {
+        let stops_content =
+            "stop_id,stop_code,stop_name,stop_lat,stop_lon,location_type,parent_station,level_id\n\
+             stoppoint_id,1234,my stop name,0.1,1.2,0,stop_area_id,2\n\
+             stoparea_id,5678,stop area name,0.1,1.2,1,,\n\
+             entrance_id,,entrance name,0.1,1.2,2,stop_area_id,1\n\
+             node_id,,node name,0.1,1.2,3,stop_area_id,2\n\
+             boarding_id,,boarding name,0.1,1.2,4,stoppoint_id,";
+        let level_content = "level_id,level_index\n\
+                               1,0\n\
+                               2,2\n\
+                               3,1\n\
+                               4,4";
+        test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            create_file_with_content(path, "stops.txt", stops_content);
+            create_file_with_content(path, "levels.txt", level_content);
+            let levels : CollectionWithId<Level> = read_opt_collection(&mut handler, "levels.txt").unwrap();
+            assert_eq!(4, levels.len());
+        })
     }
 }
