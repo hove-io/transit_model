@@ -139,3 +139,17 @@ fn test_gtfs_with_platforms() {
         );
     });
 }
+
+#[test]
+fn test_gtfs_with_levels() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./tests/fixtures/gtfs2ntfs/levels_and_pathways/input";
+        let model = transit_model::gtfs::read_from_path(input_dir, None, None).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec!["stops.txt", "pathways.txt", "levels.txt",],),
+            "./tests/fixtures/gtfs2ntfs/levels_and_pathways/output",
+        );
+    });
+}

@@ -264,7 +264,7 @@ pub fn write<P: AsRef<path::Path>>(
         &model.stop_time_headsigns,
         &model.stop_time_ids,
     )?;
-    write::write_collection(path, "frequencies.txt", &model.frequencies)?;
+    write_collection(path, "frequencies.txt", &model.frequencies)?;
     write_calendar_dates(path, &model.calendars)?;
     write::write_stops(
         path,
