@@ -1,0 +1,6 @@
+object_type,object_id,object_system,object_code
+trip,trip:3,source,trip:3
+trip,trip:4,source,trip:4
+trip,trip:5,source,trip:5
+trip,trip:6,source,trip:6
+trip,with_no_stop_times,source,with_no_stop_times
