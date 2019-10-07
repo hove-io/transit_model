@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use pretty_assertions::assert_eq;
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
 use std::path::Path;
@@ -51,23 +52,23 @@ fn merge_collections_ok() {
             .try_merge(to_append_model.into_collections())
             .unwrap();
     }
-    assert_eq!(collections.contributors.len(), 2);
-    assert_eq!(collections.datasets.len(), 2);
-    assert_eq!(collections.networks.len(), 3);
+    assert_eq!(2, collections.contributors.len());
+    assert_eq!(2, collections.datasets.len());
+    assert_eq!(3, collections.networks.len());
     // check that commercial mode Bus appears once.
     let count_bus = collections
         .commercial_modes
         .values()
         .filter(|cm| cm.id == "Bus" && cm.name == "Bus")
         .count();
-    assert_eq!(count_bus, 1);
-    assert_eq!(collections.commercial_modes.len(), 6);
-    assert_eq!(collections.lines.len(), 6);
-    assert_eq!(collections.routes.len(), 8);
-    assert_eq!(collections.vehicle_journeys.len(), 8);
-    assert_eq!(collections.frequencies.len(), 2);
-    assert_eq!(collections.stop_time_headsigns.len(), 1);
-    assert_eq!(collections.stop_time_ids.len(), 5);
+    assert_eq!(1, count_bus);
+    assert_eq!(6, collections.commercial_modes.len());
+    assert_eq!(6, collections.lines.len());
+    assert_eq!(8, collections.routes.len());
+    assert_eq!(8, collections.vehicle_journeys.len());
+    assert_eq!(2, collections.frequencies.len());
+    assert_eq!(1, collections.stop_time_headsigns.len());
+    assert_eq!(5, collections.stop_time_ids.len());
 
     let mut headsigns = HashMap::<(Idx<VehicleJourney>, u32), String>::new();
     headsigns.insert(
@@ -164,36 +165,36 @@ fn merge_collections_ok() {
     }
 
     assert_eq!(
-        get_stop_point_idxs(&collections.vehicle_journeys, "RERAB1"),
         vec![
             collections.stop_points.get_idx("DEFR").unwrap(),
             collections.stop_points.get_idx("CDGR").unwrap(),
             collections.stop_points.get_idx("GDLR").unwrap(),
             collections.stop_points.get_idx("NATR").unwrap(),
-        ]
+        ],
+        get_stop_point_idxs(&collections.vehicle_journeys, "RERAB1")
     );
     assert_eq!(
-        get_stop_point_idxs(&collections.vehicle_journeys, "OIF:77100911-1_1420-1"),
         vec![
             collections.stop_points.get_idx("OIF:SP:10:10").unwrap(),
             collections.stop_points.get_idx("OIF:SP:10:100").unwrap(),
             collections.stop_points.get_idx("OIF:SP:10:200").unwrap(),
-        ]
+        ],
+        get_stop_point_idxs(&collections.vehicle_journeys, "OIF:77100911-1_1420-1")
     );
-    assert_eq!(collections.physical_modes.len(), 6);
-    assert_eq!(collections.stop_areas.len(), 7);
-    assert_eq!(collections.stop_points.len(), 14);
-    assert_eq!(collections.feed_infos.len(), 0);
+    assert_eq!(6, collections.physical_modes.len());
+    assert_eq!(7, collections.stop_areas.len());
+    assert_eq!(14, collections.stop_points.len());
+    assert_eq!(0, collections.feed_infos.len());
     let calendar_vec = collections.calendars.into_vec();
-    assert_eq!(calendar_vec[0].dates.len(), 261);
-    assert_eq!(calendar_vec[1].dates.len(), 6);
-    assert_eq!(collections.companies.len(), 3);
-    assert_eq!(collections.comments.len(), 6);
-    assert_eq!(collections.equipments.len(), 0);
-    assert_eq!(collections.transfers.len(), 0);
-    assert_eq!(collections.trip_properties.len(), 0);
-    assert_eq!(collections.geometries.len(), 0);
-    assert_eq!(collections.admin_stations.len(), 0);
+    assert_eq!(261, calendar_vec[0].dates.len());
+    assert_eq!(6, calendar_vec[1].dates.len());
+    assert_eq!(3, collections.companies.len());
+    assert_eq!(6, collections.comments.len());
+    assert_eq!(0, collections.equipments.len());
+    assert_eq!(0, collections.transfers.len());
+    assert_eq!(0, collections.trip_properties.len());
+    assert_eq!(0, collections.geometries.len());
+    assert_eq!(0, collections.admin_stations.len());
 }
 
 #[test]

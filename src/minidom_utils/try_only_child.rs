@@ -68,8 +68,7 @@ impl TryOnlyChild for Element {
 
 #[cfg(test)]
 mod tests {
-    use super::TryOnlyChild;
-    use minidom::Element;
+    use super::*;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -84,7 +83,7 @@ mod tests {
                 e.attr("type").map(|id| id == "ugly").unwrap_or(false)
             })
             .unwrap();
-        assert_eq!(child.name(), "child");
+        assert_eq!("child", child.name());
     }
 
     #[test]

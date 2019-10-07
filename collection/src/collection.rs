@@ -91,10 +91,10 @@ pub struct Collection<T> {
 /// use transit_model_collection::Collection;
 ///
 /// let collection: Collection<i32> = Collection::from(42);
-/// assert_eq!(collection.len(), 1);
+/// assert_eq!(1, collection.len());
 ///
 /// let integer = collection.into_iter().next().unwrap();
-/// assert_eq!(integer, 42);
+/// assert_eq!(42, integer);
 /// ```
 impl<T> From<T> for Collection<T> {
     fn from(object: T) -> Self {
@@ -130,7 +130,7 @@ impl<T> Collection<T> {
     /// use transit_model_collection::Collection;
     ///
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
-    /// assert_eq!(c.len(), 6);
+    /// assert_eq!(6, c.len());
     /// ```
     pub fn len(&self) -> usize {
         self.objects.len()
@@ -145,8 +145,8 @@ impl<T> Collection<T> {
     ///
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// let (k, v): (Idx<i32>, &i32) = c.iter().nth(4).unwrap();
-    /// assert_eq!(v, &5);
-    /// assert_eq!(&c[k], &5);
+    /// assert_eq!(&5, v);
+    /// assert_eq!(&5, &c[k]);
     /// ```
     pub fn iter(&self) -> Iter<'_, T> {
         self.objects
@@ -164,7 +164,7 @@ impl<T> Collection<T> {
     ///
     /// let c: Collection<i32> = Collection::new(vec![1, 1, 2, 3, 5, 8]);
     /// let values: Vec<&i32> = c.values().collect();
-    /// assert_eq!(values, &[&1, &1, &2, &3, &5, &8]);
+    /// assert_eq!(vec![&1, &1, &2, &3, &5, &8], values);
     /// ```
     pub fn values(&self) -> slice::Iter<'_, T> {
         self.objects.iter()
@@ -181,7 +181,7 @@ impl<T> Collection<T> {
     /// for elem in c.values_mut() {
     ///     *elem *= 2;
     /// }
-    /// assert_eq!(c, Collection::new(vec![2, 2, 4, 6, 10, 16]));
+    /// assert_eq!(Collection::new(vec![2, 2, 4, 6, 10, 16]), c);
     /// ```
     pub fn values_mut(&mut self) -> slice::IterMut<'_, T> {
         self.objects.iter_mut()
@@ -204,7 +204,7 @@ impl<T> Collection<T> {
     /// let c = Collection::new(vec!["bike", "bus", "walking", "car", "metro", "train"]);
     /// let transit_indices: BTreeSet<Idx<&str>> = get_transit_indices(&c);
     /// let transit_refs: Vec<&&str> = c.iter_from(&transit_indices).collect();
-    /// assert_eq!(transit_refs, &[&"bus", &"metro", &"train"]);
+    /// assert_eq!(vec![&"bus", &"metro", &"train"], transit_refs);
     /// ```
     pub fn iter_from<I>(&self, indexes: I) -> impl Iterator<Item = &T>
     where
@@ -229,8 +229,8 @@ impl<T> Collection<T> {
     /// let mut c = Collection::default();
     /// let foo_idx = c.push(Obj("foo"));
     /// let bar_idx = c.push(Obj("bar"));
-    /// assert_eq!(&c[foo_idx], &Obj("foo"));
-    /// assert_ne!(&c[foo_idx], &Obj("bar"));
+    /// assert_eq!(&Obj("foo"), &c[foo_idx]);
+    /// assert_ne!(&Obj("bar"), &c[foo_idx]);
     /// ```
     pub fn push(&mut self, item: T) -> Idx<T> {
         let next_index = self.objects.len();
@@ -251,7 +251,7 @@ impl<T> Collection<T> {
     /// let mut c1 = Collection::from(Obj("foo"));
     /// let c2 = Collection::from(Obj("bar"));
     /// c1.merge(c2);
-    /// assert_eq!(c1.len(), 2);
+    /// assert_eq!(2, c1.len());
     /// ```
     pub fn merge(&mut self, other: Self) {
         for item in other {
@@ -272,8 +272,8 @@ impl<T> Collection<T> {
     ///
     /// let mut c = Collection::new(vec![Obj("foo"), Obj("bar")]);
     /// let v = c.take();
-    /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);
-    /// assert_eq!(c.len(), 0);
+    /// assert_eq!(vec![Obj("foo"), Obj("bar")], v);
+    /// assert_eq!(0, c.len());
     /// ```
     pub fn take(&mut self) -> Vec<T> {
         ::std::mem::replace(&mut self.objects, Vec::new())
@@ -312,8 +312,8 @@ impl<T> Collection<T> {
     /// ids_to_keep.insert("foo".to_string());
     /// ids_to_keep.insert("qux".to_string());
     /// c.retain(|item| ids_to_keep.contains(item.0));
-    /// assert_eq!(c.len(), 2);
-    /// assert_eq!(c.values().map(|obj| obj.0).collect::<Vec<&str>>(), ["foo", "qux"]);
+    /// assert_eq!(2, c.len());
+    /// assert_eq!(vec!["foo", "qux"], c.values().map(|obj| obj.0).collect::<Vec<&str>>());
     /// ```
     pub fn retain<F: FnMut(&T) -> bool>(&mut self, f: F) {
         let mut purged = self.take();
@@ -398,9 +398,9 @@ pub struct CollectionWithId<T> {
 /// }
 ///
 /// let collection: CollectionWithId<Obj> = CollectionWithId::from(Obj("some_id"));
-/// assert_eq!(collection.len(), 1);
+/// assert_eq!(1, collection.len());
 /// let obj = collection.into_iter().next().unwrap();
-/// assert_eq!(obj.id(), "some_id");
+/// assert_eq!("some_id", obj.id());
 /// ```
 impl<T: Id<T>> From<T> for CollectionWithId<T> {
     fn from(object: T) -> Self {
@@ -428,8 +428,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// }
     ///
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
-    /// assert_eq!(c.len(), 2);
-    /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
+    /// assert_eq!(2, c.len());
+    /// assert_eq!(Some(&Obj("foo")), c.get("foo"));
     /// assert!(CollectionWithId::new(vec![Obj("foo"), Obj("foo")]).is_err());
     pub fn new(v: Vec<T>) -> Result<Self> {
         let mut id_to_idx = HashMap::default();
@@ -465,8 +465,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// }
     ///
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
-    /// assert_eq!(c.len(), 2);
-    /// assert_eq!(c.get_id_to_idx().len(), 2);
+    /// assert_eq!(2, c.len());
+    /// assert_eq!(2, c.get_id_to_idx().len());
     pub fn get_id_to_idx(&self) -> &HashMap<String, Idx<T>> {
         &self.id_to_idx
     }
@@ -493,7 +493,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// let idx = c.get_idx("foo").unwrap();
     /// c.index_mut(idx).0 = "baz";
     /// assert!(c.get("foo").is_none());
-    /// assert_eq!(c.get("baz"), Some(&Obj("baz")));
+    /// assert_eq!(Some(&Obj("baz")), c.get("baz"));
     /// ```
     ///
     /// ```should_panic
@@ -537,7 +537,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// c.get_mut("foo").unwrap().0 = "baz";
     /// assert!(c.get("foo").is_none());
-    /// assert_eq!(c.get("baz"), Some(&Obj("baz")));
+    /// assert_eq!(Some(&Obj("baz")), c.get("baz"));
     /// ```
     pub fn get_mut(&mut self, id: &str) -> Option<RefMut<'_, T>> {
         self.get_idx(id).map(move |idx| self.index_mut(idx))
@@ -561,12 +561,12 @@ impl<T: Id<T>> CollectionWithId<T> {
     ///
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let baz_idx = c.push(Obj("baz")).unwrap();
-    /// assert_eq!(&c[baz_idx], &Obj("baz"));
+    /// assert_eq!(&Obj("baz"), &c[baz_idx]);
     /// assert!(c.push(Obj("baz")).is_err());
     ///
     /// let foobar_idx = c.push(Obj("foobar")).unwrap();
-    /// assert_eq!(&c[baz_idx], &Obj("baz"));
-    /// assert_eq!(&c[foobar_idx], &Obj("foobar"));
+    /// assert_eq!(&Obj("baz"), &c[baz_idx]);
+    /// assert_eq!(&Obj("foobar"), &c[foobar_idx]);
     /// ```
     pub fn push(&mut self, item: T) -> Result<Idx<T>> {
         let next_index = self.collection.objects.len();
@@ -602,9 +602,9 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// ids_to_keep.insert("foo".to_string());
     /// ids_to_keep.insert("qux".to_string());
     /// c.retain(|item| ids_to_keep.contains(item.id()));
-    /// assert_eq!(c.len(), 2);
-    /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
-    /// assert_eq!(c.get("qux"), Some(&Obj("qux")));
+    /// assert_eq!(2, c.len());
+    /// assert_eq!(Some(&Obj("foo")), c.get("foo"));
+    /// assert_eq!(Some(&Obj("qux")), c.get("qux"));
     /// ```
     pub fn retain<F: FnMut(&T) -> bool>(&mut self, f: F) {
         let mut purged = self.take();
@@ -634,7 +634,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// assert!(c1.try_merge(c2).is_err());
     ///
     /// c1.try_merge(c3);
-    /// assert_eq!(c1.len(), 4);
+    /// assert_eq!(4, c1.len());
     /// ```
     pub fn try_merge(&mut self, other: Self) -> Result<()> {
         for item in other {
@@ -662,7 +662,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")]).unwrap();
     /// c1.merge(c2);
-    /// assert_eq!(c1.len(), 3);
+    /// assert_eq!(3, c1.len());
     /// ```
     pub fn merge(&mut self, other: Self) {
         for item in other {
@@ -720,7 +720,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     ///     source.name = to_merge.name;
     /// });
     /// let foo = collection.get("foo").unwrap();
-    /// assert_eq!(foo.name, "Bob Marley");
+    /// assert_eq!("Bob Marley", foo.name);
     /// ```
     pub fn merge_with<I, F>(&mut self, iterator: I, mut f: F)
     where
@@ -786,7 +786,7 @@ impl<T: Id<T> + WithId> CollectionWithId<T> {
     ///
     /// let mut c = CollectionWithId::from(Obj("1".into()));
     /// let obj = c.get_or_create("2");
-    /// assert_eq!(obj.0, "2");
+    /// assert_eq!("2", obj.0);
     /// ```
     pub fn get_or_create<'a>(&'a mut self, id: &str) -> RefMut<'a, T> {
         self.get_or_create_with(id, || T::with_id(id))
@@ -820,8 +820,8 @@ impl<T: Id<T>> CollectionWithId<T> {
     ///
     /// let mut c = CollectionWithId::from(Obj("1".into(), "foo".into()));
     /// let obj = c.get_or_create_with("2", || Obj("bob".into(), "bar".into()));
-    /// assert_eq!(obj.0, "2");
-    /// assert_eq!(obj.1, "bar");
+    /// assert_eq!("2", obj.0);
+    /// assert_eq!("bar", obj.1);
     /// ```
     pub fn get_or_create_with<'a, F>(&'a mut self, id: &str, mut f: F) -> RefMut<'a, T>
     where
@@ -857,7 +857,7 @@ impl<T: Id<T>> iter::Extend<T> for CollectionWithId<T> {
     /// let mut c1 = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let mut c2 = CollectionWithId::new(vec![Obj("foo"), Obj("qux")]).unwrap();
     /// c1.extend(c2);
-    /// assert_eq!(c1.len(), 3);
+    /// assert_eq!(3, c1.len());
     /// ```
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         for item in iter {
@@ -890,7 +890,7 @@ impl<T> CollectionWithId<T> {
     ///
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let idx = c.get_idx("foo").unwrap();
-    /// assert_eq!(&c[idx], &Obj("foo"));
+    /// assert_eq!(&Obj("foo"), &c[idx]);
     /// assert!(c.get_idx("baz").is_none());
     /// ```
     pub fn get_idx(&self, id: &str) -> Option<Idx<T>> {
@@ -914,7 +914,7 @@ impl<T> CollectionWithId<T> {
     /// }
     ///
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
-    /// assert_eq!(c.get("foo"), Some(&Obj("foo")));
+    /// assert_eq!(Some(&Obj("foo")), c.get("foo"));
     /// assert!(c.get("baz").is_none());
     /// ```
     pub fn get(&self, id: &str) -> Option<&T> {
@@ -938,7 +938,7 @@ impl<T> CollectionWithId<T> {
     ///
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let v = c.into_vec();
-    /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);
+    /// assert_eq!(vec![Obj("foo"), Obj("bar")], v);
     /// ```
     pub fn into_vec(self) -> Vec<T> {
         self.collection.objects
@@ -962,8 +962,8 @@ impl<T> CollectionWithId<T> {
     ///
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let v = c.take();
-    /// assert_eq!(v, &[Obj("foo"), Obj("bar")]);
-    /// assert_eq!(c.len(), 0);
+    /// assert_eq!(vec![Obj("foo"), Obj("bar")], v);
+    /// assert_eq!(0, c.len());
     /// ```
     pub fn take(&mut self) -> Vec<T> {
         self.id_to_idx.clear();

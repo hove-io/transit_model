@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 use transit_model;
 use transit_model::model::{Collections, GetCorresponding, Model};
@@ -54,36 +55,36 @@ fn minimal() {
     let gdl = ntm.stop_areas.get_idx("GDL").unwrap();
     assert_eq!(3, ntm.get_corresponding_from_idx::<_, StopPoint>(gdl).len());
     assert_eq!(
-        get(gdl, &ntm.physical_modes, &ntm),
-        &["Bus", "Metro", "RapidTransit"]
+        vec!["Bus", "Metro", "RapidTransit"],
+        get(gdl, &ntm.physical_modes, &ntm)
     );
     assert_eq!(
-        get(gdl, &ntm.commercial_modes, &ntm),
-        &["Bus", "Metro", "RER"]
+        vec!["Bus", "Metro", "RER"],
+        get(gdl, &ntm.commercial_modes, &ntm)
     );
-    assert_eq!(get(gdl, &ntm.networks, &ntm), &["TGN"]);
-    assert_eq!(get(gdl, &ntm.contributors, &ntm), &["TGC"]);
+    assert_eq!(vec!["TGN"], get(gdl, &ntm.networks, &ntm));
+    assert_eq!(vec!["TGC"], get(gdl, &ntm.contributors, &ntm));
 
     let rera = ntm.lines.get_idx("RERA").unwrap();
     assert_eq!(
-        get(rera, &ntm.physical_modes, &ntm),
-        &["Bus", "RapidTransit"]
+        vec!["Bus", "RapidTransit"],
+        get(rera, &ntm.physical_modes, &ntm)
     );
-    assert_eq!(get(rera, &ntm.commercial_modes, &ntm), &["RER"]);
-    assert_eq!(get(rera, &ntm.networks, &ntm), &["TGN"]);
-    assert_eq!(get(rera, &ntm.contributors, &ntm), &["TGC"]);
-    assert_eq!(get(rera, &ntm.routes, &ntm), &["RERAF", "RERAB"]);
+    assert_eq!(vec!["RER"], get(rera, &ntm.commercial_modes, &ntm));
+    assert_eq!(vec!["TGN"], get(rera, &ntm.networks, &ntm));
+    assert_eq!(vec!["TGC"], get(rera, &ntm.contributors, &ntm));
+    assert_eq!(vec!["RERAF", "RERAB"], get(rera, &ntm.routes, &ntm));
     assert_eq!(
-        get(rera, &ntm.vehicle_journeys, &ntm),
-        &["RERAF1", "RERAB1"]
-    );
-    assert_eq!(
-        get(rera, &ntm.stop_points, &ntm),
-        &["GDLR", "NATR", "CDGR", "DEFR", "MTPZ", "CDGZ"]
+        vec!["RERAF1", "RERAB1"],
+        get(rera, &ntm.vehicle_journeys, &ntm)
     );
     assert_eq!(
-        get(rera, &ntm.stop_areas, &ntm),
-        &["GDL", "NAT", "CDG", "DEF", "Navitia:MTPZ", "Navitia:CDGZ"]
+        vec!["GDLR", "NATR", "CDGR", "DEFR", "MTPZ", "CDGZ"],
+        get(rera, &ntm.stop_points, &ntm)
+    );
+    assert_eq!(
+        vec!["GDL", "NAT", "CDG", "DEF", "Navitia:MTPZ", "Navitia:CDGZ"],
+        get(rera, &ntm.stop_areas, &ntm)
     );
 }
 
@@ -91,9 +92,9 @@ fn minimal() {
 fn ntfs_stop_zones() {
     let ntm = transit_model::ntfs::read("tests/fixtures/minimal_ntfs/").unwrap();
     let stop_zone_1 = ntm.stop_points.get("MTPZ").unwrap();
-    assert_eq!(stop_zone_1.stop_type, StopType::Zone);
+    assert_eq!(StopType::Zone, stop_zone_1.stop_type);
     let stop_zone_2 = ntm.stop_points.get("CDGZ").unwrap();
-    assert_eq!(stop_zone_2.stop_type, StopType::Zone);
+    assert_eq!(StopType::Zone, stop_zone_2.stop_type);
 }
 
 #[test]
@@ -162,7 +163,7 @@ fn ntfs() {
             label: None,
             url: None,
         };
-        assert_eq!(comment, &expect);
+        assert_eq!(&expect, comment);
     }
     assert_eq!(4, pt_objects.comments.len());
     let rera_comment_indexes = &pt_objects.lines.get("RERA").unwrap().comment_links;
@@ -191,7 +192,7 @@ fn ntfs() {
         "on demand transport comment",
         OnDemandTransport,
     );
-    assert_eq!(iter.next(), None);
+    assert_eq!(None, iter.next());
 
     let mut stop_time_comments = HashMap::<(Idx<VehicleJourney>, u32), Idx<Comment>>::new();
     stop_time_comments.insert(

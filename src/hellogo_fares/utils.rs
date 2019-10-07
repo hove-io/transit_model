@@ -138,7 +138,7 @@ mod tests {
         #[test]
         fn parse_fare_frame_type() {
             let frame_type: FareFrameType = "UnitPrice".parse().unwrap();
-            assert_eq!(frame_type, FareFrameType::UnitPrice)
+            assert_eq!(FareFrameType::UnitPrice, frame_type)
         }
 
         #[test]
@@ -207,7 +207,7 @@ mod tests {
                 </root>"#;
             let root: Element = xml.parse().unwrap();
             let factor = get_amount_units_factor(&root).unwrap();
-            assert_eq!(factor, dec!(21.0));
+            assert_eq!(dec!(21.0), factor);
         }
 
         #[test]
@@ -256,7 +256,7 @@ mod tests {
                 </FareFrame>"#;
             let unit_price_frame: Element = xml.parse().unwrap();
             let unit_price = get_unit_price(&unit_price_frame).unwrap();
-            assert_eq!(unit_price, dec!(0.011));
+            assert_eq!(dec!(0.011), unit_price);
         }
 
         #[test]
@@ -423,8 +423,8 @@ mod tests {
                 </ResourceFrame>"#;
             let resource_frame: Element = xml.parse().unwrap();
             let (start, end) = get_validity(&resource_frame).unwrap();
-            assert_eq!(start, NaiveDate::from_ymd(2019, 01, 01));
-            assert_eq!(end, NaiveDate::from_ymd(2019, 12, 31));
+            assert_eq!(NaiveDate::from_ymd(2019, 01, 01), start);
+            assert_eq!(NaiveDate::from_ymd(2019, 12, 31), end);
         }
 
         #[test]
@@ -531,7 +531,7 @@ mod tests {
                 </FareFrame>"#;
             let fare_frame: Element = xml.parse().unwrap();
             let currency = get_currency(&fare_frame).unwrap();
-            assert_eq!(currency, "EUR");
+            assert_eq!("EUR", currency);
         }
 
         #[test]
@@ -587,7 +587,7 @@ mod tests {
                 </root>"#;
             let root: Element = xml.parse().unwrap();
             let distance_matrix_elements = get_distance_matrix_elements(&root).unwrap();
-            assert_eq!(distance_matrix_elements.len(), 2);
+            assert_eq!(2, distance_matrix_elements.len());
         }
 
         #[test]
@@ -601,7 +601,7 @@ mod tests {
                 </root>"#;
             let root: Element = xml.parse().unwrap();
             let distance_matrix_elements = get_distance_matrix_elements(&root).unwrap();
-            assert_eq!(distance_matrix_elements.len(), 0);
+            assert_eq!(0, distance_matrix_elements.len());
         }
 
         #[test]

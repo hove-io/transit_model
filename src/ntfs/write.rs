@@ -754,7 +754,6 @@ mod tests {
     mod has_constraints {
         use super::*;
         use pretty_assertions::assert_eq;
-        use std::default::Default;
 
         impl Default for TicketUse {
             fn default() -> Self {
@@ -771,28 +770,28 @@ mod tests {
         #[test]
         fn no_constraints() {
             let ticket_use = TicketUse::default();
-            assert_eq!(has_constraints(&ticket_use), false);
+            assert_eq!(false, has_constraints(&ticket_use));
         }
 
         #[test]
         fn no_constraints_with_zero_transfers() {
             let mut ticket_use = TicketUse::default();
             ticket_use.max_transfers = Some(0);
-            assert_eq!(has_constraints(&ticket_use), false);
+            assert_eq!(false, has_constraints(&ticket_use));
         }
 
         #[test]
         fn transfer_constraint() {
             let mut ticket_use = TicketUse::default();
             ticket_use.max_transfers = Some(1);
-            assert_eq!(has_constraints(&ticket_use), true);
+            assert_eq!(true, has_constraints(&ticket_use));
         }
 
         #[test]
         fn boarding_constraint() {
             let mut ticket_use = TicketUse::default();
             ticket_use.boarding_time_limit = Some(666);
-            assert_eq!(has_constraints(&ticket_use), true);
+            assert_eq!(true, has_constraints(&ticket_use));
         }
     }
 }

@@ -552,9 +552,10 @@ pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use crate::model::Collections;
-    use crate::ntfs::read;
+    use super::*;
     use crate::test_utils::*;
+    use pretty_assertions::assert_eq;
+
     #[test]
     fn read_stop_points_with_no_parent() {
         let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
@@ -563,14 +564,14 @@ mod tests {
         test_in_tmp_dir(|path| {
             create_file_with_content(path, "stops.txt", stops_content);
             let mut collections = Collections::default();
-            read::manage_stops(&mut collections, path).unwrap();
-            assert_eq!(collections.stop_points.len(), 1);
+            manage_stops(&mut collections, path).unwrap();
+            assert_eq!(1, collections.stop_points.len());
             let stop_point = collections.stop_points.values().next().unwrap();
-            assert_eq!(stop_point.id, "sp:01");
-            assert_eq!(stop_point.stop_area_id, "Navitia:sp:01");
-            assert_eq!(collections.stop_areas.len(), 1);
+            assert_eq!("sp:01", stop_point.id);
+            assert_eq!("Navitia:sp:01", stop_point.stop_area_id);
+            assert_eq!(1, collections.stop_areas.len());
             let stop_area = collections.stop_areas.values().next().unwrap();
-            assert_eq!(stop_area.id, "Navitia:sp:01");
+            assert_eq!("Navitia:sp:01", stop_area.id);
         });
     }
 }

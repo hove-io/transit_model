@@ -450,14 +450,14 @@ mod tests {
             };
             collections.contributors.push(contributor).unwrap();
             let prefix = get_prefix(&collections).unwrap();
-            assert_eq!(prefix, "PRE");
+            assert_eq!("PRE", prefix);
         }
 
         #[test]
         fn no_prefix() {
             let collections = Collections::default();
             let prefix = get_prefix(&collections);
-            assert_eq!(prefix, None);
+            assert_eq!(None, prefix);
         }
     }
 
@@ -544,9 +544,9 @@ mod tests {
             let xml = r#"<DistanceMatrixElement id="ticket:1" />"#;
             let distance_matrix_element: Element = xml.parse().unwrap();
             let ticket = Ticket::try_from(&distance_matrix_element).unwrap();
-            assert_eq!(ticket.id, "ticket:1");
-            assert_eq!(ticket.name, "Ticket Origin-Destination");
-            assert_eq!(ticket.comment, None);
+            assert_eq!("ticket:1", ticket.id);
+            assert_eq!("Ticket Origin-Destination", ticket.name);
+            assert_eq!(None, ticket.comment);
         }
 
         #[test]
@@ -586,11 +586,11 @@ mod tests {
             let ticket_price =
                 TicketPrice::try_from((ticket_id, price, currency, (validity_start, validity_end)))
                     .unwrap();
-            assert_eq!(ticket_price.ticket_id, String::from("ticket:1"));
-            assert_eq!(ticket_price.price, dec!(4.2));
-            assert_eq!(ticket_price.currency, String::from("EUR"));
-            assert_eq!(ticket_price.ticket_validity_start, validity_start);
-            assert_eq!(ticket_price.ticket_validity_end, validity_end);
+            assert_eq!(String::from("ticket:1"), ticket_price.ticket_id);
+            assert_eq!(dec!(4.2), ticket_price.price);
+            assert_eq!(String::from("EUR"), ticket_price.currency);
+            assert_eq!(validity_start, ticket_price.ticket_validity_start);
+            assert_eq!(validity_end, ticket_price.ticket_validity_end);
         }
 
         #[test]
@@ -614,11 +614,11 @@ mod tests {
         fn valid_ticket_use() {
             let ticket_id = String::from("ticket:1");
             let ticket_use = TicketUse::from(ticket_id);
-            assert_eq!(ticket_use.id, String::from("TU:ticket:1"));
-            assert_eq!(ticket_use.ticket_id, String::from("ticket:1"));
-            assert_eq!(ticket_use.max_transfers.unwrap(), 0);
-            assert_eq!(ticket_use.boarding_time_limit, None);
-            assert_eq!(ticket_use.alighting_time_limit, None);
+            assert_eq!(String::from("TU:ticket:1"), ticket_use.id);
+            assert_eq!(String::from("ticket:1"), ticket_use.ticket_id);
+            assert_eq!(0, ticket_use.max_transfers.unwrap());
+            assert_eq!(None, ticket_use.boarding_time_limit);
+            assert_eq!(None, ticket_use.alighting_time_limit);
         }
     }
 
@@ -632,14 +632,14 @@ mod tests {
             let line_id = String::from("line:1");
             let ticket_use_perimeter = TicketUsePerimeter::from((ticket_use_id, line_id));
             assert_eq!(
-                ticket_use_perimeter.ticket_use_id,
-                String::from("ticket_use:1")
+                String::from("ticket_use:1"),
+                ticket_use_perimeter.ticket_use_id
             );
-            assert_eq!(ticket_use_perimeter.object_id, String::from("line:1"));
-            assert_eq!(ticket_use_perimeter.object_type, ObjectType::Line);
+            assert_eq!(String::from("line:1"), ticket_use_perimeter.object_id);
+            assert_eq!(ObjectType::Line, ticket_use_perimeter.object_type);
             assert_eq!(
-                ticket_use_perimeter.perimeter_action,
-                PerimeterAction::Included
+                PerimeterAction::Included,
+                ticket_use_perimeter.perimeter_action
             );
         }
     }
@@ -656,20 +656,20 @@ mod tests {
             let ticket_use_restriction =
                 TicketUseRestriction::from((ticket_use_id, (origin, destination)));
             assert_eq!(
-                ticket_use_restriction.ticket_use_id,
-                String::from("ticket_use:1")
+                String::from("ticket_use:1"),
+                ticket_use_restriction.ticket_use_id
             );
             assert_eq!(
-                ticket_use_restriction.restriction_type,
-                RestrictionType::OriginDestination
+                RestrictionType::OriginDestination,
+                ticket_use_restriction.restriction_type
             );
             assert_eq!(
-                ticket_use_restriction.use_origin,
-                String::from("stop_area:1")
+                String::from("stop_area:1"),
+                ticket_use_restriction.use_origin
             );
             assert_eq!(
-                ticket_use_restriction.use_destination,
-                String::from("stop_area:2")
+                String::from("stop_area:2"),
+                ticket_use_restriction.use_destination
             );
         }
     }
@@ -691,7 +691,7 @@ mod tests {
                 </DistanceMatrixElement>"#;
             let distance_element_matrix: Element = xml.parse().unwrap();
             let price = calculate_direct_price(&distance_element_matrix).unwrap();
-            assert_eq!(price, dec!(21.0));
+            assert_eq!(dec!(21.0), price);
         }
 
         #[test]
@@ -743,7 +743,7 @@ mod tests {
                 </DistanceMatrixElement>"#;
             let distance_element_matrix: Element = xml.parse().unwrap();
             let distance = get_distance(&distance_element_matrix).unwrap();
-            assert_eq!(distance, 50);
+            assert_eq!(50, distance);
         }
 
         #[test]
@@ -786,7 +786,7 @@ mod tests {
             let service_frame: Element = SERVICE_XML.parse().unwrap();
             let fare_frame: Element = FARE_FRAME_XML.parse().unwrap();
             let line_id = get_line_id(&fare_frame, &service_frame).unwrap();
-            assert_eq!(line_id, "B42");
+            assert_eq!("B42", line_id);
         }
 
         #[test]
@@ -844,7 +844,7 @@ mod tests {
             let service_frame: Element = SERVICE_XML.parse().unwrap();
             let fare_frame: Element = fare_frame_xml.parse().unwrap();
             let line_id = get_line_id(&fare_frame, &service_frame).unwrap();
-            assert_eq!(line_id, "Bla");
+            assert_eq!("Bla", line_id);
         }
 
         #[test]
@@ -990,24 +990,24 @@ mod tests {
                 PREFIX_WITH_COLON,
             )
             .unwrap();
-            assert_eq!(ticket_use_restrictions.len(), 2);
+            assert_eq!(2, ticket_use_restrictions.len());
             let ticket_use_restriction = &ticket_use_restrictions[0];
             assert_eq!(
-                ticket_use_restriction.0,
-                format!("{}sa:1", PREFIX_WITH_COLON)
+                format!("{}sa:1", PREFIX_WITH_COLON),
+                ticket_use_restriction.0
             );
             assert_eq!(
-                ticket_use_restriction.1,
-                format!("{}sa:2", PREFIX_WITH_COLON)
+                format!("{}sa:2", PREFIX_WITH_COLON),
+                ticket_use_restriction.1
             );
             let ticket_use_restriction = &ticket_use_restrictions[1];
             assert_eq!(
-                ticket_use_restriction.0,
-                format!("{}sa:1", PREFIX_WITH_COLON)
+                format!("{}sa:1", PREFIX_WITH_COLON),
+                ticket_use_restriction.0
             );
             assert_eq!(
-                ticket_use_restriction.1,
-                format!("{}sa:3", PREFIX_WITH_COLON)
+                format!("{}sa:3", PREFIX_WITH_COLON),
+                ticket_use_restriction.1
             );
         }
 
@@ -1179,7 +1179,7 @@ mod tests {
                 PREFIX_WITH_COLON,
             )
             .unwrap();
-            assert_eq!(origin_destinations.len(), 0);
+            assert_eq!(0, origin_destinations.len());
         }
 
         #[test]
@@ -1215,7 +1215,7 @@ mod tests {
                 PREFIX_WITH_COLON,
             )
             .unwrap();
-            assert_eq!(origin_destinations.len(), 0);
+            assert_eq!(0, origin_destinations.len());
         }
     }
 }

@@ -261,11 +261,11 @@ mod tests {
 "010G0001","Bristol Bus Station",358929,173523
 "010G0002","Temple Meads",359657,172418"#;
             let stop_areas = read_stop_areas(csv_content.as_bytes()).unwrap();
-            assert_eq!(stop_areas.len(), 2);
+            assert_eq!(2, stop_areas.len());
             let stop_area = stop_areas.get("010G0001").unwrap();
-            assert_eq!(stop_area.name, "Bristol Bus Station");
+            assert_eq!("Bristol Bus Station", stop_area.name);
             let stop_area = stop_areas.get("010G0002").unwrap();
-            assert_eq!(stop_area.name, "Temple Meads");
+            assert_eq!("Temple Meads", stop_area.name);
         }
 
         #[test]
@@ -319,11 +319,11 @@ mod tests {
                 })
                 .unwrap();
             let stops_in_area = read_stops_in_area(csv_content.as_bytes(), &stop_areas).unwrap();
-            assert_eq!(stops_in_area.len(), 2);
+            assert_eq!(2, stops_in_area.len());
             let stop_area_code = stops_in_area.get("01000053220").unwrap();
-            assert_eq!(stop_area_code, "010G0005");
+            assert_eq!("010G0005", stop_area_code);
             let stop_area_code = stops_in_area.get("0100BDMNSTR0").unwrap();
-            assert_eq!(stop_area_code, "910GBDMNSTR");
+            assert_eq!("910GBDMNSTR", stop_area_code);
         }
 
         #[test]
@@ -339,9 +339,9 @@ mod tests {
                 })
                 .unwrap();
             let stops_in_area = read_stops_in_area(csv_content.as_bytes(), &stop_areas).unwrap();
-            assert_eq!(stops_in_area.len(), 1);
+            assert_eq!(1, stops_in_area.len());
             let stop_area_code = stops_in_area.get("01000053220").unwrap();
-            assert_eq!(stop_area_code, "010G0005");
+            assert_eq!("010G0005", stop_area_code);
         }
 
         #[test]
@@ -371,19 +371,19 @@ mod tests {
                 read_stops(csv_content.as_bytes(), &stop_in_area).unwrap();
 
             let stop_point = stop_points.get("0100053316").unwrap();
-            assert_eq!(stop_point.name, "Broad Walk Shops");
+            assert_eq!("Broad Walk Shops", stop_point.name);
             assert!(stop_point
                 .codes
                 .contains(&(String::from("NaptanCode"), String::from("bstjpdm"))));
             let stop_point = stop_points.get("0100053264").unwrap();
-            assert_eq!(stop_point.name, "Alberton Road");
+            assert_eq!("Alberton Road", stop_point.name);
             assert!(stop_point
                 .codes
                 .contains(&(String::from("NaptanCode"), String::from("bstmjdp"))));
 
-            assert_eq!(stop_areas.len(), 1);
+            assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.get("Navitia:0100053264").unwrap();
-            assert_eq!(stop_area.name, "Alberton Road");
+            assert_eq!("Alberton Road", stop_area.name);
         }
 
         #[test]

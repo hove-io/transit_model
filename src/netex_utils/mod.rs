@@ -101,7 +101,7 @@ mod tests {
         #[test]
         fn parse_frame_type() {
             let frame_type: FrameType = "ServiceFrame".parse().unwrap();
-            assert_eq!(frame_type, FrameType::Service);
+            assert_eq!(FrameType::Service, frame_type);
         }
 
         #[test]
@@ -124,9 +124,9 @@ mod tests {
                 </root>"#;
             let root: Element = xml.parse().unwrap();
             let frames = parse_frames_by_type(&root).unwrap();
-            assert_eq!(frames.keys().count(), 2);
-            assert_eq!(frames.get(&FrameType::Service).unwrap().len(), 1);
-            assert_eq!(frames.get(&FrameType::Fare).unwrap().len(), 2);
+            assert_eq!(2, frames.keys().count());
+            assert_eq!(1, frames.get(&FrameType::Service).unwrap().len());
+            assert_eq!(2, frames.get(&FrameType::Fare).unwrap().len());
         }
 
         #[test]
@@ -150,7 +150,7 @@ mod tests {
             let frame: Element = r#"<frame xmlns="test" />"#.parse().unwrap();
             frames.insert(FrameType::Resource, vec![&frame]);
             let resource_frame = get_only_frame(&frames, FrameType::Resource).unwrap();
-            assert_eq!(resource_frame.name(), "frame");
+            assert_eq!("frame", resource_frame.name());
         }
 
         #[test]
@@ -186,7 +186,7 @@ mod tests {
                 </root>"#;
             let root: Element = xml.parse().unwrap();
             let value: u32 = get_value_in_keylist(&root, "key").unwrap();
-            assert_eq!(value, 42);
+            assert_eq!(42, value);
         }
 
         #[test]

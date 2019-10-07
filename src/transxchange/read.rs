@@ -917,8 +917,8 @@ mod tests {
                 start_date,
                 end_date,
             } = get_service_validity_period(&root, max_end_date).unwrap();
-            assert_eq!(start_date, Date::from_ymd(2019, 1, 1));
-            assert_eq!(end_date, Date::from_ymd(2019, 3, 31));
+            assert_eq!(Date::from_ymd(2019, 1, 1), start_date);
+            assert_eq!(Date::from_ymd(2019, 3, 31), end_date);
         }
 
         #[test]
@@ -938,8 +938,8 @@ mod tests {
                 start_date,
                 end_date,
             } = get_service_validity_period(&root, max_end_date).unwrap();
-            assert_eq!(start_date, Date::from_ymd(2019, 1, 1));
-            assert_eq!(end_date, max_end_date);
+            assert_eq!(Date::from_ymd(2019, 1, 1), start_date);
+            assert_eq!(max_end_date, end_date);
         }
 
         #[test]
@@ -960,8 +960,8 @@ mod tests {
                 start_date,
                 end_date,
             } = get_service_validity_period(&root, max_end_date).unwrap();
-            assert_eq!(start_date, Date::from_ymd(2000, 1, 1));
-            assert_eq!(end_date, max_end_date);
+            assert_eq!(Date::from_ymd(2000, 1, 1), start_date);
+            assert_eq!(max_end_date, end_date);
         }
 
         #[test]
@@ -1035,8 +1035,8 @@ mod tests {
                 end_date,
             };
             update_validity_period(&mut dataset, &service_validity_period);
-            assert_eq!(dataset.start_date, start_date);
-            assert_eq!(dataset.end_date, end_date);
+            assert_eq!(start_date, dataset.start_date);
+            assert_eq!(end_date, dataset.end_date);
         }
 
         #[test]
@@ -1055,8 +1055,8 @@ mod tests {
                 end_date,
             };
             update_validity_period(&mut dataset, &service_validity_period);
-            assert_eq!(dataset.start_date, start_date);
-            assert_eq!(dataset.end_date, end_date);
+            assert_eq!(start_date, dataset.start_date);
+            assert_eq!(end_date, dataset.end_date);
         }
 
         #[test]
@@ -1075,13 +1075,14 @@ mod tests {
                 end_date: Date::from_ymd(2019, 4, 30),
             };
             update_validity_period(&mut dataset, &service_validity_period);
-            assert_eq!(dataset.start_date, start_date);
-            assert_eq!(dataset.end_date, end_date);
+            assert_eq!(start_date, dataset.start_date);
+            assert_eq!(end_date, dataset.end_date);
         }
     }
 
     mod update_validity_period_from_transxchange {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn has_start_and_end() {
@@ -1117,16 +1118,17 @@ mod tests {
                     .unwrap();
             let mut datasets_iter = datasets.values();
             let dataset = datasets_iter.next().unwrap();
-            assert_eq!(dataset.start_date, Date::from_ymd(2019, 1, 1));
-            assert_eq!(dataset.end_date, Date::from_ymd(2019, 6, 30));
+            assert_eq!(Date::from_ymd(2019, 1, 1), dataset.start_date);
+            assert_eq!(Date::from_ymd(2019, 6, 30), dataset.end_date);
             let dataset = datasets_iter.next().unwrap();
-            assert_eq!(dataset.start_date, Date::from_ymd(2019, 3, 1));
-            assert_eq!(dataset.end_date, Date::from_ymd(2019, 4, 30));
+            assert_eq!(Date::from_ymd(2019, 3, 1), dataset.start_date);
+            assert_eq!(Date::from_ymd(2019, 4, 30), dataset.end_date);
         }
     }
 
     mod get_by_reference {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn has_operator() {
@@ -1143,9 +1145,9 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let operator = get_by_reference(&root, "Operator", "op1").unwrap();
             let id = operator.try_only_child("OperatorCode").unwrap().text();
-            assert_eq!(id, "SOME_CODE");
+            assert_eq!("SOME_CODE", id);
             let name = operator.try_only_child("TradingName").unwrap().text();
-            assert_eq!(name, "Some name");
+            assert_eq!("Some name", name);
         }
 
         #[test]
@@ -1162,6 +1164,7 @@ mod tests {
 
     mod load_network {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn has_network() {
@@ -1186,9 +1189,9 @@ mod tests {
             </root>"#;
             let root: Element = xml.parse().unwrap();
             let network = load_network(&root).unwrap();
-            assert_eq!(network.name, String::from("Some name"));
-            assert_eq!(network.url, Some(String::from("www.example.com")));
-            assert_eq!(network.phone, Some(String::from("123-456-7890")));
+            assert_eq!(String::from("Some name"), network.name);
+            assert_eq!(Some(String::from("www.example.com")), network.url);
+            assert_eq!(Some(String::from("123-456-7890")), network.phone);
         }
 
         #[test]
@@ -1208,7 +1211,7 @@ mod tests {
             </root>"#;
             let root: Element = xml.parse().unwrap();
             let network = load_network(&root).unwrap();
-            assert_eq!(network.name, String::from("Some name"));
+            assert_eq!(String::from("Some name"), network.name);
         }
 
         #[test]
@@ -1267,12 +1270,13 @@ mod tests {
             </root>"#;
             let root: Element = xml.parse().unwrap();
             let network = load_network(&root).unwrap();
-            assert_eq!(network.name, UNDEFINED.to_string())
+            assert_eq!(UNDEFINED.to_string(), network.name)
         }
     }
 
     mod load_companies {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn has_company() {
@@ -1291,9 +1295,9 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let companies = load_companies(&root).unwrap();
             let company = companies.get("SOME_CODE").unwrap();
-            assert_eq!(company.name, String::from("Some name"));
+            assert_eq!(String::from("Some name"), company.name);
             let company = companies.get("OTHER_CODE").unwrap();
-            assert_eq!(company.name, String::from("Other name"));
+            assert_eq!(String::from("Other name"), company.name);
         }
 
         #[test]
@@ -1324,12 +1328,13 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let companies = load_companies(&root).unwrap();
             let company = companies.get("SOME_CODE").unwrap();
-            assert_eq!(company.name, UNDEFINED.to_string())
+            assert_eq!(UNDEFINED.to_string(), company.name)
         }
     }
 
     mod load_commercial_physical_modes {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn has_commercial_physical_modes() {
@@ -1343,11 +1348,11 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let (commercial_mode, physical_mode) = load_commercial_physical_modes(&root).unwrap();
 
-            assert_eq!(commercial_mode.id, String::from("Bus"));
-            assert_eq!(commercial_mode.name, String::from("Bus"));
+            assert_eq!(String::from("Bus"), commercial_mode.id);
+            assert_eq!(String::from("Bus"), commercial_mode.name);
 
-            assert_eq!(physical_mode.id, String::from("Bus"));
-            assert_eq!(physical_mode.name, String::from("Bus"));
+            assert_eq!(String::from("Bus"), physical_mode.id);
+            assert_eq!(String::from("Bus"), physical_mode.name);
         }
 
         #[test]
@@ -1362,16 +1367,17 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let (commercial_mode, physical_mode) = load_commercial_physical_modes(&root).unwrap();
 
-            assert_eq!(commercial_mode.id, String::from("Bus"));
-            assert_eq!(commercial_mode.name, String::from("Bus"));
+            assert_eq!(String::from("Bus"), commercial_mode.id);
+            assert_eq!(String::from("Bus"), commercial_mode.name);
 
-            assert_eq!(physical_mode.id, String::from("Bus"));
-            assert_eq!(physical_mode.name, String::from("Bus"));
+            assert_eq!(String::from("Bus"), physical_mode.id);
+            assert_eq!(String::from("Bus"), physical_mode.name);
         }
     }
 
     mod load_lines {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn has_line() {
@@ -1405,28 +1411,28 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let lines = load_lines(&root, "SSWL", "Bus").unwrap();
             let line = lines.get("SCBO001:SL1").unwrap();
-            assert_eq!(line.code, Some(String::from("1")));
-            assert_eq!(line.name, String::from("Cwmbran - Cwmbran via Thornhill"));
-            assert_eq!(line.forward_name, Some(String::from("Cwmbran North")));
+            assert_eq!(Some(String::from("1")), line.code);
+            assert_eq!(String::from("Cwmbran - Cwmbran via Thornhill"), line.name);
+            assert_eq!(Some(String::from("Cwmbran North")), line.forward_name);
             // TODO: Fill up the forward direction
-            assert_eq!(line.forward_direction, None);
-            assert_eq!(line.backward_name, Some(String::from("Cwmbran South")));
+            assert_eq!(None, line.forward_direction);
+            assert_eq!(Some(String::from("Cwmbran South")), line.backward_name);
             // TODO: Fill up the backward direction
-            assert_eq!(line.backward_direction, None);
-            assert_eq!(line.network_id, String::from("SSWL"));
-            assert_eq!(line.commercial_mode_id, String::from("Bus"));
+            assert_eq!(None, line.backward_direction);
+            assert_eq!(String::from("SSWL"), line.network_id);
+            assert_eq!(String::from("Bus"), line.commercial_mode_id);
 
             let line = lines.get("SCBO001:SL2").unwrap();
-            assert_eq!(line.code, Some(String::from("2")));
-            assert_eq!(line.name, String::from("Cwmbran - Cwmbran via Thornhill"));
-            assert_eq!(line.forward_name, Some(String::from("Cwmbran North")));
+            assert_eq!(Some(String::from("2")), line.code);
+            assert_eq!(String::from("Cwmbran - Cwmbran via Thornhill"), line.name);
+            assert_eq!(Some(String::from("Cwmbran North")), line.forward_name);
             // TODO: Fill up the forward direction
-            assert_eq!(line.forward_direction, None);
-            assert_eq!(line.backward_name, Some(String::from("Cwmbran South")));
+            assert_eq!(None, line.forward_direction);
+            assert_eq!(Some(String::from("Cwmbran South")), line.backward_name);
             // TODO: Fill up the backward direction
-            assert_eq!(line.backward_direction, None);
-            assert_eq!(line.network_id, String::from("SSWL"));
-            assert_eq!(line.commercial_mode_id, String::from("Bus"));
+            assert_eq!(None, line.backward_direction);
+            assert_eq!(String::from("SSWL"), line.network_id);
+            assert_eq!(String::from("Bus"), line.commercial_mode_id);
         }
 
         #[test]
@@ -1457,16 +1463,16 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let lines = load_lines(&root, "SSWL", "Bus").unwrap();
             let line = lines.get("SCBO001:SL1").unwrap();
-            assert_eq!(line.code, Some(String::from("1")));
-            assert_eq!(line.name, String::from(UNDEFINED));
-            assert_eq!(line.forward_name, Some(String::from("Cwmbran North")));
+            assert_eq!(Some(String::from("1")), line.code);
+            assert_eq!(String::from(UNDEFINED), line.name);
+            assert_eq!(Some(String::from("Cwmbran North")), line.forward_name);
             // TODO: Fill up the forward direction
-            assert_eq!(line.forward_direction, None);
-            assert_eq!(line.backward_name, Some(String::from("Cwmbran South")));
+            assert_eq!(None, line.forward_direction);
+            assert_eq!(Some(String::from("Cwmbran South")), line.backward_name);
             // TODO: Fill up the backward direction
-            assert_eq!(line.backward_direction, None);
-            assert_eq!(line.network_id, String::from("SSWL"));
-            assert_eq!(line.commercial_mode_id, String::from("Bus"));
+            assert_eq!(None, line.backward_direction);
+            assert_eq!(String::from("SSWL"), line.network_id);
+            assert_eq!(String::from("Bus"), line.commercial_mode_id);
         }
     }
 
@@ -1477,7 +1483,7 @@ mod tests {
         #[test]
         fn parse_duration() {
             let time = parse_duration_in_seconds("PT1H30M5S").unwrap();
-            assert_eq!(time, Time::new(1, 30, 5));
+            assert_eq!(Time::new(1, 30, 5), time);
         }
 
         #[test]
@@ -1489,6 +1495,7 @@ mod tests {
 
     mod get_duration_from {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn get_duration() {
@@ -1497,7 +1504,7 @@ mod tests {
             </root>"#;
             let root: Element = xml.parse().unwrap();
             let time = get_duration_from(&root, "duration");
-            assert_eq!(time, Time::new(0, 0, 30));
+            assert_eq!(Time::new(0, 0, 30), time);
         }
 
         #[test]
@@ -1505,12 +1512,13 @@ mod tests {
             let xml = r#"<root />"#;
             let root: Element = xml.parse().unwrap();
             let time = get_duration_from(&root, "duration");
-            assert_eq!(time, Time::new(0, 0, 0));
+            assert_eq!(Time::new(0, 0, 0), time);
         }
     }
 
     mod get_pickup_and_dropoff_types {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn get_pickup() {
@@ -1519,8 +1527,8 @@ mod tests {
             </root>"#;
             let root: Element = xml.parse().unwrap();
             let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
-            assert_eq!(pickup_type, 0);
-            assert_eq!(drop_off_type, 1);
+            assert_eq!(0, pickup_type);
+            assert_eq!(1, drop_off_type);
         }
 
         #[test]
@@ -1530,8 +1538,8 @@ mod tests {
             </root>"#;
             let root: Element = xml.parse().unwrap();
             let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
-            assert_eq!(pickup_type, 1);
-            assert_eq!(drop_off_type, 0);
+            assert_eq!(1, pickup_type);
+            assert_eq!(0, drop_off_type);
         }
 
         #[test]
@@ -1541,8 +1549,8 @@ mod tests {
             </root>"#;
             let root: Element = xml.parse().unwrap();
             let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
-            assert_eq!(pickup_type, 0);
-            assert_eq!(drop_off_type, 0);
+            assert_eq!(0, pickup_type);
+            assert_eq!(0, drop_off_type);
         }
 
         #[test]
@@ -1550,8 +1558,8 @@ mod tests {
             let xml = r#"<root />"#;
             let root: Element = xml.parse().unwrap();
             let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
-            assert_eq!(pickup_type, 0);
-            assert_eq!(drop_off_type, 0);
+            assert_eq!(0, pickup_type);
+            assert_eq!(0, drop_off_type);
         }
     }
 
@@ -1604,30 +1612,30 @@ mod tests {
                 calculate_stop_times(&stop_points, &root, Time::new(0, 0, 0), &Vec::new()).unwrap();
             let stop_time = &stop_times[0];
             assert_eq!(
-                stop_time.stop_point_idx,
-                stop_points.get_idx("sp:1").unwrap()
+                stop_points.get_idx("sp:1").unwrap(),
+                stop_time.stop_point_idx
             );
-            assert_eq!(stop_time.sequence, 1);
-            assert_eq!(stop_time.arrival_time, Time::new(0, 0, 0));
-            assert_eq!(stop_time.departure_time, Time::new(0, 1, 0));
+            assert_eq!(1, stop_time.sequence);
+            assert_eq!(Time::new(0, 0, 0), stop_time.arrival_time);
+            assert_eq!(Time::new(0, 1, 0), stop_time.departure_time);
 
             let stop_time = &stop_times[1];
             assert_eq!(
-                stop_time.stop_point_idx,
-                stop_points.get_idx("sp:2").unwrap()
+                stop_points.get_idx("sp:2").unwrap(),
+                stop_time.stop_point_idx
             );
-            assert_eq!(stop_time.sequence, 2);
-            assert_eq!(stop_time.arrival_time, Time::new(0, 11, 0));
-            assert_eq!(stop_time.departure_time, Time::new(0, 12, 30));
+            assert_eq!(2, stop_time.sequence);
+            assert_eq!(Time::new(0, 11, 0), stop_time.arrival_time);
+            assert_eq!(Time::new(0, 12, 30), stop_time.departure_time);
 
             let stop_time = &stop_times[2];
             assert_eq!(
-                stop_time.stop_point_idx,
-                stop_points.get_idx("sp:3").unwrap()
+                stop_points.get_idx("sp:3").unwrap(),
+                stop_time.stop_point_idx
             );
-            assert_eq!(stop_time.sequence, 3);
-            assert_eq!(stop_time.arrival_time, Time::new(0, 17, 30));
-            assert_eq!(stop_time.departure_time, Time::new(0, 17, 30));
+            assert_eq!(3, stop_time.sequence);
+            assert_eq!(Time::new(0, 17, 30), stop_time.arrival_time);
+            assert_eq!(Time::new(0, 17, 30), stop_time.departure_time);
         }
 
         #[test]
@@ -1908,7 +1916,7 @@ mod tests {
             let dates = generate_date_set(2020, 12, 31);
 
             let duplicate = find_duplicate_calendar(&collections, &calendars, &dates);
-            assert_eq!(duplicate, None);
+            assert_eq!(None, duplicate);
         }
 
         #[test]
@@ -1917,7 +1925,7 @@ mod tests {
             let dates = generate_date_set(2018, 1, 1);
 
             let calendar = find_duplicate_calendar(&collections, &calendars, &dates).unwrap();
-            assert_eq!(&calendar.id, "calendar:1");
+            assert_eq!("calendar:1", &calendar.id);
         }
 
         #[test]
@@ -1926,7 +1934,7 @@ mod tests {
             let dates = generate_date_set(2019, 6, 15);
 
             let calendar = find_duplicate_calendar(&collections, &calendars, &dates).unwrap();
-            assert_eq!(&calendar.id, "calendar:2");
+            assert_eq!("calendar:2", &calendar.id);
         }
     }
 }
