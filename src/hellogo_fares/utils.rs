@@ -19,41 +19,45 @@ use chrono::NaiveDate;
 use failure::{bail, format_err, Error};
 use minidom::Element;
 use rust_decimal::Decimal;
-use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
-use std::str::FromStr;
+use std::{
+    fmt::{Display, Formatter},
+    str::FromStr,
+};
 
 #[derive(Debug, Eq, Hash, PartialEq)]
-pub enum FrameType {
-    Resource,
-    Service,
+pub enum FareFrameType {
     UnitPrice,
     DistanceMatrix,
     DirectPriceMatrix,
 }
 
-impl Display for FrameType {
+impl Display for FareFrameType {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match self {
-            FrameType::Resource => write!(f, "Resource"),
-            FrameType::Service => write!(f, "Service"),
-            FrameType::UnitPrice => write!(f, "UnitPrice"),
-            FrameType::DistanceMatrix => write!(f, "DistanceMatrix"),
-            FrameType::DirectPriceMatrix => write!(f, "DirectPriceMatrix"),
+            FareFrameType::UnitPrice => write!(f, "UnitPrice"),
+            FareFrameType::DistanceMatrix => write!(f, "DistanceMatrix"),
+            FareFrameType::DirectPriceMatrix => write!(f, "DirectPriceMatrix"),
         }
     }
 }
 
-impl FromStr for FrameType {
+impl FromStr for FareFrameType {
     type Err = Error;
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
-            "UnitPrice" => Ok(FrameType::UnitPrice),
-            "DistanceMatrix" => Ok(FrameType::DistanceMatrix),
-            "DirectPriceMatrix" => Ok(FrameType::DirectPriceMatrix),
-            _ => bail!("Failed to convert '{}' into a FrameType", s),
+            "UnitPrice" => Ok(FareFrameType::UnitPrice),
+            "DistanceMatrix" => Ok(FareFrameType::DistanceMatrix),
+            "DirectPriceMatrix" => Ok(FareFrameType::DirectPriceMatrix),
+            _ => bail!("Failed to convert '{}' into a FareFrameType", s),
         }
     }
+}
+
+pub fn get_fare_frame_type(frame: &Element) -> Result<FareFrameType> {
+    let fare_structure = frame
+        .try_only_child("fareStructures")?
+        .try_only_child("FareStructure")?;
+    netex_utils::get_value_in_keylist(fare_structure, "FareStructureType")
 }
 
 pub fn get_amount_units_factor(element: &Element) -> Result<Decimal> {
@@ -113,50 +117,6 @@ pub fn get_currency(fare_frame: &Element) -> Result<String> {
     Ok(currency)
 }
 
-pub fn get_frame_type(frame: &Element) -> Result<FrameType> {
-    if frame.name() == "ServiceFrame" {
-        return Ok(FrameType::Service);
-    }
-    if frame.name() == "ResourceFrame" {
-        return Ok(FrameType::Resource);
-    }
-    let fare_structure = frame
-        .try_only_child("fareStructures")?
-        .try_only_child("FareStructure")?;
-    let frame_type: FrameType =
-        netex_utils::get_value_in_keylist(fare_structure, "FareStructureType")?;
-    Ok(frame_type)
-}
-
-pub fn get_fare_frames<'a>(root: &'a Element) -> Result<HashMap<FrameType, Vec<&'a Element>>> {
-    root.try_only_child("dataObjects")?
-        .try_only_child("CompositeFrame")?
-        .try_only_child("frames")?
-        .children()
-        .try_fold(HashMap::new(), |mut map, frame| {
-            let frame_type = get_frame_type(frame)?;
-            map.entry(frame_type).or_insert_with(Vec::new).push(frame);
-            Ok(map)
-        })
-}
-
-pub fn get_only_frame<'a>(
-    frames: &'a HashMap<FrameType, Vec<&'a Element>>,
-    frame_type: FrameType,
-) -> Result<&'a Element> {
-    let frame = frames
-        .get(&frame_type)
-        .ok_or_else(|| format_err!("Failed to find a '{}' frame in the Netex file", frame_type))?;
-    if frame.len() == 1 {
-        Ok(frame[0])
-    } else {
-        bail!(
-            "Failed to find a unique '{}' frame in the Netex file",
-            frame_type
-        )
-    }
-}
-
 pub fn get_distance_matrix_elements<'a>(fare_frame: &'a Element) -> Result<Vec<&'a Element>> {
     let distance_matrix_elements = fare_frame
         .try_only_child("fareStructures")?
@@ -169,26 +129,73 @@ pub fn get_distance_matrix_elements<'a>(fare_frame: &'a Element) -> Result<Vec<&
 
 #[cfg(test)]
 mod tests {
-    mod frame_type {
-        use crate::hellogo_fares::utils::FrameType;
+    use super::*;
+
+    mod fare_frame_type {
+        use super::*;
         use pretty_assertions::assert_eq;
 
         #[test]
-        fn parse_valid() {
-            let frame_type: FrameType = "UnitPrice".parse().unwrap();
-            assert_eq!(frame_type, FrameType::UnitPrice)
+        fn parse_fare_frame_type() {
+            let frame_type: FareFrameType = "UnitPrice".parse().unwrap();
+            assert_eq!(frame_type, FareFrameType::UnitPrice)
         }
 
         #[test]
-        #[should_panic(expected = "Failed to convert \\'NotAFrameType\\' into a FrameType")]
-        fn parse_invalid() {
-            "NotAFrameType".parse::<FrameType>().unwrap();
+        #[should_panic(expected = "Failed to convert \\'NotAFareFrameType\\' into a FareFrameType")]
+        fn parse_invalid_fare_frame_type() {
+            "NotAFareFrameType".parse::<FareFrameType>().unwrap();
+        }
+    }
+
+    mod get_fare_frame_type {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn parse_fare_frame_type() {
+            let xml = r#"<root>
+                    <fareStructures>
+                        <FareStructure>
+                            <KeyList>
+                                <KeyValue>
+                                    <Key>FareStructureType</Key>
+                                    <Value>DistanceMatrix</Value>
+                                </KeyValue>
+                            </KeyList>
+                        </FareStructure>
+                    </fareStructures>
+                </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let fare_frame_type = get_fare_frame_type(&root).unwrap();
+            assert_eq!(fare_frame_type, FareFrameType::DistanceMatrix);
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Failed to find a child \\'fareStructures\\' in element \\'root\\'"
+        )]
+        fn missing_fare_structures() {
+            let xml = r#"<root />"#;
+            let root: Element = xml.parse().unwrap();
+            get_fare_frame_type(&root).unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Failed to find a child \\'FareStructure\\' in element \\'fareStructures\\'"
+        )]
+        fn missing_fare_structure() {
+            let xml = r#"<root>
+                    <fareStructures />
+                </root>"#;
+            let root: Element = xml.parse().unwrap();
+            get_fare_frame_type(&root).unwrap();
         }
     }
 
     mod amount_unit_factor {
-        use super::super::get_amount_units_factor;
-        use minidom::Element;
+        use super::*;
         use pretty_assertions::assert_eq;
         use rust_decimal_macros::dec;
 
@@ -225,8 +232,7 @@ mod tests {
     }
 
     mod unit_price {
-        use super::super::get_unit_price;
-        use minidom::Element;
+        use super::*;
         use pretty_assertions::assert_eq;
         use rust_decimal_macros::dec;
 
@@ -402,9 +408,7 @@ mod tests {
     }
 
     mod validity {
-        use super::super::get_validity;
-        use chrono::NaiveDate;
-        use minidom::Element;
+        use super::*;
         use pretty_assertions::assert_eq;
 
         #[test]
@@ -515,8 +519,7 @@ mod tests {
     }
 
     mod currency {
-        use super::super::get_currency;
-        use minidom::Element;
+        use super::*;
         use pretty_assertions::assert_eq;
 
         #[test]
@@ -566,222 +569,8 @@ mod tests {
         }
     }
 
-    mod get_frame_type {
-        use super::super::get_frame_type;
-        use crate::hellogo_fares::utils::FrameType;
-        use minidom::Element;
-        use pretty_assertions::assert_eq;
-
-        #[test]
-        fn is_frame_type() {
-            let xml = r#"<ServiceFrame />"#;
-            let root: Element = xml.parse().unwrap();
-            let frame_type = get_frame_type(&root).unwrap();
-            assert_eq!(frame_type, FrameType::Service);
-        }
-
-        #[test]
-        fn has_frame_type() {
-            let xml = r#"<root>
-                    <fareStructures>
-                        <FareStructure>
-                            <KeyList>
-                                <KeyValue>
-                                    <Key>FareStructureType</Key>
-                                    <Value>DistanceMatrix</Value>
-                                </KeyValue>
-                            </KeyList>
-                        </FareStructure>
-                    </fareStructures>
-                </root>"#;
-            let root: Element = xml.parse().unwrap();
-            let frame_type = get_frame_type(&root).unwrap();
-            assert_eq!(frame_type, FrameType::DistanceMatrix);
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to find a child \\'fareStructures\\' in element \\'root\\'"
-        )]
-        fn fare_structures_not_found() {
-            let xml = r#"<root />"#;
-            let root: Element = xml.parse().unwrap();
-            get_frame_type(&root).unwrap();
-        }
-    }
-
-    mod frames {
-        use super::super::get_fare_frames;
-        use crate::hellogo_fares::utils::FrameType;
-        use minidom::Element;
-        use pretty_assertions::assert_eq;
-
-        #[test]
-        fn some_frame() {
-            let xml = r#"<root>
-                    <dataObjects>
-                        <CompositeFrame>
-                            <frames>
-                                <FareFrame>
-                                    <fareStructures>
-                                        <FareStructure>
-                                            <KeyList>
-                                                <KeyValue>
-                                                    <Key>FareStructureType</Key>
-                                                    <Value>DistanceMatrix</Value>
-                                                </KeyValue>
-                                            </KeyList>
-                                        </FareStructure>
-                                    </fareStructures>
-                                </FareFrame>
-                                <FareFrame>
-                                    <fareStructures>
-                                        <FareStructure>
-                                            <KeyList>
-                                                <KeyValue>
-                                                    <Key>FareStructureType</Key>
-                                                    <Value>UnitPrice</Value>
-                                                </KeyValue>
-                                            </KeyList>
-                                        </FareStructure>
-                                    </fareStructures>
-                                </FareFrame>
-                                <FareFrame>
-                                    <fareStructures>
-                                        <FareStructure>
-                                            <KeyList>
-                                                <KeyValue>
-                                                    <Key>FareStructureType</Key>
-                                                    <Value>DistanceMatrix</Value>
-                                                </KeyValue>
-                                            </KeyList>
-                                        </FareStructure>
-                                    </fareStructures>
-                                </FareFrame>
-                            </frames>
-                        </CompositeFrame>
-                    </dataObjects>
-                </root>"#;
-            let root: Element = xml.parse().unwrap();
-            let frames = get_fare_frames(&root).unwrap();
-            assert_eq!(frames.keys().count(), 2);
-            assert_eq!(frames.get(&FrameType::UnitPrice).unwrap().len(), 1);
-            assert_eq!(frames.get(&FrameType::DistanceMatrix).unwrap().len(), 2);
-        }
-
-        #[test]
-        #[should_panic(expected = "Failed to find a child \\'dataObjects\\' in element \\'root\\'")]
-        fn no_data_objects() {
-            let xml = r#"<root />"#;
-            let root: Element = xml.parse().unwrap();
-            get_fare_frames(&root).unwrap();
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to find a child \\'CompositeFrame\\' in element \\'dataObjects\\'"
-        )]
-        fn no_composite_frame() {
-            let xml = r#"<root>
-                    <dataObjects />
-                </root>"#;
-            let root: Element = xml.parse().unwrap();
-            get_fare_frames(&root).unwrap();
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to find a unique child \\'CompositeFrame\\' in element \\'dataObjects\\'"
-        )]
-        fn multiple_composite_frames() {
-            let xml = r#"<root>
-                    <dataObjects>
-                        <CompositeFrame />
-                        <CompositeFrame />
-                    </dataObjects>
-                </root>"#;
-            let root: Element = xml.parse().unwrap();
-            get_fare_frames(&root).unwrap();
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to find a child \\'frames\\' in element \\'CompositeFrame\\'"
-        )]
-        fn no_frames() {
-            let xml = r#"<root>
-                    <dataObjects>
-                        <CompositeFrame />
-                    </dataObjects>
-                </root>"#;
-            let root: Element = xml.parse().unwrap();
-            get_fare_frames(&root).unwrap();
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to find a child \\'KeyList\\' in element \\'FareStructure\\'"
-        )]
-        fn fold_error() {
-            let xml = r#"<root>
-                    <dataObjects>
-                        <CompositeFrame>
-                            <frames>
-                                <FareFrame>
-                                    <fareStructures>
-                                        <FareStructure />
-                                    </fareStructures>
-                                </FareFrame>
-                            </frames>
-                        </CompositeFrame>
-                    </dataObjects>
-                </root>"#;
-            let root: Element = xml.parse().unwrap();
-            get_fare_frames(&root).unwrap();
-        }
-    }
-
-    mod unit_price_frame {
-        use super::super::get_only_frame;
-        use crate::hellogo_fares::utils::FrameType;
-        use minidom::Element;
-        use pretty_assertions::assert_eq;
-        use std::collections::HashMap;
-
-        #[test]
-        fn one_unit_price_frame() {
-            let mut frames = HashMap::new();
-            let unit_price_frame: Element = r#"<frame xmlns="test" />"#.parse().unwrap();
-            frames.insert(FrameType::UnitPrice, vec![&unit_price_frame]);
-            let unit_price_frame = get_only_frame(&frames, FrameType::UnitPrice).unwrap();
-            assert_eq!(unit_price_frame.name(), "frame");
-        }
-
-        #[test]
-        #[should_panic(expected = "Failed to find a \\'DistanceMatrix\\' frame in the Netex file")]
-        fn no_unit_price_frame() {
-            let frames = HashMap::new();
-            get_only_frame(&frames, FrameType::DistanceMatrix).unwrap();
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to find a unique \\'UnitPrice\\' frame in the Netex file"
-        )]
-        fn multiple_unit_price_frame() {
-            let mut frames = HashMap::new();
-            let unit_price_frame: Element = r#"<frame xmlns="test" />"#.parse().unwrap();
-            frames.insert(
-                FrameType::UnitPrice,
-                vec![&unit_price_frame, &unit_price_frame],
-            );
-            get_only_frame(&frames, FrameType::UnitPrice).unwrap();
-        }
-    }
-
     mod distance_matrix_elements {
-        use super::super::get_distance_matrix_elements;
-        use minidom::Element;
+        use super::*;
         use pretty_assertions::assert_eq;
 
         #[test]
