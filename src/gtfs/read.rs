@@ -86,14 +86,15 @@ impl From<Agency> for objects::Company {
 
 impl From<Stop> for objects::StopArea {
     fn from(stop: Stop) -> objects::StopArea {
-        let mut stop_codes: KeysValues = BTreeSet::new();
+        let mut codes = KeysValues::default();
+        codes.insert(("source".to_string(), stop.id.clone()));
         if let Some(c) = stop.code {
-            stop_codes.insert(("gtfs_stop_code".to_string(), c));
+            codes.insert(("gtfs_stop_code".to_string(), c));
         }
         objects::StopArea {
             id: stop.id,
             name: stop.name,
-            codes: stop_codes,
+            codes,
             object_properties: KeysValues::default(),
             comment_links: objects::CommentLinksT::default(),
             coord: Coord {
@@ -109,14 +110,15 @@ impl From<Stop> for objects::StopArea {
 }
 impl From<Stop> for objects::StopPoint {
     fn from(stop: Stop) -> objects::StopPoint {
-        let mut stop_codes: KeysValues = BTreeSet::new();
+        let mut codes = KeysValues::default();
+        codes.insert(("source".to_string(), stop.id.clone()));
         if let Some(c) = stop.code {
-            stop_codes.insert(("gtfs_stop_code".to_string(), c));
+            codes.insert(("gtfs_stop_code".to_string(), c));
         }
         objects::StopPoint {
             id: stop.id,
             name: stop.name,
-            codes: stop_codes,
+            codes,
             coord: Coord {
                 lon: stop.lon,
                 lat: stop.lat,
@@ -1224,18 +1226,26 @@ mod tests {
             //validate stop_point code
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
-            assert_eq!(1, stop_point.codes.len());
-            let code = stop_point.codes.iter().next().unwrap();
+            assert_eq!(2, stop_point.codes.len());
+            let mut codes_iterator = stop_point.codes.iter();
+            let code = codes_iterator.next().unwrap();
             assert_eq!("gtfs_stop_code", code.0);
             assert_eq!("1234", code.1);
+            let code = codes_iterator.next().unwrap();
+            assert_eq!("source", code.0);
+            assert_eq!("stoppoint_id", code.1);
 
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
-            assert_eq!(1, stop_area.codes.len());
-            let code = stop_area.codes.iter().next().unwrap();
+            assert_eq!(2, stop_area.codes.len());
+            let mut codes_iterator = stop_area.codes.iter();
+            let code = codes_iterator.next().unwrap();
             assert_eq!("gtfs_stop_code", code.0);
             assert_eq!("5678", code.1);
+            let code = codes_iterator.next().unwrap();
+            assert_eq!("source", code.0);
+            assert_eq!("stoparea_id", code.1);
         });
     }
 
