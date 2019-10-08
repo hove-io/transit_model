@@ -433,12 +433,11 @@ pub fn write_stops(
     let path = path.join(file);
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for st in stop_points.values() {
-        let location_type: StopLocationType;
-        if st.stop_type == StopType::Zone {
-            location_type = StopLocationType::GeographicArea;
+        let location_type = if st.stop_type == StopType::Zone {
+            StopLocationType::GeographicArea
         } else {
-            location_type = StopLocationType::from(st.stop_type.clone());
-        }
+            StopLocationType::from(st.stop_type.clone())
+        };
         wtr.serialize(Stop {
             id: st.id.clone(),
             visible: st.visible,
@@ -447,7 +446,7 @@ pub fn write_stops(
             lon: st.coord.lon.to_string(),
             fare_zone_id: st.fare_zone_id.clone(),
             zone_id: st.zone_id.clone(),
-            location_type: location_type,
+            location_type,
             parent_station: stop_areas.get(&st.stop_area_id).map(|sa| sa.id.clone()),
             timezone: st.timezone.clone(),
             equipment_id: st.equipment_id.clone(),
@@ -484,8 +483,8 @@ pub fn write_stops(
             id: sl.id.clone(),
             visible: sl.visible,
             name: sl.name.clone(),
-            lat: lat,
-            lon: lon,
+            lat,
+            lon,
             fare_zone_id: None,
             zone_id: None,
             location_type: StopLocationType::from(sl.stop_type.clone()),

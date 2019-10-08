@@ -78,28 +78,26 @@ enum StopLocationType {
 
 impl Into<StopType> for StopLocationType {
     fn into(self) -> StopType {
-        let stop_type = match self {
+        match self {
             StopLocationType::StopPoint => StopType::Point,
             StopLocationType::StopArea => StopType::Zone,
             StopLocationType::GeographicArea => StopType::Zone,
             StopLocationType::EntranceExit => StopType::StopEntrance,
             StopLocationType::PathwayInterconnectionNode => StopType::GenericNode,
             StopLocationType::BoardingArea => StopType::BoardingArea,
-        };
-        stop_type
+        }
     }
 }
 
 impl From<StopType> for StopLocationType {
     fn from(stop_type: StopType) -> StopLocationType {
-        let stop_location_type = match stop_type {
+        match stop_type {
             StopType::Point => StopLocationType::StopPoint,
             StopType::Zone => StopLocationType::StopArea,
             StopType::StopEntrance => StopLocationType::EntranceExit,
             StopType::GenericNode => StopLocationType::PathwayInterconnectionNode,
             StopType::BoardingArea => StopLocationType::BoardingArea,
-        };
-        stop_location_type
+        }
     }
 }
 
@@ -201,12 +199,12 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.ticket_prices = make_opt_collection(path, "ticket_prices.txt")?;
     collections.ticket_use_perimeters = make_opt_collection(path, "ticket_use_perimeters.txt")?;
     collections.ticket_use_restrictions = make_opt_collection(path, "ticket_use_restrictions.txt")?;
-    collections.pathways = read::read_pathways(path)?;
     collections.levels = make_opt_collection_with_id(path, "levels.txt")?;
     manage_calendars(&mut file_handle, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
     read::manage_stops(&mut collections, path)?;
+    collections.pathways = read::read_pathways(&mut collections, path)?;
     read::manage_stop_times(&mut collections, path)?;
     read::manage_codes(&mut collections, path)?;
     read::manage_comments(&mut collections, path)?;

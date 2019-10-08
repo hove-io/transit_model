@@ -878,12 +878,12 @@ impl From<(String, String)> for Coord {
 impl Into<(String, String)> for Coord {
     fn into(self) -> (String, String) {
         (
-            if self.lon == <f64>::default() {
+            if (self.lon - <f64>::default()).abs() < std::f64::EPSILON {
                 "".to_string()
             } else {
                 self.lon.to_string()
             },
-            if self.lat == <f64>::default() {
+            if (self.lat - <f64>::default()).abs() < std::f64::EPSILON {
                 "".to_string()
             } else {
                 self.lat.to_string()
