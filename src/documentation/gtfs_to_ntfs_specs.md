@@ -80,9 +80,9 @@ Like the GTFS, the NTFS group stop_points and stop_areas in on file : stops.txt.
 The `parent_station` of the stop_point should then contain the generated `stop_area.id`.
 
 (2) The `stop_code` field is added as a complementary `object_code` with the following properties:
-+ `object_type` : _stop_point_ or _stop_area_  accordingly to the `location_type` value
++ `object_type` : `stop_point` or `stop_area`  accordingly to the `location_type` value
 + `object_id` : NTFS `stop_id`
-+ `object_system` : Fixed value "source"
++ `object_system` : Fixed value `gtfs_stop_code`
 + `object_code` : value of the `stop_code` property
 
 (3) The `comment` object is a complex type with additional properties :
