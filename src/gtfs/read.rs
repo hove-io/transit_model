@@ -215,10 +215,12 @@ impl Trip {
             None => bail!("Coudn't find route {} for trip {}", self.route_id, self.id),
         };
         let physical_mode = get_physical_mode(&route.route_type);
+        let mut codes = KeysValues::default();
+        codes.insert(("source".to_string(), self.id.clone()));
 
         Ok(objects::VehicleJourney {
             id: self.id.clone(),
-            codes: KeysValues::default(),
+            codes,
             object_properties: KeysValues::default(),
             comment_links: CommentLinksT::default(),
             route_id: route.get_id_by_direction(&self.direction),
@@ -956,7 +958,7 @@ where
                     FrequencyPrecision::Exact => false,
                     FrequencyPrecision::Inexact => true,
                 };
-                let mut corresponding_vj = skip_fail!(collections
+                let corresponding_vj = skip_fail!(collections
                     .vehicle_journeys
                     .get(&frequency.trip_id)
                     .cloned()
@@ -964,9 +966,6 @@ where
                         "frequency mapped to an unexisting trip {:?}",
                         frequency.trip_id
                     )));
-                corresponding_vj
-                    .codes
-                    .insert(("source".to_string(), frequency.trip_id.clone()));
                 let mut start_time = frequency.start_time;
                 let mut arrival_time_delta = match corresponding_vj.stop_times.iter().min() {
                     None => {
