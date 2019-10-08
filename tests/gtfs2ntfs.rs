@@ -100,6 +100,7 @@ fn test_gtfs_remove_vjs_with_no_traffic() {
                 "stops.txt",
                 "routes.txt",
                 "stop_times.txt",
+                "levels.txt",
             ]),
             "./tests/fixtures/gtfs2ntfs/no_traffic/output",
         );
@@ -148,7 +149,7 @@ fn test_gtfs_with_levels() {
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
-            Some(vec!["stops.txt", "pathways.txt", "levels.txt",],),
+            Some(vec!["stops.txt", "pathways.txt", "levels.txt"]),
             "./tests/fixtures/gtfs2ntfs/levels_and_pathways/output",
         );
     });

@@ -29,11 +29,12 @@ use crate::utils::*;
 use crate::Result;
 use csv;
 use derivative::Derivative;
-use failure::{bail, format_err, ResultExt};
+use failure::{bail, format_err, Error, ResultExt};
 use geo_types::{LineString, Point};
 use log::{info, warn};
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::convert::TryFrom;
 use std::result::Result as StdResult;
 use transit_model_collection::{Collection, CollectionWithId, Id};
 
@@ -84,170 +85,118 @@ impl From<Agency> for objects::Company {
     }
 }
 
-impl From<Stop> for objects::StopArea {
-    fn from(stop: Stop) -> objects::StopArea {
-        let mut codes = KeysValues::default();
-        codes.insert(("source".to_string(), stop.id.clone()));
+impl TryFrom<Stop> for objects::StopArea {
+    type Error = Error;
+    fn try_from(stop: Stop) -> Result<Self> {
+        let mut codes: KeysValues = BTreeSet::new();
         if let Some(c) = stop.code {
             codes.insert(("gtfs_stop_code".to_string(), c));
         }
-        let coord: Coord = Coord::from((stop.lon, stop.lat));
-        objects::StopArea {
+        if stop.name.is_empty() {
+            warn!("stop_id: {}: for station stop_name is required", stop.id);
+        }
+        let coord = Coord::from((stop.lon, stop.lat));
+        if coord == Coord::default() {
+            warn!("stop_id: {}: for station coordinates are required", stop.id);
+        }
+
+        let stop_area = objects::StopArea {
             id: stop.id,
             name: stop.name,
             codes,
             object_properties: KeysValues::default(),
             comment_links: objects::CommentLinksT::default(),
-            coord: coord,
+            coord,
             timezone: stop.timezone,
             visible: true,
             geometry_id: None,
             level_id: stop.level_id,
-            equipment_id: None,
-        }
-    }
-}
-
-impl Into<Result<objects::StopArea>> for Stop {
-    fn into(self) -> Result<objects::StopArea> {
-        let mut stop_codes: KeysValues = BTreeSet::new();
-        if let Some(c) = self.code {
-            stop_codes.insert(("gtfs_stop_code".to_string(), c));
-        }
-
-        if self.name.is_empty() {
-            warn!("stop_id: {}: for station stop_name is required", self.id);
-        }
-
-        let coord: Coord = Coord::from((self.lon, self.lat));
-        if coord == Coord::default() {
-            warn!("stop_id: {}: for station coordinates are required", self.id);
-        }
-
-        let stop_area = objects::StopArea {
-            id: self.id,
-            name: self.name,
-            codes: stop_codes,
-            object_properties: KeysValues::default(),
-            comment_links: objects::CommentLinksT::default(),
-            coord: coord,
-            timezone: self.timezone,
-            visible: true,
-            geometry_id: None,
-            level_id: self.level_id,
             equipment_id: None,
         };
         Ok(stop_area)
     }
 }
 
-impl From<Stop> for objects::StopPoint {
-    fn from(stop: Stop) -> objects::StopPoint {
-        let mut codes = KeysValues::default();
-        codes.insert(("source".to_string(), stop.id.clone()));
+impl TryFrom<Stop> for objects::StopPoint {
+    type Error = Error;
+    fn try_from(stop: Stop) -> Result<Self> {
+        let mut codes: KeysValues = BTreeSet::new();
         if let Some(c) = stop.code {
             codes.insert(("gtfs_stop_code".to_string(), c));
         }
-        let coord: Coord = Coord::from((stop.lon, stop.lat));
-        objects::StopPoint {
+        if stop.name.is_empty() {
+            warn!("stop_id: {}: for platform name is required", stop.id);
+        };
+
+        let coord = Coord::from((stop.lon, stop.lat));
+        if coord == Coord::default() {
+            warn!(
+                "stop_id: {}: for platform coordinates are required",
+                stop.id
+            );
+        }
+        let stop_point = objects::StopPoint {
             id: stop.id,
             name: stop.name,
             codes,
-            coord: coord,
-            stop_area_id: stop.parent_station.unwrap(),
+            coord,
+            stop_area_id: stop
+                .parent_station
+                .unwrap_or_else(|| String::from("default_id")),
             timezone: stop.timezone,
             visible: true,
             stop_type: StopType::Point,
             platform_code: stop.platform_code,
             level_id: stop.level_id,
             ..Default::default()
-        }
-    }
-}
-
-impl Into<Result<objects::StopPoint>> for Stop {
-    fn into(self) -> Result<objects::StopPoint> {
-        let mut stop_codes: KeysValues = BTreeSet::new();
-        if let Some(c) = self.code {
-            stop_codes.insert(("gtfs_stop_code".to_string(), c));
-        }
-        if self.name.is_empty() {
-            warn!("stop_id: {}: for platform name is required", self.id);
-        };
-
-        let coord: Coord = Coord::from((self.lon, self.lat));
-        if coord == Coord::default() {
-            warn!(
-                "stop_id: {}: for platform coordinates are required",
-                self.id
-            );
-        }
-        let stop_point = objects::StopPoint {
-            id: self.id,
-            name: self.name,
-            codes: stop_codes,
-            coord: coord,
-            stop_area_id: self
-                .parent_station
-                .unwrap_or_else(|| String::from("default_id")),
-            timezone: self.timezone,
-            visible: true,
-            stop_type: StopType::Point,
-            platform_code: self.platform_code,
-            level_id: self.level_id,
-            ..Default::default()
         };
         Ok(stop_point)
     }
 }
 
-impl StopLocation {
-    fn from_gtfs_stop(stop: Stop) -> Result<StopLocation> {
-        let coord: Coord = Coord::from((stop.lon, stop.lat));
+impl TryFrom<Stop> for objects::StopLocation {
+    type Error = Error;
+    fn try_from(stop: Stop) -> Result<Self> {
+        let coord = Coord::from((stop.lon, stop.lat));
 
         if stop.location_type == StopLocationType::StopEntrance {
             if coord == Coord::default() {
-                return Err(format_err!(
+                bail!(
                     "stop_id: {}: for entrances/exits coordinates is required",
                     stop.id
-                ));
+                );
             }
             if stop.parent_station.is_none() {
-                return Err(format_err!(
+                bail!(
                     "stop_id: {}: for entrances/exits parent_station is required",
                     stop.id
-                ));
+                );
             }
             if stop.name.is_empty() {
-                return Err(format_err!(
+                bail!(
                     "stop_id: {}: for entrances/exits stop_name is required",
                     stop.id
-                ));
+                );
             }
         }
-        if stop.location_type == StopLocationType::GenericNode {
-            if stop.parent_station.is_none() {
-                return Err(format_err!(
-                    "stop_id: {}: for generic node parent_station is required",
-                    stop.id
-                ));
-            }
+        if stop.location_type == StopLocationType::GenericNode && stop.parent_station.is_none() {
+            bail!(
+                "stop_id: {}: for generic node parent_station is required",
+                stop.id
+            );
         }
-        if stop.location_type == StopLocationType::BoardingArea {
-            if stop.parent_station.is_none() {
-                return Err(format_err!(
-                    "stop_id: {}: for boarding area parent_station is required",
-                    stop.id
-                ));
-            }
+        if stop.location_type == StopLocationType::BoardingArea && stop.parent_station.is_none() {
+            bail!(
+                "stop_id: {}: for boarding area parent_station is required",
+                stop.id
+            );
         }
-
         let stop_location = StopLocation {
             id: stop.id,
             name: stop.name,
             comment_links: CommentLinksT::default(),
             visible: false,
-            coord: coord,
+            coord,
             parent_id: stop.parent_station,
             timezone: stop.timezone,
             geometry_id: None,
@@ -597,13 +546,13 @@ fn manage_comment_from_stop(
     stop: &Stop,
 ) -> CommentLinksT {
     let mut comment_links: CommentLinksT = CommentLinksT::default();
-    if stop.desc.is_some() {
+    if let Some(desc) = &stop.desc {
         let comment_id = "stop:".to_string() + &stop.id;
         let comment = objects::Comment {
             id: comment_id,
             comment_type: objects::CommentType::Information,
             label: None,
-            name: stop.desc.as_ref().unwrap().to_string(),
+            name: desc.to_string(),
             url: None,
         };
         let idx = comments.push(comment).unwrap();
@@ -663,24 +612,7 @@ fn get_equipment_id_and_populate_equipments(
     }
 }
 
-fn read_stops<H>(file_handler: &mut H) -> Result<Vec<Stop>>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let file = "stops.txt";
-
-    let (reader, path) = file_handler.get_file(file)?;
-    let mut rdr = csv::ReaderBuilder::new()
-        .trim(csv::Trim::All)
-        .from_reader(reader);
-    let gtfs_stops: Vec<Stop> = rdr
-        .deserialize()
-        .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
-    Ok(gtfs_stops)
-}
-
-pub fn manage_stops<H>(
+pub fn read_stops<H>(
     file_handler: &mut H,
     comments: &mut CollectionWithId<objects::Comment>,
     equipments: &mut EquipmentList,
@@ -693,7 +625,16 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     info!("Reading stops.txt");
-    let gtfs_stops = read_stops(file_handler)?;
+    let file = "stops.txt";
+
+    let (reader, path) = file_handler.get_file(file)?;
+    let mut rdr = csv::ReaderBuilder::new()
+        .trim(csv::Trim::All)
+        .from_reader(reader);
+    let gtfs_stops: Vec<Stop> = rdr
+        .deserialize()
+        .collect::<StdResult<_, _>>()
+        .with_context(ctx_from_path!(path))?;
 
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
@@ -703,27 +644,24 @@ where
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
             StopLocationType::StopPoint => {
-                let mut stop_point: objects::StopPoint = skip_fail!(stop.clone().into());
+                let mut stop_point = skip_fail!(objects::StopPoint::try_from(stop.clone()));
                 if stop.parent_station.is_none() {
                     let stop_area = objects::StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
                     stop_areas.push(stop_area);
-                    stop_point.clone()
-                } else {
-                    skip_fail!(stop.into())
                 };
                 stop_point.comment_links = comment_links;
                 stop_point.equipment_id = equipment_id;
                 stop_points.push(stop_point);
             }
             StopLocationType::StopArea => {
-                let mut stop_area: objects::StopArea = skip_fail!(stop.into());
+                let mut stop_area = skip_fail!(objects::StopArea::try_from(stop));
                 stop_area.comment_links = comment_links;
                 stop_area.equipment_id = equipment_id;
                 stop_areas.push(stop_area);
             }
             _ => {
-                let mut stop_location = skip_fail!(objects::StopLocation::from_gtfs_stop(stop));
+                let mut stop_location = skip_fail!(objects::StopLocation::try_from(stop));
                 stop_location.comment_links = comment_links;
                 stop_location.equipment_id = equipment_id;
                 stop_locations.push(stop_location);
@@ -736,18 +674,14 @@ where
     Ok((stopareas, stoppoints, stoplocations))
 }
 
-pub fn read_pathways<H>(file_handler: &mut H) -> Result<CollectionWithId<objects::Pathway>>
+pub fn read_pathways<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<CollectionWithId<objects::Pathway>>
 where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "pathways.txt";
-    let gtfs_stops = read_stops(file_handler)?;
-    let mut stops: HashMap<String, Stop> = HashMap::new();
-
-    for gtfs_stop in gtfs_stops {
-        stops.insert(gtfs_stop.id.clone(), gtfs_stop);
-    }
-
     let (reader, _path) = file_handler.get_file_if_exists(file)?;
     match reader {
         None => {
@@ -761,24 +695,38 @@ where
             for pathway in rdr.deserialize() {
                 let mut pathway: Pathway = skip_fail!(pathway.map_err(|e| format_err!("{}", e)));
 
-                let from_stop_point =
-                    skip_fail!(stops.get(&pathway.from_stop_id).ok_or_else(|| format_err!(
-                        "Problem reading {:?}: from_stop_id={:?} not found",
-                        file,
-                        pathway.from_stop_id
-                    )));
+                pathway.from_stop_type = skip_fail!(collections
+                    .stop_points
+                    .get(&pathway.from_stop_id)
+                    .map(|st| st.stop_type.clone())
+                    .or(collections
+                        .stop_locations
+                        .get(&pathway.from_stop_id)
+                        .map(|sl| sl.stop_type.clone()))
+                    .ok_or_else(|| {
+                        format_err!(
+                            "Problem reading {:?}: from_stop_id={:?} not found",
+                            file,
+                            pathway.from_stop_id
+                        )
+                    }));
 
-                let to_stop_point =
-                    skip_fail!(stops.get(&pathway.to_stop_id).ok_or_else(|| format_err!(
-                        "Problem reading {:?}: from_stop_id={:?} not found",
-                        file,
-                        pathway.to_stop_id
-                    )));
-
-                pathway.from_stop_type = from_stop_point.location_type.clone().into();
-                pathway.to_stop_type = to_stop_point.location_type.clone().into();
-
-                pathways.push(pathway)
+                pathway.to_stop_type = skip_fail!(collections
+                    .stop_points
+                    .get(&pathway.to_stop_id)
+                    .map(|st| st.stop_type.clone())
+                    .or(collections
+                        .stop_locations
+                        .get(&pathway.to_stop_id)
+                        .map(|sl| sl.stop_type.clone()))
+                    .ok_or_else(|| {
+                        format_err!(
+                            "Problem reading {:?}: to_stop_id={:?} not found",
+                            file,
+                            pathway.to_stop_id
+                        )
+                    }));
+                pathways.push(pathway);
             }
             Ok(CollectionWithId::new(pathways)?)
         }
@@ -1248,7 +1196,7 @@ mod tests {
         gtfs::read::EquipmentList,
         model::Collections,
         objects::*,
-        read_utils::{self, PathFileHandler, read_opt_collection},
+        read_utils::{self, read_opt_collection, PathFileHandler},
         test_utils::*,
         AddPrefix,
     };
@@ -1340,7 +1288,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
 
             let (stop_areas, stop_points, stop_locations) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_areas.len());
             assert_eq!(1, stop_points.len());
             assert_eq!(0, stop_locations.len());
@@ -1373,7 +1321,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             // let stop_file = File::open(path.join("stops.txt")).unwrap();
             let (stop_areas, stop_points, stop_locations) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
             collections.stop_locations = stop_locations;
@@ -1408,7 +1356,7 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points, stop_locations) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             //validate stop_point code
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
@@ -1448,7 +1396,7 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, _, _) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             //validate stop_area code
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -1898,7 +1846,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
             let (stop_areas, stop_points, stop_locations) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.equipments = CollectionWithId::new(equipments.into_equipments()).unwrap();
             collections.transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
             collections.stop_areas = stop_areas;
@@ -2234,7 +2182,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (stop_areas, stop_points, _) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             let equipments_collection =
                 CollectionWithId::new(equipments.into_equipments()).unwrap();
             assert_eq!(2, stop_areas.len());
@@ -2299,7 +2247,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             let equipments_collection =
                 CollectionWithId::new(equipments.into_equipments()).unwrap();
             assert_eq!(2, stop_points.len());
@@ -2369,7 +2317,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -2452,7 +2400,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -2519,7 +2467,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
 
             let transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
             assert_eq!(
@@ -2856,7 +2804,7 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (stop_areas, stop_points, _) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(1, stop_points.len());
             assert_eq!(1, stop_areas.len());
             let stop_area = stop_areas.iter().next().unwrap().1;
@@ -2879,7 +2827,7 @@ mod tests {
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let (_, stop_points, _) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             assert_eq!(3, stop_points.len());
             let longitudes: Vec<f64> = stop_points
                 .values()
@@ -2942,7 +2890,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -3014,7 +2962,7 @@ mod tests {
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
             let (_, stop_points, _) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
@@ -3039,25 +2987,20 @@ mod tests {
             create_file_with_content(path, "stops.txt", stops_content);
             let mut equipments = EquipmentList::default();
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
-            let (_, _, mut stop_locations) =
-                super::manage_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+            let (_, _, stop_locations) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             let stop_entrance = stop_locations
-                .clone()
-                .take()
-                .into_iter()
+                .values()
                 .filter(|sl| sl.stop_type == StopType::StopEntrance)
                 .collect::<Vec<_>>();
             assert_eq!(1, stop_entrance.len());
             let stop_node = stop_locations
-                .clone()
-                .take()
-                .into_iter()
+                .values()
                 .filter(|sl| sl.stop_type == StopType::GenericNode)
                 .collect::<Vec<_>>();
             assert_eq!(1, stop_node.len());
             let stop_boarding = stop_locations
-                .take()
-                .into_iter()
+                .values()
                 .filter(|sl| sl.stop_type == StopType::GenericNode)
                 .collect::<Vec<_>>();
             assert_eq!(1, stop_boarding.len());
@@ -3076,12 +3019,21 @@ mod tests {
                                1;stoppoint_id,stoparea_id,8,0\n\
                                2,stoppoint_id,stoparea_id,1,3\n\
                                3,stoppoint_id,stoparea_id_0,2,0\n\
-                               4,stoppoint_id,stoparea_id,1,0";
+                               4,stoppoint_id,stoparea_id,1,0
+                               5,node_id,boarding_id,1,0";
         test_in_tmp_dir(|path| {
             let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
             create_file_with_content(path, "pathways.txt", pathway_content);
-            let pathways = super::read_pathways(&mut handler).unwrap();
+            let mut collections = Collections::default();
+            let mut equipments = EquipmentList::default();
+            let (_, stop_points, stop_locations) =
+                super::read_stops(&mut handler, &mut collections.comments, &mut equipments)
+                    .unwrap();
+            collections.stop_points = stop_points;
+            collections.stop_locations = stop_locations;
+
+            let pathways = super::read_pathways(&mut collections, &mut handler).unwrap();
             assert_eq!(1, pathways.len());
         })
     }
@@ -3095,15 +3047,16 @@ mod tests {
              node_id,,node name,0.1,1.2,3,stop_area_id,2\n\
              boarding_id,,boarding name,0.1,1.2,4,stoppoint_id,";
         let level_content = "level_id,level_index\n\
-                               1,0\n\
-                               2,2\n\
-                               3,1\n\
-                               4,4";
+                             1,0\n\
+                             2,2\n\
+                             3,1\n\
+                             4,4";
         test_in_tmp_dir(|path| {
             let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "stops.txt", stops_content);
             create_file_with_content(path, "levels.txt", level_content);
-            let levels : CollectionWithId<Level> = read_opt_collection(&mut handler, "levels.txt").unwrap();
+            let levels: CollectionWithId<Level> =
+                read_opt_collection(&mut handler, "levels.txt").unwrap();
             assert_eq!(4, levels.len());
         })
     }

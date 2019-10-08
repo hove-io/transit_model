@@ -45,6 +45,7 @@ pub struct Collections {
     pub physical_modes: CollectionWithId<PhysicalMode>,
     pub stop_areas: CollectionWithId<StopArea>,
     pub stop_points: CollectionWithId<StopPoint>,
+    pub stop_locations: CollectionWithId<StopLocation>,
     pub feed_infos: BTreeMap<String, String>,
     pub calendars: CollectionWithId<Calendar>,
     pub companies: CollectionWithId<Company>,
@@ -70,7 +71,6 @@ pub struct Collections {
     pub ticket_use_restrictions: Collection<TicketUseRestriction>,
     pub pathways: CollectionWithId<Pathway>,
     pub levels: CollectionWithId<Level>,
-    pub stop_locations: CollectionWithId<StopLocation>,
 }
 
 impl Collections {
@@ -108,6 +108,8 @@ impl Collections {
             ticket_prices,
             ticket_use_perimeters,
             ticket_use_restrictions,
+            pathways,
+            levels,
             ..
         } = c;
         self.contributors.try_merge(contributors)?;
@@ -127,6 +129,8 @@ impl Collections {
         self.ticket_prices.merge(ticket_prices);
         self.ticket_use_perimeters.merge(ticket_use_perimeters);
         self.ticket_use_restrictions.merge(ticket_use_restrictions);
+        self.pathways.merge(pathways);
+        self.levels.merge(levels);
 
         fn get_new_idx<T>(
             old_idx: Idx<T>,
@@ -366,7 +370,7 @@ impl Collections {
                     level_id_used.insert(level_id.clone());
                 }
                 update_comments_used(&mut comments_used, &sl.comment_links, &self.comments);
-                return true;
+                true
             })
             .collect::<Vec<_>>();
 
@@ -375,28 +379,20 @@ impl Collections {
             .take()
             .into_iter()
             .filter(|pw| {
-                if pw.from_stop_type == StopType::BoardingArea
-                    || pw.from_stop_type == StopType::Point
-                {
-                    stop_points_used.insert(pw.from_stop_id.clone());
-                    if let Some(stop_area_id) = self
-                        .stop_points
-                        .get(&pw.from_stop_id)
-                        .map(|sp| sp.stop_area_id.clone())
-                    {
-                        stop_area_ids_used.insert(stop_area_id);
+                let mut insert_if_used = |stop_type: &StopType, stop_id: &String| {
+                    if *stop_type == StopType::BoardingArea || *stop_type == StopType::Point {
+                        stop_points_used.insert(stop_id.clone());
+                        if let Some(stop_area_id) = self
+                            .stop_points
+                            .get(&stop_id)
+                            .map(|sp| sp.stop_area_id.clone())
+                        {
+                            stop_area_ids_used.insert(stop_area_id);
+                        }
                     }
-                }
-                if pw.to_stop_type == StopType::BoardingArea || pw.to_stop_type == StopType::Point {
-                    stop_points_used.insert(pw.to_stop_id.clone());
-                    if let Some(stop_area_id) = self
-                        .stop_points
-                        .get(&pw.to_stop_id)
-                        .map(|sp| sp.stop_area_id.clone())
-                    {
-                        stop_area_ids_used.insert(stop_area_id);
-                    }
-                }
+                };
+                insert_if_used(&pw.from_stop_type, &pw.from_stop_id);
+                insert_if_used(&pw.to_stop_type, &pw.to_stop_id);
                 true
             })
             .collect::<Vec<_>>();

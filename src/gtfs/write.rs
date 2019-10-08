@@ -100,7 +100,7 @@ fn ntfs_stop_point_to_gtfs_stop(
         .clone()
         .and_then(|eq_id| equipments.get(&eq_id))
         .map(|eq| eq.wheelchair_boarding)
-        .unwrap_or_else(Availability::default);
+        .unwrap_or_default();
     Stop {
         id: sp.id.clone(),
         name: sp.name.clone(),
@@ -129,7 +129,7 @@ fn ntfs_stop_area_to_gtfs_stop(
         .clone()
         .and_then(|eq_id| equipments.get(&eq_id))
         .map(|eq| eq.wheelchair_boarding)
-        .unwrap_or_else(Availability::default);
+        .unwrap_or_default();
     Stop {
         id: sa.id.clone(),
         name: sa.name.clone(),
@@ -158,14 +158,14 @@ fn ntfs_stop_location_to_gtfs_stop(
         .clone()
         .and_then(|eq_id| equipments.get(&eq_id))
         .map(|eq| eq.wheelchair_boarding)
-        .unwrap_or_else(Availability::default);
+        .unwrap_or_default();
 
     let (lon, lat) = sl.coord.into();
     Stop {
         id: sl.id.clone(),
         name: sl.name.clone(),
-        lat: lat,
-        lon: lon,
+        lat,
+        lon,
         fare_zone_id: None,
         location_type: StopLocationType::from(sl.stop_type.clone()),
         parent_station: sl.parent_id.clone(),

@@ -61,6 +61,7 @@ impl AddPrefix for Collections {
         self.frequencies.add_prefix(&prefix);
         self.stop_areas.add_prefix(&prefix);
         self.stop_points.add_prefix(&prefix);
+        self.stop_locations.add_prefix(&prefix);
         self.calendars.add_prefix(&prefix);
         self.companies.add_prefix(&prefix);
         self.comments.add_prefix(&prefix);
@@ -79,7 +80,6 @@ impl AddPrefix for Collections {
         self.ticket_use_restrictions.add_prefix(&prefix);
         self.pathways.add_prefix(&prefix);
         self.levels.add_prefix(&prefix);
-        self.stop_locations.add_prefix(&prefix);
     }
 }
 

@@ -91,28 +91,26 @@ enum StopLocationType {
 }
 
 impl Into<StopType> for StopLocationType {
-    fn into(self) -> objects::StopType {
-        let stop_type = match self {
-            StopLocationType::StopPoint => objects::StopType::Point,
-            StopLocationType::StopArea => objects::StopType::Zone,
-            StopLocationType::StopEntrance => objects::StopType::StopEntrance,
-            StopLocationType::GenericNode => objects::StopType::GenericNode,
-            StopLocationType::BoardingArea => objects::StopType::BoardingArea,
-        };
-        stop_type
+    fn into(self) -> StopType {
+        match self {
+            StopLocationType::StopPoint => StopType::Point,
+            StopLocationType::StopArea => StopType::Zone,
+            StopLocationType::StopEntrance => StopType::StopEntrance,
+            StopLocationType::GenericNode => StopType::GenericNode,
+            StopLocationType::BoardingArea => StopType::BoardingArea,
+        }
     }
 }
 
 impl From<StopType> for StopLocationType {
     fn from(stop_type: StopType) -> StopLocationType {
-        let stop_location_type = match stop_type {
-            objects::StopType::Point => StopLocationType::StopPoint,
-            objects::StopType::Zone => StopLocationType::StopArea,
-            objects::StopType::StopEntrance => StopLocationType::StopEntrance,
-            objects::StopType::GenericNode => StopLocationType::GenericNode,
-            objects::StopType::BoardingArea => StopLocationType::BoardingArea,
-        };
-        stop_location_type
+        match stop_type {
+            StopType::Point => StopLocationType::StopPoint,
+            StopType::Zone => StopLocationType::StopArea,
+            StopType::StopEntrance => StopLocationType::StopEntrance,
+            StopType::GenericNode => StopLocationType::GenericNode,
+            StopType::BoardingArea => StopLocationType::BoardingArea,
+        }
     }
 }
 
@@ -122,7 +120,7 @@ struct Stop {
     id: String,
     #[serde(rename = "stop_code")]
     code: Option<String>,
-    #[serde(rename = "stop_name")] //Conditionally Required
+    #[serde(rename = "stop_name")]
     name: String,
     #[serde(
         default,
@@ -141,7 +139,7 @@ struct Stop {
     #[serde(default, deserialize_with = "de_with_empty_default")]
     location_type: StopLocationType,
     #[serde(default, deserialize_with = "de_option_without_slashes")]
-    parent_station: Option<String>, //Conditionally Required
+    parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
     timezone: Option<String>,
     level_id: Option<String>,
@@ -285,7 +283,7 @@ where
     collections.networks = networks;
     collections.companies = companies;
     let (stop_areas, stop_points, stop_locations) =
-        read::manage_stops(file_handler, &mut comments, &mut equipments)?;
+        read::read_stops(file_handler, &mut comments, &mut equipments)?;
     collections.transfers = read::read_transfers(file_handler, &stop_points)?;
     collections.stop_areas = stop_areas;
     collections.stop_points = stop_points;
@@ -298,7 +296,7 @@ where
     collections.comments = comments;
     read::manage_stop_times(&mut collections, file_handler)?;
     read::manage_frequencies(&mut collections, file_handler)?;
-    collections.pathways = read::read_pathways(file_handler)?;
+    collections.pathways = read::read_pathways(&mut collections, file_handler)?;
     collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
     collections.sanitize()?;
 
