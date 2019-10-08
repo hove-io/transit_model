@@ -1,4 +1,5 @@
 object_type,object_id,object_system,object_code
+network,1,source,1
 trip,trip:3,source,trip:3
 trip,trip:4,source,trip:4
 trip,trip:5,source,trip:5

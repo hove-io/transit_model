@@ -38,7 +38,7 @@ use std::result::Result as StdResult;
 use transit_model_collection::{Collection, CollectionWithId, Id};
 
 fn default_agency_id() -> String {
-    "default_agency_id".to_string()
+    1.to_string()
 }
 
 fn get_agency_id(route: &Route, networks: &CollectionWithId<objects::Network>) -> Result<String> {
@@ -55,10 +55,13 @@ fn get_agency_id(route: &Route, networks: &CollectionWithId<objects::Network>) -
 
 impl From<Agency> for objects::Network {
     fn from(agency: Agency) -> objects::Network {
+        let id = agency.id.unwrap_or_else(default_agency_id);
+        let mut codes = KeysValues::default();
+        codes.insert(("source".to_string(), id.clone()));
         objects::Network {
-            id: agency.id.unwrap_or_else(default_agency_id),
+            id,
             name: agency.name,
-            codes: KeysValues::default(),
+            codes,
             timezone: Some(agency.timezone),
             url: Some(agency.url),
             lang: agency.lang,
@@ -1087,7 +1090,7 @@ mod tests {
             let (networks, companies) = super::read_agency(&mut handler).unwrap();
             assert_eq!(1, networks.len());
             let agency = networks.iter().next().unwrap().1;
-            assert_eq!("default_agency_id", agency.id);
+            assert_eq!("1", agency.id);
             assert_eq!(1, companies.len());
         });
     }

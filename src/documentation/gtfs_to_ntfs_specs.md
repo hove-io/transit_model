@@ -23,7 +23,7 @@ The use of this specific pattern is shown explicitly using the value **ID** in t
 ### Reading agency.txt
 The field "agency_id" may not be provided in the GTFS as it's an optionnal field.
 * If there is only one agency, the "agency_id" is considered to be "1".
-* If there are several agencies, the program will raise an exception as it won't be able to choose the the right agency for the routes.
+* If there are several agencies, the program will raise an exception as it won't be able to choose the right agency for the routes.
 
 #### Loading Networks
 
