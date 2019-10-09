@@ -103,7 +103,7 @@ fn to_edge(field: &syn::Field) -> Option<Edge> {
     let mut split = ident.split("_to_");
     let _from_collection = split.next()?;
     let _to_collection = split.next()?;
-    if !split.next().is_none() {
+    if split.next().is_some() {
         return None;
     }
     let segment = if let syn::Ty::Path(_, ref path) = field.ty {
@@ -141,7 +141,7 @@ fn to_edge(field: &syn::Field) -> Option<Edge> {
         ident: ident.into(),
         from: from_ty.clone(),
         to: to_ty.clone(),
-        weight: weight,
+        weight,
     }
     .into()
 }

@@ -77,7 +77,7 @@ impl<'a> ModelBuilder {
             .collections
             .vehicle_journeys
             .push(new_vj)
-            .expect(&format!("vj {} already exists", name));
+            .unwrap_or_else(|_| panic!("vj {} already exists", name));
         let vj_builder = VehicleJourneyBuilder {
             model: &mut self,
             vj_idx,
@@ -195,7 +195,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
                     .collections
                     .stop_points
                     .push(new_sp)
-                    .expect(&format!("stoppoint {} already exists", sp))
+                    .unwrap_or_else(|_| panic!("stoppoint {} already exists", sp))
             })
     }
 

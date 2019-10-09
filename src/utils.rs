@@ -90,6 +90,8 @@ where
     }
 }
 
+// The signature of the function must pass by reference for 'serde' to be able to use the function
+#[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn ser_from_bool<S>(v: &bool, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
@@ -107,6 +109,8 @@ where
     NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom)
 }
 
+// The signature of the function must pass by reference for 'serde' to be able to use the function
+#[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn ser_from_naive_date<S>(date: &Date, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
@@ -312,8 +316,7 @@ pub fn make_opt_collection_with_id<T>(
     file: &str,
 ) -> crate::Result<CollectionWithId<T>>
 where
-    T: Id<T>,
-    for<'de> T: serde::Deserialize<'de>,
+    for<'de> T: Id<T> + serde::Deserialize<'de>,
 {
     if !path.join(file).exists() {
         info!("Skipping {}", file);
@@ -328,8 +331,7 @@ pub fn make_collection_with_id<T>(
     file: &str,
 ) -> crate::Result<CollectionWithId<T>>
 where
-    T: Id<T>,
-    for<'de> T: serde::Deserialize<'de>,
+    for<'de> T: Id<T> + serde::Deserialize<'de>,
 {
     info!("Reading {}", file);
     let path = path.join(file);
@@ -373,8 +375,7 @@ pub fn write_collection_with_id<T>(
     collection: &CollectionWithId<T>,
 ) -> crate::Result<()>
 where
-    T: Id<T>,
-    T: serde::Serialize,
+    T: Id<T> + serde::Serialize,
 {
     if collection.is_empty() {
         return Ok(());

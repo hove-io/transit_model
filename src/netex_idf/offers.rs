@@ -49,7 +49,7 @@ impl std::fmt::Display for GeneralFrameType {
     }
 }
 
-fn parse_general_frame_by_type<'a>(general_frames: &Vec<&'a Element>) -> Result<GeneralFrames<'a>> {
+fn parse_general_frame_by_type<'a>(general_frames: &[&'a Element]) -> Result<GeneralFrames<'a>> {
     fn extract_general_frame_type(general_frame: &Element) -> Result<GeneralFrameType> {
         let type_of_frame_ref: String = general_frame
             .try_only_child("TypeOfFrameRef")?

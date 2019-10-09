@@ -638,7 +638,7 @@ pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Resu
             .stop_points
             .get(&pathway.from_stop_id)
             .map(|st| st.stop_type.clone())
-            .or(collections
+            .or_else(|| collections
                 .stop_locations
                 .get(&pathway.from_stop_id)
                 .map(|sl| sl.stop_type.clone()))
@@ -654,7 +654,7 @@ pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Resu
             .stop_points
             .get(&pathway.to_stop_id)
             .map(|st| st.stop_type.clone())
-            .or(collections
+            .or_else(|| collections
                 .stop_locations
                 .get(&pathway.to_stop_id)
                 .map(|sl| sl.stop_type.clone()))
