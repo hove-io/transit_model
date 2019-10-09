@@ -693,6 +693,12 @@ pub struct Frequency {
     pub headway_secs: u32,
 }
 
+impl AddPrefix for Frequency {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.vehicle_journey_id = prefix.to_string() + &self.vehicle_journey_id;
+    }
+}
+
 #[derive(Debug)]
 pub enum TimeError {
     WrongFormat,
