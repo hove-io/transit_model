@@ -78,18 +78,6 @@ Default ones are provided by the command but you can pass a json file that conta
 }
 ```
 
-### Usage
-
-```bash
-target/release/gtfs2ntfs -h
-```
-
-### Example
-
-```bash
-target/release/gtfs2ntfs -i path/to/input/directory -c path/to/config.json -p PREFIX -o path/to/output/directory
-```
-
 ## Tests
 
 ```bash
