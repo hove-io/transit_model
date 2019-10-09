@@ -58,6 +58,7 @@ impl AddPrefix for Collections {
         self.lines.add_prefix(&prefix);
         self.routes.add_prefix(&prefix);
         self.vehicle_journeys.add_prefix(&prefix);
+        self.frequencies.add_prefix(&prefix);
         self.stop_areas.add_prefix(&prefix);
         self.stop_points.add_prefix(&prefix);
         self.calendars.add_prefix(&prefix);
