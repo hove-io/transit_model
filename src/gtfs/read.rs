@@ -1190,12 +1190,12 @@ mod tests {
     use super::*;
     use crate::{
         common_format,
-        objects::{
-            Calendar, Comment, CommentType, Dataset, Equipment, Geometry, Rgb, StopTime, Transfer,
-        },
         gtfs::read::EquipmentList,
         model::Collections,
         objects::*,
+        objects::{
+            Calendar, Comment, CommentType, Dataset, Equipment, Geometry, Rgb, StopTime, Transfer,
+        },
         read_utils::{self, read_opt_collection, PathFileHandler},
         test_utils::*,
         AddPrefix,
