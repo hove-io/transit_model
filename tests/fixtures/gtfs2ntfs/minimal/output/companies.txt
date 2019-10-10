@@ -1,2 +1,2 @@
 company_id,company_name,company_address,company_url,company_mail,company_phone
-default_agency_id,mon agence,,http://kisio.org,,
+1,mon agence,,http://kisio.org,,

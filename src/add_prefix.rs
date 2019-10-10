@@ -58,6 +58,7 @@ impl AddPrefix for Collections {
         self.lines.add_prefix(&prefix);
         self.routes.add_prefix(&prefix);
         self.vehicle_journeys.add_prefix(&prefix);
+        self.frequencies.add_prefix(&prefix);
         self.stop_areas.add_prefix(&prefix);
         self.stop_points.add_prefix(&prefix);
         self.calendars.add_prefix(&prefix);
@@ -82,6 +83,7 @@ impl AddPrefix for Collections {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     struct Obj(String);
     impl Id<Obj> for Obj {
@@ -106,9 +108,9 @@ mod tests {
         collection.add_prefix("pre");
         let mut values = collection.values();
         let element = values.next().unwrap();
-        assert_eq!(element.0, String::from("pre:some_id"));
+        assert_eq!(String::from("pre:some_id"), element.0);
         let element = values.next().unwrap();
-        assert_eq!(element.0, String::from("pre:other_id"));
+        assert_eq!(String::from("pre:other_id"), element.0);
     }
 
     #[test]
@@ -119,8 +121,8 @@ mod tests {
         collection.add_prefix("pre");
         let mut values = collection.values();
         let element = values.next().unwrap();
-        assert_eq!(element.0, String::from("pre:some_id"));
+        assert_eq!(String::from("pre:some_id"), element.0);
         let element = values.next().unwrap();
-        assert_eq!(element.0, String::from("pre:other_id"));
+        assert_eq!(String::from("pre:other_id"), element.0);
     }
 }

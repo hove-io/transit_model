@@ -78,7 +78,7 @@ fn test_read_global_without_prefix() {
 }
 
 #[test]
-#[should_panic(expected = "Failed to find a \\'UnitPrice\\' frame in the Netex file")]
+#[should_panic(expected = "Failed to find a \\'UnitPrice\\' fare frame in the Netex file")]
 fn test_read_ko_no_unit_price() {
     let objects = transit_model::ntfs::read(Path::new(
         "./tests/fixtures/enrich-with-hellogo-fares/input/ntfs_with_prefix",
@@ -93,7 +93,7 @@ fn test_read_ko_no_unit_price() {
 }
 
 #[test]
-#[should_panic(expected = "Failed to find a unique \\'UnitPrice\\' frame in the Netex file")]
+#[should_panic(expected = "Failed to find a unique \\'UnitPrice\\' fare frame in the Netex file")]
 fn test_read_ko_several_unit_prices() {
     let objects = transit_model::ntfs::read(Path::new(
         "./tests/fixtures/enrich-with-hellogo-fares/input/ntfs_with_prefix",

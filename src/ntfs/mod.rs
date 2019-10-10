@@ -262,21 +262,16 @@ pub fn write_to_zip<P: AsRef<path::Path>>(
 
 #[cfg(test)]
 mod tests {
-
-    use super::Collections;
-    use super::{read, write};
-    use crate::common_format;
-    use crate::objects::*;
-    use crate::read_utils::PathFileHandler;
-    use crate::test_utils::*;
-    use crate::utils::*;
-    use chrono;
+    use super::*;
+    use crate::{read_utils::PathFileHandler, test_utils::*};
     use geo_types::line_string;
+    use pretty_assertions::assert_eq;
     use serde;
-    use std::collections::{BTreeMap, BTreeSet, HashMap};
-    use std::fmt::Debug;
-    use transit_model_collection::*;
-    use transit_model_collection::{Collection, CollectionWithId};
+    use std::{
+        collections::{BTreeMap, BTreeSet, HashMap},
+        fmt::Debug,
+    };
+    use transit_model_collection::{Collection, CollectionWithId, Id};
 
     fn test_serialize_deserialize_collection_with_id<T>(objects: Vec<T>)
     where
@@ -287,7 +282,7 @@ mod tests {
         test_in_tmp_dir(|path| {
             write::write_collection_with_id(path, "file.txt", &collection).unwrap();
             let des_collection = make_collection_with_id(path, "file.txt").unwrap();
-            assert_eq!(des_collection, collection);
+            assert_eq!(collection, des_collection);
         });
     }
 
@@ -300,7 +295,7 @@ mod tests {
         test_in_tmp_dir(|path| {
             write::write_collection(path, "file.txt", &collection).unwrap();
             let des_collection = make_opt_collection(path, "file.txt").unwrap();
-            assert_eq!(des_collection, collection);
+            assert_eq!(collection, des_collection);
         });
     }
 
@@ -649,9 +644,9 @@ mod tests {
             collections.stop_points = stop_points;
 
             read::manage_stop_times(&mut collections, path).unwrap();
-            assert_eq!(collections.vehicle_journeys, vehicle_journeys);
-            assert_eq!(headsigns, collections.stop_time_headsigns);
-            assert_eq!(stop_time_ids, collections.stop_time_ids);
+            assert_eq!(vehicle_journeys, collections.vehicle_journeys);
+            assert_eq!(collections.stop_time_headsigns, headsigns);
+            assert_eq!(collections.stop_time_ids, stop_time_ids);
         });
     }
 
@@ -764,7 +759,7 @@ mod tests {
             let mut collections = Collections::default();
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
 
-            assert_eq!(collections.calendars, calendars);
+            assert_eq!(calendars, collections.calendars);
         });
     }
 
@@ -843,8 +838,8 @@ mod tests {
             let mut collections = Collections::default();
             read::manage_stops(&mut collections, path).unwrap();
 
-            assert_eq!(collections.stop_points, stop_points);
-            assert_eq!(collections.stop_areas, stop_areas);
+            assert_eq!(stop_points, collections.stop_points);
+            assert_eq!(stop_areas, collections.stop_areas);
         });
     }
 

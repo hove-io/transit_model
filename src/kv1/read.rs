@@ -889,9 +889,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::{CollectionWithId, Collections, Kv1Line};
-    use crate::read_utils::PathFileHandler;
-    use crate::test_utils::*;
+    use super::*;
+    use crate::{read_utils::PathFileHandler, test_utils::*};
+    use pretty_assertions::assert_eq;
 
     #[test]
     #[should_panic]
@@ -938,7 +938,7 @@ mod tests {
         let mut collections = Collections::default();
         super::make_physical_and_commercial_modes(&mut collections, &kv1_lines).unwrap();
 
-        let expected = [("Bus", "Bus"), ("Ferry", "Ferry")];
+        let expected = vec![("Bus", "Bus"), ("Ferry", "Ferry")];
 
         let pms: Vec<(&str, &str)> = collections
             .physical_modes
@@ -952,8 +952,8 @@ mod tests {
             .map(|cm| (cm.id.as_ref(), cm.name.as_ref()))
             .collect();
 
-        assert_eq!(pms, expected);
-        assert_eq!(cms, expected);
+        assert_eq!(expected, pms);
+        assert_eq!(expected, cms);
     }
 
     #[test]

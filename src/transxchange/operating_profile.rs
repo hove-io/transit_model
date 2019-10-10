@@ -456,6 +456,7 @@ mod tests {
         use super::*;
         use crate::transxchange::bank_holidays::BankHoliday::*;
         use chrono::Weekday::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn weekend() {
@@ -477,8 +478,8 @@ mod tests {
             let dates: Vec<Date> = operating_profile
                 .iter_with_bank_holidays_between(&bank_holidays, &validity_period)
                 .collect();
-            assert_eq!(dates[0], Date::from_ymd(2019, 1, 5));
-            assert_eq!(dates[1], Date::from_ymd(2019, 1, 6));
+            assert_eq!(Date::from_ymd(2019, 1, 5), dates[0]);
+            assert_eq!(Date::from_ymd(2019, 1, 6), dates[1]);
         }
 
         #[test]
@@ -505,10 +506,10 @@ mod tests {
             let dates: Vec<Date> = operating_profile
                 .iter_with_bank_holidays_between(&bank_holidays, &validity_period)
                 .collect();
-            assert_eq!(dates[0], Date::from_ymd(2017, 1, 1));
-            assert_eq!(dates[1], Date::from_ymd(2017, 1, 2));
-            assert_eq!(dates[2], Date::from_ymd(2017, 1, 7));
-            assert_eq!(dates[3], Date::from_ymd(2017, 1, 8));
+            assert_eq!(Date::from_ymd(2017, 1, 1), dates[0]);
+            assert_eq!(Date::from_ymd(2017, 1, 2), dates[1]);
+            assert_eq!(Date::from_ymd(2017, 1, 7), dates[2]);
+            assert_eq!(Date::from_ymd(2017, 1, 8), dates[3]);
         }
 
         #[test]
@@ -536,10 +537,10 @@ mod tests {
             let dates: Vec<Date> = operating_profile
                 .iter_with_bank_holidays_between(&bank_holidays, &validity_period)
                 .collect();
-            assert_eq!(dates[0], Date::from_ymd(2018, 1, 2));
-            assert_eq!(dates[1], Date::from_ymd(2018, 1, 3));
-            assert_eq!(dates[2], Date::from_ymd(2018, 1, 4));
-            assert_eq!(dates[3], Date::from_ymd(2018, 1, 5));
+            assert_eq!(Date::from_ymd(2018, 1, 2), dates[0]);
+            assert_eq!(Date::from_ymd(2018, 1, 3), dates[1]);
+            assert_eq!(Date::from_ymd(2018, 1, 4), dates[2]);
+            assert_eq!(Date::from_ymd(2018, 1, 5), dates[3]);
         }
     }
 }

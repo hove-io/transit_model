@@ -19,6 +19,8 @@ use crate::{
     common_format::Availability,
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
+    netex_utils,
+    netex_utils::{FrameType, Frames},
     objects::{Codes, Coord, Equipment, StopArea, StopPoint, StopType},
     Result,
 };
@@ -254,17 +256,16 @@ fn load_stop_points<'a>(
 }
 
 fn load_stops(
-    elem: &Element,
+    frames: &Frames,
 ) -> Result<(
     CollectionWithId<StopArea>,
     CollectionWithId<StopPoint>,
     CollectionWithId<Equipment>,
 )> {
-    let member_children: Vec<_> = elem
-        .try_only_child("dataObjects")?
-        .try_only_child("CompositeFrame")?
-        .try_only_child("frames")?
-        .children()
+    let member_children: Vec<_> = frames
+        .get(&FrameType::General)
+        .unwrap_or(&vec![])
+        .iter()
         .flat_map(|e| e.children())
         .filter(|e| e.name() == "members")
         .flat_map(|e| e.children())
@@ -299,11 +300,16 @@ pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Resul
     let mut file = File::open(&path).with_context(ctx_from_path!(path))?;
     let mut file_content = String::new();
     file.read_to_string(&mut file_content)?;
-    let elem = file_content.parse::<Element>();
+    let root: Element = file_content
+        .parse()
+        .map_err(|e| format_err!("Failed to parse file '{:?}': {}", path, e))?;
+    let frames = netex_utils::parse_frames_by_type(
+        root.try_only_child("dataObjects")?
+            .try_only_child("CompositeFrame")?
+            .try_only_child("frames")?,
+    )?;
 
-    let (stop_areas, stop_points, equipments) = elem
-        .map_err(|e| format_err!("Failed to parse file '{:?}': {}", path, e))
-        .and_then(|ref e| load_stops(e))?;
+    let (stop_areas, stop_points, equipments) = load_stops(&frames)?;
 
     collections.stop_areas.try_merge(stop_areas)?;
     collections.stop_points.try_merge(stop_points)?;
@@ -317,7 +323,9 @@ mod tests {
     use super::*;
 
     mod test_coords {
-        use super::{load_coords, Element};
+        use super::*;
+        use pretty_assertions::assert_eq;
+
         #[test]
         #[should_panic(expected = "longitude and latitude not found")]
         fn test_load_coords_with_one_coord() {
@@ -367,6 +375,7 @@ mod tests {
 
     mod test_avaibility {
         use super::*;
+        use pretty_assertions::assert_eq;
 
         #[test]
         fn test_available() {

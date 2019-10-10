@@ -14,11 +14,12 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::{utils, utils::FrameType};
+use super::{utils, utils::FareFrameType};
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
+    netex_utils::{FrameType, Frames},
     objects::*,
     AddPrefix, Result,
 };
@@ -26,11 +27,13 @@ use failure::{bail, format_err};
 use log::{info, warn};
 use minidom::Element;
 use rust_decimal::Decimal;
-use std::collections::BTreeSet;
-use std::convert::{From, TryFrom};
-use std::fs;
-use std::io::Read;
-use std::path::Path;
+use std::{
+    collections::BTreeSet,
+    convert::{From, TryFrom},
+    fs,
+    io::Read,
+    path::Path,
+};
 use zip::read::ZipArchive;
 
 impl TryFrom<&Element> for Ticket {
@@ -118,6 +121,27 @@ fn get_prefix(collections: &Collections) -> Option<String> {
                 .find(':')
                 .map(|index| contributor_id[..index].to_string())
         })
+}
+
+fn get_unit_price_frame<'a>(frames: &'a Frames<'a>) -> Result<&'a Element> {
+    if let Some(fare_frames) = frames.get(&FrameType::Fare) {
+        let mut iterator = fare_frames.iter().filter(|fare_frame| {
+            utils::get_fare_frame_type(fare_frame)
+                .map(|fare_frame_type| fare_frame_type == FareFrameType::UnitPrice)
+                .unwrap_or(false)
+        });
+        if let Some(ref unit_price_frame) = iterator.next() {
+            if iterator.next().is_none() {
+                Ok(unit_price_frame)
+            } else {
+                bail!("Failed to find a unique 'UnitPrice' fare frame in the Netex file")
+            }
+        } else {
+            bail!("Failed to find a 'UnitPrice' fare frame in the Netex file")
+        }
+    } else {
+        bail!("Failed to find a fare frame")
+    }
 }
 
 fn calculate_direct_price(distance_matrix_element: &Element) -> Result<Decimal> {
@@ -280,90 +304,88 @@ fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()>
     let prefix_with_colon = get_prefix(&collections)
         .map(|prefix| prefix + ":")
         .unwrap_or_else(String::new);
-    let frames = utils::get_fare_frames(root)?;
-    let unit_price_frame = utils::get_only_frame(&frames, FrameType::UnitPrice)?;
-    let service_frame = utils::get_only_frame(&frames, FrameType::Service)?;
-    let resource_frame = utils::get_only_frame(&frames, FrameType::Resource)?;
+    let frames = netex_utils::parse_frames_by_type(
+        root.try_only_child("dataObjects")?
+            .try_only_child("CompositeFrame")?
+            .try_only_child("frames")?,
+    )?;
+    let unit_price_frame = get_unit_price_frame(&frames)?;
+    let service_frame = netex_utils::get_only_frame(&frames, FrameType::Service)?;
+    let resource_frame = netex_utils::get_only_frame(&frames, FrameType::Resource)?;
     let unit_price = utils::get_unit_price(unit_price_frame)?;
     let validity = utils::get_validity(resource_frame)?;
-    for frame_type in &[FrameType::DistanceMatrix, FrameType::DirectPriceMatrix] {
-        if let Some(fare_frames) = frames.get(frame_type) {
-            for fare_frame in fare_frames {
-                let line_id = get_line_id(fare_frame, service_frame)?;
-                let line = if let Some(line) = collections
-                    .lines
-                    .get(&format!("{}{}", &prefix_with_colon, line_id))
-                {
-                    line
-                } else {
-                    warn!("Failed to find line ID '{}' in the existing NTFS", line_id);
-                    continue;
-                };
-                let boarding_fee: Decimal =
-                    netex_utils::get_value_in_keylist(fare_frame, "EntranceRateWrtCurrency")?;
-                let rounding_rule: Decimal =
-                    netex_utils::get_value_in_keylist(fare_frame, "RoundingWrtCurrencyRule")?;
-                let rounding_rule = rounding_rule.normalize().scale();
-                let currency = utils::get_currency(fare_frame)?;
-                let distance_matrix_elements = utils::get_distance_matrix_elements(fare_frame)?;
-                for distance_matrix_element in distance_matrix_elements {
-                    let mut ticket = Ticket::try_from(distance_matrix_element)?;
-                    let price = match frame_type {
-                        FrameType::DirectPriceMatrix => {
-                            boarding_fee + calculate_direct_price(distance_matrix_element)?
-                        }
-                        FrameType::DistanceMatrix => {
-                            let distance: Decimal = get_distance(distance_matrix_element)?.into();
-                            boarding_fee + unit_price * distance
-                        }
-                        _ => continue,
-                    };
-                    let price = price.round_dp_with_strategy(
-                        rounding_rule,
-                        rust_decimal::RoundingStrategy::RoundHalfUp,
-                    );
-                    let mut ticket_price = TicketPrice::try_from((
-                        ticket.id.clone(),
-                        price,
-                        currency.clone(),
-                        validity,
-                    ))?;
-                    let mut ticket_use = TicketUse::from(ticket.id.clone());
-                    let mut ticket_use_perimeter =
-                        TicketUsePerimeter::from((ticket_use.id.clone(), line.id.clone()));
-                    let origin_destinations = get_origin_destinations(
-                        &*collections,
-                        service_frame,
-                        distance_matrix_element,
-                        &prefix_with_colon,
-                    )?;
-                    if !origin_destinations.is_empty() {
-                        for origin_destination in origin_destinations {
-                            let mut ticket_use_restriction = TicketUseRestriction::from((
-                                ticket_use.id.clone(),
-                                origin_destination,
-                            ));
-                            // `use_origin` and `use_destination` are already
-                            // prefixed so we can't use the AddPrefix trait here
-                            ticket_use_restriction.ticket_use_id =
-                                prefix_with_colon.clone() + &ticket_use_restriction.ticket_use_id;
-                            collections
-                                .ticket_use_restrictions
-                                .push(ticket_use_restriction);
-                        }
-                        ticket.add_prefix(&prefix_with_colon);
-                        collections.tickets.push(ticket)?;
-                        ticket_use.add_prefix(&prefix_with_colon);
-                        collections.ticket_uses.push(ticket_use)?;
-                        ticket_price.add_prefix(&prefix_with_colon);
-                        collections.ticket_prices.push(ticket_price);
-                        // `object_id` is already prefixed so we can't use the
-                        // AddPrefix trait here
-                        ticket_use_perimeter.ticket_use_id =
-                            prefix_with_colon.clone() + &ticket_use_perimeter.ticket_use_id;
-                        collections.ticket_use_perimeters.push(ticket_use_perimeter);
-                    }
+    for fare_frame in frames.get(&FrameType::Fare).unwrap_or(&vec![]) {
+        let fare_frame_type = utils::get_fare_frame_type(fare_frame)?;
+        if fare_frame_type != FareFrameType::DirectPriceMatrix
+            && fare_frame_type != FareFrameType::DistanceMatrix
+        {
+            continue;
+        }
+        let line_id = get_line_id(fare_frame, service_frame)?;
+        let line = if let Some(line) = collections
+            .lines
+            .get(&format!("{}{}", &prefix_with_colon, line_id))
+        {
+            line
+        } else {
+            warn!("Failed to find line ID '{}' in the existing NTFS", line_id);
+            continue;
+        };
+        let boarding_fee: Decimal =
+            netex_utils::get_value_in_keylist(fare_frame, "EntranceRateWrtCurrency")?;
+        let rounding_rule: Decimal =
+            netex_utils::get_value_in_keylist(fare_frame, "RoundingWrtCurrencyRule")?;
+        let rounding_rule = rounding_rule.normalize().scale();
+        let currency = utils::get_currency(fare_frame)?;
+        let distance_matrix_elements = utils::get_distance_matrix_elements(fare_frame)?;
+        for distance_matrix_element in distance_matrix_elements {
+            let mut ticket = Ticket::try_from(distance_matrix_element)?;
+            let price = match fare_frame_type {
+                FareFrameType::DirectPriceMatrix => {
+                    boarding_fee + calculate_direct_price(distance_matrix_element)?
                 }
+                FareFrameType::DistanceMatrix => {
+                    let distance: Decimal = get_distance(distance_matrix_element)?.into();
+                    boarding_fee + unit_price * distance
+                }
+                _ => continue,
+            };
+            let price = price
+                .round_dp_with_strategy(rounding_rule, rust_decimal::RoundingStrategy::RoundHalfUp);
+            let mut ticket_price =
+                TicketPrice::try_from((ticket.id.clone(), price, currency.clone(), validity))?;
+            let mut ticket_use = TicketUse::from(ticket.id.clone());
+            let mut ticket_use_perimeter =
+                TicketUsePerimeter::from((ticket_use.id.clone(), line.id.clone()));
+            let origin_destinations = get_origin_destinations(
+                &*collections,
+                service_frame,
+                distance_matrix_element,
+                &prefix_with_colon,
+            )?;
+            if !origin_destinations.is_empty() {
+                for origin_destination in origin_destinations {
+                    let mut ticket_use_restriction =
+                        TicketUseRestriction::from((ticket_use.id.clone(), origin_destination));
+                    // `use_origin` and `use_destination` are already
+                    // prefixed so we can't use the AddPrefix trait here
+                    ticket_use_restriction.ticket_use_id =
+                        prefix_with_colon.clone() + &ticket_use_restriction.ticket_use_id;
+                    collections
+                        .ticket_use_restrictions
+                        .push(ticket_use_restriction);
+                }
+                ticket.add_prefix(&prefix_with_colon);
+                collections.tickets.push(ticket)?;
+                ticket_use.add_prefix(&prefix_with_colon);
+                collections.ticket_uses.push(ticket_use)?;
+                ticket_price.add_prefix(&prefix_with_colon);
+                collections.ticket_prices.push(ticket_price);
+                // `object_id` is already prefixed so we can't use the
+                // AddPrefix trait here
+                ticket_use_perimeter.ticket_use_id =
+                    prefix_with_colon.clone() + &ticket_use_perimeter.ticket_use_id;
+                collections.ticket_use_perimeters.push(ticket_use_perimeter);
             }
         }
     }
@@ -413,10 +435,10 @@ pub fn enrich_with_hellogo_fares<P: AsRef<Path>>(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     mod prefix {
-        use super::super::get_prefix;
-        use crate::model::Collections;
-        use crate::objects::Contributor;
+        use super::*;
         use pretty_assertions::assert_eq;
 
         #[test]
@@ -428,31 +450,103 @@ mod tests {
             };
             collections.contributors.push(contributor).unwrap();
             let prefix = get_prefix(&collections).unwrap();
-            assert_eq!(prefix, "PRE");
+            assert_eq!("PRE", prefix);
         }
 
         #[test]
         fn no_prefix() {
             let collections = Collections::default();
             let prefix = get_prefix(&collections);
-            assert_eq!(prefix, None);
+            assert_eq!(None, prefix);
+        }
+    }
+
+    mod unit_price_frame {
+        use super::*;
+        use std::collections::HashMap;
+
+        #[test]
+        fn has_unit_price_frame() {
+            let xml = r#"<root>
+                    <fareStructures>
+                        <FareStructure>
+                            <KeyList>
+                                <KeyValue>
+                                    <Key>FareStructureType</Key>
+                                    <Value>UnitPrice</Value>
+                                </KeyValue>
+                            </KeyList>
+                        </FareStructure>
+                    </fareStructures>
+                </root>"#;
+            let unit_price_frame: Element = xml.parse().unwrap();
+            let mut frames = HashMap::new();
+            frames.insert(FrameType::Fare, vec![&unit_price_frame]);
+            let unit_price_frame = get_unit_price_frame(&frames);
+            assert!(unit_price_frame.is_ok())
+        }
+
+        #[test]
+        #[should_panic = "Failed to find a fare frame"]
+        fn no_fare_frame() {
+            get_unit_price_frame(&HashMap::new()).unwrap();
+        }
+
+        #[test]
+        #[should_panic = "Failed to find a \\'UnitPrice\\' fare frame in the Netex file"]
+        fn no_unit_price_fare_frame() {
+            let xml = r#"<root>
+                    <fareStructures>
+                        <FareStructure>
+                            <KeyList>
+                                <KeyValue>
+                                    <Key>FareStructureType</Key>
+                                    <Value>DistanceMatrix</Value>
+                                </KeyValue>
+                            </KeyList>
+                        </FareStructure>
+                    </fareStructures>
+                </root>"#;
+            let unit_price_frame: Element = xml.parse().unwrap();
+            let mut frames = HashMap::new();
+            frames.insert(FrameType::Fare, vec![&unit_price_frame]);
+            get_unit_price_frame(&frames).unwrap();
+        }
+
+        #[test]
+        #[should_panic = "Failed to find a unique \\'UnitPrice\\' fare frame in the Netex file"]
+        fn multiple_unit_price_fare_frame() {
+            let xml = r#"<root>
+                    <fareStructures>
+                        <FareStructure>
+                            <KeyList>
+                                <KeyValue>
+                                    <Key>FareStructureType</Key>
+                                    <Value>UnitPrice</Value>
+                                </KeyValue>
+                            </KeyList>
+                        </FareStructure>
+                    </fareStructures>
+                </root>"#;
+            let unit_price_frame: Element = xml.parse().unwrap();
+            let mut frames = HashMap::new();
+            frames.insert(FrameType::Fare, vec![&unit_price_frame, &unit_price_frame]);
+            get_unit_price_frame(&frames).unwrap();
         }
     }
 
     mod ticket {
-        use crate::objects::Ticket;
-        use minidom::Element;
+        use super::*;
         use pretty_assertions::assert_eq;
-        use std::convert::TryFrom;
 
         #[test]
         fn extract_ticket() {
             let xml = r#"<DistanceMatrixElement id="ticket:1" />"#;
             let distance_matrix_element: Element = xml.parse().unwrap();
             let ticket = Ticket::try_from(&distance_matrix_element).unwrap();
-            assert_eq!(ticket.id, "ticket:1");
-            assert_eq!(ticket.name, "Ticket Origin-Destination");
-            assert_eq!(ticket.comment, None);
+            assert_eq!("ticket:1", ticket.id);
+            assert_eq!("Ticket Origin-Destination", ticket.name);
+            assert_eq!(None, ticket.comment);
         }
 
         #[test]
@@ -477,11 +571,10 @@ mod tests {
     }
 
     mod ticket_price {
-        use crate::objects::TicketPrice;
+        use super::*;
         use chrono::NaiveDate;
         use pretty_assertions::assert_eq;
         use rust_decimal_macros::dec;
-        use std::convert::TryFrom;
 
         #[test]
         fn valid_ticket_price() {
@@ -493,11 +586,11 @@ mod tests {
             let ticket_price =
                 TicketPrice::try_from((ticket_id, price, currency, (validity_start, validity_end)))
                     .unwrap();
-            assert_eq!(ticket_price.ticket_id, String::from("ticket:1"));
-            assert_eq!(ticket_price.price, dec!(4.2));
-            assert_eq!(ticket_price.currency, String::from("EUR"));
-            assert_eq!(ticket_price.ticket_validity_start, validity_start);
-            assert_eq!(ticket_price.ticket_validity_end, validity_end);
+            assert_eq!(String::from("ticket:1"), ticket_price.ticket_id);
+            assert_eq!(dec!(4.2), ticket_price.price);
+            assert_eq!(String::from("EUR"), ticket_price.currency);
+            assert_eq!(validity_start, ticket_price.ticket_validity_start);
+            assert_eq!(validity_end, ticket_price.ticket_validity_end);
         }
 
         #[test]
@@ -514,26 +607,24 @@ mod tests {
     }
 
     mod ticket_use {
-        use crate::objects::TicketUse;
+        use super::*;
         use pretty_assertions::assert_eq;
-        use std::convert::From;
 
         #[test]
         fn valid_ticket_use() {
             let ticket_id = String::from("ticket:1");
             let ticket_use = TicketUse::from(ticket_id);
-            assert_eq!(ticket_use.id, String::from("TU:ticket:1"));
-            assert_eq!(ticket_use.ticket_id, String::from("ticket:1"));
-            assert_eq!(ticket_use.max_transfers.unwrap(), 0);
-            assert_eq!(ticket_use.boarding_time_limit, None);
-            assert_eq!(ticket_use.alighting_time_limit, None);
+            assert_eq!(String::from("TU:ticket:1"), ticket_use.id);
+            assert_eq!(String::from("ticket:1"), ticket_use.ticket_id);
+            assert_eq!(0, ticket_use.max_transfers.unwrap());
+            assert_eq!(None, ticket_use.boarding_time_limit);
+            assert_eq!(None, ticket_use.alighting_time_limit);
         }
     }
 
     mod ticket_use_perimeter {
-        use crate::objects::{ObjectType, PerimeterAction, TicketUsePerimeter};
+        use super::*;
         use pretty_assertions::assert_eq;
-        use std::convert::From;
 
         #[test]
         fn valid_ticket_use() {
@@ -541,22 +632,21 @@ mod tests {
             let line_id = String::from("line:1");
             let ticket_use_perimeter = TicketUsePerimeter::from((ticket_use_id, line_id));
             assert_eq!(
-                ticket_use_perimeter.ticket_use_id,
-                String::from("ticket_use:1")
+                String::from("ticket_use:1"),
+                ticket_use_perimeter.ticket_use_id
             );
-            assert_eq!(ticket_use_perimeter.object_id, String::from("line:1"));
-            assert_eq!(ticket_use_perimeter.object_type, ObjectType::Line);
+            assert_eq!(String::from("line:1"), ticket_use_perimeter.object_id);
+            assert_eq!(ObjectType::Line, ticket_use_perimeter.object_type);
             assert_eq!(
-                ticket_use_perimeter.perimeter_action,
-                PerimeterAction::Included
+                PerimeterAction::Included,
+                ticket_use_perimeter.perimeter_action
             );
         }
     }
 
     mod ticket_use_restriction {
-        use crate::objects::{RestrictionType, TicketUseRestriction};
+        use super::*;
         use pretty_assertions::assert_eq;
-        use std::convert::From;
 
         #[test]
         fn valid_ticket_use() {
@@ -566,27 +656,26 @@ mod tests {
             let ticket_use_restriction =
                 TicketUseRestriction::from((ticket_use_id, (origin, destination)));
             assert_eq!(
-                ticket_use_restriction.ticket_use_id,
-                String::from("ticket_use:1")
+                String::from("ticket_use:1"),
+                ticket_use_restriction.ticket_use_id
             );
             assert_eq!(
-                ticket_use_restriction.restriction_type,
-                RestrictionType::OriginDestination
+                RestrictionType::OriginDestination,
+                ticket_use_restriction.restriction_type
             );
             assert_eq!(
-                ticket_use_restriction.use_origin,
-                String::from("stop_area:1")
+                String::from("stop_area:1"),
+                ticket_use_restriction.use_origin
             );
             assert_eq!(
-                ticket_use_restriction.use_destination,
-                String::from("stop_area:2")
+                String::from("stop_area:2"),
+                ticket_use_restriction.use_destination
             );
         }
     }
 
     mod direct_price {
-        use super::super::calculate_direct_price;
-        use minidom::Element;
+        use super::*;
         use pretty_assertions::assert_eq;
         use rust_decimal_macros::dec;
 
@@ -602,7 +691,7 @@ mod tests {
                 </DistanceMatrixElement>"#;
             let distance_element_matrix: Element = xml.parse().unwrap();
             let price = calculate_direct_price(&distance_element_matrix).unwrap();
-            assert_eq!(price, dec!(21.0));
+            assert_eq!(dec!(21.0), price);
         }
 
         #[test]
@@ -644,8 +733,7 @@ mod tests {
     }
 
     mod distance {
-        use super::super::get_distance;
-        use minidom::Element;
+        use super::*;
         use pretty_assertions::assert_eq;
 
         #[test]
@@ -655,7 +743,7 @@ mod tests {
                 </DistanceMatrixElement>"#;
             let distance_element_matrix: Element = xml.parse().unwrap();
             let distance = get_distance(&distance_element_matrix).unwrap();
-            assert_eq!(distance, 50);
+            assert_eq!(50, distance);
         }
 
         #[test]
@@ -670,8 +758,7 @@ mod tests {
     }
 
     mod line_id {
-        use super::super::get_line_id;
-        use minidom::Element;
+        use super::*;
         use pretty_assertions::assert_eq;
 
         const SERVICE_XML: &'static str = r#"<ServiceFrame>
@@ -699,7 +786,7 @@ mod tests {
             let service_frame: Element = SERVICE_XML.parse().unwrap();
             let fare_frame: Element = FARE_FRAME_XML.parse().unwrap();
             let line_id = get_line_id(&fare_frame, &service_frame).unwrap();
-            assert_eq!(line_id, "B42");
+            assert_eq!("B42", line_id);
         }
 
         #[test]
@@ -757,7 +844,7 @@ mod tests {
             let service_frame: Element = SERVICE_XML.parse().unwrap();
             let fare_frame: Element = fare_frame_xml.parse().unwrap();
             let line_id = get_line_id(&fare_frame, &service_frame).unwrap();
-            assert_eq!(line_id, "Bla");
+            assert_eq!("Bla", line_id);
         }
 
         #[test]
@@ -821,11 +908,8 @@ mod tests {
     }
 
     mod origin_destination {
-        use super::super::get_origin_destinations;
-        use crate::{model::Collections, objects::*};
-        use minidom::Element;
+        use super::*;
         use pretty_assertions::assert_eq;
-        use std::default::Default;
 
         const PREFIX_WITH_COLON: &'static str = "NTM:";
 
@@ -906,24 +990,24 @@ mod tests {
                 PREFIX_WITH_COLON,
             )
             .unwrap();
-            assert_eq!(ticket_use_restrictions.len(), 2);
+            assert_eq!(2, ticket_use_restrictions.len());
             let ticket_use_restriction = &ticket_use_restrictions[0];
             assert_eq!(
-                ticket_use_restriction.0,
-                format!("{}sa:1", PREFIX_WITH_COLON)
+                format!("{}sa:1", PREFIX_WITH_COLON),
+                ticket_use_restriction.0
             );
             assert_eq!(
-                ticket_use_restriction.1,
-                format!("{}sa:2", PREFIX_WITH_COLON)
+                format!("{}sa:2", PREFIX_WITH_COLON),
+                ticket_use_restriction.1
             );
             let ticket_use_restriction = &ticket_use_restrictions[1];
             assert_eq!(
-                ticket_use_restriction.0,
-                format!("{}sa:1", PREFIX_WITH_COLON)
+                format!("{}sa:1", PREFIX_WITH_COLON),
+                ticket_use_restriction.0
             );
             assert_eq!(
-                ticket_use_restriction.1,
-                format!("{}sa:3", PREFIX_WITH_COLON)
+                format!("{}sa:3", PREFIX_WITH_COLON),
+                ticket_use_restriction.1
             );
         }
 
@@ -1095,7 +1179,7 @@ mod tests {
                 PREFIX_WITH_COLON,
             )
             .unwrap();
-            assert_eq!(origin_destinations.len(), 0);
+            assert_eq!(0, origin_destinations.len());
         }
 
         #[test]
@@ -1131,7 +1215,7 @@ mod tests {
                 PREFIX_WITH_COLON,
             )
             .unwrap();
-            assert_eq!(origin_destinations.len(), 0);
+            assert_eq!(0, origin_destinations.len());
         }
     }
 }

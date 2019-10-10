@@ -364,8 +364,10 @@ impl Report {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     mod serde_currency {
-        use super::super::*;
+        use super::*;
         use pretty_assertions::assert_eq;
         use serde::{Deserialize, Serialize};
 
@@ -386,7 +388,7 @@ mod tests {
             let json = serde_json::to_string(&wrapper).unwrap();
             let wrapper: CurrencyCodeWrapper = serde_json::from_str(&json).unwrap();
 
-            assert_eq!(wrapper.currency_code, "EUR");
+            assert_eq!("EUR", wrapper.currency_code);
         }
 
         #[test]
@@ -394,7 +396,7 @@ mod tests {
             let result: Result<CurrencyCodeWrapper, _> =
                 serde_json::from_str("{\"currency_code\":\"XXX\"}");
             let err_msg = result.unwrap_err().to_string();
-            assert_eq!(err_msg, "invalid value: unrecognized currency code (ISO-4217), expected 3-letters currency code (ISO-4217) at line 1 column 23");
+            assert_eq!( "invalid value: unrecognized currency code (ISO-4217), expected 3-letters currency code (ISO-4217) at line 1 column 23",err_msg);
         }
 
         #[test]
@@ -405,14 +407,14 @@ mod tests {
             let result = serde_json::to_string(&wrapper);
             let err_msg = result.unwrap_err().to_string();
             assert_eq!(
-                err_msg,
-                "The String is not a valid currency code (ISO-4217)"
+                "The String is not a valid currency code (ISO-4217)",
+                err_msg
             );
         }
     }
 
     mod deserialize_decimal {
-        use super::super::*;
+        use super::*;
         use pretty_assertions::assert_eq;
         use rust_decimal_macros::dec;
         use serde::{Deserialize, Serialize};
@@ -427,14 +429,14 @@ mod tests {
         fn positive_decimal() {
             let result: Result<DecimalWrapper, _> = serde_json::from_str("{\"value\":\"4.2\"}");
             let wrapper = result.unwrap();
-            assert_eq!(wrapper.value, dec!(4.2));
+            assert_eq!(dec!(4.2), wrapper.value);
         }
 
         #[test]
         fn negative_decimal() {
             let result: Result<DecimalWrapper, _> = serde_json::from_str("{\"value\":\"-4.2\"}");
             let err_msg = result.unwrap_err().to_string();
-            assert_eq!(err_msg, "invalid value: strictly negative float number, expected positive float number at line 1 column 16");
+            assert_eq!( "invalid value: strictly negative float number, expected positive float number at line 1 column 16",err_msg);
         }
 
         #[test]
@@ -443,8 +445,8 @@ mod tests {
                 serde_json::from_str("{\"value\":\"NotANumber\"}");
             let err_msg = result.unwrap_err().to_string();
             assert_eq!(
-                err_msg,
-                "invalid value: string \"NotANumber\", expected a Decimal type representing a fixed-point number at line 1 column 21"
+                "invalid value: string \"NotANumber\", expected a Decimal type representing a fixed-point number at line 1 column 21",
+                err_msg
             );
         }
     }

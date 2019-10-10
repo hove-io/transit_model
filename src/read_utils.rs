@@ -217,6 +217,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
     use std::io::Read;
 
     #[test]
@@ -226,12 +227,12 @@ mod tests {
         let (mut hello, _) = file_handler.get_file("hello.txt").unwrap();
         let mut hello_str = String::new();
         hello.read_to_string(&mut hello_str).unwrap();
-        assert_eq!(hello_str, "hello\n");
+        assert_eq!("hello\n", hello_str);
 
         let (mut world, _) = file_handler.get_file("folder/world.txt").unwrap();
         let mut world_str = String::new();
         world.read_to_string(&mut world_str).unwrap();
-        assert_eq!(world_str, "world\n");
+        assert_eq!("world\n", world_str);
     }
 
     #[test]
@@ -243,14 +244,14 @@ mod tests {
             let (mut hello, _) = file_handler.get_file("hello.txt").unwrap();
             let mut hello_str = String::new();
             hello.read_to_string(&mut hello_str).unwrap();
-            assert_eq!(hello_str, "hello\n");
+            assert_eq!("hello\n", hello_str);
         }
 
         {
             let (mut world, _) = file_handler.get_file("world.txt").unwrap();
             let mut world_str = String::new();
             world.read_to_string(&mut world_str).unwrap();
-            assert_eq!(world_str, "world\n");
+            assert_eq!("world\n", world_str);
         }
     }
 }

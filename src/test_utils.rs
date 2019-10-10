@@ -65,7 +65,7 @@ pub fn compare_output_dir_with_expected<P: AsRef<Path>>(
         let expected_file_path = format!("{}/{}", work_dir_expected, filename);
         let expected_contents = get_lines_content(expected_file_path);
 
-        assert_eq!(output_contents, expected_contents);
+        assert_eq!(expected_contents, output_contents);
     }
 }
 

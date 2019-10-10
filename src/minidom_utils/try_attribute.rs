@@ -44,16 +44,15 @@ impl TryAttribute for Element {
 
 #[cfg(test)]
 mod tests {
-    use super::TryAttribute;
-    use approx::assert_relative_eq;
-    use minidom::Element;
+    use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn one_attribute() {
-        let xml: &'static str = r#"<root id="4.2" />"#;
+        let xml: &'static str = r#"<root id="42" />"#;
         let root: Element = xml.parse().unwrap();
-        let id: f64 = root.try_attribute("id").unwrap();
-        assert_relative_eq!(id, 4.2);
+        let id: u64 = root.try_attribute("id").unwrap();
+        assert_eq!(42, id);
     }
 
     #[test]
