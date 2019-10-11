@@ -166,11 +166,10 @@ fn load_network(transxchange: &Element) -> Result<Network> {
         .trim()
         .to_string();
     let timezone = Some(String::from(EUROPE_LONDON_TIMEZONE));
-    let url = operator.try_only_child("WebSite").map(Element::text).ok();
+    let url = operator.only_child("WebSite").map(Element::text);
     let phone = operator
-        .try_only_child("ContactTelephoneNumber")
-        .map(Element::text)
-        .ok();
+        .only_child("ContactTelephoneNumber")
+        .map(Element::text);
     let network = Network {
         id,
         name,
@@ -437,14 +436,13 @@ fn get_stop_point_activity<'a>(
     vehicle_journey_timing_links
         .iter()
         .find(|vjtl| {
-            vjtl.try_only_child("JourneyPatternTimingLinkRef")
+            vjtl.only_child("JourneyPatternTimingLinkRef")
                 .map(Element::text)
-                .ok()
                 == journey_pattern_timing_link
                     .attr("id")
                     .map(|s| s.to_string())
         })
-        .and_then(|vjtl| vjtl.try_only_child(direction).ok())
+        .and_then(|vjtl| vjtl.only_child(direction))
         .unwrap_or(stop_point)
 }
 
@@ -651,10 +649,9 @@ fn load_routes_vehicle_journeys_calendars(
         )?;
         let route_id = route.id.clone();
         let headsign = journey_pattern
-            .try_only_child("DestinationDisplay")
+            .only_child("DestinationDisplay")
             .map(Element::text)
-            .map(|head_sign| head_sign.trim().to_string())
-            .ok();
+            .map(|head_sign| head_sign.trim().to_string());
 
         // Insert only at the last moment and if no duplicate calendar exist
         if dup_calendar.is_none() {
