@@ -76,9 +76,9 @@ enum StopLocationType {
     BoardingArea,
 }
 
-impl Into<StopType> for StopLocationType {
-    fn into(self) -> StopType {
-        match self {
+impl From<StopLocationType> for StopType {
+    fn from(stop_location_type: StopLocationType) -> StopType {
+        match stop_location_type {
             StopLocationType::StopPoint => StopType::Point,
             StopLocationType::StopArea => StopType::Zone,
             StopLocationType::GeographicArea => StopType::Zone,
