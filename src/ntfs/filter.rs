@@ -21,14 +21,11 @@
 use crate::{Model, Result};
 use failure::bail;
 use std::collections::HashSet;
-use structopt::clap::arg_enum;
 
-arg_enum! {
-    #[derive(Debug)]
-    pub enum Action {
-        Extract,
-        Remove,
-    }
+#[derive(Debug)]
+pub enum Action {
+    Extract,
+    Remove,
 }
 
 /// Extract or remove networks
