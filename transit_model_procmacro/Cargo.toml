@@ -5,6 +5,7 @@ authors = ["Guillaume Pinot <texitoi@texitoi.eu>"]
 license = "AGPL-3.0-only"
 description = "A private procmacro crate for the transit_model crate"
 edition = "2018"
+autotests = false
 
 [lib]
 proc-macro = true
@@ -12,3 +13,14 @@ proc-macro = true
 [dependencies]
 syn = "0.11.11"
 quote = "0.3.15"
+
+[dev-dependencies]
+pretty_assertions = "0.6"
+trybuild = "1"
+transit_model = { path = "../" }
+transit_model_collection = { path = "../collection" }
+transit_model_relations = { path = "../relations" }
+
+[[test]]
+name = "tests"
+path = "tests/tests.rs"
