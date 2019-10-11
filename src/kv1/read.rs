@@ -701,7 +701,7 @@ fn make_routes(collections: &mut Collections, jopas: &[Jopa]) -> Result<()> {
         .collect();
     for ((line_id, direction), jopa) in jopas_map {
         let id = jopa.route_id();
-        let (origin, destination) = get_route_origin_destination(collections, &id)?;
+        let (origin, destination) = skip_fail!(get_route_origin_destination(collections, &id));
         let name = format!("{} - {}", origin.name, destination.name);
         let destination_stop_area = collections
             .stop_areas
@@ -763,9 +763,9 @@ fn make_lines(collections: &mut Collections, lines: &CollectionWithId<Kv1Line>) 
             .filter(|r| r.line_id == l.id)
             .collect();
         let backward_route = route_name_by_direction(&corresponding_routes, "backward");
-        let forward_route = route_name_by_direction(&corresponding_routes, "forward")
+        let forward_route = skip_fail!(route_name_by_direction(&corresponding_routes, "forward")
             .or(backward_route)
-            .ok_or_else(|| format_err!("no routes found with line_id={}", l.id,))?;
+            .ok_or_else(|| format_err!("no routes found with line_id={}", l.id,)));
 
         collections
             .lines
