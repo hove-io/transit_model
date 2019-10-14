@@ -421,7 +421,13 @@ pub fn enrich_with_hellogo_fares<P: AsRef<Path>>(
                     info!("reading fares file {:?}", zip_file.sanitized_name());
                     let mut file_content = String::new();
                     zip_file.read_to_string(&mut file_content)?;
-                    let root: Element = file_content.parse()?;
+                    let root: Element = file_content.parse().map_err(|e| {
+                        format_err!(
+                            "failed to parse file '{:?}': {}",
+                            zip_file.sanitized_name(),
+                            e
+                        )
+                    })?;
                     load_netex_fares(collections, &root)?;
                 }
                 _ => {

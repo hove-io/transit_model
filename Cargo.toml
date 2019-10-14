@@ -22,7 +22,7 @@ geo-types = "0.4"
 iso4217 = "0.3"
 lazy_static = "1.2"
 log = "0.4"
-minidom = "0.9"
+minidom = "0.11"
 num-traits = "0.2"
 pretty_assertions = "0.6"
 proj = { version = "0.10", optional = true }
