@@ -35,6 +35,12 @@ pub trait TryOnlyChild {
     fn try_only_child<'a>(&'a self, child_name: &str) -> Result<&'a Self> {
         self.try_only_child_with_filter(child_name, |_| true)
     }
+
+    /// Get a unique child from its name and return an [Option](std::Option)
+    /// Returns None if the child can't be found or if the child is not unique
+    fn only_child<'a>(&'a self, child_name: &str) -> Option<&'a Self> {
+        self.try_only_child(child_name).ok()
+    }
 }
 
 impl TryOnlyChild for Element {

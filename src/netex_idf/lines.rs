@@ -56,8 +56,8 @@ fn load_netex_lines(
             for line in lines_node.children().filter(|e| e.name() == "Line") {
                 let id = line.try_attribute("id")?;
                 let name = line.try_only_child("Name")?.text().parse()?;
-                let code = line.try_only_child("ShortName").map(Element::text).ok();
-                let private_code = line.try_only_child("PrivateCode").map(Element::text).ok();
+                let code = line.only_child("ShortName").map(Element::text);
+                let private_code = line.only_child("PrivateCode").map(Element::text);
                 let network_id = if let Some(network_id) = map_line_network.get(&id) {
                     network_id.to_string()
                 } else {
