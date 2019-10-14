@@ -11,8 +11,8 @@ pull_request_rules:
       - author=@coretoolsteam
     actions:
       merge:
-        method: merge
-        strict: true
+        method: smart
+        strict_method: rebase
   - name: delete head branch after merge
     conditions: []
     actions:
