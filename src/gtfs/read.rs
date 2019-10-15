@@ -89,6 +89,7 @@ impl TryFrom<Stop> for objects::StopArea {
     type Error = Error;
     fn try_from(stop: Stop) -> Result<Self> {
         let mut codes: KeysValues = BTreeSet::new();
+        codes.insert(("source".to_string(), stop.id.clone()));
         if let Some(c) = stop.code {
             codes.insert(("gtfs_stop_code".to_string(), c));
         }
@@ -121,6 +122,7 @@ impl TryFrom<Stop> for objects::StopPoint {
     type Error = Error;
     fn try_from(stop: Stop) -> Result<Self> {
         let mut codes: KeysValues = BTreeSet::new();
+        codes.insert(("source".to_string(), stop.id.clone()));
         if let Some(c) = stop.code {
             codes.insert(("gtfs_stop_code".to_string(), c));
         }
