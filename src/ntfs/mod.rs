@@ -204,7 +204,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
     read::manage_stops(&mut collections, path)?;
-    collections.pathways = read::read_pathways(&mut collections, path)?;
+    read::manage_pathways(&mut collections, path)?;
     read::manage_stop_times(&mut collections, path)?;
     read::manage_codes(&mut collections, path)?;
     read::manage_comments(&mut collections, path)?;

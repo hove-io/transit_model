@@ -618,15 +618,12 @@ pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {
     Ok(())
 }
 
-pub fn read_pathways(
-    collections: &mut Collections,
-    path: &path::Path,
-) -> Result<CollectionWithId<Pathway>> {
+pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Result<()> {
     let file = "pathways.txt";
     let pathway_path = path.join(file);
     if !pathway_path.exists() {
         info!("Skipping {}", file);
-        return Ok(CollectionWithId::new(vec![])?);
+        return Ok(());
     }
 
     info!("Reading {}", file);
@@ -671,7 +668,8 @@ pub fn read_pathways(
         pathways.push(pathway);
     }
 
-    Ok(CollectionWithId::new(pathways)?)
+    collections.pathways = CollectionWithId::new(pathways)?;
+    Ok(())
 }
 
 #[cfg(test)]

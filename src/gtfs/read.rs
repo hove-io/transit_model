@@ -676,10 +676,7 @@ where
     Ok((stopareas, stoppoints, stoplocations))
 }
 
-pub fn read_pathways<H>(
-    collections: &mut Collections,
-    file_handler: &mut H,
-) -> Result<CollectionWithId<objects::Pathway>>
+pub fn manage_pathways<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -688,7 +685,6 @@ where
     match reader {
         None => {
             info!("Skipping {}", file);
-            Ok(CollectionWithId::new(vec![])?)
         }
         Some(reader) => {
             info!("Reading {}", file);
@@ -730,9 +726,10 @@ where
                     }));
                 pathways.push(pathway);
             }
-            Ok(CollectionWithId::new(pathways)?)
+            collections.pathways = CollectionWithId::new(pathways)?;
         }
     }
+    Ok(())
 }
 
 pub fn read_transfers<H>(
@@ -3035,8 +3032,8 @@ mod tests {
             collections.stop_points = stop_points;
             collections.stop_locations = stop_locations;
 
-            let pathways = super::read_pathways(&mut collections, &mut handler).unwrap();
-            assert_eq!(1, pathways.len());
+            super::manage_pathways(&mut collections, &mut handler).unwrap();
+            assert_eq!(1, collections.pathways.len());
         })
     }
     #[test]
