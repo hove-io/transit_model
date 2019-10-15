@@ -1162,10 +1162,7 @@ pub struct Pathway {
     #[serde(skip)]
     pub to_stop_type: StopType,
     pub pathway_mode: PathwayMode,
-    #[serde(
-        deserialize_with = "de_from_u8_with_check",
-        serialize_with = "ser_from_bool"
-    )]
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     pub is_bidirectional: bool,
     #[serde(default, deserialize_with = "de_option_positive_decimal")]
     pub length: Option<Decimal>,
