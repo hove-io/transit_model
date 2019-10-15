@@ -476,7 +476,7 @@ pub fn write_stops(
         })
         .with_context(ctx_from_path!(path))?;
     }
-
+    #[cfg(feature = "stop_location")]
     for sl in stop_locations.values() {
         let (lon, lat) = sl.coord.into();
         wtr.serialize(Stop {
