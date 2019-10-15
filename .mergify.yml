@@ -12,7 +12,8 @@ pull_request_rules:
     actions:
       merge:
         method: merge
-        strict: true
+        strict: smart
+        strict_method: rebase
   - name: delete head branch after merge
     conditions: []
     actions:
