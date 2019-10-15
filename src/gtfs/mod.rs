@@ -296,7 +296,7 @@ where
     collections.comments = comments;
     read::manage_stop_times(&mut collections, file_handler)?;
     read::manage_frequencies(&mut collections, file_handler)?;
-    collections.pathways = read::read_pathways(&mut collections, file_handler)?;
+    read::manage_pathways(&mut collections, file_handler)?;
     collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
     collections.sanitize()?;
 
