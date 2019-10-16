@@ -30,7 +30,6 @@ fn test_read_write_netex_idf() {
         compare_output_dir_with_expected(
             &output_dir,
             Some(vec![
-                "commercial_modes.txt",
                 "contributors.txt",
                 "datasets.txt",
                 "feed_infos.txt",
@@ -38,6 +37,7 @@ fn test_read_write_netex_idf() {
                 "physical_modes.txt",
                 "companies.txt",
                 "networks.txt",
+                "stops.txt",
             ]),
             "tests/fixtures/netexidf2ntfs/output",
         );
