@@ -270,3 +270,75 @@ fn sanitize_frequencies() {
     collections.sanitize().unwrap();
     assert_eq!(collections.frequencies.len(), 0);
 }
+
+#[test]
+fn sanitize_grid() {
+    let mut collections = Collections::default();
+    let grid_calendar = GridCalendar {
+        id: String::from("grid_calendar_id"),
+        name: String::from("Grid Calendar Name"),
+        monday: true,
+        tuesday: true,
+        wednesday: true,
+        thursday: true,
+        friday: true,
+        saturday: false,
+        sunday: false,
+    };
+    let grid_exception_date = GridExceptionDate {
+        grid_calendar_id: String::from("grid_calendar_id"),
+        date: Date::from_ymd(2019, 1, 1),
+        r#type: true,
+    };
+    let grid_period = GridPeriod {
+        grid_calendar_id: String::from("grid_calendar_id"),
+        start_date: Date::from_ymd(2019, 1, 1),
+        end_date: Date::from_ymd(2019, 12, 31),
+    };
+    let grid_rel_calendar_line = GridRelCalendarLine {
+        grid_calendar_id: String::from("grid_calendar_id"),
+        line_id: String::from("A line which doesn't exist"),
+        line_external_code: None,
+    };
+    collections.grid_calendars.push(grid_calendar).unwrap();
+    collections.grid_exception_dates.push(grid_exception_date);
+    collections.grid_periods.push(grid_period);
+    collections
+        .grid_rel_calendar_line
+        .push(grid_rel_calendar_line);
+
+    collections.sanitize().unwrap();
+    assert_eq!(0, collections.grid_calendars.len());
+    assert_eq!(0, collections.grid_exception_dates.len());
+    assert_eq!(0, collections.grid_periods.len());
+    assert_eq!(0, collections.grid_rel_calendar_line.len());
+}
+
+#[test]
+fn sanitize_grid_with_line_external_code() {
+    let mut collections = Collections::default();
+    let grid_calendar = GridCalendar {
+        id: String::from("grid_calendar_id"),
+        name: String::from("Grid Calendar Name"),
+        monday: true,
+        tuesday: true,
+        wednesday: true,
+        thursday: true,
+        friday: true,
+        saturday: false,
+        sunday: false,
+    };
+    let grid_rel_calendar_line = GridRelCalendarLine {
+        grid_calendar_id: String::from("grid_calendar_id"),
+        line_id: String::from(""),
+        line_external_code: Some(String::from("some_line_id")),
+    };
+    collections.grid_calendars.push(grid_calendar).unwrap();
+    collections
+        .grid_rel_calendar_line
+        .push(grid_rel_calendar_line);
+
+    collections.sanitize().unwrap();
+    assert_eq!(1, collections.grid_calendars.len());
+    assert_eq!(1, collections.grid_rel_calendar_line.len());
+}

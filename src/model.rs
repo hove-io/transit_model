@@ -564,6 +564,27 @@ impl Collections {
                     .map(|new_vj_id| ((*new_vj_id, *seq), headsign.clone()))
             })
             .collect();
+        self.grid_rel_calendar_line
+            .retain(|grid_rel_calendar_line| {
+                line_ids_used.contains(&grid_rel_calendar_line.line_id)
+                    // If `line_external_code` is used,
+                    // it is not possible to sanitize without the exact `line` identifier
+                    || (grid_rel_calendar_line.line_id.is_empty() && grid_rel_calendar_line.line_external_code.is_some())
+            });
+        let grid_calendar_id_used: Vec<_> = self
+            .grid_rel_calendar_line
+            .values()
+            .map(|grid_rel_calendar_line| grid_rel_calendar_line.grid_calendar_id.clone())
+            .collect();
+        self.grid_calendars.retain(log_predicate(
+            "GridCalendar",
+            |grid_calendar: &GridCalendar| grid_calendar_id_used.contains(&grid_calendar.id),
+        ));
+        self.grid_exception_dates.retain(|grid_exception_date| {
+            grid_calendar_id_used.contains(&grid_exception_date.grid_calendar_id)
+        });
+        self.grid_periods
+            .retain(|grid_period| grid_calendar_id_used.contains(&grid_period.grid_calendar_id));
 
         self.networks
             .retain(log_predicate("Network", |network: &Network| {
