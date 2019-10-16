@@ -8,10 +8,21 @@ data are not described below.
 
 In order to guarantee that the NTFS objects identifiers are unique and stable, each
 object id is prefixed with a unique prefix (specified for each datasource), following
-the general pattern `<prefix>:<id>`.
+the general pattern `<prefix>:<id>`. This prefix is uniquely defined for all data_sources 
+to make possible safe data aggregations.
+
+### Versions of this document:
+Version | Date | Modification
+--- | --- | ---
+1.0 | 2019-09-13 | Initial redaction
+1.1 | 2019-09-30 | Adding fare zones, MIP access on lines and stop_points, the use of source coordinates of a stop_area (if available), complementary properties of a line (commercial_mode, line_color, line_text_color, note sur ligne)
+1.2 | 2019-10-07 | Using new source specifications for Netex IDFM lines and stops, reading of `lignes.xml` and `arrets.xml` is reworked (no more complementary codes on stops and lines, associations between objects changed, etc.).<br>For `stop_points`, lowest level of `Quay` will be used (ZDEp).
 
 ## Input data description
-This specification assumes that all the required data (time tables for all the lines, stop points and stop areas, transfers, etc.) are provided in one ZIP archive (aka "FICHIERS OFFRE") described in the specification document "NT60-A150701-v1.11-BO-STIF_-_Specification_Technique_d_Interface_NeTEx_pour_la_publication_20190624.docx".
+This specification assumes that all the required data (time tables for all the lines, stop points and stop areas, transfers, etc.) are provided in one ZIP archive (aka "FICHIERS OFFRE") described in the specification documents:
++  *NT60-A150701-v1.11-BO-STIF_-_Specification_Technique_d_Interface_NeTEx_pour_la_publication_20190624.docx*
++ *ATD-TDI-LZR-069-DINT WS-NETEX-01 v1.0.9_20190805.docx* (section 4.3)
++ *DINT-LIGNE_publication_1.7.3_20180306.docx* (section 4)
 
 The ZIP archive contains: 
 - one **arrets.xml** file
@@ -22,61 +33,57 @@ The ZIP archive contains:
   + a **commun.xml** optional file, containing the comments referenced by the operator objects (if needed)
   + several files starting with **offre_** describing the time tables of a specific line in each file
 
-In this document, versions of objects are not handled. The first encountered object description is considered when creating an object.
+In this document, versions of objects are not handled. The first encountered object description is considered when creating an object. 
 
-Each XML file contains a `PublicationDelivery` node, containing a `dataObjects` node. Descriptions below is considering nodes inside this `dataObjects` node.
+Each XML file contains a `PublicationDelivery` node, containing a `dataObjects` node. Descriptions below is considering nodes inside this `dataObjects` node. Furthermore, brackets (`[]`) in an XML tag indicates this tag can appear more than one time.
 
 ## Reading of the "arrets.xml" file into stops.txt file
-`stops` are provided in the **arrets.xml** file in the node **CompositeFrame/frames/GeneralFrame/** (only one **CompositeFrame** is expected). 
-In this netex feed, a `Quay` is included in a "ZDL" `StopPlace`, this "ZDL" `StopPlace` could be included in an "LDA" `StopPlace`.
-This connector assumes that all the "ZDL" `StopPlace` are included in one (and only one) "LDA" `StopPlace`.
-
-For french readers: 
-- "ZDE" stands for "Zone D'Embarquement" (a boarding position)
-- "ZDL" stands for "Zone De Lieux" (a group of boarding position with the same transport mode)
-- "LDA" stands for "Lieu D'Arrêt" (a large group of boarding position with several transport modes known with a global name)
+In the Netex-IDFM feed: 
+- a `Quay` object defined at the operator level is referenced by a `Quay` object defined by the PTA (IDFM),
+- this PTA `Quay` is included in a monomodal `StopPlace`,
+- this monomodal `StopPlace` is included in a multimodal `StopPlace`.
 
 ### For stop_areas
-`stop_area` objects are `StopPlace` nodes of the **arrets.xml** file created in this order:
-1. `StopPlace` with a `placeTypes/TypeOfPlace/@ref` attribute with a "LDA" value are used
-2. Other `StopPlace` with no `ParentSiteRef` node (corresponding to "ZDL" stops not included in an LDA)
+`stop_area` objects in the output NTFS are top level `StopPlace` (ie. not included in an other `StopPlace`).
+`stop_area` are defined by `CompositeFrame/frames/GeneralFrame[]/StopPlace[]` nodes. Only the `GeneralFrame` with the `TypeOfFrameRef/@ref` attribut set to `FR100:TypeOfFrame:NETEX_ARRET_STIF:` contains the stop_areas.
+
+A stop_area can therefore be:
+
+1. a multimodal `StopPlace`
+2. a monomodal `StopPlace` without a multimodal `StopPlace` containing it
+
+A `stop_area` is created for each `StopPlace` not containing a `StopPlace/ParentSiteRef` tag or referencing by `StopPlace/ParentSiteRef/@ref` a `StopPlace` that does not exists in the feed.
+
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 stop_id | *StopPlace/@id* | This field is prefixed. 
 stop_name | *StopPlace/Name* | 
 location_type | | Fixed value `1` (stop_area)
-stop_lat | | see (1) below
-stop_lon | | see (1) below
+stop_lat | StopPlace/Centroid/Location | see (1) below
+stop_lon | StopPlace/Centroid/Location | see (1) below
 
-(1) Definition of stop_lat et stop_lon:
-As this Netex feed does not provide coordinates for the stop_areas, the stop_lat et stop_lon fields will be set with the coordinate of the centroid of all included stop_points.
+**(1) Definition of stop_lat et stop_lon:**
+
+The node `StopPlace/Centroid/Location` declares the position (X, Y) of the stop_area with an explicit EPSG always set to 2154. This coordinate will be converted to the NTFS WGS84 projection (EPSG:4326).
+Exemple of Netex declaration:
+><gml:pos srsName="EPSG:2154">662233.0 6861519.0</gml:pos>
+
+If the Netex feed does not provide coordinates for a stop_area, the stop_lat et stop_lon fields will be set with the coordinate of the centroid of all included stop_points.
 
 **Complementary object_properties**
-
-A complementary property `Netex_StopType` is added to the stop_area with either the "LDA" or "ZDL" value.
-
-NTFS field | Netex-IDFM element | Mapping rule/Comment
---- | --- | ---
-object_type |  | fixed value `stop` 
-object_id | *StopPlace/@id* | This field is prefixed. 
-object_property_name |  | fixed value `Netex_StopType`.
-object_property_value | *StopPlace/placeTypes/TypeOfPlace/@ref* | 
+No complementary properties on `stop_area`.
 
 **Complementary object_codes**
-
-A complementary code `Netex_ZDL` is added to "LDA" stop_area for each included "ZDL" (ie. `StopPlace` with `ParentSiteRef` node).
-
-NTFS field | Netex-IDFM element | Mapping rule/Comment
---- | --- | ---
-object_type |  | fixed value `stop` 
-object_id | *StopPlace/ParentSiteRef/@ref* | This field is prefixed. 
-object_system |  | fixed value `Netex_ZDL`.
-object_code | *StopPlace/@id* | This field is prefixed. 
-
+No complementary code on `stop_area`.
 
 ### For stop_points
-`stop_point` objects are `Quay` nodes ("ZDE objects") in the **arrets.xml** file in the node **CompositeFrame/frames/GeneralFrame/**.
+`stop_point` objects in the output NTFS are the lowest level `Quays` (those provided by operators).
+`stop_points` are defined by `CompositeFrame/frames/GeneralFrame[]/Quay[]` nodes, considering:
+- only the `GeneralFrame` with the `TypeOfFrameRef/@ref` attribut set to `FR100:TypeOfFrame:NETEX_ARRET_STIF:` contains the stop_points,
+- only the `Quay` nodes having the `Quay/@dataSourceRef` property set to **_anything different_** from `FR1-ARRET_AUTO`
+
+The `Quay` nodes with a `FR1-ARRET_AUTO` value in `Quay/@dataSourceRef` property are the PTA (IDFM) defined Quays.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
@@ -88,28 +95,31 @@ stop_lon | Quay/Centroid/Location | see (1) below
 parent_station | | stop_id of the corresponding `stop_area`, see (2) below.
 stop_timezone | | fixed value `Europe/Paris`
 equipment_id | | This value will be self generated by the connector if an equipment object is necessary. See (2) below.
+fare_zone_id | Quay/tariffZones/TariffZoneRef/@ref | If the `tariffZones` does not exists or is empty, this field will be empty. If more than one fare zone are available, the first one will be considered. The fare zone needs to be extract from the content of the `@ref` attribute, using the 3rd field using a `:` separator. If this 3rd field is not an integer, the resulting `fare_zone_id` will be empty.
 
-(1) Definition of stop_lat et stop_lon:
-The `Quay/Centroid/Location` node contains a position (X, Y) with an EPSG described, for example: 
-`<gml:pos srsName="EPSG:2154">662233.0 6861519.0</gml:pos>`
-This coordinate is to be converted to a WGS84 coordinate (EPSG:4326).
+**(1) Definition of stop_lat et stop_lon:**
 
-(2) Definition of the parent_station:
-A ZDL `StopPlace` includes the references of it's ZDE in `StopPlace/quays/QuayRef` nodes. The parent_station of a `stop_point` can be either: 
-* a ZDL `stop_area` referencing its `Quay`
-* an LDA `stop_area` contains it's ZDL references as complementary object_codes, each ZDL referencing its `Quay`
+The node `Quay/Centroid/Location` declares the position (X, Y) of the stop_point with an explicit EPSG always set to 2154. This coordinate will be converted to the NTFS WGS84 projection (EPSG:4326).
+Exemple of Netex declaration:
+><gml:pos srsName="EPSG:2154">662233.0 6861519.0</gml:pos>
+
+**(2) Definition of the parent_station:**
+Linking a stop_area to a stop_point requires to navigate from lower `Quay` to upper `StopPlace` nodes:
+- the operator `Quay` node (aka ZDEp) references the PTA `Quay` node (aka ZDEr) with the attribute `Quay/@derivedFromObjectRef`,
+- the PTA `Quay` (aka ZDEr) references the monomodal `StopPlace` node (aka ZDL) with the attribute `Quay/ParentZoneRef/@ref`
+- the monomodal `StopPlace` node (aka ZDL) references the multimodal `StopPlace` (aka LDA, the actual `stop_area`) with the attribute `StopPlace/ParentSiteRef/@ref`.
 
 
 **Definition of the Accessibility of a stop_point**
 
-If the `Quay` node contains a `AccessibilityAssessment/MobilityImpairedAccess` node, an equipment will be generated with:
-- a self generated and prefixed `equipment_id`,
-- a `wheelchair_boarding` property set to: 
-  + Fixed value `1` (accessible) if `MobilityImpairedAccess` has the value `true`,
-  + Fixed value `2` (not accessible) if `MobilityImpairedAccess` has the value `false`,
-  + Fixed value `0` (unknown) if `MobilityImpairedAccess` has any other value (`partial` or `unknown` for example).
+If the `Quay` node corresponding to the stop_point contains a `AccessibilityAssessment/MobilityImpairedAccess` node, an equipment will be generated (in the NTFS **equipments.txt** file) with properties described below. The resulting **equipments.txt** file will contain as few lines as possible to describe all possible sets of values.
 
-The equipments.txt file will contain at most 3 lines for each possible accessibility definition.
+NTFS field | Netex-IDFM element | Mapping rule/Comment
+--- | --- | ---
+equipment_id |  | Auto-incremented value. This field is prefixed. 
+wheelchair_boarding | Quay/AccessibilityAssessment/MobilityImpairedAccess | If the source value is `false`, `wheelchair_boarding` value is set to `2` (non accessible). <br>If the source value is `true`, `wheelchair_boarding` value is set to `1` (accessible)<br> In any other case (other value or missing node) the value is set to `0` (unknown accessibility)
+visual_announcement | Quay/AccessibilityAssessment/ limitations/AccessibilityLimitation/VisualSignsAvailable | same rule as `wheelchair_boarding`
+audible_announcement | Quay/AccessibilityAssessment/ limitations/AccessibilityLimitation/AudibleSignalsAvailable | same rule as `wheelchair_boarding`
 
 
 ## Reading of the "lignes.xml" file
