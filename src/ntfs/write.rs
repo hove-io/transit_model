@@ -21,11 +21,13 @@ use crate::objects::*;
 use crate::NTFS_VERSION;
 use chrono::{Duration, NaiveDateTime};
 use csv;
+use csv::Writer;
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
+use std::fs::File;
 use std::path;
 use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
 
@@ -428,6 +430,39 @@ pub fn write_stops(
     stop_areas: &CollectionWithId<StopArea>,
     stop_locations: &CollectionWithId<StopLocation>,
 ) -> Result<()> {
+    #[cfg(not(feature = "stop_location"))]
+    fn write_stop_locations(
+        _wtr: &mut Writer<File>,
+        _stop_locations: &CollectionWithId<StopLocation>,
+    ) -> Result<()> {
+        Ok(())
+    }
+    #[cfg(feature = "stop_location")]
+    fn write_stop_locations(
+        wtr: &mut Writer<File>,
+        stop_locations: &CollectionWithId<StopLocation>,
+    ) -> Result<()> {
+        for sl in stop_locations.values() {
+            let (lon, lat) = sl.coord.into();
+            wtr.serialize(Stop {
+                id: sl.id.clone(),
+                visible: sl.visible,
+                name: sl.name.clone(),
+                lat,
+                lon,
+                fare_zone_id: None,
+                zone_id: None,
+                location_type: StopLocationType::from(sl.stop_type.clone()),
+                parent_station: sl.parent_id.clone(),
+                timezone: sl.timezone.clone(),
+                equipment_id: sl.equipment_id.clone(),
+                geometry_id: sl.geometry_id.clone(),
+                level_id: sl.level_id.clone(),
+                platform_code: None,
+            })?;
+        }
+        Ok(())
+    }
     let file = "stops.txt";
     info!("Writing {}", file);
     let path = path.join(file);
@@ -476,27 +511,7 @@ pub fn write_stops(
         })
         .with_context(ctx_from_path!(path))?;
     }
-    #[cfg(feature = "stop_location")]
-    for sl in stop_locations.values() {
-        let (lon, lat) = sl.coord.into();
-        wtr.serialize(Stop {
-            id: sl.id.clone(),
-            visible: sl.visible,
-            name: sl.name.clone(),
-            lat,
-            lon,
-            fare_zone_id: None,
-            zone_id: None,
-            location_type: StopLocationType::from(sl.stop_type.clone()),
-            parent_station: sl.parent_id.clone(),
-            timezone: sl.timezone.clone(),
-            equipment_id: sl.equipment_id.clone(),
-            geometry_id: sl.geometry_id.clone(),
-            level_id: sl.level_id.clone(),
-            platform_code: None,
-        })
-        .with_context(ctx_from_path!(path))?;
-    }
+    write_stop_locations(&mut wtr, stop_locations).with_context(ctx_from_path!(path))?;
     wtr.flush().with_context(ctx_from_path!(path))?;
 
     Ok(())
