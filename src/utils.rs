@@ -64,9 +64,19 @@ pub fn de_from_u8<'de, D>(deserializer: D) -> Result<bool, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    use serde::Deserialize;
-    let i = u8::deserialize(deserializer)?;
-    Ok(i != 0)
+    use serde::{
+        de::{Error, Unexpected::Other},
+        Deserialize,
+    };
+    let i = <u8 as Deserialize<'de>>::deserialize(deserializer)?;
+    if i == 0 || i == 1 {
+        Ok(i != 0)
+    } else {
+        Err(D::Error::invalid_value(
+            Other(&format!("{} non boolean value", i)),
+            &"boolean",
+        ))
+    }
 }
 
 pub fn de_from_u8_with_true_default<'de, D>(deserializer: D) -> Result<bool, D::Error>
@@ -126,18 +136,6 @@ where
     })
 }
 
-pub fn de_location_trim_with_default<'de, D>(deserializer: D) -> Result<f64, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    use serde::Deserialize;
-    let s = String::deserialize(deserializer)?;
-    Ok(s.parse::<f64>().unwrap_or_else(|e| {
-        error!("{}", e);
-        0.00
-    }))
-}
-
 pub fn de_without_slashes<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -192,6 +190,60 @@ where
     }
 }
 
+pub fn de_option_positive_decimal<'de, D>(deserializer: D) -> Result<Option<Decimal>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::{
+        de::{Error, Unexpected::Other},
+        Deserialize,
+    };
+    let option = <Option<Decimal> as Deserialize<'de>>::deserialize(deserializer)?;
+    match option {
+        Some(number) if number.is_sign_positive() => Ok(option),
+        None => Ok(None),
+        _ => Err(D::Error::invalid_value(
+            Other("strictly negative float number"),
+            &"positive float number",
+        )),
+    }
+}
+
+pub fn de_option_positive_float<'de, D>(deserializer: D) -> Result<Option<f32>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::{
+        de::{Error, Unexpected::Other},
+        Deserialize,
+    };
+    let option = <Option<f32> as Deserialize<'de>>::deserialize(deserializer)?;
+    match option {
+        Some(number) if number.is_sign_positive() => Ok(option),
+        None => Ok(None),
+        _ => Err(D::Error::invalid_value(
+            Other("strictly negative float number"),
+            &"positive float number",
+        )),
+    }
+}
+
+pub fn de_option_non_null_integer<'de, D>(deserializer: D) -> Result<Option<i16>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::{
+        de::{Error, Unexpected::Other},
+        Deserialize,
+    };
+    let option = <Option<i16> as Deserialize<'de>>::deserialize(deserializer)?;
+    match option {
+        Some(number) if number != 0 => Ok(option),
+        None => Ok(None),
+        _ => Err(D::Error::invalid_value(Other("0"), &"non null number")),
+    }
+}
+
 pub fn de_currency_code<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: serde::Deserializer<'de>,
@@ -229,6 +281,24 @@ where
 {
     let wkt = geometry.to_wkt();
     serializer.serialize_str(&format!("{}", wkt.items[0]))
+}
+
+pub fn de_option_empty_string<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::Deserialize;
+    let option = <Option<String> as Deserialize<'de>>::deserialize(deserializer)?;
+    match option {
+        Some(string) => {
+            if string.is_empty() {
+                Ok(None)
+            } else {
+                Ok(Some(string))
+            }
+        }
+        None => Ok(None),
+    }
 }
 
 macro_rules! ctx_from_path {
@@ -295,6 +365,51 @@ where
         .collect::<Result<_, _>>()
         .with_context(ctx_from_path!(path))?;
     Ok(Collection::new(vec))
+}
+
+pub fn write_collection_with_id<T>(
+    path: &path::Path,
+    file: &str,
+    collection: &CollectionWithId<T>,
+) -> crate::Result<()>
+where
+    T: Id<T>,
+    T: serde::Serialize,
+{
+    if collection.is_empty() {
+        return Ok(());
+    }
+    info!("Writing {}", file);
+    let path = path.join(file);
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    for obj in collection.values() {
+        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
+    }
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
+}
+
+pub fn write_collection<T>(
+    path: &path::Path,
+    file: &str,
+    collection: &Collection<T>,
+) -> crate::Result<()>
+where
+    T: serde::Serialize,
+{
+    if collection.is_empty() {
+        return Ok(());
+    }
+    info!("Writing {}", file);
+    let path = path.join(file);
+    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    for obj in collection.values() {
+        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
+    }
+    wtr.flush().with_context(ctx_from_path!(path))?;
+
+    Ok(())
 }
 
 macro_rules! skip_fail {

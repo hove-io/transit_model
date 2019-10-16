@@ -27,48 +27,129 @@ use failure::{bail, ensure, format_err, ResultExt};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use transit_model_collection::*;
 
-impl From<Stop> for StopArea {
-    fn from(stop: Stop) -> StopArea {
-        StopArea {
+impl TryFrom<Stop> for StopArea {
+    type Error = Error;
+    fn try_from(stop: Stop) -> Result<Self> {
+        if stop.name.is_empty() {
+            warn!("stop_id: {}: for platform stop_name is required", stop.id);
+        }
+
+        let coord = Coord::from((stop.lon, stop.lat));
+        if coord == Coord::default() {
+            warn!(
+                "stop_id: {}: for platform coordinates are required",
+                stop.id
+            );
+        }
+        let stop_area = StopArea {
             id: stop.id,
             name: stop.name,
             codes: KeysValues::default(),
             object_properties: KeysValues::default(),
             comment_links: CommentLinksT::default(),
             visible: stop.visible,
-            coord: Coord {
-                lon: stop.lon,
-                lat: stop.lat,
-            },
+            coord,
             timezone: stop.timezone,
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
-        }
+            level_id: stop.level_id,
+        };
+        Ok(stop_area)
     }
 }
-impl StopPoint {
-    fn from_with_type(stop: Stop, stop_type: StopType) -> StopPoint {
-        let id = stop.id;
-        StopPoint {
-            id,
+
+impl TryFrom<Stop> for StopPoint {
+    type Error = Error;
+    fn try_from(stop: Stop) -> Result<Self> {
+        if stop.name.is_empty() {
+            warn!("stop_id: {}: for platform name is required", stop.id);
+        };
+
+        let coord = Coord::from((stop.lon, stop.lat));
+        if coord == Coord::default() {
+            warn!(
+                "stop_id: {}: for platform coordinates are required",
+                stop.id
+            );
+        }
+        let stop_point = StopPoint {
+            id: stop.id,
             name: stop.name,
             visible: stop.visible,
-            coord: Coord {
-                lon: stop.lon,
-                lat: stop.lat,
-            },
-            stop_area_id: stop.parent_station.unwrap(),
+            coord,
+            stop_area_id: stop
+                .parent_station
+                .unwrap_or_else(|| String::from("default_id")),
             timezone: stop.timezone,
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
             fare_zone_id: stop.fare_zone_id,
             zone_id: stop.zone_id,
-            stop_type,
+            stop_type: stop.location_type.into(),
             platform_code: stop.platform_code,
+            level_id: stop.level_id,
             ..Default::default()
+        };
+        Ok(stop_point)
+    }
+}
+
+impl TryFrom<Stop> for StopLocation {
+    type Error = Error;
+    fn try_from(stop: Stop) -> Result<Self> {
+        let coord = Coord::from((stop.lon, stop.lat));
+
+        if stop.location_type == StopLocationType::EntranceExit {
+            if coord == Coord::default() {
+                bail!(
+                    "stop_id: {}: for entrances/exits coordinates is required",
+                    stop.id
+                );
+            }
+            if stop.parent_station.is_none() {
+                bail!(
+                    "stop_id: {}: for entrances/exits parent_station is required",
+                    stop.id
+                );
+            }
+            if stop.name.is_empty() {
+                bail!(
+                    "stop_id: {}: for entrances/exits stop_name is required",
+                    stop.id
+                );
+            }
         }
+        if stop.location_type == StopLocationType::PathwayInterconnectionNode
+            && stop.parent_station.is_none()
+        {
+            bail!(
+                "stop_id: {}: for generic node parent_station is required",
+                stop.id
+            );
+        }
+        if stop.location_type == StopLocationType::BoardingArea && stop.parent_station.is_none() {
+            bail!(
+                "stop_id: {}: for boarding area parent_station is required",
+                stop.id
+            );
+        }
+        let stop_location = StopLocation {
+            id: stop.id,
+            name: stop.name,
+            comment_links: CommentLinksT::default(),
+            visible: false,
+            coord,
+            parent_id: stop.parent_station,
+            timezone: stop.timezone,
+            geometry_id: stop.geometry_id,
+            equipment_id: stop.equipment_id,
+            stop_type: stop.location_type.clone().into(),
+            level_id: stop.level_id,
+        };
+        Ok(stop_location)
     }
 }
 
@@ -76,45 +157,32 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
     info!("Reading stops.txt");
     let path = path.join("stops.txt");
     let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
+    let mut stop_locations = vec![];
     for stop in rdr.deserialize() {
-        let mut stop: Stop = stop.with_context(ctx_from_path!(path))?;
+        let stop: Stop = stop.with_context(ctx_from_path!(path))?;
         match stop.location_type {
             StopLocationType::StopPoint | StopLocationType::GeographicArea => {
-                let (stop_type, area_visibility) =
-                    if stop.location_type == StopLocationType::GeographicArea {
-                        (StopType::Zone, false)
-                    } else {
-                        (StopType::Point, true)
-                    };
-                let stop_point = if stop.parent_station.is_none() {
-                    stop.parent_station = Some(String::from("default_id"));
-                    let mut stop_point = StopPoint::from_with_type(stop, stop_type);
+                let mut stop_point = skip_fail!(StopPoint::try_from(stop.clone()));
+                if stop.parent_station.is_none() {
                     let mut stop_area = StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
-                    stop_area.visible = area_visibility;
+                    stop_area.visible = stop.location_type == StopLocationType::StopPoint;
                     stop_areas.push(stop_area);
-                    stop_point
-                } else {
-                    StopPoint::from_with_type(stop, stop_type)
                 };
                 stop_points.push(stop_point);
             }
-            StopLocationType::StopArea => stop_areas.push(StopArea::from(stop)),
-            StopLocationType::EntranceExit => {
-                warn!("stop.location_type = 3 not yet supported, skipping.")
-            }
-            StopLocationType::PathwayInterconnectionNode => {
-                warn!("stop.location_type = 4 not yet supported, skipping.")
-            }
-            StopLocationType::BoardingArea => {
-                warn!("stop.location_type = 5 not yet supported, skipping.")
+            StopLocationType::StopArea => stop_areas.push(skip_fail!(StopArea::try_from(stop))),
+            _ => {
+                stop_locations.push(skip_fail!(StopLocation::try_from(stop)));
             }
         }
     }
     collections.stop_areas = CollectionWithId::new(stop_areas)?;
     collections.stop_points = CollectionWithId::new(stop_points)?;
+    collections.stop_locations = CollectionWithId::new(stop_locations)?;
     Ok(())
 }
 
@@ -547,6 +615,60 @@ pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {
                 default_company.id.to_string();
         }
     }
+    Ok(())
+}
+
+pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Result<()> {
+    let file = "pathways.txt";
+    let pathway_path = path.join(file);
+    if !pathway_path.exists() {
+        info!("Skipping {}", file);
+        return Ok(());
+    }
+
+    info!("Reading {}", file);
+    let mut pathways = vec![];
+    let mut rdr =
+        csv::Reader::from_path(&pathway_path).with_context(ctx_from_path!(pathway_path))?;
+
+    for pathway in rdr.deserialize() {
+        let mut pathway: Pathway = skip_fail!(pathway.map_err(|e| format_err!("{}", e)));
+
+        pathway.from_stop_type = skip_fail!(collections
+            .stop_points
+            .get(&pathway.from_stop_id)
+            .map(|st| st.stop_type.clone())
+            .or(collections
+                .stop_locations
+                .get(&pathway.from_stop_id)
+                .map(|sl| sl.stop_type.clone()))
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: from_stop_id={:?} not found",
+                    file,
+                    pathway.from_stop_id
+                )
+            }));
+
+        pathway.to_stop_type = skip_fail!(collections
+            .stop_points
+            .get(&pathway.to_stop_id)
+            .map(|st| st.stop_type.clone())
+            .or(collections
+                .stop_locations
+                .get(&pathway.to_stop_id)
+                .map(|sl| sl.stop_type.clone()))
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: to_stop_id={:?} not found",
+                    file,
+                    pathway.to_stop_id
+                )
+            }));
+        pathways.push(pathway);
+    }
+
+    collections.pathways = CollectionWithId::new(pathways)?;
     Ok(())
 }
 

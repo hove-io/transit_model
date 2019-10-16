@@ -24,7 +24,6 @@ use csv;
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
-use serde;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
 use std::path;
@@ -423,65 +422,28 @@ pub fn write_fares_v1(base_path: &path::Path, collections: &Collections) -> Resu
     Ok(())
 }
 
-pub fn write_collection_with_id<T>(
-    path: &path::Path,
-    file: &str,
-    collection: &CollectionWithId<T>,
-) -> Result<()>
-where
-    T: Id<T> + serde::Serialize,
-{
-    if collection.is_empty() {
-        return Ok(());
-    }
-    info!("Writing {}", file);
-    let path = path.join(file);
-    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
-    for obj in collection.values() {
-        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
-    }
-    wtr.flush().with_context(ctx_from_path!(path))?;
-
-    Ok(())
-}
-
-pub fn write_collection<T>(path: &path::Path, file: &str, collection: &Collection<T>) -> Result<()>
-where
-    T: serde::Serialize,
-{
-    if collection.is_empty() {
-        return Ok(());
-    }
-    info!("Writing {}", file);
-    let path = path.join(file);
-    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
-    for obj in collection.values() {
-        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
-    }
-    wtr.flush().with_context(ctx_from_path!(path))?;
-
-    Ok(())
-}
-
 pub fn write_stops(
     path: &path::Path,
     stop_points: &CollectionWithId<StopPoint>,
     stop_areas: &CollectionWithId<StopArea>,
+    stop_locations: &CollectionWithId<StopLocation>,
 ) -> Result<()> {
-    info!("Writing stops.txt");
-    let path = path.join("stops.txt");
+    let file = "stops.txt";
+    info!("Writing {}", file);
+    let path = path.join(file);
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     for st in stop_points.values() {
-        let location_type = match st.stop_type {
-            StopType::Point => StopLocationType::StopPoint,
-            StopType::Zone => StopLocationType::GeographicArea,
+        let location_type = if st.stop_type == StopType::Zone {
+            StopLocationType::GeographicArea
+        } else {
+            StopLocationType::from(st.stop_type.clone())
         };
         wtr.serialize(Stop {
             id: st.id.clone(),
             visible: st.visible,
             name: st.name.clone(),
-            lat: st.coord.lat,
-            lon: st.coord.lon,
+            lat: st.coord.lat.to_string(),
+            lon: st.coord.lon.to_string(),
             fare_zone_id: st.fare_zone_id.clone(),
             zone_id: st.zone_id.clone(),
             location_type,
@@ -489,6 +451,7 @@ pub fn write_stops(
             timezone: st.timezone.clone(),
             equipment_id: st.equipment_id.clone(),
             geometry_id: st.geometry_id.clone(),
+            level_id: st.level_id.clone(),
             platform_code: st.platform_code.clone(),
         })
         .with_context(ctx_from_path!(path))?;
@@ -499,8 +462,8 @@ pub fn write_stops(
             id: sa.id.clone(),
             visible: sa.visible,
             name: sa.name.clone(),
-            lat: sa.coord.lat,
-            lon: sa.coord.lon,
+            lat: sa.coord.lat.to_string(),
+            lon: sa.coord.lon.to_string(),
             fare_zone_id: None,
             zone_id: None,
             location_type: StopLocationType::StopArea,
@@ -508,6 +471,28 @@ pub fn write_stops(
             timezone: sa.timezone.clone(),
             equipment_id: sa.equipment_id.clone(),
             geometry_id: sa.geometry_id.clone(),
+            level_id: sa.level_id.clone(),
+            platform_code: None,
+        })
+        .with_context(ctx_from_path!(path))?;
+    }
+    #[cfg(feature = "stop_location")]
+    for sl in stop_locations.values() {
+        let (lon, lat) = sl.coord.into();
+        wtr.serialize(Stop {
+            id: sl.id.clone(),
+            visible: sl.visible,
+            name: sl.name.clone(),
+            lat,
+            lon,
+            fare_zone_id: None,
+            zone_id: None,
+            location_type: StopLocationType::from(sl.stop_type.clone()),
+            parent_station: sl.parent_id.clone(),
+            timezone: sl.timezone.clone(),
+            equipment_id: sl.equipment_id.clone(),
+            geometry_id: sl.geometry_id.clone(),
+            level_id: sl.level_id.clone(),
             platform_code: None,
         })
         .with_context(ctx_from_path!(path))?;

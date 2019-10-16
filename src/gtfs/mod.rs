@@ -90,6 +90,30 @@ enum StopLocationType {
     BoardingArea,
 }
 
+impl From<StopLocationType> for StopType {
+    fn from(stop_location_type: StopLocationType) -> StopType {
+        match stop_location_type {
+            StopLocationType::StopPoint => StopType::Point,
+            StopLocationType::StopArea => StopType::Zone,
+            StopLocationType::StopEntrance => StopType::StopEntrance,
+            StopLocationType::GenericNode => StopType::GenericNode,
+            StopLocationType::BoardingArea => StopType::BoardingArea,
+        }
+    }
+}
+
+impl From<StopType> for StopLocationType {
+    fn from(stop_type: StopType) -> StopLocationType {
+        match stop_type {
+            StopType::Point => StopLocationType::StopPoint,
+            StopType::Zone => StopLocationType::StopArea,
+            StopType::StopEntrance => StopLocationType::StopEntrance,
+            StopType::GenericNode => StopLocationType::GenericNode,
+            StopType::BoardingArea => StopLocationType::BoardingArea,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Stop {
     #[serde(rename = "stop_id", deserialize_with = "de_without_slashes")]
@@ -98,18 +122,16 @@ struct Stop {
     code: Option<String>,
     #[serde(rename = "stop_name")]
     name: String,
-    #[serde(default, rename = "stop_desc")]
-    desc: String,
     #[serde(
-        rename = "stop_lon",
-        deserialize_with = "de_location_trim_with_default"
+        default,
+        rename = "stop_desc",
+        deserialize_with = "de_option_empty_string"
     )]
-    lon: f64,
-    #[serde(
-        rename = "stop_lat",
-        deserialize_with = "de_location_trim_with_default"
-    )]
-    lat: f64,
+    desc: Option<String>,
+    #[serde(rename = "stop_lon")]
+    lon: String,
+    #[serde(rename = "stop_lat")]
+    lat: String,
     #[serde(rename = "zone_id")]
     fare_zone_id: Option<String>,
     #[serde(rename = "stop_url")]
@@ -120,6 +142,7 @@ struct Stop {
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
     timezone: Option<String>,
+    level_id: Option<String>,
     #[serde(deserialize_with = "de_with_empty_default", default)]
     wheelchair_boarding: Availability,
     platform_code: Option<String>,
@@ -259,10 +282,12 @@ where
     let (networks, companies) = read::read_agency(file_handler)?;
     collections.networks = networks;
     collections.companies = companies;
-    let (stop_areas, stop_points) = read::read_stops(file_handler, &mut comments, &mut equipments)?;
+    let (stop_areas, stop_points, stop_locations) =
+        read::read_stops(file_handler, &mut comments, &mut equipments)?;
     collections.transfers = read::read_transfers(file_handler, &stop_points)?;
     collections.stop_areas = stop_areas;
     collections.stop_points = stop_points;
+    collections.stop_locations = stop_locations;
 
     read::manage_shapes(&mut collections, file_handler)?;
 
@@ -271,7 +296,8 @@ where
     collections.comments = comments;
     read::manage_stop_times(&mut collections, file_handler)?;
     read::manage_frequencies(&mut collections, file_handler)?;
-
+    read::manage_pathways(&mut collections, file_handler)?;
+    collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
     collections.sanitize()?;
 
     //add prefixes
@@ -404,6 +430,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
         path,
         &model.stop_points,
         &model.stop_areas,
+        &model.stop_locations,
         &model.comments,
         &model.equipments,
     )?;
@@ -423,6 +450,8 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
         &model.stop_time_headsigns,
     )?;
     write::write_shapes(path, &model.geometries)?;
+    write_collection_with_id(path, "pathways.txt", &model.pathways)?;
+    write_collection_with_id(path, "levels.txt", &model.levels)?;
 
     Ok(())
 }

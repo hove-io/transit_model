@@ -22,12 +22,14 @@ pub mod filter;
 mod read;
 mod write;
 
-use crate::common_format;
-use crate::model::{Collections, Model};
-use crate::objects::*;
-use crate::read_utils;
-use crate::utils::*;
-use crate::Result;
+use crate::{
+    common_format::{manage_calendars, write_calendar_dates},
+    model::{Collections, Model},
+    objects::*,
+    read_utils,
+    utils::*,
+    Result,
+};
 use chrono::NaiveDateTime;
 use derivative::Derivative;
 use log::info;
@@ -74,6 +76,31 @@ enum StopLocationType {
     BoardingArea,
 }
 
+impl From<StopLocationType> for StopType {
+    fn from(stop_location_type: StopLocationType) -> StopType {
+        match stop_location_type {
+            StopLocationType::StopPoint => StopType::Point,
+            StopLocationType::StopArea => StopType::Zone,
+            StopLocationType::GeographicArea => StopType::Zone,
+            StopLocationType::EntranceExit => StopType::StopEntrance,
+            StopLocationType::PathwayInterconnectionNode => StopType::GenericNode,
+            StopLocationType::BoardingArea => StopType::BoardingArea,
+        }
+    }
+}
+
+impl From<StopType> for StopLocationType {
+    fn from(stop_type: StopType) -> StopLocationType {
+        match stop_type {
+            StopType::Point => StopLocationType::StopPoint,
+            StopType::Zone => StopLocationType::StopArea,
+            StopType::StopEntrance => StopLocationType::EntranceExit,
+            StopType::GenericNode => StopLocationType::PathwayInterconnectionNode,
+            StopType::BoardingArea => StopLocationType::BoardingArea,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Stop {
     #[serde(rename = "stop_id")]
@@ -89,9 +116,9 @@ struct Stop {
     fare_zone_id: Option<String>,
     zone_id: Option<String>,
     #[serde(rename = "stop_lon")]
-    lon: f64,
+    lon: String,
     #[serde(rename = "stop_lat")]
-    lat: f64,
+    lat: String,
     #[serde(default, deserialize_with = "de_with_empty_default")]
     location_type: StopLocationType,
     parent_station: Option<String>,
@@ -99,6 +126,7 @@ struct Stop {
     timezone: Option<String>,
     geometry_id: Option<String>,
     equipment_id: Option<String>,
+    level_id: Option<String>,
     platform_code: Option<String>,
 }
 
@@ -171,10 +199,12 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.ticket_prices = make_opt_collection(path, "ticket_prices.txt")?;
     collections.ticket_use_perimeters = make_opt_collection(path, "ticket_use_perimeters.txt")?;
     collections.ticket_use_restrictions = make_opt_collection(path, "ticket_use_restrictions.txt")?;
-    common_format::manage_calendars(&mut file_handle, &mut collections)?;
+    collections.levels = make_opt_collection_with_id(path, "levels.txt")?;
+    manage_calendars(&mut file_handle, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
     read::manage_stops(&mut collections, path)?;
+    read::manage_pathways(&mut collections, path)?;
     read::manage_stop_times(&mut collections, path)?;
     read::manage_codes(&mut collections, path)?;
     read::manage_comments(&mut collections, path)?;
@@ -199,28 +229,28 @@ pub fn write<P: AsRef<path::Path>>(
     info!("Writing NTFS to {:?}", path);
 
     write::write_feed_infos(path, &model.feed_infos, &model.datasets, current_datetime)?;
-    write::write_collection_with_id(path, "contributors.txt", &model.contributors)?;
-    write::write_collection_with_id(path, "datasets.txt", &model.datasets)?;
-    write::write_collection_with_id(path, "networks.txt", &model.networks)?;
-    write::write_collection_with_id(path, "commercial_modes.txt", &model.commercial_modes)?;
-    write::write_collection_with_id(path, "companies.txt", &model.companies)?;
-    write::write_collection_with_id(path, "lines.txt", &model.lines)?;
-    write::write_collection_with_id(path, "physical_modes.txt", &model.physical_modes)?;
-    write::write_collection_with_id(path, "equipments.txt", &model.equipments)?;
-    write::write_collection_with_id(path, "routes.txt", &model.routes)?;
-    write::write_collection_with_id(path, "trip_properties.txt", &model.trip_properties)?;
-    write::write_collection_with_id(path, "geometries.txt", &model.geometries)?;
-    write::write_collection(path, "transfers.txt", &model.transfers)?;
-    write::write_collection(path, "admin_stations.txt", &model.admin_stations)?;
-    write::write_collection_with_id(path, "tickets.txt", &model.tickets)?;
-    write::write_collection_with_id(path, "ticket_uses.txt", &model.ticket_uses)?;
-    write::write_collection(path, "ticket_prices.txt", &model.ticket_prices)?;
-    write::write_collection(
+    write_collection_with_id(path, "contributors.txt", &model.contributors)?;
+    write_collection_with_id(path, "datasets.txt", &model.datasets)?;
+    write_collection_with_id(path, "networks.txt", &model.networks)?;
+    write_collection_with_id(path, "commercial_modes.txt", &model.commercial_modes)?;
+    write_collection_with_id(path, "companies.txt", &model.companies)?;
+    write_collection_with_id(path, "lines.txt", &model.lines)?;
+    write_collection_with_id(path, "physical_modes.txt", &model.physical_modes)?;
+    write_collection_with_id(path, "equipments.txt", &model.equipments)?;
+    write_collection_with_id(path, "routes.txt", &model.routes)?;
+    write_collection_with_id(path, "trip_properties.txt", &model.trip_properties)?;
+    write_collection_with_id(path, "geometries.txt", &model.geometries)?;
+    write_collection(path, "transfers.txt", &model.transfers)?;
+    write_collection(path, "admin_stations.txt", &model.admin_stations)?;
+    write_collection_with_id(path, "tickets.txt", &model.tickets)?;
+    write_collection_with_id(path, "ticket_uses.txt", &model.ticket_uses)?;
+    write_collection(path, "ticket_prices.txt", &model.ticket_prices)?;
+    write_collection(
         path,
         "ticket_use_perimeters.txt",
         &model.ticket_use_perimeters,
     )?;
-    write::write_collection(
+    write_collection(
         path,
         "ticket_use_restrictions.txt",
         &model.ticket_use_restrictions,
@@ -232,13 +262,20 @@ pub fn write<P: AsRef<path::Path>>(
         &model.stop_time_headsigns,
         &model.stop_time_ids,
     )?;
-    write::write_collection(path, "frequencies.txt", &model.frequencies)?;
-    common_format::write_calendar_dates(path, &model.calendars)?;
-    write::write_stops(path, &model.stop_points, &model.stop_areas)?;
+    write_collection(path, "frequencies.txt", &model.frequencies)?;
+    write_calendar_dates(path, &model.calendars)?;
+    write::write_stops(
+        path,
+        &model.stop_points,
+        &model.stop_areas,
+        &model.stop_locations,
+    )?;
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
     write::write_fares_v1(path, &model)?;
+    write_collection_with_id(path, "pathways.txt", &model.pathways)?;
+    write_collection_with_id(path, "levels.txt", &model.levels)?;
 
     Ok(())
 }
@@ -262,7 +299,10 @@ pub fn write_to_zip<P: AsRef<path::Path>>(
 
 #[cfg(test)]
 mod tests {
+    use super::Collections;
     use super::*;
+    use super::{read, write};
+    use crate::common_format::{manage_calendars, write_calendar_dates, Availability};
     use crate::{read_utils::PathFileHandler, test_utils::*};
     use geo_types::line_string;
     use pretty_assertions::assert_eq;
@@ -280,7 +320,7 @@ mod tests {
     {
         let collection = CollectionWithId::new(objects).unwrap();
         test_in_tmp_dir(|path| {
-            write::write_collection_with_id(path, "file.txt", &collection).unwrap();
+            write_collection_with_id(path, "file.txt", &collection).unwrap();
             let des_collection = make_collection_with_id(path, "file.txt").unwrap();
             assert_eq!(collection, des_collection);
         });
@@ -293,7 +333,7 @@ mod tests {
     {
         let collection = Collection::new(objects);
         test_in_tmp_dir(|path| {
-            write::write_collection(path, "file.txt", &collection).unwrap();
+            write_collection(path, "file.txt", &collection).unwrap();
             let des_collection = make_opt_collection(path, "file.txt").unwrap();
             assert_eq!(collection, des_collection);
         });
@@ -339,7 +379,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.9.2".to_string()),
+                    ("ntfs_version".to_string(), "0.9.3".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -698,16 +738,16 @@ mod tests {
     fn equipments_serialization_deserialization() {
         test_serialize_deserialize_collection_with_id(vec![Equipment {
             id: "1".to_string(),
-            wheelchair_boarding: common_format::Availability::Available,
-            sheltered: common_format::Availability::InformationNotAvailable,
-            elevator: common_format::Availability::Available,
-            escalator: common_format::Availability::Available,
-            bike_accepted: common_format::Availability::Available,
-            bike_depot: common_format::Availability::Available,
-            visual_announcement: common_format::Availability::Available,
-            audible_announcement: common_format::Availability::Available,
-            appropriate_escort: common_format::Availability::Available,
-            appropriate_signage: common_format::Availability::Available,
+            wheelchair_boarding: Availability::Available,
+            sheltered: Availability::InformationNotAvailable,
+            elevator: Availability::Available,
+            escalator: Availability::Available,
+            bike_accepted: Availability::Available,
+            bike_depot: Availability::Available,
+            visual_announcement: Availability::Available,
+            audible_announcement: Availability::Available,
+            appropriate_escort: Availability::Available,
+            appropriate_signage: Availability::Available,
         }]);
     }
 
@@ -754,10 +794,10 @@ mod tests {
 
         test_in_tmp_dir(|path| {
             let mut handler = PathFileHandler::new(path.to_path_buf());
-            common_format::write_calendar_dates(path, &calendars).unwrap();
+            write_calendar_dates(path, &calendars).unwrap();
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
+            manage_calendars(&mut handler, &mut collections).unwrap();
 
             assert_eq!(calendars, collections.calendars);
         });
@@ -813,6 +853,7 @@ mod tests {
                 timezone: None,
                 geometry_id: None,
                 equipment_id: None,
+                level_id: None,
             },
             StopArea {
                 id: "sa_1".to_string(),
@@ -828,12 +869,15 @@ mod tests {
                 timezone: Some("Europe/Paris".to_string()),
                 geometry_id: Some("geometry_3".to_string()),
                 equipment_id: Some("equipment_1".to_string()),
+                level_id: Some("level2".to_string()),
             },
         ])
         .unwrap();
 
+        let stop_locations: CollectionWithId<StopLocation> = CollectionWithId::default();
+
         test_in_tmp_dir(|path| {
-            write::write_stops(path, &stop_points, &stop_areas).unwrap();
+            write::write_stops(path, &stop_points, &stop_areas, &stop_locations).unwrap();
 
             let mut collections = Collections::default();
             read::manage_stops(&mut collections, path).unwrap();
@@ -913,7 +957,10 @@ mod tests {
             timezone: None,
             geometry_id: None,
             equipment_id: None,
+            level_id: Some("level1".to_string()),
         });
+
+        let stop_locations: CollectionWithId<StopLocation> = CollectionWithId::default();
 
         let lines = CollectionWithId::from(Line {
             id: "OIF:002002003:3OIF829".to_string(),
@@ -1023,6 +1070,7 @@ mod tests {
         ser_collections.comments = comments;
         ser_collections.stop_areas = stop_areas;
         ser_collections.stop_points = stop_points;
+        ser_collections.stop_locations = stop_locations;
         ser_collections.lines = lines;
         ser_collections.routes = routes;
         ser_collections.vehicle_journeys = vehicle_journeys;
@@ -1031,16 +1079,16 @@ mod tests {
         ser_collections.stop_time_comments = stop_time_comments;
 
         test_in_tmp_dir(|path| {
-            write::write_collection_with_id(path, "lines.txt", &ser_collections.lines).unwrap();
+            write_collection_with_id(path, "lines.txt", &ser_collections.lines).unwrap();
             write::write_stops(
                 path,
                 &ser_collections.stop_points,
                 &ser_collections.stop_areas,
+                &ser_collections.stop_locations,
             )
             .unwrap();
-            write::write_collection_with_id(path, "routes.txt", &ser_collections.routes).unwrap();
-            write::write_collection_with_id(path, "networks.txt", &ser_collections.networks)
-                .unwrap();
+            write_collection_with_id(path, "routes.txt", &ser_collections.routes).unwrap();
+            write_collection_with_id(path, "networks.txt", &ser_collections.networks).unwrap();
             write::write_vehicle_journeys_and_stop_times(
                 path,
                 &ser_collections.vehicle_journeys,
@@ -1209,24 +1257,24 @@ mod tests {
         test_serialize_deserialize_collection_with_id(vec![
             TripProperty {
                 id: "1".to_string(),
-                wheelchair_accessible: common_format::Availability::Available,
-                bike_accepted: common_format::Availability::NotAvailable,
-                air_conditioned: common_format::Availability::InformationNotAvailable,
-                visual_announcement: common_format::Availability::Available,
-                audible_announcement: common_format::Availability::Available,
-                appropriate_escort: common_format::Availability::Available,
-                appropriate_signage: common_format::Availability::Available,
+                wheelchair_accessible: Availability::Available,
+                bike_accepted: Availability::NotAvailable,
+                air_conditioned: Availability::InformationNotAvailable,
+                visual_announcement: Availability::Available,
+                audible_announcement: Availability::Available,
+                appropriate_escort: Availability::Available,
+                appropriate_signage: Availability::Available,
                 school_vehicle_type: TransportType::Regular,
             },
             TripProperty {
                 id: "2".to_string(),
-                wheelchair_accessible: common_format::Availability::Available,
-                bike_accepted: common_format::Availability::NotAvailable,
-                air_conditioned: common_format::Availability::InformationNotAvailable,
-                visual_announcement: common_format::Availability::Available,
-                audible_announcement: common_format::Availability::Available,
-                appropriate_escort: common_format::Availability::Available,
-                appropriate_signage: common_format::Availability::Available,
+                wheelchair_accessible: Availability::Available,
+                bike_accepted: Availability::NotAvailable,
+                air_conditioned: Availability::InformationNotAvailable,
+                visual_announcement: Availability::Available,
+                audible_announcement: Availability::Available,
+                appropriate_escort: Availability::Available,
+                appropriate_signage: Availability::Available,
                 school_vehicle_type: TransportType::RegularAndSchool,
             },
         ]);

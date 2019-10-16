@@ -864,6 +864,40 @@ pub struct Coord {
     pub lat: f64,
 }
 
+impl From<(String, String)> for Coord {
+    fn from((str_lon, str_lat): (String, String)) -> Self {
+        Self {
+            lon: if str_lon.is_empty() {
+                <f64>::default()
+            } else {
+                str_lon.parse::<f64>().unwrap()
+            },
+            lat: if str_lat.is_empty() {
+                <f64>::default()
+            } else {
+                str_lat.parse::<f64>().unwrap()
+            },
+        }
+    }
+}
+
+impl From<Coord> for (String, String) {
+    fn from(coord: Coord) -> Self {
+        (
+            if (coord.lon - <f64>::default()).abs() < std::f64::EPSILON {
+                "".to_string()
+            } else {
+                coord.lon.to_string()
+            },
+            if (coord.lat - <f64>::default()).abs() < std::f64::EPSILON {
+                "".to_string()
+            } else {
+                coord.lat.to_string()
+            },
+        )
+    }
+}
+
 // Mean Earth radius in meters
 const EARTH_RADIUS: f64 = 6_371_000.0;
 
@@ -967,6 +1001,7 @@ pub struct StopArea {
     pub timezone: Option<String>,
     pub geometry_id: Option<String>,
     pub equipment_id: Option<String>,
+    pub level_id: Option<String>,
 }
 impl_id!(StopArea);
 
@@ -983,6 +1018,7 @@ impl From<StopPoint> for StopArea {
             timezone: stop_point.timezone,
             geometry_id: stop_point.geometry_id,
             equipment_id: stop_point.equipment_id,
+            level_id: stop_point.level_id,
         }
     }
 }
@@ -995,6 +1031,7 @@ impl AddPrefix for StopArea {
             .as_ref()
             .map(|id| prefix.to_string() + &id);
         self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
+        self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
     }
 }
 impl_codes!(StopArea);
@@ -1013,6 +1050,9 @@ pub enum StopType {
     #[derivative(Default)]
     Point,
     Zone,
+    StopEntrance,
+    GenericNode,
+    BoardingArea,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
@@ -1033,6 +1073,7 @@ pub struct StopPoint {
     pub equipment_id: Option<String>,
     pub fare_zone_id: Option<String>,
     pub zone_id: Option<String>,
+    pub level_id: Option<String>,
     pub platform_code: Option<String>,
     #[serde(skip)]
     pub stop_type: StopType,
@@ -1050,6 +1091,7 @@ impl AddPrefix for StopPoint {
             .as_ref()
             .map(|id| prefix.to_string() + &id);
         self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
+        self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
     }
 }
 impl_codes!(StopPoint);
@@ -1062,6 +1104,107 @@ impl GetObjectType for StopPoint {
         ObjectType::StopPoint
     }
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct StopLocation {
+    pub id: String,
+    pub name: String,
+    #[serde(skip)]
+    pub comment_links: CommentLinksT,
+    pub visible: bool,
+    pub coord: Coord,
+    pub parent_id: Option<String>,
+    pub timezone: Option<String>,
+    pub geometry_id: Option<String>,
+    pub equipment_id: Option<String>,
+    pub level_id: Option<String>,
+    #[serde(skip)]
+    pub stop_type: StopType,
+}
+impl_id!(StopLocation);
+impl_comment_links!(StopLocation);
+
+impl AddPrefix for StopLocation {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+        self.parent_id = self.parent_id.as_ref().map(|id| prefix.to_string() + &id);
+        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
+        self.equipment_id = self
+            .equipment_id
+            .as_ref()
+            .map(|id| prefix.to_string() + &id);
+        self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
+    }
+}
+
+#[derivative(Default)]
+#[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum PathwayMode {
+    #[derivative(Default)]
+    #[serde(rename = "1")]
+    Walkway,
+    #[serde(rename = "2")]
+    Stairs,
+    #[serde(rename = "3")]
+    MovingSidewalk,
+    #[serde(rename = "4")]
+    Escalator,
+    #[serde(rename = "5")]
+    Elevator,
+    #[serde(rename = "6")]
+    FareGate,
+    #[serde(rename = "7")]
+    ExitGate,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+pub struct Pathway {
+    #[serde(rename = "pathway_id")]
+    pub id: String,
+    pub from_stop_id: String,
+    #[serde(skip)]
+    pub from_stop_type: StopType,
+    pub to_stop_id: String,
+    #[serde(skip)]
+    pub to_stop_type: StopType,
+    pub pathway_mode: PathwayMode,
+    #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
+    pub is_bidirectional: bool,
+    #[serde(default, deserialize_with = "de_option_positive_decimal")]
+    pub length: Option<Decimal>,
+    pub traversal_time: Option<u32>,
+    #[serde(default, deserialize_with = "de_option_non_null_integer")]
+    pub stair_count: Option<i16>,
+    pub max_slope: Option<f32>,
+    #[serde(default, deserialize_with = "de_option_positive_float")]
+    pub min_width: Option<f32>,
+    pub signposted_as: Option<String>,
+    pub reversed_signposted_as: Option<String>,
+}
+
+impl AddPrefix for Pathway {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+        self.from_stop_id = prefix.to_string() + &self.from_stop_id;
+        self.to_stop_id = prefix.to_string() + &self.to_stop_id;
+    }
+}
+impl_id!(Pathway);
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+pub struct Level {
+    #[serde(rename = "level_id")]
+    pub id: String,
+    pub level_index: f32,
+    pub level_name: Option<String>,
+}
+
+impl AddPrefix for Level {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+impl_id!(Level);
 
 pub type Date = chrono::NaiveDate;
 
