@@ -11,6 +11,9 @@ edition = "2018"
 [badges]
 travis-ci = { repository = "CanalTP/transit_model" }
 
+[features]
+stop_location = []
+
 [dependencies]
 chrono = "0.4"
 csv = "1.0"
