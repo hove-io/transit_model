@@ -35,13 +35,9 @@ fn test_read_write_netex_idf() {
                 "datasets.txt",
                 "feed_infos.txt",
                 "lines.txt",
-                "object_codes.txt",
-                "object_properties.txt",
                 "physical_modes.txt",
-                "stops.txt",
                 "companies.txt",
                 "networks.txt",
-                "equipments.txt",
             ]),
             "tests/fixtures/netexidf2ntfs/output",
         );

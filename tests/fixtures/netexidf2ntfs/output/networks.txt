@@ -1,2 +1,2 @@
 network_id,network_name,network_url,network_timezone,network_lang,network_phone,network_address,network_sort_order
-prefix:STIF:CODIFLIGNE:PTNetwork:119,VEOLIA RAMBOUILLET,,Europe/Paris,,,,
+prefix:FR1:Network:212:LOC,Val de Seine,,Europe/Paris,,,,
