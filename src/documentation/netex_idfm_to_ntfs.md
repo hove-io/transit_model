@@ -126,26 +126,29 @@ audible_announcement | Quay/AccessibilityAssessment/ limitations/AccessibilityLi
 ## Reading of the "lignes.xml" file
 
 ### networks.txt
-`networks` are provided in the nodes **CompositeFrame/frames/ServiceFrame/Network**. There could be multiple `ServiceFrame` to read.
+`network` objects are provided in the nodes **CompositeFrame/frames/ServiceFrame[]/Network**, each `ServiceFrame` node containing only one `Network` node.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-network_id | *Network/@id* | This field is prefixed. 
-network_name | *Network/Name* | 
+network_id | Network/@id | This field is prefixed. 
+network_name | Network/Name* | 
 network_timezone | | Fixed value `Europe/Paris`.
 
 ### companies.txt
-`companies` are provided in the nodes **CompositeFrame/frames/ResourceFrame/organisations/Operator**. There could be multiple `ResourceFrame` to read.
+`companies` (aka operators) are provided in the nodes **CompositeFrame/frames/ResourceFrame/organisations/Operator[]**. There is only one `ResourceFrame` in the file.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-company_id | *Operator/@id* | This field is prefixed. 
-company_name | *Operator/Name* | 
+company_id | Operator/@id | This field is prefixed. 
+company_name | Operator/Name | 
 
 
 ### commercial_modes.txt and physical_modes.txt
-The transport modes in Netex-IDFM are only defined at the Line level in the node **CompositeFrame/frames/ServiceFrame/lines/Line/**. There could be multiple `ServiceFrame` to read.
-`physical_mode_id` and `commercial_mode_id` are **not** prefixed.
+The transport modes in Netex-IDFM are only defined at the Line level in the node **CompositeFrame/frames/ServiceFrame[]/lines/Line[]/TransportMode**. The only `ServiceFrame` containing the lines has an id property set to `STIF:CODIFLIGNE:ServiceFrame:lineid`.
+
+Be careful, `physical_mode_id` and `commercial_mode_id` are **not** prefixed.
+
+Here is the mapping table between a TransportMode value and the corresponding `physical_mode` and `commercial_mode`:
 
 TransportMode in Netex-IDFM | physical_mode_id | physical_mode_name | commercial_mode_id | commercial_mode_name 
 --- | --- | --- | --- | ---
@@ -165,18 +168,29 @@ other | Bus | Bus | Bus | Bus
 
 
 ### lines.txt
-`lines` are provided in the nodes **CompositeFrame/frames/ServiceFrame/lines/Line**. There could be multiple `ServiceFrame` to read.
+`lines` are provided in the nodes **CompositeFrame/frames/ServiceFrame[]/lines/Line[]**. The only `ServiceFrame` containing the lines has an id property set to `STIF:CODIFLIGNE:ServiceFrame:lineid`.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-line_id | *Line/@id* | This field is prefixed. 
-network_id | *Network/@id* | id of the network containing a reference to this line in `Network/members/LineRef/@ref`. This field is prefixed. 
-line_code | *Line/ShortName* | 
-line_name | *Line/Name* | 
+line_id | Line/@id | This field is prefixed. 
+network_id | Network/@id | id of the network containing a reference to this line in `Network/members/LineRef/@ref`. This field is prefixed. 
+commercial_mode_id | Line/TransportMode | corresponding commercial_mode_id (see mapping above)
+line_code | Line/PublicCode or Line/ShortName | Use the `PublicCode` value if available and not empty, else the `ShortName` should be used.
+line_name | Line/Name | 
 
 If the node `Line/PrivateCode` is available, the content of this node is added as an `object_code` for this line with `object_system` set at `Netex_PrivateCode`.
 
-If a node `Line/keyList/keyValue/Key` contains the value `Accessibility`, a `trip_property` will be specified for all the trips of the line (see trip_properties.txt).
+The accessibility of the line, described by `Line/AccessibilityAssessment` node is used at the trip level (see below).
+
+**Comments on line:**
+If at least one `Line/noticeAssignments/NoticeAssignment/NoticeRef` exists and references a valid notice described in the **commun.xml** file, a link between those notices and the line is described in the NTFS `comment_links.txt` file.
+
+NTFS field | Netex-IDFM element | Mapping rule/Comment
+--- | --- | ---
+object_id | Line/@id | This field is prefixed. 
+object_type |  | fixed value "line"
+comment_id | Line/noticeAssignments/NoticeAssignment/NoticeRef | This field is prefixed. 
+
 
 ## Reading of each folder
 In a **offre_** file, 2 **GeneralFrame** are expected in a **CompositeFrame/frames** node:
