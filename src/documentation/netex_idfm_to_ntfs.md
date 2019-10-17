@@ -1,6 +1,6 @@
 # Netex IDFM reading specification
 ## Introduction
-This document describes how a Netex feed provided by Ile-de-France Mobilités is read in Navitia Transit model (NTM)
+This document describes how a Netex feed provided by Ile-de-France Mobilités (IDFM) is read in Navitia Transit model (NTM)
 and transformed into an [NTFS feed](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
 
 For the sake of simplicity, the NTM properties that are not specified in the source
@@ -19,7 +19,7 @@ Version | Date | Modification
 1.2 | 2019-10-07 | Using new source specifications for Netex IDFM lines and stops, reading of `lignes.xml` and `arrets.xml` is reworked (no more complementary codes on stops and lines, associations between objects changed, etc.).<br>For `stop_points`, lowest level of `Quay` will be used (ZDEp).
 
 ## Input data description
-This specification assumes that all the required data (time tables for all the lines, stop points and stop areas, transfers, etc.) are provided in one ZIP archive (aka "FICHIERS OFFRE") described in the specification documents:
+This specification assumes that all the required data (time tables for all the lines, stop points and stop areas, transfers, etc.) are provided in one ZIP archive (aka "FICHIERS OFFRE") described in the private specification documents provided by IDFM:
 +  *NT60-A150701-v1.11-BO-STIF_-_Specification_Technique_d_Interface_NeTEx_pour_la_publication_20190624.docx*
 + *ATD-TDI-LZR-069-DINT WS-NETEX-01 v1.0.9_20190805.docx* (section 4.3)
 + *DINT-LIGNE_publication_1.7.3_20180306.docx* (section 4)
@@ -107,8 +107,9 @@ Exemple of Netex declaration:
 Linking a stop_area to a stop_point requires to navigate from lower `Quay` to upper `StopPlace` nodes:
 - the operator `Quay` node (aka ZDEp) references the PTA `Quay` node (aka ZDEr) with the attribute `Quay/@derivedFromObjectRef`,
 - the PTA `Quay` (aka ZDEr) references the monomodal `StopPlace` node (aka ZDL) with the attribute `Quay/ParentZoneRef/@ref`
-- the monomodal `StopPlace` node (aka ZDL) references the multimodal `StopPlace` (aka LDA, the actual `stop_area`) with the attribute `StopPlace/ParentSiteRef/@ref`.
+- the monomodal `StopPlace` node (aka ZDL) references the multimodal `StopPlace` (aka LDA, the actual `stop_area`) with the attribute `StopPlace/ParentSiteRef/@ref` (unless there is no valid multimodal parent, then the monomodal StopPlace is the stop_area).
 
+If no parent_station is available (neither multimodal nor monomodal), a stop_area will be created using the stop_point properties.
 
 **Definition of the Accessibility of a stop_point**
 
