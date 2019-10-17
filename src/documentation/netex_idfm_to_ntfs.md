@@ -15,7 +15,7 @@ to make possible safe data aggregations.
 Version | Date | Modification
 --- | --- | ---
 1.0 | 2019-09-13 | Initial redaction
-1.1 | 2019-09-30 | Adding fare zones, MIP access on lines and stop_points, the use of source coordinates of a stop_area (if available), complementary properties of a line (commercial_mode, line_color, line_text_color, note sur ligne)
+1.1 | 2019-09-30 | Adding fare zones, MIP access on lines and stop_points, the use of source coordinates of a stop_area (if available), complementary properties of a line (commercial_mode, line_color, line_text_color, comment on line)
 1.2 | 2019-10-07 | Using new source specifications for Netex IDFM lines and stops, reading of `lignes.xml` and `arrets.xml` is reworked (no more complementary codes on stops and lines, associations between objects changed, etc.).<br>For `stop_points`, lowest level of `Quay` will be used (ZDEp).
 
 ## Input data description
