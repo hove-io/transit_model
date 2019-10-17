@@ -22,7 +22,7 @@ Version | Date | Modification
 This specification assumes that all the required data (time tables for all the lines, stop points and stop areas, transfers, etc.) are provided in one ZIP archive (aka "FICHIERS OFFRE") described in the private specification documents provided by IDFM:
 +  *NT60-A150701-v1.11-BO-STIF_-_Specification_Technique_d_Interface_NeTEx_pour_la_publication_20190624.docx*
 + *ATD-TDI-LZR-069-DINT WS-NETEX-01 v1.0.9_20190805.docx* (section 4.3)
-+ *DINT-LIGNE_publication_1.7.3_20180306.docx* (section 4)
++ *DINT-LIGNE_publication_1.7.3_20180306.docx* (section 4, using the WebService version 2)
 
 The ZIP archive contains: 
 - one **arrets.xml** file
