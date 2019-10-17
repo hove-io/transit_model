@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery xmlns="http://www.netex.org.uk/netex">
+   <dataObjects>
+      <CompositeFrame id="FR100:CompositeFrame:NETEX_OFFRE_LIGNE-20190709T093213Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
+         <frames>
+            <GeneralFrame id="FR100:GeneralFrame:NETEX_STRUCTURE-20190709T093213Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
+               <TypeOfFrameRef ref="FR100:TypeOfFrame:NETEX_STRUCTURE:"/>
+               <members>
+                  <Route dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:Route:local-26-C00114-1:LOC" version="any">
+                     <Name>BIBLIOTHEQUE - BIBLIOTHEQUE NATIONALE</Name>
+                     <LineRef ref="FR1:Line:C00114:">version="any"</LineRef>
+                     <DirectionType>outbound</DirectionType>
+                     <DirectionRef ref="stif:Direction:local-26-C00114-1:LOC" version="any"/>
+                     <InverseRouteRef ref="stif:Route:local-26-C00114-2:LOC" version="any"/>
+                  </Route>
+                  <Route dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:Route:local-26-C00114-2:LOC" version="any">
+                     <Name>BIBLIOTHEQUE NATIONALE - BIBLIOTHEQUE</Name>
+                     <LineRef ref="FR1:Line:C00114:">version="any"</LineRef>
+                     <DirectionType>inbound</DirectionType>
+                     <DirectionRef ref="stif:Direction:local-26-C00114-2:LOC" version="any"/>
+                     <InverseRouteRef ref="stif:Route:local-26-C00114-1:LOC" version="any"/>
+                  </Route>
+               </members>
+            </GeneralFrame>
+		</frames>
+      </CompositeFrame>
+   </dataObjects>
+</PublicationDelivery>
