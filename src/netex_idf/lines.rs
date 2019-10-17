@@ -218,53 +218,43 @@ pub fn from_path(
     Ok(lines_netex_idf)
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use pretty_assertions::assert_eq;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
 
-//     #[test]
-//     #[should_panic(expected = "Unknown mode UNKNOWN found for line STIF:CODIFLIGNE:Line:C00163")]
-//     fn test_load_netex_lines_unknown_mode() {
-//         let xml = r#"
-//             <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:119">
-//                <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:119">
-//                   <Name>VEOLIA RAMBOUILLET</Name>
-//                   <members>
-//                      <LineRef ref="STIF:CODIFLIGNE:Line:C00163"/>
-//                   </members>
-//                </Network>
-//             </ServiceFrame>"#;
-//         let service_frame_networks: Element = xml.parse().unwrap();
-//         let xml = r#"
-//             <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:lineid">
-//                <lines>
-//                   <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00163">
-//                      <Name>Line 01</Name>
-//                      <ShortName>01</ShortName>
-//                      <TransportMode>UNKNOWN</TransportMode>
-//                      <PrivateCode>013013001</PrivateCode>
-//                      <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
-//                   </Line>
-//                </lines>
-//             </ServiceFrame>"#;
-//         let service_frame_lines: Element = xml.parse().unwrap();
-//         let xml = r#"
-//             <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:1">
-//                <organisations>
-//                   <Operator version="any" id="STIF:CODIFLIGNE:Operator:013">
-//                      <Name>TRANSDEV IDF RAMBOUILLET</Name>
-//                   </Operator>
-//                </organisations>
-//             </ResourceFrame>"#;
-//         let resource_frame_organisations: Element = xml.parse().unwrap();
-//         let mut frames = HashMap::new();
-//         frames.insert(
-//             FrameType::Service,
-//             vec![&service_frame_networks, &service_frame_lines],
-//         );
-//         frames.insert(FrameType::Resource, vec![&resource_frame_organisations]);
-//         let (_networks, companies, map_line_network) = make_networks_companies(&frames).unwrap();
-//         load_netex_lines(&frames, &map_line_network, &companies).unwrap();
-//     }
-// }
+    #[test]
+    #[should_panic(expected = "Unknown mode UNKNOWN found for line FR1:Line:C00001")]
+    fn test_load_netex_lines_unknown_mode() {
+        let xml = r#"
+            <ServiceFrame>
+               <lines>
+                  <Line id="FR1:Line:C00001">
+                     <Name>Line 01</Name>
+                     <ShortName>01</ShortName>
+                     <TransportMode>UNKNOWN</TransportMode>
+                     <RepresentedByGroupRef ref="FR1:Network:1:LOC"/>
+                     <OperatorRef ref="FR1:Operator:1:LOC"/>
+                  </Line>
+               </lines>
+            </ServiceFrame>"#;
+        let mut frames = HashMap::new();
+        let service_frame_lines: Element = xml.parse().unwrap();
+        frames.insert(FrameType::Service, vec![&service_frame_lines]);
+
+        let networks = CollectionWithId::new(vec![Network {
+            id: String::from("FR1:Network:1:LOC"),
+            name: String::from("Network1"),
+            ..Default::default()
+        }])
+        .unwrap();
+        let companies = CollectionWithId::new(vec![Company {
+            id: String::from("FR1:Operator:1:LOC"),
+            name: String::from("Operator1"),
+            ..Default::default()
+        }])
+        .unwrap();
+
+        load_netex_lines(&frames, &networks, &companies).unwrap();
+    }
+}
