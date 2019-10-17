@@ -35,6 +35,7 @@ fn test_read_write_netex_idf() {
                 "feed_infos.txt",
                 "lines.txt",
                 "physical_modes.txt",
+                "commercial_modes.txt",
                 "companies.txt",
                 "networks.txt",
                 "stops.txt",

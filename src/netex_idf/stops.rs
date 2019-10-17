@@ -35,7 +35,7 @@ use transit_model_collection::CollectionWithId;
 fn load_stop_area(stop_place_elem: &Element, proj: &Proj) -> Result<StopArea> {
     let id: String = stop_place_elem.try_attribute("id")?;
     let coord: Coord = load_coords(stop_place_elem)
-        .and_then(|coords| proj.convert((coords.0, coords.1).into()))
+        .and_then(|coords| proj.convert(coords.into()))
         .map(Coord::from)
         .unwrap_or_else(|e| {
             warn!("unable to parse coordinates of stop place {}: {}", id, e);
@@ -58,7 +58,7 @@ fn load_stop_area(stop_place_elem: &Element, proj: &Proj) -> Result<StopArea> {
 // A stop area is a multimodal stop place or a monomodal stoplace
 // with ParentSiteRef referencing a nonexistent multimodal stop place
 fn load_stop_areas<'a>(
-    stop_places: Vec<&'a &'a Element>,
+    stop_places: Vec<&'a Element>,
     proj: &Proj,
 ) -> Result<CollectionWithId<StopArea>> {
     let mut stop_areas = CollectionWithId::default();
@@ -99,13 +99,14 @@ fn load_coords(elem: &Element) -> Result<(f64, f64)> {
 }
 
 fn load_stops(frames: &Frames) -> Result<CollectionWithId<StopArea>> {
-    let member_children: Vec<_> = frames
+    let stop_places: Vec<_> = frames
         .get(&FrameType::General)
         .unwrap_or(&vec![])
         .iter()
         .flat_map(|e| e.children())
         .filter(|e| e.name() == "members")
         .flat_map(|e| e.children())
+        .filter(|e| e.name() == "StopPlace")
         .collect();
 
     let from = "EPSG:2154";
@@ -113,13 +114,7 @@ fn load_stops(frames: &Frames) -> Result<CollectionWithId<StopArea>> {
     let proj = Proj::new_known_crs(&from, &to, None)
         .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))?;
 
-    let stop_areas = load_stop_areas(
-        member_children
-            .iter()
-            .filter(|e| e.name() == "StopPlace")
-            .collect(),
-        &proj,
-    )?;
+    let stop_areas = load_stop_areas(stop_places, &proj)?;
 
     Ok(stop_areas)
 }
