@@ -63,20 +63,16 @@ fn load_netex_lines(
                 let network_id: String = line
                     .try_only_child("RepresentedByGroupRef")?
                     .try_attribute("ref")?;
-                let network_id = if let Some(_network) = networks.get(&network_id) {
-                    network_id
-                } else {
+                if networks.get(&network_id).is_none() {
                     warn!("Failed to find network {} for line {}", network_id, id);
                     continue;
-                };
+                }
                 let company_id: String =
                     line.try_only_child("OperatorRef")?.try_attribute("ref")?;
-                let company_id = if let Some(_company) = companies.get(&company_id) {
-                    company_id
-                } else {
+                if companies.get(&company_id).is_none() {
                     warn!("Failed to find company {} for line {}", company_id, id);
                     continue;
-                };
+                }
                 let mode: String = line.try_only_child("TransportMode")?.text().parse()?;
                 MODES
                     .get(mode.as_str())
