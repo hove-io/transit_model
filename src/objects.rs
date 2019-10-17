@@ -1639,6 +1639,7 @@ impl AddPrefix for TicketUseRestriction {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GridCalendar {
+    #[serde(rename = "grid_calendar_id")]
     pub id: String,
     pub name: String,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
