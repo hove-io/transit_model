@@ -1,0 +1,2 @@
+grid_calendar_id,date,type
+1,20190714,0
