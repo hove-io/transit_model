@@ -131,7 +131,7 @@ audible_announcement | Quay/AccessibilityAssessment/ limitations/AccessibilityLi
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 network_id | Network/@id | This field is prefixed. 
-network_name | Network/Name* | 
+network_name | Network/Name | 
 network_timezone | | Fixed value `Europe/Paris`.
 
 ### companies.txt
@@ -173,10 +173,12 @@ other | Bus | Bus | Bus | Bus
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 line_id | Line/@id | This field is prefixed. 
-network_id | Network/@id | id of the network containing a reference to this line in `Network/members/LineRef/@ref`. This field is prefixed. 
+network_id | Line/RepresentedByGroupRef/@ref | This field is prefixed. If this attribute or if the referenced network does not exists, this line is not created.
 commercial_mode_id | Line/TransportMode | corresponding commercial_mode_id (see mapping above)
 line_code | Line/PublicCode or Line/ShortName | Use the `PublicCode` value if available and not empty, else the `ShortName` should be used.
 line_name | Line/Name | 
+line_color | Line/Presentation/Colour | If the value is not available or is not a valid hexa RGB, the value `000000` (black) is used.
+line_text_color | Line/Presentation/TextColour | If the value is not available or is not a valid hexa RGB, the value `FFFFFF` (white) is used.
 
 If the node `Line/PrivateCode` is available, the content of this node is added as an `object_code` for this line with `object_system` set at `Netex_PrivateCode`.
 
