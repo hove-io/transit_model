@@ -1,2 +1,0 @@
-object_type,object_id,object_system,object_code
-stop_area,prefix:FR:94033:LDA:415674:STIF,Netex_ZDL,FR:94033:ZDL:43272:STIF

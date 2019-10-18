@@ -27,7 +27,7 @@ use crate::{
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use minidom::Element;
-use std::{collections::BTreeSet, collections::HashMap, fs::File, io::Read};
+use std::{collections::BTreeSet, fs::File, io::Read};
 use transit_model_collection::{CollectionWithId, Id};
 
 #[derive(Debug, Default)]
@@ -43,11 +43,9 @@ pub struct LineNetexIDF {
 }
 impl_id!(LineNetexIDF);
 
-type MapLineNetwork = HashMap<String, String>;
-
 fn load_netex_lines(
     frames: &Frames,
-    map_line_network: &MapLineNetwork,
+    networks: &CollectionWithId<Network>,
     companies: &CollectionWithId<Company>,
 ) -> Result<CollectionWithId<LineNetexIDF>> {
     let mut lines_netex_idf = CollectionWithId::default();
@@ -56,22 +54,25 @@ fn load_netex_lines(
             for line in lines_node.children().filter(|e| e.name() == "Line") {
                 let id = line.try_attribute("id")?;
                 let name = line.try_only_child("Name")?.text().parse()?;
-                let code = line.only_child("ShortName").map(Element::text);
+                let code = line
+                    .try_only_child_with_filter("PublicCode", |e| !e.text().is_empty())
+                    .or_else(|_| line.try_only_child("ShortName"))
+                    .map(Element::text)
+                    .ok();
                 let private_code = line.only_child("PrivateCode").map(Element::text);
-                let network_id = if let Some(network_id) = map_line_network.get(&id) {
-                    network_id.to_string()
-                } else {
-                    warn!("Failed to find network for line {}", id);
+                let network_id: String = line
+                    .try_only_child("RepresentedByGroupRef")?
+                    .try_attribute("ref")?;
+                if networks.get(&network_id).is_none() {
+                    warn!("Failed to find network {} for line {}", network_id, id);
                     continue;
-                };
+                }
                 let company_id: String =
                     line.try_only_child("OperatorRef")?.try_attribute("ref")?;
-                let company_id = if let Some(_company) = companies.get(&company_id) {
-                    company_id
-                } else {
+                if companies.get(&company_id).is_none() {
                     warn!("Failed to find company {} for line {}", company_id, id);
                     continue;
-                };
+                }
                 let mode: String = line.try_only_child("TransportMode")?.text().parse()?;
                 MODES
                     .get(mode.as_str())
@@ -114,14 +115,9 @@ fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<Collec
 
 fn make_networks_companies(
     frames: &Frames,
-) -> Result<(
-    CollectionWithId<Network>,
-    CollectionWithId<Company>,
-    MapLineNetwork,
-)> {
+) -> Result<(CollectionWithId<Network>, CollectionWithId<Company>)> {
     let mut networks = CollectionWithId::default();
     let mut companies = CollectionWithId::default();
-    let mut map_line_network: MapLineNetwork = HashMap::new();
     for frame in frames.get(&FrameType::Service).unwrap_or(&vec![]) {
         for network in frame.children().filter(|e| e.name() == "Network") {
             let id = network.try_attribute("id")?;
@@ -133,15 +129,6 @@ fn make_networks_companies(
                 timezone,
                 ..Default::default()
             })?;
-
-            let lines_ref = network
-                .try_only_child("members")?
-                .children()
-                .filter(|e| e.name() == "LineRef");
-            for line_ref in lines_ref {
-                map_line_network
-                    .insert(line_ref.try_attribute("ref")?, network.try_attribute("id")?);
-            }
         }
     }
     for frame in frames.get(&FrameType::Resource).unwrap_or(&vec![]) {
@@ -157,7 +144,7 @@ fn make_networks_companies(
             }
         }
     }
-    Ok((networks, companies, map_line_network))
+    Ok((networks, companies))
 }
 
 fn make_physical_and_commercial_modes(
@@ -210,8 +197,8 @@ pub fn from_path(
                 .try_only_child("CompositeFrame")?
                 .try_only_child("frames")?,
         )?;
-        let (networks, companies, map_line_network) = make_networks_companies(&frames)?;
-        let lines_netex_idf = load_netex_lines(&frames, &map_line_network, &companies)?;
+        let (networks, companies) = make_networks_companies(&frames)?;
+        let lines_netex_idf = load_netex_lines(&frames, &networks, &companies)?;
         let lines = make_lines(&lines_netex_idf)?;
         let (physical_modes, commercial_modes) =
             make_physical_and_commercial_modes(&lines_netex_idf)?;
@@ -230,251 +217,40 @@ pub fn from_path(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pretty_assertions::assert_eq;
+    use std::collections::HashMap;
 
     #[test]
-    fn test_make_networks_companies() {
-        // Test several networks in the same frame, or in several frames
-        // Same thing for operators (= companies)
-        let xml = r#"
-            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:119">
-               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:119">
-                  <Name>VEOLIA RAMBOUILLET</Name>
-                  <members>
-                     <LineRef ref="STIF:CODIFLIGNE:Line:C00163"/>
-                     <LineRef ref="STIF:CODIFLIGNE:Line:C00164"/>
-                  </members>
-               </Network>
-               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:120">
-                  <Name>VEOLIA RAMBOUILLET 2</Name>
-                  <members>
-                     <LineRef ref="STIF:CODIFLIGNE:Line:C00165"/>
-                  </members>
-               </Network>
-            </ServiceFrame>"#;
-        let service_frame_networks_1: Element = xml.parse().unwrap();
-        let xml = r#"
-            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:121">
-               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:121">
-                  <Name>VEOLIA RAMBOUILLET 3</Name>
-                  <members>
-                     <LineRef ref="STIF:CODIFLIGNE:Line:C00166"/>
-                  </members>
-               </Network>
-            </ServiceFrame>"#;
-        let service_frame_networks_2: Element = xml.parse().unwrap();
-        let xml = r#"
-            <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:1">
-               <organisations>
-                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:013">
-                     <Name>TRANSDEV IDF RAMBOUILLET</Name>
-                  </Operator>
-                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:014">
-                     <Name>TRANSDEV IDF RAMBOUILLET 2</Name>
-                  </Operator>
-               </organisations>
-            </ResourceFrame>"#;
-        let resource_frame_organisations_1: Element = xml.parse().unwrap();
-        let xml = r#"
-            <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:2">
-               <organisations>
-                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:015">
-                     <Name>TRANSDEV IDF RAMBOUILLET 3</Name>
-                  </Operator>
-               </organisations>
-            </ResourceFrame>"#;
-        let resource_frame_organisations_2: Element = xml.parse().unwrap();
-        let mut frames = HashMap::new();
-        frames.insert(
-            FrameType::Service,
-            vec![&service_frame_networks_1, &service_frame_networks_2],
-        );
-        frames.insert(
-            FrameType::Resource,
-            vec![
-                &resource_frame_organisations_1,
-                &resource_frame_organisations_2,
-            ],
-        );
-        let (networks, companies, _) = make_networks_companies(&frames).unwrap();
-        let networks_names: Vec<_> = networks.values().map(|n| &n.name).collect();
-        assert_eq!(
-            vec![
-                "VEOLIA RAMBOUILLET",
-                "VEOLIA RAMBOUILLET 2",
-                "VEOLIA RAMBOUILLET 3"
-            ],
-            networks_names
-        );
-        let companies_names: Vec<_> = companies.values().map(|c| &c.name).collect();
-        assert_eq!(
-            vec![
-                "TRANSDEV IDF RAMBOUILLET",
-                "TRANSDEV IDF RAMBOUILLET 2",
-                "TRANSDEV IDF RAMBOUILLET 3"
-            ],
-            companies_names
-        );
-    }
-
-    #[test]
-    fn test_make_lines() {
-        let xml = r#"
-            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:119">
-               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:119">
-                  <Name>VEOLIA RAMBOUILLET</Name>
-                  <members>
-                     <LineRef ref="STIF:CODIFLIGNE:Line:C00163"/>
-                  </members>
-               </Network>
-               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:120">
-                  <Name>VEOLIA RAMBOUILLET 2</Name>
-                  <members>
-                     <LineRef ref="STIF:CODIFLIGNE:Line:C00165"/>
-                  </members>
-               </Network>
-            </ServiceFrame>"#;
-        let service_frame_networks_1: Element = xml.parse().unwrap();
-        let xml = r#"
-            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:121">
-               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:121">
-                  <Name>VEOLIA RAMBOUILLET 3</Name>
-                  <members>
-                     <LineRef ref="STIF:CODIFLIGNE:Line:C00166"/>
-                  </members>
-               </Network>
-            </ServiceFrame>"#;
-        let service_frame_networks_2: Element = xml.parse().unwrap();
-        let xml = r#"
-            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:lineid">
-               <lines>
-                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00164">
-                     <keyList>
-                        <KeyValue>
-                           <Key>Accessibility</Key>
-                           <Value>0</Value>
-                        </KeyValue>
-                     </keyList>
-                     <Name>Line 03</Name>
-                     <ShortName>03</ShortName>
-                     <TransportMode>bus</TransportMode>
-                     <PrivateCode>013013003</PrivateCode>
-                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
-                  </Line>
-                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00163">
-                     <keyList>
-                        <KeyValue>
-                           <Key>Accessibility</Key>
-                           <Value>0</Value>
-                        </KeyValue>
-                     </keyList>
-                     <Name>Line 01</Name>
-                     <ShortName>01</ShortName>
-                     <TransportMode>bus</TransportMode>
-                     <PrivateCode>013013001</PrivateCode>
-                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
-                  </Line>
-                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00165">
-                     <keyList>
-                        <KeyValue>
-                           <Key>Accessibility</Key>
-                           <Value>0</Value>
-                        </KeyValue>
-                     </keyList>
-                     <Name>Line 04</Name>
-                     <ShortName>04</ShortName>
-                     <TransportMode>bus</TransportMode>
-                     <PrivateCode>013013004</PrivateCode>
-                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
-                  </Line>
-                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00166">
-                     <keyList>
-                        <KeyValue>
-                           <Key>Accessibility</Key>
-                           <Value>0</Value>
-                        </KeyValue>
-                     </keyList>
-                     <Name>Line 05</Name>
-                     <ShortName>05</ShortName>
-                     <TransportMode>bus</TransportMode>
-                     <PrivateCode>013013005</PrivateCode>
-                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:0133"/>
-                  </Line>
-               </lines>
-            </ServiceFrame>"#;
-        let service_frame_lines: Element = xml.parse().unwrap();
-        let xml = r#"
-            <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:1">
-               <organisations>
-                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:013">
-                     <Name>TRANSDEV IDF RAMBOUILLET</Name>
-                  </Operator>
-               </organisations>
-            </ResourceFrame>"#;
-        let resource_frame_organisations: Element = xml.parse().unwrap();
-        let mut frames = HashMap::new();
-        frames.insert(
-            FrameType::Service,
-            vec![
-                &service_frame_networks_1,
-                &service_frame_networks_2,
-                &service_frame_lines,
-            ],
-        );
-        frames.insert(FrameType::Resource, vec![&resource_frame_organisations]);
-        let (_networks, companies, map_line_network) = make_networks_companies(&frames).unwrap();
-        let lines_netex_idf = load_netex_lines(&frames, &map_line_network, &companies).unwrap();
-        let lines = make_lines(&lines_netex_idf).unwrap();
-        let lines_names: Vec<_> = lines.values().map(|l| &l.name).collect();
-        // Test explanation
-        // Line 03 - Orphan line; not referenced by any network -> line skipped
-        // Line 05 - Unknown company -> line skipped
-        assert_eq!(vec!["Line 01", "Line 04"], lines_names);
-    }
-
-    #[test]
-    #[should_panic(expected = "Unknown mode UNKNOWN found for line STIF:CODIFLIGNE:Line:C00163")]
+    #[should_panic(expected = "Unknown mode UNKNOWN found for line FR1:Line:C00001")]
     fn test_load_netex_lines_unknown_mode() {
         let xml = r#"
-            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:119">
-               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:119">
-                  <Name>VEOLIA RAMBOUILLET</Name>
-                  <members>
-                     <LineRef ref="STIF:CODIFLIGNE:Line:C00163"/>
-                  </members>
-               </Network>
-            </ServiceFrame>"#;
-        let service_frame_networks: Element = xml.parse().unwrap();
-        let xml = r#"
-            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:lineid">
+            <ServiceFrame>
                <lines>
-                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00163">
+                  <Line id="FR1:Line:C00001">
                      <Name>Line 01</Name>
                      <ShortName>01</ShortName>
                      <TransportMode>UNKNOWN</TransportMode>
-                     <PrivateCode>013013001</PrivateCode>
-                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
+                     <RepresentedByGroupRef ref="FR1:Network:1:LOC"/>
+                     <OperatorRef ref="FR1:Operator:1:LOC"/>
                   </Line>
                </lines>
-            </ServiceFrame>
-"#;
-        let service_frame_lines: Element = xml.parse().unwrap();
-        let xml = r#"
-            <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:1">
-               <organisations>
-                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:013">
-                     <Name>TRANSDEV IDF RAMBOUILLET</Name>
-                  </Operator>
-               </organisations>
-            </ResourceFrame>"#;
-        let resource_frame_organisations: Element = xml.parse().unwrap();
+            </ServiceFrame>"#;
         let mut frames = HashMap::new();
-        frames.insert(
-            FrameType::Service,
-            vec![&service_frame_networks, &service_frame_lines],
-        );
-        frames.insert(FrameType::Resource, vec![&resource_frame_organisations]);
-        let (_networks, companies, map_line_network) = make_networks_companies(&frames).unwrap();
-        load_netex_lines(&frames, &map_line_network, &companies).unwrap();
+        let service_frame_lines: Element = xml.parse().unwrap();
+        frames.insert(FrameType::Service, vec![&service_frame_lines]);
+
+        let networks = CollectionWithId::new(vec![Network {
+            id: String::from("FR1:Network:1:LOC"),
+            name: String::from("Network1"),
+            ..Default::default()
+        }])
+        .unwrap();
+        let companies = CollectionWithId::new(vec![Company {
+            id: String::from("FR1:Operator:1:LOC"),
+            name: String::from("Operator1"),
+            ..Default::default()
+        }])
+        .unwrap();
+
+        load_netex_lines(&frames, &networks, &companies).unwrap();
     }
 }

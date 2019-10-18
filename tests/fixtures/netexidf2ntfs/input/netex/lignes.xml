@@ -8,72 +8,98 @@
                      xmlns:core="http://www.govtalk.gov.uk/core"
                      xmlns:siri="http://www.siri.org.uk/siri"
                      version="1.04:FR100-NETEX-1.6-1.8">
-   <PublicationTimestamp>2018-11-08T15:32:14Z</PublicationTimestamp>
+   <PublicationTimestamp>2019-07-09T09:32:14Z</PublicationTimestamp>
    <ParticipantRef>FR100_OFFRE</ParticipantRef>
    <dataObjects>
-      <CompositeFrame id="FR100:CompositeFrame:NETEX_IDF-20181108T153214Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
+      <CompositeFrame id="FR100:CompositeFrame:NETEX_IDF-20190709T093214Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
          <TypeOfFrameRef ref="FR100:TypeOfFrame:NETEX_IDF:"/>
          <frames>
-            <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:119">
-               <Network version="any" changed="2009-12-02T00:00:00Z" id="STIF:CODIFLIGNE:PTNetwork:119">
-                  <Name>VEOLIA RAMBOUILLET</Name>
-                  <members>
-                     <LineRef ref="STIF:CODIFLIGNE:Line:C00171"/>
-                     <LineRef ref="STIF:CODIFLIGNE:Line:C00164"/>
-                  </members>
+            <ServiceFrame version="any" id="FR1:Network:212:LOC">
+               <Network version="any" id="FR1:Network:212:LOC">
+                  <Name>Val de Seine</Name>
                </Network>
             </ServiceFrame>
             <ServiceFrame version="any" id="STIF:CODIFLIGNE:ServiceFrame:lineid">
                <lines>
-                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00171">
-                     <keyList>
-                        <KeyValue>
-                           <!-- Ceci est l accessibilite de la ligne : 0 si false , 1 si true -->
-                           <Key>Accessibility</Key>
-                           <Value>0</Value>
-                        </KeyValue>
-                     </keyList>
-                     <Name>11</Name>
-                     <ShortName>11</ShortName>
+                  <Line version="any" dataSourceRef="FR1:OrganisationalUnit: :" created="2014-07-16T00:00:00Z" changed="2014-07-16T00:00:00Z" status="active" id="FR1:Line:C00114:">
+                     <ValidBetween>
+                        <FromDate>2019-01-01T00:00:00</FromDate>
+                     </ValidBetween>
+                     <Name>Express 19</Name>
+                     <ShortName>19</ShortName>
                      <TransportMode>bus</TransportMode>
-                     <!-- Ceci est le code technique -->
-                     <PrivateCode>013013011</PrivateCode>
-                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
-                     <!-- Type of line null ou égal à seasonal -->
-                     <TypeOfLineRef version="any" ref="null"/>
+                     <TransportSubmode>
+                        <BusSubmode>expressBus</BusSubmode>
+                     </TransportSubmode>
+                     <PublicCode/>
+                     <PrivateCode>011011019</PrivateCode>
+                     <OperatorRef version="any" ref="FR1:Operator:011:LOC"/>
+                     <additionalOperators>
+                        <OperatorRef version="any" ref="FR1:Operator:011:LOC"/>
+                     </additionalOperators>
+                     <RepresentedByGroupRef version="any" ref="FR1:Network:212:LOC"/>
                      <Presentation>
-                        <infoLinks/>
+                        <Colour>1ac7ff</Colour>
+                        <ColourName>RGB:26199255</ColourName>
+                        <TextColour>000000</TextColour>
                      </Presentation>
-                  </Line>
-                  <Line version="any" created="2014-07-16T00:00:00+00:00" changed="2014-07-16T00:00:00+00:00" status="active" id="STIF:CODIFLIGNE:Line:C00164">
-                     <keyList>
-                        <KeyValue>
-                           <!-- Ceci est l accessibilite de la ligne : 0 si false , 1 si true -->
-                           <Key>Accessibility</Key>
-                           <Value>0</Value>
-                        </KeyValue>
-                     </keyList>
-                     <Name>03</Name>
-                     <ShortName>03</ShortName>
-                     <TransportMode>bus</TransportMode>
-                     <!-- Ceci est le code technique -->
-                     <PrivateCode>013013003</PrivateCode>
-                     <OperatorRef version="any" ref="STIF:CODIFLIGNE:Operator:013"/>
-                     <!-- Type of line null ou égal à seasonal -->
-                     <TypeOfLineRef version="any" ref="null"/>
-                     <Presentation>
-                        <infoLinks/>
-                     </Presentation>
+                     <AlternativePresentation>
+                        <ColourName>CMYK:90 22 0 0</ColourName>
+                        <TextColour>000000</TextColour>
+                     </AlternativePresentation>
+                     <AccessibilityAssessment id="FR1:AccessibilityAssessment:C00114:" version="any">
+                        <MobilityImpairedAccess>false</MobilityImpairedAccess>
+                        <limitations>
+                           <AccessibilityLimitation>
+                              <WheelchairAccess>unknown</WheelchairAccess>
+                              <AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+                              <VisualSignsAvailable>unknown</VisualSignsAvailable>
+                           </AccessibilityLimitation>
+                        </limitations>
+                     </AccessibilityAssessment>
+                     <noticeAssignments>
+                        <NoticeAssignment id="FR1:NoticeAssignment:C00114:" version="any" order="0">
+                           <NoticeRef version="any" ref="FR1:Notice:C00114:"/>
+                        </NoticeAssignment>
+                        <NoticeAssignmentView id="FR1:NoticeAssignmentView:C00114:" order="0">
+                           <Mark>Horaires et Plan Ligne Express 19</Mark>
+                           <MarkUrl>http://www.transdev-idf.com/horaire-ligne-express_19-express_19_les_mureaux_versailles_011</MarkUrl>
+                           <TypeOfNoticeRef ref="PDFTimetable"/>
+                        </NoticeAssignmentView>
+                     </noticeAssignments>
                   </Line>                  
                </lines>
+               <notices>
+                  <Notice version="any" id="FR1:Notice:C00170:">
+                     <Name>Test IBOO</Name>
+                     <Text>Test BOO</Text>
+                     <TypeOfNoticeRef ref="LineNotice"/>
+                  </Notice>
+               </notices>
             </ServiceFrame>
             <ResourceFrame version="any" id="STIF:CODIFLIGNE:ResourceFrame:1">
                <typesOfValue>
                   <TypeOfLine version="any" id="STIF:CODIFLIGNE:seasonal"/>
                </typesOfValue>
                <organisations>
-                  <Operator version="any" id="STIF:CODIFLIGNE:Operator:013">
-                     <Name>TRANSDEV IDF RAMBOUILLET</Name>
+                  <Operator version="any" dataSourceRef="FR1:OrganisationalUnit::" id="FR1:Operator:011:LOC">
+                     <BrandingRef ref=""/>
+                     <Name>TRANSDEV IDF ECQUEVILLY</Name>
+                     <ContactDetails>
+                        <ContactPerson/>
+                        <Email/>
+                        <Phone/>
+                        <Url/>
+                        <FurtherDetails/>
+                     </ContactDetails>
+                     <Address>
+                        <HouseNumber/>
+                        <AddressLine1/>
+                        <Street/>
+                        <Town/>
+                        <PostCode/>
+                        <PostCodeExtension/>
+                     </Address>
                   </Operator>
                </organisations>
             </ResourceFrame>

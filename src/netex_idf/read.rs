@@ -42,7 +42,7 @@ where
     collections.feed_infos = feed_infos;
 
     let path = netex_idf_path.as_ref();
-    stops::from_path(&path.join("arrets.xml"), &mut collections)?;
+    //stops::from_path(&path.join("arrets.xml"), &mut collections)?;
     // TODO : use _lines_netex_idf to get trips>physical_mode_id
     let _lines_netex_idf = lines::from_path(&path.join("lignes.xml"), &mut collections)?;
 
