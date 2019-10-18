@@ -77,7 +77,7 @@ an error. Likewise for the stop_areas.
 | stops.txt | stop_name | Required | stops.txt | stop_name |  |
 | stops.txt | stop_lat | Required | stops.txt | stop_lat |  |
 | stops.txt | stop_lon | Required | stops.txt | stop_lon |  |
-| stops.txt | location_type | Optional | stops.txt | location_type | If value is not one of `0`, `1`, `2`, `3` or `4`, then set to `0` |
+| stops.txt | location_type | Optional | stops.txt | location_type | The value is set to `0` if the input value is `0` or unspecified or invalid, `1` if the input value is `1`, `3` if the input value is `2`, `4` if the input value is `3` and `5` if the input value is `4`
 | stops.txt | parent_station | Optional | stops.txt | parent_station | All
 slashes `/` are removed (1) |
 | stops.txt | stop_timezone | Optional | stops.txt | stop_timezone |  |
