@@ -57,8 +57,8 @@ A `stop_area` is created for each `StopPlace` not containing a `StopPlace/Parent
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-stop_id | *StopPlace/@id* | This field is prefixed. 
-stop_name | *StopPlace/Name* | 
+stop_id | StopPlace/@id | This field is prefixed. 
+stop_name | StopPlace/Name | 
 location_type | | Fixed value `1` (stop_area)
 stop_lat | StopPlace/Centroid/Location | see (1) below
 stop_lon | StopPlace/Centroid/Location | see (1) below
@@ -87,8 +87,8 @@ The `Quay` nodes with a `FR1-ARRET_AUTO` value in `Quay/@dataSourceRef` property
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-stop_id | *Quay/@id* | This field is prefixed. 
-stop_name | *Quay/Name* | 
+stop_id | Quay/@id | This field is prefixed. 
+stop_name | Quay/Name | 
 location_type | | Fixed value `0` (stop_point)
 stop_lat | Quay/Centroid/Location | see (1) below
 stop_lon | Quay/Centroid/Location | see (1) below
