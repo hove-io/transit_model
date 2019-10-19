@@ -71,6 +71,10 @@ fn merge_collections_ok() {
     assert_eq!(5, collections.stop_time_ids.len());
     assert_eq!(5, collections.levels.len());
     assert_eq!(3, collections.pathways.len());
+    assert_eq!(1, collections.grid_calendars.len());
+    assert_eq!(1, collections.grid_exception_dates.len());
+    assert_eq!(1, collections.grid_periods.len());
+    assert_eq!(1, collections.grid_rel_calendar_line.len());
 
     let mut headsigns = HashMap::<(Idx<VehicleJourney>, u32), String>::new();
     headsigns.insert(

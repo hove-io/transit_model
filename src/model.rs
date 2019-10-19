@@ -114,6 +114,10 @@ impl Collections {
             ticket_use_restrictions,
             pathways,
             levels,
+            grid_calendars,
+            grid_exception_dates,
+            grid_periods,
+            grid_rel_calendar_line,
             ..
         } = c;
         self.contributors.try_merge(contributors)?;
@@ -135,6 +139,10 @@ impl Collections {
         self.ticket_use_restrictions.merge(ticket_use_restrictions);
         self.pathways.merge(pathways);
         self.levels.merge(levels);
+        self.grid_calendars.try_merge(grid_calendars)?;
+        self.grid_exception_dates.merge(grid_exception_dates);
+        self.grid_periods.merge(grid_periods);
+        self.grid_rel_calendar_line.merge(grid_rel_calendar_line);
 
         fn get_new_idx<T>(
             old_idx: Idx<T>,
