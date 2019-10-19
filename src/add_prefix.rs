@@ -80,6 +80,10 @@ impl AddPrefix for Collections {
         self.ticket_use_restrictions.add_prefix(&prefix);
         self.pathways.add_prefix(&prefix);
         self.levels.add_prefix(&prefix);
+        self.grid_calendars.add_prefix(&prefix);
+        self.grid_exception_dates.add_prefix(&prefix);
+        self.grid_periods.add_prefix(&prefix);
+        self.grid_rel_calendar_line.add_prefix(&prefix);
     }
 }
 

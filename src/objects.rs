@@ -1659,6 +1659,12 @@ pub struct GridCalendar {
 }
 impl_id!(GridCalendar);
 
+impl AddPrefix for GridCalendar {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.id = prefix.to_string() + &self.id;
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GridExceptionDate {
     pub grid_calendar_id: String,
@@ -1671,6 +1677,12 @@ pub struct GridExceptionDate {
     pub r#type: bool,
 }
 impl_id!(GridExceptionDate, GridCalendar, grid_calendar_id);
+
+impl AddPrefix for GridExceptionDate {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.grid_calendar_id = prefix.to_string() + &self.grid_calendar_id;
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GridPeriod {
@@ -1688,6 +1700,12 @@ pub struct GridPeriod {
 }
 impl_id!(GridPeriod, GridCalendar, grid_calendar_id);
 
+impl AddPrefix for GridPeriod {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.grid_calendar_id = prefix.to_string() + &self.grid_calendar_id;
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GridRelCalendarLine {
     pub grid_calendar_id: String,
@@ -1696,6 +1714,13 @@ pub struct GridRelCalendarLine {
 }
 impl_id!(GridRelCalendarLine, GridCalendar, grid_calendar_id);
 impl_id!(GridRelCalendarLine, Line, line_id);
+
+impl AddPrefix for GridRelCalendarLine {
+    fn add_prefix(&mut self, prefix: &str) {
+        self.grid_calendar_id = prefix.to_string() + &self.grid_calendar_id;
+        self.line_id = prefix.to_string() + &self.line_id;
+    }
+}
 
 #[cfg(test)]
 mod tests {
