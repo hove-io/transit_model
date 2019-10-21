@@ -26,6 +26,14 @@ pub trait TryAttribute {
     fn try_attribute<F>(&self, attr_name: &str) -> Result<F>
     where
         F: FromStr;
+
+    /// Get an attribute from its name if present and return a [Option](std::option::Option)
+    fn attribute<F>(&self, attr_name: &str) -> Option<F>
+    where
+        F: FromStr,
+    {
+        self.try_attribute(attr_name).ok()
+    }
 }
 
 impl TryAttribute for Element {
