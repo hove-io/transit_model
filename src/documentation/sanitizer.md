@@ -49,3 +49,9 @@ anymore. This part of the process remove all of these objects:
 - commercial modes which are not referenced
 - trip properties which are not referenced
 - comments which are not referenced
+- grid calendar which refers a line which does not exist (through the relation
+  in the file `grid_rel_calendar_line.txt`); **Exception**: when the
+  `line_external_code` is used and the `line_id` is empty, the grid calendar is
+  kept
+- grid exception date which refers to a grid calendar which does not exist
+- grid period which refers to a grid calendar which does not exist
