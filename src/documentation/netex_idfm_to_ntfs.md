@@ -195,81 +195,86 @@ comment_id | Line/noticeAssignments/NoticeAssignment/NoticeRef | This field is p
 
 
 ## Reading of each folder
-In a **offre_** file, 2 **GeneralFrame** are expected in a **CompositeFrame/frames** node:
+In a **offre_*.xml** file, 2 **GeneralFrame** are expected in a **CompositeFrame/frames** node:
 * one with a `TypeOfFrameRef/@ref` containing the string `NETEX_STRUCTURE`
 * one with a `TypeOfFrameRef/@ref` containing the string `NETEX_HORAIRE`
 In the following chapters, the **CompositeFrame/frames/GeneralFrame/members** is ommitted.
 
 ### routes.txt
-`routes` are provided in each **offre_** file in the nodes **Route**. 
+`routes` are provided in each **offre_** file in the nodes **CompositeFrame/frames/GeneralFrame[]/members/Route[]**. The `GeneralFrame` to be used is the one with the `@ref` containing `NETEX_STRUCTURE`.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-route_id | *Route/@id* | This field is prefixed. 
-route_name | *Route/Name* | 
-direction_type | *Route/DirectionType* | The value of this field is used without transformation.
+route_id | Route/@id | This field is prefixed. 
+line_id | Route/LineRef/@ref | This field is prefixed. 
+route_name | Route/Name | 
+direction_type | Route/DirectionType | The value of this field is used without transformation.
 destination_id |  | The `DirectionRef` of the Route doesn't link to a stop (neither stop_point nor stop_area), thus its value is not used.
-line_id | *Route/LineRef/@ref* | This field is prefixed. 
 
 **ServiceJourneyPattern references**
-All ServiceJourneyPattern of a `route` are stored as complementary `object_codes`. ServiceJourneyPattern nodes are listed in the same parent node as Route nodes.
+
+All ServiceJourneyPattern of a `route` are stored as complementary `object_codes`. ServiceJourneyPattern nodes are listed in the nodes `CompositeFrame/frames/GeneralFrame[]/members/ServiceJourneyPattern[]`. The `GeneralFrame` to be used is the one with the `@ref` containing `NETEX_STRUCTURE`.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 object_type |  | fixed value `route` 
-object_id | *ServiceJourneyPattern/RouteRef/@ref* | This field is prefixed. 
+object_id | ServiceJourneyPattern/RouteRef/@ref | This field is prefixed. 
 object_system |  | fixed value `Netex_ServiceJourneyPattern`
-object_code | *ServiceJourneyPattern/@id* | The value of this field is used without transformation.
+object_code | ServiceJourneyPattern/@id | The value of this field is used without transformation.
 
 
 ### trips.txt
-`trips` are described in each **offre_** file in the nodes **ServiceJourney**. 
+`trips` are described in each **offre_*.xml** file in the nodes **CompositeFrame/frames/GeneralFrame[]/members/ServiceJourney[]**. 
+The `GeneralFrame` to be used is the one with the `@ref` containing `NETEX_STRUCTURE`.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-route_id | *ServiceJourney/JourneyPatternRef/@ref* | route_id of the Route containing the JourneyPatternRef as an object_code.
+route_id | ServiceJourney/JourneyPatternRef/@ref | route_id of the Route containing the `JourneyPatternRef` as an object_code.
 service_id |  | Defined using `ServiceJourney/DayTypeRef`, see (calendar.txt and calendar_dates.txt)[]
-trip_id | *ServiceJourney/@id* | This field is prefixed. 
-trip_headsign | *ServiceJourney/DestinationDisplayRef* | Content of the `DestinationDisplay/FrontText` node. If not available, the name of the `stop_point` of the last `stop_time` is used.
-trip_short_name | *ServiceJourney/DestinationDisplayRef* | Content of the `DestinationDisplay/PublicCode` node. If not available, this field is empty.
-company_id | *ServiceJourney/OperatorRef* | if *ServiceJourney/OperatorRef* is not defined, use *Line/OperatorRef* in [*lines.xml*](#linestxt) file. This field is prefixed.
-physical_mode_id | *Line/TransportMode* | see physical_modes definition
+trip_id | ServiceJourney/@id | This field is prefixed. 
+trip_headsign | ServiceJourney/DestinationDisplayRef | Content of the `DestinationDisplay/FrontText` node. If not available, the name of the `stop_point` of the last `stop_time` is used.
+trip_short_name | ServiceJourney/DestinationDisplayRef | Content of the `DestinationDisplay/PublicCode` node. If not available, this field is empty.
+company_id | ServiceJourney/OperatorRef | if `ServiceJourney/OperatorRef` is not defined, use `Line/OperatorRef` in [*lines.xml*](#linestxt) file. This field is prefixed.
+physical_mode_id | Line/TransportMode | see physical_modes definition
 trip_property_id |  | see [trip_properties.txt](#trip_propertiestxt)
 
 
 **comment_links for a trip**
-If one (or more) `noticeAssignments/NoticeAssignment/NoticeRef` is available in the `ServiceJourney`, a `comment_link` will be created as follow.
+
+If one (or more) `noticeAssignments/NoticeAssignment/NoticeRef` is available in the `ServiceJourney`, a `comment_link` will be created as follow in the `comment_links.txt` file.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-object_id | *ServiceJourney/@id* | This field is prefixed. 
+object_id | ServiceJourney/@id | This field is prefixed. 
 object_type |  | Fixed value `trip`
-comment_id | *noticeAssignments/NoticeAssignment/NoticeRef* | This field is prefixed. 
+comment_id | noticeAssignments/NoticeAssignment/NoticeRef | This field is prefixed. 
 
 ### trip_properties.txt
-In the Line declaration (cf. `lines.txt`), if a node `Line/keyList/keyValue/Key` contains the value `Accessibility`, a `trip_property` will be specified for all the trips of the line.
+In the Line declaration (cf. `lines.txt`), if a node `Line/AccessibilityAssessment` exists, a `trip_property` will be specified for all the trips of the line.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-trip_property_id | *Line/@id* | The id of the line is used to create this object. This field is prefixed. 
-wheelchair_accessible | `Line/keyList/keyValue/Value` | See (1) below.
+trip_property_id | Line/AccessibilityAssessment/@id | The id of the line is used to create this object. This field is prefixed. 
+wheelchair_accessible | Line/AccessibilityAssessment/MobilityImpairedAccess | See (1) below.
+visual_announcement | Line/AccessibilityAssessment/limitations/AccessibilityLimitation/VisualSignsAvailable | See (1) below.
+audible_announcement | Line/AccessibilityAssessment/limitations/AccessibilityLimitation/AudibleSignalsAvailable | See (1) below.
 
-wheelchair_accessible value: 
-* If source value is "0", then this property is set to "2" (not accessible),
-* If source value is "1", then this property is set to "1" (accessible),
-* else this property is set to "0" (unknown)
+(1) setting accessibility value: 
+* If source value is `false`, then this property is set to `2` (not accessible),
+* If source value is `true`, then this property is set to `1` (accessible),
+* else this property is set to `0` (unknown)
 
 
 ### stop_times.txt
-`stop_times` of a trip are listed in the `passingTimes/TimetabledPassingTime` nodes of a `ServiceJourney` (cf. `trip` definition).
+`stop_times` of a trip are listed in the `ServiceJourney/passingTimes/TimetabledPassingTime[]` nodes. They are positioned in the same order as the `ServiceJourneyPattern/pointsInSequence` corresponding to the ServiceJourney.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-trip_id | *ServiceJourney/@id* | This field is prefixed. 
+trip_id | ServiceJourney/@id | This field is prefixed. 
 stop_sequence | | Auto-incremented field starting with `0` for the first stop_time
 stop_id | | See (1) below
-arrival_time | *TimetabledPassingTime/ArrivalTime* | If `TimetabledPassingTime/DepartureDayOffset` value is >0, arrival_time is incremented 24 hours for each day offset. 
-departure_time | *TimetabledPassingTime/DepartureTime* | If `TimetabledPassingTime/DepartureDayOffset` value is >0, departure_time is incremented 24 hours for each day offset. 
+arrival_time | TimetabledPassingTime/ArrivalTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, arrival_time is incremented 24 hours for each day offset. 
+departure_time | TimetabledPassingTime/DepartureTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, departure_time is incremented 24 hours for each day offset. 
 boarding_duration | | Fixed value `0`
 alighting_duration | | Fixed value `0`
 pickup_type | | See (2) below
@@ -289,11 +294,12 @@ local_zone_id | | See (3) below
 In the `ServiceJourneyPattern/pointsInSequence/StopPointInJourneyPattern` corresponding to this `stop_time` (see `(1)`):
 * if the `ForBoarding` node is existing and with a `False` value, `pickup_type` is set to "1" (no boarding)
 * else `pickup_type` is set to "0" (regular boarding)
+
 `drop_off_type` is set using the same method and using the `ForAlighting` node.
 
 (3) Definition of local_zone_id:
 
-The declaration of those zones is made in the nodes `RoutingConstraintZone` of the **offre_** file.
+The declaration of those zones is made in the nodes `RoutingConstraintZone` of the **offre_*.xml** file.
 The `local_zone_id` is specified with an auto-incremented integer. Each `RoutingConstraintZone/@id` is associated with a new integer. 
 This `RoutingConstraintZone` contains a list of `ScheduledStopPointRef` (in `RoutingConstraintZone/members/ScheduledStopPointRef/@ref`). If a stop_time corresponds to one of those `ScheduledStopPointRef`, the `local_zone_id` is set to the associated integer.
 
@@ -322,7 +328,7 @@ Here is 3 possible modelizations in Netex-IDFM of a calendar running from 2016-0
 
 
 ### comments.txt
-`comments` are provided in **commun.xml** file in the nodes **GeneralFrame/members/Notice**.
+`comments` are provided in **commun.xml** file in the nodes **GeneralFrame/members/Notice[]**.
 
 NTFS field | Netex IDFM element | Mapping rule/Comment
 --- | --- | ---
