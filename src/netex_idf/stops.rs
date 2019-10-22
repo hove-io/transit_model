@@ -121,14 +121,12 @@ fn stop_point_fare_zone_id(quay: &Element) -> Option<String> {
 
 fn stop_point_parent_id(
     quay: &Element,
-    map_refquay_stopplace: &HashMap<String, String>,
-    map_stopplace_stoparea: &HashMap<String, String>,
+    map_refquay_stoparea: &HashMap<String, &String>,
     stop_areas: &CollectionWithId<StopArea>,
 ) -> Result<Option<String>> {
     Ok(quay
         .attribute::<String>("derivedFromObjectRef")
-        .and_then(|refquay_id| map_refquay_stopplace.get(&refquay_id))
-        .and_then(|monomodal_sp| map_stopplace_stoparea.get(monomodal_sp.as_str()))
+        .and_then(|refquay_id| map_refquay_stoparea.get(&refquay_id))
         .and_then(|stop_area_id| stop_areas.get(&stop_area_id))
         .map(|stop_area| stop_area.id.clone()))
 }
@@ -141,21 +139,22 @@ fn load_stop_points<'a>(
 ) -> Result<CollectionWithId<StopPoint>> {
     let mut stop_points = CollectionWithId::default();
 
-    let is_referential_quay = |q: &Element| {
-        q.try_attribute::<String>("dataSourceRef")
+    let is_referential_quay = |quay: &Element| {
+        quay.try_attribute::<String>("dataSourceRef")
             .map(|ds_ref| ds_ref == "FR1-ARRET_AUTO")
             .unwrap_or(false)
     };
 
-    let map_refquay_stopplace: HashMap<_, _> = quays
+    let map_refquay_stoparea: HashMap<_, _> = quays
         .iter()
-        .filter(|q| is_referential_quay(*q))
-        .map(|q| {
-            let referential_quay_id: String = q.try_attribute("id")?;
-            let stop_place_id: String = q.try_only_child("ParentZoneRef")?.try_attribute("ref")?;
-            Ok((referential_quay_id, stop_place_id))
+        .filter(|quay| is_referential_quay(*quay))
+        .flat_map(|quay| {
+            let referential_quay_id: String = quay.attribute("id")?;
+            let stop_place_id: String = quay.only_child("ParentZoneRef")?.attribute("ref")?;
+            let stop_area_id = map_stopplace_stoparea.get(&stop_place_id)?;
+            Some((referential_quay_id, stop_area_id))
         })
-        .collect::<Result<_>>()?;
+        .collect();
 
     for quay in quays.iter().filter(|q| !is_referential_quay(*q)) {
         let id: String = quay.try_attribute("id")?;
@@ -177,12 +176,9 @@ fn load_stop_points<'a>(
             ..Default::default()
         };
 
-        let stop_point = if let Some(stop_area_id) = stop_point_parent_id(
-            quay,
-            &map_refquay_stopplace,
-            map_stopplace_stoparea,
-            &stop_areas,
-        )? {
+        let stop_point = if let Some(stop_area_id) =
+            stop_point_parent_id(quay, &map_refquay_stoparea, &stop_areas)?
+        {
             StopPoint {
                 stop_area_id,
                 ..stop_point
