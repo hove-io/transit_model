@@ -61,8 +61,8 @@ fn load_stop_area(stop_place_elem: &Element, proj: &Proj) -> Result<StopArea> {
 // A stop area is a multimodal stop place or a monomodal stoplace
 // with ParentSiteRef referencing a nonexistent multimodal stop place
 fn load_stop_areas<'a>(
-    stop_places: Vec<&'a &'a Element>,
-    map_mono_multimodal: &mut HashMap<String, String>,
+    stop_places: Vec<&'a Element>,
+    map_stopplace_stoparea: &mut HashMap<String, String>,
     proj: &Proj,
 ) -> Result<CollectionWithId<StopArea>> {
     let mut stop_areas = CollectionWithId::default();
@@ -78,95 +78,85 @@ fn load_stop_areas<'a>(
             .try_only_child("ParentSiteRef")?
             .try_attribute("ref")?;
 
-        map_mono_multimodal.insert(stop_place.try_attribute("id")?, parent_site_ref.clone());
-        if stop_areas.get(&parent_site_ref).is_none() {
+        let stop_place_id = stop_place.try_attribute("id")?;
+        if stop_areas.get(&parent_site_ref).is_some() {
+            map_stopplace_stoparea.insert(stop_place_id, parent_site_ref.clone());
+        } else {
             stop_areas.push(load_stop_area(stop_place, proj)?)?;
+            map_stopplace_stoparea.insert(stop_place_id.clone(), stop_place_id);
         }
     }
-
     Ok(stop_areas)
 }
 
 fn load_coords(elem: &Element) -> Result<(f64, f64)> {
-    let gml_pos = elem
+    let coords = elem
         .try_only_child("Centroid")?
         .try_only_child("Location")?
         .try_only_child("pos")?
         .text()
         .trim()
-        .to_string();
-    let coords: Vec<&str> = gml_pos.split_whitespace().collect();
-    if coords.len() != 2 {
-        bail!("longitude and latitude not found");
+        .split_whitespace()
+        .map(|n| n.parse())
+        .collect::<std::result::Result<Vec<f64>, _>>();
+    if let Ok(coords) = coords {
+        if coords.len() == 2 {
+            return Ok((coords[0], coords[1]));
+        }
     }
-
-    Ok((coords[0].parse()?, coords[1].parse()?))
+    bail!("longitude and latitude not found")
 }
 
 fn stop_point_fare_zone_id(quay: &Element) -> Option<String> {
-    quay.only_child("tariffZones").and_then(|tariff_zones| {
-        tariff_zones
-            .children()
-            .next()
-            .and_then(|el| el.try_attribute("ref").ok())
-            .and_then(|tzr: String| {
-                tzr.as_str()
-                    .split(':')
-                    .nth(2)
-                    .and_then(|zone| zone.parse::<u32>().ok())
-                    .map(|v| v.to_string())
-            })
-    })
+    quay.only_child("tariffZones")
+        .and_then(|tariff_zones| tariff_zones.children().next())
+        .and_then(|tariff_zone| tariff_zone.attribute::<String>("ref"))
+        .and_then(|tzr| {
+            tzr.split(':')
+                .nth(2)
+                .and_then(|zone| zone.parse::<u32>().ok())
+        })
+        .map(|v| v.to_string())
 }
 
 fn stop_point_parent_id(
     quay: &Element,
-    map_zder_monomodal_sp: &HashMap<String, String>,
-    map_mono_multimodal: &HashMap<String, String>,
+    map_refquay_stoparea: &HashMap<String, &String>,
     stop_areas: &CollectionWithId<StopArea>,
 ) -> Result<Option<String>> {
-    let zder_id: String = quay.try_attribute("derivedFromObjectRef")?;
-    Ok(map_zder_monomodal_sp
-        .get(&zder_id)
-        .and_then(|monomodal_sp| {
-            map_mono_multimodal
-                .get(monomodal_sp.as_str())
-                .map(|stop_area_id| {
-                    stop_areas
-                        .get(&stop_area_id)
-                        .map(|_| stop_area_id.to_string())
-                        .unwrap_or_else(|| monomodal_sp.to_string())
-                })
-        }))
+    Ok(quay
+        .attribute::<String>("derivedFromObjectRef")
+        .and_then(|refquay_id| map_refquay_stoparea.get(&refquay_id))
+        .and_then(|stop_area_id| stop_areas.get(&stop_area_id))
+        .map(|stop_area| stop_area.id.clone()))
 }
 
 fn load_stop_points<'a>(
-    quays: Vec<&'a &'a Element>,
+    quays: Vec<&'a Element>,
     stop_areas: &mut CollectionWithId<StopArea>,
-    map_mono_multimodal: &HashMap<String, String>,
+    map_stopplace_stoparea: &HashMap<String, String>,
     proj: &Proj,
 ) -> Result<CollectionWithId<StopPoint>> {
     let mut stop_points = CollectionWithId::default();
 
-    let is_zder = |q: &Element| {
-        q.try_attribute::<String>("dataSourceRef")
+    let is_referential_quay = |quay: &Element| {
+        quay.try_attribute::<String>("dataSourceRef")
             .map(|ds_ref| ds_ref == "FR1-ARRET_AUTO")
             .unwrap_or(false)
     };
 
-    let map_zder_monomodal_sp: HashMap<_, _> = quays
+    let map_refquay_stoparea: HashMap<_, _> = quays
         .iter()
-        .filter(|&&&q| is_zder(q))
-        .map(|q| {
-            let zder_id = q.try_attribute::<String>("id")?;
-            let sa_id = q
-                .try_only_child("ParentZoneRef")?
-                .try_attribute::<String>("ref")?;
-            Ok((zder_id, sa_id))
+        .filter(|quay| is_referential_quay(*quay))
+        .flat_map(|quay| {
+            let referential_quay_id: String = quay.attribute("id")?;
+            let stop_place_id: String = quay.only_child("ParentZoneRef")?.attribute("ref")?;
+            let stop_area_id = map_stopplace_stoparea.get(&stop_place_id)?;
+            Some((referential_quay_id, stop_area_id))
         })
-        .collect::<Result<_>>()?;
+        .collect();
 
-    for quay in quays.iter().filter(|&&&q| !is_zder(q)) {
+    for quay in quays.iter().filter(|q| !is_referential_quay(*q)) {
         let id: String = quay.try_attribute("id")?;
         let coords = skip_fail!(load_coords(quay).map_err(|e| format_err!(
             "unable to parse coordinates of quay {}: {}",
@@ -178,7 +168,7 @@ fn load_stop_points<'a>(
             id: quay.try_attribute("id")?,
             name: quay.try_only_child("Name")?.text().trim().to_string(),
             visible: true,
-            coord: proj.convert((coords.0, coords.1).into()).map(Coord::from)?,
+            coord: proj.convert(coords.into()).map(Coord::from)?,
             stop_area_id: "default_id".to_string(),
             timezone: Some(EUROPE_PARIS_TIMEZONE.to_string()),
             stop_type: StopType::Point,
@@ -186,12 +176,9 @@ fn load_stop_points<'a>(
             ..Default::default()
         };
 
-        let stop_point = if let Some(stop_area_id) = stop_point_parent_id(
-            quay,
-            &map_zder_monomodal_sp,
-            map_mono_multimodal,
-            &stop_areas,
-        )? {
+        let stop_point = if let Some(stop_area_id) =
+            stop_point_parent_id(quay, &map_refquay_stoparea, &stop_areas)?
+        {
             StopPoint {
                 stop_area_id,
                 ..stop_point
@@ -243,38 +230,35 @@ fn update_stop_area_coords(
 fn load_stops(
     frames: &Frames,
 ) -> Result<(CollectionWithId<StopArea>, CollectionWithId<StopPoint>)> {
-    let member_children: Vec<_> = frames
-        .get(&FrameType::General)
-        .unwrap_or(&vec![])
-        .iter()
-        .flat_map(|e| e.children())
-        .filter(|e| e.name() == "members")
-        .flat_map(|e| e.children())
-        .collect();
+    let member_children = || {
+        frames
+            .get(&FrameType::General)
+            .into_iter()
+            .flatten()
+            .flat_map(|e| e.children())
+            .filter(|e| e.name() == "members")
+            .flat_map(|e| e.children())
+    };
 
     let from = "EPSG:2154";
     let to = "+proj=longlat +datum=WGS84 +no_defs";
     let proj = Proj::new_known_crs(&from, &to, None)
         .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))?;
 
-    let mut map_mono_multimodal = HashMap::<String, String>::default();
+    let mut map_stopplace_stoparea = HashMap::default();
 
     let mut stop_areas = load_stop_areas(
-        member_children
-            .iter()
+        member_children()
             .filter(|e| e.name() == "StopPlace")
             .collect(),
-        &mut map_mono_multimodal,
+        &mut map_stopplace_stoparea,
         &proj,
     )?;
 
     let stop_points = load_stop_points(
-        member_children
-            .iter()
-            .filter(|e| e.name() == "Quay")
-            .collect(),
+        member_children().filter(|e| e.name() == "Quay").collect(),
         &mut stop_areas,
-        &map_mono_multimodal,
+        &map_stopplace_stoparea,
         &proj,
     )?;
 
