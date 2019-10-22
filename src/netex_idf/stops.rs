@@ -127,7 +127,7 @@ fn stop_point_parent_id(
 ) -> Result<Option<String>> {
     Ok(quay
         .attribute::<String>("derivedFromObjectRef")
-        .and_then(|zder_id| map_refquay_stopplace.get(&zder_id))
+        .and_then(|refquay_id| map_refquay_stopplace.get(&refquay_id))
         .and_then(|monomodal_sp| map_stopplace_stoparea.get(monomodal_sp.as_str()))
         .and_then(|stop_area_id| stop_areas.get(&stop_area_id))
         .map(|stop_area| stop_area.id.clone()))
@@ -141,7 +141,7 @@ fn load_stop_points<'a>(
 ) -> Result<CollectionWithId<StopPoint>> {
     let mut stop_points = CollectionWithId::default();
 
-    let is_zder = |q: &Element| {
+    let is_referential_quay = |q: &Element| {
         q.try_attribute::<String>("dataSourceRef")
             .map(|ds_ref| ds_ref == "FR1-ARRET_AUTO")
             .unwrap_or(false)
@@ -149,15 +149,15 @@ fn load_stop_points<'a>(
 
     let map_refquay_stopplace: HashMap<_, _> = quays
         .iter()
-        .filter(|q| is_zder(*q))
+        .filter(|q| is_referential_quay(*q))
         .map(|q| {
-            let zder_id: String = q.try_attribute("id")?;
-            let sa_id: String = q.try_only_child("ParentZoneRef")?.try_attribute("ref")?;
-            Ok((zder_id, sa_id))
+            let referential_quay_id: String = q.try_attribute("id")?;
+            let stop_place_id: String = q.try_only_child("ParentZoneRef")?.try_attribute("ref")?;
+            Ok((referential_quay_id, stop_place_id))
         })
         .collect::<Result<_>>()?;
 
-    for quay in quays.iter().filter(|q| !is_zder(*q)) {
+    for quay in quays.iter().filter(|q| !is_referential_quay(*q)) {
         let id: String = quay.try_attribute("id")?;
         let coords = skip_fail!(load_coords(quay).map_err(|e| format_err!(
             "unable to parse coordinates of quay {}: {}",
