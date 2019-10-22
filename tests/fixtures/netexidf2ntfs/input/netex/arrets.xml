@@ -410,7 +410,73 @@
                                 </DestinationDisplayView>
                             </destinations>
                         </Quay>
-				    </members>
+                        <Quay xmlns="http://www.netex.org.uk/netex" xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="FR1-ARRET_AUTO" version="1111626-750395" created="2019-02-26T23:00:00Z" changed="2019-04-09T12:41:46Z" id="FR::zder_without_stopplace:FR1">
+                            <Name>Diderot</Name>
+                            <Centroid>
+                               <Location>
+                                  <gml:pos srsName="EPSG:2154">647649.0 6857873.0</gml:pos>
+                               </Location>
+                            </Centroid>
+                            <ParentZoneRef ref="FR::UnknownStopPlace:FR1"/>
+                            <PostalAddress version="any" id="FR1:PostalAddress:464031:">
+                               <Town>Vanves</Town>
+                               <PostalRegion>92075</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="FR1:AccessibilityAssessment:464031:">
+                               <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                               <limitations>
+                                  <AccessibilityLimitation>
+                                     <WheelchairAccess>partial</WheelchairAccess>
+                                     <AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+                                     <VisualSignsAvailable>unknown</VisualSignsAvailable>
+                                  </AccessibilityLimitation>
+                               </limitations>
+                            </AccessibilityAssessment>
+                            <TransportMode>bus</TransportMode>
+                            <tariffZones>
+                               <TariffZoneRef ref="FR1:TariffZone:2:LOC"/>
+                            </tariffZones>
+                            <destinations>
+                               <DestinationDisplayView>
+                                  <Name>Vanves</Name>
+                                  <PrivateCode>039039001</PrivateCode>
+                               </DestinationDisplayView>
+                            </destinations>
+                        </Quay>
+                        <Quay xmlns="http://www.netex.org.uk/netex" xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="FR1:OrganisationalUnit:59:" version="1111602-1111626" created="2019-02-27T13:06:06Z" changed="2019-04-09T12:02:32Z" derivedFromObjectRef="FR::zder_without_stopplace:FR1" id="FR::Quay:with_zder_but_no_stopplace:FR1">
+                            <keyList>
+                               <KeyValue typeOfKey="LOCATION">
+                                  <Key>EPSG_27572</Key>
+                                  <Value>596365.0 2424491.0</Value>
+                               </KeyValue>
+                            </keyList>
+                            <Name>DIDEROT</Name>
+                            <PrivateCode>69541</PrivateCode>
+                            <Centroid>
+                               <Location>
+                                  <gml:pos srsName="EPSG:2154">647649.0 6857873.0</gml:pos>
+                               </Location>
+                            </Centroid>
+                            <PostalAddress version="any" id="FR1:PostalAddress:50147145:">
+                               <Town>Vanves</Town>
+                               <PostalRegion>92075</PostalRegion>
+                            </PostalAddress>
+                            <AccessibilityAssessment version="any" id="FR1:AccessibilityAssessment:50147145:">
+                               <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                               <limitations>
+                                  <AccessibilityLimitation>
+                                     <WheelchairAccess>unknown</WheelchairAccess>
+                                     <AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+                                     <VisualSignsAvailable>unknown</VisualSignsAvailable>
+                                  </AccessibilityLimitation>
+                               </limitations>
+                            </AccessibilityAssessment>
+                            <TransportMode>bus</TransportMode>
+                            <tariffZones>
+                               <TariffZoneRef ref="FR1:TariffZone:2:LOC"/>
+                            </tariffZones>
+                        </Quay>
+                     </members>
                 </GeneralFrame>
             </frames>
         </CompositeFrame>
