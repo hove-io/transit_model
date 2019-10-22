@@ -14,15 +14,17 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::{lines, stops};
+use super::{lines, offers, stops};
 use crate::{
     model::{Collections, Model},
     objects::Dataset,
     AddPrefix, Result,
 };
 use chrono::naive::{MAX_DATE, MIN_DATE};
+use log::info;
 use std::path::Path;
 use transit_model_collection::CollectionWithId;
+use walkdir::WalkDir;
 
 /// Read Netex IDF format into a Navitia Transit Model
 pub fn read<P>(netex_idf_path: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
@@ -45,6 +47,16 @@ where
     stops::from_path(&path.join("arrets.xml"), &mut collections)?;
     // TODO : use _lines_netex_idf to get trips>physical_mode_id
     let _lines_netex_idf = lines::from_path(&path.join("lignes.xml"), &mut collections)?;
+    for offer_folder in WalkDir::new(path)
+        .min_depth(1)
+        .max_depth(1)
+        .into_iter()
+        .filter_map(std::result::Result::ok)
+        .filter(|dir_entry| dir_entry.file_type().is_dir())
+    {
+        info!("Reading offer in folder {:?}", offer_folder.path());
+        offers::read_offer_folder(offer_folder.path(), &mut collections)?;
+    }
 
     if let Some(prefix) = prefix {
         collections.add_prefix_with_sep(prefix.as_str(), ":");
