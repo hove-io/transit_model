@@ -268,7 +268,7 @@ fn load_stops(
 }
 
 pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Result<()> {
-    info!("reading {:?}", path);
+    info!("Reading {:?}", path);
 
     let mut file = File::open(&path).with_context(ctx_from_path!(path))?;
     let mut file_content = String::new();

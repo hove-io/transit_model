@@ -1,33 +1,35 @@
 use crate::{model::Collections, Result};
-use failure::format_err;
+use failure::{format_err, ResultExt};
 use log::{info, warn};
 use minidom::Element;
 use std::{fs::File, io::Read, path::Path};
 use walkdir::WalkDir;
 
-const CALENDAR_FILENAME: &str = "calendriers.xml";
+const CALENDARS_FILENAME: &str = "calendriers.xml";
+const COMMON_FILENAME: &str = "commun.xml";
 pub fn read_offer_folder(offer_folder: &Path, _collections: &mut Collections) -> Result<()> {
-    let calendar_path = offer_folder.join(CALENDAR_FILENAME);
-    if calendar_path.exists() {
-        let mut calendars_file = File::open(&calendar_path)?;
+    let calendars_path = offer_folder.join(CALENDARS_FILENAME);
+    if calendars_path.exists() {
+        let mut calendars_file =
+            File::open(&calendars_path).with_context(ctx_from_path!(calendars_path))?;
         let mut calendars_file_content = String::new();
         calendars_file.read_to_string(&mut calendars_file_content)?;
         let calendars: Element = calendars_file_content
             .parse()
-            .map_err(|_| format_err!("Failed to open {:?}", calendar_path))?;
-        info!("Reading {:?}", calendar_path);
+            .map_err(|_| format_err!("Failed to open {:?}", calendars_path))?;
+        info!("Reading {:?}", calendars_path);
         parse_calendars(&calendars)?;
     } else {
         warn!(
             "Offer {:?} ignored because it does not contain the '{}' file.",
-            offer_folder, CALENDAR_FILENAME
+            offer_folder, CALENDARS_FILENAME
         );
         return Ok(());
     }
 
-    let common_path = offer_folder.join("commun.xml");
+    let common_path = offer_folder.join(COMMON_FILENAME);
     if common_path.exists() {
-        let mut common_file = File::open(&common_path)?;
+        let mut common_file = File::open(&common_path).with_context(ctx_from_path!(common_path))?;
         let mut common_file_content = String::new();
         common_file.read_to_string(&mut common_file_content)?;
         let common: Element = common_file_content
