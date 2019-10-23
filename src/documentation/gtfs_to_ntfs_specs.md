@@ -25,6 +25,8 @@ The use of this specific pattern is shown explicitly using the value **ID** in t
 | trip | route and trip |
 | stop_time | stop_time |
 | transfer | transfer |
+| shape | geometry |
+| frequency | trip and stop_time |
 
 ## Detailed mapping of objects
 ### Reading agency.txt
@@ -78,8 +80,7 @@ an error. Likewise for the stop_areas.
 | stops.txt | stop_lat | Required | stops.txt | stop_lat |  |
 | stops.txt | stop_lon | Required | stops.txt | stop_lon |  |
 | stops.txt | location_type | Optional | stops.txt | location_type | The value is set to `0` if the input value is `0` or unspecified or invalid, `1` if the input value is `1`, `3` if the input value is `2`, `4` if the input value is `3` and `5` if the input value is `4`
-| stops.txt | parent_station | Optional | stops.txt | parent_station | All
-slashes `/` are removed (1) |
+| stops.txt | parent_station | Optional | stops.txt | parent_station | All slashes `/` are removed (1) |
 | stops.txt | stop_timezone | Optional | stops.txt | stop_timezone |  |
 | comments.txt | comment_value | Optional | stops.txt | stop_desc | See (3) for additional properties |
 | equipments.txt | wheelchair_boarding | Optional | stops.txt | wheelchair_boarding | If value is not one of `0`, `1` or `2`, then set to `0`. See (4) for detailed info. |
@@ -187,7 +188,7 @@ immediately with an error.
 | trips.txt | route_id | Required | trips.txt | route_id | cf. NTFS `route_id` definition above to specify the proper reference. |
 | trips.txt | service_id | Required | trips.txt | service_id |  |
 | trips.txt | trip_id | Required | trips.txt | trip_id |  |
-| trips.txt | trip_headsign | Optional | trips.txt |  | `trip_short_name`, of if empty `trip_headsign` |
+| trips.txt | trip_headsign | Optional | trips.txt |  | `trip_short_name`, or if empty `trip_headsign` |
 | trips.txt | block_id | Optional | trips.txt | block_id |  |
 | trips.txt | company_id | Required | routes.txt | agency_id | The company corresponding to the `agency_id` of the trip's `route_id` |
 | trips.txt | physical_mode_id | Required |  |  | use the `route_type` See ["Mapping of route_type with modes"](#mapping-of-route_type-with-modes) chapter |
@@ -271,3 +272,26 @@ follows. Note that if value is not one of `0`, `1`, `2` or `3`, then set to `0`.
 | 1 | 0 | 0 | |
 | 2 | GTFS `min_transfer_time` | GTFS `min_transfer_time` | Log a warning message if the `min_transfer_time` is empty |
 | 3 | 86400 | 86400 | |
+
+### Reading shapes.txt
+
+| NTFS file | NTFS field | Constraint | GTFS file | GTFS field | Note |
+| --- | --- | --- | --- | --- | --- |
+| geometries.txt | geometry_id | ID | shapes.txt | shape_id | All slashes `/` are removed |
+| geometries.txt | geometry_wkt | Required | shapes.txt | shape_pt_lat, shape_pt_lon, shape_pt_sequence | A WKT LINESTRING geometry is created from the 3 input fields. |
+
+### Reading frequencies.txt
+Frequencies are transformed into explicit passing times by creating new trips that operate on regular times within the specified period. For each line of the GTFS frequencies.txt file, the referenced trip and its stop_times are used as a sample to create the new trips whose stop_times are calculated based on the given headway.
+
+A new trip is created, departing from the first stop every `headway_secs` seconds within the time period between `start_time` and `end_time`. Stop times of the referenced trip are used to calculate the time interval between two stop departures.
+The departure time at the first stop of the last trip should not be later than the `end_time` value. In case both values for `start_time` and `end_time` are equal or `end_time` is smaller than `start_time`, the frequency is ignored (no new trip is created).
+
+Note that the referenced trip (and its stop_times) is only used as a sample and is deleted in the resulting data. In case the referenced trip and/or its associated stop_times do not exist, the frequency is ignored (no new trip is created).
+
+The identifier for each new trip is generated using the following pattern: \<trip_id>:<auto-incrimented integer\> and maintains the rest of the attributes of the sample trip. That is, all new trips are assigned to the same route as the route of the sample trip, have the same service_id, etc. 
+
+A complementary `object_code` is added to each new trip with the following properties:
+* `object_type` : the fixed value `trip`
+* `object_id` : the value of the `trip_id` field
+* `object_system` : the fixed value `source`
+* `object_code` : the unmodified initial GTFS value of `trip_id`
