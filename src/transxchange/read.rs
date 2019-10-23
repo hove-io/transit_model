@@ -305,7 +305,7 @@ fn create_route(
     let service_code = service.try_only_child("ServiceCode")?.text();
     let line_ref = vehicle_journey.try_only_child("LineRef")?.text();
     let line_id = format!("{}:{}", service_code, line_ref);
-    if lines.get(&line_id).is_none() {
+    if !lines.contains_id(&line_id) {
         bail!(
             "Failed to create route because line {} doesn't exist.",
             line_id
@@ -585,7 +585,7 @@ fn load_routes_vehicle_journeys_calendars(
                     "{}:{}:{}:{}",
                     service_ref, line_ref, vehicle_journey_code, seq
                 );
-                if collections.vehicle_journeys.get(&vj_id).is_none() {
+                if !collections.vehicle_journeys.contains_id(&vj_id) {
                     break;
                 }
                 seq += 1;

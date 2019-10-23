@@ -174,7 +174,7 @@ where
     let mut routes = CollectionWithId::default();
     for route_element in route_elements {
         let route = skip_fail!(Route::try_from(route_element));
-        if collections.lines.get(&route.line_id).is_none() {
+        if !collections.lines.contains_id(&route.line_id) {
             warn!(
                 "Failed to create route {} because line {} doesn't exist.",
                 route.id, route.line_id

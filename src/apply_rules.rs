@@ -127,7 +127,7 @@ fn check_networks_consolidation(
             continue;
         }
         for ntw_grouped in &ntw.grouped_from {
-            if networks.get(&ntw_grouped).is_none() {
+            if !networks.contains_id(&ntw_grouped) {
                 report.add_error(
                     format!("The grouped network \"{}\" don't exist", ntw_grouped),
                     ReportType::ObjectNotFound,
@@ -406,7 +406,7 @@ fn update_physical_mode(
 ) {
     let any_prop = "*";
     if let Some(pov) = p.property_old_value.as_ref() {
-        if collections.physical_modes.get(pov).is_none() && *pov != any_prop {
+        if !collections.physical_modes.contains_id(pov) && *pov != any_prop {
             report.add_warning(
                 format!(
                     "object_type={}, object_id={}, property_name={}, property_old_value={}: physical mode not found",
@@ -446,7 +446,7 @@ fn update_physical_mode(
                 );
                 return;
             }
-            if collections.physical_modes.get(&p.property_value).is_none() {
+            if !collections.physical_modes.contains_id(&p.property_value) {
                 report.add_warning(
                     format!(
                         "object_type={}, object_id={}, property_name={}, property_value={}: physical mode not found",

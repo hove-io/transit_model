@@ -63,13 +63,13 @@ fn load_netex_lines(
                 let network_id: String = line
                     .try_only_child("RepresentedByGroupRef")?
                     .try_attribute("ref")?;
-                if networks.get(&network_id).is_none() {
+                if !networks.contains_id(&network_id) {
                     warn!("Failed to find network {} for line {}", network_id, id);
                     continue;
                 }
                 let company_id: String =
                     line.try_only_child("OperatorRef")?.try_attribute("ref")?;
-                if companies.get(&company_id).is_none() {
+                if !companies.contains_id(&company_id) {
                     warn!("Failed to find company {} for line {}", company_id, id);
                     continue;
                 }
