@@ -26,6 +26,8 @@ use std::path::Path;
 use transit_model_collection::CollectionWithId;
 use walkdir::WalkDir;
 
+const STOPS_FILENAME: &str = "arrets.xml";
+const LINES_FILENAME: &str = "lignes.xml";
 /// Read Netex IDF format into a Navitia Transit Model
 pub fn read<P>(netex_idf_path: P, config_path: Option<P>, prefix: Option<String>) -> Result<Model>
 where
@@ -44,9 +46,9 @@ where
     collections.feed_infos = feed_infos;
 
     let path = netex_idf_path.as_ref();
-    stops::from_path(&path.join("arrets.xml"), &mut collections)?;
+    stops::from_path(&path.join(STOPS_FILENAME), &mut collections)?;
     // TODO : use _lines_netex_idf to get trips>physical_mode_id
-    let _lines_netex_idf = lines::from_path(&path.join("lignes.xml"), &mut collections)?;
+    let _lines_netex_idf = lines::from_path(&path.join(LINES_FILENAME), &mut collections)?;
     for offer_folder in WalkDir::new(path)
         .min_depth(1)
         .max_depth(1)
