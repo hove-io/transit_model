@@ -38,6 +38,7 @@ fn test_read_write_netex_idf() {
                 "commercial_modes.txt",
                 "companies.txt",
                 "networks.txt",
+                "routes.txt",
                 "stops.txt",
             ]),
             "tests/fixtures/netexidf2ntfs/output",
