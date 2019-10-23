@@ -80,8 +80,7 @@ an error. Likewise for the stop_areas.
 | stops.txt | stop_lat | Required | stops.txt | stop_lat |  |
 | stops.txt | stop_lon | Required | stops.txt | stop_lon |  |
 | stops.txt | location_type | Optional | stops.txt | location_type | The value is set to `0` if the input value is `0` or unspecified or invalid, `1` if the input value is `1`, `3` if the input value is `2`, `4` if the input value is `3` and `5` if the input value is `4`
-| stops.txt | parent_station | Optional | stops.txt | parent_station | All
-slashes `/` are removed (1) |
+| stops.txt | parent_station | Optional | stops.txt | parent_station | All slashes `/` are removed (1) |
 | stops.txt | stop_timezone | Optional | stops.txt | stop_timezone |  |
 | comments.txt | comment_value | Optional | stops.txt | stop_desc | See (3) for additional properties |
 | equipments.txt | wheelchair_boarding | Optional | stops.txt | wheelchair_boarding | If value is not one of `0`, `1` or `2`, then set to `0`. See (4) for detailed info. |
@@ -278,8 +277,8 @@ follows. Note that if value is not one of `0`, `1`, `2` or `3`, then set to `0`.
 
 | NTFS file | NTFS field | Constraint | GTFS file | GTFS field | Note |
 | --- | --- | --- | --- | --- | --- |
-| geometries.txt | geometry__id | ID | shapes.txt | shape_id | All slashes `/` are removed |
-| geometries.txt | geometry__wkt | Required | shapes.txt | shape_pt_lat, shape_pt_lon, shape_pt_sequence | A WKT LINESTRING geometry is created from the 3 input fields. |
+| geometries.txt | geometry_id | ID | shapes.txt | shape_id | All slashes `/` are removed |
+| geometries.txt | geometry_wkt | Required | shapes.txt | shape_pt_lat, shape_pt_lon, shape_pt_sequence | A WKT LINESTRING geometry is created from the 3 input fields. |
 
 ### Reading frequencies.txt
 Frequencies are transformed into explicit passing times by creating new trips that operate on regular times within the specified period. For each line of the GTFS frequencies.txt file, the referenced trip and its stop_times are used as a sample to create the new trips whose stop_times are calculated based on the given headway.
