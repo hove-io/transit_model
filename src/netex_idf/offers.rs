@@ -14,6 +14,7 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use super::calendars;
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
@@ -28,15 +29,17 @@ use std::{collections::HashMap, convert::TryFrom, fs::File, io::Read, path::Path
 use transit_model_collection::CollectionWithId;
 use walkdir::WalkDir;
 
-const CALENDARS_FILENAME: &str = "calendriers.xml";
-const COMMON_FILENAME: &str = "commun.xml";
-const NETEX_STRUCTURE: &str = "NETEX_STRUCTURE";
-const NETEX_SCHEDULE: &str = "NETEX_HORAIRE";
+pub const CALENDARS_FILENAME: &str = "calendriers.xml";
+pub const COMMON_FILENAME: &str = "commun.xml";
+pub const NETEX_STRUCTURE: &str = "NETEX_STRUCTURE";
+pub const NETEX_SCHEDULE: &str = "NETEX_HORAIRE";
+pub const NETEX_CALENDAR: &str = "NETEX_CALENDRIER";
 
 #[derive(Debug, Eq, Hash, PartialEq)]
-enum GeneralFrameType {
+pub enum GeneralFrameType {
     Structure,
     Schedule,
+    Calendar,
 }
 type GeneralFrames<'a> = HashMap<GeneralFrameType, &'a Element>;
 
@@ -45,11 +48,14 @@ impl std::fmt::Display for GeneralFrameType {
         match self {
             Self::Structure => write!(f, "{}", NETEX_STRUCTURE),
             Self::Schedule => write!(f, "{}", NETEX_SCHEDULE),
+            Self::Calendar => write!(f, "{}", NETEX_CALENDAR),
         }
     }
 }
 
-fn parse_general_frame_by_type<'a>(general_frames: &[&'a Element]) -> Result<GeneralFrames<'a>> {
+pub fn parse_general_frame_by_type<'a>(
+    general_frames: &[&'a Element],
+) -> Result<GeneralFrames<'a>> {
     fn extract_general_frame_type(general_frame: &Element) -> Result<GeneralFrameType> {
         let type_of_frame_ref: String = general_frame
             .try_only_child("TypeOfFrameRef")?
@@ -59,6 +65,9 @@ fn parse_general_frame_by_type<'a>(general_frames: &[&'a Element]) -> Result<Gen
         }
         if type_of_frame_ref.contains(NETEX_SCHEDULE) {
             return Ok(GeneralFrameType::Schedule);
+        }
+        if type_of_frame_ref.contains(NETEX_CALENDAR) {
+            return Ok(GeneralFrameType::Calendar);
         }
         bail!("Failed to identify the type of this GeneralFrame")
     }
@@ -108,7 +117,7 @@ impl TryFrom<&Element> for Route {
 
 pub fn read_offer_folder(offer_folder: &Path, collections: &mut Collections) -> Result<()> {
     let calendars_path = offer_folder.join(CALENDARS_FILENAME);
-    if calendars_path.exists() {
+    let _map_calendars = if calendars_path.exists() {
         let mut calendars_file =
             File::open(&calendars_path).with_context(ctx_from_path!(calendars_path))?;
         let mut calendars_file_content = String::new();
@@ -117,7 +126,7 @@ pub fn read_offer_folder(offer_folder: &Path, collections: &mut Collections) -> 
             .parse()
             .map_err(|_| format_err!("Failed to open {}", calendars_path.display()))?;
         info!("Reading {}", calendars_path.display());
-        parse_calendars(&calendars)?;
+        calendars::parse_calendars(&calendars)?
     } else {
         warn!(
             "Offer {} ignored because it does not contain the '{}' file.",
@@ -125,7 +134,7 @@ pub fn read_offer_folder(offer_folder: &Path, collections: &mut Collections) -> 
             CALENDARS_FILENAME
         );
         return Ok(());
-    }
+    };
 
     let common_path = offer_folder.join(COMMON_FILENAME);
     if common_path.exists() {
@@ -167,11 +176,6 @@ pub fn read_offer_folder(offer_folder: &Path, collections: &mut Collections) -> 
         )));
         collections.routes.try_merge(routes)?;
     }
-    Ok(())
-}
-
-fn parse_calendars(_calendars: &Element) -> Result<()> {
-    // TODO: To implement
     Ok(())
 }
 
