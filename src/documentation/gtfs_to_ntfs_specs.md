@@ -12,10 +12,11 @@ At the end of the conversion, a sanitizing operation is started on the final
 model. See [sanitizer.md](sanitizer.md) for more information.
 
 ### Prepending data
-The NTFS format introduce 2 objects to enable the manipulation of several datasets : contributors and datasets. Those two objects are not described here. The construction of NTFS objects IDs requires, for uniqueness purpose, that a unique prefix (specified for each source of data) needs to be included in every object's id.
-
+As explained in [common.md](common.md), a prefix is added to all identifiers during the conversion in order to guarantee uniqueness among objects IDs.
 In the following chapters, identifiers may be prepend with this _prefix_ using this pattern : **\<prefix>:<object\_id>**.
 The use of this specific pattern is shown explicitly using the value **ID** in the column _Constraint_ in the tables below.
+
+In addition, the NTFS format introduces 2 objects to enable the manipulation of several datasets : contributors and datasets. Those two objects are not described here, see [common.md](common.md) for more information. 
 
 ## Mapping of objects between GTFS and NTFS
 | GTFS object | NTFS object(s) |
@@ -177,6 +178,17 @@ specified, the conversion should stop immediately with an error.
 | lines.txt | commercial_mode_id | Required | routes.txt | route_type | See "Mapping of route_type with modes" chapter (1). |
 
 (1) When several GTFS Routes with different `route_type`s are grouped together, the commercial_mode_id with the smallest priority should be used (as specified in chapter "Mapping of route_type with modes").
+
+### Reading calendars.txt and calendar_dates.txt
+Dates of service are trasnformed into explicit active service exceptions as if using a single NTFS file calendar_dates.txt. The resulting files might be different following an optimization operation applied at the end of the conversion, but the result should be functionally identical.
+* In case both files calendar.txt and calendar_dates.txt are present in the input dataset, the days of the week of the specified services within the date range [`start_date` - `end_date`] are transformed into explicit active service dates, taking into account the dates when service exceptions occur. Note that the generated (`service_id`, `date`) pairs must be unique.
+* In case the file calendar.txt is empty or not present in the input dataset, the active service dates are loaded as is.
+
+| NTFS file | NTFS field | Constraint | GTFS file | GTFS field | Note |
+| --- | --- | --- | --- | --- | --- |
+| calendar_dates.txt | service_id | Required | calendar_dates.txt | service_id | All slashes `/` are removed
+| calendar_dates.txt | date | Required | calendar_dates.txt | date |
+| calendar_dates.txt | exception_type | Required | calendar_dates.txt | exception_type | Fixed value `1`.
 
 ### Reading trips.txt
 If 2 trips with the same ID are specified, the conversion should stop
