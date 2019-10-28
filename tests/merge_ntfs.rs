@@ -21,7 +21,7 @@ use std::path::Path;
 use transit_model;
 use transit_model::model::Collections;
 use transit_model::model::Model;
-use transit_model::objects::{Comment, StopPoint, VehicleJourney};
+use transit_model::objects::{Comment, CommentLinks, StopPoint, VehicleJourney};
 use transit_model::test_utils::*;
 use transit_model::transfers;
 use transit_model::transfers::TransfersMode;
@@ -195,12 +195,43 @@ fn merge_collections_ok() {
     assert_eq!(261, calendar_vec[0].dates.len());
     assert_eq!(6, calendar_vec[1].dates.len());
     assert_eq!(3, collections.companies.len());
-    assert_eq!(6, collections.comments.len());
+    assert_eq!(8, collections.comments.len());
     assert_eq!(0, collections.equipments.len());
     assert_eq!(0, collections.transfers.len());
     assert_eq!(0, collections.trip_properties.len());
     assert_eq!(0, collections.geometries.len());
     assert_eq!(0, collections.admin_stations.len());
+
+    fn assert_comment_idx<T: CommentLinks>(
+        collection: &CollectionWithId<T>,
+        obj_id: &str,
+        comments: &CollectionWithId<Comment>,
+        comment_id: &str,
+    ) {
+        assert_eq!(
+            &comments.get_idx(comment_id).unwrap(),
+            collection
+                .get(obj_id)
+                .unwrap()
+                .comment_links()
+                .iter()
+                .next()
+                .unwrap()
+        );
+    }
+
+    assert_comment_idx(
+        &collections.stop_points,
+        "OIF:SP:10:10",
+        &collections.comments,
+        "OIFCOM3",
+    );
+    assert_comment_idx(
+        &collections.stop_areas,
+        "OIF:SA:10:1002",
+        &collections.comments,
+        "OIFCOM4",
+    );
 }
 
 #[test]

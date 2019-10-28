@@ -91,8 +91,8 @@ impl Collections {
             mut vehicle_journeys,
             frequencies,
             physical_modes,
-            stop_areas,
-            stop_points,
+            mut stop_areas,
+            mut stop_points,
             calendars,
             companies,
             comments,
@@ -128,7 +128,7 @@ impl Collections {
         self.routes.try_merge(routes)?;
         self.frequencies.merge(frequencies);
         self.physical_modes.extend(physical_modes);
-        self.stop_areas.try_merge(stop_areas)?;
+
         self.prices_v1.merge(prices_v1);
         self.od_fares_v1.merge(od_fares_v1);
         self.fares_v1.merge(fares_v1);
@@ -160,11 +160,34 @@ impl Collections {
                 .collect()
         }
 
+        // update comment idx of collection
+        fn update_comment_idx<T: CommentLinks + Id<T>>(
+            collection: &mut CollectionWithId<T>,
+            c_idx_to_id: &HashMap<Idx<Comment>, String>,
+            comments: &CollectionWithId<Comment>,
+        ) {
+            let mut objs = collection.take();
+            for obj in &mut objs {
+                *obj.comment_links_mut() = obj
+                    .comment_links()
+                    .iter()
+                    .filter_map(|c_idx| get_new_idx(*c_idx, c_idx_to_id, comments))
+                    .collect();
+            }
+
+            *collection = CollectionWithId::new(objs).unwrap();
+        }
+
         let sp_idx_to_id = idx_to_id(&stop_points);
         let vj_idx_to_id = idx_to_id(&vehicle_journeys);
         let c_idx_to_id = idx_to_id(&comments);
 
+        self.comments.try_merge(comments)?;
+        update_comment_idx(&mut stop_points, &c_idx_to_id, &self.comments);
+        update_comment_idx(&mut stop_areas, &c_idx_to_id, &self.comments);
+
         self.stop_points.try_merge(stop_points)?;
+        self.stop_areas.try_merge(stop_areas)?;
 
         // Update stop point idx in new stop times
         let mut vjs = vehicle_journeys.take();
@@ -205,7 +228,6 @@ impl Collections {
             &vj_idx_to_id,
         ));
 
-        self.comments.try_merge(comments)?;
         let mut new_stop_time_comments = HashMap::new();
         for ((old_vj_idx, sequence), value) in &stop_time_comments {
             let new_vj_idx =
