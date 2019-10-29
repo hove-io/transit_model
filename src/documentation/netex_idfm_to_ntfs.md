@@ -72,9 +72,11 @@ Example of Netex declaration:
 If the Netex feed does not provide coordinates for a stop_area, the stop_lat et stop_lon fields will be set with the coordinate of the centroid of all included stop_points.
 
 **Complementary object_properties**
+
 No complementary properties on `stop_area`.
 
 **Complementary object_codes**
+
 No complementary code on `stop_area`.
 
 ### For stop_points
@@ -174,7 +176,7 @@ NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 line_id | Line/@id | This field is prefixed. 
 network_id | Line/RepresentedByGroupRef/@ref | This field is prefixed. If this attribute or if the referenced network does not exists, this line is not created.
-commercial_mode_id | Line/TransportMode | corresponding commercial_mode_id (see mapping above)
+commercial_mode_id | Line/TransportMode | corresponding commercial_mode_id (see mapping above, this field is **not** prefixed). 
 line_code | Line/PublicCode or Line/ShortName | Use the `PublicCode` value if available and not empty, else the `ShortName` should be used.
 line_name | Line/Name | 
 line_color | Line/Presentation/Colour | If the value is not available or is not a valid hexa RGB, the value `000000` (black) is used.
@@ -198,7 +200,6 @@ comment_id | Line/noticeAssignments/NoticeAssignment/NoticeRef | This field is p
 In a **offre_*.xml** file, 2 **GeneralFrame** are expected in a **CompositeFrame/frames** node:
 * one with a `TypeOfFrameRef/@ref` containing the string `NETEX_STRUCTURE`
 * one with a `TypeOfFrameRef/@ref` containing the string `NETEX_HORAIRE`
-In the following chapters, the **CompositeFrame/frames/GeneralFrame/members** is ommitted.
 
 ### routes.txt
 `routes` are provided in each **offre_** file in the nodes **CompositeFrame/frames/GeneralFrame[]/members/Route[]**. The `GeneralFrame` to be used is the one with the `@ref` containing `NETEX_STRUCTURE`.
@@ -224,18 +225,21 @@ object_code | ServiceJourneyPattern/@id | The value of this field is used withou
 
 
 ### trips.txt
-`trips` are described in each **offre_*.xml** file in the nodes **CompositeFrame/frames/GeneralFrame[]/members/ServiceJourney[]**. 
-The `GeneralFrame` to be used is the one with the `@ref` containing `NETEX_STRUCTURE`.
+`trips` are described in each **offre_*.xml** file. A `trip` combines information of:
+- `ServiceJourneyPattern` listed in **CompositeFrame/frames/GeneralFrame[]/members/ServiceJourneyPattern[]**  (the `GeneralFrame` is the one with the `@ref` containing `NETEX_STRUCTURE`).
+- `ServiceJourney` listed in **CompositeFrame/frames/GeneralFrame[]/members/ServiceJourney[]** (the `GeneralFrame` is the one with the `@ref` containing `NETEX_HORAIRE`),
+
+The link between those 2 objects is made by `ServiceJourney/JourneyPatternRef/@ref`.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 route_id | ServiceJourney/JourneyPatternRef/@ref | route_id of the Route containing the `JourneyPatternRef` as an object_code.
 service_id |  | Defined using `ServiceJourney/DayTypeRef`, see (calendar.txt and calendar_dates.txt)[]
 trip_id | ServiceJourney/@id | This field is prefixed. 
-trip_headsign | ServiceJourney/DestinationDisplayRef | Content of the `DestinationDisplay/FrontText` node. If not available, the name of the `stop_point` of the last `stop_time` is used.
-trip_short_name | ServiceJourney/DestinationDisplayRef | Content of the `DestinationDisplay/PublicCode` node. If not available, this field is empty.
+trip_headsign | ServiceJourneyPattern/DestinationDisplayRef | Content of the `DestinationDisplay/FrontText` node. If not available, the name of the `stop_point` of the last `stop_time` is used.
+trip_short_name | ServiceJourneyPattern/DestinationDisplayRef | Content of the `DestinationDisplay/PublicCode` node. If not available, this field is empty.
 company_id | ServiceJourney/OperatorRef | if `ServiceJourney/OperatorRef` is not defined, use `Line/OperatorRef` in [*lines.xml*](#linestxt) file. This field is prefixed.
-physical_mode_id | Line/TransportMode | see physical_modes definition
+physical_mode_id | Line/TransportMode | see physical_modes definition (this field is **not** prefixed)
 trip_property_id |  | see [trip_properties.txt](#trip_propertiestxt)
 
 
@@ -273,8 +277,8 @@ NTFS field | Netex-IDFM element | Mapping rule/Comment
 trip_id | ServiceJourney/@id | This field is prefixed. 
 stop_sequence | | Auto-incremented field starting with `0` for the first stop_time
 stop_id | | See (1) below
-arrival_time | TimetabledPassingTime/ArrivalTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, arrival_time is incremented 24 hours for each day offset. 
-departure_time | TimetabledPassingTime/DepartureTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, departure_time is incremented 24 hours for each day offset. 
+arrival_time | TimetabledPassingTime/ArrivalTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, arrival_time is incremented 24 hours for each day offset (value will be greater than 24:00 for the stop_times on the next day).
+departure_time | TimetabledPassingTime/DepartureTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, departure_time is incremented 24 hours for each day offset (value will be greater than 24:00 for the stop_times on the next day). 
 boarding_duration | | Fixed value `0`
 alighting_duration | | Fixed value `0`
 pickup_type | | See (2) below
