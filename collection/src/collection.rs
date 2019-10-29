@@ -492,7 +492,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// let idx = c.get_idx("foo").unwrap();
     /// c.index_mut(idx).0 = "baz";
-    /// assert!(c.get("foo").is_none());
+    /// assert!(!c.contains_id("foo"));
     /// assert_eq!(Some(&Obj("baz")), c.get("baz"));
     /// ```
     ///
@@ -536,7 +536,7 @@ impl<T: Id<T>> CollectionWithId<T> {
     ///
     /// let mut c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// c.get_mut("foo").unwrap().0 = "baz";
-    /// assert!(c.get("foo").is_none());
+    /// assert!(!c.contains_id("foo"));
     /// assert_eq!(Some(&Obj("baz")), c.get("baz"));
     /// ```
     pub fn get_mut(&mut self, id: &str) -> Option<RefMut<'_, T>> {
@@ -873,6 +873,27 @@ impl<T: Id<T>> iter::Extend<T> for CollectionWithId<T> {
 }
 
 impl<T> CollectionWithId<T> {
+    /// Returns true if the collection contains a value for the specified id.
+    ///
+    /// ```
+    /// use transit_model_collection::{CollectionWithId, Id};
+    ///
+    /// #[derive(PartialEq, Debug)]
+    /// struct Obj(&'static str);
+    ///
+    /// impl Id<Obj> for Obj {
+    ///     fn id(&self) -> &str { self.0 }
+    ///     fn set_id(&mut self, id: String) { unimplemented!(); }
+    /// }
+    ///
+    /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
+    /// assert!(c.contains_id("foo"));
+    /// assert!(!c.contains_id("baz"));
+    /// ```
+    pub fn contains_id(&self, id: &str) -> bool {
+        self.id_to_idx.contains_key(id)
+    }
+
     /// Returns the index corresponding to the identifier.
     ///
     /// # Examples
@@ -915,7 +936,7 @@ impl<T> CollectionWithId<T> {
     ///
     /// let c = CollectionWithId::new(vec![Obj("foo"), Obj("bar")]).unwrap();
     /// assert_eq!(Some(&Obj("foo")), c.get("foo"));
-    /// assert!(c.get("baz").is_none());
+    /// assert!(!c.contains_id("baz"));
     /// ```
     pub fn get(&self, id: &str) -> Option<&T> {
         self.get_idx(id).map(|idx| &self[idx])

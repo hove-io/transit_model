@@ -1129,7 +1129,7 @@ where
                             .cloned()
                             .unwrap();
                         let new_service_id = format!("{}:+{}days", service.id, nb_days);
-                        if collections.calendars.get(&new_service_id).is_none() {
+                        if !collections.calendars.contains_id(&new_service_id) {
                             arrival_time_delta = arrival_time_delta + Time::new(24, 0, 0);
                             let new_dates: BTreeSet<_> = service
                                 .dates
