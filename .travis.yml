@@ -20,10 +20,7 @@ matrix:
   allow_failures:
   - rust: nightly
 script:
-- cargo test --verbose --features proj
-- cd model-builder && cargo test --verbose
-- cd ../collection && cargo test --verbose
-- cd ../relations && cargo test --verbose
+- cargo test --all --verbose --features proj
 deploy:
   provider: cargo
   on:

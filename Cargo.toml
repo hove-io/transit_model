@@ -11,6 +11,14 @@ edition = "2018"
 [badges]
 travis-ci = { repository = "CanalTP/transit_model" }
 
+[workspace]
+members = [
+  "collection",
+  "relations",
+  "model-builder",
+  "transit_model_procmacro",
+]
+
 [features]
 stop_location = []
 
