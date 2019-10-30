@@ -19,13 +19,19 @@ use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils::{self, FrameType},
-    objects::{Route, VehicleJourney},
+    objects::{Calendar, Date, Route, VehicleJourney},
     Result,
 };
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use minidom::Element;
-use std::{collections::HashMap, convert::TryFrom, fs::File, io::Read, path::Path};
+use std::{
+    collections::{BTreeSet, HashMap},
+    convert::TryFrom,
+    fs::File,
+    io::Read,
+    path::Path,
+};
 use transit_model_collection::CollectionWithId;
 use walkdir::WalkDir;
 
@@ -169,7 +175,7 @@ pub fn read_offer_folder(offer_folder: &Path, collections: &mut Collections) -> 
             .parse()
             .map_err(|_| format_err!("Failed to open {}", offer_path.display()))?;
         info!("Reading {}", offer_path.display());
-        let (routes, vehicle_journeys) = skip_fail!(parse_offer(
+        let (routes, vehicle_journeys, calendars) = skip_fail!(parse_offer(
             &offer,
             collections,
             &map_daytypes
@@ -177,6 +183,7 @@ pub fn read_offer_folder(offer_folder: &Path, collections: &mut Collections) -> 
         .map_err(|e| format_err!("Skip file {}: {}", offer_path.display(), e)));
         collections.routes.try_merge(routes)?;
         collections.vehicle_journeys.try_merge(vehicle_journeys)?;
+        collections.calendars.try_merge(calendars)?;
     }
     Ok(())
 }
@@ -256,8 +263,10 @@ fn enhance_with_object_code(
 fn parse_vehicle_journeys<'a, I>(
     service_journey_elements: I,
     collections: &Collections,
+    routes: &CollectionWithId<Route>,
     map_journeypatterns: &HashMap<String, &Element>,
-) -> Result<CollectionWithId<VehicleJourney>>
+    map_daytypes: &DayTypes,
+) -> Result<(CollectionWithId<VehicleJourney>, CollectionWithId<Calendar>)>
 where
     I: Iterator<Item = &'a Element>,
 {
@@ -284,28 +293,66 @@ where
         Ok(vehicle_journey)
     }
     let mut vehicle_journeys = CollectionWithId::default();
+    let mut calendars = CollectionWithId::default();
+    let mut service_id = collections
+        .calendars
+        .values()
+        .flat_map(|calendar| calendar.id.parse::<usize>().ok())
+        .max()
+        .unwrap_or(0);
     for service_journey_element in service_journey_elements {
         let vehicle_journey = skip_fail!(parse_service_journey(
             service_journey_element,
             map_journeypatterns
         ));
-        if !collections.routes.contains_id(&vehicle_journey.route_id) {
+        if !collections.routes.contains_id(&vehicle_journey.route_id)
+            && !routes.contains_id(&vehicle_journey.route_id)
+        {
             warn!(
                 "Failed to create vehicle journey {} because route {} doesn't exist.",
                 vehicle_journey.id, vehicle_journey.route_id
             );
             continue;
         }
+        let dates: BTreeSet<Date> = service_journey_element
+            .only_child("dayTypes")
+            .iter()
+            .flat_map(|day_types| day_types.children())
+            .filter_map(|day_type_ref| day_type_ref.attribute::<String>("ref"))
+            .filter_map(|day_type_ref| map_daytypes.get(&day_type_ref))
+            .flatten()
+            .cloned()
+            .collect();
+        if dates.is_empty() {
+            warn!(
+                "Vehicle Journey {} doesn't have any date for the service",
+                vehicle_journey.id
+            );
+            continue;
+        }
+        service_id += 1;
+        calendars.push(Calendar {
+            id: service_id.to_string(),
+            dates,
+        })?;
+        let vehicle_journey = VehicleJourney {
+            service_id: service_id.to_string(),
+            ..vehicle_journey
+        };
         vehicle_journeys.push(vehicle_journey)?;
     }
-    Ok(vehicle_journeys)
+    Ok((vehicle_journeys, calendars))
 }
 
 fn parse_offer(
     offer: &Element,
     collections: &Collections,
-    _map_daytypes: &DayTypes,
-) -> Result<(CollectionWithId<Route>, CollectionWithId<VehicleJourney>)> {
+    map_daytypes: &DayTypes,
+) -> Result<(
+    CollectionWithId<Route>,
+    CollectionWithId<VehicleJourney>,
+    CollectionWithId<Calendar>,
+)> {
     let frames = netex_utils::parse_frames_by_type(
         offer
             .try_only_child("dataObjects")?
@@ -338,16 +385,22 @@ fn parse_offer(
         .transpose()?
         .unwrap_or_else(CollectionWithId::default);
     let routes = enhance_with_object_code(routes, &map_journeypatterns);
-    let vehicle_journeys = schedule_frame
+    let (vehicle_journeys, calendars) = schedule_frame
         .only_child("members")
         .map(Element::children)
         .map(|childrens| childrens.filter(|e| e.name() == "ServiceJourney"))
         .map(|service_journey_elements| {
-            parse_vehicle_journeys(service_journey_elements, collections, &map_journeypatterns)
+            parse_vehicle_journeys(
+                service_journey_elements,
+                collections,
+                &routes,
+                &map_journeypatterns,
+                map_daytypes,
+            )
         })
         .transpose()?
-        .unwrap_or_else(CollectionWithId::default);
-    Ok((routes, vehicle_journeys))
+        .unwrap_or_else(|| (CollectionWithId::default(), CollectionWithId::default()));
+    Ok((routes, vehicle_journeys, calendars))
 }
 
 #[cfg(test)]
@@ -506,6 +559,10 @@ mod tests {
 
         fn service_journey() -> Element {
             let service_journey_xml = r#"<ServiceJourney id="service_journey_id">
+                    <dayTypes>
+                        <DayTypeRef ref="day_type_id_1" />
+                        <DayTypeRef ref="day_type_id_2" />
+                    </dayTypes>
                     <JourneyPatternRef ref="journey_pattern_id" />
                 </ServiceJourney>"#;
             service_journey_xml.parse().unwrap()
@@ -518,10 +575,30 @@ mod tests {
             journey_pattern_xml.parse().unwrap()
         }
 
+        fn day_types() -> DayTypes {
+            let mut day_type_1 = BTreeSet::new();
+            day_type_1.insert(Date::from_ymd(2019, 1, 1));
+            let mut day_type_2 = BTreeSet::new();
+            day_type_2.insert(Date::from_ymd(2019, 1, 2));
+            let mut day_types = HashMap::new();
+            day_types.insert(String::from("day_type_id_1"), day_type_1);
+            day_types.insert(String::from("day_type_id_2"), day_type_2);
+            day_types
+        }
+
         #[test]
         fn parse_vehicle_journey() {
             let service_journey_element = service_journey();
+            let service_journey_xml = r#"<ServiceJourney id="service_journey_id_1">
+                    <dayTypes>
+                        <DayTypeRef ref="day_type_id_1" />
+                        <DayTypeRef ref="day_type_id_2" />
+                    </dayTypes>
+                    <JourneyPatternRef ref="journey_pattern_id" />
+                </ServiceJourney>"#;
+            let service_journey_element_1 = service_journey_xml.parse().unwrap();
             let journey_pattern_element = journey_pattern();
+            let day_types = day_types();
             let mut collections = Collections::default();
             collections
                 .routes
@@ -533,20 +610,34 @@ mod tests {
             let mut map_journeypatterns = HashMap::new();
             map_journeypatterns
                 .insert(String::from("journey_pattern_id"), &journey_pattern_element);
-            let vehicle_journeys = parse_vehicle_journeys(
-                vec![service_journey_element].iter(),
+            let (vehicle_journeys, calendars) = parse_vehicle_journeys(
+                vec![&service_journey_element, &service_journey_element_1].into_iter(),
                 &collections,
+                &CollectionWithId::default(),
                 &map_journeypatterns,
+                &day_types,
             )
             .unwrap();
-            assert_eq!(1, vehicle_journeys.len());
+
+            assert_eq!(2, vehicle_journeys.len());
             let vehicle_journey = vehicle_journeys.get("service_journey_id").unwrap();
             assert_eq!("route_id", vehicle_journey.route_id.as_str());
+            let vehicle_journey = vehicle_journeys.get("service_journey_id_1").unwrap();
+            assert_eq!("route_id", vehicle_journey.route_id.as_str());
+
+            assert_eq!(2, calendars.len());
+            let calendar = calendars.get("1").unwrap();
+            assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 1)));
+            assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 2)));
+            let calendar = calendars.get("2").unwrap();
+            assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 1)));
+            assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 2)));
         }
 
         #[test]
         fn ignore_vehicle_journey_without_journey_pattern() {
             let service_journey_element = service_journey();
+            let day_types = day_types();
             let mut collections = Collections::default();
             collections
                 .routes
@@ -556,30 +647,37 @@ mod tests {
                 })
                 .unwrap();
             let map_journeypatterns = HashMap::new();
-            let vehicle_journeys = parse_vehicle_journeys(
+            let (vehicle_journeys, calendars) = parse_vehicle_journeys(
                 vec![service_journey_element].iter(),
                 &collections,
+                &CollectionWithId::default(),
                 &map_journeypatterns,
+                &day_types,
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
+            assert_eq!(0, calendars.len());
         }
 
         #[test]
         fn ignore_vehicle_journey_without_route() {
             let service_journey_element = service_journey();
             let journey_pattern_element = journey_pattern();
+            let day_types = day_types();
             let collections = Collections::default();
             let mut map_journeypatterns = HashMap::new();
             map_journeypatterns
                 .insert(String::from("journey_pattern_id"), &journey_pattern_element);
-            let vehicle_journeys = parse_vehicle_journeys(
+            let (vehicle_journeys, calendars) = parse_vehicle_journeys(
                 vec![service_journey_element].iter(),
                 &collections,
+                &CollectionWithId::default(),
                 &map_journeypatterns,
+                &day_types,
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
+            assert_eq!(0, calendars.len());
         }
 
         #[test]
@@ -589,21 +687,65 @@ mod tests {
                         <DayTypeRef ref="day_type_id_1" />
                         <DayTypeRef ref="day_type_id_2" />
                     </dayTypes>
-                    <JourneyPatternRef ref="journey_pattern_id" version="any"/>
+                    <JourneyPatternRef ref="journey_pattern_id" />
                 </ServiceJourney>"#;
             let service_journey_element: Element = service_journey_xml.parse().unwrap();
             let journey_pattern_element = journey_pattern();
+            let day_types = day_types();
             let collections = Collections::default();
             let mut map_journeypatterns = HashMap::new();
             map_journeypatterns
                 .insert(String::from("journey_pattern_id"), &journey_pattern_element);
-            let vehicle_journeys = parse_vehicle_journeys(
+            let (vehicle_journeys, calendars) = parse_vehicle_journeys(
                 vec![service_journey_element].iter(),
                 &collections,
+                &CollectionWithId::default(),
                 &map_journeypatterns,
+                &day_types,
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
+            assert_eq!(0, calendars.len());
+        }
+
+        #[test]
+        fn increment_service_id() {
+            let service_journey_element = service_journey();
+            let journey_pattern_element = journey_pattern();
+            let day_types = day_types();
+            let mut collections = Collections::default();
+            collections
+                .routes
+                .push(Route {
+                    id: String::from("route_id"),
+                    ..Default::default()
+                })
+                .unwrap();
+            // There is already an existing service
+            // (for example, from a previous call to 'parse_vehicle_journeys')
+            collections
+                .calendars
+                .push(Calendar {
+                    id: String::from("1"),
+                    ..Default::default()
+                })
+                .unwrap();
+            let mut map_journeypatterns = HashMap::new();
+            map_journeypatterns
+                .insert(String::from("journey_pattern_id"), &journey_pattern_element);
+            let (_, calendars) = parse_vehicle_journeys(
+                vec![&service_journey_element].into_iter(),
+                &collections,
+                &CollectionWithId::default(),
+                &map_journeypatterns,
+                &day_types,
+            )
+            .unwrap();
+
+            assert_eq!(1, calendars.len());
+            let calendar = calendars.get("2").unwrap();
+            assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 1)));
+            assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 2)));
         }
     }
 }

@@ -49,6 +49,26 @@ where
     stops::from_path(&path.join(STOPS_FILENAME), &mut collections)?;
     // TODO : use _lines_netex_idf to get trips>physical_mode_id
     let _lines_netex_idf = lines::from_path(&path.join(LINES_FILENAME), &mut collections)?;
+    // TODO: Remove these fake Physical Mode
+    collections
+        .physical_modes
+        .push(crate::objects::PhysicalMode::default())
+        .unwrap();
+    // TODO: Remove these fake Dataset
+    collections
+        .datasets
+        .push(crate::objects::Dataset::default())
+        .unwrap();
+    // TODO: Remove these fake Contributor
+    collections
+        .contributors
+        .push(crate::objects::Contributor::default())
+        .unwrap();
+    // TODO: Remove these fake Company
+    collections
+        .companies
+        .push(crate::objects::Company::default())
+        .unwrap();
     for offer_folder in WalkDir::new(path)
         .min_depth(1)
         .max_depth(1)
