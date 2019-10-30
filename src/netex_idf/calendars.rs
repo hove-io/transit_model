@@ -28,7 +28,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 
 type OperatingPeriods = HashMap<String, ValidityPeriod>;
 type DayTypeAssignments<'a> = HashMap<String, Vec<DayTypeAssignment<'a>>>;
-type DayTypes = HashMap<String, BTreeSet<Date>>;
+pub type DayTypes = HashMap<String, BTreeSet<Date>>;
 
 #[derive(Debug)]
 enum DayTypeAssignment<'a> {
