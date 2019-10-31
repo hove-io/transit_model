@@ -697,7 +697,7 @@ where
                     .stop_points
                     .get(&pathway.from_stop_id)
                     .map(|st| st.stop_type.clone())
-                    .or(collections
+                    .or_else(|| collections
                         .stop_locations
                         .get(&pathway.from_stop_id)
                         .map(|sl| sl.stop_type.clone()))
@@ -713,7 +713,7 @@ where
                     .stop_points
                     .get(&pathway.to_stop_id)
                     .map(|st| st.stop_type.clone())
-                    .or(collections
+                    .or_else(|| collections
                         .stop_locations
                         .get(&pathway.to_stop_id)
                         .map(|sl| sl.stop_type.clone()))

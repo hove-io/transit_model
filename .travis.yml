@@ -17,6 +17,10 @@ matrix:
     name: Formatting check
     before_script: rustup component add rustfmt
     script: cargo fmt --all -- --check
+  - rust: stable
+    name: Quality check
+    before_script: rustup component add clippy
+    script: cargo clippy --all --all-features -- -D warnings
   allow_failures:
   - rust: nightly
 script:
