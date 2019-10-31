@@ -9,7 +9,7 @@ needs to be included in every object's id.
 
 Prepending all the identifiers with a unique prefix ensures that the NTFS identifiers are unique accross all the NTFS datasets. With this assumption, merging two NTFS datasets can be done without worrying about conflicting identifiers.
 
-This prefix should be applied to all NTFS identifier except for the physical mode identifiers that are standarized and fixed values. Fixed values are described in the [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md#physical_modestxt-requis)
+This prefix should be applied to all NTFS identifiers except for the physical mode identifiers that are standardized and fixed values. Fixed values are described in the [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md#physical_modestxt-requis)
 
 ## Configuration of each converter
 A configuration file `config.json`, as it is shown below, is provided for each 

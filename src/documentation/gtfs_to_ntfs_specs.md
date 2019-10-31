@@ -180,7 +180,7 @@ specified, the conversion should stop immediately with an error.
 (1) When several GTFS Routes with different `route_type`s are grouped together, the commercial_mode_id with the smallest priority should be used (as specified in chapter "Mapping of route_type with modes").
 
 ### Reading calendars.txt and calendar_dates.txt
-GTFS services are trasnformed into lists of active dates as if using a single NTFS 
+GTFS services are transformed into lists of active dates as if using a single NTFS 
 file `calendar_dates.txt`. The resulting NTFS files might be different following an 
 optimization operation applied at the end of the conversion, but the result should be 
 functionally identical.
