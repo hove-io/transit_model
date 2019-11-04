@@ -184,6 +184,18 @@ fn parse_common(_common: &Element) -> Result<()> {
     Ok(())
 }
 
+fn parse_service_journey_patterns<'a, I>(sjp_elements: I) -> HashMap<String, &'a Element>
+where
+    I: Iterator<Item = &'a Element>,
+{
+    sjp_elements
+        .filter_map(|sjp_element| {
+            let id: String = sjp_element.attribute("id")?;
+            Some((id, sjp_element))
+        })
+        .collect()
+}
+
 fn parse_routes<'a, I>(
     route_elements: I,
     collections: &Collections,
@@ -206,6 +218,39 @@ where
     Ok(routes)
 }
 
+fn enhance_with_object_code(
+    routes: CollectionWithId<Route>,
+    map_journeypatterns: &HashMap<String, &Element>,
+) -> CollectionWithId<Route> {
+    let mut enhanced_routes = CollectionWithId::default();
+    let map_routes_journeypatterns: HashMap<String, String> = map_journeypatterns
+        .iter()
+        .filter_map(|(jp_id, jp_element)| {
+            let route_ref: String = jp_element.only_child("RouteRef")?.attribute("ref")?;
+            Some((route_ref, jp_id.clone()))
+        })
+        .collect();
+    for route in routes {
+        let journey_pattern_ref =
+            skip_fail!(map_routes_journeypatterns.get(&route.id).ok_or_else(|| {
+                format_err!(
+                    "Route {} doesn't have any ServiceJourneyPattern associated",
+                    route.id
+                )
+            }));
+        let codes = vec![(
+            String::from("Netex_ServiceJourneyPattern"),
+            journey_pattern_ref.clone(),
+        )]
+        .into_iter()
+        .collect();
+        let route = Route { codes, ..route };
+        // We are inserting only routes that were already in a 'CollectionWithId'
+        enhanced_routes.push(route).unwrap();
+    }
+    enhanced_routes
+}
+
 fn parse_offer(offer: &Element, collections: &Collections) -> Result<CollectionWithId<Route>> {
     let frames = netex_utils::parse_frames_by_type(
         offer
@@ -222,6 +267,12 @@ fn parse_offer(offer: &Element, collections: &Collections) -> Result<CollectionW
                 NETEX_STRUCTURE
             )
         })?;
+    let map_journeypatterns = structure_frame
+        .only_child("members")
+        .map(Element::children)
+        .map(|childrens| childrens.filter(|e| e.name() == "ServiceJourneyPattern"))
+        .map(parse_service_journey_patterns)
+        .unwrap_or_else(HashMap::new);
     let routes = structure_frame
         .only_child("members")
         .map(Element::children)
@@ -229,6 +280,7 @@ fn parse_offer(offer: &Element, collections: &Collections) -> Result<CollectionW
         .map(|route_elements| parse_routes(route_elements, collections))
         .transpose()?
         .unwrap_or_else(CollectionWithId::default);
+    let routes = enhance_with_object_code(routes, &map_journeypatterns);
     Ok(routes)
 }
 
@@ -338,6 +390,46 @@ mod tests {
                 })
                 .unwrap();
             let routes = parse_routes(vec![root].iter(), &collections).unwrap();
+            assert_eq!(0, routes.len());
+        }
+    }
+
+    mod enhance_with_object_code {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn add_object_code() {
+            let route = Route {
+                id: String::from("route_id"),
+                name: String::from("Route Name"),
+                ..Default::default()
+            };
+            let routes = CollectionWithId::from(route);
+            let mut map = HashMap::new();
+            let xml = r#"<ServiceJourneyPattern id="service_journey_pattern_id">
+            <RouteRef ref="route_id" />
+        </ServiceJourneyPattern>"#;
+            let element: Element = xml.parse().unwrap();
+            map.insert(String::from("service_journey_pattern_id"), &element);
+            let routes = enhance_with_object_code(routes, &map);
+            let route = routes.get("route_id").unwrap();
+            assert_eq!("Route Name", route.name.as_str());
+            assert_eq!(1, route.codes.len());
+            let code = route.codes.iter().next().unwrap();
+            assert_eq!("Netex_ServiceJourneyPattern", code.0.as_str());
+            assert_eq!("service_journey_pattern_id", code.1.as_str());
+        }
+
+        #[test]
+        fn no_associated_service_journey_pattern() {
+            let route = Route {
+                id: String::from("route_id"),
+                name: String::from("Route Name"),
+                ..Default::default()
+            };
+            let routes = CollectionWithId::from(route);
+            let routes = enhance_with_object_code(routes, &HashMap::new());
             assert_eq!(0, routes.len());
         }
     }

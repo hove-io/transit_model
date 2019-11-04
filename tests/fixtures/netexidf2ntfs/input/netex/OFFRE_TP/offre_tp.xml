@@ -20,6 +20,12 @@
                      <DirectionRef ref="stif:Direction:local-26-C00114-2:LOC" version="any"/>
                      <InverseRouteRef ref="stif:Route:local-26-C00114-1:LOC" version="any"/>
                   </Route>
+                  <ServiceJourneyPattern dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:JourneyPattern:local-26-C00114-1:LOC" version="any">
+                     <RouteRef ref="stif:Route:local-26-C00114-1:LOC" version="any"/>
+                  </ServiceJourneyPattern>
+                  <ServiceJourneyPattern dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:JourneyPattern:local-26-C00114-2:LOC" version="any">
+                     <RouteRef ref="stif:Route:local-26-C00114-2:LOC" version="any"/>
+                  </ServiceJourneyPattern>
                </members>
             </GeneralFrame>
 		</frames>
