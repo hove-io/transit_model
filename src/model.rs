@@ -20,6 +20,7 @@ use crate::{objects::*, Error, Result};
 use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::format_err;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::cmp;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
@@ -28,6 +29,53 @@ use std::result::Result as StdResult;
 use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
 use transit_model_procmacro::*;
 use transit_model_relations::{IdxSet, ManyToMany, OneToMany, Relation};
+
+const AIR_PHYSICAL_MODE: &str = "Air";
+const BIKE_PHYSICAL_MODE: &str = "Bike";
+const BIKE_SHARING_SERVICE_PHYSICAL_MODE: &str = "BikeSharingService";
+const BUS_PHYSICAL_MODE: &str = "Bus";
+const BUS_RAPID_TRANSIT_PHYSICAL_MODE: &str = "BusRapidTransit";
+const CAR_PHYSICAL_MODE: &str = "Car";
+const COACH_PHYSICAL_MODE: &str = "Coach";
+const FERRY_PHYSICAL_MODE: &str = "Ferry";
+const FUNICULAR_PHYSICAL_MODE: &str = "Funicular";
+const LOCAL_TRAIN_PHYSICAL_MODE: &str = "LocalTrain";
+const LONG_DISTANCE_TRAIN_PHYSICAL_MODE: &str = "LongDistanceTrain";
+const METRO_PHYSICAL_MODE: &str = "Metro";
+const RAPID_TRANSIT_PHYSICAL_MODE: &str = "RapidTransit";
+const TAXI_PHYSICAL_MODE: &str = "Taxi";
+const TRAIN_PHYSICAL_MODE: &str = "Train";
+const TRAMWAY_PHYSICAL_MODE: &str = "Tramway";
+lazy_static! {
+    static ref CO2_EMISSIONS: std::collections::HashMap<&'static str, f32> = {
+        let mut modes_map = std::collections::HashMap::new();
+        modes_map.insert(AIR_PHYSICAL_MODE, 144.6f32);
+        modes_map.insert(BIKE_PHYSICAL_MODE, 0f32);
+        modes_map.insert(BIKE_SHARING_SERVICE_PHYSICAL_MODE, 0f32);
+        // Unknown value
+        // modes_map.insert("Boat", 0.0f32);
+        modes_map.insert(BUS_PHYSICAL_MODE, 132f32);
+        modes_map.insert(BUS_RAPID_TRANSIT_PHYSICAL_MODE, 84f32);
+        modes_map.insert(CAR_PHYSICAL_MODE, 184f32);
+        modes_map.insert(COACH_PHYSICAL_MODE, 171f32);
+        modes_map.insert(FERRY_PHYSICAL_MODE, 279f32);
+        modes_map.insert(FUNICULAR_PHYSICAL_MODE, 3f32);
+        modes_map.insert(LOCAL_TRAIN_PHYSICAL_MODE, 30.7f32);
+        modes_map.insert(LONG_DISTANCE_TRAIN_PHYSICAL_MODE, 3.4f32);
+        modes_map.insert(METRO_PHYSICAL_MODE, 3f32);
+        modes_map.insert(RAPID_TRANSIT_PHYSICAL_MODE, 6.2f32);
+        // Unknown value
+        // modes_map.insert("RailShuttle", 0.0f32);
+        // Unknown value
+        // modes_map.insert("Shuttle", 0.0f32);
+        // Unknown value
+        // modes_map.insert("SuspendedCableCar", 0.0f32);
+        modes_map.insert(TAXI_PHYSICAL_MODE, 184f32);
+        modes_map.insert(TRAIN_PHYSICAL_MODE, 11.9f32);
+        modes_map.insert(TRAMWAY_PHYSICAL_MODE, 4f32);
+        modes_map
+    };
+}
 
 /// The set of collections representing the model.
 #[derive(Derivative, Serialize, Deserialize, Debug)]
@@ -90,7 +138,7 @@ impl Collections {
             routes,
             mut vehicle_journeys,
             frequencies,
-            physical_modes,
+            mut physical_modes,
             mut stop_areas,
             mut stop_points,
             calendars,
@@ -127,7 +175,25 @@ impl Collections {
         self.lines.try_merge(lines)?;
         self.routes.try_merge(routes)?;
         self.frequencies.merge(frequencies);
-        self.physical_modes.extend(physical_modes);
+        for physical_mode in physical_modes.take() {
+            if self.physical_modes.contains_id(&physical_mode.id) {
+                // We already check the ID is present, unwrap is safe
+                let mut existing_physical_mode =
+                    self.physical_modes.get_mut(&physical_mode.id).unwrap();
+                existing_physical_mode.co2_emission = match (
+                    existing_physical_mode.co2_emission,
+                    physical_mode.co2_emission,
+                ) {
+                    (Some(e), Some(n)) => Some(e.max(n)),
+                    (Some(e), None) => Some(e),
+                    (None, Some(n)) => Some(n),
+                    (None, None) => None,
+                }
+            } else {
+                // We already check the ID is not present, unwrap is safe
+                self.physical_modes.push(physical_mode).unwrap();
+            }
+        }
 
         self.prices_v1.merge(prices_v1);
         self.od_fares_v1.merge(od_fares_v1);
@@ -323,6 +389,11 @@ impl Collections {
         let mut physical_modes_used: HashSet<String> = HashSet::new();
         let mut comments_used: HashSet<String> = HashSet::new();
         let mut level_id_used: HashSet<String> = HashSet::new();
+
+        // Keep fallback modes even if not referenced by the model
+        physical_modes_used.insert(String::from(BIKE_PHYSICAL_MODE));
+        physical_modes_used.insert(String::from(BIKE_SHARING_SERVICE_PHYSICAL_MODE));
+        physical_modes_used.insert(String::from(CAR_PHYSICAL_MODE));
 
         let vj_id_to_old_idx = self.vehicle_journeys.get_id_to_idx().clone();
         let comment_id_to_old_idx = self.comments.get_id_to_idx().clone();
@@ -664,6 +735,35 @@ impl Collections {
             .retain(|level| level_id_used.contains(&level.id));
         Ok(())
     }
+
+    /// Physical mode should contains CO2 emissions. If the values are not present
+    /// in the NTFS, some default values will be used.
+    pub fn enhance_with_co2(&mut self) {
+        let mut physical_modes = self.physical_modes.take();
+        for physical_mode in &mut physical_modes {
+            if physical_mode.co2_emission.is_none() {
+                physical_mode.co2_emission = CO2_EMISSIONS.get(physical_mode.id.as_str()).copied();
+            }
+        }
+        self.physical_modes = CollectionWithId::new(physical_modes).unwrap();
+        // Add fallback modes
+        for fallback_mode in &[
+            BIKE_PHYSICAL_MODE,
+            BIKE_SHARING_SERVICE_PHYSICAL_MODE,
+            CAR_PHYSICAL_MODE,
+        ] {
+            if !self.physical_modes.contains_id(fallback_mode) {
+                // Can unwrap because we first check that the ID doesn't exist
+                self.physical_modes
+                    .push(PhysicalMode {
+                        id: fallback_mode.to_string(),
+                        name: fallback_mode.to_string(),
+                        co2_emission: CO2_EMISSIONS.get(fallback_mode).copied(),
+                    })
+                    .unwrap();
+            }
+        }
+    }
 }
 
 /// The navitia transit model.
@@ -876,5 +976,119 @@ impl ops::Deref for Model {
     type Target = Collections;
     fn deref(&self) -> &Self::Target {
         &self.collections
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod merge {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn physical_mode_co2_emission_max() {
+            let physical_mode1 = PhysicalMode {
+                id: String::from(BUS_PHYSICAL_MODE),
+                name: String::from("Bus"),
+                co2_emission: Some(21f32),
+            };
+            let physical_mode2 = PhysicalMode {
+                id: String::from(BUS_PHYSICAL_MODE),
+                name: String::from("Bus"),
+                co2_emission: Some(42f32),
+            };
+            let mut collections = Collections::default();
+            collections.physical_modes.push(physical_mode1).unwrap();
+            let mut collections_to_merge = Collections::default();
+            collections_to_merge
+                .physical_modes
+                .push(physical_mode2)
+                .unwrap();
+            collections.try_merge(collections_to_merge).unwrap();
+            let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
+            assert_eq!(42f32, bus_mode.co2_emission.unwrap());
+        }
+
+        #[test]
+        fn physical_mode_co2_emission_one_missing() {
+            let physical_mode1 = PhysicalMode {
+                id: String::from(BUS_PHYSICAL_MODE),
+                name: String::from("Bus"),
+                co2_emission: None,
+            };
+            let physical_mode2 = PhysicalMode {
+                id: String::from(BUS_PHYSICAL_MODE),
+                name: String::from("Bus"),
+                co2_emission: Some(42f32),
+            };
+            let mut collections = Collections::default();
+            collections.physical_modes.push(physical_mode1).unwrap();
+            let mut collections_to_merge = Collections::default();
+            collections_to_merge
+                .physical_modes
+                .push(physical_mode2)
+                .unwrap();
+            collections.try_merge(collections_to_merge).unwrap();
+            let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
+            assert_eq!(42f32, bus_mode.co2_emission.unwrap());
+        }
+    }
+
+    mod enhance_with_co2 {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn enhance_with_default() {
+            let mut collections = Collections::default();
+            collections
+                .physical_modes
+                .push(PhysicalMode {
+                    id: String::from(BUS_PHYSICAL_MODE),
+                    name: String::from("Bus"),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections.enhance_with_co2();
+
+            let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
+            assert_eq!(132f32, bus_mode.co2_emission.unwrap());
+        }
+
+        #[test]
+        fn preserve_existing() {
+            let mut collections = Collections::default();
+            collections
+                .physical_modes
+                .push(PhysicalMode {
+                    id: String::from(BUS_PHYSICAL_MODE),
+                    name: String::from("Bus"),
+                    co2_emission: Some(42.0f32),
+                })
+                .unwrap();
+            collections.enhance_with_co2();
+
+            let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
+            assert_eq!(42.0f32, bus_mode.co2_emission.unwrap());
+        }
+
+        #[test]
+        fn add_fallback_modes() {
+            let mut collections = Collections::default();
+            collections.enhance_with_co2();
+
+            assert_eq!(3, collections.physical_modes.len());
+            let bike_mode = collections.physical_modes.get(BIKE_PHYSICAL_MODE).unwrap();
+            assert_eq!(0.0f32, bike_mode.co2_emission.unwrap());
+            let walk_mode = collections
+                .physical_modes
+                .get(BIKE_SHARING_SERVICE_PHYSICAL_MODE)
+                .unwrap();
+            assert_eq!(0.0f32, walk_mode.co2_emission.unwrap());
+            let car_mode = collections.physical_modes.get(CAR_PHYSICAL_MODE).unwrap();
+            assert_eq!(184.0f32, car_mode.co2_emission.unwrap());
+        }
     }
 }

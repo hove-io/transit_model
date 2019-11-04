@@ -107,6 +107,9 @@ trolleyBus | Shuttle | Shuttle | Shuttle | Shuttle
 
 If *Services/Service/Mode* is not specified or the value is unknown (a different value than those listed above), the default mode `Bus` is used.
 
+All `physical_mode` are enhanced with CO2 emission and fallback modes, following
+the documentation in [common.md](common.md#co2-emissions-and-fallback-modes).
+
 ### routes.txt
 A Route is created from a line and a direction of journey patterns (*StandardService/JourneyPattern/Direction*).
 

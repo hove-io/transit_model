@@ -311,7 +311,7 @@ impl_id!(CommercialMode);
 
 impl_with_id!(CommercialMode);
 
-#[derive(Derivative, Serialize, Deserialize, Debug)]
+#[derive(Clone, Derivative, Serialize, Deserialize, Debug)]
 #[derivative(Default)]
 pub struct PhysicalMode {
     #[derivative(Default(value = "\"default_physical_mode\".into()"))]

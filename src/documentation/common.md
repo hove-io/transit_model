@@ -59,3 +59,37 @@ The files `contributors.txt` and `datasets.txt` provide additional information a
 | datasets.txt | contributor_id | contributor_id | Required | This field is prefixed.
 | datasets.txt | dataset_start_date |  |  | Smallest date of all the trips of the dataset.
 | datasets.txt | dataset_end_date |  |  | Greatest date of all the trips of the dataset.
+
+## CO2 emissions and fallback modes
+Physical modes may not contain CO2 emissions. If the value is missing, we are
+using default values (see below), mostly based on what is provided by
+[ADEME](https://www.ademe.fr).
+
+Physical Mode     | CO2 emission (gCO<sub>2</sub>-eq/km)
+---               | ---
+Air               | 144.6
+Boat              |  NC
+Bus               | 132
+BusRapidTransit   |  84
+Coach             | 171
+Ferry             | 279
+Funicular         |   3
+LocalTrain        |  30.7
+LongDistanceTrain |   3.4
+Metro             |   3
+RapidTransit      |   6.2
+RailShuttle       |  NC
+Shuttle           |  NC
+SuspendedCableCar |  NC
+Taxi              | 184
+Train             |  11.9
+Tramway           |   4
+
+The following fallback modes are also added to the model (they're usually not
+referenced by any Vehicle Journey).
+
+Physical Mode      | CO2 emission (gCO<sub>2</sub>-eq/km)
+---                | ---
+Bike               |   0
+BikeSharingService |   0
+Car                | 184

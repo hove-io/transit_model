@@ -140,6 +140,9 @@ The standard values of the `route_type` field are directly mapped to the NTFS mo
 (1) The physical_mode ID is a mapping with a specific value as described in the NTFS format specification. This value must not be prefixed.
 (2) The commercial_mode ID are standardized when converting from GTFS. This value must not be prefixed.
 
+All `physical_mode` are enhanced with CO2 emission and fallback modes, following
+the documentation in [common.md](common.md#co2-emissions-and-fallback-modes).
+
 #### Loading Routes
 A Route is created for each direction of existing trips.  If 2 routes with the
 same ID are specified, the conversion should stop immediately with an error.

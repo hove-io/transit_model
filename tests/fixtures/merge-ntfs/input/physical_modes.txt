@@ -1,5 +1,5 @@
 physical_mode_id,physical_mode_name,co2_emission
-Bus,Bus,
+Bus,Bus,42
 Metro,Metro,
 Funicular,"Funiculaire",
 Train,"Train",11.9
