@@ -315,21 +315,19 @@ The `service_id` property of the calendar in the NTFS is specified by an auto-in
 
 Active dates of the calendar are specified by:
 - `DayType` nodes describing the active days of a week
-  + days of the week are listed in `DayType/properties/PropertyOfDay/DaysOfWeek nodes`. 
+  + days of the week are listed in `DayType/properties[]/PropertyOfDay/DaysOfWeek nodes`. 
   + Expected values MUST be one of `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`.
-- `OperatingPeriod` nodes describing periods (basically a begining date and an end date) referenced in `DayTypeAssignment`
-- `DayTypeAssignment` nodes with 2 possible uses:
+- `OperatingPeriod` nodes describing periods (basically a beginning date and an end date) referenced in `DayTypeAssignment`
+- `DayTypeAssignment` nodes with 2 possible uses (they are applied in the order they appear in the file):
   + Activate or deactivate a specific day on a DayType (with the nodes `IsAvailable` and `Date`)
   + Apply the active days of the referenced DayType on an `OperatingPeriod`
 
 All resulting calendars are to be restricted between `ValidBetween/FromDate` and `ValidBetween/ToDate` specified at the top level of the file in `GeneralFrame`.
 
-
 Be careful: Definition of calendars and exceptions in calendar_dates may not be the same definition as the one in the Netex-IDFM files, but the resulting active dates will be the same.
 
 Here is 3 possible modelizations in Netex-IDFM of a calendar running from 2016-07-01 to 2016-07-31 from monday to saturday except on 2016-07-14:
 ![](./netex_idfm_to_ntfs_calendars.png "Definition of calendars in Netex-IDFM specs")
-
 
 ### comments.txt
 `comments` are provided in **commun.xml** file in the nodes **GeneralFrame/members/Notice[]**.
