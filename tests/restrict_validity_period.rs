@@ -37,25 +37,7 @@ fn test_restrict_global() {
         transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
-            Some(vec![
-                "calendar_dates.txt",
-                "calendar.txt",
-                "companies.txt",
-                "datasets.txt",
-                "equipments.txt",
-                "feed_infos.txt",
-                "geometries.txt",
-                "lines.txt",
-                "networks.txt",
-                "routes.txt",
-                "stop_times.txt",
-                "stops.txt",
-                "trip_properties.txt",
-                "trips.txt",
-                "object_codes.txt",
-                "object_properties.txt",
-                "transfers.txt",
-            ]),
+            None,
             "./tests/fixtures/restrict-validity-period/output/",
         );
     });

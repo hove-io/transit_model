@@ -10,4 +10,5 @@ M1F,route,comment:kept:1
 M1B1_R,trip,comment:kept:2
 RERAF1_R,trip,comment:removed:2
 stoptime:5,stop_time,comment:kept:1
+stoptime:8,stop_time,comment:kept:3
 stoptime:19,stop_time,comment:removed:1

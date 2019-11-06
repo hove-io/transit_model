@@ -328,11 +328,11 @@ impl Collections {
         let comment_id_to_old_idx = self.comments.get_id_to_idx().clone();
         let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
 
-        let mut vjs: Vec<VehicleJourney> = self
+        let vjs: HashMap<String, VehicleJourney> = self
             .vehicle_journeys
             .take()
             .into_iter()
-            .filter(|vj| {
+            .filter_map(|vj| {
                 if self.calendars.get(&vj.service_id).is_some() {
                     if let Some(geo_id) = &vj.geometry_id {
                         geometries_used.insert(geo_id.clone());
@@ -349,10 +349,10 @@ impl Collections {
                     data_sets_used.insert(vj.dataset_id.clone());
                     physical_modes_used.insert(vj.physical_mode_id.clone());
                     update_comments_used(&mut comments_used, &vj.comment_links, &self.comments);
-                    true
+                    Some((vj.id.clone(), vj))
                 } else {
                     log_object_removed("Vehicle Journey", &vj.id);
-                    false
+                    None
                 }
             })
             .collect();
@@ -515,10 +515,24 @@ impl Collections {
             })
             .collect::<Vec<_>>();
 
+        let vj_idx_to_old_id: HashMap<&Idx<VehicleJourney>, &String> =
+            vj_id_to_old_idx.iter().map(|(id, idx)| (idx, id)).collect();
+        comments_used.extend(self.stop_time_comments.iter().filter_map(
+            |((old_vj_idx, _), old_comment_idx)| {
+                let old_vj_id = vj_idx_to_old_id[old_vj_idx];
+                if vjs.contains_key(old_vj_id) {
+                    Some(self.comments[*old_comment_idx].id.clone())
+                } else {
+                    None
+                }
+            },
+        ));
+
         self.comments
             .retain(log_predicate("Comment", |comment: &Comment| {
                 comments_used.contains(&comment.id)
             }));
+
         let comment_old_idx_to_new_idx: HashMap<Idx<Comment>, Idx<Comment>> = self
             .comments
             .iter()
@@ -534,6 +548,7 @@ impl Collections {
             .iter()
             .map(|(new_idx, stop_point)| (stop_point_id_to_old_idx[&stop_point.id], new_idx))
             .collect();
+        let mut vjs: Vec<VehicleJourney> = vjs.into_iter().map(|(_, vj)| vj).collect();
         for vj in vjs.iter_mut() {
             for st in vj.stop_times.iter_mut() {
                 st.stop_point_idx = stop_point_old_idx_to_new_idx[&st.stop_point_idx];
@@ -556,9 +571,9 @@ impl Collections {
         self.stop_time_comments = self
             .stop_time_comments
             .iter()
-            .filter_map(|((old_vj_id, seq), comment_old_idx)| {
+            .filter_map(|((old_vj_idx, seq), comment_old_idx)| {
                 match (
-                    vj_old_idx_to_new_idx.get(&old_vj_id),
+                    vj_old_idx_to_new_idx.get(old_vj_idx),
                     comment_old_idx_to_new_idx.get(&comment_old_idx),
                 ) {
                     (Some(new_vj_idx), Some(new_comment_idx)) => {
