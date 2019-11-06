@@ -14,7 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use super::calendars::{self, DayTypes};
+use super::{
+    calendars::{self, DayTypes},
+    lines::LineNetexIDF,
+    modes::MODES,
+};
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
@@ -121,7 +125,11 @@ impl TryFrom<&Element> for Route {
     }
 }
 
-pub fn read_offer_folder(offer_folder: &Path, collections: &mut Collections) -> Result<()> {
+pub fn read_offer_folder(
+    offer_folder: &Path,
+    collections: &mut Collections,
+    lines_netex_idf: &CollectionWithId<LineNetexIDF>,
+) -> Result<()> {
     let calendars_path = offer_folder.join(CALENDARS_FILENAME);
     let map_daytypes = if calendars_path.exists() {
         let mut calendars_file =
@@ -175,12 +183,11 @@ pub fn read_offer_folder(offer_folder: &Path, collections: &mut Collections) -> 
             .parse()
             .map_err(|_| format_err!("Failed to open {}", offer_path.display()))?;
         info!("Reading {}", offer_path.display());
-        let (routes, vehicle_journeys, calendars) = skip_fail!(parse_offer(
-            &offer,
-            collections,
-            &map_daytypes
-        )
-        .map_err(|e| format_err!("Skip file {}: {}", offer_path.display(), e)));
+        let (routes, vehicle_journeys, calendars) =
+            skip_fail!(
+                parse_offer(&offer, collections, lines_netex_idf, &map_daytypes)
+                    .map_err(|e| format_err!("Skip file {}: {}", offer_path.display(), e))
+            );
         collections.routes.try_merge(routes)?;
         collections.vehicle_journeys.try_merge(vehicle_journeys)?;
         collections.calendars.try_merge(calendars)?;
@@ -263,6 +270,7 @@ fn enhance_with_object_code(
 fn parse_vehicle_journeys<'a, I>(
     service_journey_elements: I,
     collections: &Collections,
+    lines_netex_idf: &CollectionWithId<LineNetexIDF>,
     routes: &CollectionWithId<Route>,
     map_journeypatterns: &HashMap<String, &Element>,
     map_daytypes: &DayTypes,
@@ -273,13 +281,15 @@ where
     fn parse_service_journey(
         service_journey_element: &Element,
         collections: &Collections,
+        lines_netex_idf: &CollectionWithId<LineNetexIDF>,
+        routes: &CollectionWithId<Route>,
         map_journeypatterns: &HashMap<String, &Element>,
     ) -> Result<VehicleJourney> {
         let id = service_journey_element.try_attribute("id")?;
         let journey_pattern_ref: String = service_journey_element
             .try_only_child("JourneyPatternRef")?
             .try_attribute("ref")?;
-        let route_id = map_journeypatterns
+        let route_id: String = map_journeypatterns
             .get(&journey_pattern_ref)
             .and_then(|sjp_element| sjp_element.only_child("RouteRef"))
             .and_then(|route_ref_element| route_ref_element.attribute("ref"))
@@ -292,10 +302,30 @@ where
             .next()
             .map(|dataset| dataset.id.clone())
             .ok_or_else(|| format_err!("Failed to find a dataset"))?;
+        let line_netex_idf = collections
+            .routes
+            .get(&route_id)
+            .or_else(|| routes.get(&route_id))
+            .and_then(|route| lines_netex_idf.get(&route.line_id))
+            .ok_or_else(|| {
+                format_err!("VehicleJourney {} doesn't have a corresponding line", id)
+            })?;
+        let company_id = service_journey_element
+            .only_child("OperatorRef")
+            .map(Element::text)
+            .unwrap_or_else(|| line_netex_idf.company_id.clone());
+        let physical_mode_id = MODES
+            .get(line_netex_idf.mode.as_str())
+            .ok_or_else(|| format_err!("Mode {} doesn't exist", line_netex_idf.mode))?
+            .physical_mode
+            .0
+            .to_string();
         let vehicle_journey = VehicleJourney {
             id,
             route_id,
             dataset_id,
+            company_id,
+            physical_mode_id,
             ..Default::default()
         };
         Ok(vehicle_journey)
@@ -312,6 +342,8 @@ where
         let vehicle_journey = skip_fail!(parse_service_journey(
             service_journey_element,
             collections,
+            lines_netex_idf,
+            routes,
             map_journeypatterns
         ));
         if !collections.routes.contains_id(&vehicle_journey.route_id)
@@ -356,6 +388,7 @@ where
 fn parse_offer(
     offer: &Element,
     collections: &Collections,
+    lines_netex_idf: &CollectionWithId<LineNetexIDF>,
     map_daytypes: &DayTypes,
 ) -> Result<(
     CollectionWithId<Route>,
@@ -402,6 +435,7 @@ fn parse_offer(
             parse_vehicle_journeys(
                 service_journey_elements,
                 collections,
+                lines_netex_idf,
                 &routes,
                 &map_journeypatterns,
                 map_daytypes,
@@ -605,6 +639,19 @@ mod tests {
             journey_pattern_xml.parse().unwrap()
         }
 
+        fn lines_netex_idf() -> CollectionWithId<LineNetexIDF> {
+            CollectionWithId::from(LineNetexIDF {
+                id: String::from("line_id"),
+                name: String::from("The Line"),
+                code: None,
+                private_code: None,
+                network_id: String::from("network_id"),
+                company_id: String::from("company_id"),
+                mode: String::from("bus"),
+                wheelchair_accessible: false,
+            })
+        }
+
         fn day_types() -> DayTypes {
             let mut day_type_1 = BTreeSet::new();
             day_type_1.insert(Date::from_ymd(2019, 1, 1));
@@ -628,6 +675,7 @@ mod tests {
                 </ServiceJourney>"#;
             let service_journey_element_1 = service_journey_xml.parse().unwrap();
             let journey_pattern_element = journey_pattern();
+            let lines_netex_idf = lines_netex_idf();
             let day_types = day_types();
             let collections = collections();
             let mut map_journeypatterns = HashMap::new();
@@ -636,6 +684,7 @@ mod tests {
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
                 vec![&service_journey_element, &service_journey_element_1].into_iter(),
                 &collections,
+                &lines_netex_idf,
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,
@@ -649,6 +698,8 @@ mod tests {
             let vehicle_journey = vehicle_journeys.get("service_journey_id_1").unwrap();
             assert_eq!("route_id", vehicle_journey.route_id.as_str());
             assert_eq!("dataset_id", vehicle_journey.dataset_id.as_str());
+            assert_eq!("company_id", vehicle_journey.company_id.as_str());
+            assert_eq!("Bus", vehicle_journey.physical_mode_id.as_str());
 
             assert_eq!(2, calendars.len());
             let calendar = calendars.get("1").unwrap();
@@ -662,12 +713,14 @@ mod tests {
         #[test]
         fn ignore_vehicle_journey_without_journey_pattern() {
             let service_journey_element = service_journey();
+            let lines_netex_idf = lines_netex_idf();
             let day_types = day_types();
             let collections = collections();
             let map_journeypatterns = HashMap::new();
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
                 vec![service_journey_element].iter(),
                 &collections,
+                &lines_netex_idf,
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,
@@ -681,6 +734,7 @@ mod tests {
         fn ignore_vehicle_journey_without_route() {
             let service_journey_element = service_journey();
             let journey_pattern_element = journey_pattern();
+            let lines_netex_idf = lines_netex_idf();
             let day_types = day_types();
             let collections = Collections::default();
             let mut map_journeypatterns = HashMap::new();
@@ -689,6 +743,72 @@ mod tests {
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
                 vec![service_journey_element].iter(),
                 &collections,
+                &lines_netex_idf,
+                &CollectionWithId::default(),
+                &map_journeypatterns,
+                &day_types,
+            )
+            .unwrap();
+            assert_eq!(0, vehicle_journeys.len());
+            assert_eq!(0, calendars.len());
+        }
+
+        #[test]
+        fn ignore_vehicle_journey_without_line() {
+            let service_journey_element = service_journey();
+            let journey_pattern_element = journey_pattern();
+            let lines_netex_idf = lines_netex_idf();
+            let day_types = day_types();
+            let mut collections = Collections::default();
+            collections
+                .routes
+                .push(Route {
+                    id: String::from("route_id"),
+                    line_id: String::from("unknown_line_id"),
+                    ..Default::default()
+                })
+                .unwrap();
+            let mut map_journeypatterns = HashMap::new();
+            map_journeypatterns
+                .insert(String::from("journey_pattern_id"), &journey_pattern_element);
+            let (vehicle_journeys, calendars) = parse_vehicle_journeys(
+                vec![service_journey_element].iter(),
+                &collections,
+                &lines_netex_idf,
+                &CollectionWithId::default(),
+                &map_journeypatterns,
+                &day_types,
+            )
+            .unwrap();
+            assert_eq!(0, vehicle_journeys.len());
+            assert_eq!(0, calendars.len());
+        }
+
+        #[test]
+        fn ignore_vehicle_journey_without_physical_mode() {
+            let service_journey_element = service_journey();
+            let journey_pattern_element = journey_pattern();
+            let mut lines_netex_idf = lines_netex_idf();
+            use std::ops::DerefMut;
+            lines_netex_idf.get_mut("line_id").unwrap().deref_mut().mode =
+                String::from("unknown_mode_id");
+            let day_types = day_types();
+            let mut collections = Collections::default();
+            collections
+                .routes
+                .push(Route {
+                    id: String::from("route_id"),
+                    line_id: String::from("line_id"),
+                    ..Default::default()
+                })
+                .unwrap();
+            let mut map_journeypatterns = HashMap::new();
+            map_journeypatterns
+                .insert(String::from("journey_pattern_id"), &journey_pattern_element);
+            let (vehicle_journeys, calendars) = parse_vehicle_journeys(
+                vec![service_journey_element].iter(),
+                &collections,
+                &lines_netex_idf,
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,
@@ -709,6 +829,7 @@ mod tests {
                 </ServiceJourney>"#;
             let service_journey_element: Element = service_journey_xml.parse().unwrap();
             let journey_pattern_element = journey_pattern();
+            let lines_netex_idf = lines_netex_idf();
             let day_types = day_types();
             let collections = Collections::default();
             let mut map_journeypatterns = HashMap::new();
@@ -717,6 +838,7 @@ mod tests {
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
                 vec![service_journey_element].iter(),
                 &collections,
+                &lines_netex_idf,
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,
@@ -730,6 +852,7 @@ mod tests {
         fn increment_service_id() {
             let service_journey_element = service_journey();
             let journey_pattern_element = journey_pattern();
+            let lines_netex_idf = lines_netex_idf();
             let day_types = day_types();
             let mut collections = collections();
             // There is already an existing service
@@ -747,6 +870,7 @@ mod tests {
             let (_, calendars) = parse_vehicle_journeys(
                 vec![&service_journey_element].into_iter(),
                 &collections,
+                &lines_netex_idf,
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,

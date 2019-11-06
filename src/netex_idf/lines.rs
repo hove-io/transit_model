@@ -32,14 +32,14 @@ use transit_model_collection::{CollectionWithId, Id};
 
 #[derive(Debug, Default)]
 pub struct LineNetexIDF {
-    id: String,
-    name: String,
-    code: Option<String>,
-    private_code: Option<String>,
-    network_id: String,
-    company_id: String,
-    mode: String,
-    wheelchair_accessible: bool,
+    pub id: String,
+    pub name: String,
+    pub code: Option<String>,
+    pub private_code: Option<String>,
+    pub network_id: String,
+    pub company_id: String,
+    pub mode: String,
+    pub wheelchair_accessible: bool,
 }
 impl_id!(LineNetexIDF);
 
