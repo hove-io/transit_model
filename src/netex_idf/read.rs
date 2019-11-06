@@ -57,7 +57,10 @@ where
         .filter(|dir_entry| dir_entry.file_type().is_dir())
     {
         info!("Reading offer in folder {:?}", offer_folder.path());
-        offers::read_offer_folder(offer_folder.path(), &mut collections)?;
+        skip_fail!(offers::read_offer_folder(
+            offer_folder.path(),
+            &mut collections
+        ));
     }
 
     if let Some(prefix) = prefix {
