@@ -54,16 +54,6 @@ where
         .physical_modes
         .push(crate::objects::PhysicalMode::default())
         .unwrap();
-    // TODO: Remove these fake Dataset
-    collections
-        .datasets
-        .push(crate::objects::Dataset::default())
-        .unwrap();
-    // TODO: Remove these fake Contributor
-    collections
-        .contributors
-        .push(crate::objects::Contributor::default())
-        .unwrap();
     // TODO: Remove these fake Company
     collections
         .companies

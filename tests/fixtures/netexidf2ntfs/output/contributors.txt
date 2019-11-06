@@ -1,3 +1,2 @@
 contributor_id,contributor_name,contributor_license,contributor_website
 prefix:IDF,IDF,license,http://www.datasource-website.com
-prefix:default_contributor,Default contributor,Unknown license,

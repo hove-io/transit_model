@@ -272,6 +272,7 @@ where
 {
     fn parse_service_journey(
         service_journey_element: &Element,
+        collections: &Collections,
         map_journeypatterns: &HashMap<String, &Element>,
     ) -> Result<VehicleJourney> {
         let id = service_journey_element.try_attribute("id")?;
@@ -285,9 +286,16 @@ where
             .ok_or_else(|| {
                 format_err!("VehicleJourney {} doesn't have any Route associated", id)
             })?;
+        let dataset_id = collections
+            .datasets
+            .values()
+            .next()
+            .map(|dataset| dataset.id.clone())
+            .ok_or_else(|| format_err!("Failed to find a dataset"))?;
         let vehicle_journey = VehicleJourney {
             id,
             route_id,
+            dataset_id,
             ..Default::default()
         };
         Ok(vehicle_journey)
@@ -303,6 +311,7 @@ where
     for service_journey_element in service_journey_elements {
         let vehicle_journey = skip_fail!(parse_service_journey(
             service_journey_element,
+            collections,
             map_journeypatterns
         ));
         if !collections.routes.contains_id(&vehicle_journey.route_id)
@@ -555,7 +564,28 @@ mod tests {
 
     mod parse_vehicle_journeys {
         use super::*;
+        use crate::objects::Dataset;
         use pretty_assertions::assert_eq;
+
+        fn collections() -> Collections {
+            let mut collections = Collections::default();
+            collections
+                .datasets
+                .push(Dataset {
+                    id: String::from("dataset_id"),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+                .routes
+                .push(Route {
+                    id: String::from("route_id"),
+                    line_id: String::from("line_id"),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+        }
 
         fn service_journey() -> Element {
             let service_journey_xml = r#"<ServiceJourney id="service_journey_id">
@@ -599,14 +629,7 @@ mod tests {
             let service_journey_element_1 = service_journey_xml.parse().unwrap();
             let journey_pattern_element = journey_pattern();
             let day_types = day_types();
-            let mut collections = Collections::default();
-            collections
-                .routes
-                .push(Route {
-                    id: String::from("route_id"),
-                    ..Default::default()
-                })
-                .unwrap();
+            let collections = collections();
             let mut map_journeypatterns = HashMap::new();
             map_journeypatterns
                 .insert(String::from("journey_pattern_id"), &journey_pattern_element);
@@ -622,8 +645,10 @@ mod tests {
             assert_eq!(2, vehicle_journeys.len());
             let vehicle_journey = vehicle_journeys.get("service_journey_id").unwrap();
             assert_eq!("route_id", vehicle_journey.route_id.as_str());
+            assert_eq!("dataset_id", vehicle_journey.dataset_id.as_str());
             let vehicle_journey = vehicle_journeys.get("service_journey_id_1").unwrap();
             assert_eq!("route_id", vehicle_journey.route_id.as_str());
+            assert_eq!("dataset_id", vehicle_journey.dataset_id.as_str());
 
             assert_eq!(2, calendars.len());
             let calendar = calendars.get("1").unwrap();
@@ -638,14 +663,7 @@ mod tests {
         fn ignore_vehicle_journey_without_journey_pattern() {
             let service_journey_element = service_journey();
             let day_types = day_types();
-            let mut collections = Collections::default();
-            collections
-                .routes
-                .push(Route {
-                    id: String::from("route_id"),
-                    ..Default::default()
-                })
-                .unwrap();
+            let collections = collections();
             let map_journeypatterns = HashMap::new();
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
                 vec![service_journey_element].iter(),
@@ -713,14 +731,7 @@ mod tests {
             let service_journey_element = service_journey();
             let journey_pattern_element = journey_pattern();
             let day_types = day_types();
-            let mut collections = Collections::default();
-            collections
-                .routes
-                .push(Route {
-                    id: String::from("route_id"),
-                    ..Default::default()
-                })
-                .unwrap();
+            let mut collections = collections();
             // There is already an existing service
             // (for example, from a previous call to 'parse_vehicle_journeys')
             collections
