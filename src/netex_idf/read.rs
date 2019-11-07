@@ -47,18 +47,7 @@ where
 
     let path = netex_idf_path.as_ref();
     stops::from_path(&path.join(STOPS_FILENAME), &mut collections)?;
-    // TODO : use _lines_netex_idf to get trips>physical_mode_id
-    let _lines_netex_idf = lines::from_path(&path.join(LINES_FILENAME), &mut collections)?;
-    // TODO: Remove these fake Physical Mode
-    collections
-        .physical_modes
-        .push(crate::objects::PhysicalMode::default())
-        .unwrap();
-    // TODO: Remove these fake Company
-    collections
-        .companies
-        .push(crate::objects::Company::default())
-        .unwrap();
+    let lines_netex_idf = lines::from_path(&path.join(LINES_FILENAME), &mut collections)?;
     for offer_folder in WalkDir::new(path)
         .min_depth(1)
         .max_depth(1)
@@ -69,7 +58,8 @@ where
         info!("Reading offer in folder {:?}", offer_folder.path());
         skip_fail!(offers::read_offer_folder(
             offer_folder.path(),
-            &mut collections
+            &mut collections,
+            &lines_netex_idf
         ));
     }
 

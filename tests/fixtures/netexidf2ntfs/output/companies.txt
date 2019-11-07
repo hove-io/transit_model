@@ -1,3 +1,2 @@
 company_id,company_name,company_address,company_url,company_mail,company_phone
 prefix:FR1:Operator:011:LOC,TRANSDEV IDF ECQUEVILLY,,,,
-prefix:default_company,Default Company,,,,
