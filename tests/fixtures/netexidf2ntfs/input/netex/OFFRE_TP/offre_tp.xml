@@ -22,10 +22,68 @@
                   </Route>
                   <ServiceJourneyPattern dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:JourneyPattern:local-26-C00114-1:LOC" version="any">
                      <RouteRef ref="stif:Route:local-26-C00114-1:LOC" version="any"/>
+                     <pointsInSequence>
+                        <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-11:LOC" order="1" version="any">
+                           <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-10:LOC" version="any"/>
+                           <ForAlighting>true</ForAlighting>
+                           <ForBoarding>true</ForBoarding>
+                        </StopPointInJourneyPattern>
+                        <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-12:LOC" order="2" version="any">
+                           <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-11:LOC" version="any"/>
+                           <ForAlighting>true</ForAlighting>
+                           <ForBoarding>true</ForBoarding>
+                        </StopPointInJourneyPattern>
+                        <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-13:LOC" order="3" version="any">
+                           <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-12:LOC" version="any"/>
+                           <ForAlighting>true</ForAlighting>
+                           <ForBoarding>true</ForBoarding>
+                        </StopPointInJourneyPattern>
+                     </pointsInSequence>
                   </ServiceJourneyPattern>
                   <ServiceJourneyPattern dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:JourneyPattern:local-26-C00114-2:LOC" version="any">
                      <RouteRef ref="stif:Route:local-26-C00114-2:LOC" version="any"/>
+                     <pointsInSequence>
+                        <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-21:LOC" order="1" version="any">
+                           <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-20:LOC" version="any"/>
+                           <ForAlighting>true</ForAlighting>
+                           <ForBoarding>true</ForBoarding>
+                        </StopPointInJourneyPattern>
+                        <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-22:LOC" order="2" version="any">
+                           <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-21:LOC" version="any"/>
+                           <ForAlighting>true</ForAlighting>
+                           <ForBoarding>true</ForBoarding>
+                        </StopPointInJourneyPattern>
+                        <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-23:LOC" order="3" version="any">
+                           <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-22:LOC" version="any"/>
+                           <ForAlighting>true</ForAlighting>
+                           <ForBoarding>true</ForBoarding>
+                        </StopPointInJourneyPattern>
+                     </pointsInSequence>
                   </ServiceJourneyPattern>
+                  <PassengerStopAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:PassengerStopAssignment:local-26-C00114-10:LOC" version="any" order="0">
+                     <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-10:LOC" version="any" />
+                     <QuayRef ref="FR::Quay:50144192:FR1">version="any"</QuayRef>
+                  </PassengerStopAssignment>
+                   <PassengerStopAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:PassengerStopAssignment:local-26-C00114-11:LOC" version="any" order="0">
+                     <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-11:LOC" version="any" />
+                     <QuayRef ref="FR::Quay:with_zder_not_found:FR1">version="any"</QuayRef>
+                  </PassengerStopAssignment>
+                  <PassengerStopAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:PassengerStopAssignment:local-26-C00114-12:LOC" version="any" order="0">
+                     <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-12:LOC" version="any" />
+                     <QuayRef ref="FR::Quay:50068421:FR1">version="any"</QuayRef>
+                  </PassengerStopAssignment>
+                   <PassengerStopAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:PassengerStopAssignment:local-26-C00114-20:LOC" version="any" order="0">
+                     <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-20:LOC" version="any" />
+                     <QuayRef ref="FR::Quay:50013706:FR1">version="any"</QuayRef>
+                  </PassengerStopAssignment>
+                  <PassengerStopAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:PassengerStopAssignment:local-26-C00114-21:LOC" version="any" order="0">
+                     <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-21:LOC" version="any" />
+                     <QuayRef ref="FR::Quay:with_zder_but_no_stopplace:FR1">version="any"</QuayRef>
+                  </PassengerStopAssignment>
+                  <PassengerStopAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:PassengerStopAssignment:local-26-C00114-22:LOC" version="any" order="0">
+                     <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-22:LOC" version="any" />
+                     <QuayRef ref="FR::Quay:50144192:FR1">version="any"</QuayRef>
+                  </PassengerStopAssignment>
                </members>
             </GeneralFrame>
             <GeneralFrame id="FR100:GeneralFrame:NETEX_HORAIRE-20190709T093213Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
@@ -52,18 +110,13 @@
                            <DepartureTime>06:35:00</DepartureTime>
                            <DepartureDayOffset>0</DepartureDayOffset>
                         </TimetabledPassingTime>
-                        <TimetabledPassingTime version="any">
-                           <ArrivalTime>07:00:00</ArrivalTime>
-                           <DepartureTime>07:00:00</DepartureTime>
-                           <DepartureDayOffset>0</DepartureDayOffset>
-                        </TimetabledPassingTime>
                      </passingTimes>
                   </ServiceJourney>
                   <ServiceJourney dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:VehicleJourney:local-26-C00114-2:LOC" version="any">
                      <dayTypes>
                         <DayTypeRef ref="stif:TimeTable:local-28-2:LOC">version="1"</DayTypeRef>
                      </dayTypes>
-                     <JourneyPatternRef ref="stif:JourneyPattern:local-26-C00114-1:LOC" version="any"/>
+                     <JourneyPatternRef ref="stif:JourneyPattern:local-26-C00114-2:LOC" version="any"/>
                      <passingTimes>
                         <TimetabledPassingTime version="any">
                            <ArrivalTime>06:30:00</ArrivalTime>
@@ -78,11 +131,6 @@
                         <TimetabledPassingTime version="any">
                            <ArrivalTime>07:05:00</ArrivalTime>
                            <DepartureTime>07:05:00</DepartureTime>
-                           <DepartureDayOffset>0</DepartureDayOffset>
-                        </TimetabledPassingTime>
-                        <TimetabledPassingTime version="any">
-                           <ArrivalTime>07:30:00</ArrivalTime>
-                           <DepartureTime>07:30:00</DepartureTime>
                            <DepartureDayOffset>0</DepartureDayOffset>
                         </TimetabledPassingTime>
                      </passingTimes>

@@ -298,7 +298,7 @@ local_zone_id | | See (3) below
 (2) Definition of pickup_type and drop_off_type:
 
 In the `ServiceJourneyPattern/pointsInSequence/StopPointInJourneyPattern` corresponding to this `stop_time` (see `(1)`):
-* if the `ForBoarding` node is existing and with a `False` value, `pickup_type` is set to "1" (no boarding)
+* if the `ForBoarding` node is existing and with a `false` value, `pickup_type` is set to "1" (no boarding)
 * else `pickup_type` is set to "0" (regular boarding)
 
 `drop_off_type` is set using the same method and using the `ForAlighting` node.
