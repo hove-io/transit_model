@@ -39,7 +39,7 @@ For the static analysis, we use [`clippy`].
 
 ```sh
 # To format the source code in the entire repository
-cargo clippy --all
+cargo clippy --workspace
 ```
 
 [`clippy`]: https://github.com/rust-lang/rust-clippy
@@ -49,7 +49,7 @@ The test suite include unit test and integration tests.
 
 ```sh
 # Run all the tests of `transit_model` in the entire repository
-cargo test --all --all-features
+cargo test --workspace --all-features
 ```
 
 ## Conduct
