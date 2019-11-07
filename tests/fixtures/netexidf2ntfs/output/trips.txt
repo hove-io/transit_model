@@ -1,0 +1,3 @@
+trip_id,route_id,physical_mode_id,dataset_id,service_id,trip_headsign,block_id,company_id,trip_property_id,geometry_id
+prefix:stif:VehicleJourney:local-26-C00114-1:LOC,prefix:stif:Route:local-26-C00114-1:LOC,default_physical_mode,prefix:IDF,prefix:1,,,prefix:default_company,,
+prefix:stif:VehicleJourney:local-26-C00114-2:LOC,prefix:stif:Route:local-26-C00114-1:LOC,default_physical_mode,prefix:IDF,prefix:2,,,prefix:default_company,,
