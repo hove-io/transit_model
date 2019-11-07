@@ -585,7 +585,7 @@ fn make_vjs_and_stop_times(
 
     // there always is one dataset from config or a default one
     let dataset = collections.datasets.values().next().unwrap();
-    for pujopass in map_pujopass.values().flat_map(|p| p) {
+    for pujopass in map_pujopass.values().flatten() {
         let route_id = map_jopas
             .get(&(
                 pujopass.line_planning_number.clone(),
