@@ -616,6 +616,8 @@ pub struct VehicleJourney {
     pub service_id: String,
     #[serde(rename = "trip_headsign")]
     pub headsign: Option<String>,
+    #[serde(rename = "trip_short_name")]
+    pub short_name: Option<String>,
     pub block_id: Option<String>,
     pub company_id: String,
     pub trip_property_id: Option<String>,
@@ -635,6 +637,7 @@ impl Default for VehicleJourney {
             dataset_id: "default_dataset".to_string(),
             service_id: "default_service".to_string(),
             headsign: None,
+            short_name: None,
             block_id: None,
             company_id: "default_company".to_string(),
             trip_property_id: None,

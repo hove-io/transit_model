@@ -308,6 +308,7 @@ impl Trip {
             dataset_id: dataset.id.clone(),
             service_id: self.service_id.clone(),
             headsign: self.short_name.clone().or_else(|| self.headsign.clone()),
+            short_name: None,
             block_id: self.block_id.clone(),
             company_id: get_agency_id(route, networks)?,
             trip_property_id: trip_property_id.clone(),
