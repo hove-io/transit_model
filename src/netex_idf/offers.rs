@@ -292,6 +292,20 @@ fn enhance_with_object_code(
     }
     enhanced_routes
 }
+// Representing N days
+struct Days(u32);
+impl From<Days> for Time {
+    fn from(day: Days) -> Self {
+        Time::new(24 * day.0, 0, 0)
+    }
+}
+
+impl std::ops::Add<Days> for Time {
+    type Output = Self;
+    fn add(self, rhs: Days) -> Self::Output {
+        self + Time::from(rhs)
+    }
+}
 
 fn arrival_departure_times(el: &Element) -> Result<(Time, Time)> {
     fn time(el: &Element, node_name: &str) -> Result<Time> {
@@ -302,11 +316,21 @@ fn arrival_departure_times(el: &Element) -> Result<(Time, Time)> {
         .text()
         .parse()
         .unwrap_or(0);
-    let offset_time = Time::new(24 * offset, 0, 0);
+    let arrival_offset_time: Time = Days(offset).into();
+
     let arrival_time = time(el, "ArrivalTime")?;
     let departure_time = time(el, "DepartureTime")?;
 
-    Ok((arrival_time + offset_time, departure_time + offset_time))
+    let departure_offset_time = if arrival_time.total_seconds() > departure_time.total_seconds() {
+        arrival_offset_time + Days(1)
+    } else {
+        arrival_offset_time
+    };
+
+    Ok((
+        arrival_time + arrival_offset_time,
+        departure_time + departure_offset_time,
+    ))
 }
 
 fn boarding_type(el: &Element, node_name: &str) -> u8 {
@@ -358,7 +382,7 @@ fn stop_times(
         .filter_map(|jp| jp.only_child("pointsInSequence"))
         .flat_map(|p| p.children());
 
-    let stop_times: Vec<StopTime> = timetable_passing_times
+    let stop_times: Vec<_> = timetable_passing_times
         .zip(stop_points_in_journey_pattern)
         .enumerate()
         .map(|(sequence, (tpt, sp_in_jp))| {
@@ -1049,6 +1073,20 @@ mod tests {
             let times = arrival_departure_times(&tpt_el).unwrap();
 
             let expected = (Time::new(1, 30, 0), Time::new(1, 32, 0));
+            assert_eq!(expected, times);
+        }
+
+        #[test]
+        fn test_arrival_departure_times_passing_midnight() {
+            let tpt_xml = r#"<TimetabledPassingTime version="any">
+                                        <ArrivalTime>23:50:00</ArrivalTime>
+                                        <DepartureTime>00:10:00</DepartureTime>
+                                        <DepartureDayOffset>1</DepartureDayOffset>
+                                    </TimetabledPassingTime>"#;
+            let tpt_el: Element = tpt_xml.parse().unwrap();
+            let times = arrival_departure_times(&tpt_el).unwrap();
+
+            let expected = (Time::new(47, 50, 0), Time::new(48, 10, 0));
             assert_eq!(expected, times);
         }
 
