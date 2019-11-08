@@ -107,6 +107,9 @@ METRO | Metro | Metro | Metro | Metro
 TRAM | Tramway | Tramway | Tramway | Tramway
 BOAT | Ferry | Ferry | Ferry | Ferry
 
+All `physical_mode` are enhanced with CO2 emission and fallback modes, following
+the documentation in [common.md](common.md#co2-emissions-and-fallback-modes).
+
 ### stop_times.txt
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---

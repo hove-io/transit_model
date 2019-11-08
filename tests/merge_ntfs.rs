@@ -62,7 +62,12 @@ fn merge_collections_ok() {
         .filter(|cm| cm.id == "Bus" && cm.name == "Bus")
         .count();
     assert_eq!(1, count_bus);
+    // Check that the merge of CO2 emission keeps only the biggest value
+    let bus_mode = collections.physical_modes.get("Bus").unwrap();
+    assert_eq!(132f32, bus_mode.co2_emission.unwrap());
+
     assert_eq!(6, collections.commercial_modes.len());
+    assert_eq!(6, collections.physical_modes.len());
     assert_eq!(6, collections.lines.len());
     assert_eq!(8, collections.routes.len());
     assert_eq!(8, collections.vehicle_journeys.len());

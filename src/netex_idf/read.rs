@@ -67,6 +67,7 @@ where
         collections.add_prefix_with_sep(prefix.as_str(), ":");
     }
 
+    collections.enhance_with_co2();
     // TODO: uncomment once we have all netex  parsed
     // collections.sanitize()?;
     Model::new(collections)

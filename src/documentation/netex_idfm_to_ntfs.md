@@ -168,6 +168,8 @@ funicular | Funicular | Funiculaire | Funicular | Funiculaire
 lift | Bus | Bus | Bus | Bus
 other | Bus | Bus | Bus | Bus
 
+All `physical_mode` are enhanced with CO2 emission and fallback modes, following
+the documentation in [common.md](common.md#co2-emissions-and-fallback-modes).
 
 ### lines.txt
 `lines` are provided in the nodes **CompositeFrame/frames/ServiceFrame[]/lines/Line[]**. The only `ServiceFrame` containing the lines has an id property set to `STIF:CODIFLIGNE:ServiceFrame:lineid`.

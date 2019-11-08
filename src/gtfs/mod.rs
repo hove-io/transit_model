@@ -305,6 +305,7 @@ where
         collections.add_prefix_with_sep(prefix.as_str(), ":");
     }
 
+    collections.enhance_with_co2();
     Ok(Model::new(collections)?)
 }
 
