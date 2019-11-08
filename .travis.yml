@@ -20,11 +20,11 @@ matrix:
   - rust: stable
     name: Quality check
     before_script: rustup component add clippy
-    script: cargo clippy --all --all-features -- -D warnings
+    script: cargo clippy --workspace --all-features -- -D warnings
   allow_failures:
   - rust: nightly
 script:
-- cargo test --all --verbose --features proj
+- cargo test --workspace --verbose --features proj
 deploy:
   provider: cargo
   on:
