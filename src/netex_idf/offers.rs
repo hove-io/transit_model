@@ -21,7 +21,7 @@ use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils::{self, FrameType},
-    objects::{Calendar, Date, Route, VehicleJourney},
+    objects::{Calendar, Dataset, Date, Route, ValidityPeriod, VehicleJourney},
     Result,
 };
 use failure::{bail, format_err, ResultExt};
@@ -129,7 +129,7 @@ pub fn read_offer_folder(
     lines_netex_idf: &CollectionWithId<LineNetexIDF>,
 ) -> Result<()> {
     let calendars_path = offer_folder.join(CALENDARS_FILENAME);
-    let map_daytypes = if calendars_path.exists() {
+    let (map_daytypes, validity_period) = if calendars_path.exists() {
         let mut calendars_file =
             File::open(&calendars_path).with_context(ctx_from_path!(calendars_path))?;
         let mut calendars_file_content = String::new();
@@ -189,6 +189,7 @@ pub fn read_offer_folder(
         collections.routes.try_merge(routes)?;
         collections.vehicle_journeys.try_merge(vehicle_journeys)?;
         collections.calendars.try_merge(calendars)?;
+        collections.datasets = update_validity_period(&mut collections.datasets, &validity_period)?;
     }
     Ok(())
 }
@@ -230,6 +231,26 @@ where
         routes.push(route)?;
     }
     Ok(routes)
+}
+
+fn update_validity_period(
+    datasets: &mut CollectionWithId<Dataset>,
+    validity_period: &ValidityPeriod,
+) -> Result<CollectionWithId<Dataset>> {
+    let mut datasets = datasets.take();
+    for dataset in &mut datasets {
+        dataset.start_date = if validity_period.start_date < dataset.start_date {
+            validity_period.start_date
+        } else {
+            dataset.start_date
+        };
+        dataset.end_date = if validity_period.end_date > dataset.end_date {
+            validity_period.end_date
+        } else {
+            dataset.end_date
+        };
+    }
+    CollectionWithId::new(datasets)
 }
 
 fn enhance_with_object_code(
