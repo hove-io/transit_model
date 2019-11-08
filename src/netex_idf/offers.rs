@@ -34,8 +34,7 @@ use std::{
     io::Read,
     path::Path,
 };
-use transit_model_collection::CollectionWithId;
-use transit_model_collection::Idx;
+use transit_model_collection::{CollectionWithId, Idx};
 use walkdir::WalkDir;
 
 pub const CALENDARS_FILENAME: &str = "calendriers.xml";
@@ -219,11 +218,11 @@ where
 {
     psa_elements
         .filter_map(|psa_element| {
-            let scheduled_stop_point_ref: Option<String> = psa_element
+            let scheduled_stop_point_ref: String = psa_element
                 .only_child("ScheduledStopPointRef")?
-                .attribute("ref");
-            let quay_ref: Option<String> = psa_element.only_child("QuayRef")?.attribute("ref");
-            scheduled_stop_point_ref.and_then(|ssp| quay_ref.map(|q| (ssp, q)))
+                .attribute("ref")?;
+            let quay_ref: String = psa_element.only_child("QuayRef")?.attribute("ref")?;
+            Some((scheduled_stop_point_ref, quay_ref))
         })
         .collect()
 }
@@ -298,11 +297,11 @@ fn arrival_departure_times(el: &Element) -> Result<(Time, Time)> {
     fn time(el: &Element, node_name: &str) -> Result<Time> {
         Ok(el.try_only_child(node_name)?.text().parse()?)
     }
-    let offset: u32 = match el.try_only_child("DepartureDayOffset")?.text().parse() {
-        Ok(offset) if offset > 0 => offset,
-        Ok(offset) if offset == 0 => 0,
-        _ => 0,
-    };
+    let offset: u32 = el
+        .try_only_child("DepartureDayOffset")?
+        .text()
+        .parse()
+        .unwrap_or(0);
     let offset_time = Time::new(24 * offset, 0, 0);
     let arrival_time = time(el, "ArrivalTime")?;
     let departure_time = time(el, "DepartureTime")?;
@@ -312,7 +311,9 @@ fn arrival_departure_times(el: &Element) -> Result<(Time, Time)> {
 
 fn boarding_type(el: &Element, node_name: &str) -> u8 {
     el.only_child(node_name)
-        .map(|node| (node.text() == "false") as u8)
+        .and_then(|node| node.text().parse::<bool>().ok())
+        .map(|val| !val)
+        .map(u8::from)
         .unwrap_or(0)
 }
 
@@ -1019,7 +1020,7 @@ mod tests {
             let tpt_el: Element = tpt_xml.parse().unwrap();
             let times = arrival_departure_times(&tpt_el).unwrap();
 
-            let expected = (Time::new(0, 0, 5400), Time::new(0, 0, 5520));
+            let expected = (Time::new(1, 30, 0), Time::new(1, 32, 0));
             assert_eq!(expected, times);
         }
 
@@ -1033,12 +1034,11 @@ mod tests {
             let tpt_el: Element = tpt_xml.parse().unwrap();
             let times = arrival_departure_times(&tpt_el).unwrap();
 
-            let expected = (Time::new(0, 0, 91800), Time::new(0, 0, 91920));
+            let expected = (Time::new(25, 30, 0), Time::new(25, 32, 00));
             assert_eq!(expected, times);
         }
 
         #[test]
-        #[should_panic]
         fn test_arrival_departure_times_with_negative_offset() {
             let tpt_xml = r#"<TimetabledPassingTime version="any">
                                         <ArrivalTime>01:30:00</ArrivalTime>
@@ -1048,7 +1048,7 @@ mod tests {
             let tpt_el: Element = tpt_xml.parse().unwrap();
             let times = arrival_departure_times(&tpt_el).unwrap();
 
-            let expected = (Time::new(0, 0, 5400), Time::new(0, 0, 5400));
+            let expected = (Time::new(1, 30, 0), Time::new(1, 32, 0));
             assert_eq!(expected, times);
         }
 
