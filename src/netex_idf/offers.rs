@@ -370,15 +370,17 @@ fn stop_times(
     stop_points: &CollectionWithId<StopPoint>,
     map_schedule_stop_point_quay: &HashMap<String, String>,
 ) -> Result<Vec<StopTime>> {
-    let sj_el = service_journey_element.only_child("passingTimes");
-    let timetable_passing_times = sj_el.iter().flat_map(|el| el.children());
+    let timetable_passing_times = service_journey_element
+        .only_child("passingTimes")
+        .into_iter()
+        .flat_map(|el| el.children());
 
     let journey_pattern_ref: String = service_journey_element
         .try_only_child("JourneyPatternRef")?
         .try_attribute("ref")?;
-    let jp = map_journeypatterns.get(&journey_pattern_ref);
-    let stop_points_in_journey_pattern = jp
-        .iter()
+    let stop_points_in_journey_pattern = map_journeypatterns
+        .get(&journey_pattern_ref)
+        .into_iter()
         .filter_map(|jp| jp.only_child("pointsInSequence"))
         .flat_map(|p| p.children());
 

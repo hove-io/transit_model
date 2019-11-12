@@ -25,7 +25,7 @@
                      <pointsInSequence>
                         <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-11:LOC" order="1" version="any">
                            <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-10:LOC" version="any"/>
-                           <ForAlighting>true</ForAlighting>
+                           <ForAlighting>false</ForAlighting>
                            <ForBoarding>true</ForBoarding>
                         </StopPointInJourneyPattern>
                         <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-12:LOC" order="2" version="any">
@@ -36,7 +36,7 @@
                         <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-13:LOC" order="3" version="any">
                            <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-12:LOC" version="any"/>
                            <ForAlighting>true</ForAlighting>
-                           <ForBoarding>true</ForBoarding>
+                           <ForBoarding>false</ForBoarding>
                         </StopPointInJourneyPattern>
                      </pointsInSequence>
                   </ServiceJourneyPattern>
