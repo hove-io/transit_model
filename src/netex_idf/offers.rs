@@ -902,4 +902,33 @@ mod tests {
             assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 2)));
         }
     }
+
+    mod update_validity_period {
+        use super::*;
+        use chrono::naive::{MAX_DATE, MIN_DATE};
+        use pretty_assertions::assert_eq;
+        #[test]
+        fn no_existing_validity_period() {
+            let start_date = Date::from_ymd(2019, 1, 1);
+            let end_date = Date::from_ymd(2019, 6, 30);
+            let dataset = Dataset {
+                id: String::from("dataset_id"),
+                contributor_id: String::from("contributor_id"),
+                start_date: MAX_DATE,
+                end_date: MIN_DATE,
+                ..Default::default()
+            };
+            let validity_period = ValidityPeriod {
+                start_date,
+                end_date,
+            };
+            for dataset in
+                update_validity_period(&mut CollectionWithId::from(dataset), &validity_period)
+                    .unwrap()
+            {
+                assert_eq!(start_date, dataset.start_date);
+                assert_eq!(end_date, dataset.end_date);
+            }
+        }
+    }
 }
