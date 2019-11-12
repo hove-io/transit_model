@@ -22,7 +22,7 @@ use crate::{
     model::Collections,
     netex_utils::{self, FrameType},
     objects::{Calendar, Dataset, Date, Route, ValidityPeriod, VehicleJourney},
-    Result,
+    read_utils, Result,
 };
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
@@ -189,7 +189,8 @@ pub fn read_offer_folder(
         collections.routes.try_merge(routes)?;
         collections.vehicle_journeys.try_merge(vehicle_journeys)?;
         collections.calendars.try_merge(calendars)?;
-        collections.datasets = update_validity_period(&mut collections.datasets, &validity_period)?;
+        collections.datasets =
+            update_validity_period_from_netex_idf(&mut collections.datasets, &validity_period)?;
     }
     Ok(())
 }
@@ -233,22 +234,13 @@ where
     Ok(routes)
 }
 
-fn update_validity_period(
+fn update_validity_period_from_netex_idf(
     datasets: &mut CollectionWithId<Dataset>,
     validity_period: &ValidityPeriod,
 ) -> Result<CollectionWithId<Dataset>> {
     let mut datasets = datasets.take();
     for dataset in &mut datasets {
-        dataset.start_date = if validity_period.start_date < dataset.start_date {
-            validity_period.start_date
-        } else {
-            dataset.start_date
-        };
-        dataset.end_date = if validity_period.end_date > dataset.end_date {
-            validity_period.end_date
-        } else {
-            dataset.end_date
-        };
+        read_utils::update_validity_period(dataset, &validity_period);
     }
     CollectionWithId::new(datasets)
 }
@@ -900,35 +892,6 @@ mod tests {
             let calendar = calendars.get("2").unwrap();
             assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 1)));
             assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 2)));
-        }
-    }
-
-    mod update_validity_period {
-        use super::*;
-        use chrono::naive::{MAX_DATE, MIN_DATE};
-        use pretty_assertions::assert_eq;
-        #[test]
-        fn no_existing_validity_period() {
-            let start_date = Date::from_ymd(2019, 1, 1);
-            let end_date = Date::from_ymd(2019, 6, 30);
-            let dataset = Dataset {
-                id: String::from("dataset_id"),
-                contributor_id: String::from("contributor_id"),
-                start_date: MAX_DATE,
-                end_date: MIN_DATE,
-                ..Default::default()
-            };
-            let validity_period = ValidityPeriod {
-                start_date,
-                end_date,
-            };
-            for dataset in
-                update_validity_period(&mut CollectionWithId::from(dataset), &validity_period)
-                    .unwrap()
-            {
-                assert_eq!(start_date, dataset.start_date);
-                assert_eq!(end_date, dataset.end_date);
-            }
         }
     }
 }
