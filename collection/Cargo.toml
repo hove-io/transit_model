@@ -4,7 +4,7 @@ description = "Manage collection of objects"
 version = "0.1.1"
 authors = ["Kisio Digital <team.coretools@kisio.org>"]
 edition = "2018"
-license = "AGPL-3.0"
+license = "AGPL-3.0-only"
 repository = "https://github.com/CanalTP/transit_model"
 keywords = ["collection", "index"]
 
