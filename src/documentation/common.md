@@ -93,3 +93,67 @@ Physical Mode      | CO2 emission (gCO<sub>2</sub>-eq/km)
 Bike               |   0
 BikeSharingService |   0
 Car                | 184
+
+## Common practices
+The following rules apply to every converter, unless otherwise explicitly specified.
+
+### General rules
+- When one or more stop_points in the input data are not attached to a stop_area, 
+a stop_area is automatically created for each one. The coordinates and the name of the new `stop_area` are
+the same as the corresponding stop_point.
+- If a `stop_area` doesn't have coordinates, the barycenter of the contained `stop_points` is used. 
+- Unless otherwise specified, dates of service are transformed into a list of active dates as if using a single NTFS file `calendar_dates.txt`. Those list of dates are then transformed to `calendar` and `calendar_dates` automatically. 
+- Any `/` character in an identifier of an object is removed.
+
+### Conflicting identifiers
+The model will raise a critical error if idenfiers of 2 objects of the same type are identicals. 
+For example:
+- if 2 datasets have the same identifier
+- if 2 lines have the same identifier
+- if 2 stop_points have the same identifier
+- if 2 stop_areas have the same identifier
+- if 2 routes have the same identifier
+- if 2 trips have the same identifier
+
+Please note that a stop_area and a stop_point can have the same identifier because they are considered as different types of objects.
+
+### Incoherences
+Dangling references are cleaned up:
+- if a transfer refers a stop which doesn't exist (`from_stop_id` and
+  `to_stop_id`)
+- if a trip refers to a route which doesn't exist
+- if a trip refers to a commercial mode which doesn't exist
+- if a trip refers to a dataset which doesn't exist
+- if a trip refers to a company which doesn't exist
+- if a trip refers to a calendar which doesn't exist
+- if a line refers to a network which doesn't exist
+- if a line refers to a commercial mode which doesn't exist
+- if a route refers to a line which doesn't exist
+- if a stop_point refers to a stop_area which doesn't exist
+- if a dataset refers to a contributor which doesn't exist
+
+### Unnecessary objects
+Objects that are not relevant are cleaned up:
+- `datasets` which are not referenced by `trips`
+- `contributors` which are not referenced by `datasets`
+- `companies` which are not referenced by `trips`
+- `networks` containing no `line`
+- `lines` containing no `route`
+- `routes` containing no `trips`
+- `trips` containing no `stop_time` or with empty `calendars`
+- `stop_points` which are not referenced by `stop_times`
+- `stop_areas` which are not referenced by `stop_points` or `routes`
+- `calendars` which doesn't contain any active date
+- `geometries` which are not referenced
+- `equipments` which are not referenced by `stop_points`
+- `frequencies` which are not referenced by `trips`
+- `physical_modes` which are not referenced by `trips`
+- `commercial_modes` which are not referenced by `lines`
+- `trip_properties` which are not referenced by `trips`
+- `comments` which are not referenced
+- `grid_calendar` which refers to a `line` which does not exist (through the relation
+  in the file `grid_rel_calendar_line.txt`); **Exception**: when the
+  `line_external_code` is used and the `line_id` is empty, the `grid_calendar` is
+  kept
+- `grid_exception` date which refers to a `grid_calendar` which does not exist
+- `grid_period` which refers to a `grid_calendar` which does not exist
