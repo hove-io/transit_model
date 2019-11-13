@@ -1,6 +1,6 @@
 [package]
 name = "transit_model_procmacro"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Guillaume Pinot <texitoi@texitoi.eu>"]
 license = "AGPL-3.0-only"
 description = "A private procmacro crate for the transit_model crate"
