@@ -210,7 +210,7 @@ where
     day_types
 }
 
-pub fn parse_calendars(calendars: &Element) -> Result<DayTypes> {
+pub fn parse_calendars(calendars: &Element) -> Result<(DayTypes, ValidityPeriod)> {
     let frames = netex_utils::parse_frames_by_type(calendars.try_only_child("dataObjects")?)?;
     let general_frames = frames
         .get(&FrameType::General)
@@ -233,7 +233,7 @@ pub fn parse_calendars(calendars: &Element) -> Result<DayTypes> {
         parse_day_type_assignments(day_type_assignment_elements, &operating_periods);
     let day_type_elements = members.children().filter(|child| child.name() == "DayType");
     let day_types = parse_day_types(day_type_elements, &validity_period, &day_type_assignments);
-    Ok(day_types)
+    Ok((day_types, validity_period))
 }
 
 #[cfg(test)]

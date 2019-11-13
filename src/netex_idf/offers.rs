@@ -21,8 +21,8 @@ use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils::{self, FrameType},
-    objects::{Calendar, Date, Route, VehicleJourney},
-    Result,
+    objects::{Calendar, Dataset, Date, Route, ValidityPeriod, VehicleJourney},
+    read_utils, Result,
 };
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
@@ -129,7 +129,7 @@ pub fn read_offer_folder(
     lines_netex_idf: &CollectionWithId<LineNetexIDF>,
 ) -> Result<()> {
     let calendars_path = offer_folder.join(CALENDARS_FILENAME);
-    let map_daytypes = if calendars_path.exists() {
+    let (map_daytypes, validity_period) = if calendars_path.exists() {
         let mut calendars_file =
             File::open(&calendars_path).with_context(ctx_from_path!(calendars_path))?;
         let mut calendars_file_content = String::new();
@@ -189,6 +189,8 @@ pub fn read_offer_folder(
         collections.routes.try_merge(routes)?;
         collections.vehicle_journeys.try_merge(vehicle_journeys)?;
         collections.calendars.try_merge(calendars)?;
+        collections.datasets =
+            update_validity_period_from_netex_idf(&mut collections.datasets, &validity_period)?;
     }
     Ok(())
 }
@@ -230,6 +232,17 @@ where
         routes.push(route)?;
     }
     Ok(routes)
+}
+
+fn update_validity_period_from_netex_idf(
+    datasets: &mut CollectionWithId<Dataset>,
+    validity_period: &ValidityPeriod,
+) -> Result<CollectionWithId<Dataset>> {
+    let mut datasets = datasets.take();
+    for dataset in &mut datasets {
+        read_utils::update_validity_period(dataset, &validity_period);
+    }
+    CollectionWithId::new(datasets)
 }
 
 fn enhance_with_object_code(

@@ -16,6 +16,7 @@ use crate::{
     minidom_utils::TryOnlyChild,
     model::{Collections, Model},
     objects::*,
+    read_utils,
     transxchange::{bank_holidays, bank_holidays::BankHoliday, naptan},
     AddPrefix, Result,
 };
@@ -96,19 +97,6 @@ fn get_service_validity_period(
     })
 }
 
-fn update_validity_period(dataset: &mut Dataset, service_validity_period: &ValidityPeriod) {
-    dataset.start_date = if service_validity_period.start_date < dataset.start_date {
-        service_validity_period.start_date
-    } else {
-        dataset.start_date
-    };
-    dataset.end_date = if service_validity_period.end_date > dataset.end_date {
-        service_validity_period.end_date
-    } else {
-        dataset.end_date
-    };
-}
-
 // The datasets already have some validity period. This function tries to
 // extend them with a service validity period from the TransXChange file:
 // - if service start date is before the dataset start date, then update the
@@ -139,7 +127,7 @@ fn update_validity_period_from_transxchange(
     let service_validity_period = get_service_validity_period(transxchange, max_end_date)?;
     let mut datasets = datasets.take();
     for dataset in &mut datasets {
-        update_validity_period(dataset, &service_validity_period);
+        read_utils::update_validity_period(dataset, &service_validity_period);
     }
     CollectionWithId::new(datasets)
 }
@@ -1008,71 +996,6 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let max_end_date = Date::from_ymd(2021, 1, 1);
             get_service_validity_period(&root, max_end_date).unwrap();
-        }
-    }
-
-    mod update_validity_period {
-        use super::*;
-        use pretty_assertions::assert_eq;
-
-        #[test]
-        fn no_existing_validity_period() {
-            let start_date = Date::from_ymd(2019, 1, 1);
-            let end_date = Date::from_ymd(2019, 6, 30);
-            let mut dataset = Dataset {
-                id: String::from("dataset_id"),
-                contributor_id: String::from("contributor_id"),
-                start_date: MAX_DATE,
-                end_date: MIN_DATE,
-                ..Default::default()
-            };
-            let service_validity_period = ValidityPeriod {
-                start_date,
-                end_date,
-            };
-            update_validity_period(&mut dataset, &service_validity_period);
-            assert_eq!(start_date, dataset.start_date);
-            assert_eq!(end_date, dataset.end_date);
-        }
-
-        #[test]
-        fn with_extended_validity_period() {
-            let start_date = Date::from_ymd(2019, 1, 1);
-            let end_date = Date::from_ymd(2019, 6, 30);
-            let mut dataset = Dataset {
-                id: String::from("dataset_id"),
-                contributor_id: String::from("contributor_id"),
-                start_date: Date::from_ymd(2019, 3, 1),
-                end_date: Date::from_ymd(2019, 4, 30),
-                ..Default::default()
-            };
-            let service_validity_period = ValidityPeriod {
-                start_date,
-                end_date,
-            };
-            update_validity_period(&mut dataset, &service_validity_period);
-            assert_eq!(start_date, dataset.start_date);
-            assert_eq!(end_date, dataset.end_date);
-        }
-
-        #[test]
-        fn with_included_validity_period() {
-            let start_date = Date::from_ymd(2019, 1, 1);
-            let end_date = Date::from_ymd(2019, 6, 30);
-            let mut dataset = Dataset {
-                id: String::from("dataset_id"),
-                contributor_id: String::from("contributor_id"),
-                start_date,
-                end_date,
-                ..Default::default()
-            };
-            let service_validity_period = ValidityPeriod {
-                start_date: Date::from_ymd(2019, 3, 1),
-                end_date: Date::from_ymd(2019, 4, 30),
-            };
-            update_validity_period(&mut dataset, &service_validity_period);
-            assert_eq!(start_date, dataset.start_date);
-            assert_eq!(end_date, dataset.end_date);
         }
     }
 
