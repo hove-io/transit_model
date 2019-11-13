@@ -298,11 +298,10 @@ local_zone_id | | See (4) below
 (2) Passing midnight
 
 `TimetabledPassingTime/ArrivalTime` can be greater than `TimetabledPassingTime/DepartureTime`. That means has passes midnight and is therefore the next day.
-In this case the same rule as above is applied but 1 day more is added to `TimetabledPassingTime/DepartureTime`.
+In this case the same rule as above is applied but 1 day more is subtracted from `TimetabledPassingTime/ArrivalTime`.
 
 Eg: `TimetabledPassingTime/ArrivalTime` = "23:50:00", `TimetabledPassingTime/DepartureTime` = "00:10:00",  `TimetabledPassingTime/DepartureDayOffset` = 1
-
-arrival_time = "47:50:00" and departure_time = "48:10:00"
+The departure is the next day so arrival_time = "23:50:00" and departure_time = "24:10:00"
 
 (3) Definition of pickup_type and drop_off_type:
 

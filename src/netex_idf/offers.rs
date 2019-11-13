@@ -21,7 +21,9 @@ use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils::{self, FrameType},
-    objects::{Calendar, Dataset, Date, Route, StopPoint, StopTime, Time, ValidityPeriod, VehicleJourney},
+    objects::{
+        Calendar, Dataset, Date, Route, StopPoint, StopTime, Time, ValidityPeriod, VehicleJourney,
+    },
     read_utils, Result,
 };
 use failure::{bail, format_err, ResultExt};
@@ -300,10 +302,10 @@ impl From<Days> for Time {
     }
 }
 
-impl std::ops::Add<Days> for Time {
+impl std::ops::Sub<Days> for Time {
     type Output = Self;
-    fn add(self, rhs: Days) -> Self::Output {
-        self + Time::from(rhs)
+    fn sub(self, rhs: Days) -> Self::Output {
+        self - Time::from(rhs)
     }
 }
 
@@ -316,15 +318,15 @@ fn arrival_departure_times(el: &Element) -> Result<(Time, Time)> {
         .text()
         .parse()
         .unwrap_or(0);
-    let arrival_offset_time: Time = Days(offset).into();
+    let departure_offset_time: Time = Days(offset).into();
 
     let arrival_time = time(el, "ArrivalTime")?;
     let departure_time = time(el, "DepartureTime")?;
 
-    let departure_offset_time = if arrival_time.total_seconds() > departure_time.total_seconds() {
-        arrival_offset_time + Days(1)
+    let arrival_offset_time = if arrival_time.total_seconds() > departure_time.total_seconds() {
+        departure_offset_time - Days(1)
     } else {
-        arrival_offset_time
+        departure_offset_time
     };
 
     Ok((
@@ -1088,7 +1090,7 @@ mod tests {
             let tpt_el: Element = tpt_xml.parse().unwrap();
             let times = arrival_departure_times(&tpt_el).unwrap();
 
-            let expected = (Time::new(47, 50, 0), Time::new(48, 10, 0));
+            let expected = (Time::new(23, 50, 0), Time::new(24, 10, 0));
             assert_eq!(expected, times);
         }
 
