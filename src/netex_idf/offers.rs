@@ -21,7 +21,9 @@ use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils::{self, FrameType},
-    objects::{Calendar, Dataset, Date, Route, ValidityPeriod, VehicleJourney},
+    objects::{
+        Calendar, Dataset, Date, Route, StopPoint, StopTime, Time, ValidityPeriod, VehicleJourney,
+    },
     read_utils, Result,
 };
 use failure::{bail, format_err, ResultExt};
@@ -34,7 +36,7 @@ use std::{
     io::Read,
     path::Path,
 };
-use transit_model_collection::CollectionWithId;
+use transit_model_collection::{CollectionWithId, Idx};
 use walkdir::WalkDir;
 
 pub const CALENDARS_FILENAME: &str = "calendriers.xml";
@@ -212,6 +214,21 @@ where
         .collect()
 }
 
+fn parse_passenger_stop_assignment<'a, I>(psa_elements: I) -> HashMap<String, String>
+where
+    I: Iterator<Item = &'a Element>,
+{
+    psa_elements
+        .filter_map(|psa_element| {
+            let scheduled_stop_point_ref: String = psa_element
+                .only_child("ScheduledStopPointRef")?
+                .attribute("ref")?;
+            let quay_ref: String = psa_element.only_child("QuayRef")?.attribute("ref")?;
+            Some((scheduled_stop_point_ref, quay_ref))
+        })
+        .collect()
+}
+
 fn parse_routes<'a, I>(
     route_elements: I,
     collections: &Collections,
@@ -277,6 +294,125 @@ fn enhance_with_object_code(
     }
     enhanced_routes
 }
+// Representing N days
+struct Days(u32);
+impl From<Days> for Time {
+    fn from(day: Days) -> Self {
+        Time::new(24 * day.0, 0, 0)
+    }
+}
+
+impl std::ops::Sub<Days> for Time {
+    type Output = Self;
+    fn sub(self, rhs: Days) -> Self::Output {
+        self - Time::from(rhs)
+    }
+}
+
+fn arrival_departure_times(el: &Element) -> Result<(Time, Time)> {
+    fn time(el: &Element, node_name: &str) -> Result<Time> {
+        Ok(el.try_only_child(node_name)?.text().parse()?)
+    }
+    let offset: u32 = el
+        .try_only_child("DepartureDayOffset")?
+        .text()
+        .parse()
+        .unwrap_or(0);
+    let departure_offset_time: Time = Days(offset).into();
+
+    let arrival_time = time(el, "ArrivalTime")?;
+    let departure_time = time(el, "DepartureTime")?;
+
+    let arrival_offset_time = if arrival_time.total_seconds() > departure_time.total_seconds() {
+        departure_offset_time - Days(1)
+    } else {
+        departure_offset_time
+    };
+
+    Ok((
+        arrival_time + arrival_offset_time,
+        departure_time + departure_offset_time,
+    ))
+}
+
+fn boarding_type(el: &Element, node_name: &str) -> u8 {
+    el.only_child(node_name)
+        .and_then(|node| node.text().parse::<bool>().ok())
+        .map(|val| !val)
+        .map(u8::from)
+        .unwrap_or(0)
+}
+
+fn stop_point_idx(
+    sp_in_jp: &Element,
+    stop_points: &CollectionWithId<StopPoint>,
+    map_schedule_stop_point_quay: &HashMap<String, String>,
+) -> Result<Idx<StopPoint>> {
+    sp_in_jp
+        .try_only_child("ScheduledStopPointRef")
+        .and_then(|ssp_ref_el| ssp_ref_el.try_attribute::<String>("ref"))
+        .and_then(|ssp_ref| {
+            map_schedule_stop_point_quay.get(&ssp_ref).ok_or_else(|| {
+                format_err!(
+                    "QuayRef corresponding to ScheduledStopPointRef {} not found",
+                    ssp_ref
+                )
+            })
+        })
+        .and_then(|quay_ref| {
+            stop_points
+                .get_idx(quay_ref)
+                .ok_or_else(|| format_err!("stop point {} not found", quay_ref))
+        })
+}
+
+fn stop_times(
+    service_journey_element: &Element,
+    map_journeypatterns: &HashMap<String, &Element>,
+    stop_points: &CollectionWithId<StopPoint>,
+    map_schedule_stop_point_quay: &HashMap<String, String>,
+) -> Result<Vec<StopTime>> {
+    let timetable_passing_times = service_journey_element
+        .only_child("passingTimes")
+        .into_iter()
+        .flat_map(|el| el.children());
+
+    let journey_pattern_ref: String = service_journey_element
+        .try_only_child("JourneyPatternRef")?
+        .try_attribute("ref")?;
+    let stop_points_in_journey_pattern = map_journeypatterns
+        .get(&journey_pattern_ref)
+        .into_iter()
+        .filter_map(|jp| jp.only_child("pointsInSequence"))
+        .flat_map(|p| p.children());
+
+    let stop_times: Vec<_> = timetable_passing_times
+        .zip(stop_points_in_journey_pattern)
+        .enumerate()
+        .map(|(sequence, (tpt, sp_in_jp))| {
+            let times = arrival_departure_times(tpt)?;
+            let stop_point_idx =
+                stop_point_idx(sp_in_jp, stop_points, map_schedule_stop_point_quay)
+                    .map_err(|err| format_err!("impossible to get the stop point: {}", err))?;
+
+            let stop_time = StopTime {
+                stop_point_idx,
+                sequence: sequence as u32,
+                arrival_time: times.0,
+                departure_time: times.1,
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: boarding_type(sp_in_jp, "ForBoarding"),
+                drop_off_type: boarding_type(sp_in_jp, "ForAlighting"),
+                datetime_estimated: false,
+                local_zone_id: None,
+            };
+
+            Ok(stop_time)
+        })
+        .collect::<Result<_>>()?;
+    Ok(stop_times)
+}
 
 fn parse_vehicle_journeys<'a, I>(
     service_journey_elements: I,
@@ -285,6 +421,7 @@ fn parse_vehicle_journeys<'a, I>(
     routes: &CollectionWithId<Route>,
     map_journeypatterns: &HashMap<String, &Element>,
     map_daytypes: &DayTypes,
+    map_schedule_stop_point_quay: &HashMap<String, String>,
 ) -> Result<(CollectionWithId<VehicleJourney>, CollectionWithId<Calendar>)>
 where
     I: Iterator<Item = &'a Element>,
@@ -391,6 +528,27 @@ where
             service_id: service_id.to_string(),
             ..vehicle_journey
         };
+
+        let stop_times = skip_fail!(stop_times(
+            service_journey_element,
+            map_journeypatterns,
+            &collections.stop_points,
+            map_schedule_stop_point_quay,
+        ));
+
+        if stop_times.is_empty() {
+            warn!(
+                "no stop times for vehicle journey {} found",
+                vehicle_journey.id
+            );
+            continue;
+        }
+
+        let vehicle_journey = VehicleJourney {
+            stop_times,
+            ..vehicle_journey
+        };
+
         vehicle_journeys.push(vehicle_journey)?;
     }
     Ok((vehicle_journeys, calendars))
@@ -430,6 +588,14 @@ fn parse_offer(
         .map(|childrens| childrens.filter(|e| e.name() == "ServiceJourneyPattern"))
         .map(parse_service_journey_patterns)
         .unwrap_or_else(HashMap::new);
+
+    let map_schedule_stop_point_quay = structure_frame
+        .only_child("members")
+        .map(Element::children)
+        .map(|childrens| childrens.filter(|e| e.name() == "PassengerStopAssignment"))
+        .map(parse_passenger_stop_assignment)
+        .unwrap_or_else(HashMap::new);
+
     let routes = structure_frame
         .only_child("members")
         .map(Element::children)
@@ -450,6 +616,7 @@ fn parse_offer(
                 &routes,
                 &map_journeypatterns,
                 map_daytypes,
+                &map_schedule_stop_point_quay,
             )
         })
         .transpose()?
@@ -675,59 +842,13 @@ mod tests {
         }
 
         #[test]
-        fn parse_vehicle_journey() {
-            let service_journey_element = service_journey();
-            let service_journey_xml = r#"<ServiceJourney id="service_journey_id_1">
-                    <dayTypes>
-                        <DayTypeRef ref="day_type_id_1" />
-                        <DayTypeRef ref="day_type_id_2" />
-                    </dayTypes>
-                    <JourneyPatternRef ref="journey_pattern_id" />
-                </ServiceJourney>"#;
-            let service_journey_element_1 = service_journey_xml.parse().unwrap();
-            let journey_pattern_element = journey_pattern();
-            let lines_netex_idf = lines_netex_idf();
-            let day_types = day_types();
-            let collections = collections();
-            let mut map_journeypatterns = HashMap::new();
-            map_journeypatterns
-                .insert(String::from("journey_pattern_id"), &journey_pattern_element);
-            let (vehicle_journeys, calendars) = parse_vehicle_journeys(
-                vec![&service_journey_element, &service_journey_element_1].into_iter(),
-                &collections,
-                &lines_netex_idf,
-                &CollectionWithId::default(),
-                &map_journeypatterns,
-                &day_types,
-            )
-            .unwrap();
-
-            assert_eq!(2, vehicle_journeys.len());
-            let vehicle_journey = vehicle_journeys.get("service_journey_id").unwrap();
-            assert_eq!("route_id", vehicle_journey.route_id.as_str());
-            assert_eq!("dataset_id", vehicle_journey.dataset_id.as_str());
-            let vehicle_journey = vehicle_journeys.get("service_journey_id_1").unwrap();
-            assert_eq!("route_id", vehicle_journey.route_id.as_str());
-            assert_eq!("dataset_id", vehicle_journey.dataset_id.as_str());
-            assert_eq!("company_id", vehicle_journey.company_id.as_str());
-            assert_eq!("Bus", vehicle_journey.physical_mode_id.as_str());
-
-            assert_eq!(2, calendars.len());
-            let calendar = calendars.get("1").unwrap();
-            assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 1)));
-            assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 2)));
-            let calendar = calendars.get("2").unwrap();
-            assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 1)));
-            assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 2)));
-        }
-
-        #[test]
         fn ignore_vehicle_journey_without_journey_pattern() {
             let service_journey_element = service_journey();
             let lines_netex_idf = lines_netex_idf();
             let day_types = day_types();
             let collections = collections();
             let map_journeypatterns = HashMap::new();
+            let map_schedule_stop_point_quay = HashMap::new();
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
                 vec![service_journey_element].iter(),
                 &collections,
@@ -735,6 +856,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,
+                &map_schedule_stop_point_quay,
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
@@ -749,6 +871,7 @@ mod tests {
             let day_types = day_types();
             let collections = Collections::default();
             let mut map_journeypatterns = HashMap::new();
+            let map_schedule_stop_point_quay = HashMap::new();
             map_journeypatterns
                 .insert(String::from("journey_pattern_id"), &journey_pattern_element);
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
@@ -758,6 +881,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,
+                &map_schedule_stop_point_quay,
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
@@ -780,6 +904,7 @@ mod tests {
                 })
                 .unwrap();
             let mut map_journeypatterns = HashMap::new();
+            let map_schedule_stop_point_quay = HashMap::new();
             map_journeypatterns
                 .insert(String::from("journey_pattern_id"), &journey_pattern_element);
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
@@ -789,6 +914,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,
+                &map_schedule_stop_point_quay,
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
@@ -814,6 +940,7 @@ mod tests {
                 })
                 .unwrap();
             let mut map_journeypatterns = HashMap::new();
+            let map_schedule_stop_point_quay = HashMap::new();
             map_journeypatterns
                 .insert(String::from("journey_pattern_id"), &journey_pattern_element);
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
@@ -823,6 +950,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,
+                &map_schedule_stop_point_quay,
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
@@ -844,6 +972,7 @@ mod tests {
             let day_types = day_types();
             let collections = Collections::default();
             let mut map_journeypatterns = HashMap::new();
+            let map_schedule_stop_point_quay = HashMap::new();
             map_journeypatterns
                 .insert(String::from("journey_pattern_id"), &journey_pattern_element);
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
@@ -853,6 +982,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,
+                &map_schedule_stop_point_quay,
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
@@ -876,6 +1006,7 @@ mod tests {
                 })
                 .unwrap();
             let mut map_journeypatterns = HashMap::new();
+            let map_schedule_stop_point_quay = HashMap::new();
             map_journeypatterns
                 .insert(String::from("journey_pattern_id"), &journey_pattern_element);
             let (_, calendars) = parse_vehicle_journeys(
@@ -885,6 +1016,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &map_journeypatterns,
                 &day_types,
+                &map_schedule_stop_point_quay,
             )
             .unwrap();
 
@@ -892,6 +1024,113 @@ mod tests {
             let calendar = calendars.get("2").unwrap();
             assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 1)));
             assert!(calendar.dates.contains(&Date::from_ymd(2019, 1, 2)));
+        }
+    }
+    mod stop_times {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        #[should_panic]
+        fn test_arrival_departure_times_invalid_xml() {
+            let tpt_xml = r#"<TimetabledPassingTime version="any"></TimetabledPassingTime>"#;
+            let tpt_el: Element = tpt_xml.parse().unwrap();
+            arrival_departure_times(&tpt_el).unwrap();
+        }
+
+        #[test]
+        fn test_arrival_departure_times_with_offset_0() {
+            let tpt_xml = r#"<TimetabledPassingTime version="any">
+                                        <ArrivalTime>01:30:00</ArrivalTime>
+                                        <DepartureTime>01:32:00</DepartureTime>
+                                        <DepartureDayOffset>0</DepartureDayOffset>
+                                    </TimetabledPassingTime>"#;
+            let tpt_el: Element = tpt_xml.parse().unwrap();
+            let times = arrival_departure_times(&tpt_el).unwrap();
+
+            let expected = (Time::new(1, 30, 0), Time::new(1, 32, 0));
+            assert_eq!(expected, times);
+        }
+
+        #[test]
+        fn test_arrival_departure_times_with_positive_offset() {
+            let tpt_xml = r#"<TimetabledPassingTime version="any">
+                                        <ArrivalTime>01:30:00</ArrivalTime>
+                                        <DepartureTime>01:32:00</DepartureTime>
+                                        <DepartureDayOffset>1</DepartureDayOffset>
+                                    </TimetabledPassingTime>"#;
+            let tpt_el: Element = tpt_xml.parse().unwrap();
+            let times = arrival_departure_times(&tpt_el).unwrap();
+
+            let expected = (Time::new(25, 30, 0), Time::new(25, 32, 00));
+            assert_eq!(expected, times);
+        }
+
+        #[test]
+        fn test_arrival_departure_times_with_negative_offset() {
+            let tpt_xml = r#"<TimetabledPassingTime version="any">
+                                        <ArrivalTime>01:30:00</ArrivalTime>
+                                        <DepartureTime>01:32:00</DepartureTime>
+                                        <DepartureDayOffset>-1</DepartureDayOffset>
+                                    </TimetabledPassingTime>"#;
+            let tpt_el: Element = tpt_xml.parse().unwrap();
+            let times = arrival_departure_times(&tpt_el).unwrap();
+
+            let expected = (Time::new(1, 30, 0), Time::new(1, 32, 0));
+            assert_eq!(expected, times);
+        }
+
+        #[test]
+        fn test_arrival_departure_times_passing_midnight() {
+            let tpt_xml = r#"<TimetabledPassingTime version="any">
+                                        <ArrivalTime>23:50:00</ArrivalTime>
+                                        <DepartureTime>00:10:00</DepartureTime>
+                                        <DepartureDayOffset>1</DepartureDayOffset>
+                                    </TimetabledPassingTime>"#;
+            let tpt_el: Element = tpt_xml.parse().unwrap();
+            let times = arrival_departure_times(&tpt_el).unwrap();
+
+            let expected = (Time::new(23, 50, 0), Time::new(24, 10, 0));
+            assert_eq!(expected, times);
+        }
+
+        #[test]
+        fn test_boarding_type_no_node() {
+            let sp_in_jp_xml = r#"<StopPointInJourneyPattern>
+                                    </StopPointInJourneyPattern>"#;
+            let sp_in_jp_el: Element = sp_in_jp_xml.parse().unwrap();
+            let boarding_type = boarding_type(&sp_in_jp_el, "unknown_node");
+            assert_eq!(0, boarding_type);
+        }
+
+        #[test]
+        fn test_boarding_type_node_true() {
+            let sp_in_jp_xml = r#"<StopPointInJourneyPattern>
+                                        <ForAlighting>true</ForAlighting>
+                                    </StopPointInJourneyPattern>"#;
+            let sp_in_jp_el: Element = sp_in_jp_xml.parse().unwrap();
+            let boarding_type = boarding_type(&sp_in_jp_el, "ForAlighting");
+            assert_eq!(0, boarding_type);
+        }
+
+        #[test]
+        fn test_boarding_type_node_whatever() {
+            let sp_in_jp_xml = r#"<StopPointInJourneyPattern>
+                                        <ForAlighting>whatever</ForAlighting>
+                                    </StopPointInJourneyPattern>"#;
+            let sp_in_jp_el: Element = sp_in_jp_xml.parse().unwrap();
+            let boarding_type = boarding_type(&sp_in_jp_el, "ForAlighting");
+            assert_eq!(0, boarding_type);
+        }
+
+        #[test]
+        fn test_boarding_type_node_false() {
+            let sp_in_jp_xml = r#"<StopPointInJourneyPattern>
+                                        <ForAlighting>false</ForAlighting>
+                                    </StopPointInJourneyPattern>"#;
+            let sp_in_jp_el: Element = sp_in_jp_xml.parse().unwrap();
+            let boarding_type = boarding_type(&sp_in_jp_el, "ForAlighting");
+            assert_eq!(1, boarding_type);
         }
     }
 }

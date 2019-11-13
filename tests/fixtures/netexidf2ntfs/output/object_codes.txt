@@ -1,0 +1,3 @@
+object_type,object_id,object_system,object_code
+route,prefix:stif:Route:local-26-C00114-1:LOC,Netex_ServiceJourneyPattern,stif:JourneyPattern:local-26-C00114-1:LOC
+route,prefix:stif:Route:local-26-C00114-2:LOC,Netex_ServiceJourneyPattern,stif:JourneyPattern:local-26-C00114-2:LOC

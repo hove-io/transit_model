@@ -280,12 +280,12 @@ trip_id | ServiceJourney/@id | This field is prefixed.
 stop_sequence | | Auto-incremented field starting with `0` for the first stop_time
 stop_id | | See (1) below
 arrival_time | TimetabledPassingTime/ArrivalTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, arrival_time is incremented 24 hours for each day offset (value will be greater than 24:00 for the stop_times on the next day).
-departure_time | TimetabledPassingTime/DepartureTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, departure_time is incremented 24 hours for each day offset (value will be greater than 24:00 for the stop_times on the next day). 
+departure_time | TimetabledPassingTime/DepartureTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, departure_time is incremented 24 hours for each day offset (value will be greater than 24:00 for the stop_times on the next day). See (2) for hours passing midnight.
 boarding_duration | | Fixed value `0`
 alighting_duration | | Fixed value `0`
-pickup_type | | See (2) below
-drop_off_type | | See (2) below
-local_zone_id | | See (3) below
+pickup_type | | See (3) below
+drop_off_type | | See (4) below
+local_zone_id | | See (4) below
 
 
 (1) Definition of the stop_id of a stop_time:
@@ -295,15 +295,23 @@ local_zone_id | | See (3) below
 3. The `StopPointInJourneyPattern/ScheduledStopPointRef/@ref` attribute is searched in the `PassengerStopAssignment/ScheduledStopPointRef/@ref` attribute of all the `PassengerStopAssignment` nodes of the file
 4. The `PassengerStopAssignment/QuayRef/@ref` is the stop_id of the stop_point (with a prefix).
 
-(2) Definition of pickup_type and drop_off_type:
+(2) Passing midnight
+
+`TimetabledPassingTime/ArrivalTime` can be greater than `TimetabledPassingTime/DepartureTime`. That means has passes midnight and is therefore the next day.
+In this case the same rule as above is applied but 1 day more is subtracted from `TimetabledPassingTime/ArrivalTime`.
+
+Eg: `TimetabledPassingTime/ArrivalTime` = "23:50:00", `TimetabledPassingTime/DepartureTime` = "00:10:00",  `TimetabledPassingTime/DepartureDayOffset` = 1
+The departure is the next day so arrival_time = "23:50:00" and departure_time = "24:10:00"
+
+(3) Definition of pickup_type and drop_off_type:
 
 In the `ServiceJourneyPattern/pointsInSequence/StopPointInJourneyPattern` corresponding to this `stop_time` (see `(1)`):
-* if the `ForBoarding` node is existing and with a `False` value, `pickup_type` is set to "1" (no boarding)
+* if the `ForBoarding` node is existing and with a `false` value, `pickup_type` is set to "1" (no boarding)
 * else `pickup_type` is set to "0" (regular boarding)
 
 `drop_off_type` is set using the same method and using the `ForAlighting` node.
 
-(3) Definition of local_zone_id:
+(4) Definition of local_zone_id:
 
 The declaration of those zones is made in the nodes `RoutingConstraintZone` of the **offre_*.xml** file.
 The `local_zone_id` is specified with an auto-incremented integer. Each `RoutingConstraintZone/@id` is associated with a new integer. 
