@@ -279,8 +279,8 @@ NTFS field | Netex-IDFM element | Mapping rule/Comment
 trip_id | ServiceJourney/@id | This field is prefixed. 
 stop_sequence | | Auto-incremented field starting with `0` for the first stop_time
 stop_id | | See (1) below
-arrival_time | TimetabledPassingTime/ArrivalTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, arrival_time is incremented 24 hours for each day offset (value will be greater than 24:00 for the stop_times on the next day).
-departure_time | TimetabledPassingTime/DepartureTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, departure_time is incremented 24 hours for each day offset (value will be greater than 24:00 for the stop_times on the next day). See (2) for hours passing midnight.
+arrival_time | TimetabledPassingTime/ArrivalTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, arrival_time is incremented 24 hours for each day offset (value will be greater than 24:00 for the stop_times on the next day). See (2) for hours passing midnight.
+departure_time | TimetabledPassingTime/DepartureTime | If `TimetabledPassingTime/DepartureDayOffset` value is >0, departure_time is incremented 24 hours for each day offset (value will be greater than 24:00 for the stop_times on the next day). 
 boarding_duration | | Fixed value `0`
 alighting_duration | | Fixed value `0`
 pickup_type | | See (3) below
@@ -297,8 +297,8 @@ local_zone_id | | See (4) below
 
 (2) Passing midnight
 
-`TimetabledPassingTime/ArrivalTime` can be greater than `TimetabledPassingTime/DepartureTime`. That means has passes midnight and is therefore the next day.
-In this case the same rule as above is applied but 1 day more is subtracted from `TimetabledPassingTime/ArrivalTime`.
+When a trip stops around midnight (arriving at stop before midnight and departing after midnight),  `TimetabledPassingTime/ArrivalTime` is greater than `TimetabledPassingTime/DepartureTime`. 
+In this particular situation, `arrival_time` is incremented with 1 day less than the `departure_time`.
 
 Eg: `TimetabledPassingTime/ArrivalTime` = "23:50:00", `TimetabledPassingTime/DepartureTime` = "00:10:00",  `TimetabledPassingTime/DepartureDayOffset` = 1
 The departure is the next day so arrival_time = "23:50:00" and departure_time = "24:10:00"
