@@ -108,12 +108,12 @@
                                 <PostalRegion>94033</PostalRegion>
                             </PostalAddress>
                             <AccessibilityAssessment version="any" id="FR1:AccessibilityAssessment:27910:">
-                                <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                                <MobilityImpairedAccess>true</MobilityImpairedAccess>
                                 <limitations>
                                     <AccessibilityLimitation>
                                     <WheelchairAccess>partial</WheelchairAccess>
-                                    <AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
-                                    <VisualSignsAvailable>unknown</VisualSignsAvailable>
+                                    <AudibleSignalsAvailable>true</AudibleSignalsAvailable>
+                                    <VisualSignsAvailable>true</VisualSignsAvailable>
                                     </AccessibilityLimitation>
                                 </limitations>
                             </AccessibilityAssessment>
@@ -147,7 +147,6 @@
                                 <PostalRegion>94033</PostalRegion>
                             </PostalAddress>
                             <AccessibilityAssessment version="any" id="FR1:AccessibilityAssessment:50144192:">
-                                <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
                                 <limitations>
                                     <AccessibilityLimitation>
                                     <WheelchairAccess>unknown</WheelchairAccess>
@@ -190,7 +189,7 @@
                                 <limitations>
                                     <AccessibilityLimitation>
                                     <WheelchairAccess>unknown</WheelchairAccess>
-                                    <AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+                                    <AudibleSignalsAvailable>false</AudibleSignalsAvailable>
                                     <VisualSignsAvailable>unknown</VisualSignsAvailable>
                                     </AccessibilityLimitation>
                                 </limitations>
@@ -260,8 +259,8 @@
                                 <limitations>
                                     <AccessibilityLimitation>
                                     <WheelchairAccess>false</WheelchairAccess>
-                                    <AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
-                                    <VisualSignsAvailable>unknown</VisualSignsAvailable>
+                                    <AudibleSignalsAvailable>false</AudibleSignalsAvailable>
+                                    <VisualSignsAvailable>false</VisualSignsAvailable>
                                     </AccessibilityLimitation>
                                 </limitations>
                             </AccessibilityAssessment>
@@ -291,7 +290,7 @@
                                     <AccessibilityLimitation>
                                     <WheelchairAccess>false</WheelchairAccess>
                                     <AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
-                                    <VisualSignsAvailable>unknown</VisualSignsAvailable>
+                                    <VisualSignsAvailable>true</VisualSignsAvailable>
                                     </AccessibilityLimitation>
                                 </limitations>
                             </AccessibilityAssessment>
@@ -358,12 +357,12 @@
                                 <PostalRegion>77312</PostalRegion>
                             </PostalAddress>
                             <AccessibilityAssessment version="any" id="FR1:AccessibilityAssessment:50013706:">
-                                <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                                <MobilityImpairedAccess>true</MobilityImpairedAccess>
                                 <limitations>
                                     <AccessibilityLimitation>
                                     <WheelchairAccess>false</WheelchairAccess>
-                                    <AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
-                                    <VisualSignsAvailable>unknown</VisualSignsAvailable>
+                                    <AudibleSignalsAvailable>false</AudibleSignalsAvailable>
+                                    <VisualSignsAvailable>true</VisualSignsAvailable>
                                     </AccessibilityLimitation>
                                 </limitations>
                             </AccessibilityAssessment>

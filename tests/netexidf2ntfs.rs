@@ -42,6 +42,7 @@ fn test_read_write_netex_idf() {
                 "trips.txt",
                 "stop_times.txt",
                 "object_codes.txt",
+                "equipments.txt",
             ]),
             "tests/fixtures/netexidf2ntfs/output",
         );

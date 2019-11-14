@@ -14,11 +14,12 @@
 
 use super::EUROPE_PARIS_TIMEZONE;
 use crate::{
+    common_format::Availability,
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
     netex_utils::{FrameType, Frames},
-    objects::{Coord, StopArea, StopPoint, StopType},
+    objects::{Coord, Equipment, StopArea, StopPoint, StopType},
     Result,
 };
 use failure::{bail, format_err, ResultExt};
@@ -129,13 +130,73 @@ fn stop_point_parent_id(
         .map(|stop_area| stop_area.id.clone()))
 }
 
+#[derive(Eq, PartialEq, Hash, Clone, Copy)]
+struct StopAccessibility {
+    wheelchair_boarding: Availability,
+    visual_announcement: Availability,
+    audible_announcement: Availability,
+}
+
+fn accessibility(quay: &Element) -> Option<StopAccessibility> {
+    fn availability(val: &str) -> Availability {
+        match val {
+            "true" => Availability::Available,
+            "false" => Availability::NotAvailable,
+            _ => Availability::InformationNotAvailable,
+        }
+    }
+
+    let accessibility_node = quay.only_child("AccessibilityAssessment")?;
+    let mobility_impaired_access = accessibility_node
+        .only_child("MobilityImpairedAccess")?
+        .text();
+    let limitation = accessibility_node
+        .only_child("limitations")?
+        .only_child("AccessibilityLimitation")?;
+    let visual_signs_available = limitation.only_child("VisualSignsAvailable")?.text();
+    let audio_signs_available = limitation.only_child("AudibleSignalsAvailable")?.text();
+
+    Some(StopAccessibility {
+        wheelchair_boarding: availability(&mobility_impaired_access),
+        visual_announcement: availability(&visual_signs_available),
+        audible_announcement: availability(&audio_signs_available),
+    })
+}
+
+fn get_or_create_equipment<'a>(
+    quay: &Element,
+    equipments: &'a mut HashMap<StopAccessibility, Equipment>,
+    id_incr: &mut u8,
+) -> Option<&'a mut Equipment> {
+    let accessibility = accessibility(quay)?;
+
+    let equipment = equipments.entry(accessibility).or_insert_with(|| {
+        let StopAccessibility {
+            wheelchair_boarding,
+            visual_announcement,
+            audible_announcement,
+        } = accessibility;
+        *id_incr += 1;
+        Equipment {
+            id: id_incr.to_string(),
+            wheelchair_boarding,
+            visual_announcement,
+            audible_announcement,
+            ..Default::default()
+        }
+    });
+    Some(equipment)
+}
+
 fn load_stop_points<'a>(
     quays: Vec<&'a Element>,
     stop_areas: &mut CollectionWithId<StopArea>,
     map_stopplace_stoparea: &HashMap<String, String>,
     proj: &Proj,
-) -> Result<CollectionWithId<StopPoint>> {
+) -> Result<(CollectionWithId<StopPoint>, CollectionWithId<Equipment>)> {
     let mut stop_points = CollectionWithId::default();
+    let mut equipments: HashMap<StopAccessibility, Equipment> = HashMap::new();
+    let mut id_incr = 0u8;
 
     let is_referential_quay = |quay: &Element| {
         quay.try_attribute::<String>("dataSourceRef")
@@ -174,7 +235,7 @@ fn load_stop_points<'a>(
             ..Default::default()
         };
 
-        let stop_point = if let Some(stop_area_id) =
+        let mut stop_point = if let Some(stop_area_id) =
             stop_point_parent_id(quay, &map_refquay_stoparea, &stop_areas)?
         {
             StopPoint {
@@ -188,10 +249,19 @@ fn load_stop_points<'a>(
             stop_point
         };
 
+        if let Some(associated_equipment) =
+            get_or_create_equipment(quay, &mut equipments, &mut id_incr)
+        {
+            stop_point.equipment_id = Some(associated_equipment.id.clone());
+        }
+
         stop_points.push(stop_point)?;
     }
 
-    Ok(stop_points)
+    let mut equipments: Vec<_> = equipments.into_iter().map(|(_, e)| e).collect();
+    equipments.sort_unstable_by(|tp1, tp2| tp1.id.cmp(&tp2.id));
+
+    Ok((stop_points, CollectionWithId::new(equipments)?))
 }
 
 fn update_stop_area_coords(
@@ -227,7 +297,11 @@ fn update_stop_area_coords(
 
 fn load_stops(
     frames: &Frames,
-) -> Result<(CollectionWithId<StopArea>, CollectionWithId<StopPoint>)> {
+) -> Result<(
+    CollectionWithId<StopArea>,
+    CollectionWithId<StopPoint>,
+    CollectionWithId<Equipment>,
+)> {
     let member_children = || {
         frames
             .get(&FrameType::General)
@@ -253,7 +327,7 @@ fn load_stops(
         &proj,
     )?;
 
-    let stop_points = load_stop_points(
+    let (stop_points, equipments) = load_stop_points(
         member_children().filter(|e| e.name() == "Quay").collect(),
         &mut stop_areas,
         &map_stopplace_stoparea,
@@ -262,7 +336,7 @@ fn load_stops(
 
     update_stop_area_coords(&mut stop_areas, &stop_points);
 
-    Ok((stop_areas, stop_points))
+    Ok((stop_areas, stop_points, equipments))
 }
 
 pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Result<()> {
@@ -280,10 +354,11 @@ pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Resul
             .try_only_child("frames")?,
     )?;
 
-    let (stop_areas, stop_points) = load_stops(&frames)?;
+    let (stop_areas, stop_points, equipments) = load_stops(&frames)?;
 
     collections.stop_areas.try_merge(stop_areas)?;
     collections.stop_points.try_merge(stop_points)?;
+    collections.equipments.try_merge(equipments)?;
 
     Ok(())
 }
