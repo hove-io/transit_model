@@ -762,6 +762,21 @@ impl Collections {
             }
         }
     }
+
+    /// Trip headsign can be derived from the name of the stop point of the
+    /// last stop time of the associated trip.
+    pub fn enhance_trip_headsign(&mut self) {
+        let mut vehicle_journeys = self.vehicle_journeys.take();
+        for vehicle_journey in &mut vehicle_journeys {
+            if vehicle_journey.headsign.is_none() {
+                vehicle_journey.headsign = vehicle_journey
+                    .stop_times
+                    .last()
+                    .map(|stop_time| self.stop_points[stop_time.stop_point_idx].name.clone());
+            }
+        }
+        self.vehicle_journeys = CollectionWithId::new(vehicle_journeys).unwrap();
+    }
 }
 
 /// The navitia transit model.
@@ -1087,6 +1102,63 @@ mod tests {
             assert_eq!(0.0f32, walk_mode.co2_emission.unwrap());
             let car_mode = collections.physical_modes.get(CAR_PHYSICAL_MODE).unwrap();
             assert_eq!(184.0f32, car_mode.co2_emission.unwrap());
+        }
+    }
+
+    mod enhance_trip_headsign {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn enhance() {
+            let mut collections = Collections::default();
+            collections
+                .stop_points
+                .push(StopPoint {
+                    id: String::from("stop_point_id"),
+                    name: String::from("Stop Name"),
+                    ..Default::default()
+                })
+                .unwrap();
+            let stop_time = StopTime {
+                stop_point_idx: collections.stop_points.get_idx("stop_point_id").unwrap(),
+                sequence: 0,
+                arrival_time: Time::new(0, 0, 0),
+                departure_time: Time::new(0, 0, 0),
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 0,
+                datetime_estimated: false,
+                local_zone_id: Some(0),
+            };
+            collections
+                .vehicle_journeys
+                .push(VehicleJourney {
+                    id: String::from("vehicle_journey_id_1"),
+                    stop_times: vec![stop_time],
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+                .vehicle_journeys
+                .push(VehicleJourney {
+                    id: String::from("vehicle_journey_id_2"),
+                    headsign: Some(String::from("Headsign")),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections.enhance_trip_headsign();
+            let vehicle_journey = collections
+                .vehicle_journeys
+                .get("vehicle_journey_id_1")
+                .unwrap();
+            assert_eq!("Stop Name", vehicle_journey.headsign.as_ref().unwrap());
+            let vehicle_journey = collections
+                .vehicle_journeys
+                .get("vehicle_journey_id_2")
+                .unwrap();
+            assert_eq!("Headsign", vehicle_journey.headsign.as_ref().unwrap());
         }
     }
 }
