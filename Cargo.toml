@@ -7,6 +7,21 @@ description = "Transit data management"
 repository = "https://github.com/CanalTP/transit_model"
 keywords = ["ntfs", "gtfs", "netex", "navitia", "transit"]
 edition = "2018"
+exclude = [
+	".gitignore",
+	".mergify.yml",
+	".travis.yml",
+	"CONTRIBUTING.md",
+	"README.md",
+	"benches/",
+	"collection/",
+	"examples/",
+	"model-builder/",
+	"relations/",
+	"src/documentation/",
+	"tests/",
+	"transit_model_procmacro/",
+]
 
 [badges]
 travis-ci = { repository = "CanalTP/transit_model" }
