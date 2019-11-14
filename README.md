@@ -1,7 +1,7 @@
 # transit_model [![Build Status](https://travis-ci.org/CanalTP/transit_model.svg?branch=master)](https://travis-ci.org/CanalTP/transit_model)
 
 `transit_model` is a Rust crate managing transit data by implementing the NTFS
-model `v0.9.1` (used  in [navitia](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)). See the
+model (used  in [navitia](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)). See the
 section [NTFS: Level of Support](#ntfs-level-of-support) for more details about the
 level of support of the NTFS standard.
 
@@ -85,14 +85,13 @@ cargo test
 ```
 
 ## NTFS: Level of Support
-`transit_model` is partially supporting `v0.9.1` of NTFS (see [CHANGELOG in
+`transit_model` is partially supporting `v0.10.0` of NTFS (see [CHANGELOG in
 French](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_changelog_fr.md)).
 From the standard, some of the functionalities are not fully supported:
-- Management of pathways introduced in version `v0.8` is not supported
-- No support for all periodic description (files `grid_calendars.txt`,
-  `grid_exception_dates.txt`, `grid_periods.txt` and `grid_rel_calendar_line.txt`)
 - No support for Line Groups (files `line_groups.txt` and `line_group_links.txt`)
+- The field `trip_short_name_at_stop` in `stop_times.txt` introduced in version
+  `v0.10.0` is not supported
 
 ## License
 
-Licensed under [GNU General Public License v3.0](LICENSE)
+Licensed under [GNU Affero General Public License v3.0](LICENSE)

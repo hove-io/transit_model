@@ -632,6 +632,7 @@ fn make_vjs_and_stop_times(
                 pujopass.schedule_type_code
             ),
             headsign: None,
+            short_name: None,
             block_id: None,
             company_id: line.data_owner_code.clone(),
             trip_property_id: None,
