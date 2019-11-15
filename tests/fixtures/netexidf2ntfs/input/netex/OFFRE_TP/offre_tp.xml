@@ -43,7 +43,6 @@
                   </ServiceJourneyPattern>
                   <ServiceJourneyPattern dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:JourneyPattern:local-26-C00114-2:LOC" version="any">
                      <RouteRef ref="stif:Route:local-26-C00114-2:LOC" version="any"/>
-                     <DestinationDisplayRef ref="stif:JourneyPattern:local-26-C00114-1:LOC" version="any"/>
                      <pointsInSequence>
                         <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-21:LOC" order="1" version="any">
                            <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-20:LOC" version="any"/>

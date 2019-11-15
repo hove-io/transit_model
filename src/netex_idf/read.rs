@@ -66,6 +66,7 @@ where
     }
 
     collections.enhance_with_co2();
+    collections.enhance_trip_headsign();
     // TODO: uncomment once we have all netex  parsed
     // collections.sanitize()?;
     Model::new(collections)
