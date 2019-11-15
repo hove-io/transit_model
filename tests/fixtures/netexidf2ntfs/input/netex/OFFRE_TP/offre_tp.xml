@@ -87,7 +87,7 @@
                   </PassengerStopAssignment>
                   <DestinationDisplay dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:JourneyPattern:local-26-C00114-1:LOC" version="any">
                      <FrontText>BIBLIOTHEQUE NATIONALE</FrontText>
-                     <PublicCode></PublicCode>
+                     <PublicCode>BIBLIOTHEQUE NATIONALE</PublicCode>
                   </DestinationDisplay>
                </members>
             </GeneralFrame>

@@ -65,6 +65,7 @@ impl std::fmt::Display for GeneralFrameType {
 
 struct DestinationDisplay {
     front_text: Option<String>,
+    public_code: Option<String>,
 }
 type DestinationDisplays = HashMap<String, DestinationDisplay>;
 struct StopPointInJourneyPattern {
@@ -296,7 +297,14 @@ where
         .filter_map(|dd_element| {
             let id: String = dd_element.attribute("id")?;
             let front_text = dd_element.only_child("FrontText").map(Element::text);
-            Some((id, DestinationDisplay { front_text }))
+            let public_code = dd_element.only_child("PublicCode").map(Element::text);
+            Some((
+                id,
+                DestinationDisplay {
+                    front_text,
+                    public_code,
+                },
+            ))
         })
         .collect()
 }
@@ -553,6 +561,10 @@ where
             .and_then(|journey_pattern| journey_pattern.destination_display)
             .and_then(|destination_display| destination_display.front_text.as_ref())
             .cloned();
+        let short_name = journey_pattern_opt
+            .and_then(|journey_pattern| journey_pattern.destination_display)
+            .and_then(|destination_display| destination_display.public_code.as_ref())
+            .cloned();
         let vehicle_journey = VehicleJourney {
             id,
             route_id,
@@ -560,6 +572,7 @@ where
             company_id,
             physical_mode_id,
             headsign,
+            short_name,
             ..Default::default()
         };
         Ok(vehicle_journey)
@@ -910,6 +923,7 @@ mod tests {
             let mut destination_displays = DestinationDisplays::new();
             let destination_display = DestinationDisplay {
                 front_text: Some(String::from("Trip Name")),
+                public_code: Some(String::from("Trip Short Name")),
             };
             destination_displays
                 .insert(String::from("destination_display_id"), destination_display);
@@ -1010,6 +1024,10 @@ mod tests {
             assert_eq!("company_id", vehicle_journey.company_id.as_str());
             assert_eq!("Bus", vehicle_journey.physical_mode_id.as_str());
             assert_eq!("Trip Name", vehicle_journey.headsign.as_ref().unwrap());
+            assert_eq!(
+                "Trip Short Name",
+                vehicle_journey.short_name.as_ref().unwrap()
+            );
             let stop_time = &vehicle_journey.stop_times[0];
             assert_eq!(0, stop_time.sequence);
             assert_eq!(Time::new(6, 0, 0), stop_time.arrival_time);
@@ -1024,6 +1042,10 @@ mod tests {
             assert_eq!("company_id", vehicle_journey.company_id.as_str());
             assert_eq!("Bus", vehicle_journey.physical_mode_id.as_str());
             assert_eq!("Trip Name", vehicle_journey.headsign.as_ref().unwrap());
+            assert_eq!(
+                "Trip Short Name",
+                vehicle_journey.short_name.as_ref().unwrap()
+            );
             let stop_time = &vehicle_journey.stop_times[0];
             assert_eq!(0, stop_time.sequence);
             assert_eq!(Time::new(23, 55, 0), stop_time.arrival_time);
