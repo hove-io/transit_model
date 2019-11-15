@@ -116,6 +116,11 @@
                            <DepartureDayOffset>0</DepartureDayOffset>
                         </TimetabledPassingTime>
                      </passingTimes>
+                     <noticeAssignments>
+                        <NoticeAssignment id="CITYWAY:NoticeAssignment:1245-C00163-2-011:LOC" version="1541584675607" order="0">
+                           <NoticeRef ref="STIF:Notice:C00164_7:LOC">version="any"</NoticeRef>
+                        </NoticeAssignment>
+                     </noticeAssignments>
                   </ServiceJourney>
                   <ServiceJourney dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:VehicleJourney:local-26-C00114-2:LOC" version="any">
                      <dayTypes>

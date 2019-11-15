@@ -570,6 +570,24 @@ where
             .and_then(|journey_pattern| journey_pattern.destination_display)
             .and_then(|destination_display| destination_display.public_code.as_ref())
             .cloned();
+        let comment_links = service_journey_element
+            .only_child("noticeAssignments")
+            .iter()
+            .flat_map(|notice_assignments_element| notice_assignments_element.children())
+            .filter_map(|notice_assignment_element| {
+                notice_assignment_element.only_child("NoticeRef")
+            })
+            .filter_map(|notice_ref_element| notice_ref_element.attribute::<String>("ref"))
+            .filter_map(
+                |notice_ref| match collections.comments.get_idx(&notice_ref) {
+                    Some(comment_idx) => Some(comment_idx),
+                    None => {
+                        warn!("The comment with ID {} doesn't exist", notice_ref);
+                        None
+                    }
+                },
+            )
+            .collect();
         let vehicle_journey = VehicleJourney {
             id,
             route_id,
@@ -578,6 +596,7 @@ where
             physical_mode_id,
             headsign,
             short_name,
+            comment_links,
             ..Default::default()
         };
         Ok(vehicle_journey)
@@ -883,7 +902,7 @@ mod tests {
 
     mod parse_vehicle_journeys {
         use super::*;
-        use crate::objects::Dataset;
+        use crate::objects::{Comment, CommentType, Dataset};
         use pretty_assertions::assert_eq;
 
         fn collections() -> Collections {
@@ -904,6 +923,16 @@ mod tests {
                 })
                 .unwrap();
             collections
+                .comments
+                .push(Comment {
+                    id: String::from("comment_id"),
+                    comment_type: CommentType::Information,
+                    label: None,
+                    name: String::from("Comment"),
+                    url: None,
+                })
+                .unwrap();
+            collections
         }
 
         fn service_journey() -> Element {
@@ -920,6 +949,11 @@ mod tests {
                           <DepartureDayOffset>0</DepartureDayOffset>
                        </TimetabledPassingTime>
                     </passingTimes>
+                    <noticeAssignments>
+                       <NoticeAssignment>
+                          <NoticeRef ref="comment_id" />
+                       </NoticeAssignment>
+                    </noticeAssignments>
                 </ServiceJourney>"#;
             service_journey_xml.parse().unwrap()
         }
@@ -1033,6 +1067,9 @@ mod tests {
                 "Trip Short Name",
                 vehicle_journey.short_name.as_ref().unwrap()
             );
+            assert!(vehicle_journey
+                .comment_links
+                .contains(&collections.comments.get_idx("comment_id").unwrap()));
             let stop_time = &vehicle_journey.stop_times[0];
             assert_eq!(0, stop_time.sequence);
             assert_eq!(Time::new(6, 0, 0), stop_time.arrival_time);

@@ -1,0 +1,2 @@
+comment_id,comment_type,comment_label,comment_name,comment_url
+prefix:STIF:Notice:C00164_7:LOC,information,,note numéro 1,
