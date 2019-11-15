@@ -12,14 +12,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{lines, offers, stops};
+use super::{
+    lines::{self, LineNetexIDF},
+    offers, stops,
+};
 use crate::{
     model::{Collections, Model},
     objects::Dataset,
     AddPrefix, Result,
 };
 use chrono::naive::{MAX_DATE, MIN_DATE};
-use log::info;
+use log::{info, warn};
 use std::path::Path;
 use transit_model_collection::CollectionWithId;
 use walkdir::WalkDir;
@@ -60,6 +63,7 @@ where
             &lines_netex_idf
         ));
     }
+    enhance_with_line_comments(&mut collections, &lines_netex_idf);
 
     if let Some(prefix) = prefix {
         collections.add_prefix_with_sep(prefix.as_str(), ":");
@@ -69,4 +73,75 @@ where
     collections.enhance_trip_headsign();
     collections.sanitize()?;
     Model::new(collections)
+}
+
+fn enhance_with_line_comments(
+    collections: &mut Collections,
+    lines_netex_idf: &CollectionWithId<LineNetexIDF>,
+) {
+    let mut lines = collections.lines.take();
+    for line in &mut lines {
+        if let Some(line_netex_idf) = lines_netex_idf.get(&line.id) {
+            line.comment_links = line_netex_idf
+                .comment_ids
+                .iter()
+                .filter_map(
+                    |comment_id| match collections.comments.get_idx(comment_id) {
+                        Some(comment_idx) => Some(comment_idx),
+                        None => {
+                            warn!("The comment with ID {} doesn't exist", comment_id);
+                            None
+                        }
+                    },
+                )
+                .collect();
+        }
+    }
+    collections.lines = CollectionWithId::new(lines).unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::objects::{Comment, CommentType, Line};
+
+    #[test]
+    fn enhance_line_comments() {
+        let mut collections = Collections::default();
+        collections
+            .lines
+            .push(Line {
+                id: String::from("line_id"),
+                ..Default::default()
+            })
+            .unwrap();
+        collections
+            .comments
+            .push(Comment {
+                id: String::from("comment_id"),
+                comment_type: CommentType::Information,
+                label: None,
+                name: String::from("Comment"),
+                url: None,
+            })
+            .unwrap();
+        let lines_netex_idf = CollectionWithId::from(LineNetexIDF {
+            id: String::from("line_id"),
+            name: String::from("Line Name"),
+            code: None,
+            private_code: None,
+            network_id: String::from("network_id"),
+            company_id: String::from("company_id"),
+            mode: String::from("physical_mode_id"),
+            wheelchair_accessible: false,
+            color: None,
+            text_color: None,
+            comment_ids: vec![String::from("comment_id")].into_iter().collect(),
+        });
+        enhance_with_line_comments(&mut collections, &lines_netex_idf);
+        let line = collections.lines.get("line_id").unwrap();
+        assert!(line
+            .comment_links
+            .contains(&collections.comments.get_idx("comment_id").unwrap()));
+    }
 }
