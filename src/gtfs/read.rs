@@ -16,15 +16,17 @@ use super::{
     Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
     TransferType, Trip,
 };
-use crate::common_format::Availability;
-use crate::model::Collections;
-use crate::objects::{
-    self, CommentLinksT, Coord, KeysValues, Pathway, StopLocation, StopTime as NtfsStopTime,
-    StopType, Time, TransportType, VehicleJourney,
+use crate::{
+    common_format::Availability,
+    model::Collections,
+    objects::{
+        self, CommentLinksT, Coord, KeysValues, Pathway, StopLocation, StopTime as NtfsStopTime,
+        StopType, Time, TransportType, VehicleJourney,
+    },
+    read_utils::{read_collection, read_objects, FileHandler},
+    utils::*,
+    Result,
 };
-use crate::read_utils::{read_collection, read_objects, FileHandler};
-use crate::utils::*;
-use crate::Result;
 use csv;
 use derivative::Derivative;
 use failure::{bail, format_err, Error, ResultExt};
@@ -1196,7 +1198,7 @@ mod tests {
         },
         read_utils::{self, read_opt_collection, PathFileHandler},
         test_utils::*,
-        AddPrefix,
+        validity_period, AddPrefix,
     };
     use geo_types::line_string;
     use pretty_assertions::assert_eq;
@@ -2658,7 +2660,8 @@ mod tests {
             let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
 
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
-            read_utils::set_dataset_validity_period(&mut dataset, &collections.calendars).unwrap();
+            validity_period::set_dataset_validity_period(&mut dataset, &collections.calendars)
+                .unwrap();
 
             assert_eq!(
                 Dataset {
@@ -2689,7 +2692,8 @@ mod tests {
             let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
 
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
-            read_utils::set_dataset_validity_period(&mut dataset, &collections.calendars).unwrap();
+            validity_period::set_dataset_validity_period(&mut dataset, &collections.calendars)
+                .unwrap();
 
             assert_eq!(
                 Dataset {

@@ -18,7 +18,7 @@ mod read;
 
 use crate::{
     model::{Collections, Model},
-    read_utils, AddPrefix, Result,
+    read_utils, validity_period, AddPrefix, Result,
 };
 use std::path::Path;
 use transit_model_collection::CollectionWithId;
@@ -36,7 +36,7 @@ where
     read::read_operday(file_handler, &mut collections)?;
 
     let (contributor, mut dataset, feed_infos) = read_utils::read_config(config_path)?;
-    read_utils::set_dataset_validity_period(&mut dataset, &collections.calendars)?;
+    validity_period::set_dataset_validity_period(&mut dataset, &collections.calendars)?;
 
     collections.contributors = CollectionWithId::new(vec![contributor])?;
     collections.datasets = CollectionWithId::new(vec![dataset])?;
