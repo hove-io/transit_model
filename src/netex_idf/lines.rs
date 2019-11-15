@@ -19,7 +19,7 @@ use crate::{
     model::Collections,
     netex_utils,
     netex_utils::{FrameType, Frames},
-    objects::{CommercialMode, Company, Line, Network, PhysicalMode},
+    objects::{CommercialMode, Company, Line, Network, PhysicalMode, Rgb},
     Result,
 };
 use failure::{bail, format_err, ResultExt};
@@ -28,7 +28,21 @@ use minidom::Element;
 use std::{collections::BTreeSet, fs::File, io::Read};
 use transit_model_collection::{CollectionWithId, Id};
 
-#[derive(Debug, Default)]
+// #000000
+const DEFAULT_COLOR: Rgb = Rgb {
+    red: 0,
+    green: 0,
+    blue: 0,
+};
+
+// #FFFFFF
+const DEFAULT_TEXT_COLOR: Rgb = Rgb {
+    red: 255,
+    green: 255,
+    blue: 255,
+};
+
+#[derive(Debug)]
 pub struct LineNetexIDF {
     pub id: String,
     pub name: String,
@@ -38,8 +52,15 @@ pub struct LineNetexIDF {
     pub company_id: String,
     pub mode: String,
     pub wheelchair_accessible: bool,
+    pub color: Option<Rgb>,
+    pub text_color: Option<Rgb>,
 }
 impl_id!(LineNetexIDF);
+
+fn line_color(line: &Element, child_name: &str) -> Option<Rgb> {
+    line.only_child("Presentation")
+        .and_then(|p| p.only_child(child_name)?.text().parse().ok())
+}
 
 fn load_netex_lines(
     frames: &Frames,
@@ -76,6 +97,9 @@ fn load_netex_lines(
                     .get(mode.as_str())
                     .ok_or_else(|| format_err!("Unknown mode {} found for line {}", mode, id))?;
 
+                let color = line_color(line, "Colour");
+                let text_color = line_color(line, "TextColour");
+
                 lines_netex_idf.push(LineNetexIDF {
                     id,
                     name,
@@ -85,6 +109,8 @@ fn load_netex_lines(
                     company_id,
                     mode,
                     wheelchair_accessible: false, // TODO
+                    color,
+                    text_color,
                 })?;
             }
         }
@@ -104,6 +130,8 @@ fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<Collec
             name: ln.name.clone(),
             code: ln.code.clone(),
             network_id: ln.network_id.clone(),
+            color: ln.color.clone().or_else(|| Some(DEFAULT_COLOR)),
+            text_color: ln.text_color.clone().or_else(|| Some(DEFAULT_TEXT_COLOR)),
             commercial_mode_id,
             ..Default::default()
         })?;
@@ -250,5 +278,45 @@ mod tests {
         .unwrap();
 
         load_netex_lines(&frames, &networks, &companies).unwrap();
+    }
+
+    #[test]
+    fn test_color_parent_node() {
+        let xml = r#"
+              <Line id="FR1:Line:C00001"></Line>"#;
+        let line: Element = xml.parse().unwrap();
+        let color = line_color(&line, "Colour");
+        assert_eq!(None, color);
+    }
+
+    #[test]
+    fn test_color_invalid_color() {
+        let xml = r#"
+              <Line id="FR1:Line:C00001">
+                <Presentation>
+                    <Colour>invalid</Colour>
+                </Presentation>
+              </Line>"#;
+        let line: Element = xml.parse().unwrap();
+        let color = line_color(&line, "Colour");
+        assert_eq!(None, color);
+    }
+
+    #[test]
+    fn test_color() {
+        let xml = r#"
+              <Line id="FR1:Line:C00001">
+                <Presentation>
+                    <Colour>FF0000</Colour>
+                </Presentation>
+              </Line>"#;
+        let line: Element = xml.parse().unwrap();
+        let color = line_color(&line, "Colour");
+        let expected = Some(Rgb {
+            red: 255,
+            green: 0,
+            blue: 0,
+        });
+        assert_eq!(expected, color);
     }
 }

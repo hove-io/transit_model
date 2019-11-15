@@ -954,6 +954,8 @@ mod tests {
                 company_id: String::from("company_id"),
                 mode: String::from("bus"),
                 wheelchair_accessible: false,
+                color: None,
+                text_color: None,
             })
         }
 
