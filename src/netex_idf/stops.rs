@@ -31,6 +31,13 @@ use proj::Proj;
 use std::{collections::HashMap, fs::File, io::Read};
 use transit_model_collection::CollectionWithId;
 
+#[derive(Eq, PartialEq, Hash, Clone, Copy)]
+struct StopAccessibility {
+    wheelchair_boarding: Availability,
+    visual_announcement: Availability,
+    audible_announcement: Availability,
+}
+
 // load a stop area
 // coordinates will be computed with centroid of stop points if the stop area
 // has no coordinates
@@ -128,13 +135,6 @@ fn stop_point_parent_id(
         .and_then(|refquay_id| map_refquay_stoparea.get(&refquay_id))
         .and_then(|stop_area_id| stop_areas.get(&stop_area_id))
         .map(|stop_area| stop_area.id.clone()))
-}
-
-#[derive(Eq, PartialEq, Hash, Clone, Copy)]
-struct StopAccessibility {
-    wheelchair_boarding: Availability,
-    visual_announcement: Availability,
-    audible_announcement: Availability,
 }
 
 fn accessibility(quay: &Element) -> Option<StopAccessibility> {
