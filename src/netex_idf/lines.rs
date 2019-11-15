@@ -19,7 +19,7 @@ use crate::{
     model::Collections,
     netex_utils,
     netex_utils::{FrameType, Frames},
-    objects::{CommercialMode, Company, Line, Network, PhysicalMode, Rgb},
+    objects::{CommercialMode, Company, KeysValues, Line, Network, PhysicalMode, Rgb},
     Result,
 };
 use failure::{bail, format_err, ResultExt};
@@ -125,6 +125,12 @@ fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<Collec
             .get(ln.mode.as_str())
             .map(|m| { m.commercial_mode.0.to_string() })
             .ok_or_else(|| format_err!("{} not found", ln.mode)));
+
+        let codes: KeysValues = ln
+            .private_code
+            .clone()
+            .map(|pc| vec![("Netex_PrivateCode".into(), pc)].into_iter().collect())
+            .unwrap_or_else(BTreeSet::new);
         lines.push(Line {
             id: ln.id.clone(),
             name: ln.name.clone(),
@@ -133,6 +139,7 @@ fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<Collec
             color: ln.color.clone().or_else(|| Some(DEFAULT_COLOR)),
             text_color: ln.text_color.clone().or_else(|| Some(DEFAULT_TEXT_COLOR)),
             commercial_mode_id,
+            codes,
             ..Default::default()
         })?;
     }
