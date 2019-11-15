@@ -12,9 +12,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::EUROPE_PARIS_TIMEZONE;
+use super::{share::*, EUROPE_PARIS_TIMEZONE};
 use crate::{
-    common_format::Availability,
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
@@ -30,13 +29,6 @@ use minidom::Element;
 use proj::Proj;
 use std::{collections::HashMap, fs::File, io::Read};
 use transit_model_collection::CollectionWithId;
-
-#[derive(Eq, PartialEq, Hash, Clone, Copy)]
-struct StopAccessibility {
-    wheelchair_boarding: Availability,
-    visual_announcement: Availability,
-    audible_announcement: Availability,
-}
 
 // load a stop area
 // coordinates will be computed with centroid of stop points if the stop area
@@ -137,41 +129,15 @@ fn stop_point_parent_id(
         .map(|stop_area| stop_area.id.clone()))
 }
 
-fn accessibility(quay: &Element) -> Option<StopAccessibility> {
-    fn availability(val: &str) -> Availability {
-        match val {
-            "true" => Availability::Available,
-            "false" => Availability::NotAvailable,
-            _ => Availability::InformationNotAvailable,
-        }
-    }
-
-    let accessibility_node = quay.only_child("AccessibilityAssessment")?;
-    let mobility_impaired_access = accessibility_node
-        .only_child("MobilityImpairedAccess")?
-        .text();
-    let limitation = accessibility_node
-        .only_child("limitations")?
-        .only_child("AccessibilityLimitation")?;
-    let visual_signs_available = limitation.only_child("VisualSignsAvailable")?.text();
-    let audio_signs_available = limitation.only_child("AudibleSignalsAvailable")?.text();
-
-    Some(StopAccessibility {
-        wheelchair_boarding: availability(&mobility_impaired_access),
-        visual_announcement: availability(&visual_signs_available),
-        audible_announcement: availability(&audio_signs_available),
-    })
-}
-
-fn get_or_create_equipment<'a>(
+pub fn get_or_create_equipment<'a>(
     quay: &Element,
-    equipments: &'a mut HashMap<StopAccessibility, Equipment>,
+    equipments: &'a mut HashMap<Accessibility, Equipment>,
     id_incr: &mut u8,
 ) -> Option<&'a mut Equipment> {
     let accessibility = accessibility(quay)?;
 
     let equipment = equipments.entry(accessibility).or_insert_with(|| {
-        let StopAccessibility {
+        let Accessibility {
             wheelchair_boarding,
             visual_announcement,
             audible_announcement,
@@ -195,7 +161,7 @@ fn load_stop_points<'a>(
     proj: &Proj,
 ) -> Result<(CollectionWithId<StopPoint>, CollectionWithId<Equipment>)> {
     let mut stop_points = CollectionWithId::default();
-    let mut equipments: HashMap<StopAccessibility, Equipment> = HashMap::new();
+    let mut equipments: HashMap<Accessibility, Equipment> = HashMap::new();
     let mut id_incr = 0u8;
 
     let is_referential_quay = |quay: &Element| {

@@ -12,8 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::modes::MODES;
-use super::EUROPE_PARIS_TIMEZONE;
+use super::{modes::MODES, EUROPE_PARIS_TIMEZONE};
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,

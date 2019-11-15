@@ -20,6 +20,7 @@ mod lines;
 mod modes;
 mod offers;
 mod read;
+mod share;
 mod stops;
 
 pub(crate) const EUROPE_PARIS_TIMEZONE: &str = "Europe/Paris";
