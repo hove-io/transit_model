@@ -14,6 +14,7 @@
 
 use super::{
     calendars::{self, DayTypes},
+    common,
     lines::LineNetexIDF,
     modes::MODES,
 };
@@ -44,12 +45,14 @@ pub const COMMON_FILENAME: &str = "commun.xml";
 pub const NETEX_STRUCTURE: &str = "NETEX_STRUCTURE";
 pub const NETEX_SCHEDULE: &str = "NETEX_HORAIRE";
 pub const NETEX_CALENDAR: &str = "NETEX_CALENDRIER";
+pub const NETEX_COMMON: &str = "NETEX_COMMUN";
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub enum GeneralFrameType {
     Structure,
     Schedule,
     Calendar,
+    Common,
 }
 type GeneralFrames<'a> = HashMap<GeneralFrameType, &'a Element>;
 
@@ -59,6 +62,7 @@ impl std::fmt::Display for GeneralFrameType {
             Self::Structure => write!(f, "{}", NETEX_STRUCTURE),
             Self::Schedule => write!(f, "{}", NETEX_SCHEDULE),
             Self::Calendar => write!(f, "{}", NETEX_CALENDAR),
+            Self::Common => write!(f, "{}", NETEX_COMMON),
         }
     }
 }
@@ -95,6 +99,9 @@ pub fn parse_general_frame_by_type<'a>(
         }
         if type_of_frame_ref.contains(NETEX_CALENDAR) {
             return Ok(GeneralFrameType::Calendar);
+        }
+        if type_of_frame_ref.contains(NETEX_COMMON) {
+            return Ok(GeneralFrameType::Common);
         }
         bail!("Failed to identify the type of this GeneralFrame")
     }
@@ -168,7 +175,7 @@ pub fn read_offer_folder(
     };
 
     let common_path = offer_folder.join(COMMON_FILENAME);
-    if common_path.exists() {
+    let comments = if common_path.exists() {
         let mut common_file = File::open(&common_path).with_context(ctx_from_path!(common_path))?;
         let mut common_file_content = String::new();
         common_file.read_to_string(&mut common_file_content)?;
@@ -176,8 +183,11 @@ pub fn read_offer_folder(
             .parse()
             .map_err(|_| format_err!("Failed to open {}", common_path.display()))?;
         info!("Reading {}", common_path.display());
-        parse_common(&common)?;
-    }
+        common::parse_common(&common)?
+    } else {
+        CollectionWithId::default()
+    };
+    collections.comments.try_merge(comments)?;
 
     for offer_entry in WalkDir::new(offer_folder)
         .into_iter()
@@ -211,11 +221,6 @@ pub fn read_offer_folder(
         collections.datasets =
             update_validity_period_from_netex_idf(&mut collections.datasets, &validity_period)?;
     }
-    Ok(())
-}
-
-fn parse_common(_common: &Element) -> Result<()> {
-    // TODO: To implement
     Ok(())
 }
 

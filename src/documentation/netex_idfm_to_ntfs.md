@@ -194,7 +194,7 @@ If at least one `Line/noticeAssignments/NoticeAssignment/NoticeRef` exists and r
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 object_id | Line/@id | This field is prefixed. 
-object_type |  | fixed value "line"
+object_type |  | fixed value `line`
 comment_id | Line/noticeAssignments/NoticeAssignment/NoticeRef | This field is prefixed. 
 
 
