@@ -12,19 +12,25 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{modes::MODES, EUROPE_PARIS_TIMEZONE};
+use super::{modes::MODES, share::*, EUROPE_PARIS_TIMEZONE};
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
     netex_utils::{FrameType, Frames},
-    objects::{CommercialMode, Company, KeysValues, Line, Network, PhysicalMode, Rgb},
+    objects::{
+        CommercialMode, Company, KeysValues, Line, Network, PhysicalMode, Rgb, TripProperty,
+    },
     Result,
 };
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use minidom::Element;
-use std::{collections::BTreeSet, fs::File, io::Read};
+use std::{
+    collections::{BTreeSet, HashMap},
+    fs::File,
+    io::Read,
+};
 use transit_model_collection::{CollectionWithId, Id};
 
 // #000000
@@ -50,10 +56,10 @@ pub struct LineNetexIDF {
     pub network_id: String,
     pub company_id: String,
     pub mode: String,
-    pub wheelchair_accessible: bool,
     pub color: Option<Rgb>,
     pub text_color: Option<Rgb>,
     pub comment_ids: BTreeSet<String>,
+    pub trip_property_id: Option<String>,
 }
 impl_id!(LineNetexIDF);
 
@@ -62,12 +68,43 @@ fn line_color(line: &Element, child_name: &str) -> Option<Rgb> {
         .and_then(|p| p.only_child(child_name)?.text().parse().ok())
 }
 
+pub fn get_or_create_trip_property<'a>(
+    line: &Element,
+    trip_propertiess: &'a mut HashMap<Accessibility, TripProperty>,
+) -> Option<&'a mut TripProperty> {
+    let accessibility_node = line.only_child("AccessibilityAssessment")?;
+    let id: String = accessibility_node.attribute("id")?;
+    let accessibility = accessibility(accessibility_node)?;
+
+    let trip_property = trip_propertiess
+        .entry(accessibility.clone())
+        .or_insert_with(|| {
+            let Accessibility {
+                wheelchair,
+                visual_announcement,
+                audible_announcement,
+            } = accessibility;
+            TripProperty {
+                id,
+                wheelchair_accessible: wheelchair,
+                visual_announcement,
+                audible_announcement,
+                ..Default::default()
+            }
+        });
+    Some(trip_property)
+}
+
 fn load_netex_lines(
     frames: &Frames,
     networks: &CollectionWithId<Network>,
     companies: &CollectionWithId<Company>,
-) -> Result<CollectionWithId<LineNetexIDF>> {
+) -> Result<(
+    CollectionWithId<LineNetexIDF>,
+    CollectionWithId<TripProperty>,
+)> {
     let mut lines_netex_idf = CollectionWithId::default();
+    let mut trip_properties: HashMap<Accessibility, TripProperty> = HashMap::new();
     for frame in frames.get(&FrameType::Service).unwrap_or(&vec![]) {
         if let Ok(lines_node) = frame.try_only_child("lines") {
             for line in lines_node.children().filter(|e| e.name() == "Line") {
@@ -109,6 +146,9 @@ fn load_netex_lines(
                 let color = line_color(line, "Colour");
                 let text_color = line_color(line, "TextColour");
 
+                let trip_property_id =
+                    get_or_create_trip_property(line, &mut trip_properties).map(|tp| tp.id.clone());
+
                 lines_netex_idf.push(LineNetexIDF {
                     id,
                     name,
@@ -117,15 +157,18 @@ fn load_netex_lines(
                     network_id,
                     company_id,
                     mode,
-                    wheelchair_accessible: false, // TODO
                     color,
                     text_color,
                     comment_ids,
+                    trip_property_id,
                 })?;
             }
         }
     }
-    Ok(lines_netex_idf)
+    let mut trip_properties: Vec<_> = trip_properties.into_iter().map(|(_, e)| e).collect();
+    trip_properties.sort_unstable_by(|tp1, tp2| tp1.id.cmp(&tp2.id));
+
+    Ok((lines_netex_idf, CollectionWithId::new(trip_properties)?))
 }
 
 fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<CollectionWithId<Line>> {
@@ -241,7 +284,7 @@ pub fn from_path(
                 .try_only_child("frames")?,
         )?;
         let (networks, companies) = make_networks_companies(&frames)?;
-        let lines_netex_idf = load_netex_lines(&frames, &networks, &companies)?;
+        let (lines_netex_idf, trip_properties) = load_netex_lines(&frames, &networks, &companies)?;
         let lines = make_lines(&lines_netex_idf)?;
         let (physical_modes, commercial_modes) =
             make_physical_and_commercial_modes(&lines_netex_idf)?;
@@ -250,6 +293,7 @@ pub fn from_path(
         collections.physical_modes.try_merge(physical_modes)?;
         collections.commercial_modes.try_merge(commercial_modes)?;
         collections.lines.try_merge(lines)?;
+        collections.trip_properties.try_merge(trip_properties)?;
         lines_netex_idf
     } else {
         bail!("Failed to parse file {:?}", path);

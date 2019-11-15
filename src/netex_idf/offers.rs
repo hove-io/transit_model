@@ -588,6 +588,7 @@ where
                 },
             )
             .collect();
+        let trip_property_id = line_netex_idf.trip_property_id.clone();
         let vehicle_journey = VehicleJourney {
             id,
             route_id,
@@ -597,6 +598,7 @@ where
             headsign,
             short_name,
             comment_links,
+            trip_property_id,
             ..Default::default()
         };
         Ok(vehicle_journey)
@@ -1006,10 +1008,10 @@ mod tests {
                 network_id: String::from("network_id"),
                 company_id: String::from("company_id"),
                 mode: String::from("bus"),
-                wheelchair_accessible: false,
                 color: None,
                 text_color: None,
                 comment_ids: BTreeSet::new(),
+                trip_property_id: Some("tp_id".into()),
             })
         }
 
@@ -1089,6 +1091,7 @@ mod tests {
                 "Trip Short Name",
                 vehicle_journey.short_name.as_ref().unwrap()
             );
+            assert_eq!(Some("tp_id".to_string()), vehicle_journey.trip_property_id);
             let stop_time = &vehicle_journey.stop_times[0];
             assert_eq!(0, stop_time.sequence);
             assert_eq!(Time::new(23, 55, 0), stop_time.arrival_time);

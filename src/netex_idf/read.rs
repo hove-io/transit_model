@@ -133,10 +133,10 @@ mod tests {
             network_id: String::from("network_id"),
             company_id: String::from("company_id"),
             mode: String::from("physical_mode_id"),
-            wheelchair_accessible: false,
             color: None,
             text_color: None,
             comment_ids: vec![String::from("comment_id")].into_iter().collect(),
+            trip_property_id: None,
         });
         enhance_with_line_comments(&mut collections, &lines_netex_idf);
         let line = collections.lines.get("line_id").unwrap();

@@ -134,18 +134,20 @@ pub fn get_or_create_equipment<'a>(
     equipments: &'a mut HashMap<Accessibility, Equipment>,
     id_incr: &mut u8,
 ) -> Option<&'a mut Equipment> {
-    let accessibility = accessibility(quay)?;
+    let accessibility_node = quay.only_child("AccessibilityAssessment")?;
+    let accessibility = accessibility(accessibility_node)?;
 
-    let equipment = equipments.entry(accessibility).or_insert_with(|| {
+    let equipment = equipments.entry(accessibility.clone()).or_insert_with(|| {
         let Accessibility {
-            wheelchair_boarding,
+            wheelchair,
             visual_announcement,
             audible_announcement,
+            ..
         } = accessibility;
         *id_incr += 1;
         Equipment {
             id: id_incr.to_string(),
-            wheelchair_boarding,
+            wheelchair_boarding: wheelchair,
             visual_announcement,
             audible_announcement,
             ..Default::default()
@@ -225,7 +227,7 @@ fn load_stop_points<'a>(
     }
 
     let mut equipments: Vec<_> = equipments.into_iter().map(|(_, e)| e).collect();
-    equipments.sort_unstable_by(|tp1, tp2| tp1.id.cmp(&tp2.id));
+    equipments.sort_unstable_by(|eq1, eq2| eq1.id.cmp(&eq2.id));
 
     Ok((stop_points, CollectionWithId::new(equipments)?))
 }
