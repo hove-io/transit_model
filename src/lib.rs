@@ -43,6 +43,7 @@ pub mod test_utils;
 pub mod transfers;
 #[cfg(feature = "proj")]
 pub mod transxchange;
+mod validity_period;
 pub mod vptranslator;
 
 /// Current version of the NTFS format

@@ -25,7 +25,7 @@ use crate::{
     objects::{
         Calendar, Dataset, Date, Route, StopPoint, StopTime, Time, ValidityPeriod, VehicleJourney,
     },
-    read_utils, Result,
+    validity_period, Result,
 };
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
@@ -357,7 +357,7 @@ fn update_validity_period_from_netex_idf(
 ) -> Result<CollectionWithId<Dataset>> {
     let mut datasets = datasets.take();
     for dataset in &mut datasets {
-        read_utils::update_validity_period(dataset, &validity_period);
+        validity_period::update_validity_period(dataset, &validity_period);
     }
     CollectionWithId::new(datasets)
 }

@@ -16,9 +16,8 @@ use crate::{
     minidom_utils::TryOnlyChild,
     model::{Collections, Model},
     objects::*,
-    read_utils,
     transxchange::{bank_holidays, bank_holidays::BankHoliday, naptan},
-    AddPrefix, Result,
+    validity_period, AddPrefix, Result,
 };
 use chrono::{
     naive::{NaiveDate, MAX_DATE, MIN_DATE},
@@ -127,7 +126,7 @@ fn update_validity_period_from_transxchange(
     let service_validity_period = get_service_validity_period(transxchange, max_end_date)?;
     let mut datasets = datasets.take();
     for dataset in &mut datasets {
-        read_utils::update_validity_period(dataset, &service_validity_period);
+        validity_period::update_validity_period(dataset, &service_validity_period);
     }
     CollectionWithId::new(datasets)
 }
