@@ -14,6 +14,7 @@
 
 //! Module to handle Netex IDF profile
 
+mod accessibility;
 mod calendars;
 mod common;
 mod lines;

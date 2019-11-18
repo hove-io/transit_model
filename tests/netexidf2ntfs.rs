@@ -25,28 +25,6 @@ fn test_read_write_netex_idf() {
     .unwrap();
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(
-            &output_dir,
-            Some(vec![
-                "calendar.txt",
-                "comments.txt",
-                "comment_links.txt",
-                "commercial_modes.txt",
-                "companies.txt",
-                "contributors.txt",
-                "datasets.txt",
-                "equipments.txt",
-                "feed_infos.txt",
-                "lines.txt",
-                "networks.txt",
-                "object_codes.txt",
-                "physical_modes.txt",
-                "routes.txt",
-                "stop_times.txt",
-                "stops.txt",
-                "trips.txt",
-            ]),
-            "tests/fixtures/netexidf2ntfs/output",
-        );
+        compare_output_dir_with_expected(&output_dir, None, "tests/fixtures/netexidf2ntfs/output");
     });
 }
