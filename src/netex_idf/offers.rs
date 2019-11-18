@@ -1009,6 +1009,7 @@ mod tests {
                 wheelchair_accessible: false,
                 color: None,
                 text_color: None,
+                comment_ids: BTreeSet::new(),
             })
         }
 

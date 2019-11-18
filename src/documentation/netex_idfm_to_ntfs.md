@@ -189,7 +189,7 @@ If the node `Line/PrivateCode` is available, the content of this node is added a
 The accessibility of the line, described by `Line/AccessibilityAssessment` node is used at the trip level (see below).
 
 **Comments on line:**
-If at least one `Line/noticeAssignments/NoticeAssignment/NoticeRef` exists and references a valid notice described in the **commun.xml** file, a link between those notices and the line is described in the NTFS `comment_links.txt` file.
+If at least one `Line/noticeAssignments/NoticeAssignment/NoticeRef` exists and references a valid notice described in one of the **commun.xml** files of the `OFFRE` folders, a link between those notices and the line is described in the NTFS `comment_links.txt` file.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---

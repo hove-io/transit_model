@@ -54,6 +54,7 @@ pub struct LineNetexIDF {
     pub wheelchair_accessible: bool,
     pub color: Option<Rgb>,
     pub text_color: Option<Rgb>,
+    pub comment_ids: BTreeSet<String>,
 }
 impl_id!(LineNetexIDF);
 
@@ -96,6 +97,15 @@ fn load_netex_lines(
                 MODES
                     .get(mode.as_str())
                     .ok_or_else(|| format_err!("Unknown mode {} found for line {}", mode, id))?;
+                let comment_ids = line
+                    .only_child("noticeAssignments")
+                    .iter()
+                    .flat_map(|notice_assignments_element| notice_assignments_element.children())
+                    .filter_map(|notice_assignment_element| {
+                        notice_assignment_element.only_child("NoticeRef")
+                    })
+                    .filter_map(|notice_ref_element| notice_ref_element.attribute::<String>("ref"))
+                    .collect();
 
                 let color = line_color(line, "Colour");
                 let text_color = line_color(line, "TextColour");
@@ -111,6 +121,7 @@ fn load_netex_lines(
                     wheelchair_accessible: false, // TODO
                     color,
                     text_color,
+                    comment_ids,
                 })?;
             }
         }

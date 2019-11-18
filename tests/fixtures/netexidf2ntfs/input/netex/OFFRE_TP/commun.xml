@@ -17,6 +17,11 @@
                <PublicCode>1</PublicCode>
                <TypeOfNoticeRef ref="ServiceJourneyNotice" />
             </Notice>
+            <Notice dataSourceRef="STIF" id="FR1:Notice:C00114:" version="any">
+               <Text>note num&#233;ro 2</Text>
+               <PublicCode>1</PublicCode>
+               <TypeOfNoticeRef ref="LineNotice" />
+            </Notice>
          </members>
       </GeneralFrame>
    </dataObjects>
