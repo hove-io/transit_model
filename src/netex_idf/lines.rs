@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{modes::MODES, share::*, EUROPE_PARIS_TIMEZONE};
+use super::{accessibility::*, modes::MODES, EUROPE_PARIS_TIMEZONE};
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
@@ -70,23 +70,23 @@ fn line_color(line: &Element, child_name: &str) -> Option<Rgb> {
 
 pub fn get_or_create_trip_property<'a>(
     line: &Element,
-    trip_propertiess: &'a mut HashMap<Accessibility, TripProperty>,
-) -> Option<&'a mut TripProperty> {
+    trip_properties: &'a mut HashMap<Accessibility, TripProperty>,
+) -> Option<&'a TripProperty> {
     let accessibility_node = line.only_child("AccessibilityAssessment")?;
     let id: String = accessibility_node.attribute("id")?;
     let accessibility = accessibility(accessibility_node)?;
 
-    let trip_property = trip_propertiess
+    let trip_property = trip_properties
         .entry(accessibility.clone())
         .or_insert_with(|| {
             let Accessibility {
-                wheelchair,
+                wheelchair: wheelchair_accessible,
                 visual_announcement,
                 audible_announcement,
             } = accessibility;
             TripProperty {
                 id,
-                wheelchair_accessible: wheelchair,
+                wheelchair_accessible,
                 visual_announcement,
                 audible_announcement,
                 ..Default::default()

@@ -1091,7 +1091,7 @@ mod tests {
                 "Trip Short Name",
                 vehicle_journey.short_name.as_ref().unwrap()
             );
-            assert_eq!(Some("tp_id".to_string()), vehicle_journey.trip_property_id);
+            assert_eq!("tp_id", vehicle_journey.trip_property_id.as_ref().unwrap());
             let stop_time = &vehicle_journey.stop_times[0];
             assert_eq!(0, stop_time.sequence);
             assert_eq!(Time::new(23, 55, 0), stop_time.arrival_time);

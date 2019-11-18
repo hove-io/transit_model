@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{share::*, EUROPE_PARIS_TIMEZONE};
+use super::{accessibility::*, EUROPE_PARIS_TIMEZONE};
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
@@ -133,21 +133,20 @@ pub fn get_or_create_equipment<'a>(
     quay: &Element,
     equipments: &'a mut HashMap<Accessibility, Equipment>,
     id_incr: &mut u8,
-) -> Option<&'a mut Equipment> {
+) -> Option<&'a Equipment> {
     let accessibility_node = quay.only_child("AccessibilityAssessment")?;
     let accessibility = accessibility(accessibility_node)?;
 
     let equipment = equipments.entry(accessibility.clone()).or_insert_with(|| {
         let Accessibility {
-            wheelchair,
+            wheelchair: wheelchair_boarding,
             visual_announcement,
             audible_announcement,
-            ..
         } = accessibility;
         *id_incr += 1;
         Equipment {
             id: id_incr.to_string(),
-            wheelchair_boarding: wheelchair,
+            wheelchair_boarding,
             visual_announcement,
             audible_announcement,
             ..Default::default()
