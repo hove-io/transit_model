@@ -91,6 +91,9 @@
                      <QuayRef ref="FR::Quay:with_zder_but_no_stopplace:FR1">version="any"</QuayRef>
                   </PassengerStopAssignment>
                   <PassengerStopAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:PassengerStopAssignment:local-26-C00114-22:LOC" version="any" order="0">
+                     <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-22:LOC" version="any" />
+                     <QuayRef ref="FR::Quay:50144192:FR1">version="any"</QuayRef>
+                  </PassengerStopAssignment>
                   <RoutingConstraintZone dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:RoutingConstraintZone:local-26-C00114:LOC" version="any">
                      <Name>ITL 1</Name>
                      <members>
@@ -99,9 +102,6 @@
                      </members>
                      <ZoneUse>cannotBoardAndAlightInSameZone</ZoneUse>
                   </RoutingConstraintZone>
-                     <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-22:LOC" version="any" />
-                     <QuayRef ref="FR::Quay:50144192:FR1">version="any"</QuayRef>
-                  </PassengerStopAssignment>
                   <DestinationDisplay dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:JourneyPattern:local-26-C00114-1:LOC" version="any">
                      <FrontText>BIBLIOTHEQUE NATIONALE</FrontText>
                      <PublicCode>BIBLIOTHEQUE NATIONALE</PublicCode>
