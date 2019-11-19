@@ -76,6 +76,7 @@ struct StopPointInJourneyPattern {
     stop_point_idx: Idx<StopPoint>,
     pickup_type: u8,
     drop_off_type: u8,
+    local_zone_id: Option<u16>,
 }
 struct JourneyPattern<'a, 'b> {
     route: &'a Route,
@@ -224,12 +225,62 @@ pub fn read_offer_folder(
     Ok(())
 }
 
+// This function apply RoutingConstraintZone on journey patterns.
+//
+// The sequence of Stop Points in a RoutingConstraintZone must match a subset of
+// the journey pattern: order of the Stop Points matters!
+//
+// The Stop Points of RoutingConstraintZones are organized in a tree (see
+// `RoutingConstraintZones::from()`).
+//
+// # Algorithm Explanation
+//
+// For each Stop Point of the Journey Pattern, a RoutingConstraintZone can start.
+// Therefore, we add the root of the tree in `current_nodes` on each iteration.
+// `current_nodes` is storing all the TreeNode still matching the sequence of
+// Stop Points of the Journey Pattern. As we move on the iteration, this list of
+// TreeNode is moving down one level in the tree until reaching a leaf. Once it
+// reaches a leaf, then it creates a `local_zone_id` for all the corresponding
+// nodes (the `depth` help to calculate how many nodes are concerned)
+fn apply_routing_constraint_zones(
+    stop_points_in_journey_pattern: &mut Vec<StopPointInJourneyPattern>,
+    routing_constraint_zones: &RoutingConstraintZones,
+) {
+    let mut current_nodes: Vec<&TreeNode> = Vec::new();
+    let mut local_zone_id = 1;
+    for index in 0..stop_points_in_journey_pattern.len() {
+        let sp_idx = stop_points_in_journey_pattern[index].stop_point_idx;
+        // On each StopPointInJourneyPattern, a RoutingConstraintZone can start
+        // So we add a new pointer on the root of the tree for each StopPointInJourneyPattern
+        current_nodes.push(routing_constraint_zones);
+        // Go down a level in the tree for all the possible RoutingConstraintZone, the other ones are removed
+        current_nodes = current_nodes
+            .into_iter()
+            .filter_map(|node| node.childrens.get(&sp_idx))
+            .collect();
+        for node in &current_nodes {
+            // If the node is the final StopPoint of a RoutingConstraintZone, apply the 'local_zone_id'
+            if node.is_leaf {
+                for sp_in_jp in stop_points_in_journey_pattern
+                    .iter_mut()
+                    .skip(index - (node.depth - 1))
+                    .take(node.depth)
+                {
+                    sp_in_jp.local_zone_id = Some(local_zone_id);
+                }
+                local_zone_id += 1;
+            }
+        }
+    }
+}
+
 fn parse_service_journey_patterns<'a, 'b, 'c, I>(
     sjp_elements: I,
     routes: &'b CollectionWithId<Route>,
     stop_points: &CollectionWithId<StopPoint>,
     destination_displays: &'c DestinationDisplays,
     map_schedule_stop_point_quay: &HashMap<String, String>,
+    routing_constraint_zones: &RoutingConstraintZones,
 ) -> JourneyPatterns<'b, 'c>
 where
     I: Iterator<Item = &'a Element>,
@@ -251,6 +302,7 @@ where
             stop_point_idx,
             pickup_type,
             drop_off_type,
+            local_zone_id: None,
         })
     }
     sjp_elements
@@ -264,7 +316,7 @@ where
                 .only_child("DestinationDisplayRef")
                 .and_then(|dd_ref| dd_ref.attribute::<String>("ref"))
                 .and_then(|dd_ref| destination_displays.get(&dd_ref));
-            let stop_points_in_journey_pattern = match sjp_element
+            let mut stop_points_in_journey_pattern = match sjp_element
                 .only_child("pointsInSequence")?
                 .children()
                 .map(|sp_in_jp| {
@@ -282,6 +334,10 @@ where
                     return None;
                 }
             };
+            apply_routing_constraint_zones(
+                &mut stop_points_in_journey_pattern,
+                &routing_constraint_zones,
+            );
             Some((
                 id,
                 JourneyPattern {
@@ -312,6 +368,73 @@ where
             ))
         })
         .collect()
+}
+
+type RoutingConstraintZone = Vec<Idx<StopPoint>>;
+fn parse_routing_constraint_zones<'a, I>(
+    rcz_elements: I,
+    map_schedule_stop_point_quay: &HashMap<String, String>,
+    collections: &Collections,
+) -> Vec<RoutingConstraintZone>
+where
+    I: Iterator<Item = &'a Element>,
+{
+    rcz_elements
+        .filter_map(|rcz_element| {
+            let mut stop_point_idxs = RoutingConstraintZone::new();
+            for scheduled_stop_point_ref_element in rcz_element
+                .only_child("members")
+                .iter()
+                .flat_map(|members| members.children())
+            {
+                if let Some(stop_point_idx) = scheduled_stop_point_ref_element
+                    .attribute::<String>("ref")
+                    .and_then(|ssp_ref| map_schedule_stop_point_quay.get(&ssp_ref))
+                    .and_then(|quay_ref| collections.stop_points.get_idx(&quay_ref))
+                {
+                    stop_point_idxs.push(stop_point_idx);
+                } else {
+                    return None;
+                }
+            }
+            if stop_point_idxs.is_empty() {
+                None
+            } else {
+                Some(stop_point_idxs)
+            }
+        })
+        .collect()
+}
+
+#[derive(Default, Debug)]
+struct TreeNode {
+    depth: usize,
+    is_leaf: bool,
+    childrens: HashMap<Idx<StopPoint>, TreeNode>,
+}
+type RoutingConstraintZones = TreeNode;
+
+// Transform a list of RoutingConstraintZone (which are basically an ordered list
+// of Stop Points) into a tree.
+impl From<Vec<RoutingConstraintZone>> for RoutingConstraintZones {
+    fn from(routing_constraint_zone_list: Vec<RoutingConstraintZone>) -> Self {
+        let mut routing_constraint_zones = RoutingConstraintZones::default();
+        for routing_constraint_zone in routing_constraint_zone_list {
+            let mut current_node = &mut routing_constraint_zones;
+            current_node.depth = 0;
+            for (depth, stop_point_idx) in routing_constraint_zone.iter().enumerate() {
+                current_node = current_node
+                    .childrens
+                    .entry(*stop_point_idx)
+                    .or_insert_with(TreeNode::default);
+                current_node.depth = depth + 1;
+                if depth == routing_constraint_zone.len() - 1 {
+                    current_node.is_leaf = true;
+                }
+            }
+        }
+        routing_constraint_zones
+    }
 }
 
 fn parse_passenger_stop_assignment<'a, I>(psa_elements: I) -> HashMap<String, String>
@@ -489,6 +612,7 @@ fn stop_times(
                 stop_point_idx,
                 pickup_type,
                 drop_off_type,
+                local_zone_id,
             } = *stop_point_in_journey_pattern;
             let times = arrival_departure_times(tpt)?;
             let stop_time = StopTime {
@@ -501,7 +625,7 @@ fn stop_times(
                 pickup_type,
                 drop_off_type,
                 datetime_estimated: false,
-                local_zone_id: None,
+                local_zone_id,
             };
 
             Ok(stop_time)
@@ -717,6 +841,19 @@ fn parse_offer(
         .map(|childrens| childrens.filter(|e| e.name() == "DestinationDisplay"))
         .map(parse_destination_display)
         .unwrap_or_else(HashMap::new);
+    let routing_constraint_zones = structure_frame
+        .only_child("members")
+        .map(Element::children)
+        .map(|childrens| childrens.filter(|e| e.name() == "RoutingConstraintZone"))
+        .map(|rcz_elements| {
+            parse_routing_constraint_zones(
+                rcz_elements,
+                &map_schedule_stop_point_quay,
+                &collections,
+            )
+        })
+        .map(RoutingConstraintZones::from)
+        .unwrap_or_else(RoutingConstraintZones::default);
     let journey_patterns = structure_frame
         .only_child("members")
         .map(Element::children)
@@ -728,6 +865,7 @@ fn parse_offer(
                 &collections.stop_points,
                 &destination_displays,
                 &map_schedule_stop_point_quay,
+                &routing_constraint_zones,
             )
         })
         .unwrap_or_else(HashMap::new);
@@ -987,6 +1125,7 @@ mod tests {
                 stop_point_idx,
                 pickup_type: 0,
                 drop_off_type: 1,
+                local_zone_id: None,
             });
             if let Some(route) = routes.get("route_id") {
                 let journey_pattern = JourneyPattern {
@@ -1378,6 +1517,304 @@ mod tests {
             let sp_in_jp_el: Element = sp_in_jp_xml.parse().unwrap();
             let boarding_type = boarding_type(&sp_in_jp_el, "ForAlighting");
             assert_eq!(1, boarding_type);
+        }
+    }
+
+    mod parse_routing_constraint_zones {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn map_schedule_stop_point_quay() -> HashMap<String, String> {
+            vec![
+                (
+                    String::from("scheduled_stop_point_ref"),
+                    String::from("stop_point_id"),
+                ),
+                (
+                    String::from("schedule_stop_point_ref_with_incorrect_stop_point_id"),
+                    String::from("unknown_id"),
+                ),
+            ]
+            .into_iter()
+            .collect()
+        }
+
+        fn collections() -> Collections {
+            let mut collections = Collections::default();
+            collections
+                .stop_points
+                .push(StopPoint {
+                    id: String::from("stop_point_id"),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+        }
+
+        #[test]
+        fn valid_routing_constraint_zone() {
+            let routing_constraint_zone_xml = r#"<RoutingConstraintZone>
+                    <members>
+                        <ScheduledStopPointRef ref="scheduled_stop_point_ref" />
+                    </members>
+                </RoutingConstraintZone>"#;
+            let routing_constraint_zone: Element = routing_constraint_zone_xml.parse().unwrap();
+            let map_schedule_stop_point_quay = map_schedule_stop_point_quay();
+            let collections = collections();
+            let routing_constraint_zones = parse_routing_constraint_zones(
+                [routing_constraint_zone].iter(),
+                &map_schedule_stop_point_quay,
+                &collections,
+            );
+            assert_eq!(1, routing_constraint_zones.len());
+            let routing_constraint_zone = &routing_constraint_zones[0];
+            let expected_idx = collections.stop_points.get_idx("stop_point_id").unwrap();
+            assert_eq!(1, routing_constraint_zone.len());
+            assert_eq!(expected_idx, routing_constraint_zone[0]);
+        }
+
+        #[test]
+        fn invalid_scheduled_stop_point_ref() {
+            let routing_constraint_zone_xml = r#"<RoutingConstraintZone>
+                    <members>
+                        <ScheduledStopPointRef ref="scheduled_stop_point_ref" />
+                        <ScheduledStopPointRef ref="unknown_ref" />
+                    </members>
+                </RoutingConstraintZone>"#;
+            let routing_constraint_zone: Element = routing_constraint_zone_xml.parse().unwrap();
+            let map_schedule_stop_point_quay = map_schedule_stop_point_quay();
+            let collections = collections();
+            let routing_constraint_zones = parse_routing_constraint_zones(
+                [routing_constraint_zone].iter(),
+                &map_schedule_stop_point_quay,
+                &collections,
+            );
+            assert_eq!(0, routing_constraint_zones.len());
+        }
+
+        #[test]
+        fn routing_constraint_zone_without_members() {
+            let routing_constraint_zone_xml = r#"<RoutingConstraintZone />"#;
+            let routing_constraint_zone: Element = routing_constraint_zone_xml.parse().unwrap();
+            let map_schedule_stop_point_quay = map_schedule_stop_point_quay();
+            let collections = collections();
+            let routing_constraint_zones = parse_routing_constraint_zones(
+                [routing_constraint_zone].iter(),
+                &map_schedule_stop_point_quay,
+                &collections,
+            );
+            assert_eq!(0, routing_constraint_zones.len());
+        }
+
+        #[test]
+        fn invalid_stop_point_id() {
+            let routing_constraint_zone_xml = r#"<RoutingConstraintZone>
+                    <members>
+                        <ScheduledStopPointRef ref="scheduled_stop_point_ref" />
+                        <ScheduledStopPointRef ref="scheduled_stop_point_ref_with_incorrect_stop_point_id" />
+                    </members>
+                </RoutingConstraintZone>"#;
+            let routing_constraint_zone: Element = routing_constraint_zone_xml.parse().unwrap();
+            let map_schedule_stop_point_quay = map_schedule_stop_point_quay();
+            let collections = collections();
+            let routing_constraint_zones = parse_routing_constraint_zones(
+                [routing_constraint_zone].iter(),
+                &map_schedule_stop_point_quay,
+                &collections,
+            );
+            assert_eq!(0, routing_constraint_zones.len());
+        }
+    }
+
+    // This test asserts that the following tree will be produced
+    // (the 'x' symbol marks that the node is also a final node for one constraint zone, aka 'is_leaf')
+    //
+    //                                 root
+    //                                /    \
+    //                               /      \
+    //            [x]stop_point_idx_1        stop_point_idx_2[x]
+    //                     /
+    //                    /
+    // [x]stop_point_idx_2
+    #[test]
+    fn tree() {
+        let mut stop_points = CollectionWithId::default();
+        stop_points
+            .push(StopPoint {
+                id: String::from("stop_point_1"),
+                ..Default::default()
+            })
+            .unwrap();
+        stop_points
+            .push(StopPoint {
+                id: String::from("stop_point_2"),
+                ..Default::default()
+            })
+            .unwrap();
+        let stop_point_idx_1 = stop_points.get_idx("stop_point_1").unwrap();
+        let stop_point_idx_2 = stop_points.get_idx("stop_point_2").unwrap();
+        let routing_constraint_zone_1 = vec![stop_point_idx_1];
+        let routing_constraint_zone_2 = vec![stop_point_idx_1, stop_point_idx_2];
+        let routing_constraint_zone_3 = vec![stop_point_idx_2];
+        let routing_constraint_zone_list = vec![
+            routing_constraint_zone_1,
+            routing_constraint_zone_2,
+            routing_constraint_zone_3,
+        ];
+        let routing_constraint_zones = RoutingConstraintZones::from(routing_constraint_zone_list);
+
+        assert_eq!(false, routing_constraint_zones.is_leaf);
+        assert_eq!(0, routing_constraint_zones.depth);
+        assert_eq!(2, routing_constraint_zones.childrens.len());
+        assert!(routing_constraint_zones
+            .childrens
+            .contains_key(&stop_point_idx_1));
+        assert!(routing_constraint_zones
+            .childrens
+            .contains_key(&stop_point_idx_2));
+
+        let branch_1 = routing_constraint_zones
+            .childrens
+            .get(&stop_point_idx_1)
+            .unwrap();
+        assert_eq!(true, branch_1.is_leaf);
+        assert_eq!(1, branch_1.depth);
+        assert_eq!(1, branch_1.childrens.len());
+        assert!(branch_1.childrens.contains_key(&stop_point_idx_2));
+
+        let branch_12 = branch_1.childrens.get(&stop_point_idx_2).unwrap();
+        assert_eq!(true, branch_12.is_leaf);
+        assert_eq!(2, branch_12.depth);
+        assert_eq!(0, branch_12.childrens.len());
+
+        let branch_2 = routing_constraint_zones
+            .childrens
+            .get(&stop_point_idx_2)
+            .unwrap();
+        assert_eq!(true, branch_2.is_leaf);
+        assert_eq!(1, branch_2.depth);
+        assert_eq!(0, branch_2.childrens.len());
+    }
+
+    mod apply_routing_constraint_zones {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn stop_points() -> CollectionWithId<StopPoint> {
+            let mut stop_points = CollectionWithId::default();
+            stop_points
+                .push(StopPoint {
+                    id: String::from("sp1"),
+                    ..Default::default()
+                })
+                .unwrap();
+            stop_points
+                .push(StopPoint {
+                    id: String::from("sp2"),
+                    ..Default::default()
+                })
+                .unwrap();
+            stop_points
+                .push(StopPoint {
+                    id: String::from("sp3"),
+                    ..Default::default()
+                })
+                .unwrap();
+            stop_points
+                .push(StopPoint {
+                    id: String::from("sp4"),
+                    ..Default::default()
+                })
+                .unwrap();
+            stop_points
+                .push(StopPoint {
+                    id: String::from("sp5"),
+                    ..Default::default()
+                })
+                .unwrap();
+            stop_points
+        }
+
+        #[test]
+        fn apply_routing_constraint_zones_at_start_of_journey_pattern() {
+            let stop_points = stop_points();
+            let sp1_idx = stop_points.get_idx("sp1").unwrap();
+            let sp2_idx = stop_points.get_idx("sp2").unwrap();
+            let sp3_idx = stop_points.get_idx("sp3").unwrap();
+            let mut stop_points_in_journey_pattern = vec![sp1_idx, sp2_idx, sp3_idx]
+                .into_iter()
+                .map(|stop_point_idx| StopPointInJourneyPattern {
+                    stop_point_idx,
+                    pickup_type: 0,
+                    drop_off_type: 0,
+                    local_zone_id: None,
+                })
+                .collect();
+            let routing_constraint_zones =
+                RoutingConstraintZones::from(vec![vec![sp1_idx, sp2_idx]]);
+            apply_routing_constraint_zones(
+                &mut stop_points_in_journey_pattern,
+                &routing_constraint_zones,
+            );
+            assert_eq!(1, stop_points_in_journey_pattern[0].local_zone_id.unwrap());
+            assert_eq!(1, stop_points_in_journey_pattern[1].local_zone_id.unwrap());
+            assert_eq!(None, stop_points_in_journey_pattern[2].local_zone_id);
+        }
+
+        #[test]
+        fn apply_routing_constraint_zones_at_end_of_journey_pattern() {
+            let stop_points = stop_points();
+            let sp1_idx = stop_points.get_idx("sp1").unwrap();
+            let sp2_idx = stop_points.get_idx("sp2").unwrap();
+            let sp3_idx = stop_points.get_idx("sp3").unwrap();
+            let mut stop_points_in_journey_pattern = vec![sp1_idx, sp2_idx, sp3_idx]
+                .into_iter()
+                .map(|stop_point_idx| StopPointInJourneyPattern {
+                    stop_point_idx,
+                    pickup_type: 0,
+                    drop_off_type: 0,
+                    local_zone_id: None,
+                })
+                .collect();
+            let routing_constraint_zones = RoutingConstraintZones::from(vec![vec![sp3_idx]]);
+            apply_routing_constraint_zones(
+                &mut stop_points_in_journey_pattern,
+                &routing_constraint_zones,
+            );
+            assert_eq!(None, stop_points_in_journey_pattern[0].local_zone_id);
+            assert_eq!(None, stop_points_in_journey_pattern[1].local_zone_id);
+            assert_eq!(1, stop_points_in_journey_pattern[2].local_zone_id.unwrap());
+        }
+
+        #[test]
+        fn apply_two_routing_constraint_zones() {
+            let stop_points = stop_points();
+            let sp1_idx = stop_points.get_idx("sp1").unwrap();
+            let sp2_idx = stop_points.get_idx("sp2").unwrap();
+            let sp3_idx = stop_points.get_idx("sp3").unwrap();
+            let sp4_idx = stop_points.get_idx("sp4").unwrap();
+            let sp5_idx = stop_points.get_idx("sp5").unwrap();
+            let mut stop_points_in_journey_pattern =
+                vec![sp1_idx, sp2_idx, sp3_idx, sp4_idx, sp5_idx]
+                    .into_iter()
+                    .map(|stop_point_idx| StopPointInJourneyPattern {
+                        stop_point_idx,
+                        pickup_type: 0,
+                        drop_off_type: 0,
+                        local_zone_id: None,
+                    })
+                    .collect();
+            let routing_constraint_zones =
+                RoutingConstraintZones::from(vec![vec![sp1_idx, sp2_idx], vec![sp4_idx]]);
+            apply_routing_constraint_zones(
+                &mut stop_points_in_journey_pattern,
+                &routing_constraint_zones,
+            );
+            assert_eq!(1, stop_points_in_journey_pattern[0].local_zone_id.unwrap());
+            assert_eq!(1, stop_points_in_journey_pattern[1].local_zone_id.unwrap());
+            assert_eq!(None, stop_points_in_journey_pattern[2].local_zone_id);
+            assert_eq!(2, stop_points_in_journey_pattern[3].local_zone_id.unwrap());
+            assert_eq!(None, stop_points_in_journey_pattern[4].local_zone_id);
         }
     }
 }
