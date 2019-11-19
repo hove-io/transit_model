@@ -236,6 +236,47 @@
                                 </DestinationDisplayView>
                             </destinations>
                         </Quay>
+                       <Quay xmlns="http://www.netex.org.uk/netex" xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="FR1-ARRET_AUTO" version="28674-42332" created="2014-12-29T14:31:51Z" changed="2019-02-18T20:12:08Z" id="FR::Quay:28674:FR1">
+                          <Name>Bibliothèque Nationale</Name>
+                          <Centroid>
+                             <Location>
+                                <gml:pos srsName="EPSG:2154">651434.0 6863307.0</gml:pos>
+                             </Location>
+                          </Centroid>
+                          <ParentZoneRef ref="FR::monomodalStopPlace:42332:FR1"/>
+                          <PostalAddress version="any" id="FR1:PostalAddress:28674:">
+                             <Town>Paris 2e</Town>
+                             <PostalRegion>75102</PostalRegion>
+                          </PostalAddress>
+                          <AccessibilityAssessment version="any" id="FR1:AccessibilityAssessment:28674:">
+                             <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                             <limitations>
+                                <AccessibilityLimitation>
+                                   <WheelchairAccess>unknown</WheelchairAccess>
+                                   <AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+                                   <VisualSignsAvailable>unknown</VisualSignsAvailable>
+                                </AccessibilityLimitation>
+                             </limitations>
+                          </AccessibilityAssessment>
+                          <TransportMode>bus</TransportMode>
+                          <tariffZones>
+                             <TariffZoneRef ref="FR1:TariffZone:1:LOC"/>
+                          </tariffZones>
+                          <destinations>
+                             <DestinationDisplayView>
+                                <Name>48</Name>
+                                <PrivateCode>100100048</PrivateCode>
+                             </DestinationDisplayView>
+                             <DestinationDisplayView>
+                                <Name>39</Name>
+                                <PrivateCode>100100039</PrivateCode>
+                             </DestinationDisplayView>
+                             <DestinationDisplayView>
+                                <Name>67</Name>
+                                <PrivateCode>100100067</PrivateCode>
+                             </DestinationDisplayView>
+                          </destinations>
+                       </Quay>
                         <Quay xmlns="http://www.netex.org.uk/netex" xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="FR1:OrganisationalUnit:6:" version="999712-660598" created="2016-08-01T19:25:32Z" changed="2018-09-26T19:12:13Z" derivedFromObjectRef="FR::Quay:415821:FR1" id="FR::Quay:50068421:FR1">
                             <keyList>
                                 <KeyValue typeOfKey="LOCATION">
@@ -272,6 +313,53 @@
                                 </DestinationDisplayView>
                             </destinations>
                         </Quay>
+                       <Quay xmlns="http://www.netex.org.uk/netex" xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="FR1:OrganisationalUnit:59:" version="1033093-28674" created="2018-04-12T07:26:31Z" changed="2019-02-18T20:09:42Z" derivedFromObjectRef="FR::Quay:28674:FR1" id="FR::Quay:50114580:FR1">
+                          <keyList>
+                             <KeyValue typeOfKey="LOCATION">
+                                <Key>EPSG_27572</Key>
+                                <Value>600106.0 2429960.0</Value>
+                             </KeyValue>
+                          </keyList>
+                          <Name>BIBLIOTHEQUE NATIONALE</Name>
+                          <PrivateCode>626</PrivateCode>
+                          <Centroid>
+                             <Location>
+                                <gml:pos srsName="EPSG:2154">651434.0 6863307.0</gml:pos>
+                             </Location>
+                          </Centroid>
+                          <PostalAddress version="any" id="FR1:PostalAddress:50114580:">
+                             <Town>Paris 2e</Town>
+                             <PostalRegion>75102</PostalRegion>
+                          </PostalAddress>
+                          <AccessibilityAssessment version="any" id="FR1:AccessibilityAssessment:50114580:">
+                             <MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+                             <limitations>
+                                <AccessibilityLimitation>
+                                   <WheelchairAccess>unknown</WheelchairAccess>
+                                   <AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+                                   <VisualSignsAvailable>unknown</VisualSignsAvailable>
+                                </AccessibilityLimitation>
+                             </limitations>
+                          </AccessibilityAssessment>
+                          <TransportMode>bus</TransportMode>
+                          <tariffZones>
+                             <TariffZoneRef ref="FR1:TariffZone:1:LOC"/>
+                          </tariffZones>
+                          <destinations>
+                             <DestinationDisplayView>
+                                <Name>39</Name>
+                                <PrivateCode>100100039</PrivateCode>
+                             </DestinationDisplayView>
+                             <DestinationDisplayView>
+                                <Name>67</Name>
+                                <PrivateCode>100100067</PrivateCode>
+                             </DestinationDisplayView>
+                             <DestinationDisplayView>
+                                <Name>48</Name>
+                                <PrivateCode>100100048</PrivateCode>
+                             </DestinationDisplayView>
+                          </destinations>
+                       </Quay>
                         <Quay xmlns="http://www.netex.org.uk/netex" xmlns:gml="http://www.opengis.net/gml/3.2" dataSourceRef="FR1-ARRET_AUTO" version="821508-55383" created="2014-12-28T23:00:00Z" changed="2018-12-17T15:07:13Z" id="FR::Quay:33759:FR1">
                             <Name>Roger Genty</Name>
                             <Centroid>
