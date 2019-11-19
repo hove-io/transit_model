@@ -31,11 +31,16 @@
                         </StopPointInJourneyPattern>
                         <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-12:LOC" order="2" version="any">
                            <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-11:LOC" version="any"/>
-                           <ForAlighting>true</ForAlighting>
+                           <ForAlighting>false</ForAlighting>
                            <ForBoarding>true</ForBoarding>
                         </StopPointInJourneyPattern>
                         <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-13:LOC" order="3" version="any">
                            <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-12:LOC" version="any"/>
+                           <ForAlighting>false</ForAlighting>
+                           <ForBoarding>true</ForBoarding>
+                        </StopPointInJourneyPattern>
+                       <StopPointInJourneyPattern id="stif:JourneyPattern:local-26-C00114-14:LOC" order="4" version="any">
+                           <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-13:LOC" version="any"/>
                            <ForAlighting>true</ForAlighting>
                            <ForBoarding>false</ForBoarding>
                         </StopPointInJourneyPattern>
@@ -73,6 +78,10 @@
                      <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-12:LOC" version="any" />
                      <QuayRef ref="FR::Quay:50068421:FR1">version="any"</QuayRef>
                   </PassengerStopAssignment>
+                  <PassengerStopAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:PassengerStopAssignment:local-26-C00114-13:LOC" version="any" order="0">
+                     <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-13:LOC" version="any" />
+                     <QuayRef ref="FR::Quay:50114580:FR1">version="any"</QuayRef>
+                  </PassengerStopAssignment>
                    <PassengerStopAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:PassengerStopAssignment:local-26-C00114-20:LOC" version="any" order="0">
                      <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-20:LOC" version="any" />
                      <QuayRef ref="FR::Quay:50013706:FR1">version="any"</QuayRef>
@@ -82,6 +91,14 @@
                      <QuayRef ref="FR::Quay:with_zder_but_no_stopplace:FR1">version="any"</QuayRef>
                   </PassengerStopAssignment>
                   <PassengerStopAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:PassengerStopAssignment:local-26-C00114-22:LOC" version="any" order="0">
+                  <RoutingConstraintZone dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:RoutingConstraintZone:local-26-C00114:LOC" version="any">
+                     <Name>ITL 1</Name>
+                     <members>
+                        <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-11:LOC" version="any" />
+                        <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-12:LOC" version="any" />
+                     </members>
+                     <ZoneUse>cannotBoardAndAlightInSameZone</ZoneUse>
+                  </RoutingConstraintZone>
                      <ScheduledStopPointRef ref="stif:ScheduledStopPoint:local-26-C00114-22:LOC" version="any" />
                      <QuayRef ref="FR::Quay:50144192:FR1">version="any"</QuayRef>
                   </PassengerStopAssignment>
@@ -113,6 +130,11 @@
                         <TimetabledPassingTime version="any">
                            <ArrivalTime>06:35:00</ArrivalTime>
                            <DepartureTime>06:35:00</DepartureTime>
+                           <DepartureDayOffset>0</DepartureDayOffset>
+                        </TimetabledPassingTime>
+                        <TimetabledPassingTime version="any">
+                           <ArrivalTime>07:00:00</ArrivalTime>
+                           <DepartureTime>07:00:00</DepartureTime>
                            <DepartureDayOffset>0</DepartureDayOffset>
                         </TimetabledPassingTime>
                      </passingTimes>
