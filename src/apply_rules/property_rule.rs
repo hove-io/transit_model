@@ -12,30 +12,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-//! See function apply_rules
-
-use crate::model::Collections;
-use crate::utils::{Report, ReportType};
-use crate::Result;
 use crate::{
-    objects::{
-        Codes, Coord, Geometry, Line, Network, ObjectType as ModelObjectType, VehicleJourney,
-    },
-    Model,
+    model::Collections,
+    objects::{Coord, Geometry, Line, VehicleJourney},
+    utils::{Report, ReportType},
+    Result,
 };
 use csv;
-use failure::bail;
-use failure::{format_err, ResultExt};
+use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
 use lazy_static::lazy_static;
 use log::{info, warn};
 use serde::Deserialize;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::fs;
-use std::fs::File;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
-use transit_model_collection::{CollectionWithId, Id, Idx};
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap},
+    path::Path,
+    str::FromStr,
+};
+use transit_model_collection::{CollectionWithId, Idx};
 use transit_model_relations::IdxSet;
 use wkt::{self, conversion::try_into_geometry};
 
@@ -47,8 +41,9 @@ enum ObjectType {
     StopPoint,
     StopArea,
 }
+
 impl ObjectType {
-    pub fn as_str(self) -> &'static str {
+    fn as_str(self) -> &'static str {
         match self {
             ObjectType::Line => "line",
             ObjectType::Route => "route",
@@ -59,167 +54,12 @@ impl ObjectType {
 }
 
 #[derive(Deserialize, Debug, Ord, Eq, PartialOrd, PartialEq, Clone)]
-struct ComplementaryCode {
-    object_type: ObjectType,
-    object_id: String,
-    object_system: String,
-    object_code: String,
-}
-
-#[derive(Deserialize, Debug, Ord, Eq, PartialOrd, PartialEq, Clone)]
 struct PropertyRule {
     object_type: ObjectType,
     object_id: String,
     property_name: String,
     property_old_value: Option<String>,
     property_value: String,
-}
-
-#[derive(Clone, Default, Debug, Deserialize)]
-struct NetworkConsolidation {
-    #[serde(flatten)]
-    network: Network,
-    #[serde(default)]
-    grouped_from: Vec<String>,
-}
-
-fn read_networks_consolidation_file<P: AsRef<Path>>(
-    networks_consolidation_file: P,
-) -> Result<Vec<NetworkConsolidation>> {
-    info!("Reading networks consolidation rules.");
-
-    #[derive(Debug, Deserialize)]
-    struct Consolidation {
-        #[serde(rename = "networks")]
-        networks_consolidation: Vec<NetworkConsolidation>,
-    }
-
-    let file = File::open(networks_consolidation_file)?;
-    let consolidation: Consolidation = serde_json::from_reader(file)
-        .map_err(|_| format_err!("unvalid networks configuration file"))?;
-    Ok(consolidation.networks_consolidation)
-}
-
-fn check_networks_consolidation(
-    report: &mut Report,
-    networks: &CollectionWithId<Network>,
-    networks_consolidation: Vec<NetworkConsolidation>,
-) -> Result<Vec<NetworkConsolidation>> {
-    info!("Checking networks consolidation.");
-    let mut res: Vec<NetworkConsolidation> = vec![];
-
-    for ntw in networks_consolidation.into_iter() {
-        let mut network_consolidation = false;
-        if networks.get(&ntw.network.id).is_some() {
-            bail!(format!("The network \"{}\" already exists", ntw.network.id));
-        };
-
-        if ntw.grouped_from.is_empty() {
-            report.add_error(
-                format!(
-                    "The grouped network list is empty for network consolidation \"{}\"",
-                    &ntw.network.id
-                ),
-                ReportType::ObjectNotFound,
-            );
-            continue;
-        }
-        for ntw_grouped in &ntw.grouped_from {
-            if !networks.contains_id(&ntw_grouped) {
-                report.add_error(
-                    format!("The grouped network \"{}\" don't exist", ntw_grouped),
-                    ReportType::ObjectNotFound,
-                );
-            } else {
-                network_consolidation = true;
-            }
-        }
-        if network_consolidation {
-            res.push(ntw);
-        } else {
-            report.add_error(
-                format!(
-                    "No network has been consolidated for network \"{}\"",
-                    ntw.network.id
-                ),
-                ReportType::ObjectNotFound,
-            );
-        }
-    }
-    Ok(res)
-}
-
-fn update_ticket_use_perimeters(
-    collections: &mut Collections,
-    networks_consolidation: &[NetworkConsolidation],
-) {
-    for network in networks_consolidation {
-        let network_id = &network.network.id;
-        for grouped_from in &network.grouped_from {
-            collections
-                .ticket_use_perimeters
-                .values_mut()
-                .filter(|ticket| {
-                    ticket.object_type == ModelObjectType::Network
-                        && &ticket.object_id == grouped_from
-                })
-                .for_each(|mut ticket| ticket.object_id = network_id.to_string());
-        }
-    }
-}
-
-fn set_networks_consolidation(
-    mut collections: Collections,
-    lines_by_network: &HashMap<String, IdxSet<Line>>,
-    networks_consolidation: Vec<NetworkConsolidation>,
-) -> Result<Collections> {
-    let mut networks_to_remove: HashSet<String> = HashSet::new();
-    for network in networks_consolidation {
-        let network_id = network.network.id.clone();
-        collections.networks.push(network.network)?;
-        for grouped_from in network.grouped_from {
-            if let Some(lines) = lines_by_network.get(&grouped_from) {
-                for line_idx in lines {
-                    let mut line = collections.lines.index_mut(*line_idx);
-                    line.network_id = network_id.to_string();
-                }
-            }
-            networks_to_remove.insert(grouped_from);
-        }
-    }
-    collections
-        .networks
-        .retain(|ntw| !networks_to_remove.contains(&ntw.id));
-    Ok(collections)
-}
-
-fn read_complementary_code_rules_files<P: AsRef<Path>>(
-    rule_files: Vec<P>,
-    report: &mut Report,
-) -> Result<Vec<ComplementaryCode>> {
-    info!("Reading complementary code rules.");
-    let mut codes = BTreeSet::new();
-    for rule_path in rule_files {
-        let path = rule_path.as_ref();
-        let mut rdr = csv::ReaderBuilder::new()
-            .trim(csv::Trim::All)
-            .from_path(&path)
-            .with_context(ctx_from_path!(path))?;
-        for c in rdr.deserialize() {
-            let c: ComplementaryCode = match c {
-                Ok(val) => val,
-                Err(e) => {
-                    report.add_warning(
-                        format!("Error reading {:?}: {}", path.file_name().unwrap(), e),
-                        ReportType::InvalidFile,
-                    );
-                    continue;
-                }
-            };
-            codes.insert(c);
-        }
-    }
-    Ok(codes.into_iter().collect())
 }
 
 fn read_property_rules_files<P: AsRef<Path>>(
@@ -284,34 +124,6 @@ fn read_property_rules_files<P: AsRef<Path>>(
         .collect();
 
     Ok(properties)
-}
-
-fn insert_code<T>(
-    collection: &mut CollectionWithId<T>,
-    code: ComplementaryCode,
-    report: &mut Report,
-) where
-    T: Codes + Id<T>,
-{
-    let idx = match collection.get_idx(&code.object_id) {
-        Some(idx) => idx,
-        None => {
-            report.add_warning(
-                format!(
-                    "Error inserting code: object_codes.txt: object={},  object_id={} not found",
-                    code.object_type.as_str(),
-                    code.object_id
-                ),
-                ReportType::ObjectNotFound,
-            );
-            return;
-        }
-    };
-
-    collection
-        .index_mut(idx)
-        .codes_mut()
-        .insert((code.object_system, code.object_code));
 }
 
 fn property_old_value_do_not_match(report: &mut Report, p: &PropertyRule) {
@@ -829,71 +641,13 @@ lazy_static! {
     };
 }
 
-/// Applying rules
-///
-/// `complementary_code_rules_files` Csv files containing codes to add for certain objects
-pub fn apply_rules(
-    model: Model,
-    complementary_code_rules_files: Vec<PathBuf>,
-    property_rules_files: Vec<PathBuf>,
-    networks_consolidation_file: Option<PathBuf>,
-    report_path: PathBuf,
-) -> Result<Model> {
-    let vjs_by_line: HashMap<String, IdxSet<VehicleJourney>> = model
-        .lines
-        .iter()
-        .filter_map(|(idx, obj)| {
-            let vjs = model.get_corresponding_from_idx(idx);
-            if vjs.is_empty() {
-                None
-            } else {
-                Some((obj.id.clone(), vjs))
-            }
-        })
-        .collect();
-
-    let lines_by_network: HashMap<String, IdxSet<Line>> = model
-        .networks
-        .iter()
-        .filter_map(|(idx, obj)| {
-            let lines = model.get_corresponding_from_idx(idx);
-            if lines.is_empty() {
-                None
-            } else {
-                Some((obj.id.clone(), lines))
-            }
-        })
-        .collect();
-
-    let mut collections = model.into_collections();
-
-    info!("Applying rules...");
-    let mut report = Report::default();
-
-    if let Some(networks_consolidation_file) = networks_consolidation_file {
-        let networks_consolidation = read_networks_consolidation_file(networks_consolidation_file)?;
-        let networks_consolidation = check_networks_consolidation(
-            &mut report,
-            &collections.networks,
-            networks_consolidation,
-        )?;
-
-        update_ticket_use_perimeters(&mut collections, &networks_consolidation);
-        collections =
-            set_networks_consolidation(collections, &lines_by_network, networks_consolidation)?;
-    }
-
-    let codes = read_complementary_code_rules_files(complementary_code_rules_files, &mut report)?;
-    for code in codes {
-        match code.object_type {
-            ObjectType::Line => insert_code(&mut collections.lines, code, &mut report),
-            ObjectType::Route => insert_code(&mut collections.routes, code, &mut report),
-            ObjectType::StopPoint => insert_code(&mut collections.stop_points, code, &mut report),
-            ObjectType::StopArea => insert_code(&mut collections.stop_areas, code, &mut report),
-        }
-    }
-
-    let properties = read_property_rules_files(property_rules_files, &mut report)?;
+pub fn apply_rules<P: AsRef<Path>>(
+    rule_files: Vec<P>,
+    mut collections: &mut Collections,
+    vjs_by_line: &HashMap<String, IdxSet<VehicleJourney>>,
+    mut report: &mut Report,
+) -> Result<()> {
+    let properties = read_property_rules_files(rule_files, &mut report)?;
 
     let lines = collections.lines.clone();
     for mut p in properties {
@@ -921,8 +675,5 @@ pub fn apply_rules(
         }
     }
 
-    let serialized_report = serde_json::to_string_pretty(&report)?;
-    fs::write(report_path, serialized_report)?;
-
-    Model::new(collections)
+    Ok(())
 }
