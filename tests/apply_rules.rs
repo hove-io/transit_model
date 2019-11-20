@@ -40,6 +40,7 @@ fn test_apply_rules(
             "admin_stations.txt",
             "ticket_use_perimeters.txt",
             "admin_stations.txt",
+            "physical_modes.txt",
         ];
 
         let input_dir = "tests/fixtures/apply_rules/input";

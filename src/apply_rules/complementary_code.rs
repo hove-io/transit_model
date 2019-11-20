@@ -24,7 +24,7 @@ use serde::Deserialize;
 use std::{collections::BTreeSet, path::Path};
 use transit_model_collection::{CollectionWithId, Id};
 
-#[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Hash)]
+#[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 enum ObjectType {
     Line,

@@ -40,6 +40,7 @@ enum ObjectType {
     Route,
     StopPoint,
     StopArea,
+    PhysicalMode,
 }
 
 impl ObjectType {
@@ -49,6 +50,7 @@ impl ObjectType {
             ObjectType::Route => "route",
             ObjectType::StopPoint => "stop_point",
             ObjectType::StopArea => "stop_area",
+            ObjectType::PhysicalMode => "physical_mode",
         }
     }
 }
@@ -634,6 +636,23 @@ lazy_static! {
                     update_position(p, &mut obj.coord, r);
                     true
                 })
+            }),
+        );
+
+        m.insert(
+            (ObjectType::PhysicalMode, "co2_emission"),
+            Box::new(|c, p, r| {
+                c.physical_modes
+                    .get_mut(&p.object_id)
+                    .map_or(false, |mut obj| {
+                        update_stringable_option(
+                            p,
+                            &mut obj.co2_emission,
+                            r,
+                            "property_value should be a float",
+                        );
+                        true
+                    })
             }),
         );
 
