@@ -304,6 +304,7 @@ where
     }
 
     collections.enhance_with_co2();
+    collections.calendar_deduplication();
     Ok(Model::new(collections)?)
 }
 
