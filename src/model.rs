@@ -1195,4 +1195,78 @@ mod tests {
             assert_eq!("Headsign", vehicle_journey.headsign.as_ref().unwrap());
         }
     }
+
+    mod calendar_deduplication {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn enhance() {
+            let mut collections = Collections::default();
+
+            let mut service_1 = Calendar::new(String::from("service_1"));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 01));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 02));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 03));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            collections.calendars.push(service_1).unwrap();
+
+            let mut service_2 = Calendar::new(String::from("service_2"));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 01));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 02));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 03));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            collections.calendars.push(service_2).unwrap();
+
+            let mut service_3 = Calendar::new(String::from("service_3"));
+            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 01));
+            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 03));
+            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            collections.calendars.push(service_3).unwrap();
+
+            collections
+                .vehicle_journeys
+                .push(VehicleJourney {
+                    id: String::from("vehicle_journey_id_1"),
+                    service_id: String::from("service_1"),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            collections
+                .vehicle_journeys
+                .push(VehicleJourney {
+                    id: String::from("vehicle_journey_id_2"),
+                    service_id: String::from("service_2"),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            collections
+                .vehicle_journeys
+                .push(VehicleJourney {
+                    id: String::from("vehicle_journey_id_3"),
+                    service_id: String::from("service_3"),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            collections.calendar_deduplication();
+
+            let vehicle_journey = collections
+                .vehicle_journeys
+                .get("vehicle_journey_id_2")
+                .unwrap();
+            assert_eq!("service_1", vehicle_journey.service_id);
+
+            let vehicle_journey = collections
+                .vehicle_journeys
+                .get("vehicle_journey_id_3")
+                .unwrap();
+            assert_eq!("service_3", vehicle_journey.service_id);
+
+            let calendar = collections.calendars.get("service_2");
+            assert_eq!(None, calendar);
+        }
+    }
 }
