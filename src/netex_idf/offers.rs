@@ -76,6 +76,7 @@ struct StopPointInJourneyPattern {
     stop_point_idx: Idx<StopPoint>,
     pickup_type: u8,
     drop_off_type: u8,
+    local_zone_id: Option<u16>,
 }
 struct JourneyPattern<'a, 'b> {
     route: &'a Route,
@@ -224,12 +225,49 @@ pub fn read_offer_folder(
     Ok(())
 }
 
+fn apply_routing_constraint_zones(
+    stop_points: &CollectionWithId<StopPoint>,
+    stop_points_in_journey_pattern: &mut Vec<StopPointInJourneyPattern>,
+    routing_constraint_zones: &[StopPointsSet],
+) {
+    fn flatten_stop_points_ids(
+        stop_points: &CollectionWithId<StopPoint>,
+        stop_points_idx: &[Idx<StopPoint>],
+    ) -> String {
+        stop_points_idx
+            .iter()
+            .map(|sp_idx| format!("/{}/", stop_points[*sp_idx].id.clone()))
+            .collect()
+    }
+
+    let stop_points_idx_in_jp: StopPointsSet = stop_points_in_journey_pattern
+        .iter()
+        .map(|e| e.stop_point_idx)
+        .collect();
+    let stop_points_in_jp_flattened = flatten_stop_points_ids(stop_points, &stop_points_idx_in_jp);
+    let mut id_incr = 1;
+    for routing_constraint_zone in routing_constraint_zones {
+        let stop_points_in_constraint_flattened =
+            flatten_stop_points_ids(stop_points, &routing_constraint_zone);
+        if stop_points_in_jp_flattened.contains(&stop_points_in_constraint_flattened) {
+            for stop_point_in_journey_pattern in stop_points_in_journey_pattern
+                .iter_mut()
+                .filter(|sp| routing_constraint_zone.contains(&sp.stop_point_idx))
+            {
+                stop_point_in_journey_pattern.local_zone_id = Some(id_incr);
+            }
+            id_incr += 1;
+        }
+    }
+}
+
 fn parse_service_journey_patterns<'a, 'b, 'c, I>(
     sjp_elements: I,
     routes: &'b CollectionWithId<Route>,
     stop_points: &CollectionWithId<StopPoint>,
     destination_displays: &'c DestinationDisplays,
     map_schedule_stop_point_quay: &HashMap<String, String>,
+    routing_constraint_zones: &[StopPointsSet],
 ) -> JourneyPatterns<'b, 'c>
 where
     I: Iterator<Item = &'a Element>,
@@ -251,6 +289,7 @@ where
             stop_point_idx,
             pickup_type,
             drop_off_type,
+            local_zone_id: None,
         })
     }
     sjp_elements
@@ -264,7 +303,7 @@ where
                 .only_child("DestinationDisplayRef")
                 .and_then(|dd_ref| dd_ref.attribute::<String>("ref"))
                 .and_then(|dd_ref| destination_displays.get(&dd_ref));
-            let stop_points_in_journey_pattern = match sjp_element
+            let mut stop_points_in_journey_pattern = match sjp_element
                 .only_child("pointsInSequence")?
                 .children()
                 .map(|sp_in_jp| {
@@ -282,6 +321,11 @@ where
                     return None;
                 }
             };
+            apply_routing_constraint_zones(
+                stop_points,
+                &mut stop_points_in_journey_pattern,
+                routing_constraint_zones,
+            );
             Some((
                 id,
                 JourneyPattern {
@@ -310,6 +354,39 @@ where
                     public_code,
                 },
             ))
+        })
+        .collect()
+}
+
+type StopPointsSet = Vec<Idx<StopPoint>>;
+
+fn parse_routing_constraint_zones<'a, I>(
+    rcz_elements: I,
+    map_schedule_stop_point_quay: &HashMap<String, String>,
+    collections: &Collections,
+) -> Vec<StopPointsSet>
+where
+    I: Iterator<Item = &'a Element>,
+{
+    rcz_elements
+        .filter_map(|rcz_element| {
+            let mut stop_point_idxs = StopPointsSet::new();
+            for scheduled_stop_point_ref_element in rcz_element
+                .only_child("members")
+                .iter()
+                .flat_map(|members| members.children())
+            {
+                if let Some(stop_point_idx) = scheduled_stop_point_ref_element
+                    .attribute::<String>("ref")
+                    .and_then(|ssp_ref| map_schedule_stop_point_quay.get(&ssp_ref))
+                    .and_then(|quay_ref| collections.stop_points.get_idx(&quay_ref))
+                {
+                    stop_point_idxs.push(stop_point_idx);
+                } else {
+                    return None;
+                }
+            }
+            Some(stop_point_idxs)
         })
         .collect()
 }
@@ -489,6 +566,7 @@ fn stop_times(
                 stop_point_idx,
                 pickup_type,
                 drop_off_type,
+                local_zone_id,
             } = *stop_point_in_journey_pattern;
             let times = arrival_departure_times(tpt)?;
             let stop_time = StopTime {
@@ -501,7 +579,7 @@ fn stop_times(
                 pickup_type,
                 drop_off_type,
                 datetime_estimated: false,
-                local_zone_id: None,
+                local_zone_id,
             };
 
             Ok(stop_time)
@@ -717,6 +795,18 @@ fn parse_offer(
         .map(|childrens| childrens.filter(|e| e.name() == "DestinationDisplay"))
         .map(parse_destination_display)
         .unwrap_or_else(HashMap::new);
+    let routing_constraint_zones = structure_frame
+        .only_child("members")
+        .map(Element::children)
+        .map(|childrens| childrens.filter(|e| e.name() == "RoutingConstraintZone"))
+        .map(|rcz_elements| {
+            parse_routing_constraint_zones(
+                rcz_elements,
+                &map_schedule_stop_point_quay,
+                &collections,
+            )
+        })
+        .unwrap_or_else(Vec::new);
     let journey_patterns = structure_frame
         .only_child("members")
         .map(Element::children)
@@ -728,6 +818,7 @@ fn parse_offer(
                 &collections.stop_points,
                 &destination_displays,
                 &map_schedule_stop_point_quay,
+                &routing_constraint_zones,
             )
         })
         .unwrap_or_else(HashMap::new);
@@ -987,6 +1078,7 @@ mod tests {
                 stop_point_idx,
                 pickup_type: 0,
                 drop_off_type: 1,
+                local_zone_id: None,
             });
             if let Some(route) = routes.get("route_id") {
                 let journey_pattern = JourneyPattern {
