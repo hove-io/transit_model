@@ -1,4 +1,0 @@
-physical_mode_id,physical_mode_name,co2_emission
-Bus,Bus,130.5
-Metro,Metro,90.0
-RapidTransit,Rapid Transit,
