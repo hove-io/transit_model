@@ -588,12 +588,13 @@ impl Collections {
             vj_id_to_old_idx.iter().map(|(id, idx)| (idx, id)).collect();
         comments_used.extend(self.stop_time_comments.iter().filter_map(
             |((old_vj_idx, _), old_comment_idx)| {
-                let old_vj_id = vj_idx_to_old_id[old_vj_idx];
-                if vjs.contains_key(old_vj_id) {
-                    Some(self.comments[*old_comment_idx].id.clone())
-                } else {
-                    None
-                }
+                vj_idx_to_old_id.get(&old_vj_idx).and_then(|&old_vj_id| {
+                    if vjs.contains_key(old_vj_id) {
+                        Some(self.comments[*old_comment_idx].id.clone())
+                    } else {
+                        None
+                    }
+                })
             },
         ));
 
