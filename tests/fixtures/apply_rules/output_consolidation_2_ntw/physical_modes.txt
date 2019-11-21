@@ -1,4 +1,4 @@
 physical_mode_id,physical_mode_name,co2_emission
 Bus,Bus,
-Metro,Metro,80
+Metro,Metro,80.0
 RapidTransit,Rapid Transit,

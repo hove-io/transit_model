@@ -1,9 +1,0 @@
-{
-  "errors": [
-    {
-      "category": "MultipleValue",
-      "message": "The network TGB already exists"
-    }
-  ],
-  "warnings": []
-}

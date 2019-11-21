@@ -40,6 +40,7 @@ fn test_apply_rules(
             "admin_stations.txt",
             "ticket_use_perimeters.txt",
             "admin_stations.txt",
+            "physical_modes.txt",
         ];
 
         let input_dir = "tests/fixtures/apply_rules/input";
@@ -127,8 +128,8 @@ fn test_ntw_consolidation_unvalid() {
         "",
         "",
         "./tests/fixtures/apply_rules/ntw_consolidation_unvalid.json",
-        "./tests/fixtures/apply_rules/output_consolidation_unvalid",
-        "./tests/fixtures/apply_rules/output_report/report.json",
+        "",
+        "",
     );
 }
 
@@ -183,8 +184,8 @@ fn test_ntw_consolidation_duplicate_id() {
         "",
         "",
         "./tests/fixtures/apply_rules/ntw_consolidation_duplicate_id.json",
-        "./tests/fixtures/apply_rules/output",
-        "./tests/fixtures/apply_rules/output_report/report_consolidation_duplicate_id.json",
+        "",
+        "",
     );
 }
 
@@ -195,8 +196,8 @@ fn test_ntw_consolidation_unvalid_network() {
         "",
         "",
         "./tests/fixtures/apply_rules/ntw_consolidation_unvalid_network.json",
-        "./tests/fixtures/apply_rules/output",
-        "./tests/fixtures/apply_rules/output_report/report_consolidation_duplicate_id.json",
+        "",
+        "",
     );
 }
 
