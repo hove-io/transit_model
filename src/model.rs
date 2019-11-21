@@ -779,27 +779,15 @@ impl Collections {
         self.vehicle_journeys = CollectionWithId::new(vehicle_journeys).unwrap();
     }
 
-    /// Many calendars are identicall and can be deduplicate
+    /// Many calendars are identical and can be deduplicate
     pub fn calendar_deduplication(&mut self) {
-        fn find_duplicate_calendar<'a>(
-            calendars: &'a [Calendar],
-            dates: &BTreeSet<NaiveDate>,
-        ) -> Option<&'a Calendar> {
-            for c in calendars {
-                if c.dates == *dates {
-                    return Some(c);
-                }
-            }
-            None
-        }
-
         let mut calendars_used: Vec<Calendar> = vec![];
         let mut vehicle_journeys = self.vehicle_journeys.take();
-        vehicle_journeys.sort_unstable_by_key(|vj| vj.id.clone());
+        vehicle_journeys.sort_unstable_by(|vj1, vj2| vj1.service_id.cmp(&vj2.service_id));
         for vehicle_journey in &mut vehicle_journeys {
             if let Some(calendar) = self.calendars.get(&vehicle_journey.service_id) {
                 if let Some(dup_calendar) =
-                    find_duplicate_calendar(&calendars_used, &calendar.dates)
+                    calendars_used.iter().find(|c| c.dates == calendar.dates)
                 {
                     vehicle_journey.service_id = dup_calendar.id.clone();
                 } else {
