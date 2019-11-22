@@ -778,6 +778,27 @@ impl Collections {
         }
         self.vehicle_journeys = CollectionWithId::new(vehicle_journeys).unwrap();
     }
+
+    /// Many calendars are identical and can be deduplicate
+    pub fn calendar_deduplication(&mut self) {
+        let mut calendars_used: Vec<Calendar> = vec![];
+        let mut vehicle_journeys = self.vehicle_journeys.take();
+        vehicle_journeys.sort_unstable_by(|vj1, vj2| vj1.service_id.cmp(&vj2.service_id));
+        for vehicle_journey in &mut vehicle_journeys {
+            if let Some(calendar) = self.calendars.get(&vehicle_journey.service_id) {
+                if let Some(dup_calendar) =
+                    calendars_used.iter().find(|c| c.dates == calendar.dates)
+                {
+                    vehicle_journey.service_id = dup_calendar.id.clone();
+                } else {
+                    calendars_used.push(calendar.clone());
+                }
+            }
+        }
+        self.calendars
+            .retain(|calendar| calendars_used.contains(calendar));
+        self.vehicle_journeys = CollectionWithId::new(vehicle_journeys).unwrap();
+    }
 }
 
 /// The navitia transit model.
@@ -1160,6 +1181,80 @@ mod tests {
                 .get("vehicle_journey_id_2")
                 .unwrap();
             assert_eq!("Headsign", vehicle_journey.headsign.as_ref().unwrap());
+        }
+    }
+
+    mod calendar_deduplication {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn enhance() {
+            let mut collections = Collections::default();
+
+            let mut service_1 = Calendar::new(String::from("service_1"));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 01));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 02));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 03));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            collections.calendars.push(service_1).unwrap();
+
+            let mut service_2 = Calendar::new(String::from("service_2"));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 01));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 02));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 03));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            collections.calendars.push(service_2).unwrap();
+
+            let mut service_3 = Calendar::new(String::from("service_3"));
+            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 01));
+            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 03));
+            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            collections.calendars.push(service_3).unwrap();
+
+            collections
+                .vehicle_journeys
+                .push(VehicleJourney {
+                    id: String::from("vehicle_journey_id_1"),
+                    service_id: String::from("service_1"),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            collections
+                .vehicle_journeys
+                .push(VehicleJourney {
+                    id: String::from("vehicle_journey_id_2"),
+                    service_id: String::from("service_2"),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            collections
+                .vehicle_journeys
+                .push(VehicleJourney {
+                    id: String::from("vehicle_journey_id_3"),
+                    service_id: String::from("service_3"),
+                    ..Default::default()
+                })
+                .unwrap();
+
+            collections.calendar_deduplication();
+
+            let vehicle_journey = collections
+                .vehicle_journeys
+                .get("vehicle_journey_id_2")
+                .unwrap();
+            assert_eq!("service_1", vehicle_journey.service_id);
+
+            let vehicle_journey = collections
+                .vehicle_journeys
+                .get("vehicle_journey_id_3")
+                .unwrap();
+            assert_eq!("service_3", vehicle_journey.service_id);
+
+            let calendar = collections.calendars.get("service_2");
+            assert_eq!(None, calendar);
         }
     }
 }

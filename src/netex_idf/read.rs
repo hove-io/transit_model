@@ -71,6 +71,7 @@ where
 
     collections.enhance_with_co2();
     collections.enhance_trip_headsign();
+    collections.calendar_deduplication();
     collections.sanitize()?;
     Model::new(collections)
 }
