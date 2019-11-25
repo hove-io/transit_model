@@ -116,9 +116,9 @@ fn load_netex_lines(
                     .map(Element::text)
                     .ok();
                 let private_code = line.only_child("PrivateCode").map(Element::text);
-                let network_id: String = line
-                    .try_only_child("RepresentedByGroupRef")?
-                    .try_attribute("ref")?;
+                let network_id: String = skip_fail!(line
+                    .try_only_child("RepresentedByGroupRef")
+                    .and_then(|netref| netref.try_attribute("ref")));
                 if !networks.contains_id(&network_id) {
                     warn!("Failed to find network {} for line {}", network_id, id);
                     continue;
