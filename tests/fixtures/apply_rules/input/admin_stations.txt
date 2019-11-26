@@ -1,6 +1,0 @@
-admin_id,admin_name,station_id,station_name,stop_id,stop_name
-02163,"Charly-sur-Marne",47:14648,"Poste",0:SA:47:14648,"Poste"
-02168,"Château-Thierry",8711658,"Gare de Château Thierry",0:SA:8711658,"Gare de Château Thierry"
-02168,"Château-Thierry",8711658,"Gare de Château Thierry",0:SA:8711658,"Gare de Château Thierry"
-02186,"Chézy-sur-Marne",8711657,"Gare de Chezy sur Marne",0:SA:8711657,"Gare de Chezy sur Marne"
-

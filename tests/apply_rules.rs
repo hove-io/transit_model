@@ -37,9 +37,7 @@ fn test_apply_rules(
             "trips.txt",
             "stops.txt",
             "networks.txt",
-            "admin_stations.txt",
             "ticket_use_perimeters.txt",
-            "admin_stations.txt",
             "physical_modes.txt",
         ];
 
