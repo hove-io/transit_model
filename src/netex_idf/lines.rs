@@ -342,6 +342,47 @@ mod tests {
     }
 
     #[test]
+    fn test_load_netex_lines_with_one_without_network() {
+        let xml = r#"
+            <ServiceFrame>
+               <lines>
+                  <Line id="FR1:Line:C00001">
+                     <Name>Line 01</Name>
+                     <ShortName>01</ShortName>
+                     <TransportMode>bus</TransportMode>
+                     <RepresentedByGroupRef ref="FR1:Network:1:LOC"/>
+                     <OperatorRef ref="FR1:Operator:1:LOC"/>
+                  </Line>
+                  <Line id="FR1:Line:C00002">
+                     <Name>Line 02</Name>
+                     <ShortName>02</ShortName>
+                     <TransportMode>bus</TransportMode>                     
+                     <OperatorRef ref="FR1:Operator:1:LOC"/>
+                  </Line>
+               </lines>
+            </ServiceFrame>"#;
+        let mut frames = HashMap::new();
+        let service_frame_lines: Element = xml.parse().unwrap();
+        frames.insert(FrameType::Service, vec![&service_frame_lines]);
+
+        let networks = CollectionWithId::new(vec![Network {
+            id: String::from("FR1:Network:1:LOC"),
+            name: String::from("Network1"),
+            ..Default::default()
+        }])
+        .unwrap();
+        let companies = CollectionWithId::new(vec![Company {
+            id: String::from("FR1:Operator:1:LOC"),
+            name: String::from("Operator1"),
+            ..Default::default()
+        }])
+        .unwrap();
+
+        let (lines_netex_idf, _) = load_netex_lines(&frames, &networks, &companies).unwrap();
+        assert_eq!(1, lines_netex_idf.len());
+    }
+
+    #[test]
     fn test_color_parent_node() {
         let xml = r#"
               <Line id="FR1:Line:C00001"></Line>"#;
