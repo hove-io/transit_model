@@ -41,6 +41,7 @@ enum ObjectType {
     StopPoint,
     StopArea,
     PhysicalMode,
+    CommercialMode,
 }
 
 impl ObjectType {
@@ -51,6 +52,7 @@ impl ObjectType {
             ObjectType::StopPoint => "stop_point",
             ObjectType::StopArea => "stop_area",
             ObjectType::PhysicalMode => "physical_mode",
+            ObjectType::CommercialMode => "commercial_mode",
         }
     }
 }
@@ -651,6 +653,30 @@ lazy_static! {
                             r,
                             "property_value should be a float",
                         );
+                        true
+                    })
+            }),
+        );
+
+        m.insert(
+            (ObjectType::PhysicalMode, "physical_mode_name"),
+            Box::new(|c, p, r| {
+                c.physical_modes
+                    .get_mut(&p.object_id)
+                    .map_or(false, |mut obj| {
+                        update_prop(p, &mut obj.name, r);
+                        true
+                    })
+            }),
+        );
+
+        m.insert(
+            (ObjectType::CommercialMode, "commercial_mode_name"),
+            Box::new(|c, p, r| {
+                c.commercial_modes
+                    .get_mut(&p.object_id)
+                    .map_or(false, |mut obj| {
+                        update_prop(p, &mut obj.name, r);
                         true
                     })
             }),
