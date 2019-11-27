@@ -54,10 +54,6 @@ lazy_static::lazy_static! {
     pub static ref CURRENT_DATETIME: String = chrono::Local::now().format("%FT%T").to_string();
 }
 
-#[cfg(test)]
-#[path = "../model-builder/src/builder.rs"]
-pub mod model_builder;
-
 /// The error type used by the crate.
 pub type Error = failure::Error;
 

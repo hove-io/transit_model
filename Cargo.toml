@@ -30,7 +30,6 @@ travis-ci = { repository = "CanalTP/transit_model" }
 members = [
   "collection",
   "relations",
-  "model-builder",
   "transit_model_procmacro",
 ]
 
