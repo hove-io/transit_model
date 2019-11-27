@@ -64,6 +64,5 @@ pub fn filter(model: Model, action: Action, network_ids: Vec<String>) -> Result<
     }
 
     collections.sanitize()?;
-
     Model::new(collections)
 }
