@@ -1,5 +1,4 @@
 geometry_id,geometry_wkt
-not_ref_with_route,POINT(23 23)
 route:M1F,POINT(1 1)
 route:M1F:4,POINT(59 67)
 route:M1B,POINT(4 4)
