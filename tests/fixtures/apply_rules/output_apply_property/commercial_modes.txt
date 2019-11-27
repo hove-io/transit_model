@@ -1,0 +1,4 @@
+commercial_mode_id,commercial_mode_name
+Bus,ネコバス
+Metro,Metro
+RER,Réseau Express Régional (RER)

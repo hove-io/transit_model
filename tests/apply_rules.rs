@@ -31,14 +31,15 @@ fn test_apply_rules(
 ) {
     test_in_tmp_dir(|path| {
         let mut file_to_compare = vec![
+            "commercial_modes.txt",
             "geometries.txt",
             "lines.txt",
-            "routes.txt",
-            "trips.txt",
-            "stops.txt",
             "networks.txt",
-            "ticket_use_perimeters.txt",
             "physical_modes.txt",
+            "routes.txt",
+            "stops.txt",
+            "ticket_use_perimeters.txt",
+            "trips.txt",
         ];
 
         let input_dir = "tests/fixtures/apply_rules/input";
