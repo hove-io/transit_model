@@ -85,7 +85,6 @@ impl TryFrom<Stop> for StopPoint {
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
             fare_zone_id: stop.fare_zone_id,
-            zone_id: stop.zone_id,
             stop_type: stop.location_type.into(),
             platform_code: stop.platform_code,
             level_id: stop.level_id,

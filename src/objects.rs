@@ -1073,7 +1073,6 @@ pub struct StopPoint {
     pub geometry_id: Option<String>,
     pub equipment_id: Option<String>,
     pub fare_zone_id: Option<String>,
-    pub zone_id: Option<String>,
     pub level_id: Option<String>,
     pub platform_code: Option<String>,
     #[serde(skip)]

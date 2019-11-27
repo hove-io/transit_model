@@ -112,7 +112,6 @@ struct Stop {
     )]
     visible: bool,
     fare_zone_id: Option<String>,
-    zone_id: Option<String>,
     #[serde(rename = "stop_lon")]
     lon: String,
     #[serde(rename = "stop_lat")]
