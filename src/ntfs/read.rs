@@ -286,6 +286,14 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             |v| v != 0,
         );
 
+        let stop_time_precision: Option<StopTimePrecision> =
+            stop_time.stop_time_precision.or_else(|| {
+                match collections.stop_points[stop_point_idx].stop_type {
+                    StopType::Zone => Some(StopTimePrecision::Estimated),
+                    _ => Some(StopTimePrecision::Exact),
+                }
+            });
+
         if let Some(stop_time_id) = stop_time.stop_time_id {
             stop_time_ids.insert((vj_idx, stop_time.stop_sequence), stop_time_id);
         }
@@ -305,6 +313,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
                 drop_off_type: stop_time.drop_off_type,
                 datetime_estimated,
                 local_zone_id: stop_time.local_zone_id,
+                stop_time_precision,
             });
     }
     collections.stop_time_headsigns = headsigns;

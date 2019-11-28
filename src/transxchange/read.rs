@@ -472,6 +472,7 @@ fn calculate_stop_times(
             drop_off_type,
             datetime_estimated: false,
             local_zone_id: None,
+            stop_time_precision: None,
         });
 
         next_arrival_time = departure_time + run_time;
@@ -510,6 +511,7 @@ fn calculate_stop_times(
         drop_off_type,
         datetime_estimated: false,
         local_zone_id: None,
+        stop_time_precision: None,
     });
     Ok(stop_times)
 }

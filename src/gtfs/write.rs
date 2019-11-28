@@ -880,6 +880,7 @@ mod tests {
                     drop_off_type: 1,
                     datetime_estimated: false,
                     local_zone_id: None,
+                    stop_time_precision: None,
                 },
                 objects::StopTime {
                     stop_point_idx: sps.get_idx("OIF:SP:36:2127").unwrap(),
@@ -892,6 +893,7 @@ mod tests {
                     drop_off_type: 0,
                     datetime_estimated: false,
                     local_zone_id: None,
+                    stop_time_precision: None,
                 },
             ],
         };
@@ -1105,6 +1107,7 @@ mod tests {
                 drop_off_type: 0,
                 datetime_estimated: false,
                 local_zone_id: None,
+                stop_time_precision: None,
             },
             StopTime {
                 stop_point_idx: stop_points.get_idx("sp:01").unwrap(),
@@ -1117,6 +1120,7 @@ mod tests {
                 drop_off_type: 1,
                 datetime_estimated: true,
                 local_zone_id: Some(3),
+                stop_time_precision: None,
             },
         ];
         let vehicle_journeys = CollectionWithId::from(VehicleJourney {

@@ -1,9 +1,9 @@
-stop_id,trip_id,stop_sequence,arrival_time,departure_time,boarding_duration,alighting_duration,pickup_type,drop_off_type,datetime_estimated,local_zone_id,stop_headsign,stop_time_id
-CDGM,M1B1,6,10:40:00,10:40:00,0,0,0,0,0,,,stoptime:8
-CHAM,M1B1,7,10:50:00,10:50:00,0,0,0,0,0,,,stoptime:7
-GDLM,M1B1,8,11:00:00,11:00:00,0,0,0,0,0,,,stoptime:6
-NATM,M1B1,9,11:10:00,11:10:00,0,0,0,0,1,,headsign kept,stoptime:5
-GDLB,B42F1,10,10:10:00,10:10:00,0,0,0,0,0,,,stoptime:9
-MTPB,B42F1,20,10:20:00,10:20:00,0,0,0,0,0,,,stoptime:10
-MTPB,B42B1,20,07:00:00,07:00:00,0,0,0,0,0,,,stoptime:12
-GDLB,B42B1,30,07:10:00,07:10:00,0,0,0,0,0,,,stoptime:11
+stop_id,trip_id,stop_sequence,arrival_time,departure_time,boarding_duration,alighting_duration,pickup_type,drop_off_type,datetime_estimated,local_zone_id,stop_headsign,stop_time_id,stop_time_precision
+CDGM,M1B1,6,10:40:00,10:40:00,0,0,0,0,0,,,stoptime:8,0
+CHAM,M1B1,7,10:50:00,10:50:00,0,0,0,0,0,,,stoptime:7,0
+GDLM,M1B1,8,11:00:00,11:00:00,0,0,0,0,0,,,stoptime:6,0
+NATM,M1B1,9,11:10:00,11:10:00,0,0,0,0,1,,headsign kept,stoptime:5,2
+GDLB,B42F1,10,10:10:00,10:10:00,0,0,0,0,0,,,stoptime:9,0
+MTPB,B42F1,20,10:20:00,10:20:00,0,0,0,0,0,,,stoptime:10,0
+MTPB,B42B1,20,07:00:00,07:00:00,0,0,0,0,0,,,stoptime:12,0
+GDLB,B42B1,30,07:10:00,07:10:00,0,0,0,0,0,,,stoptime:11,0

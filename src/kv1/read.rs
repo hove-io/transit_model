@@ -662,6 +662,7 @@ fn make_vjs_and_stop_times(
             drop_off_type: 0,
             datetime_estimated: false,
             local_zone_id: None,
+            stop_time_precision: None,
         });
     }
     collections.vehicle_journeys =
