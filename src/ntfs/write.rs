@@ -115,9 +115,10 @@ pub fn write_vehicle_journeys_and_stop_times(
         for st in &vj.stop_times {
             let stop_time_precision = st.stop_time_precision.clone().or_else(|| {
                 if st.datetime_estimated {
-                         Some(StopTimePrecision::Estimated)
-                     } else {
-                         Some(StopTimePrecision::Exact)                }
+                    Some(StopTimePrecision::Estimated)
+                } else {
+                    Some(StopTimePrecision::Exact)
+                }
             });
             st_wtr
                 .serialize(StopTime {

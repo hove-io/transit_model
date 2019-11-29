@@ -47,7 +47,7 @@ mod validity_period;
 pub mod vptranslator;
 
 /// Current version of the NTFS format
-pub const NTFS_VERSION: &str = "0.10.0";
+pub const NTFS_VERSION: &str = "0.11.0";
 
 lazy_static::lazy_static! {
     /// Current datetime
