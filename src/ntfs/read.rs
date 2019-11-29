@@ -680,6 +680,9 @@ pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::common_format;
+    use crate::objects;
+    use crate::read_utils;
     use crate::test_utils::*;
     use pretty_assertions::assert_eq;
 
@@ -699,6 +702,155 @@ mod tests {
             assert_eq!(1, collections.stop_areas.len());
             let stop_area = collections.stop_areas.values().next().unwrap();
             assert_eq!("Navitia:sp:01", stop_area.id);
+        });
+    }
+    #[test]
+    fn ntfs_stop_times_precision() {
+        let commercial_modes_content = "commercial_mode_id,commercial_mode_name\n\
+                                        commercial_mode_1,My Commercial Mode 1";
+
+        let networks_content = "network_id,network_name\n\
+                                network_1, My Network 1";
+
+        let lines_content = "line_id,line_name,network_id,commercial_mode_id\n\
+                             line_1,My Line 1,network_1, commercial_mode_1";
+
+        let routes_content = "route_id,route_name,line_id\n\
+                              route_1,My Route 1,line_1";
+
+        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
+                             sp:01,my stop point name 1,0.1,1.2,0,\n\
+                             sp:02,my stop point name 2,0.2,1.5,0,\n\
+                             sp:03,my stop point name 3,0.2,1.5,0,\n\
+                             sp:04,my stop point name 4,0.2,1.5,0,\n\
+                             sp:05,my stop point name 5,0.2,1.5,2,";
+
+        let companies_content = "company_id,company_name\n\
+                                 company_1, My Company 1";
+
+        let physical_modes_content = "physical_mode_id,physical_mode_name\n\
+                                      physical_mode_1,My Physical Mode 1";
+
+        let contributors_content = "contributor_id,contributor_name\n\
+                                    contributor_1,My Contributor 1";
+
+        let datasets_content = "dataset_id,contributor_id,dataset_start_date,dataset_end_date\n\
+                                dataset_1,contributor_1,20190101,20191231";
+
+        let calendar_content = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
+                                service_1,1,1,1,1,1,0,0,20190101,20191231";
+
+        let trips_content = "trip_id,route_id,service_id,company_id,physical_mode_id,dataset_id\n\
+                             1,route_1,service_1,company_1,physical_mode_1,dataset_1";
+
+        let stop_times_content = "stop_time_id,trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,shape_dist_traveled,stop_time_precision\n\
+                                  1,1,06:00:00,06:00:00,sp:01,1,0,0,,0\n\
+                                  2,1,06:06:27,06:06:27,sp:02,2,2,1,,1\n\
+                                  3,1,06:06:27,06:06:27,sp:03,3,2,1,,2\n\
+                                  4,1,06:06:27,06:06:27,sp:04,3,2,1,,\n\
+                                  5,1,06:06:27,06:06:27,sp:05,3,2,1,,";
+
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "commercial_modes.txt", commercial_modes_content);
+            create_file_with_content(path, "networks.txt", networks_content);
+            create_file_with_content(path, "lines.txt", lines_content);
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "stops.txt", stops_content);
+            create_file_with_content(path, "companies.txt", companies_content);
+            create_file_with_content(path, "physical_modes.txt", physical_modes_content);
+            create_file_with_content(path, "contributors.txt", contributors_content);
+            create_file_with_content(path, "datasets.txt", datasets_content);
+            create_file_with_content(path, "trips.txt", trips_content);
+            create_file_with_content(path, "calendar.txt", calendar_content);
+            create_file_with_content(path, "stop_times.txt", stop_times_content);
+
+            let mut collections = Collections::default();
+            let mut file_handle = read_utils::PathFileHandler::new(path.to_path_buf());
+            collections.contributors = make_collection_with_id(path, "contributors.txt").unwrap();
+            collections.datasets = make_collection_with_id(path, "datasets.txt").unwrap();
+            collections.commercial_modes =
+                make_collection_with_id(path, "commercial_modes.txt").unwrap();
+            collections.networks = make_collection_with_id(path, "networks.txt").unwrap();
+            collections.lines = make_collection_with_id(path, "lines.txt").unwrap();
+            collections.routes = make_collection_with_id(path, "routes.txt").unwrap();
+            collections.vehicle_journeys = make_collection_with_id(path, "trips.txt").unwrap();
+            collections.physical_modes =
+                make_collection_with_id(path, "physical_modes.txt").unwrap();
+            collections.companies = make_collection_with_id(path, "companies.txt").unwrap();
+            common_format::manage_calendars(&mut file_handle, &mut collections).unwrap();
+            manage_stops(&mut collections, path).unwrap();
+            manage_stop_times(&mut collections, path).unwrap();
+
+            assert_eq!(
+                vec![
+                    objects::StopTime {
+                        stop_point_idx: collections.stop_points.get_idx("sp:01").unwrap(),
+                        sequence: 1,
+                        arrival_time: Time::new(6, 0, 0),
+                        departure_time: Time::new(6, 0, 0),
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: 0,
+                        drop_off_type: 0,
+                        datetime_estimated: false,
+                        local_zone_id: None,
+                        stop_time_precision: Some(StopTimePrecision::Exact),
+                    },
+                    objects::StopTime {
+                        stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
+                        sequence: 2,
+                        arrival_time: Time::new(6, 6, 27),
+                        departure_time: Time::new(6, 6, 27),
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: 2,
+                        drop_off_type: 1,
+                        datetime_estimated: false,
+                        local_zone_id: None,
+                        stop_time_precision: Some(StopTimePrecision::Approximate),
+                    },
+                    objects::StopTime {
+                        stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
+                        sequence: 3,
+                        arrival_time: Time::new(6, 6, 27),
+                        departure_time: Time::new(6, 6, 27),
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: 2,
+                        drop_off_type: 1,
+                        datetime_estimated: false,
+                        local_zone_id: None,
+                        stop_time_precision: Some(StopTimePrecision::Estimated),
+                    },
+                    objects::StopTime {
+                        stop_point_idx: collections.stop_points.get_idx("sp:04").unwrap(),
+                        sequence: 3,
+                        arrival_time: Time::new(6, 6, 27),
+                        departure_time: Time::new(6, 6, 27),
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: 2,
+                        drop_off_type: 1,
+                        datetime_estimated: false,
+                        local_zone_id: None,
+                        stop_time_precision: Some(StopTimePrecision::Exact),
+                    },
+                    objects::StopTime {
+                        stop_point_idx: collections.stop_points.get_idx("sp:05").unwrap(),
+                        sequence: 3,
+                        arrival_time: Time::new(6, 6, 27),
+                        departure_time: Time::new(6, 6, 27),
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: 2,
+                        drop_off_type: 1,
+                        datetime_estimated: true,
+                        local_zone_id: None,
+                        stop_time_precision: Some(StopTimePrecision::Estimated),
+                    },
+                ],
+                collections.vehicle_journeys.into_vec()[0].stop_times
+            );
         });
     }
 }
