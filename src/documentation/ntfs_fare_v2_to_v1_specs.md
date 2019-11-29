@@ -5,7 +5,7 @@ This document describes how [NTFS fare model](https://github.com/CanalTP/ntfs-sp
 This conversion is only used for a limited timeframe until main navitia product can read the new model.
 The only possible conversions are:
 * an OD fare on a specific line
-* a flat fare on a specific network
+* a flat fare shared across several networks
 
 ## Conversion of an OD fare on a specific line
 ### Description in V2 model
@@ -51,11 +51,11 @@ This file must be created without any data.
 ## Conversion of a flat fare on a specific network
 
 ### Description in V2 model
-An flat fare on a specific network is described in the V2 fare sytem as:
+A flat fare on a set of specific networks is described in the V2 fare sytem as:
 * A ticket in `tickets.txt` (with an ID) with:
   * A `ticket price` with a validity period, and only a euro currency
   * One `ticket use` without constrain on transfers, and empty bording and alighting times
-  * One `ticket use perimeter` with only the specified network (and no exclusion)
+  * One `ticket use perimeter` with the specified networks, all associated to the same `ticket_use` (and no exclusion)
   * No `ticket use restriction`
 
 ### Description of the transformation in V1 format
@@ -75,8 +75,7 @@ prices.csv field | Source file | Source field | Notes/Mapping rule
 "devise" | ticket_prices.txt | ticket_currency | fixed value `centime`, and only for a `EUR` value of `ticket_currency`
 
 #### fares.csv
-
-First, a transition from anything to board in the network is defined:
+For each network associated to the `ticket_use`, a transition from anything to board on the network is firstly defined:
 
 prices.csv field | Source file | Source field | Notes/Mapping rule
 --- | --- | --- | ---
@@ -87,17 +86,9 @@ prices.csv field | Source file | Source field | Notes/Mapping rule
 "condition globale" |  |  | this field is empty
 "clef ticket" | tickets.txt | ticket_id |
 
-Then a transition allowing a transfert from one section of the network to another section of the same network:
-
-prices.csv field | Source file | Source field | Notes/Mapping rule
---- | --- | --- | ---
-"avant changement" | ticket_use_perimeters.txt | object_id | the content of the field must follow the pattern : "network=network:[object_id]"
-"après changement" | ticket_use_perimeters.txt | object_id | the content of the field must follow the pattern : "network=network:[object_id]"
-"début trajet" |  |  | this field is empty
-"fin trajet" |  |  | this field is empty
-"condition globale" |  |  | this field is empty
-"clef ticket" | tickets.txt | ticket_id |
+Then, another transition is defined allowing a transfer from a section of the given network to a section of each specified network (including the transition between two sections within the same network).
+All these transitions should use the same `ticket` (the field "clef ticket" should be left empty).
+In the end, all possible combinations of transitions among the specified networks should be defined.
 
 #### od_fares.csv
-
 This file must be created without any data.
