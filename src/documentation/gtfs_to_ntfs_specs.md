@@ -252,7 +252,7 @@ For exemple :
 | GTFS passing time | NTFS Extrapolated time |
 | --- | --- |
 | 9:00 | 9:00 |
-| - | 9h30 |
+| - | 9:30 |
 | - | 10:00 |
 | 10:30 | 10:30 |
 
