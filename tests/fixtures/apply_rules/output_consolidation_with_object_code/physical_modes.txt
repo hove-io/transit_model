@@ -1,4 +1,7 @@
 physical_mode_id,physical_mode_name,co2_emission
+Bike,Bike,0.0
+BikeSharingService,BikeSharingService,0.0
 Bus,バス,130.5
+Car,Car,184.0
 Metro,Metro,90.0
-RapidTransit,Rapid Transit,
+RapidTransit,Rapid Transit,6.2

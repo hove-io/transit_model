@@ -42,7 +42,8 @@ fn minimal() {
     assert_eq!(3, ntm.commercial_modes.len());
     assert_eq!(3, ntm.lines.len());
     assert_eq!(6, ntm.routes.len());
-    assert_eq!(3, ntm.physical_modes.len());
+    // 3 + 3 automatically inserted modes 'Bike', 'BikeSharingService', and 'Car'
+    assert_eq!(6, ntm.physical_modes.len());
     assert_eq!(6, ntm.vehicle_journeys.len());
     assert_eq!(1, ntm.networks.len());
     assert_eq!(1, ntm.companies.len());

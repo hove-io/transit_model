@@ -296,16 +296,15 @@ where
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
     collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
-    collections.sanitize()?;
 
     //add prefixes
     if let Some(prefix) = prefix {
         collections.add_prefix_with_sep(prefix.as_str(), ":");
     }
 
-    collections.enhance_with_co2();
     collections.calendar_deduplication();
-    Ok(Model::new(collections)?)
+    collections.sanitize()?;
+    Model::new(collections)
 }
 
 /// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the

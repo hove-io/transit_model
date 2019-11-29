@@ -869,7 +869,7 @@ where
     if let Some(prefix) = prefix {
         collections.add_prefix_with_sep(prefix.as_str(), ":");
     }
-    collections.enhance_with_co2();
+
     collections.calendar_deduplication();
     collections.sanitize()?;
     Model::new(collections)

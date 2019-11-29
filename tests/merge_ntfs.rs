@@ -65,7 +65,8 @@ fn merge_collections_ok() {
     assert_eq!(132f32, bus_mode.co2_emission.unwrap());
 
     assert_eq!(6, collections.commercial_modes.len());
-    assert_eq!(6, collections.physical_modes.len());
+    // 6 + 3 automatically inserted 'Bike', 'BikeSharingService', and 'Car'
+    assert_eq!(9, collections.physical_modes.len());
     assert_eq!(6, collections.lines.len());
     assert_eq!(8, collections.routes.len());
     assert_eq!(8, collections.vehicle_journeys.len());
@@ -190,7 +191,6 @@ fn merge_collections_ok() {
         ],
         get_stop_point_idxs(&collections.vehicle_journeys, "OIF:77100911-1_1420-1")
     );
-    assert_eq!(6, collections.physical_modes.len());
     assert_eq!(7, collections.stop_areas.len());
     assert_eq!(14, collections.stop_points.len());
     assert_eq!(0, collections.feed_infos.len());

@@ -865,7 +865,13 @@ impl Model {
     /// });
     /// assert!(Model::new(collections).is_err());
     /// ```
-    pub fn new(c: Collections) -> Result<Self> {
+    pub fn new(mut c: Collections) -> Result<Self> {
+        fn apply_generic_business_rules(collections: &mut Collections) {
+            collections.enhance_with_co2();
+            collections.enhance_trip_headsign();
+        }
+        apply_generic_business_rules(&mut c);
+
         let forward_vj_to_sp = c
             .vehicle_journeys
             .iter()

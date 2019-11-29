@@ -86,7 +86,7 @@ Train             |  11.9
 Tramway           |   4
 
 The following fallback modes are also added to the model (they're usually not
-referenced by any Vehicle Journey).
+referenced by any trip).
 
 Physical Mode      | CO2 emission (gCO<sub>2</sub>-eq/km)
 ---                | ---
@@ -104,9 +104,11 @@ the same as the corresponding stop_point.
 - If a `stop_area` doesn't have coordinates, the barycenter of the contained `stop_points` is used. 
 - Unless otherwise specified, dates of service are transformed into a list of active dates as if using a single NTFS file `calendar_dates.txt`. Those list of dates are then transformed to `calendar` and `calendar_dates` automatically. 
 - Any `/` character in an identifier of an object is removed.
+- If a trip doesn't have a `trip_headsign`, it is automatically generated based
+  on the name of the last stop point of the trip
 
 ### Conflicting identifiers
-The model will raise a critical error if idenfiers of 2 objects of the same type are identicals. 
+The model will raise a critical error if identifiers of 2 objects of the same type are identicals. 
 For example:
 - if 2 datasets have the same identifier
 - if 2 lines have the same identifier
