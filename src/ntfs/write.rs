@@ -113,13 +113,12 @@ pub fn write_vehicle_journeys_and_stop_times(
             .with_context(ctx_from_path!(trip_path))?;
 
         for st in &vj.stop_times {
-            let stop_time_precision = if st.stop_time_precision.is_some() {
-                st.stop_time_precision.clone()
-            } else if st.datetime_estimated {
-                Some(StopTimePrecision::Estimated)
-            } else {
-                Some(StopTimePrecision::Exact)
-            };
+            let stop_time_precision = st.stop_time_precision.clone().or_else(|| {
+                if st.datetime_estimated {
+                         Some(StopTimePrecision::Estimated)
+                     } else {
+                         Some(StopTimePrecision::Exact)                }
+            });
             st_wtr
                 .serialize(StopTime {
                     stop_id: stop_points[st.stop_point_idx].id.clone(),
