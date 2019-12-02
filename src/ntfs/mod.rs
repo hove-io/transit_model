@@ -54,8 +54,8 @@ struct StopTime {
     local_zone_id: Option<u16>,
     stop_headsign: Option<String>,
     stop_time_id: Option<String>,
-
-    stop_time_precision: Option<StopTimePrecision>,
+    #[serde(rename = "stop_time_precision")]
+    precision: Option<StopTimePrecision>,
 }
 
 #[derivative(Default)]
@@ -633,7 +633,7 @@ mod tests {
                         drop_off_type: 1,
                         datetime_estimated: false,
                         local_zone_id: None,
-                        stop_time_precision: Some(StopTimePrecision::Exact),
+                        precision: Some(StopTimePrecision::Exact),
                     },
                     StopTime {
                         stop_point_idx: stop_points.get_idx("OIF:SP:36:2127").unwrap(),
@@ -646,7 +646,7 @@ mod tests {
                         drop_off_type: 0,
                         datetime_estimated: false,
                         local_zone_id: None,
-                        stop_time_precision: Some(StopTimePrecision::Exact),
+                        precision: Some(StopTimePrecision::Exact),
                     },
                 ],
             },
@@ -1061,7 +1061,7 @@ mod tests {
                 drop_off_type: 2,
                 datetime_estimated: false,
                 local_zone_id: None,
-                stop_time_precision: None,
+                precision: None,
             }],
         });
 

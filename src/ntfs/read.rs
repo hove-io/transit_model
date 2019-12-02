@@ -286,7 +286,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             |v| v != 0,
         );
 
-        let stop_time_precision = stop_time.stop_time_precision.or_else(|| {
+        let precision = stop_time.precision.or_else(|| {
             match collections.stop_points[stop_point_idx].stop_type {
                 StopType::Zone => Some(StopTimePrecision::Estimated),
                 _ => Some(StopTimePrecision::Exact),
@@ -312,7 +312,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
                 drop_off_type: stop_time.drop_off_type,
                 datetime_estimated,
                 local_zone_id: stop_time.local_zone_id,
-                stop_time_precision,
+                precision,
             });
     }
     collections.stop_time_headsigns = headsigns;
@@ -794,7 +794,7 @@ mod tests {
                         drop_off_type: 0,
                         datetime_estimated: false,
                         local_zone_id: None,
-                        stop_time_precision: Some(StopTimePrecision::Exact),
+                        precision: Some(StopTimePrecision::Exact),
                     },
                     objects::StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
@@ -807,7 +807,7 @@ mod tests {
                         drop_off_type: 1,
                         datetime_estimated: false,
                         local_zone_id: None,
-                        stop_time_precision: Some(StopTimePrecision::Approximate),
+                        precision: Some(StopTimePrecision::Approximate),
                     },
                     objects::StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
@@ -820,7 +820,7 @@ mod tests {
                         drop_off_type: 1,
                         datetime_estimated: false,
                         local_zone_id: None,
-                        stop_time_precision: Some(StopTimePrecision::Estimated),
+                        precision: Some(StopTimePrecision::Estimated),
                     },
                     objects::StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:04").unwrap(),
@@ -833,7 +833,7 @@ mod tests {
                         drop_off_type: 1,
                         datetime_estimated: false,
                         local_zone_id: None,
-                        stop_time_precision: Some(StopTimePrecision::Exact),
+                        precision: Some(StopTimePrecision::Exact),
                     },
                     objects::StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:05").unwrap(),
@@ -846,7 +846,7 @@ mod tests {
                         drop_off_type: 1,
                         datetime_estimated: true,
                         local_zone_id: None,
-                        stop_time_precision: Some(StopTimePrecision::Estimated),
+                        precision: Some(StopTimePrecision::Estimated),
                     },
                 ],
                 collections.vehicle_journeys.into_vec()[0].stop_times

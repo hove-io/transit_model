@@ -230,7 +230,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
                 drop_off_type: 0u8,
                 datetime_estimated: false,
                 local_zone_id: None,
-                stop_time_precision: None,
+                precision: None,
             };
 
             vj.stop_times.push(stop_time);

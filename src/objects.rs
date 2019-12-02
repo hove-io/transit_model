@@ -839,7 +839,7 @@ pub struct StopTime {
     pub drop_off_type: u8,
     pub datetime_estimated: bool,
     pub local_zone_id: Option<u16>,
-    pub stop_time_precision: Option<StopTimePrecision>,
+    pub precision: Option<StopTimePrecision>,
 }
 
 impl Ord for StopTime {

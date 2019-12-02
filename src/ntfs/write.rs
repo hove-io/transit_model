@@ -113,7 +113,7 @@ pub fn write_vehicle_journeys_and_stop_times(
             .with_context(ctx_from_path!(trip_path))?;
 
         for st in &vj.stop_times {
-            let stop_time_precision = st.stop_time_precision.clone().or_else(|| {
+            let precision = st.precision.clone().or_else(|| {
                 if st.datetime_estimated {
                     Some(StopTimePrecision::Estimated)
                 } else {
@@ -135,7 +135,7 @@ pub fn write_vehicle_journeys_and_stop_times(
                     local_zone_id: st.local_zone_id,
                     stop_headsign: stop_time_headsigns.get(&(vj_idx, st.sequence)).cloned(),
                     stop_time_id: stop_time_ids.get(&(vj_idx, st.sequence)).cloned(),
-                    stop_time_precision,
+                    precision,
                 })
                 .with_context(ctx_from_path!(st_wtr))?;
         }
