@@ -17,7 +17,7 @@
 use crate::{objects::*, Error, Result};
 use chrono::NaiveDate;
 use derivative::Derivative;
-use failure::format_err;
+use failure::{bail, format_err};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::cmp;
@@ -799,6 +799,140 @@ impl Collections {
             .retain(|calendar| calendars_used.contains(calendar));
         self.vehicle_journeys = CollectionWithId::new(vehicle_journeys).unwrap();
     }
+
+    /// If the route name is empty, it is derived from the most frequent
+    /// `stop_area` origin and `stop_area` destination of all the associated
+    /// trips.  The `stop_area` name is used to create the following `String`:
+    /// `[most frequent origin] - [most frequent destination]`
+    ///
+    /// If 2 stops have equal frequency, the biggest `stop_area` (biggest number
+    /// of `stop_point`) is chosen.
+    ///
+    /// If still equality between multiple `stop_area`, then alphabetical order
+    /// of `stop_area`'s name is used.
+    pub fn enhance_route_names(&mut self) {
+        fn generate_route_name(route: &Route, collections: &Collections) -> Result<String> {
+            fn select_stop_areas<F>(
+                collections: &Collections,
+                route_id: &str,
+                select_stop_point_in_vj: F,
+            ) -> Vec<Idx<StopArea>>
+            where
+                F: Fn(&VehicleJourney) -> Idx<StopPoint>,
+            {
+                collections
+                    .vehicle_journeys
+                    .values()
+                    .filter(|vj| vj.route_id == route_id)
+                    .filter(|vj| !vj.stop_times.is_empty())
+                    .map(select_stop_point_in_vj)
+                    .map(|sp_idx| &collections.stop_points[sp_idx])
+                    .map(|stop_point| &stop_point.stop_area_id)
+                    .filter_map(|sa_id| collections.stop_areas.get_idx(sa_id))
+                    .collect()
+            }
+            fn group_by_frequencies(
+                stop_areas: Vec<Idx<StopArea>>,
+            ) -> HashMap<Idx<StopArea>, usize> {
+                stop_areas
+                    .into_iter()
+                    .fold(HashMap::new(), |mut frequencies, sa_idx| {
+                        *frequencies.entry(sa_idx).or_insert(0) += 1;
+                        frequencies
+                    })
+            }
+            fn find_indexes_with_max_frequency(
+                frequencies: HashMap<Idx<StopArea>, usize>,
+            ) -> Vec<Idx<StopArea>> {
+                if frequencies.is_empty() {
+                    return Vec::new();
+                }
+                let mut max_frequency = *frequencies.values().next().unwrap();
+                let mut max_indexes = Vec::new();
+                for (idx, frequency) in frequencies {
+                    if frequency > max_frequency {
+                        max_frequency = frequency;
+                        max_indexes = vec![idx];
+                    } else if frequency == max_frequency {
+                        max_indexes.push(idx);
+                    }
+                }
+                max_indexes
+            }
+            fn find_biggest_stop_area<'a>(
+                stop_area_indexes: Vec<Idx<StopArea>>,
+                collections: &'a Collections,
+            ) -> Vec<&'a StopArea> {
+                if stop_area_indexes.is_empty() {
+                    return Vec::new();
+                }
+                if stop_area_indexes.len() == 1 {
+                    return vec![&collections.stop_areas[stop_area_indexes[0]]];
+                }
+                let mut max_sp_number = 0;
+                let mut biggest_stop_areas = Vec::new();
+                for sa_idx in stop_area_indexes {
+                    let stop_area = &collections.stop_areas[sa_idx];
+                    let sp_number = collections
+                        .stop_points
+                        .values()
+                        .filter(|stop_point| stop_point.stop_area_id == stop_area.id)
+                        .count();
+                    if sp_number > max_sp_number {
+                        max_sp_number = sp_number;
+                        biggest_stop_areas = vec![stop_area];
+                    } else if sp_number == max_sp_number {
+                        biggest_stop_areas.push(stop_area);
+                    }
+                }
+                biggest_stop_areas
+            }
+            fn find_first_by_alphabetical_order(stop_areas: Vec<&StopArea>) -> Option<String> {
+                let mut stop_area_names: Vec<_> = stop_areas
+                    .into_iter()
+                    .map(|stop_area| &stop_area.name)
+                    .collect();
+                stop_area_names.sort();
+                stop_area_names.get(0).cloned().cloned()
+            }
+            fn find_name_for<F>(
+                collections: &Collections,
+                route_id: &str,
+                select_stop_point_in_vj: F,
+            ) -> Option<String>
+            where
+                F: Fn(&VehicleJourney) -> Idx<StopPoint>,
+            {
+                let stop_areas: Vec<Idx<StopArea>> =
+                    select_stop_areas(collections, route_id, select_stop_point_in_vj);
+                let by_frequency: HashMap<Idx<StopArea>, usize> = group_by_frequencies(stop_areas);
+                let most_frequent_stop_areas = find_indexes_with_max_frequency(by_frequency);
+                let biggest_stop_areas =
+                    find_biggest_stop_area(most_frequent_stop_areas, collections);
+                find_first_by_alphabetical_order(biggest_stop_areas)
+            }
+
+            let origin_name =
+                find_name_for(collections, &route.id, |vj| vj.stop_times[0].stop_point_idx);
+            let destination_name = find_name_for(collections, &route.id, |vj| {
+                vj.stop_times[vj.stop_times.len() - 1].stop_point_idx
+            });
+
+            if let (Some(origin_name), Some(destination_name)) = (origin_name, destination_name) {
+                Ok(format!("{} - {}", origin_name, destination_name))
+            } else {
+                bail!("Failed to generate a `name` for route {}", route.id)
+            }
+        }
+
+        let mut routes = self.routes.take();
+        for mut route in &mut routes {
+            if route.name.is_empty() {
+                route.name = skip_fail!(generate_route_name(&route, &self));
+            }
+        }
+        self.routes = CollectionWithId::new(routes).unwrap();
+    }
 }
 
 /// The navitia transit model.
@@ -869,6 +1003,7 @@ impl Model {
         fn apply_generic_business_rules(collections: &mut Collections) {
             collections.enhance_with_co2();
             collections.enhance_trip_headsign();
+            collections.enhance_route_names();
         }
         apply_generic_business_rules(&mut c);
 
@@ -1262,6 +1397,205 @@ mod tests {
 
             let calendar = collections.calendars.get("service_2");
             assert_eq!(None, calendar);
+        }
+    }
+
+    mod enhance_route_names {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn stop_areas() -> CollectionWithId<StopArea> {
+            CollectionWithId::new(
+                (1..9)
+                    .map(|index| StopArea {
+                        id: format!("stop_area:{}", index),
+                        name: format!("Stop Area {}", index),
+                        ..Default::default()
+                    })
+                    .collect(),
+            )
+            .unwrap()
+        }
+
+        fn stop_points() -> CollectionWithId<StopPoint> {
+            CollectionWithId::new(
+                (1..9)
+                    .map(|index| StopPoint {
+                        id: format!("stop_point:{}", index),
+                        stop_area_id: format!("stop_area:{}", index),
+                        ..Default::default()
+                    })
+                    .collect(),
+            )
+            .unwrap()
+        }
+
+        fn collections() -> Collections {
+            let mut collections = Collections::default();
+            collections.stop_areas = stop_areas();
+            collections.stop_points = stop_points();
+            collections
+                .routes
+                .push(Route {
+                    id: String::from("route_id"),
+                    name: String::new(),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+        }
+
+        fn create_vehicle_journey_with(
+            trip_id: &str,
+            stop_point_ids: Vec<&str>,
+            collections: &Collections,
+        ) -> VehicleJourney {
+            let stop_time_at = |stop_point_id: &str| StopTime {
+                stop_point_idx: collections.stop_points.get_idx(stop_point_id).unwrap(),
+                sequence: 0,
+                arrival_time: Time::new(0, 0, 0),
+                departure_time: Time::new(0, 0, 0),
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 0,
+                datetime_estimated: false,
+                local_zone_id: None,
+                precision: None,
+            };
+            let stop_times: Vec<_> = stop_point_ids.into_iter().map(stop_time_at).collect();
+            VehicleJourney {
+                id: String::from(trip_id),
+                codes: KeysValues::default(),
+                object_properties: KeysValues::default(),
+                comment_links: CommentLinksT::default(),
+                route_id: String::from("route_id"),
+                physical_mode_id: String::new(),
+                dataset_id: String::new(),
+                service_id: String::new(),
+                headsign: None,
+                short_name: None,
+                block_id: None,
+                company_id: String::new(),
+                trip_property_id: None,
+                geometry_id: None,
+                stop_times,
+            }
+        }
+
+        #[test]
+        fn generate_route_name() {
+            let mut collections = collections();
+            collections
+                .vehicle_journeys
+                .push(create_vehicle_journey_with(
+                    "trip:1",
+                    vec!["stop_point:1", "stop_point:2"],
+                    &collections,
+                ))
+                .unwrap();
+            collections.enhance_route_names();
+            let route = collections.routes.get("route_id").unwrap();
+            assert_eq!("Stop Area 1 - Stop Area 2", route.name);
+        }
+
+        #[test]
+        fn most_frequent_origin_destination() {
+            let mut collections = collections();
+            collections
+                .vehicle_journeys
+                .push(create_vehicle_journey_with(
+                    "trip:1",
+                    vec!["stop_point:1", "stop_point:2"],
+                    &collections,
+                ))
+                .unwrap();
+            collections
+                .vehicle_journeys
+                .push(create_vehicle_journey_with(
+                    "trip:2",
+                    vec!["stop_point:1", "stop_point:3"],
+                    &collections,
+                ))
+                .unwrap();
+            collections
+                .vehicle_journeys
+                .push(create_vehicle_journey_with(
+                    "trip:3",
+                    vec!["stop_point:2", "stop_point:3"],
+                    &collections,
+                ))
+                .unwrap();
+            collections.enhance_route_names();
+            let route = collections.routes.get("route_id").unwrap();
+            assert_eq!("Stop Area 1 - Stop Area 3", route.name);
+        }
+
+        #[test]
+        fn same_frequency_then_biggest_stop_area() {
+            let mut collections = collections();
+            // Make 'stop_area:1' the biggest stop area by number of stop points
+            collections
+                .stop_points
+                .get_mut("stop_point:2")
+                .unwrap()
+                .stop_area_id = String::from("stop_area:1");
+            collections
+                .vehicle_journeys
+                .push(create_vehicle_journey_with(
+                    "trip:1",
+                    vec!["stop_point:1", "stop_point:3"],
+                    &collections,
+                ))
+                .unwrap();
+            collections
+                .vehicle_journeys
+                .push(create_vehicle_journey_with(
+                    "trip:2",
+                    vec!["stop_point:3", "stop_point:2"],
+                    &collections,
+                ))
+                .unwrap();
+            collections.enhance_route_names();
+            let route = collections.routes.get("route_id").unwrap();
+            assert_eq!("Stop Area 1 - Stop Area 1", route.name);
+        }
+
+        #[test]
+        fn same_frequency_same_size_stop_area_then_first_aphabetical_order() {
+            let mut collections = collections();
+            // Make 'stop_area:1' the biggest stop area by number of stop points
+            collections
+                .stop_points
+                .get_mut("stop_point:2")
+                .unwrap()
+                .stop_area_id = String::from("stop_area:1");
+            // Make 'stop_area:3' as big as 'stop_area:1'
+            collections
+                .stop_points
+                .get_mut("stop_point:4")
+                .unwrap()
+                .stop_area_id = String::from("stop_area:3");
+            collections
+                .vehicle_journeys
+                .push(create_vehicle_journey_with(
+                    "trip:1",
+                    vec!["stop_point:1", "stop_point:3"],
+                    &collections,
+                ))
+                .unwrap();
+            collections
+                .vehicle_journeys
+                .push(create_vehicle_journey_with(
+                    "trip:2",
+                    vec!["stop_point:4", "stop_point:2"],
+                    &collections,
+                ))
+                .unwrap();
+            collections.enhance_route_names();
+            let route = collections.routes.get("route_id").unwrap();
+            // 'Stop Area 1' is before 'Stop Area 3' in alphabetical order
+            assert_eq!("Stop Area 1 - Stop Area 1", route.name);
         }
     }
 }
