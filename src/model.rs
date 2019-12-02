@@ -1159,6 +1159,7 @@ mod tests {
                 drop_off_type: 0,
                 datetime_estimated: false,
                 local_zone_id: Some(0),
+                precision: None,
             };
             collections
                 .vehicle_journeys

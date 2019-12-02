@@ -260,6 +260,7 @@ fn read<H>(
     file_handler: &mut H,
     config_path: Option<impl AsRef<Path>>,
     prefix: Option<String>,
+    on_demand_transport: bool,
 ) -> Result<Model>
 where
     for<'a> &'a mut H: read_utils::FileHandler,
@@ -292,7 +293,7 @@ where
     read::read_routes(file_handler, &mut collections)?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
     collections.comments = comments;
-    read::manage_stop_times(&mut collections, file_handler)?;
+    read::manage_stop_times(&mut collections, file_handler, on_demand_transport)?;
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
     collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
@@ -321,9 +322,10 @@ pub fn read_from_path<P: AsRef<Path>>(
     p: P,
     config_path: Option<P>,
     prefix: Option<String>,
+    on_demand_transport: bool,
 ) -> Result<Model> {
     let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
-    read(&mut file_handle, config_path, prefix)
+    read(&mut file_handle, config_path, prefix, on_demand_transport)
 }
 
 /// Imports a `Model` from a zip file containing the [GTFS](http://gtfs.org/).
@@ -339,9 +341,10 @@ pub fn read_from_zip<P: AsRef<Path>>(
     path: P,
     config_path: Option<P>,
     prefix: Option<String>,
+    on_demand_transport: bool,
 ) -> Result<Model> {
     let mut file_handler = read_utils::ZipHandler::new(path)?;
-    read(&mut file_handler, config_path, prefix)
+    read(&mut file_handler, config_path, prefix, on_demand_transport)
 }
 
 #[derive(PartialOrd, Ord, Debug, Clone, Eq, PartialEq, Hash)]

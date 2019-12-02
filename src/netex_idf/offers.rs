@@ -584,6 +584,7 @@ fn stop_times(
                 drop_off_type,
                 datetime_estimated: false,
                 local_zone_id,
+                precision: None,
             };
 
             Ok(stop_time)

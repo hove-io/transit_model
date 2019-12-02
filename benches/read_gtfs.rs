@@ -22,6 +22,12 @@ use transit_model::gtfs;
 #[bench]
 fn read_gtfs(bencher: &mut Bencher) {
     bencher.iter(|| {
-        gtfs::read_from_path("./tests/fixtures/gtfs2ntfs/minimal/input", None, None).unwrap()
+        gtfs::read_from_path(
+            "./tests/fixtures/gtfs2ntfs/minimal/input",
+            None,
+            None,
+            false,
+        )
+        .unwrap()
     });
 }

@@ -21,7 +21,7 @@ use crate::{
     model::Collections,
     objects::{
         self, CommentLinksT, Coord, KeysValues, Pathway, StopLocation, StopTime as NtfsStopTime,
-        StopType, Time, TransportType, VehicleJourney,
+        StopTimePrecision, StopType, Time, TransportType, VehicleJourney,
     },
     read_utils::{read_collection, read_objects, FileHandler},
     utils::*,
@@ -366,7 +366,11 @@ where
     }
 }
 
-pub fn manage_stop_times<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+pub fn manage_stop_times<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+    on_demand_transport: bool,
+) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -422,6 +426,11 @@ where
                         stop_time.stop_id
                     )
                 })?;
+            let precision = match (on_demand_transport, st_values.datetime_estimated) {
+                (_, false) => Some(StopTimePrecision::Exact),
+                (false, true) => Some(StopTimePrecision::Approximate),
+                (true, true) => Some(StopTimePrecision::Estimated),
+            };
 
             vj.stop_times.push(objects::StopTime {
                 stop_point_idx,
@@ -434,6 +443,7 @@ where
                 drop_off_type: stop_time.drop_off_type,
                 datetime_estimated: st_values.datetime_estimated,
                 local_zone_id: stop_time.local_zone_id,
+                precision,
             });
         }
     }
@@ -1163,6 +1173,7 @@ where
                             drop_off_type: stop_time.drop_off_type,
                             datetime_estimated,
                             local_zone_id: stop_time.local_zone_id,
+                            precision: stop_time.precision.clone(),
                         })
                         .collect();
                     start_time = start_time + Time::new(0, 0, frequency.headway_secs);
@@ -2321,7 +2332,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, false).unwrap();
 
             assert_eq!(
                 vec![
@@ -2336,6 +2347,7 @@ mod tests {
                         drop_off_type: 0,
                         datetime_estimated: true,
                         local_zone_id: None,
+                        precision: Some(StopTimePrecision::Approximate),
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
@@ -2348,6 +2360,7 @@ mod tests {
                         drop_off_type: 1,
                         datetime_estimated: false,
                         local_zone_id: None,
+                        precision: Some(StopTimePrecision::Exact),
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
@@ -2360,6 +2373,7 @@ mod tests {
                         drop_off_type: 1,
                         datetime_estimated: false,
                         local_zone_id: None,
+                        precision: Some(StopTimePrecision::Exact),
                     },
                 ],
                 collections.vehicle_journeys.into_vec()[0].stop_times
@@ -2404,7 +2418,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, false).unwrap();
 
             assert_eq!(
                 vec![
@@ -2419,6 +2433,7 @@ mod tests {
                         drop_off_type: 0,
                         datetime_estimated: false,
                         local_zone_id: None,
+                        precision: Some(StopTimePrecision::Exact),
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
@@ -2431,6 +2446,7 @@ mod tests {
                         drop_off_type: 1,
                         datetime_estimated: false,
                         local_zone_id: None,
+                        precision: Some(StopTimePrecision::Exact),
                     },
                 ],
                 collections.vehicle_journeys.into_vec()[0].stop_times
@@ -2896,7 +2912,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, false).unwrap();
 
             assert_eq!(
                 vec![
@@ -2968,7 +2984,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            let val = super::manage_stop_times(&mut collections, &mut handler);
+            let val = super::manage_stop_times(&mut collections, &mut handler, false);
 
             // the first stop time of the vj has no departure/arrival, it's an error
             let err = val.unwrap_err();
@@ -3061,5 +3077,92 @@ mod tests {
                 read_opt_collection(&mut handler, "levels.txt").unwrap();
             assert_eq!(4, levels.len());
         })
+    }
+    #[test]
+    fn gtfs_stop_times_precision() {
+        let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                              route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF";
+
+        let stops_content =
+            "stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station\n\
+             sp:01,my stop point name 1,my first desc,0.1,1.2,0,\n\
+             sp:02,my stop point name 2,,0.2,1.5,0,\n\
+             sp:03,my stop point name 2,,0.2,1.5,0,";
+
+        let trips_content =
+            "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+             1,route_1,0,service_1,,";
+
+        let stop_times_content = "trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled,timepoint\n\
+                                  1,06:00:00,06:00:00,sp:01,1,over there,,,,0\n\
+                                  1,06:06:27,06:06:27,sp:02,2,,2,1,,1\n\
+                                  1,06:06:27,06:06:27,sp:03,3,,2,1,,";
+
+        test_in_tmp_dir(|path| {
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
+            create_file_with_content(path, "stop_times.txt", stop_times_content);
+            create_file_with_content(path, "stops.txt", stops_content);
+
+            let mut collections = Collections::default();
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
+
+            let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
+            let mut equipments = EquipmentList::default();
+            let (_, stop_points, _) =
+                super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
+            collections.stop_points = stop_points;
+
+            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, true).unwrap();
+
+            assert_eq!(
+                vec![
+                    StopTime {
+                        stop_point_idx: collections.stop_points.get_idx("sp:01").unwrap(),
+                        sequence: 1,
+                        arrival_time: Time::new(6, 0, 0),
+                        departure_time: Time::new(6, 0, 0),
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: 0,
+                        drop_off_type: 0,
+                        datetime_estimated: true,
+                        local_zone_id: None,
+                        precision: Some(StopTimePrecision::Estimated),
+                    },
+                    StopTime {
+                        stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
+                        sequence: 2,
+                        arrival_time: Time::new(6, 6, 27),
+                        departure_time: Time::new(6, 6, 27),
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: 2,
+                        drop_off_type: 1,
+                        datetime_estimated: false,
+                        local_zone_id: None,
+                        precision: Some(StopTimePrecision::Exact),
+                    },
+                    StopTime {
+                        stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
+                        sequence: 3,
+                        arrival_time: Time::new(6, 6, 27),
+                        departure_time: Time::new(6, 6, 27),
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: 2,
+                        drop_off_type: 1,
+                        datetime_estimated: false,
+                        local_zone_id: None,
+                        precision: Some(StopTimePrecision::Exact),
+                    },
+                ],
+                collections.vehicle_journeys.into_vec()[0].stop_times
+            );
+        });
     }
 }

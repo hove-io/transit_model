@@ -54,6 +54,8 @@ struct StopTime {
     local_zone_id: Option<u16>,
     stop_headsign: Option<String>,
     stop_time_id: Option<String>,
+    #[serde(rename = "stop_time_precision")]
+    precision: Option<StopTimePrecision>,
 }
 
 #[derivative(Default)]
@@ -392,7 +394,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.10.0".to_string()),
+                    ("ntfs_version".to_string(), "0.11.0".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -631,6 +633,7 @@ mod tests {
                         drop_off_type: 1,
                         datetime_estimated: false,
                         local_zone_id: None,
+                        precision: Some(StopTimePrecision::Exact),
                     },
                     StopTime {
                         stop_point_idx: stop_points.get_idx("OIF:SP:36:2127").unwrap(),
@@ -643,6 +646,7 @@ mod tests {
                         drop_off_type: 0,
                         datetime_estimated: false,
                         local_zone_id: None,
+                        precision: Some(StopTimePrecision::Exact),
                     },
                 ],
             },
@@ -1057,6 +1061,7 @@ mod tests {
                 drop_off_type: 2,
                 datetime_estimated: false,
                 local_zone_id: None,
+                precision: None,
             }],
         });
 

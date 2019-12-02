@@ -839,6 +839,7 @@ pub struct StopTime {
     pub drop_off_type: u8,
     pub datetime_estimated: bool,
     pub local_zone_id: Option<u16>,
+    pub precision: Option<StopTimePrecision>,
 }
 
 impl Ord for StopTime {
@@ -857,6 +858,16 @@ impl GetObjectType for StopTime {
     fn get_object_type() -> ObjectType {
         ObjectType::StopTime
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub enum StopTimePrecision {
+    #[serde(rename = "0")]
+    Exact,
+    #[serde(rename = "1")]
+    Approximate,
+    #[serde(rename = "2")]
+    Estimated,
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Default)]
