@@ -54,6 +54,6 @@ stop_point,MTPB,stop_position,"POINT(2.321783 48.842481)","POINT(1.1 2.2)"
 stop_point,GDLM,stop_position,*,"POINT(6.7 8.9)"
 stop_area,GDL,stop_position,"POINT(2.372987 48.844746)","POINT(5.3 8.1)"
 commercial_mode,Bus,commercial_mode_name,Bus,ネコバス
-physical_mode,Bus,physical_mode_name,Bus,バス
-physical_mode,Bus,co2_emission,*,130.5
+physical_mode,RapidTransit,physical_mode_name,"Rapid Transit",バス
+physical_mode,RapidTransit,co2_emission,*,3.14
 physical_mode,Metro,co2_emission,80,90
