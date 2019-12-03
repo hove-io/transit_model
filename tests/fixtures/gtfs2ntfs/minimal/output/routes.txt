@@ -1,3 +1,3 @@
 route_id,route_name,direction_type,line_id,geometry_id,destination_id
-route:2,,forward,route:2,,
-route:3,,forward,route:3,,
+route:2,plop - plop,forward,route:2,,stoparea:1
+route:3,plop - plop,forward,route:3,,stoparea:1
