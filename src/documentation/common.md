@@ -106,16 +106,19 @@ the same as the corresponding stop_point.
 - Any `/` character in an identifier of an object is removed.
 - If a trip doesn't have a `trip_headsign`, it is automatically generated based
   on the name of the last stop point of the trip
-- If a route doesn't have a name (or empty), `name` is automatically generated
-  with the following rules:
-  1. select the most frequent `stop_area` origin and most frequent `stop_area`
-     destination of all the associated trips
-  2. in case of equal frequencies, the biggest `stop_area`s (the most
-     `stop_points`) are chosen
-  3. in case of `stop_area` of equal sizes, the `stop_area` names are sorted
-     alphabetically and the first ones are taken
-  4. finally, the `route.name` is generated with:
-     `[name of origin's stop area] - [name of destination's stop area]`
+- If a route doesn't have a name (or empty), `name` and `destination_id` are
+  automatically generated:
+  - the `route.name` is generated with the following rules:
+    1. select the most frequent `stop_area` origin and most frequent `stop_area`
+       destination of all the associated trips
+    2. in case of equal frequencies, the biggest `stop_area`s (the most
+       `stop_points`) are chosen
+    3. in case of `stop_area` of equal sizes, the `stop_area` names are sorted
+       alphabetically and the first ones are taken
+    4. finally, the `route.name` is generated with:
+       `[name of origin's stop area] - [name of destination's stop area]`
+  - the `route.destination_id` is set (overridden if needed) with the
+    destination's stop area selected with the above rule
 
 ### Conflicting identifiers
 The model will raise a critical error if identifiers of 2 objects of the same type are identicals. 

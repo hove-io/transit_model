@@ -810,8 +810,14 @@ impl Collections {
     ///
     /// If still equality between multiple `stop_area`, then alphabetical order
     /// of `stop_area`'s name is used.
+    ///
+    /// `route.destination_id` is also replaced with the destination stop area
+    /// found with the above rules.
     pub fn enhance_route_names(&mut self) {
-        fn generate_route_name(route: &Route, collections: &Collections) -> Result<String> {
+        fn find_best_origin_destination<'a>(
+            route_id: &'a str,
+            collections: &'a Collections,
+        ) -> Result<(&'a StopArea, &'a StopArea)> {
             fn select_stop_areas<F>(
                 collections: &Collections,
                 route_id: &str,
@@ -887,19 +893,17 @@ impl Collections {
                 }
                 biggest_stop_areas
             }
-            fn find_first_by_alphabetical_order(stop_areas: Vec<&StopArea>) -> Option<String> {
-                let mut stop_area_names: Vec<_> = stop_areas
-                    .into_iter()
-                    .map(|stop_area| &stop_area.name)
-                    .collect();
-                stop_area_names.sort();
-                stop_area_names.get(0).cloned().cloned()
+            fn find_first_by_alphabetical_order<'a>(
+                mut stop_areas: Vec<&'a StopArea>,
+            ) -> Option<&'a StopArea> {
+                stop_areas.sort_by_key(|stop_area| &stop_area.name);
+                stop_areas.get(0).cloned()
             }
-            fn find_name_for<F>(
-                collections: &Collections,
-                route_id: &str,
+            fn find_stop_area_for<'a, F>(
+                collections: &'a Collections,
+                route_id: &'a str,
                 select_stop_point_in_vj: F,
-            ) -> Option<String>
+            ) -> Option<&'a StopArea>
             where
                 F: Fn(&VehicleJourney) -> Idx<StopPoint>,
             {
@@ -912,23 +916,28 @@ impl Collections {
                 find_first_by_alphabetical_order(biggest_stop_areas)
             }
 
-            let origin_name =
-                find_name_for(collections, &route.id, |vj| vj.stop_times[0].stop_point_idx);
-            let destination_name = find_name_for(collections, &route.id, |vj| {
+            let origin_stop_area =
+                find_stop_area_for(collections, route_id, |vj| vj.stop_times[0].stop_point_idx);
+            let destination_stop_area = find_stop_area_for(collections, route_id, |vj| {
                 vj.stop_times[vj.stop_times.len() - 1].stop_point_idx
             });
 
-            if let (Some(origin_name), Some(destination_name)) = (origin_name, destination_name) {
-                Ok(format!("{} - {}", origin_name, destination_name))
+            if let (Some(origin_stop_area), Some(destination_stop_area)) =
+                (origin_stop_area, destination_stop_area)
+            {
+                Ok((origin_stop_area, destination_stop_area))
             } else {
-                bail!("Failed to generate a `name` for route {}", route.id)
+                bail!("Failed to generate a `name` for route {}", route_id)
             }
         }
 
         let mut routes = self.routes.take();
         for mut route in &mut routes {
             if route.name.is_empty() {
-                route.name = skip_fail!(generate_route_name(&route, &self));
+                let (origin, destination) =
+                    skip_fail!(find_best_origin_destination(&route.id, &self));
+                route.destination_id = Some(destination.id.clone());
+                route.name = format!("{} - {}", origin.name, destination.name);
             }
         }
         self.routes = CollectionWithId::new(routes).unwrap();
