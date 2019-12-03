@@ -116,12 +116,10 @@ A Route is created from a line and a direction of journey patterns (*StandardSer
 NTFS field | TransXChange element | Mapping rule/Comment
 --- | --- | ---
 route_id | *Services/Service/ServiceCode*, *Services/Service/Line{id}* *StandardService/JourneyPattern/Direction* | This field is prefixed and formed by the concatenation of *Services/Service/ServiceCode*, *Services/Service/Line{id}* and *StandardService/JourneyPattern/Direction* separated by a `:`. Ex. "\<prefix>:1_58_BC:SL1:inbound".
-route_name |  | "[first stop of the first trip] - [last stop of the first trip]" (1)
+route_name |  | See [`common.md`](common.md#general-rules) to generate the `name`
 direction_type | *StandardService/JourneyPattern/Direction* | The value is set to `inbound` or `clockwise` when the specified value for the direction is `inboundAndOutbound` or `circular`, respectively.
 line_id | *Services/Service/ServiceCode*, *Services/Service/Line{id}* | This field is prefixed. Link to the file [lines.txt](#linestxt).
-destination_id |  | `stop_id` of the stop_area of the last stop of the first trip (1). Link to the file [stops.txt](#stopstxt).
-
-(1) The first trip of a route is the first one encontered in the TransXChange file.
+destination_id |  | See [`common.md`](common.md#general-rules) to generate the `destination_id`
 
 ### calendar.txt and calendar_dates.txt
 The validity period of a service is stated in *Services/Service/OperatingPeriod*. In case the validity period is open ended (the *EndDate* is not specified), the end date is defined by a mandatory parameter of this converter.
