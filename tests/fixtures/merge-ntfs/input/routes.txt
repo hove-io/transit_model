@@ -1,3 +1,5 @@
 route_id,route_name,is_forward,line_id,contributor_id,destination_id,geometry_id
 OIF:002002002:BDE,"Hôtels - Hôtels",0,OIF:002002002:BDEOIF829,OIF,OIF:SA:4:126,
 OIF:002002002:BDE_R,"Hôtels - Hôtels",1,OIF:002002002:BDEOIF829,OIF,OIF:SA:4:126,
+OIF:002002002:CEN,"Hôtels - Hôtels",0,OIF:002002002:CENOIF829,OIF,OIF:SA:4:126,
+OIF:002002002:CEN_R,"Hôtels - Hôtels",1,OIF:002002002:CENOIF829,OIF,OIF:SA:4:126,

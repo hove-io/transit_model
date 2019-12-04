@@ -1,4 +1,4 @@
 object_id,object_type,comment_id
 StopTime:OIF:77100911-1_1420-1:2,stop_time,OIFCOM1
-OIF:SP:10:10,stop_point,OIFCOM3
-OIF:SA:10:1002,stop_area,OIFCOM4
+OIF:SP:10:10,stop_point,OIFCOM2
+OIF:SA:10:1002,stop_area,OIFCOM3

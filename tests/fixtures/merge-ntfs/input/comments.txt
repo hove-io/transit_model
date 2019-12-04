@@ -1,5 +1,4 @@
 comment_id,comment_name,comment_type
 OIFCOM1,"oif information",information
-OIFCOM2,"oif on demand transport comment",on_demand_transport
-OIFCOM3,"oif stop point comment",information
-OIFCOM4,"oif stop area comment",information
+OIFCOM2,"oif stop point comment",information
+OIFCOM3,"oif stop area comment",information
