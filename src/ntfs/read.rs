@@ -287,9 +287,10 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
         );
 
         let precision = stop_time.precision.or_else(|| {
-            match collections.stop_points[stop_point_idx].stop_type {
-                StopType::Zone => Some(StopTimePrecision::Estimated),
-                _ => Some(StopTimePrecision::Exact),
+            if datetime_estimated {
+                Some(StopTimePrecision::Estimated)
+            } else {
+                Some(StopTimePrecision::Exact)
             }
         });
 
