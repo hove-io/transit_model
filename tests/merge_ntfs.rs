@@ -50,6 +50,7 @@ fn merge_collections_ok() {
             .try_merge(to_append_model.into_collections())
             .unwrap();
     }
+    collections.sanitize().unwrap();
     assert_eq!(2, collections.contributors.len());
     assert_eq!(2, collections.datasets.len());
     assert_eq!(3, collections.networks.len());
@@ -64,16 +65,16 @@ fn merge_collections_ok() {
     let bus_mode = collections.physical_modes.get("Bus").unwrap();
     assert_eq!(132f32, bus_mode.co2_emission.unwrap());
 
-    assert_eq!(6, collections.commercial_modes.len());
-    // 6 + 3 automatically inserted 'Bike', 'BikeSharingService', and 'Car'
-    assert_eq!(9, collections.physical_modes.len());
-    assert_eq!(6, collections.lines.len());
+    assert_eq!(5, collections.commercial_modes.len());
+    // 4 + 3 automatically inserted 'Bike', 'BikeSharingService', and 'Car'
+    assert_eq!(7, collections.physical_modes.len());
+    assert_eq!(5, collections.lines.len());
     assert_eq!(8, collections.routes.len());
-    assert_eq!(8, collections.vehicle_journeys.len());
+    assert_eq!(10, collections.vehicle_journeys.len());
     assert_eq!(2, collections.frequencies.len());
     assert_eq!(1, collections.stop_time_headsigns.len());
     assert_eq!(5, collections.stop_time_ids.len());
-    assert_eq!(5, collections.levels.len());
+    assert_eq!(4, collections.levels.len());
     assert_eq!(3, collections.pathways.len());
     assert_eq!(1, collections.grid_calendars.len());
     assert_eq!(1, collections.grid_exception_dates.len());
@@ -198,7 +199,7 @@ fn merge_collections_ok() {
     assert_eq!(261, calendar_vec[0].dates.len());
     assert_eq!(6, calendar_vec[1].dates.len());
     assert_eq!(3, collections.companies.len());
-    assert_eq!(8, collections.comments.len());
+    assert_eq!(7, collections.comments.len());
     assert_eq!(0, collections.equipments.len());
     assert_eq!(0, collections.transfers.len());
     assert_eq!(0, collections.trip_properties.len());
@@ -227,13 +228,13 @@ fn merge_collections_ok() {
         &collections.stop_points,
         "OIF:SP:10:10",
         &collections.comments,
-        "OIFCOM3",
+        "OIFCOM2",
     );
     assert_comment_idx(
         &collections.stop_areas,
         "OIF:SA:10:1002",
         &collections.comments,
-        "OIFCOM4",
+        "OIFCOM3",
     );
 }
 
@@ -255,6 +256,7 @@ fn merge_collections_with_transfers_ok() {
                 .try_merge(to_append_model.into_collections())
                 .unwrap();
         }
+        collections.sanitize().unwrap();
         let model = Model::new(collections).unwrap();
         let model = transfers::generates_transfers(
             model,
@@ -292,6 +294,7 @@ fn merge_collections_with_feed_infos() {
                 .unwrap();
         }
         collections.feed_infos.append(&mut feed_infos);
+        collections.sanitize().unwrap();
         let model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
@@ -314,6 +317,7 @@ fn merge_collections_fares_v2() {
                 .try_merge(to_append_model.into_collections())
                 .unwrap();
         }
+        collections.sanitize().unwrap();
         let model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
@@ -365,6 +369,7 @@ fn merge_collections_fares_v2_not_convertible_in_v1() {
                 .try_merge(to_append_model.into_collections())
                 .unwrap();
         }
+        collections.sanitize().unwrap();
         let model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
     });
@@ -385,6 +390,7 @@ fn merge_collections_fares_v2_with_ntfs_only_farev1() {
                 .try_merge(to_append_model.into_collections())
                 .unwrap();
         }
+        collections.sanitize().unwrap();
         let model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
