@@ -1508,7 +1508,7 @@ impl AddPrefix for ODFareV1 {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct FareV1 {
     #[serde(rename = "avant changement")]
     pub before_change: String,

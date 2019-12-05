@@ -4,6 +4,8 @@ avant changement;après changement;début trajet;fin trajet;condition globale;cl
 *;network=network:OIF:101;;;;OIF:ticket.1
 *;network=network:OIF:102;;;;OIF:ticket.1
 *;network=network:TGN;;;;ticket.1
-network=network:OIF:101;network=network:OIF:101;;;;OIF:ticket.1
-network=network:OIF:102;network=network:OIF:102;;;;OIF:ticket.1
-network=network:TGN;network=network:TGN;;;;ticket.1
+network=network:OIF:101;network=network:OIF:101;;;;
+network=network:OIF:101;network=network:OIF:102;;;;
+network=network:OIF:102;network=network:OIF:102;;;;
+network=network:OIF:102;network=network:OIF:101;;;;
+network=network:TGN;network=network:TGN;;;;
