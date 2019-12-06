@@ -70,7 +70,7 @@ pub fn apply_rules(
     let mut report = Report::default();
 
     if let Some(networks_consolidation_file) = networks_consolidation_file {
-        info!("Applying networks consolidations");
+        info!("Applying network consolidation rules");
         collections = network_consolidation::apply_rules(
             networks_consolidation_file,
             &lines_by_network,
@@ -79,7 +79,7 @@ pub fn apply_rules(
         )?;
     }
 
-    info!("Applying networks consolidations");
+    info!("Applying complementary code rules");
     complementary_code::apply_rules(
         complementary_code_rules_files,
         &mut collections,
