@@ -371,19 +371,28 @@ fn insert_flat_fare_as_fare_v1(
         fares_v1.insert(FareV1 {
             before_change: "*".to_string(),
             after_change: format!("network=network:{}", ticket_use_perimeter.object_id),
-            start_trip: String::new(),
-            end_trip: String::new(),
-            global_condition: String::new(),
             ticket_id: ticket.id.clone(),
+            ..Default::default()
         });
         fares_v1.insert(FareV1 {
             before_change: format!("network=network:{}", ticket_use_perimeter.object_id),
             after_change: format!("network=network:{}", ticket_use_perimeter.object_id),
-            start_trip: String::new(),
-            end_trip: String::new(),
-            global_condition: String::new(),
-            ticket_id: ticket.id.clone(),
+            ..Default::default()
         });
+        for connected_perimeter in fares
+            .ticket_use_perimeters
+            .values()
+            .filter(|p| p.object_type == ObjectType::Network)
+            .filter(|p| p.perimeter_action == PerimeterAction::Included)
+            .filter(|p| p.ticket_use_id == ticket_use_perimeter.ticket_use_id)
+            .filter(|p| p.object_id != ticket_use_perimeter.object_id)
+        {
+            fares_v1.insert(FareV1 {
+                before_change: format!("network=network:{}", ticket_use_perimeter.object_id),
+                after_change: format!("network=network:{}", connected_perimeter.object_id),
+                ..Default::default()
+            });
+        }
     }
     Ok(())
 }
