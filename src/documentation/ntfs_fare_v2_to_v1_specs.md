@@ -50,7 +50,7 @@ Note that more that one `ticket uses` are allowed for the same `ticket` specifyi
 This file must be created without any data.
 
 
-## Conversion of a flat fare on a specific network
+## Conversion of a flat fare on specific networks
 
 ### Description in V2 model
 A flat fare on a set of specific networks is described in the V2 fare system as:
@@ -59,6 +59,8 @@ A flat fare on a set of specific networks is described in the V2 fare system as:
   * At least one `ticket use` without constraint on transfers, and empty boarding and alighting times
   * One `ticket use perimeter` for each specified network, all associated to the same `ticket_use` (and no exclusion)
   * No `ticket use restriction`
+
+Warning: If different 2 tickets with several networks share a commun network, unexpected behaviour will arise (see chapter [`Limitations`](#limitations) below).
 
 ### Description of the transformation in V1 format
 
@@ -77,7 +79,7 @@ prices.csv field | Source file | Source field | Notes/Mapping rule
 "devise" | ticket_prices.txt | ticket_currency | fixed value `centime`, and only for a `EUR` value of `ticket_currency`
 
 #### fares.csv
-For each network associated to the `ticket_use`, a transition from anything to board on the network is firstly defined:
+For each network of each `ticket_use`, a transition from anything to board on this network is firstly defined:
 
 fares.csv field | Source file | Source field | Notes/Mapping rule
 --- | --- | --- | ---
@@ -88,11 +90,40 @@ fares.csv field | Source file | Source field | Notes/Mapping rule
 "condition globale" |  |  | this field is empty
 "clef ticket" | tickets.txt | ticket_id |
 
-Then, another transition is defined allowing a transfer from a section of the given network to a section of each specified network (including the transition between two sections within the same network).
-All these transitions should use the same `ticket` (the field "clef ticket" should be left empty).
-In the end, all possible combinations of transitions among the specified networks should be defined.
-
-In case multiple `ticket uses` are specified for the same ticket defining different `ticket use perimeters`, the associated transitions for the `ticket` should be generated accordingly.
+Then, another transition is defined for each combinaison of all the networks referenced by the current `ticket_use` (including every network with itself). As transitions are directional, both combinasion (A->B and B->A) are created.
+Those now transitions have a `clef ticket` field empty to indicate the same ticket is to be used for the connection.
 
 #### od_fares.csv
 This file must be created without any data.
+
+### Limitations
+This conversion into V1 model has drawbacks if two tickets can be used to travel on multiple networks (allowing transfers) and with a common network.
+In this case, some unexpected transfers will be possible.
+
+For example, the simplest unexpected behaviour can occur with:
+* a ticket `ticket1` usable on networks `network:01` and `network:02`
+* a ticket `ticket2` usable on networks `network:02` and `network:03`
+
+NTFS V1 modelization of such a case is represented by the following (inserting unvalid comments starting with # to explaint it): 
+```
+avant changement;après changement;début trajet;fin trajet;condition globale;clef ticket
+# declaration of the starting use of the ticket ticket1
+*;network=network:01;;;;ticket1
+*;network=network:02;;;;ticket1
+# declaration of the starting use of the ticket ticket2
+*;network=network:02;;;;ticket2
+*;network=network:03;;;;ticket2
+# declaration of the transitions for ticket 1 without linking a ticket for allowing the use of the same ticket
+network=network:01;network=network:01;;;;
+network=network:01;network=network:02;;;;
+network=network:02;network=network:01;;;;
+network=network:02;network=network:02;;;;
+# declaration of the transitions for ticket 2 without linking a ticket for allowing the use of the same ticket
+network=network:02;network=network:02;;;;
+network=network:02;network=network:03;;;;
+network=network:03;network=network:02;;;;
+network=network:03;network=network:03;;;;
+```
+In this case, following situations are possible:
+* with a `ticket1`, boarding in the `network:02` and make a transfer to board a line on `network:03` is possible,
+* with a `ticket2`, boarding in the `network:02` and make a transfer to board a line on `network:01` is possible.
