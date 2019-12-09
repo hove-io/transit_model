@@ -2,7 +2,7 @@
 ## Introduction
 This document describes how [NTFS fare model](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fare_extension.md) are converted to the [deprecated fare model](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fare_extension_fr_deprecated.md).
 
-This conversion is only used for a limited timeframe until main navitia product can read the new model.
+This conversion is only used for a limited timeframe until main navitia product can read the new model. 
 The only possible conversions are:
 * an OD fare on a specific line
 * a flat fare shared across several networks, allowing transitions within the networks with the same ticket.
