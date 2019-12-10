@@ -90,8 +90,8 @@ fares.csv field | Source file | Source field | Notes/Mapping rule
 "condition globale" |  |  | this field is empty
 "clef ticket" | tickets.txt | ticket_id |
 
-Then, another transition is defined for each combinaison of all the networks referenced by the current `ticket_use` (including every network with itself). As transitions are directional, both combinasion (A->B and B->A) are created.
-Those now transitions have a `clef ticket` field empty to indicate the same ticket is to be used for the connection.
+Then, another transition is defined for each combination of all the networks referenced by the current `ticket_use` (including every network with itself). As transitions are directional, both combination (A->B and B->A) are created.
+Those new transitions have a `clef ticket` field empty to indicate the same ticket is to be used for the connection.
 
 #### od_fares.csv
 This file must be created without any data.
