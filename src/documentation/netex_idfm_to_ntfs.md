@@ -210,9 +210,9 @@ NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 route_id | Route/@id | This field is prefixed. 
 line_id | Route/LineRef/@ref | This field is prefixed. 
-route_name | Route/Name | 
+route_name | Route/Name | See [`common.md`](common.md#general-rules) to generate the `name`
 direction_type | Route/DirectionType | The value of this field is used without transformation.
-destination_id |  | The `DirectionRef` of the Route doesn't link to a stop (neither stop_point nor stop_area), thus its value is not used.
+destination_id |  | The `DirectionRef` of the Route doesn't link to a stop (neither stop_point nor stop_area), thus its value is not used. See [`common.md`](common.md#general-rules) to generate the `destination_id`
 
 **ServiceJourneyPattern references**
 

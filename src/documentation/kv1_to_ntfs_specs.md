@@ -67,12 +67,10 @@ A Route is created from a line and a direction stated in the JOPAXXXXXX.TMI file
 NTFS field | KV1 file | KV1 field | Mapping rule/Comment
 --- | --- | --- | ---
 route_id | JOPAXXXXXX.TMI | *LinePlanningNumber*, *Direction* | This field is prefixed. Concatenation of *LinePlanningNumber* and *Direction* separated by a `:`. Ex: "\<prefix\>:2029:2"
-route_name | JOPAXXXXXX.TMI |  | "[first stop of the first trip] - [last stop of the first trip]" (1)
+route_name | JOPAXXXXXX.TMI |  | See [`common.md`](common.md#general-rules) to generate the `name`
 direction_type | JOPAXXXXXX.TMI | *Direction* | `forward` value when *Direction* is `1` or `A`. `backward` in all other cases.
 line_id | JOPAXXXXXX.TMI | *LinePlanningNumber* | This field is prefixed. Link to the file [lines.txt](#linestxt).
-destination_id |  |  | `stop_id` of the stop_area of the last stop of the first trip.  (1)
-
-(1) The first trip of a route is the one with the smallest `trip_id` value.
+destination_id |  |  | See [`common.md`](common.md#general-rules) to generate the `destination_id`
 
 ### calendar.txt and calendar_dates.txt
 This document specifies a straightforward NTFS conversion using only `calendar_dates.txt` file. The resulting files may be different with the use of an optimizing processing, but the result should be functionally identical.
