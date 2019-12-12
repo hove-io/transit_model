@@ -13,7 +13,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use std::path::Path;
-use transit_model::model::Model;
 use transit_model::test_utils::*;
 
 #[test]
@@ -23,18 +22,17 @@ fn test_merge_stop_areas_multi_steps() {
             Path::new("./tests/fixtures/merge-stop-areas/rule1.csv").to_path_buf(),
             Path::new("./tests/fixtures/merge-stop-areas/rule2.csv").to_path_buf(),
         ];
-        let objects =
+        let model =
             transit_model::ntfs::read(Path::new("./tests/fixtures/merge-stop-areas/ntfs-to-merge"))
                 .unwrap();
         let report_path = path.join("report.json");
-        let collections = transit_model::merge_stop_areas::merge_stop_areas(
-            objects.into_collections(),
+        let new_model = transit_model::merge_stop_areas::merge_stop_areas(
+            model,
             paths,
             200,
             Path::new(&report_path).to_path_buf(),
         )
         .unwrap();
-        let new_model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,

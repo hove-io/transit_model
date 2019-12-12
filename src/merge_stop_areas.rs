@@ -16,7 +16,7 @@
 
 use serde_json;
 
-use crate::model::Collections;
+use crate::model::{Collections, Model};
 use crate::objects::{CommentLinksT, KeysValues};
 use crate::objects::{RestrictionType, StopArea};
 use crate::utils::{Report, ReportType};
@@ -277,11 +277,12 @@ fn apply_rules(
 /// The `report_path` parameter allows you to specify the path of the file which will contain a
 /// report of the errors and warning encountered during the merge
 pub fn merge_stop_areas(
-    mut collections: Collections,
+    model: Model,
     rule_paths: Vec<PathBuf>,
     automatic_max_distance: u32,
     report_path: PathBuf,
-) -> Result<Collections> {
+) -> Result<Model> {
+    let mut collections = model.into_collections();
     let mut report = Report::default();
     let manual_rules = read_rules(rule_paths, &mut report)?;
     collections = apply_rules(collections, manual_rules, &mut report)?;
@@ -289,5 +290,6 @@ pub fn merge_stop_areas(
     collections = apply_rules(collections, automatic_rules, &mut report)?;
     let serialized_report = serde_json::to_string(&report)?;
     fs::write(report_path, serialized_report)?;
-    Ok(collections)
+    collections.sanitize()?;
+    Ok(Model::new(collections)?)
 }
