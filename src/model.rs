@@ -999,6 +999,7 @@ impl Model {
     /// # use transit_model::objects::Transfer;
     /// let mut collections = Collections::default();
     /// // This transfer is invalid as there is no stop points in collections
+    /// // but objects not referenced are removed from the model
     /// collections.transfers = Collection::from(Transfer {
     ///     from_stop_id: "invalid".into(),
     ///     to_stop_id: "also_invalid".into(),
@@ -1006,15 +1007,16 @@ impl Model {
     ///     real_min_transfer_time: None,
     ///     equipment_id: None,
     /// });
-    /// assert!(Model::new(collections).is_err());
+    /// assert!(Model::new(collections).is_ok());
     /// ```
     pub fn new(mut c: Collections) -> Result<Self> {
-        fn apply_generic_business_rules(collections: &mut Collections) {
+        fn apply_generic_business_rules(collections: &mut Collections) -> Result<()> {
             collections.enhance_with_co2();
             collections.enhance_trip_headsign();
             collections.enhance_route_names();
+            collections.sanitize()
         }
-        apply_generic_business_rules(&mut c);
+        apply_generic_business_rules(&mut c)?;
 
         let forward_vj_to_sp = c
             .vehicle_journeys

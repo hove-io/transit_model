@@ -304,7 +304,6 @@ where
     }
 
     collections.calendar_deduplication();
-    collections.sanitize()?;
     Model::new(collections)
 }
 
@@ -419,8 +418,7 @@ fn remove_stop_zones(model: Model) -> Result<Collections> {
 /// in the given directory.
 /// see [NTFS to GTFS conversion](https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
 pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
-    let mut collections = remove_stop_zones(model)?;
-    collections.sanitize()?;
+    let collections = remove_stop_zones(model)?;
     let model = Model::new(collections)?;
     let path = path.as_ref();
     info!("Writing GTFS to {:?}", path);

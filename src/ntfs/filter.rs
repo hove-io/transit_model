@@ -107,6 +107,5 @@ pub fn filter(model: Model, action: Action, network_ids: Vec<String>) -> Result<
         bail!("the data does not contain services anymore.")
     }
 
-    collections.sanitize()?;
     Model::new(collections)
 }

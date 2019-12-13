@@ -26,11 +26,13 @@ where
     U: Id<U>,
     IdxSet<T>: GetCorresponding<U>,
 {
-    objects
+    let mut ids: Vec<_> = objects
         .get_corresponding_from_idx(idx)
         .iter()
         .map(|idx| collection[*idx].id().to_string())
-        .collect()
+        .collect();
+    ids.sort();
+    ids
 }
 
 #[test]
@@ -72,17 +74,17 @@ fn minimal() {
     assert_eq!(vec!["RER"], get(rera, &ntm.commercial_modes, &ntm));
     assert_eq!(vec!["TGN"], get(rera, &ntm.networks, &ntm));
     assert_eq!(vec!["TGC"], get(rera, &ntm.contributors, &ntm));
-    assert_eq!(vec!["RERAF", "RERAB"], get(rera, &ntm.routes, &ntm));
+    assert_eq!(vec!["RERAB", "RERAF"], get(rera, &ntm.routes, &ntm));
     assert_eq!(
-        vec!["RERAF1", "RERAB1"],
+        vec!["RERAB1", "RERAF1"],
         get(rera, &ntm.vehicle_journeys, &ntm)
     );
     assert_eq!(
-        vec!["GDLR", "NATR", "CDGR", "DEFR", "MTPZ", "CDGZ"],
+        vec!["CDGR", "CDGZ", "DEFR", "GDLR", "MTPZ", "NATR"],
         get(rera, &ntm.stop_points, &ntm)
     );
     assert_eq!(
-        vec!["GDL", "NAT", "CDG", "DEF", "Navitia:MTPZ", "Navitia:CDGZ"],
+        vec!["CDG", "DEF", "GDL", "NAT", "Navitia:CDGZ", "Navitia:MTPZ"],
         get(rera, &ntm.stop_areas, &ntm)
     );
 }

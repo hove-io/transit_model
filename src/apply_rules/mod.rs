@@ -97,6 +97,5 @@ pub fn apply_rules(
     let serialized_report = serde_json::to_string_pretty(&report)?;
     fs::write(report_path, serialized_report)?;
 
-    collections.sanitize()?;
     Model::new(collections)
 }
