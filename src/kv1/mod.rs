@@ -52,7 +52,6 @@ where
     }
 
     collections.calendar_deduplication();
-    collections.sanitize()?;
     Model::new(collections)
 }
 

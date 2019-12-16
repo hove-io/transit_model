@@ -30,7 +30,6 @@ fn test_restrict_global() {
                 NaiveDate::from_ymd(2018, 8, 5),
             )
             .unwrap();
-        collections.sanitize().unwrap();
         let new_model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
@@ -54,7 +53,6 @@ fn test_restrict_no_panic() {
                 NaiveDate::from_ymd(2019, 7, 31),
             )
             .unwrap();
-        collections.sanitize().unwrap();
         let new_model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
     });

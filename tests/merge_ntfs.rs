@@ -50,7 +50,6 @@ fn merge_collections_ok() {
             .try_merge(to_append_model.into_collections())
             .unwrap();
     }
-    collections.sanitize().unwrap();
     assert_eq!(2, collections.contributors.len());
     assert_eq!(2, collections.datasets.len());
     assert_eq!(3, collections.networks.len());
@@ -256,7 +255,6 @@ fn merge_collections_with_transfers_ok() {
                 .try_merge(to_append_model.into_collections())
                 .unwrap();
         }
-        collections.sanitize().unwrap();
         let model = Model::new(collections).unwrap();
         let model = transfers::generates_transfers(
             model,
@@ -294,7 +292,6 @@ fn merge_collections_with_feed_infos() {
                 .unwrap();
         }
         collections.feed_infos.append(&mut feed_infos);
-        collections.sanitize().unwrap();
         let model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
@@ -317,7 +314,6 @@ fn merge_collections_fares_v2() {
                 .try_merge(to_append_model.into_collections())
                 .unwrap();
         }
-        collections.sanitize().unwrap();
         let model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
@@ -369,7 +365,6 @@ fn merge_collections_fares_v2_not_convertible_in_v1() {
                 .try_merge(to_append_model.into_collections())
                 .unwrap();
         }
-        collections.sanitize().unwrap();
         let model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
     });
@@ -390,7 +385,6 @@ fn merge_collections_fares_v2_with_ntfs_only_farev1() {
                 .try_merge(to_append_model.into_collections())
                 .unwrap();
         }
-        collections.sanitize().unwrap();
         let model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(

@@ -290,6 +290,5 @@ pub fn merge_stop_areas(
     collections = apply_rules(collections, automatic_rules, &mut report)?;
     let serialized_report = serde_json::to_string(&report)?;
     fs::write(report_path, serialized_report)?;
-    collections.sanitize()?;
     Ok(Model::new(collections)?)
 }
