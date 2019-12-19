@@ -1,0 +1,16 @@
+[package]
+name = "fare_conversion"
+version = "0.1.0"
+authors = ["Pascal Benchimol <pascal.benchimol@kisio.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4"
+# transit_model = "0.6"
+transit_model = { path = "../" }
+# transit_model_collection = "0.1"
+transit_model_collection = { version = "0.1", path = "../collection" }
+transit_model_procmacro = { version = "0.1", path = "../transit_model_procmacro" }
+transit_model_relations = { version = "0.1", path = "../relations" }

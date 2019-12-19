@@ -526,10 +526,10 @@ fn construct_fare_v1_from_v2(
         {
             let states = included_networks
                                 .iter()
-                                .map(|network| format!("network={:?}", network))
+                                .map(|network| format!("network=network:{}", network))
                                 .chain(included_lines
                                         .iter()
-                                        .map(|line| format!("line={:?}", line))
+                                        .map(|line| format!("line=line:{}", line))
                                 );
                         
             // will yield a sequence of String
@@ -541,14 +541,14 @@ fn construct_fare_v1_from_v2(
                     excluded_lines
                     .iter()
                     .map( |line| 
-                            format!("line!={:?}", line)
+                            format!("line!=line:{}", line)
                     ).chain(
                         ticket_use.max_transfers.iter().map(|nb_max_transfers|
-                            format!("nb_changes<{:?}", nb_max_transfers + 1)
+                            format!("nb_changes<{}", nb_max_transfers + 1)
                         )
                     ).chain(
                         ticket_use.boarding_time_limit.iter().map(|time_limit|
-                            format!("duration<{:?}", time_limit + 1)
+                            format!("duration<{}", time_limit + 1)
                         )
                     );
 
@@ -561,7 +561,7 @@ fn construct_fare_v1_from_v2(
                 ticket_use.alighting_time_limit
                 .iter()
                 .map(|time_limit|
-                    format!("duration<{:?}", time_limit + 1)
+                    format!("duration<{}", time_limit + 1)
                 );
             
 
@@ -592,9 +592,6 @@ fn construct_fare_v1_from_v2(
                     });
 
                     for state2 in states.clone() {
-                        if state == state2 {
-                            continue;
-                        }
                         fares.insert(FareV1 {
                             before_change : state.clone(),
                             after_change : state2.clone(),
@@ -611,7 +608,6 @@ fn construct_fare_v1_from_v2(
                     }
                 }
             };
-
 
             if restrictions.is_empty() {
                 insert_one_ticket(None, None, fares_v1);
@@ -635,43 +631,11 @@ fn construct_fare_v1_from_v2(
 
                     insert_one_ticket(extra_start_cond, extra_end_cond, fares_v1);
 
-                }
-               
-
-            }
-            
-            
-
-
+                }               
+            }            
         }
-
-
-
-    }
-    
-    //let ticket_use_ids : BTreeSet<& str> = fares.ticket_uses.values().map(|ticket_use| & ticket_use.id).collect();
-    // collecter les ticket_use_id
-    // pour chaque ticket_use_id :
-    //  - collecter les networks et lignes inclues -> states
-    //  - collecter les lignes exclues
-    //  - collecter les restrictions
-    //  - recupere le ticket_id associé
-
-    // inserer dans fare_v1
-    // Si pas de restrictions :
-    // pour chaque state :
-    //  mettre une transition *;state;
-    //                        ligne!=ligne_exclues & max_changes <= .. & duration < boarding ; duration < alighting;
-    //                        ticket_id
-    // pour chaque paire d'etat autorise state_1, state_2
-    //  mettre une transition state_1; state_2; 
-    //                        ticket = ticket_use_id; ligne!=ligne_exclues & max_changes <= .. & duration < boarding ; duration < alighting;
-    //                        ""
-
-    // Si il existe une restriction, faire comme au dessus une fois par restriction
-
+    }    
     Ok(())
-
 }
 
 
@@ -679,8 +643,9 @@ fn do_write_fares_v1_from_v2(base_path: &path::Path, fares: &Fares) -> Result<()
     let mut prices_v1: BTreeSet<PriceV1> = BTreeSet::new();
     let mut fares_v1: BTreeSet<FareV1> = BTreeSet::new();
 
-    insert_od_specific_line_as_fare_v1(fares, &mut prices_v1, &mut fares_v1)?;
-    insert_flat_fare_as_fare_v1(fares, &mut prices_v1, &mut fares_v1)?;
+    //insert_od_specific_line_as_fare_v1(fares, &mut prices_v1, &mut fares_v1)?;
+    //insert_flat_fare_as_fare_v1(fares, &mut prices_v1, &mut fares_v1)?;
+    construct_fare_v1_from_v2(fares, & mut prices_v1, & mut fares_v1)?;
 
     if prices_v1.is_empty() || fares_v1.is_empty() {
         bail!("Cannot convert Fares V2 to V1. Prices or fares are empty.")
