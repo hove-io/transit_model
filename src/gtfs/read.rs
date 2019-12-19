@@ -840,7 +840,7 @@ fn get_physical_mode(route_type: &RouteType) -> objects::PhysicalMode {
     };
     objects::PhysicalMode {
         id: repres.clone(),
-        name: repres.clone(),
+        name: repres,
         co2_emission: None,
     }
 }
@@ -2867,8 +2867,7 @@ mod tests {
         let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
                               route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF";
 
-        let stops_content =
-            r#"stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station
+        let stops_content = r#"stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station
              sp:01,my stop point name 1,my first desc,0.1,1.2,0,
              sp:02,my stop point name 2,my first desc,0.1,1.2,0,
              sp:03,my stop point name 3,my first desc,0.1,1.2,0,
@@ -2939,8 +2938,7 @@ mod tests {
         let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
                               route_1,agency_1,1,My line 1,3,8F7A32,FFFFFF";
 
-        let stops_content =
-            r#"stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station
+        let stops_content = r#"stop_id,stop_name,stop_desc,stop_lat,stop_lon,location_type,parent_station
              sp:01,my stop point name 1,my first desc,0.1,1.2,0,
              sp:02,my stop point name 2,my first desc,0.1,1.2,0,
              sp:03,my stop point name 3,my first desc,0.1,1.2,0,

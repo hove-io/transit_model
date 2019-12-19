@@ -261,7 +261,7 @@ fn make_physical_and_commercial_modes(
         })
         .collect::<Result<BTreeSet<_>>>()?;
 
-    for m in modes {
+    for &m in modes {
         collections
             .physical_modes
             .push(PhysicalMode {
@@ -606,7 +606,7 @@ fn make_vjs_and_stop_times(
         })?;
         let physical_mode_id = MODES
             .get::<str>(&line.transport_type)
-            .map(|m| m.to_string())
+            .map(|&m| m.to_string())
             .ok_or_else(|| {
                 format_err!(
                     "transport_type={:?} of line_id={:?} not found",
@@ -734,7 +734,7 @@ fn make_lines(collections: &mut Collections, lines: &CollectionWithId<Kv1Line>) 
     for l in lines.values() {
         let commercial_mode_id = MODES
             .get::<str>(&l.transport_type)
-            .map(|m| m.to_string())
+            .map(|&m| m.to_string())
             .ok_or_else(|| {
                 format_err!(
                     "Problem reading {:?}: transport_type={:?} not found",

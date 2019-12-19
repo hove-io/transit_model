@@ -54,7 +54,7 @@ pub fn compare_output_dir_with_expected<P: AsRef<Path>>(
             .unwrap()
             .map(|f| f.unwrap().file_name().into_string().unwrap())
             .collect(),
-        Some(v) => v.iter().map(|f| f.to_string()).collect(),
+        Some(v) => v.iter().map(|&f| f.to_string()).collect(),
     };
     for filename in files {
         let output_file_path = output_dir.join(filename.clone());
