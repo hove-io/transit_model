@@ -1327,7 +1327,7 @@ impl AddPrefix for Comment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Default, Clone)]
 pub struct Equipment {
     #[serde(rename = "equipment_id")]
     pub id: String,

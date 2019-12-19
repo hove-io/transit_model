@@ -57,3 +57,9 @@ commercial_mode,Bus,commercial_mode_name,Bus,ネコバス
 physical_mode,RapidTransit,physical_mode_name,"Rapid Transit",バス
 physical_mode,RapidTransit,co2_emission,*,3.14
 physical_mode,Metro,co2_emission,80,90
+stop_point,CDGR,elevator,*,1
+stop_point,CDGR,escalator,2,1
+stop_point,CHAM,wheelchair_boarding,1,2
+stop_point,DEFR,wheelchair_boarding,*,1
+stop_point,DEFR,sheltered,*,2
+stop_point,GDLR,wheelchair_boarding,*,1

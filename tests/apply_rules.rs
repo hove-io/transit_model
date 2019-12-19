@@ -32,6 +32,7 @@ fn test_apply_rules(
     test_in_tmp_dir(|path| {
         let mut file_to_compare = vec![
             "commercial_modes.txt",
+            "equipments.txt",
             "geometries.txt",
             "lines.txt",
             "networks.txt",
