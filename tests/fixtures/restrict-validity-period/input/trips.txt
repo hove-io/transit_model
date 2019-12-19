@@ -12,3 +12,4 @@ B42F_R,service:3,B42F1_R,company:kept,Bus,dataset:kept,,
 B42B_R,service:4,B42B1_R,company:kept,Bus,dataset:kept,,
 RERAF_R,service:5,RERAF1_R,company:kept,RapidTransit,dataset:removed,,geo:6:removed
 RERAB_R,service:6,RERAB1_R,company:kept,RapidTransit,dataset:removed,prop:removed,
+RERAB_R,service:6,without_stop_times:removed,company:kept,RapidTransit,dataset:removed,prop:removed,

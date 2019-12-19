@@ -72,7 +72,7 @@ fn merge_collections_ok() {
     assert_eq!(10, collections.vehicle_journeys.len());
     assert_eq!(2, collections.frequencies.len());
     assert_eq!(1, collections.stop_time_headsigns.len());
-    assert_eq!(5, collections.stop_time_ids.len());
+    assert_eq!(8, collections.stop_time_ids.len());
     assert_eq!(4, collections.levels.len());
     assert_eq!(3, collections.pathways.len());
     assert_eq!(1, collections.grid_calendars.len());
@@ -133,6 +133,36 @@ fn merge_collections_ok() {
             4,
         ),
         "StopTime:OIF:77100911-1_1420-1:2".into(),
+    );
+    stop_times_ids.insert(
+        (
+            collections
+                .vehicle_journeys
+                .get_idx("OIF:77100915-1_1424-1")
+                .unwrap(),
+            0,
+        ),
+        "StopTime:OIF:77100915-1_1424-1:0".into(),
+    );
+    stop_times_ids.insert(
+        (
+            collections
+                .vehicle_journeys
+                .get_idx("OIF:77100921-1_1420-1")
+                .unwrap(),
+            0,
+        ),
+        "StopTime:OIF:77100921-1_1420-1:0".into(),
+    );
+    stop_times_ids.insert(
+        (
+            collections
+                .vehicle_journeys
+                .get_idx("OIF:77100925-1_1424-1")
+                .unwrap(),
+            0,
+        ),
+        "StopTime:OIF:77100925-1_1424-1:0".into(),
     );
     stop_times_ids.insert(
         (collections.vehicle_journeys.get_idx("RERAB1").unwrap(), 5),
