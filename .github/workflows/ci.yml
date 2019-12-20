@@ -1,0 +1,86 @@
+name: Continuous Integration
+on: [push, pull_request]
+
+env:
+  PROJ_VERSION: 6.3.0
+
+jobs:
+  rustfmt:
+    name: Formatting check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Install Rust stable
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt
+    - name: Run cargo fmt
+      uses: actions-rs/cargo@v1
+      with:
+        command: fmt
+        args: --all -- --check
+
+  clippy:
+    name: Analyzing code with Clippy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install proj
+      run: |
+        wget --quiet --output-document - "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public" | sudo apt-key add -
+        echo "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main" | sudo tee /etc/apt/sources.list.d/kisio-digital.list
+        sudo apt update
+        sudo apt install --yes pkg-config libssl-dev clang proj=${PROJ_VERSION}
+    - uses: actions/checkout@master
+    - name: Install Rust stable
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+          profile: minimal
+          components: clippy
+    - name: Run cargo clippy
+      uses: actions-rs/cargo@v1
+      with:
+        command: clippy
+        args: --workspace --all-features -- -D warnings
+
+  tests:
+    name: Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [stable, beta]
+        include:
+          - build: stable
+            os: ubuntu-latest
+            rust: stable
+          - build: beta
+            os: ubuntu-latest
+            rust: beta
+    steps:
+    - name: Install proj
+      run: |
+        wget --quiet --output-document - "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public" | sudo apt-key add -
+        echo "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main" | sudo tee /etc/apt/sources.list.d/kisio-digital.list
+        sudo apt update
+        sudo apt install --yes libxml2-utils pkg-config libssl-dev clang proj=${PROJ_VERSION}
+    - uses: actions/checkout@master
+    - name: Checkout Submodules
+      uses: textbook/git-checkout-submodule-action@2.1.1
+    - name: Install Rust ${{ matrix.rust }}
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          override: true
+    - name: Run tests without features
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --workspace --verbose
+    - name: Run tests with all features
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --workspace --verbose --all-features
