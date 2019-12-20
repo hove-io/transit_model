@@ -140,10 +140,7 @@ where
         })
         .map(|record| {
             let stop_in_area = record?;
-            Ok((
-                stop_in_area.atco_code.clone(),
-                stop_in_area.stop_area_code.clone(),
-            ))
+            Ok((stop_in_area.atco_code.clone(), stop_in_area.stop_area_code))
         })
         .collect()
 }
@@ -358,8 +355,7 @@ mod tests {
 
         #[test]
         fn parsing_works() {
-            let csv_content =
-                r#""ATCOCode","NaptanCode","CommonName","Indicator","Longitude","Latitude"
+            let csv_content = r#""ATCOCode","NaptanCode","CommonName","Indicator","Longitude","Latitude"
 "0100053316","bstjpdm","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
 "0100053264","bstmjdp","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;
             let mut stop_in_area = HashMap::new();
@@ -397,8 +393,7 @@ mod tests {
         #[test]
         #[should_panic]
         fn duplicate_id() {
-            let csv_content =
-                r#""ATCOCode","NaptanCode","CommonName","Indicator","Longitude","Latitude"
+            let csv_content = r#""ATCOCode","NaptanCode","CommonName","Indicator","Longitude","Latitude"
 "0100053316","bstjpdm","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
 "0100053316","bstjpdm","Broad Walk Shops","Stop B",-2.5876178397,51.4558382170
 "0100053264","bstmjdp","Alberton Road","NE-bound",-2.5407019785,51.4889912765"#;

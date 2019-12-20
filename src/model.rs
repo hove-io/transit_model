@@ -20,7 +20,7 @@ use derivative::Derivative;
 use failure::{bail, format_err};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use std::cmp;
+use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops;
 use std::result::Result as StdResult;
@@ -746,7 +746,7 @@ impl Collections {
         }
         self.physical_modes = CollectionWithId::new(physical_modes).unwrap();
         // Add fallback modes
-        for fallback_mode in &[
+        for &fallback_mode in &[
             BIKE_PHYSICAL_MODE,
             BIKE_SHARING_SERVICE_PHYSICAL_MODE,
             CAR_PHYSICAL_MODE,
@@ -856,11 +856,13 @@ impl Collections {
                 let mut max_frequency = *frequencies.values().next().unwrap();
                 let mut max_indexes = Vec::new();
                 for (idx, frequency) in frequencies {
-                    if frequency > max_frequency {
-                        max_frequency = frequency;
-                        max_indexes = vec![idx];
-                    } else if frequency == max_frequency {
-                        max_indexes.push(idx);
+                    match frequency.cmp(&max_frequency) {
+                        Ordering::Greater => {
+                            max_frequency = frequency;
+                            max_indexes = vec![idx];
+                        }
+                        Ordering::Equal => max_indexes.push(idx),
+                        Ordering::Less => {}
                     }
                 }
                 max_indexes
@@ -884,11 +886,14 @@ impl Collections {
                         .values()
                         .filter(|stop_point| stop_point.stop_area_id == stop_area.id)
                         .count();
-                    if sp_number > max_sp_number {
-                        max_sp_number = sp_number;
-                        biggest_stop_areas = vec![stop_area];
-                    } else if sp_number == max_sp_number {
-                        biggest_stop_areas.push(stop_area);
+
+                    match sp_number.cmp(&max_sp_number) {
+                        Ordering::Greater => {
+                            max_sp_number = sp_number;
+                            biggest_stop_areas = vec![stop_area];
+                        }
+                        Ordering::Equal => biggest_stop_areas.push(stop_area),
+                        Ordering::Less => {}
                     }
                 }
                 biggest_stop_areas
@@ -990,7 +995,7 @@ impl Model {
     /// let _: Model = Model::new(Collections::default())?;
     /// # Ok(())
     /// # }
-    /// # fn main() { run().unwrap() }
+    /// # run().unwrap()
     /// ```
     ///
     /// ```
@@ -1135,7 +1140,7 @@ impl Model {
     /// );
     /// # Ok(())
     /// # }
-    /// # fn main() { run().unwrap() }
+    /// # run().unwrap()
     /// ```
     pub fn into_collections(self) -> Collections {
         self.collections

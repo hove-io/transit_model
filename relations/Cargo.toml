@@ -1,7 +1,7 @@
 [package]
 name = "transit_model_relations"
 description = " Modeling the relations between objects"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Kisio Digital <team.coretools@kisio.org>"]
 edition = "2018"
 license = "AGPL-3.0-only"

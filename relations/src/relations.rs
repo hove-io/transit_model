@@ -47,17 +47,15 @@
 //!     jobs_to_owners: OneToMany<Job, Owner>,
 //!     kinds_to_bikes: OneToMany<Kind, Bike>,
 //! }
-//! fn main() {
-//!     let world = World::default();
-//!     let mbk: Idx<Brand> = get_mbk_brand();
-//!     let owners_with_mbk: IdxSet<Owner> = world.get_corresponding_from_idx(mbk);
-//!     let jobs_with_mbk: IdxSet<Job> = world.get_corresponding(&owners_with_mbk);
-//!     println!(
-//!         "{} owners with {} different jobs own a bike of the brand MBK.",
-//!         owners_with_mbk.len(),
-//!         jobs_with_mbk.len()
-//!     );
-//! }
+//! let world = World::default();
+//! let mbk: Idx<Brand> = get_mbk_brand();
+//! let owners_with_mbk: IdxSet<Owner> = world.get_corresponding_from_idx(mbk);
+//! let jobs_with_mbk: IdxSet<Job> = world.get_corresponding(&owners_with_mbk);
+//! println!(
+//!    "{} owners with {} different jobs own a bike of the brand MBK.",
+//!    owners_with_mbk.len(),
+//!    jobs_with_mbk.len()
+//! );
 //! ```
 //!
 //! First, we want to model the relations between the object. One bike
@@ -154,7 +152,6 @@
 //!         }
 //!     }
 //! }
-//! # fn main() {}
 //! ```
 
 /// The error type used by the crate.
