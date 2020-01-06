@@ -19,6 +19,7 @@ use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::{bail, format_err};
 use lazy_static::lazy_static;
+use log::warn;
 use serde::{Deserialize, Serialize};
 use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
@@ -378,15 +379,16 @@ impl Collections {
                 !cal.dates.is_empty()
             }));
 
-        let mut geometries_used: HashSet<String> = HashSet::new();
-        let mut companies_used: HashSet<String> = HashSet::new();
-        let mut trip_properties_used: HashSet<String> = HashSet::new();
-        let mut route_ids_used: HashSet<String> = HashSet::new();
-        let mut stop_points_used: HashSet<String> = HashSet::new();
-        let mut data_sets_used: HashSet<String> = HashSet::new();
-        let mut physical_modes_used: HashSet<String> = HashSet::new();
-        let mut comments_used: HashSet<String> = HashSet::new();
-        let mut level_id_used: HashSet<String> = HashSet::new();
+        let mut geometries_used = HashSet::<String>::new();
+        let mut companies_used = HashSet::<String>::new();
+        let mut trip_properties_used = HashSet::<String>::new();
+        let mut route_ids_used = HashSet::<String>::new();
+        let mut stop_points_used = HashSet::<String>::new();
+        let mut data_sets_used = HashSet::<String>::new();
+        let mut physical_modes_used = HashSet::<String>::new();
+        let mut comments_used = HashSet::<String>::new();
+        let mut level_id_used = HashSet::<String>::new();
+        let mut calendars_used = HashSet::<String>::new();
 
         // Keep fallback modes even if not referenced by the model
         physical_modes_used.insert(String::from(BIKE_PHYSICAL_MODE));
@@ -402,7 +404,14 @@ impl Collections {
             .take()
             .into_iter()
             .filter_map(|vj| {
-                if self.calendars.get(&vj.service_id).is_some() {
+                if vj.stop_times.is_empty() {
+                    return None;
+                }
+                if vj.stop_times.len() == 1 {
+                    warn!("vehicle journey {} only have 1 stop time", vj.id);
+                }
+                if self.calendars.contains_id(&vj.service_id) {
+                    calendars_used.insert(vj.service_id.clone());
                     if let Some(geo_id) = &vj.geometry_id {
                         geometries_used.insert(geo_id.clone());
                     }
@@ -732,6 +741,7 @@ impl Collections {
             .retain(|frequency| vehicle_journeys_used.contains(&frequency.vehicle_journey_id));
         self.levels
             .retain(|level| level_id_used.contains(&level.id));
+        self.calendars.retain(|c| calendars_used.contains(&c.id));
         Ok(())
     }
 
