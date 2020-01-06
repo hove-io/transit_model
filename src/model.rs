@@ -21,7 +21,7 @@ use failure::{bail, format_err};
 use geo::algorithm::centroid::Centroid;
 use geo_types::MultiPoint;
 use lazy_static::lazy_static;
-use log::warn;
+use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
@@ -359,7 +359,7 @@ impl Collections {
             }
         }
         fn log_object_removed(object_type: &str, id: &str) {
-            log::debug!("{} with ID {} has been removed", object_type, id);
+            debug!("{} with ID {} has been removed", object_type, id);
         }
         fn log_predicate<'a, T, F>(object_type: &'a str, mut f: F) -> impl 'a + FnMut(&T) -> bool
         where
@@ -982,7 +982,7 @@ impl Collections {
             {
                 stop_area.coord = coord;
             } else {
-                log::warn!("failed to calculate a centroid of stop area {} because it does not refer to any corresponding stop point", stop_area.id)
+                warn!("failed to calculate a centroid of stop area {} because it does not refer to any corresponding stop point", stop_area.id)
             }
         }
 
@@ -1661,10 +1661,10 @@ mod tests {
         use super::*;
         use pretty_assertions::assert_eq;
 
-        fn collections(sa_id: &str) -> Collections {
+        fn collections(sp_amount: usize) -> Collections {
             let mut collections = Collections::default();
             collections.stop_areas = stop_areas();
-            collections.stop_points = stop_points(sa_id);
+            collections.stop_points = stop_points(sp_amount);
             collections
         }
 
@@ -1677,12 +1677,12 @@ mod tests {
             })
         }
 
-        fn stop_points(sa_id: &str) -> CollectionWithId<StopPoint> {
+        fn stop_points(sp_amount: usize) -> CollectionWithId<StopPoint> {
             CollectionWithId::new(
-                (1..=3)
+                (1..=sp_amount)
                     .map(|index| StopPoint {
                         id: format!("stop_point:{}", index),
-                        stop_area_id: sa_id.into(),
+                        stop_area_id: "stop_area:1".into(),
                         coord: Coord {
                             lon: index as f64,
                             lat: index as f64,
@@ -1695,7 +1695,7 @@ mod tests {
         }
         #[test]
         fn update_coords() {
-            let mut collections = collections("stop_area:1");
+            let mut collections = collections(3);
             collections.update_stop_area_coords();
             let stop_area = collections.stop_areas.get("stop_area:1").unwrap();
             assert_eq!(2.0, stop_area.coord.lon);
@@ -1704,7 +1704,7 @@ mod tests {
 
         #[test]
         fn update_coords_on_not_referenced_stop_area() {
-            let mut collections = collections("do_not_contain_sp");
+            let mut collections = collections(0);
             collections.update_stop_area_coords();
             let stop_area = collections.stop_areas.get("stop_area:1").unwrap();
             assert_eq!(0.0, stop_area.coord.lon);
