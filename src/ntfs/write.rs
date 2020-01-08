@@ -408,14 +408,11 @@ fn insert_flat_fare_as_fare_v1(
     Ok(())
 }
 
-
-
 fn construct_fare_v1_from_v2(
     fares: &Fares,
     prices_v1: &mut BTreeSet<PriceV1>,
     fares_v1: &mut BTreeSet<FareV1>,
 ) -> Result<()> {
-
     //we check that each ticket_use_id appears only once in ticket_uses
     {
         let mut unique_ids = BTreeSet::new();
@@ -423,14 +420,24 @@ fn construct_fare_v1_from_v2(
             unique_ids.insert(ticket_use.id.as_str());
         }
         if unique_ids.len() != fares.ticket_uses.len() {
-            let duplicated_ids : Vec<&str> = unique_ids.iter()
-                                            .filter(|&unique_id| 
-                                                fares.ticket_uses.values().filter(|ticket_use| ticket_use.id.as_str() == *unique_id).count() > 1 
-                                            ).map(|&unique_id| unique_id)
-                                            .collect();
-            format_err!("ticket_uses.txt contains multiple time the same ticket_use_id, \
-                        whereas a ticket_use_id must appears only once.\n\
-                        Duplicated ticket_use_ids : {:?}", duplicated_ids);
+            let duplicated_ids: Vec<&str> = unique_ids
+                .iter()
+                .filter(|&unique_id| {
+                    fares
+                        .ticket_uses
+                        .values()
+                        .filter(|ticket_use| ticket_use.id.as_str() == *unique_id)
+                        .count()
+                        > 1
+                })
+                .copied()
+                .collect();
+            format_err!(
+                "ticket_uses.txt contains multiple time the same ticket_use_id, \
+                 whereas a ticket_use_id must appears only once.\n\
+                 Duplicated ticket_use_ids : {:?}",
+                duplicated_ids
+            );
         }
     };
     // we handle ticket_use one by one
@@ -439,42 +446,54 @@ fn construct_fare_v1_from_v2(
         // associated to our ticket_use_id
         let (included_networks, included_lines, excluded_lines) = {
             let mut included_networks = Vec::<&str>::new();
-            let mut included_lines    = Vec::<&str>::new();
-            let mut excluded_lines    = Vec::<&str>::new();
+            let mut included_lines = Vec::<&str>::new();
+            let mut excluded_lines = Vec::<&str>::new();
             for perimeter in fares.ticket_use_perimeters.values() {
                 if perimeter.ticket_use_id != ticket_use.id {
                     continue;
                 }
                 match (&perimeter.object_type, &perimeter.perimeter_action) {
-                    (ObjectType::Network, PerimeterAction::Included) => { included_networks.push(perimeter.object_id.as_str()); }
-                    (ObjectType::Line, PerimeterAction::Included) => { included_lines.push(perimeter.object_id.as_str()); }
-                    (ObjectType::Line, PerimeterAction::Excluded) => { excluded_lines.push(perimeter.object_id.as_str()); }
-                     _ => {
-                         bail!("Badly formed ticket_use_perimeter : \n {:?} \n\
-                                Accepted forms : \n\
-                                ticket_use_id, object_type, object_id, perimeter_action\n\
-                                my_use_id    , network    , my_obj_id,  1 \n\
-                                my_use_id    , line       , my_obj_id,  1 \n\
-                                my_use_id    , line       , my_obj_id,  2 \n"                           
-                                , perimeter);
-                     }
+                    (ObjectType::Network, PerimeterAction::Included) => {
+                        included_networks.push(perimeter.object_id.as_str());
+                    }
+                    (ObjectType::Line, PerimeterAction::Included) => {
+                        included_lines.push(perimeter.object_id.as_str());
+                    }
+                    (ObjectType::Line, PerimeterAction::Excluded) => {
+                        excluded_lines.push(perimeter.object_id.as_str());
+                    }
+                    _ => {
+                        bail!(
+                            "Badly formed ticket_use_perimeter : \n {:?} \n\
+                             Accepted forms : \n\
+                             ticket_use_id, object_type, object_id, perimeter_action\n\
+                             my_use_id    , network    , my_obj_id,  1 \n\
+                             my_use_id    , line       , my_obj_id,  1 \n\
+                             my_use_id    , line       , my_obj_id,  2 \n",
+                            perimeter
+                        );
+                    }
                 }
             }
             (included_networks, included_lines, excluded_lines)
         };
 
         // Now the restrictions for our ticket_use_id
-        let restrictions : Vec<&TicketUseRestriction> = fares.ticket_use_restrictions.values()
-                            .filter(|restriction| restriction.ticket_use_id.as_str() == ticket_use.id )
-                            .collect();
+        let restrictions: Vec<&TicketUseRestriction> = fares
+            .ticket_use_restrictions
+            .values()
+            .filter(|restriction| restriction.ticket_use_id.as_str() == ticket_use.id)
+            .collect();
 
         // Now the ticket for our ticket_use_id.
         //  there cannot exists two Ticket with the same ticket_id in fares.tickets
         //  thus it is sufficient to check if one ticket exists with the requested ticket_id
-        let ticket = fares.tickets.get(&ticket_use.ticket_id)
-                                    .ok_or_else(|| format_err!("The ticket_id {:?} was not found in tickets.txt"
-                                                                , ticket_use.ticket_id)
-                                                )?;
+        let ticket = fares.tickets.get(&ticket_use.ticket_id).ok_or_else(|| {
+            format_err!(
+                "The ticket_id {:?} was not found in tickets.txt",
+                ticket_use.ticket_id
+            )
+        })?;
 
         // Now the price of the ticket for our ticket_use_id
         let price = {
@@ -482,25 +501,34 @@ fn construct_fare_v1_from_v2(
             for ticket_price in fares.ticket_prices.values() {
                 if ticket_price.ticket_id == ticket_use.ticket_id {
                     if has_price.is_some() {
-                        bail!("ticket_prices.txt contains multiple times the same ticket_id, \
-                                whereas a  ticket_id can appears only once.\n\
-                                Duplicated ticket_id : {:?}", ticket_use.ticket_id );
+                        bail!(
+                            "ticket_prices.txt contains multiple times the same ticket_id, \
+                             whereas a  ticket_id can appears only once.\n\
+                             Duplicated ticket_id : {:?}",
+                            ticket_use.ticket_id
+                        );
                     }
                     has_price = Some(ticket_price);
                 }
             }
-            has_price.ok_or_else(|| 
-                format_err!("The ticket_id {:?} was not found in ticket_prices.txt", ticket_use.ticket_id)
-            )?
+            has_price.ok_or_else(|| {
+                format_err!(
+                    "The ticket_id {:?} was not found in ticket_prices.txt",
+                    ticket_use.ticket_id
+                )
+            })?
         };
 
         //We have everything, so let's fill the fare v1 data !
 
-        //first  prices_v1 
+        //first  prices_v1
         // Note :  ticket_use_id of fare v2 plays the role of ticket_id in fare v1
-        // so  price_v1.id = ticket_use.id 
+        // so  price_v1.id = ticket_use.id
         {
-            if prices_v1.iter().find(|price_v1| price_v1.id == ticket_use.id).is_some() {
+            if prices_v1
+                .iter()
+                .any(|price_v1| price_v1.id == ticket_use.id)
+            {
                 bail!("There is two prices with the same id {:?}", ticket_use.id);
             }
             let cents_price = price.price * Decimal::from(100);
@@ -525,119 +553,113 @@ fn construct_fare_v1_from_v2(
         //now fares_v1
         {
             let states = included_networks
-                                .iter()
-                                .map(|network| format!("network=network:{}", network))
-                                .chain(included_lines
-                                        .iter()
-                                        .map(|line| format!("line=line:{}", line))
-                                );
-                        
+                .iter()
+                .map(|network| format!("network=network:{}", network))
+                .chain(
+                    included_lines
+                        .iter()
+                        .map(|line| format!("line=line:{}", line)),
+                );
+
             // will yield a sequence of String
             // each  corresponds to a start_trip condition
             //  in FareV1
             // these conditions must appears in all transitions (i.e. lines of fares.txt)
-            //  used to model this ticket_use_id                                
-            let mandatory_start_conditions = 
-                    excluded_lines
-                    .iter()
-                    .map( |line| 
-                            format!("line!=line:{}", line)
-                    ).chain(
-                        ticket_use.max_transfers.iter().map(|nb_max_transfers|
-                            format!("nb_changes<{}", nb_max_transfers + 1)
-                        )
-                    ).chain(
-                        ticket_use.boarding_time_limit.iter().map(|time_limit|
-                            format!("duration<{}", time_limit + 1)
-                        )
-                    );
+            //  used to model this ticket_use_id
+            let mandatory_start_conditions = excluded_lines
+                .iter()
+                .map(|line| format!("line!=line:{}", line))
+                .chain(
+                    ticket_use
+                        .max_transfers
+                        .iter()
+                        .map(|nb_max_transfers| format!("nb_changes<{}", nb_max_transfers + 1)),
+                )
+                .chain(
+                    ticket_use
+                        .boarding_time_limit
+                        .iter()
+                        .map(|time_limit| format!("duration<{}", time_limit + 1)),
+                );
 
             // will yield a sequence of String
             // each  corresponds to a end_trip condition
             //  in FareV1
             // these conditions must appears in all transitions (i.e. lines of fares.txt)
-            //  used to model this ticket_use_id 
-            let mandatory_end_condition = 
-                ticket_use.alighting_time_limit
+            //  used to model this ticket_use_id
+            let mandatory_end_condition = ticket_use
+                .alighting_time_limit
                 .iter()
-                .map(|time_limit|
-                    format!("duration<{}", time_limit + 1)
-                );
-            
+                .map(|time_limit| format!("duration<{}", time_limit + 1));
 
-            let insert_one_ticket = | extra_start_condition : Option<String>,
-                                      extra_end_condition : Option<String> ,
-                                      fares : &mut BTreeSet<FareV1>
-                                    | {
-                let start_condition_string = 
-                        extra_start_condition
+            let insert_one_ticket =
+                |extra_start_condition: Option<String>,
+                 extra_end_condition: Option<String>,
+                 fares: &mut BTreeSet<FareV1>| {
+                    let start_condition_string = extra_start_condition
                         .into_iter()
                         .chain(mandatory_start_conditions.clone())
                         .collect::<Vec<String>>()
                         .join("&");
-                let end_condition_string =
-                        extra_end_condition
+                    let end_condition_string = extra_end_condition
                         .into_iter()
                         .chain(mandatory_end_condition.clone())
                         .collect::<Vec<String>>()
                         .join("&");
-                for state in states.clone() {
-                    fares.insert(FareV1 {
-                        before_change : "*".to_owned(),
-                        after_change : state.clone(),
-                        start_trip : start_condition_string.clone(),
-                        end_trip : end_condition_string.clone(),
-                        global_condition : String::new(),
-                        ticket_id : ticket_use.id.clone(),
-                    });
-
-                    for state2 in states.clone() {
+                    for state in states.clone() {
                         fares.insert(FareV1 {
-                            before_change : state.clone(),
-                            after_change : state2.clone(),
-                            start_trip : format!("ticket={}&{}", ticket_use.id, start_condition_string) ,
-                            end_trip : end_condition_string.clone(),
-                            global_condition : String::new(),
-                            ticket_id : String::new(),
+                            before_change: "*".to_owned(),
+                            after_change: state.clone(),
+                            start_trip: start_condition_string.clone(),
+                            end_trip: end_condition_string.clone(),
+                            global_condition: String::new(),
+                            ticket_id: ticket_use.id.clone(),
                         });
-                        // print state;state2;
-                        //        mandatory_start_conditions + choice_start_condition + ticket=ticket_use_id;
-                        //        mandatory_end_condition + choice_end_conditions;
-                        //        
 
+                        for state2 in states.clone() {
+                            fares.insert(FareV1 {
+                                before_change: state.clone(),
+                                after_change: state2.clone(),
+                                start_trip: format!(
+                                    "ticket={}&{}",
+                                    ticket_use.id, start_condition_string
+                                ),
+                                end_trip: end_condition_string.clone(),
+                                global_condition: String::new(),
+                                ticket_id: String::new(),
+                            });
+                            // print state;state2;
+                            //        mandatory_start_conditions + choice_start_condition + ticket=ticket_use_id;
+                            //        mandatory_end_condition + choice_end_conditions;
+                            //
+                        }
                     }
-                }
-            };
+                };
 
             if restrictions.is_empty() {
                 insert_one_ticket(None, None, fares_v1);
-            }
-            else {
+            } else {
                 for restriction in restrictions {
                     let (extra_start_cond, extra_end_cond) = {
                         match &restriction.restriction_type {
-                            RestrictionType::Zone => {
-                                (   Some(format!("zone={:?}", restriction.use_origin)),
-                                    Some(format!("zone={:?}", restriction.use_destination))
-                                )                                        
-                            }
-                            RestrictionType::OriginDestination => {
-                                (   Some(format!("stoparea={:?}", restriction.use_origin)),
-                                    Some(format!("stoparea={:?}", restriction.use_destination))
-                                )
-                            }
+                            RestrictionType::Zone => (
+                                Some(format!("zone={:?}", restriction.use_origin)),
+                                Some(format!("zone={:?}", restriction.use_destination)),
+                            ),
+                            RestrictionType::OriginDestination => (
+                                Some(format!("stoparea={:?}", restriction.use_origin)),
+                                Some(format!("stoparea={:?}", restriction.use_destination)),
+                            ),
                         }
                     };
 
                     insert_one_ticket(extra_start_cond, extra_end_cond, fares_v1);
-
-                }               
-            }            
+                }
+            }
         }
-    }    
+    }
     Ok(())
 }
-
 
 fn do_write_fares_v1_from_v2(base_path: &path::Path, fares: &Fares) -> Result<()> {
     let mut prices_v1: BTreeSet<PriceV1> = BTreeSet::new();
@@ -645,7 +667,7 @@ fn do_write_fares_v1_from_v2(base_path: &path::Path, fares: &Fares) -> Result<()
 
     //insert_od_specific_line_as_fare_v1(fares, &mut prices_v1, &mut fares_v1)?;
     //insert_flat_fare_as_fare_v1(fares, &mut prices_v1, &mut fares_v1)?;
-    construct_fare_v1_from_v2(fares, & mut prices_v1, & mut fares_v1)?;
+    construct_fare_v1_from_v2(fares, &mut prices_v1, &mut fares_v1)?;
 
     if prices_v1.is_empty() || fares_v1.is_empty() {
         bail!("Cannot convert Fares V2 to V1. Prices or fares are empty.")
