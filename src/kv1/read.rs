@@ -22,8 +22,6 @@ use crate::{
 use chrono::NaiveDate;
 use csv;
 use failure::{bail, format_err, ResultExt};
-use geo::algorithm::centroid::Centroid;
-use geo_types::MultiPoint as GeoMultiPoint;
 use lazy_static::lazy_static;
 use log::info;
 use proj::Proj;
@@ -380,20 +378,6 @@ where
     }
 
     for (_, usr_stop_area) in usr_stop_area_map {
-        let stop_points = &collections.stop_points;
-        let coord = stop_points
-            .values()
-            .filter(|sp| sp.stop_area_id == usr_stop_area.id)
-            .map(|sp| (sp.coord.lon, sp.coord.lat))
-            .collect::<GeoMultiPoint<_>>()
-            .centroid()
-            .map(|c| Coord {lon: c.x(), lat: c.y()})
-            .ok_or_else(||
-                format_err!(
-                    "Failed to calculate a barycenter of stop area {} because it doesn't refer to any corresponding stop point.",
-                    usr_stop_area.id
-                )
-            )?;
         let stop_area = StopArea {
             id: usr_stop_area.id,
             name: usr_stop_area.name,
@@ -401,7 +385,7 @@ where
             object_properties: KeysValues::default(),
             comment_links: CommentLinksT::default(),
             visible: true,
-            coord,
+            coord: Coord::default(),
             timezone: None,
             geometry_id: None,
             equipment_id: None,

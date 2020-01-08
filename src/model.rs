@@ -18,8 +18,10 @@ use crate::{objects::*, Error, Result};
 use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::{bail, format_err};
+use geo::algorithm::centroid::Centroid;
+use geo_types::MultiPoint;
 use lazy_static::lazy_static;
-use log::warn;
+use log::{debug, warn};
 use serde::{Deserialize, Serialize};
 use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
@@ -357,7 +359,7 @@ impl Collections {
             }
         }
         fn log_object_removed(object_type: &str, id: &str) {
-            log::debug!("{} with ID {} has been removed", object_type, id);
+            debug!("{} with ID {} has been removed", object_type, id);
         }
         fn log_predicate<'a, T, F>(object_type: &'a str, mut f: F) -> impl 'a + FnMut(&T) -> bool
         where
@@ -957,6 +959,35 @@ impl Collections {
         }
         self.routes = CollectionWithId::new(routes).unwrap();
     }
+
+    /// Compute the coordinates of stop areas according to the centroid of stop points
+    /// if the stop area has no coordinates (lon = 0, lat = 0)
+    fn update_stop_area_coords(&mut self) {
+        let mut updated_stop_areas = self.stop_areas.take();
+        for stop_area in &mut updated_stop_areas
+            .iter_mut()
+            .filter(|sa| sa.coord == Coord::default())
+        {
+            if let Some(coord) = self
+                .stop_points
+                .values()
+                .filter(|sp| sp.stop_area_id == stop_area.id)
+                .map(|sp| (sp.coord.lon, sp.coord.lat))
+                .collect::<MultiPoint<_>>()
+                .centroid()
+                .map(|c| Coord {
+                    lon: c.x(),
+                    lat: c.y(),
+                })
+            {
+                stop_area.coord = coord;
+            } else {
+                warn!("failed to calculate a centroid of stop area {} because it does not refer to any corresponding stop point", stop_area.id)
+            }
+        }
+
+        self.stop_areas = CollectionWithId::new(updated_stop_areas).unwrap();
+    }
 }
 
 /// The navitia transit model.
@@ -1026,6 +1057,7 @@ impl Model {
     /// ```
     pub fn new(mut c: Collections) -> Result<Self> {
         fn apply_generic_business_rules(collections: &mut Collections) -> Result<()> {
+            collections.update_stop_area_coords();
             collections.enhance_with_co2();
             collections.enhance_trip_headsign();
             collections.enhance_route_names();
@@ -1622,6 +1654,61 @@ mod tests {
             let route = collections.routes.get("route_id").unwrap();
             // 'Stop Area 1' is before 'Stop Area 3' in alphabetical order
             assert_eq!("Stop Area 1 - Stop Area 1", route.name);
+        }
+    }
+
+    mod update_stop_area_coords {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn collections(sp_amount: usize) -> Collections {
+            let mut collections = Collections::default();
+            collections.stop_areas = stop_areas();
+            collections.stop_points = stop_points(sp_amount);
+            collections
+        }
+
+        fn stop_areas() -> CollectionWithId<StopArea> {
+            CollectionWithId::from(StopArea {
+                id: "stop_area:1".into(),
+                name: "Stop Area 1".into(),
+                coord: Coord::default(),
+                ..Default::default()
+            })
+        }
+
+        fn stop_points(sp_amount: usize) -> CollectionWithId<StopPoint> {
+            CollectionWithId::new(
+                (1..=sp_amount)
+                    .map(|index| StopPoint {
+                        id: format!("stop_point:{}", index),
+                        stop_area_id: "stop_area:1".into(),
+                        coord: Coord {
+                            lon: index as f64,
+                            lat: index as f64,
+                        },
+                        ..Default::default()
+                    })
+                    .collect(),
+            )
+            .unwrap()
+        }
+        #[test]
+        fn update_coords() {
+            let mut collections = collections(3);
+            collections.update_stop_area_coords();
+            let stop_area = collections.stop_areas.get("stop_area:1").unwrap();
+            assert_eq!(2.0, stop_area.coord.lon);
+            assert_eq!(2.0, stop_area.coord.lat);
+        }
+
+        #[test]
+        fn update_coords_on_not_referenced_stop_area() {
+            let mut collections = collections(0);
+            collections.update_stop_area_coords();
+            let stop_area = collections.stop_areas.get("stop_area:1").unwrap();
+            assert_eq!(0.0, stop_area.coord.lon);
+            assert_eq!(0.0, stop_area.coord.lat);
         }
     }
 }
