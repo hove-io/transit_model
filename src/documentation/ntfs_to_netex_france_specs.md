@@ -3,6 +3,7 @@
 Version of the implementation: `1.0`
 
 ## Introduction
+
 This document describes how a [NTFS feed](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md) is transformed into a Netex profil France feed in Navitia Transit Model.
 
 The resulting ZIP archive is composed of:
@@ -10,6 +11,12 @@ The resulting ZIP archive is composed of:
 - a `correspondances.xml` file containing all transfers between stops
 - a folder for each network containing
   + TBD
+
+## Input parameters
+
+A NTFS feed is not sufficient to generate a valid Netex Profil France feed:
+- `ParticipantRef` : The ParticipantRef code must be provided,
+- `StopProviderCode` : The code used to identify the provider in the stop_id generation.
 
 ## File headers
 
@@ -60,7 +67,7 @@ In this version of the connector:
 - the country code will be set to the fixed value `FR`,
 - the city code will be set to the fixed value `XXXXX`,
 - the technical code of the stop will contain the value of `stop_id`, with a replacement of `:` by `_` to avoid conflict between separators,
-- the code of the provider will be set to `LOC`.
+- the code of the provider will be set to the value of `StopProviderCode` param (is specified) or  `LOC` otherwise.
 
 
 **(3) definition of SiteRef**
