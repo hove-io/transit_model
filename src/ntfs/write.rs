@@ -29,35 +29,6 @@ use std::fs::File;
 use std::path;
 use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
 
-impl TryFrom<(&Ticket, &TicketPrice)> for PriceV1 {
-    type Error = failure::Error;
-    fn try_from((ticket, price): (&Ticket, &TicketPrice)) -> Result<Self> {
-        if price.currency != "Eur" {
-            bail!(
-                "Only Eur currency supported in conversion from fare v2 to fare v1.\
-                 Found currency : {}",
-                price.currency
-            );
-        }
-        let cents_price = price.price * Decimal::from(100);
-        let cents_price = cents_price
-            .round_dp(0)
-            .to_u32()
-            .ok_or_else(|| format_err!("Cannot convert price {:?} into a u32", price.price))?;
-        let comment = ticket.comment.as_ref().cloned().unwrap_or_else(String::new);
-        let price_v1 = Self {
-            id: ticket.id.clone(),
-            start_date: price.ticket_validity_start,
-            end_date: price.ticket_validity_end + Duration::days(1),
-            price: cents_price,
-            name: ticket.name.clone(),
-            ignored: String::new(),
-            comment,
-            currency_type: Some("centime".to_string()),
-        };
-        Ok(price_v1)
-    }
-}
 
 pub fn write_feed_infos(
     path: &path::Path,
@@ -246,14 +217,7 @@ struct Fares<'a> {
     ticket_use_restrictions: &'a Collection<TicketUseRestriction>,
 }
 
-fn has_constraints(ticket_use: &TicketUse) -> bool {
-    ticket_use
-        .max_transfers
-        .filter(|&mt| mt != 0)
-        .or(ticket_use.boarding_time_limit)
-        .or(ticket_use.alighting_time_limit)
-        .is_some()
-}
+
 
 // Returns Ok(()) if each ticket_use_id appears at most once in fares
 // returns an error otherwise
@@ -362,7 +326,7 @@ fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<Pric
         .round_dp(0)
         .to_u32()
         .ok_or_else(|| format_err!("Cannot convert price {:?} into a u32", cents_price))?;
-    let comment = ticket.comment.as_ref().cloned().unwrap_or_else(String::new);
+    let comment = ticket.comment.clone().unwrap_or_else(String::new);
     let price_v1 = PriceV1 {
         id: id.to_string(),
         start_date: price.ticket_validity_start,
@@ -888,53 +852,4 @@ pub fn write_object_properties(path: &path::Path, collections: &Collections) -> 
         .with_context(|_| format!("Error reading {:?}", path))?;
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    mod has_constraints {
-        use super::*;
-        use pretty_assertions::assert_eq;
-
-        impl Default for TicketUse {
-            fn default() -> Self {
-                TicketUse {
-                    id: String::from("ticket_use_id"),
-                    ticket_id: String::from("ticket_id"),
-                    max_transfers: None,
-                    boarding_time_limit: None,
-                    alighting_time_limit: None,
-                }
-            }
-        }
-
-        #[test]
-        fn no_constraints() {
-            let ticket_use = TicketUse::default();
-            assert_eq!(false, has_constraints(&ticket_use));
-        }
-
-        #[test]
-        fn no_constraints_with_zero_transfers() {
-            let mut ticket_use = TicketUse::default();
-            ticket_use.max_transfers = Some(0);
-            assert_eq!(false, has_constraints(&ticket_use));
-        }
-
-        #[test]
-        fn transfer_constraint() {
-            let mut ticket_use = TicketUse::default();
-            ticket_use.max_transfers = Some(1);
-            assert_eq!(true, has_constraints(&ticket_use));
-        }
-
-        #[test]
-        fn boarding_constraint() {
-            let mut ticket_use = TicketUse::default();
-            ticket_use.boarding_time_limit = Some(666);
-            assert_eq!(true, has_constraints(&ticket_use));
-        }
-    }
 }
