@@ -39,7 +39,7 @@ A `stop_area` is considered monomodal if all the trips having stop_times referen
 Each `Quay` node corresponds to a NTFS `stop_point`.
 
 Netex field | NTFS file | NTFS field | Note
---- | --- | --- | --- | ---
+--- | --- | --- | ---
 Quay/@id | stops.txt | stop_id | see (1) below.
 Quay/@version | | | fixed value `any`.
 Quay/PublicCode | stops.txt | stop_code | This node may not be prensent if the stop_point has no `stop_code`.
