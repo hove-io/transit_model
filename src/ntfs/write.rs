@@ -287,40 +287,24 @@ fn extract_perimeter_for_ticket_use<'id, 'p>(
     Ok((included_networks, included_lines, excluded_lines))
 }
 
-fn extract_price_of_ticket_use_id<'id, 'p>(
-    ticket_use_id: &'id str,
-    ticket_prices: &'p Collection<TicketPrice>,
-) -> Result<&'p TicketPrice> {
-    let mut has_price = None;
-    for ticket_price in ticket_prices.values() {
-        if ticket_price.ticket_id == ticket_use_id {
-            if has_price.is_some() {
-                bail!(
-                    "ticket_prices.txt contains multiple times the same ticket_id, \
-                     whereas a  ticket_id can appears only once.\n\
-                     Duplicated ticket_id : {:?}",
-                    ticket_use_id
-                );
-            }
-            has_price = Some(ticket_price);
-        }
-    }
-    has_price.ok_or_else(|| {
-        format_err!(
-            "The ticket_id {:?} was not found in ticket_prices.txt",
-            ticket_use_id
-        )
-    })
-}
+
 
 fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<PriceV1> {
+
+    // For now we restrict to EUR only.
+    // There is several reasons to that :
+    // - fare v1 needs prices to be all in the same currency
+    // - if we want to support several currencies, we would need to have access to currency exchange rates here
+    //   and it's unclear how to provide this information (which evolves over time)
     if price.currency != "EUR" {
         bail!(
-            "Only Eur currency supported in conversion from fare v2 to fare v1.\
+            "Only EUR currency supported in conversion from fare v2 to fare v1.\
               Found currency : {}",
             price.currency
         );
     }
+    // fare v1 needs prices to be integers whereas fare v2 allows floats
+    // since prices may be smaller than 1 EUR, we convert to cents, and fill fare v1 with prices in "centimes"
     let cents_price = price.price * Decimal::from(100);
     let cents_price = cents_price
         .round_dp(0)
@@ -330,7 +314,7 @@ fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<Pric
     let price_v1 = PriceV1 {
         id: id.to_string(),
         start_date: price.ticket_validity_start,
-        end_date: price.ticket_validity_end + Duration::days(1),
+        end_date: price.ticket_validity_end + Duration::days(1), //in fare v1 end_date is excluded, whereas in fare v2 ticket_validity_end is included
         price: cents_price,
         name: ticket.name.clone(),
         ignored: String::new(),
@@ -343,6 +327,8 @@ fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<Pric
 fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeSet<FareV1>)> {
     //we check that each ticket_use_id appears only once in ticket_uses
     check_uniqueness_of_ticket_use_ids(fares)?;
+
+
 
     let mut prices_v1: BTreeSet<PriceV1> = BTreeSet::new();
     let mut fares_v1: BTreeSet<FareV1> = BTreeSet::new();
@@ -371,19 +357,17 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
             )
         })?;
 
-        // Now the price of the ticket for our ticket_use_id
-        let price = extract_price_of_ticket_use_id(&ticket_use.ticket_id, fares.ticket_prices)?;
 
         //We have everything, so let's fill the fare v1 data !
 
         //first  prices_v1
-        // Note :  ticket_use_id of fare v2 plays the role of ticket_id in fare v1
-        // so  price_v1.id = ticket_use.id
-        let price_v1 = build_price_v1(&ticket_use.id, ticket, price)?;
-        let price_inserted = prices_v1.insert(price_v1);
-        if !price_inserted {
-            bail!("There is two prices with the same id {:?}", ticket_use.id);
+        // we find all prices with id ticket.id
+        // and for each we create a price_v1 with id ticket_use_id (as ticket_use_id of fare v2 plays the role of ticket_id in fare v1)
+        for price in fares.ticket_prices.values().filter(|&ticket_price| ticket_price.ticket_id == ticket.id) {
+            let price_v1 = build_price_v1(&ticket_use.id, ticket, price)?;
+            prices_v1.insert(price_v1);
         }
+        
 
         //now fares_v1
         {
