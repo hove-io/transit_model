@@ -340,7 +340,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
         let (included_networks, included_lines, excluded_lines) =
             extract_perimeter_for_ticket_use(&ticket_use.id, fares.ticket_use_perimeters)?;
 
-        assert!(included_lines.len() + included_lines.len() > 0, 
+        assert!(included_lines.len() + included_networks.len() > 0, 
             "The ticket_use_id {} has no included line or network, \
             but at least one must exists for a ticket_use_id to be valid.", ticket_use.id);
 
