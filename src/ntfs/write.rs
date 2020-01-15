@@ -29,7 +29,6 @@ use std::fs::File;
 use std::path;
 use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
 
-
 pub fn write_feed_infos(
     path: &path::Path,
     collections: &Collections,
@@ -217,8 +216,6 @@ struct Fares<'a> {
     ticket_use_restrictions: &'a Collection<TicketUseRestriction>,
 }
 
-
-
 // Returns Ok(()) if each ticket_use_id appears at most once in fares
 // returns an error otherwise
 fn check_uniqueness_of_ticket_use_ids(fares: &Fares) -> Result<()> {
@@ -287,11 +284,7 @@ fn extract_perimeter_for_ticket_use<'id, 'p>(
     Ok((included_networks, included_lines, excluded_lines))
 }
 
-
-
 fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<PriceV1> {
-
-
     // fare v1 needs prices to be integers whereas fare v2 allows floats
     // since prices may be smaller than 1 EUR, we convert to cents, and fill fare v1 with prices in "centimes"
     let cents_price = price.price * Decimal::from(100);
@@ -317,8 +310,6 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
     //we check that each ticket_use_id appears only once in ticket_uses
     check_uniqueness_of_ticket_use_ids(fares)?;
 
-
-
     let mut prices_v1: BTreeSet<PriceV1> = BTreeSet::new();
     let mut fares_v1: BTreeSet<FareV1> = BTreeSet::new();
 
@@ -330,11 +321,13 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
             extract_perimeter_for_ticket_use(&ticket_use.id, fares.ticket_use_perimeters)?;
 
         if included_lines.len() + included_networks.len() == 0 {
-            warn!("The ticket_use_id {} is ignored since it has no included line or network, \
-                    and at least one must exists for a ticket_use_id to be valid.", ticket_use.id);
+            warn!(
+                "The ticket_use_id {} is ignored since it has no included line or network, \
+                 and at least one must exists for a ticket_use_id to be valid.",
+                ticket_use.id
+            );
             continue;
         }
-
 
         // Now the restrictions for our ticket_use_id
         let restrictions: Vec<&TicketUseRestriction> = fares
@@ -353,30 +346,32 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
             )
         })?;
 
-
         //We have everything, so let's fill the fare v1 data !
 
         //first  prices_v1
         // we find all prices with id ticket.id
         // and for each we create a price_v1 with id ticket_use_id (as ticket_use_id of fare v2 plays the role of ticket_id in fare v1)
-        for price in fares.ticket_prices.values().filter(|&ticket_price| ticket_price.ticket_id == ticket.id) {
+        for price in fares
+            .ticket_prices
+            .values()
+            .filter(|&ticket_price| ticket_price.ticket_id == ticket.id)
+        {
             // For now we restrict to EUR only.
             // There is several reasons to that :
             // - fare v1 needs prices to be all in the same currency
             // - if we want to support several currencies, we would need to have access to currency exchange rates here
             //   and it's unclear how to provide this information (which evolves over time)
             if price.currency != "EUR" {
-                warn!("The price {:?} is ignored as it has an unsupported currency : {}. \
-                    Only EUR currency supported in conversion from fare v2 to fare v1.",
-                    price,
-                    price.currency
+                warn!(
+                    "The price {:?} is ignored as it has an unsupported currency : {}. \
+                     Only EUR currency supported in conversion from fare v2 to fare v1.",
+                    price, price.currency
                 );
                 continue;
             }
             let price_v1 = build_price_v1(&ticket_use.id, ticket, price)?;
             prices_v1.insert(price_v1);
         }
-        
 
         //now fares_v1
         {
@@ -472,7 +467,10 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
                             ),
                             RestrictionType::OriginDestination => (
                                 Some(format!("stoparea=stop_area:{}", restriction.use_origin)),
-                                Some(format!("stoparea=stop_area:{}", restriction.use_destination)),
+                                Some(format!(
+                                    "stoparea=stop_area:{}",
+                                    restriction.use_destination
+                                )),
                             ),
                         }
                     };

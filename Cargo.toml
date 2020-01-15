@@ -31,7 +31,6 @@ members = [
   "collection",
   "relations",
   "transit_model_procmacro",
-  "fare_conversion",
 ]
 
 [features]
