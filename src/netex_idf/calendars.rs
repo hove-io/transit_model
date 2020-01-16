@@ -41,7 +41,7 @@ struct ValidityPatternIterator<'a> {
     current_date: Date,
     end_date: Date,
     weekday_pattern: &'a HashSet<Weekday>,
-    day_type_assignments: Option<&'a Vec<DayTypeAssignment<'a>>>,
+    day_type_assignments: Vec<&'a DayTypeAssignment<'a>>,
 }
 impl<'a> ValidityPatternIterator<'a> {
     fn new(
@@ -49,11 +49,35 @@ impl<'a> ValidityPatternIterator<'a> {
         weekday_pattern: &'a HashSet<Weekday>,
         day_type_assignments: Option<&'a Vec<DayTypeAssignment<'a>>>,
     ) -> ValidityPatternIterator<'a> {
+        let mut dtas = vec![];
+        let mut ops = vec![];
+        let mut actives = vec![];
+        let mut inactives = vec![];
+
+        if let Some(dtas) = day_type_assignments {
+            for dta in dtas {
+                match dta {
+                    DayTypeAssignment::OperatingPeriod(_) => ops.push(dta),
+                    DayTypeAssignment::ActiveDay(_) => actives.push(dta),
+                    DayTypeAssignment::InactiveDay(_) => inactives.push(dta),
+                }
+            }
+        }
+
+        // operating periods are treated first
+        // then active days
+        // then inactive days
+        // to ensure that inactive days are removed if they appears before
+        // operating periods in the XML feed.
+        dtas.extend(ops);
+        dtas.extend(actives);
+        dtas.extend(inactives);
+
         ValidityPatternIterator {
             current_date: validity_period.start_date.pred(),
             end_date: validity_period.end_date,
             weekday_pattern,
-            day_type_assignments,
+            day_type_assignments: dtas,
         }
     }
 }
@@ -65,20 +89,21 @@ impl<'a> Iterator for ValidityPatternIterator<'a> {
         if self.current_date > self.end_date {
             return None;
         }
-        if let Some(dtas) = self.day_type_assignments {
-            let is_included = dtas.iter().fold(false, |is_included, dta| match dta {
+        let mut is_included = false;
+        for &dta in &self.day_type_assignments {
+            is_included = match *dta {
                 DayTypeAssignment::OperatingPeriod(vp) => {
                     (vp.start_date <= self.current_date
                         && vp.end_date >= self.current_date
                         && self.weekday_pattern.contains(&self.current_date.weekday()))
                         || is_included
                 }
-                DayTypeAssignment::ActiveDay(date) => (*date == self.current_date) || is_included,
-                DayTypeAssignment::InactiveDay(date) => is_included && *date != self.current_date,
-            });
-            if is_included {
-                return Some(self.current_date);
-            }
+                DayTypeAssignment::ActiveDay(date) => date == self.current_date || is_included,
+                DayTypeAssignment::InactiveDay(date) => is_included && date != self.current_date,
+            };
+        }
+        if is_included {
+            return Some(self.current_date);
         }
         self.next()
     }
@@ -192,13 +217,17 @@ where
     let mut day_types = DayTypes::default();
     for dt_element in day_type_elements {
         let id: String = skip_fail!(dt_element.try_attribute("id"));
-        let properties = skip_fail!(dt_element.try_only_child("properties"));
-        let weekdays: HashSet<_> = properties
-            .children()
-            .filter_map(|property_of_day| property_of_day.only_child("DaysOfWeek"))
-            .map(Element::text)
-            .filter_map(to_weekday)
-            .collect();
+        let weekdays: HashSet<_> = dt_element
+            .only_child("properties")
+            .map(|properties| {
+                properties
+                    .children()
+                    .filter_map(|property_of_day| property_of_day.only_child("DaysOfWeek"))
+                    .map(Element::text)
+                    .filter_map(to_weekday)
+                    .collect()
+            })
+            .unwrap_or_else(HashSet::new);
         let days = ValidityPatternIterator::new(
             &validity_period,
             &weekdays,
@@ -505,6 +534,51 @@ mod tests {
                 &weekday_pattern,
                 Some(&day_type_assignments),
             );
+            assert!(validity_pattern_iterator.next().is_none());
+        }
+
+        #[test]
+        fn only_one_active_day() {
+            let validity_period = ValidityPeriod {
+                start_date: Date::from_ymd(2019, 6, 1),
+                end_date: Date::from_ymd(2019, 7, 31),
+            };
+            let weekday_pattern = vec![Weekday::Sat, Weekday::Sun].into_iter().collect();
+            let active_day = Date::from_ymd(2019, 7, 6);
+            let day_type_assignments = vec![ActiveDay(active_day)];
+            let mut validity_pattern_iterator = ValidityPatternIterator::new(
+                &validity_period,
+                &weekday_pattern,
+                Some(&day_type_assignments),
+            );
+            let date = validity_pattern_iterator.next().unwrap();
+            assert_eq!(Date::from_ymd(2019, 7, 6), date);
+            assert!(validity_pattern_iterator.next().is_none());
+        }
+
+        #[test]
+        fn inactive_day_before_operating_period() {
+            let validity_period = ValidityPeriod {
+                start_date: Date::from_ymd(2019, 6, 1),
+                end_date: Date::from_ymd(2019, 7, 31),
+            };
+            let weekday_pattern = vec![Weekday::Sat, Weekday::Sun].into_iter().collect();
+            let operating_period = ValidityPeriod {
+                start_date: Date::from_ymd(2019, 7, 1),
+                end_date: Date::from_ymd(2019, 7, 7),
+            };
+            let inactive_day = Date::from_ymd(2019, 7, 6);
+            let day_type_assignments = vec![
+                InactiveDay(inactive_day),
+                OperatingPeriod(&operating_period),
+            ];
+            let mut validity_pattern_iterator = ValidityPatternIterator::new(
+                &validity_period,
+                &weekday_pattern,
+                Some(&day_type_assignments),
+            );
+            let date = validity_pattern_iterator.next().unwrap();
+            assert_eq!(Date::from_ymd(2019, 7, 7), date);
             assert!(validity_pattern_iterator.next().is_none());
         }
     }

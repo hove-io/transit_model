@@ -548,6 +548,9 @@
                   </PropertyOfDay>
                </properties>
             </DayType>
+            <DayType dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:TimeTable:empty:LOC" version="1">
+               <Name>Ligne Express 19 - tlj</Name>
+            </DayType>
             <DayTypeAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:DayTypeAssignment:1:LOC" version="1" order="0" >
                <OperatingPeriodRef ref="stif:TimeTable:local-28-211:LOC" version="1"/>
                <DayTypeRef ref="stif:TimeTable:local-28-21:LOC" version="1"/>
@@ -790,6 +793,16 @@
                <Date>2019-08-15</Date>
                <DayTypeRef ref="stif:TimeTable:local-28-9:LOC" version="1"/>
                <isAvailable>false</isAvailable>
+            </DayTypeAssignment>
+            <DayTypeAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:DayTypeAssignment:one_exception:LOC" version="1" order="0" >
+               <Date>2019-07-13</Date>
+               <DayTypeRef ref="stif:TimeTable:empty:LOC" version="1"/>
+               <isAvailable>true</isAvailable>
+            </DayTypeAssignment>
+            <DayTypeAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:DayTypeAssignment:out_of_validity_period_not_added:LOC" version="1" order="0" >
+               <Date>2019-07-01</Date>
+               <DayTypeRef ref="stif:TimeTable:empty:LOC" version="1"/>
+               <isAvailable>true</isAvailable>
             </DayTypeAssignment>
             <OperatingPeriod dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:TimeTable:local-28-211:LOC" version="1" >
                <FromDate>2019-07-09T00:00:00</FromDate>
