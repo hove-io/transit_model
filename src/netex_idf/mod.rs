@@ -23,6 +23,6 @@ mod offers;
 mod read;
 mod stops;
 
-pub(crate) const EUROPE_PARIS_TIMEZONE: &str = "Europe/Paris";
+const EUROPE_PARIS_TIMEZONE: &str = "Europe/Paris";
 
 pub use read::read;

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery version="1.09:FR-NETEX_ARRET-2.1-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<PublicationTimestamp>2019-04-03T17:19:00</PublicationTimestamp>
+	<ParticipantRef>Participant</ParticipantRef>
+	<dataObjects>
+		<GeneralFrame>
+		</GeneralFrame>
+	</dataObjects>
+</PublicationDelivery>

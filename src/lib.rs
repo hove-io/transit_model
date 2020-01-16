@@ -19,11 +19,11 @@
 #![deny(missing_docs)]
 
 #[macro_use]
-pub(crate) mod utils;
+mod utils;
 mod add_prefix;
 use add_prefix::AddPrefix;
 pub mod apply_rules;
-pub(crate) mod common_format;
+mod common_format;
 #[macro_use]
 pub mod objects;
 pub mod gtfs;
