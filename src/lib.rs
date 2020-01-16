@@ -34,6 +34,8 @@ pub mod merge_stop_areas;
 mod minidom_utils;
 pub mod model;
 #[cfg(feature = "proj")]
+pub mod netex_france;
+#[cfg(feature = "proj")]
 pub mod netex_idf;
 mod netex_utils;
 pub mod ntfs;
