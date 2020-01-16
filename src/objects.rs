@@ -1361,6 +1361,21 @@ impl AddPrefix for Equipment {
     }
 }
 
+impl Equipment {
+    pub fn is_similar(&self, other: &Self) -> bool {
+        self.appropriate_escort == other.appropriate_escort
+            && self.appropriate_signage == other.appropriate_signage
+            && self.audible_announcement == other.audible_announcement
+            && self.bike_accepted == other.bike_accepted
+            && self.bike_depot == other.bike_depot
+            && self.elevator == other.elevator
+            && self.escalator == other.escalator
+            && self.sheltered == other.sheltered
+            && self.visual_announcement == other.visual_announcement
+            && self.wheelchair_boarding == other.wheelchair_boarding
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Transfer {
     pub from_stop_id: String,

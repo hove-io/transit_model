@@ -128,7 +128,10 @@ fn read_property_rules_files<P: AsRef<Path>>(
     let properties = properties
         .into_iter()
         .filter(|((object_type, object_id, property_name), property)| {
-            if !(PROPERTY_UPDATER.contains_key(&(*object_type, property_name)) || (*object_type, property_name) == (ObjectType::Line, &"physical_mode_id".to_string()) || *object_type == ObjectType::StopPoint && STOP_POINT_EQUIPMENTS.contains(&property_name.as_str())) {
+            let is_valid_property = || PROPERTY_UPDATER.contains_key(&(*object_type, property_name));
+            let is_physical_mode_property_for_line = || (*object_type, property_name) == (ObjectType::Line, &"physical_mode_id".to_string());
+            let is_equipment_property_for_stop_point = || *object_type == ObjectType::StopPoint && STOP_POINT_EQUIPMENTS.contains(&property_name.as_str());
+            if !(is_valid_property() || is_physical_mode_property_for_line() || is_equipment_property_for_stop_point()) {
                 report.add_warning(
                     format!(
                         "object_type={}, object_id={}: unknown property_name {} defined",
@@ -740,7 +743,7 @@ fn get_prefix(collections: &Collections) -> Option<String> {
         })
 }
 
-fn get_or_create_equipment(
+fn get_or_create_equipment_id(
     equipment: Equipment,
     collection_equipments: &mut CollectionWithId<Equipment>,
     prefix: &str,
@@ -754,7 +757,7 @@ fn get_or_create_equipment(
         let mut equipment_id = String::new();
         while !available {
             inc += 1;
-            equipment_id = [prefix, &inc.to_string()].concat();
+            equipment_id = format!("{}{}", prefix, inc.to_string());
             if collection_equipments.get(&equipment_id).is_none() {
                 available = true;
             }
@@ -764,18 +767,7 @@ fn get_or_create_equipment(
 
     let similar_equipments: Vec<&Equipment> = collection_equipments
         .values()
-        .filter(|eq| {
-            eq.appropriate_escort == equipment.appropriate_escort
-                && eq.appropriate_signage == equipment.appropriate_signage
-                && eq.audible_announcement == equipment.audible_announcement
-                && eq.bike_accepted == equipment.bike_accepted
-                && eq.bike_depot == equipment.bike_depot
-                && eq.elevator == equipment.elevator
-                && eq.escalator == equipment.escalator
-                && eq.sheltered == equipment.sheltered
-                && eq.visual_announcement == equipment.visual_announcement
-                && eq.wheelchair_boarding == equipment.wheelchair_boarding
-        })
+        .filter(|eq| eq.is_similar(&equipment))
         .collect();
 
     if !similar_equipments.is_empty() {
@@ -882,7 +874,7 @@ fn update_stop_points_equipments(
         }
 
         if let Some(mut sp) = collections.stop_points.get_mut(&stop_point_id) {
-            sp.equipment_id = Some(get_or_create_equipment(
+            sp.equipment_id = Some(get_or_create_equipment_id(
                 sp_equipment,
                 &mut collections.equipments,
                 prefix,
