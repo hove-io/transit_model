@@ -109,7 +109,7 @@ impl<'a> Iterator for ValidityPatternIterator<'a> {
         let is_included = self
             .day_type_assignments
             .iter()
-            .flat_map(|day_type_assignments| day_type_assignments.into_iter())
+            .flat_map(|day_type_assignments| day_type_assignments.iter())
             .fold(false, fold_with);
         if is_included {
             return Some(self.current_date);
@@ -555,7 +555,7 @@ mod tests {
                 start_date: Date::from_ymd(2019, 6, 1),
                 end_date: Date::from_ymd(2019, 7, 31),
             };
-            let weekday_pattern = vec![Weekday::Sat, Weekday::Sun].into_iter().collect();
+            let weekday_pattern = HashSet::new();
             let active_day = Date::from_ymd(2019, 7, 6);
             let day_type_assignments = vec![ActiveDay(active_day)].into_iter().collect();
             let mut validity_pattern_iterator = ValidityPatternIterator::new(
@@ -576,7 +576,7 @@ mod tests {
             };
             let weekday_pattern = vec![Weekday::Sat, Weekday::Sun].into_iter().collect();
             let operating_period = ValidityPeriod {
-                start_date: Date::from_ymd(2019, 7, 1),
+                start_date: Date::from_ymd(2019, 7, 6),
                 end_date: Date::from_ymd(2019, 7, 7),
             };
             let inactive_day = Date::from_ymd(2019, 7, 6);
@@ -594,6 +594,17 @@ mod tests {
             let date = validity_pattern_iterator.next().unwrap();
             assert_eq!(Date::from_ymd(2019, 7, 7), date);
             assert!(validity_pattern_iterator.next().is_none());
+        }
+
+        #[test]
+        fn day_type_assignments_order() {
+            let dta1 = DayTypeAssignment::ActiveDay(Date::from_ymd(2020, 1, 1));
+            let validity_period = ValidityPeriod {
+                start_date: Date::from_ymd(2020, 1, 1),
+                end_date: Date::from_ymd(2020, 1, 1),
+            };
+            let dta2 = DayTypeAssignment::OperatingPeriod(&validity_period);
+            assert_eq!(Ordering::Greater, dta1.cmp(&dta2));
         }
     }
 }
