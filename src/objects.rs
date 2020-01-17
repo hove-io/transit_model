@@ -922,6 +922,12 @@ impl From<GeoPoint<f64>> for Coord {
     }
 }
 
+impl Into<GeoPoint<f64>> for Coord {
+    fn into(self) -> GeoPoint<f64> {
+        GeoPoint::new(self.lon, self.lat)
+    }
+}
+
 impl Coord {
     /// Calculate the orthodromic distance in meters
     /// between 2 geographic coordinates

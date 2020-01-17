@@ -83,7 +83,8 @@ A `stop_area` is considered monomodal if all the trips having stop_times referen
 
 ### Quay
 
-Each `Quay` node corresponds to a NTFS `stop_point`.
+Each `Quay` node corresponds to a NTFS `stop_point`.  All `Quay` elements are
+grouped into a `members` element which itself is wrapped into a `GeneralFrame`.
 
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
@@ -92,10 +93,10 @@ Quay/@version | | | fixed value `any`.
 Quay/PublicCode | stops.txt | stop_code | This node may not be prensent if the stop_point has no `stop_code`.
 Quay/Name | stops.txt | stop_name | 
 Quay/Centroid/Location | stops.txt | stop_lat and stop_lon | see (2) below
-SiteRef | stops.txt | parent_station | If the parent_station is multimodal, see (3) below.
-TransportMode | | | see (4) below
-tariffZones | stops.txt | fare_zone_id | The fare zone is prefixed by the `ParticipantRef` prefix with a `:` separator
-AccessibilityAssessment | stops.txt | equipment_id | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.
+Quay/ParentSiteRef | stops.txt | parent_station | If the parent_station is multimodal, see (3) below.
+Quay/TransportMode | | | see (4) below
+Quay/tariffZones | stops.txt | fare_zone_id | The fare zone is prefixed by the `ParticipantRef` prefix with a `:` separator
+Quay/AccessibilityAssessment | stops.txt | equipment_id | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.
 
 **(1) definition of id**
 The id is composed of several parts separated by `:`: 

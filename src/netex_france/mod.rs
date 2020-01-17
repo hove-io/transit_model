@@ -15,5 +15,6 @@
 //! Module to handle Netex France profile
 
 mod exporter;
-
 pub use exporter::Exporter;
+mod stops;
+use stops::StopExporter;

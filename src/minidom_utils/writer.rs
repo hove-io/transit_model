@@ -57,8 +57,12 @@ impl ElementWriter {
     where
         W: Write,
     {
-        let name = element.name().as_bytes();
-        let mut start_bytes = BytesStart::borrowed(name, name.len());
+        let name = if let Some(prefix) = element.prefix() {
+            format!("{}:{}", prefix, element.name())
+        } else {
+            element.name().to_string()
+        };
+        let mut start_bytes = BytesStart::borrowed(name.as_bytes(), name.len());
         start_bytes.extend_attributes(element.attrs());
         writer.write_event(Event::Start(start_bytes))?;
 
@@ -75,7 +79,7 @@ impl ElementWriter {
             }
         }
 
-        let end_bytes = BytesEnd::borrowed(name);
+        let end_bytes = BytesEnd::borrowed(name.as_bytes());
         writer.write_event(Event::End(end_bytes))?;
         Ok(())
     }
@@ -88,7 +92,7 @@ mod tests {
     use std::io::Cursor;
 
     fn tag() -> Element {
-        let subtag = Element::builder("subtag")
+        let subtag = Element::builder("ns:subtag")
             .attr("id", "my_subtag")
             .append(Node::Text(String::from("Some text")))
             .build();
@@ -104,7 +108,7 @@ mod tests {
         let element_writer = ElementWriter::new(tag, false);
         let mut write = Cursor::new(Vec::new());
         element_writer.write(&mut write).unwrap();
-        let expected = r#"<?xml version="1.0" encoding="UTF-8"?><tag id="my_tag"><subtag id="my_subtag">Some text</subtag></tag>"#;
+        let expected = r#"<?xml version="1.0" encoding="UTF-8"?><tag id="my_tag"><ns:subtag id="my_subtag">Some text</ns:subtag></tag>"#;
         assert_eq!(expected, String::from_utf8(write.into_inner()).unwrap());
     }
 
@@ -116,7 +120,7 @@ mod tests {
         element_writer.write(&mut write).unwrap();
         let expected = r#"<?xml version="1.0" encoding="UTF-8"?>
 <tag id="my_tag">
-	<subtag id="my_subtag">Some text</subtag>
+	<ns:subtag id="my_subtag">Some text</ns:subtag>
 </tag>"#;
         assert_eq!(expected, String::from_utf8(write.into_inner()).unwrap());
     }

@@ -10,7 +10,7 @@ The fare data expected at the input of the connector comes in the form of XML fi
 
 The supported fare structures depend on origin-destination (OD) stop pairs in two ways:
 - the ticket price between an origin and a destination is directly specified (*DirectPriceMatrix*)
-- the price for a fare distance unit is specified, as well as the fare distance between an origin and a destination (*UnitPrice* & *DirectMatrix*). The ticket price between the origin and destination stops is computed by multiplying the fare distance by the fare distance unit. In this case, one and only one frame of type *UnitPrice* is expected: if none or more than two are provided, the file is considered invalid and should be discarded.
+- the price for a fare distance unit is specified, as well as the fare distance between an origin and a destination (*UnitPrice* & *DistanceMatrix*). The ticket price between the origin and destination stops is computed by multiplying the fare distance by the fare distance unit. In this case, one and only one frame of type *UnitPrice* is expected: if none or more than two are provided, the file is considered invalid and should be discarded.
 
 ## Connector description
 Each *FareFrame* specified in the input fare data corresponds to several `Tickets` in NTM (as many as the elements of the *DistanceMatrix* and *DirectPriceMatrix*). For each *DistanceMatrixElement*, one `Ticket` object is created specifying the associated line and the origin/destination stops.
