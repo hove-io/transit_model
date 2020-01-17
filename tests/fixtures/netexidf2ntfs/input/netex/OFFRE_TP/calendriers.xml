@@ -799,6 +799,10 @@
                <DayTypeRef ref="stif:TimeTable:empty:LOC" version="1"/>
                <isAvailable>true</isAvailable>
             </DayTypeAssignment>
+            <DayTypeAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:DayTypeAssignment:default_available_true:LOC" version="1" order="0" >
+               <Date>2019-07-14</Date>
+               <DayTypeRef ref="stif:TimeTable:empty:LOC" version="1"/>
+            </DayTypeAssignment>
             <DayTypeAssignment dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:DayTypeAssignment:out_of_validity_period_not_added:LOC" version="1" order="0" >
                <Date>2019-07-01</Date>
                <DayTypeRef ref="stif:TimeTable:empty:LOC" version="1"/>
