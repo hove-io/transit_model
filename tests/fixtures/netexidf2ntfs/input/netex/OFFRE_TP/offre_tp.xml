@@ -167,6 +167,29 @@
                         </TimetabledPassingTime>
                      </passingTimes>
                   </ServiceJourney>
+                  <ServiceJourney dataSourceRef="DATASOURCEREF_EDITION_BOIV" id="stif:VehicleJourney:only_one_exception:LOC" version="any">
+                     <dayTypes>
+                        <DayTypeRef ref="stif:TimeTable:empty:LOC">version="1"</DayTypeRef>
+                     </dayTypes>
+                     <JourneyPatternRef ref="stif:JourneyPattern:local-26-C00114-2:LOC" version="any"/>
+                     <passingTimes>
+                        <TimetabledPassingTime version="any">
+                           <ArrivalTime>06:30:00</ArrivalTime>
+                           <DepartureTime>06:30:00</DepartureTime>
+                           <DepartureDayOffset>0</DepartureDayOffset>
+                        </TimetabledPassingTime>
+                        <TimetabledPassingTime version="any">
+                           <ArrivalTime>07:00:00</ArrivalTime>
+                           <DepartureTime>07:00:00</DepartureTime>
+                           <DepartureDayOffset>0</DepartureDayOffset>
+                        </TimetabledPassingTime>
+                        <TimetabledPassingTime version="any">
+                           <ArrivalTime>07:05:00</ArrivalTime>
+                           <DepartureTime>07:05:00</DepartureTime>
+                           <DepartureDayOffset>0</DepartureDayOffset>
+                        </TimetabledPassingTime>
+                     </passingTimes>
+                  </ServiceJourney>
                </members>
             </GeneralFrame>
 		</frames>

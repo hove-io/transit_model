@@ -193,7 +193,7 @@ pub enum DatasetType {
     Production,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct ValidityPeriod {
     pub start_date: Date,
     pub end_date: Date,
