@@ -174,12 +174,12 @@ where
                 .entry(day_type_ref)
                 .or_insert_with(BTreeSet::new)
                 .insert(DayTypeAssignment::OperatingPeriod(operating_period));
-        } else if let (Some(date_element), Some(is_available_element)) = (
-            dta_element.only_child("Date"),
-            dta_element.only_child("isAvailable"),
-        ) {
+        } else if let Some(date_element) = dta_element.only_child("Date") {
             let date = skip_fail!(date_element.text().parse::<Date>());
-            let status = skip_fail!(is_available_element.text().parse::<bool>());
+            let status = dta_element
+                .only_child("isAvailable")
+                .and_then(|el| el.text().parse::<bool>().ok())
+                .unwrap_or(true);
             let day_type_assignment = if status {
                 DayTypeAssignment::ActiveDay(date)
             } else {
