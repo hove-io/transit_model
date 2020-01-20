@@ -76,6 +76,7 @@ impl TryFrom<Stop> for StopPoint {
         let stop_point = StopPoint {
             id: stop.id,
             name: stop.name,
+            code: stop.code,
             visible: stop.visible,
             coord,
             stop_area_id: stop
@@ -136,6 +137,7 @@ impl TryFrom<Stop> for StopLocation {
         let stop_location = StopLocation {
             id: stop.id,
             name: stop.name,
+            code: stop.code,
             comment_links: CommentLinksT::default(),
             visible: false,
             coord,
@@ -689,8 +691,9 @@ mod tests {
 
     #[test]
     fn read_stop_points_with_no_parent() {
-        let stops_content = "stop_id,stop_name,stop_lat,stop_lon,location_type,parent_station\n\
-                             sp:01,my stop name 1,0.1,1.2,0,";
+        let stops_content =
+            "stop_id,stop_name,stop_code,stop_lat,stop_lon,location_type,parent_station\n\
+             sp:01,my stop name 1,stopcode,0.1,1.2,0,";
 
         test_in_tmp_dir(|path| {
             create_file_with_content(path, "stops.txt", stops_content);
@@ -700,6 +703,7 @@ mod tests {
             let stop_point = collections.stop_points.values().next().unwrap();
             assert_eq!("sp:01", stop_point.id);
             assert_eq!("Navitia:sp:01", stop_point.stop_area_id);
+            assert_eq!("stopcode", stop_point.code.as_ref().unwrap());
             assert_eq!(1, collections.stop_areas.len());
             let stop_area = collections.stop_areas.values().next().unwrap();
             assert_eq!("Navitia:sp:01", stop_area.id);

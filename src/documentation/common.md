@@ -98,9 +98,11 @@ Car                | 184
 The following rules apply to every converter, unless otherwise explicitly specified.
 
 ### General rules
-- When one or more stop_points in the input data are not attached to a stop_area, 
-a stop_area is automatically created for each one. The coordinates and the name of the new `stop_area` are
-the same as the corresponding stop_point.
+- When one or more stop_points in the input data are not attached to a
+  stop_area, a stop_area is automatically created for each one. The name, the
+  coordinates, the visibility, and the timezone of the new `stop_area` are the
+  same as the corresponding stop_point, the identifier is the `stop_point`'s
+  identifier prefixed with `Navitia:`.
 - If a `stop_area` doesn't have coordinates, the barycenter of the contained `stop_points` is used. 
 - Unless otherwise specified, dates of service are transformed into a list of active dates as if using a single NTFS file `calendar_dates.txt`. Those list of dates are then transformed to `calendar` and `calendar_dates` automatically. 
 - Any `/` character in an identifier of an object is removed.
