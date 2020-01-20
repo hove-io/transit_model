@@ -743,7 +743,7 @@ fn get_prefix(collections: &Collections) -> Option<String> {
         })
 }
 
-fn get_or_create_equipment_id(
+fn get_id_or_create_equipment(
     equipment: Equipment,
     collection_equipments: &mut CollectionWithId<Equipment>,
     prefix: &str,
@@ -757,7 +757,7 @@ fn get_or_create_equipment_id(
         let mut equipment_id = String::new();
         while !available {
             inc += 1;
-            equipment_id = format!("{}{}", prefix, inc.to_string());
+            equipment_id = format!("{}{}", prefix, inc);
             if collection_equipments.get(&equipment_id).is_none() {
                 available = true;
             }
@@ -874,7 +874,7 @@ fn update_stop_points_equipments(
         }
 
         if let Some(mut sp) = collections.stop_points.get_mut(&stop_point_id) {
-            sp.equipment_id = Some(get_or_create_equipment_id(
+            sp.equipment_id = Some(get_id_or_create_equipment(
                 sp_equipment,
                 &mut collections.equipments,
                 prefix,
