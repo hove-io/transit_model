@@ -88,6 +88,10 @@
     {
       "category": "OldPropertyValueDoesNotMatch",
       "message": "object_type=stop_point, object_id=NATR, property_name=stop_position: property_old_value does not match the value found in the data"
+    },
+    {
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=stop_point, object_id=CDGR, property_name=escalator: property_old_value does not match the value found in the data"
     }
   ]
 }

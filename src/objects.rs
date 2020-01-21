@@ -1327,7 +1327,7 @@ impl AddPrefix for Comment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Default, Clone)]
 pub struct Equipment {
     #[serde(rename = "equipment_id")]
     pub id: String,
@@ -1358,6 +1358,21 @@ impl_id!(Equipment);
 impl AddPrefix for Equipment {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
+    }
+}
+
+impl Equipment {
+    pub fn is_similar(&self, other: &Self) -> bool {
+        self.appropriate_escort == other.appropriate_escort
+            && self.appropriate_signage == other.appropriate_signage
+            && self.audible_announcement == other.audible_announcement
+            && self.bike_accepted == other.bike_accepted
+            && self.bike_depot == other.bike_depot
+            && self.elevator == other.elevator
+            && self.escalator == other.escalator
+            && self.sheltered == other.sheltered
+            && self.visual_announcement == other.visual_announcement
+            && self.wheelchair_boarding == other.wheelchair_boarding
     }
 }
 

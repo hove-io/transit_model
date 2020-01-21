@@ -13,8 +13,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
+    common_format::Availability,
     model::Collections,
-    objects::{Coord, Geometry, Line, VehicleJourney},
+    objects::{Coord, Equipment, Geometry, Line, VehicleJourney},
     utils::{Report, ReportType},
     Result,
 };
@@ -66,6 +67,32 @@ struct PropertyRule {
     property_value: String,
 }
 
+const _AIR_CONDITIONED: &str = "air_conditioned";
+const APPROPRIATE_ESCORT: &str = "appropriate_escort";
+const APPROPRIATE_SIGNAGE: &str = "appropriate_signage";
+const AUDIBLE_ANNOUNCEMENT: &str = "audible_announcement";
+const BIKE_ACCEPTED: &str = "bike_accepted";
+const BIKE_DEPOT: &str = "bike_depot";
+const ELEVATOR: &str = "elevator";
+const ESCALATOR: &str = "escalator";
+const SHELTERED: &str = "sheltered";
+const VISUAL_ANNOUNCEMENT: &str = "visual_announcement";
+const _WHEELCHAIR_ACCESSIBLE: &str = "wheelchair_accessible";
+const WHEELCHAIR_BOARDING: &str = "wheelchair_boarding";
+
+const STOP_POINT_EQUIPMENTS: &[&str] = &[
+    APPROPRIATE_ESCORT,
+    APPROPRIATE_SIGNAGE,
+    AUDIBLE_ANNOUNCEMENT,
+    BIKE_ACCEPTED,
+    BIKE_DEPOT,
+    ELEVATOR,
+    ESCALATOR,
+    SHELTERED,
+    VISUAL_ANNOUNCEMENT,
+    WHEELCHAIR_BOARDING,
+];
+
 fn read_property_rules_files<P: AsRef<Path>>(
     rule_files: Vec<P>,
     report: &mut Report,
@@ -101,7 +128,10 @@ fn read_property_rules_files<P: AsRef<Path>>(
     let properties = properties
         .into_iter()
         .filter(|((object_type, object_id, property_name), property)| {
-            if !PROPERTY_UPDATER.contains_key(&(*object_type, property_name)) && (*object_type, property_name) != (ObjectType::Line, &"physical_mode_id".to_string()) {
+            let is_valid_property = || PROPERTY_UPDATER.contains_key(&(*object_type, property_name));
+            let is_physical_mode_property_for_line = || (*object_type, property_name) == (ObjectType::Line, &"physical_mode_id".to_string());
+            let is_equipment_property_for_stop_point = || *object_type == ObjectType::StopPoint && STOP_POINT_EQUIPMENTS.contains(&property_name.as_str());
+            if !(is_valid_property() || is_physical_mode_property_for_line() || is_equipment_property_for_stop_point()) {
                 report.add_warning(
                     format!(
                         "object_type={}, object_id={}: unknown property_name {} defined",
@@ -139,6 +169,19 @@ fn property_old_value_do_not_match(report: &mut Report, p: &PropertyRule) {
             p.property_name
         ),
         ReportType::OldPropertyValueDoesNotMatch,
+    )
+}
+
+fn property_unknown_value(report: &mut Report, p: &PropertyRule, val: &str) {
+    report.add_warning(
+        format!(
+            "object_type={}, object_id={}, property_name={} : invalid value {}",
+            p.object_type.as_str(),
+            p.object_id,
+            p.property_name,
+            val
+        ),
+        ReportType::UnknownPropertyValue,
     )
 }
 
@@ -686,6 +729,160 @@ lazy_static! {
     };
 }
 
+// To pool
+fn get_prefix(collections: &Collections) -> Option<String> {
+    collections
+        .contributors
+        .values()
+        .next()
+        .map(|contributor| &contributor.id)
+        .and_then(|contributor_id| {
+            contributor_id
+                .find(':')
+                .map(|index| contributor_id[..index].to_string())
+        })
+}
+
+fn get_id_or_create_equipment(
+    equipment: Equipment,
+    collection_equipments: &mut CollectionWithId<Equipment>,
+    prefix: &str,
+) -> String {
+    fn generate_equipment_id(
+        collection_equipments: &mut CollectionWithId<Equipment>,
+        prefix: &str,
+    ) -> String {
+        let mut inc = 0;
+        let mut available = false;
+        let mut equipment_id = String::new();
+        while !available {
+            inc += 1;
+            equipment_id = format!("{}{}", prefix, inc);
+            if collection_equipments.get(&equipment_id).is_none() {
+                available = true;
+            }
+        }
+        equipment_id
+    }
+
+    let similar_equipments: Vec<&Equipment> = collection_equipments
+        .values()
+        .filter(|eq| eq.is_similar(&equipment))
+        .collect();
+
+    if !similar_equipments.is_empty() {
+        // Similar equipments may exist, especially after a merge of ntfs (with different prefixes)
+        // We take the first one that matches. Rare case.
+        return similar_equipments[0].id.clone();
+    }
+
+    let equipment_id = generate_equipment_id(collection_equipments, prefix);
+
+    collection_equipments
+        .push(Equipment {
+            id: equipment_id.clone(),
+            wheelchair_boarding: equipment.wheelchair_boarding,
+            sheltered: equipment.sheltered,
+            elevator: equipment.elevator,
+            escalator: equipment.escalator,
+            bike_accepted: equipment.bike_accepted,
+            bike_depot: equipment.bike_depot,
+            visual_announcement: equipment.visual_announcement,
+            audible_announcement: equipment.audible_announcement,
+            appropriate_escort: equipment.appropriate_escort,
+            appropriate_signage: equipment.appropriate_signage,
+        })
+        .unwrap();
+    equipment_id
+}
+
+fn update_stop_points_equipments(
+    sp_equipments_properties: BTreeMap<String, Vec<PropertyRule>>,
+    report: &mut Report,
+    collections: &mut Collections,
+    prefix: &str,
+) {
+    let any_prop = "*".to_string();
+
+    for (stop_point_id, equipment_properties) in sp_equipments_properties {
+        let mut sp_equipment = collections
+            .stop_points
+            .get(&stop_point_id)
+            .and_then(|sp| sp.equipment_id.as_ref())
+            .and_then(|eq_id| collections.equipments.get(eq_id).cloned())
+            .unwrap_or_default();
+
+        for equipment_property in equipment_properties {
+            // Checks any existing equipment (for this stop point) to compare old values
+            if let Some(pov) = equipment_property.property_old_value.as_ref() {
+                if *pov != any_prop {
+                    let property_old_value = match pov.as_str() {
+                        "0" => Availability::InformationNotAvailable,
+                        "1" => Availability::Available,
+                        "2" => Availability::NotAvailable,
+                        _ => {
+                            property_unknown_value(report, &equipment_property, pov);
+                            continue;
+                        }
+                    };
+                    let equipment_old_value = match equipment_property.property_name.as_str() {
+                        APPROPRIATE_ESCORT => sp_equipment.appropriate_escort,
+                        APPROPRIATE_SIGNAGE => sp_equipment.appropriate_signage,
+                        AUDIBLE_ANNOUNCEMENT => sp_equipment.audible_announcement,
+                        BIKE_ACCEPTED => sp_equipment.bike_accepted,
+                        BIKE_DEPOT => sp_equipment.bike_depot,
+                        ELEVATOR => sp_equipment.elevator,
+                        ESCALATOR => sp_equipment.escalator,
+                        SHELTERED => sp_equipment.sheltered,
+                        VISUAL_ANNOUNCEMENT => sp_equipment.visual_announcement,
+                        WHEELCHAIR_BOARDING => sp_equipment.wheelchair_boarding,
+                        _ => Availability::InformationNotAvailable,
+                    };
+                    if property_old_value != equipment_old_value {
+                        property_old_value_do_not_match(report, &equipment_property);
+                        continue;
+                    }
+                }
+            };
+
+            // Apply new property on equipment
+            let property_value = match equipment_property.property_value.as_str() {
+                "1" => Availability::Available,
+                "2" => Availability::NotAvailable,
+                _ => {
+                    property_unknown_value(
+                        report,
+                        &equipment_property,
+                        &equipment_property.property_value,
+                    );
+                    continue;
+                }
+            };
+            match equipment_property.property_name.as_str() {
+                APPROPRIATE_ESCORT => sp_equipment.appropriate_escort = property_value,
+                APPROPRIATE_SIGNAGE => sp_equipment.appropriate_signage = property_value,
+                AUDIBLE_ANNOUNCEMENT => sp_equipment.audible_announcement = property_value,
+                BIKE_ACCEPTED => sp_equipment.bike_accepted = property_value,
+                BIKE_DEPOT => sp_equipment.bike_depot = property_value,
+                ELEVATOR => sp_equipment.elevator = property_value,
+                ESCALATOR => sp_equipment.escalator = property_value,
+                SHELTERED => sp_equipment.sheltered = property_value,
+                VISUAL_ANNOUNCEMENT => sp_equipment.visual_announcement = property_value,
+                WHEELCHAIR_BOARDING => sp_equipment.wheelchair_boarding = property_value,
+                _ => (),
+            }
+        }
+
+        if let Some(mut sp) = collections.stop_points.get_mut(&stop_point_id) {
+            sp.equipment_id = Some(get_id_or_create_equipment(
+                sp_equipment,
+                &mut collections.equipments,
+                prefix,
+            ));
+        }
+    }
+}
+
 pub fn apply_rules<P: AsRef<Path>>(
     rule_files: Vec<P>,
     mut collections: &mut Collections,
@@ -695,6 +892,11 @@ pub fn apply_rules<P: AsRef<Path>>(
     let properties = read_property_rules_files(rule_files, &mut report)?;
 
     let lines = collections.lines.clone();
+    let mut sp_equipments_properties: BTreeMap<String, Vec<PropertyRule>> = BTreeMap::default();
+    let prefix_with_colon = get_prefix(&collections)
+        .map(|prefix| prefix + ":")
+        .unwrap_or_else(String::new);
+
     for mut p in properties {
         let mut obj_found = true;
         if let Some(func) = PROPERTY_UPDATER.get(&(p.object_type, &p.property_name.clone())) {
@@ -706,6 +908,19 @@ pub fn apply_rules<P: AsRef<Path>>(
                 update_physical_mode(&p, &obj, &mut report, &mut collections, &vjs_by_line);
                 true
             });
+        } else if p.object_type == ObjectType::StopPoint
+            && STOP_POINT_EQUIPMENTS.contains(&p.property_name.as_str())
+        {
+            obj_found = match collections.stop_points.get(&p.object_id) {
+                Some(sp) => {
+                    sp_equipments_properties
+                        .entry(sp.id.clone())
+                        .or_insert_with(Vec::new)
+                        .push(p.clone());
+                    true
+                }
+                _ => false,
+            };
         }
 
         if !obj_found {
@@ -720,5 +935,11 @@ pub fn apply_rules<P: AsRef<Path>>(
         }
     }
 
+    update_stop_points_equipments(
+        sp_equipments_properties,
+        &mut report,
+        &mut collections,
+        &prefix_with_colon,
+    );
     Ok(())
 }

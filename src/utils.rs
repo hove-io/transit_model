@@ -443,6 +443,7 @@ pub enum ReportType {
     ObjectNotFound,
     InvalidFile,
     UnknownPropertyName,
+    UnknownPropertyValue,
     MultipleValue,
     OldPropertyValueDoesNotMatch,
     GeometryNotValid,
