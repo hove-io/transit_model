@@ -325,14 +325,21 @@ The `service_id` property of the calendar in the NTFS is specified by an auto-in
 
 Active dates of the calendar are specified by:
 - `DayType` nodes describing the active days of a week
-  + days of the week are listed in `DayType/properties[]/PropertyOfDay/DaysOfWeek nodes`. 
-  + Expected values MUST be one of `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`.
+  + days of the week are listed in `DayType/properties[]/PropertyOfDay/DaysOfWeek` nodes. 
+    + Expected values MUST be one of `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`.
+  + `DayType/properties` nodes are optionals. You can have a `DayType` node without active days of a week.
 - `OperatingPeriod` nodes describing periods (basically a beginning date and an end date) referenced in `DayTypeAssignment`
 - `DayTypeAssignment` nodes with 2 possible uses (they are applied in the order they appear in the file):
   + Activate or deactivate a specific day on a DayType (with the nodes `IsAvailable` and `Date`)
+    + the node `IsAvailable` is optional. If not present the default value is `true`.
   + Apply the active days of the referenced DayType on an `OperatingPeriod`
 
 All resulting calendars are to be restricted between `ValidBetween/FromDate` and `ValidBetween/ToDate` specified at the top level of the file in `GeneralFrame`.
+
+Active dates are read in the following order:
+- dates from operating periods
+- dates added (`DayTypeAssignment/IsAvailble` = true)
+- dates removed (`DayTypeAssignment/IsAvailble` = false)
 
 Be careful: Definition of calendars and exceptions in calendar_dates may not be the same definition as the one in the Netex-IDFM files, but the resulting active dates will be the same.
 
