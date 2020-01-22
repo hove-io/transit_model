@@ -305,9 +305,7 @@ where
     for point in rdr.deserialize() {
         let point: Point = point.with_context(ctx_from_path!(path))?;
         if point.category == "SP" {
-            let coords = proj
-                .convert((point.lon, point.lat).into())
-                .map(Coord::from)?;
+            let coords = proj.convert((point.lon, point.lat)).map(Coord::from)?;
             point_map.insert(point.code, coords);
         }
     }

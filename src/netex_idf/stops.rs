@@ -34,7 +34,7 @@ use transit_model_collection::CollectionWithId;
 fn load_stop_area(stop_place_elem: &Element, proj: &Proj) -> Result<StopArea> {
     let id: String = stop_place_elem.try_attribute("id")?;
     let coord: Coord = load_coords(stop_place_elem)
-        .and_then(|coords| proj.convert(coords.into()))
+        .and_then(|coords| proj.convert(coords).map_err(|e| format_err!("{}", e)))
         .map(Coord::from)
         .unwrap_or_else(|e| {
             warn!("unable to parse coordinates of stop place {}: {}", id, e);
@@ -192,7 +192,7 @@ fn load_stop_points<'a>(
             id: quay.try_attribute("id")?,
             name: quay.try_only_child("Name")?.text().trim().to_string(),
             visible: true,
-            coord: proj.convert(coords.into()).map(Coord::from)?,
+            coord: proj.convert(coords).map(Coord::from)?,
             stop_area_id: "default_id".to_string(),
             timezone: Some(EUROPE_PARIS_TIMEZONE.to_string()),
             stop_type: StopType::Point,
