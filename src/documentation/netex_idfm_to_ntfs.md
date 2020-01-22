@@ -325,9 +325,9 @@ The `service_id` property of the calendar in the NTFS is specified by an auto-in
 
 Active dates of the calendar are specified by:
 - `DayType` nodes describing the active days of a week
-  + days of the week are listed in `DayType/properties[]/PropertyOfDay/DaysOfWeek` nodes. 
+  + days of the week are listed in `DayType/properties/PropertyOfDay[]/DaysOfWeek` nodes. 
     + Expected values MUST be one of `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`.
-  + `DayType/properties` nodes are optionals. You can have a `DayType` node without active days of a week.
+  + `DayType/properties` node is optional, a `DayType` node may not have any active days of a week.
 - `OperatingPeriod` nodes describing periods (basically a beginning date and an end date) referenced in `DayTypeAssignment`
 - `DayTypeAssignment` nodes with 2 possible uses (they are applied in the order they appear in the file):
   + Activate or deactivate a specific day on a DayType (with the nodes `IsAvailable` and `Date`)
