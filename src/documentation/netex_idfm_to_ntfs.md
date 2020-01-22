@@ -338,8 +338,8 @@ All resulting calendars are to be restricted between `ValidBetween/FromDate` and
 
 Active dates are read in the following order:
 - dates from operating periods
-- dates added (`DayTypeAssignment/IsAvailble` = true)
-- dates removed (`DayTypeAssignment/IsAvailble` = false)
+- dates added (`DayTypeAssignment/IsAvailable` = true)
+- dates removed (`DayTypeAssignment/IsAvailable` = false)
 
 Be careful: Definition of calendars and exceptions in calendar_dates may not be the same definition as the one in the Netex-IDFM files, but the resulting active dates will be the same.
 
