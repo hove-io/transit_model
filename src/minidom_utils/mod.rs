@@ -19,3 +19,5 @@ mod try_attribute;
 pub use try_attribute::TryAttribute;
 mod try_only_child;
 pub use try_only_child::TryOnlyChild;
+mod writer;
+pub use self::writer::ElementWriter;

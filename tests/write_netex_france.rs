@@ -22,6 +22,6 @@ fn test_write_netex_france() {
         let netex_france_exporter =
             netex_france::Exporter::new(model, participant_ref, get_test_datetime());
         netex_france_exporter.write(output_dir).unwrap();
-        compare_output_dir_with_expected(&output_dir, None, "tests/fixtures/netex_france");
+        compare_output_dir_with_expected_content(&output_dir, None, "tests/fixtures/netex_france");
     });
 }

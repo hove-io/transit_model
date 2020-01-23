@@ -13,7 +13,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 //! Exporter for Netex France profile
-use crate::{model::Model, Result};
+use crate::{minidom_utils::ElementWriter, model::Model, Result};
 use chrono::prelude::*;
 use minidom::Element;
 use std::{
@@ -102,9 +102,11 @@ impl Exporter {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_STOPS_FILENAME);
-        let _file = File::create(filepath)?;
+        let mut file = File::create(filepath)?;
         let stop_frame = self.create_stops_frame()?;
-        let _netex = self.wrap_frame(stop_frame, VersionType::Stops)?;
+        let netex = self.wrap_frame(stop_frame, VersionType::Stops)?;
+        let writer = ElementWriter::new(netex, true);
+        writer.write(&mut file)?;
         Ok(())
     }
 

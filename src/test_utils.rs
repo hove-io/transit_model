@@ -43,27 +43,58 @@ pub fn get_lines_content<P: AsRef<Path>>(path: P) -> BTreeSet<String> {
     set
 }
 
+fn get_files_to_compare<P>(output_dir: &P, files_to_check: Option<Vec<&str>>) -> Vec<String>
+where
+    P: AsRef<Path>,
+{
+    match files_to_check {
+        None => fs::read_dir(output_dir.as_ref())
+            .unwrap()
+            .map(|f| f.unwrap().file_name().into_string().unwrap())
+            .collect(),
+        Some(v) => v.iter().map(|&f| f.to_string()).collect(),
+    }
+}
+
 pub fn compare_output_dir_with_expected<P: AsRef<Path>>(
     output_dir: &P,
     files_to_check: Option<Vec<&str>>,
     work_dir_expected: &str,
 ) {
-    let output_dir = output_dir.as_ref();
-    let files: Vec<String> = match files_to_check {
-        None => fs::read_dir(output_dir)
-            .unwrap()
-            .map(|f| f.unwrap().file_name().into_string().unwrap())
-            .collect(),
-        Some(v) => v.iter().map(|&f| f.to_string()).collect(),
-    };
+    compare_output_dir_with_expected_lines(output_dir, files_to_check, work_dir_expected);
+}
+
+pub fn compare_output_dir_with_expected_lines<P: AsRef<Path>>(
+    output_dir: &P,
+    files_to_check: Option<Vec<&str>>,
+    work_dir_expected: &str,
+) {
+    let files = get_files_to_compare(output_dir, files_to_check);
     for filename in files {
-        let output_file_path = output_dir.join(filename.clone());
+        let output_file_path = output_dir.as_ref().join(filename.clone());
         let output_contents = get_lines_content(output_file_path);
 
         let expected_file_path = format!("{}/{}", work_dir_expected, filename);
         let expected_contents = get_lines_content(expected_file_path);
 
         assert_eq!(expected_contents, output_contents);
+    }
+}
+
+pub fn compare_output_dir_with_expected_content<P: AsRef<Path>>(
+    output_dir: &P,
+    files_to_check: Option<Vec<&str>>,
+    work_dir_expected: &str,
+) {
+    let files = get_files_to_compare(output_dir, files_to_check);
+    for filename in files {
+        let output_file_path = output_dir.as_ref().join(filename.clone());
+        let output_contents = get_file_content(output_file_path);
+
+        let expected_file_path = format!("{}/{}", work_dir_expected, filename);
+        let expected_contents = get_file_content(expected_file_path);
+
+        assert_eq!(expected_contents.trim(), output_contents.trim());
     }
 }
 
