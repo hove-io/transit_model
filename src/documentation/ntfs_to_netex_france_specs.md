@@ -12,6 +12,30 @@ The resulting ZIP archive is composed of:
 - a folder for each network containing
   + TBD
 
+## Schema Validation
+To validate the produced XML document, you can use `xmllint` tool.  On a
+Debian/Ubuntu environment, install the `libxml2-utils` package.
+
+```shell
+apt install libxml2-utils
+```
+
+On Windows, you can follow [these
+instructions](https://stackoverflow.com/questions/19546854/installing-xmllint).
+
+For validation, you need NeTEx schemas.
+
+```shell
+git clone https://github.com/NeTEx-CEN/NeTEx.git
+```
+
+Then you can validate your file `my_file.xml` against NeTEx schema with the
+following command.
+
+```shell
+xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd my_file.xml
+```
+
 ## Input parameters
 
 A NTFS feed is not sufficient to generate a valid Netex Profil France feed:
