@@ -17,13 +17,13 @@ This repository also provides :
 cargo build --release
 ```
 
-### Compile for KV1
+### Compile for KV1, NeTEx IDF and TransXChange
 The KV1 format needs a additional dependency called [PROJ](https://proj.org/)
 which allows the transformation of localization coordinates.
 [crates.io](https://crates.io/) provides a
 [`proj`](https://crates.io/crates/proj) crate which is a binding to the C
-library (version 6.1.0). This means you need [PROJ](https://proj.org/) version
-6.1.0 installed on your system.  See [PROJ installation
+library (version 6.3.0). This means you need [PROJ](https://proj.org/) version
+6.3.0 installed on your system.  See [PROJ installation
 instructions](https://github.com/OSGeo/PROJ#installation).
 
 [PROJ](https://proj.org/) is configured as a `feature` of the `transit_model`
@@ -34,7 +34,8 @@ apt install -y clang libssl-dev
 cargo build --features=proj
 ```
 
-Now, you should be able to use the converter `kv12ntfs`. Enjoy!
+Now, you should be able to use the readers `kv1::read`, `netex_idf::read` and
+`transxchange::read`. Enjoy!
 
 ### Using PROJ
 If you want to use [PROJ](https://proj.org/) in your code, you can if you
