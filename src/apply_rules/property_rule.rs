@@ -918,7 +918,7 @@ fn get_id_or_create_trip_property(
 
     let similar_trip_properties: Vec<&TripProperty> = collection_trip_properties
         .values()
-        .filter(|eq| eq.is_similar(&trip_property))
+        .filter(|tp| tp.is_similar(&trip_property))
         .collect();
 
     if !similar_trip_properties.is_empty() {
@@ -955,11 +955,16 @@ fn update_lines_trips_properties(
     let any_prop = "*".to_string();
     for (line_id, trip_properties) in lines_trips_properties {
         if let Some(vehicles_journeys_idx) = vjs_by_line.get(&line_id) {
-            for vehicle_journey_idx in vehicles_journeys_idx {
-                let vehicle_journey = &collections.vehicle_journeys[*vehicle_journey_idx];
-                let mut vj_property = vehicle_journey
-                    .trip_property_id
-                    .as_ref()
+            // Orders vehicles_journeys on ids (through BTreeSet) for determinism
+            for vehicle_journey_id in vehicles_journeys_idx
+                .iter()
+                .map(|idx| collections.vehicle_journeys[*idx].id.clone())
+                .collect::<BTreeSet<_>>()
+            {
+                let mut vj_property = collections
+                    .vehicle_journeys
+                    .get(&vehicle_journey_id)
+                    .and_then(|vj| vj.trip_property_id.as_ref())
                     .and_then(|tp_id| collections.trip_properties.get(tp_id).cloned())
                     .unwrap_or_default();
                 for trip_property in &trip_properties {
@@ -994,14 +999,13 @@ fn update_lines_trips_properties(
                         _ => (),
                     }
                 }
-                collections
-                    .vehicle_journeys
-                    .index_mut(*vehicle_journey_idx)
-                    .trip_property_id = Some(get_id_or_create_trip_property(
-                    vj_property,
-                    &mut collections.trip_properties,
-                    prefix,
-                ));
+                if let Some(mut vj) = collections.vehicle_journeys.get_mut(&vehicle_journey_id) {
+                    vj.trip_property_id = Some(get_id_or_create_trip_property(
+                        vj_property,
+                        &mut collections.trip_properties,
+                        prefix,
+                    ));
+                }
             }
         }
     }
