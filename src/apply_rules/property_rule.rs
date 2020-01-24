@@ -792,16 +792,7 @@ fn get_id_or_create_equipment(
     collection_equipments
         .push(Equipment {
             id: equipment_id.clone(),
-            wheelchair_boarding: equipment.wheelchair_boarding,
-            sheltered: equipment.sheltered,
-            elevator: equipment.elevator,
-            escalator: equipment.escalator,
-            bike_accepted: equipment.bike_accepted,
-            bike_depot: equipment.bike_depot,
-            visual_announcement: equipment.visual_announcement,
-            audible_announcement: equipment.audible_announcement,
-            appropriate_escort: equipment.appropriate_escort,
-            appropriate_signage: equipment.appropriate_signage,
+            ..equipment
         })
         .unwrap();
     equipment_id
@@ -932,14 +923,7 @@ fn get_id_or_create_trip_property(
     collection_trip_properties
         .push(TripProperty {
             id: trip_property_id.clone(),
-            wheelchair_accessible: trip_property.wheelchair_accessible,
-            bike_accepted: trip_property.bike_accepted,
-            air_conditioned: trip_property.air_conditioned,
-            visual_announcement: trip_property.visual_announcement,
-            audible_announcement: trip_property.audible_announcement,
-            appropriate_escort: trip_property.appropriate_escort,
-            appropriate_signage: trip_property.appropriate_signage,
-            school_vehicle_type: trip_property.school_vehicle_type,
+            ..trip_property
         })
         .unwrap();
     trip_property_id
