@@ -76,7 +76,7 @@ an error. Likewise for the stop_areas.
 | NTFS file | NTFS field | Constraint | GTFS file | GTFS field | Note |
 | --- | --- | --- | --- | --- | --- |
 | stops.txt | stop_id | ID | stops.txt | stop_id | All slashes `/` will be removed |
-| object_codes.txt | object_code | Optional | stops.txt | stop_code | This GTFS property is stored as an associated code for this stop. See (2) for complementary properties. |
+| stops.txt | stop_code | Optional | stops.txt | stop_code | Additionally, this GTFS property is stored as an associated code for this stop. See (2) for complementary properties. |
 | stops.txt | stop_name | Required | stops.txt | stop_name |  |
 | stops.txt | stop_lat | Required | stops.txt | stop_lat |  |
 | stops.txt | stop_lon | Required | stops.txt | stop_lon |  |
@@ -100,6 +100,8 @@ The `parent_station` of the stop_point should then contain the generated `stop_a
 + `object_id` : NTFS `stop_id`
 + `object_system` : Fixed value `gtfs_stop_code`
 + `object_code` : value of the `stop_code` property
+The `gtfs_stop_code` complementary `object_code` is kept here for backward
+compatibility reasons. It will be removed in the future.
 
 (3) The `comment` object is a complex type with additional properties :
 * `comment_id` : specify an identifier with the pattern **\stop:<stop_id of GTFS>**

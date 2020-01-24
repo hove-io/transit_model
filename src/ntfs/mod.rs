@@ -107,6 +107,8 @@ struct Stop {
     id: String,
     #[serde(rename = "stop_name")]
     name: String,
+    #[serde(rename = "stop_code")]
+    code: Option<String>,
     #[serde(
         default = "default_visible",
         deserialize_with = "de_from_u8",

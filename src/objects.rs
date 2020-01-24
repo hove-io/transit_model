@@ -1028,9 +1028,9 @@ impl From<StopPoint> for StopArea {
             visible: stop_point.visible,
             coord: stop_point.coord,
             timezone: stop_point.timezone,
-            geometry_id: stop_point.geometry_id,
-            equipment_id: stop_point.equipment_id,
-            level_id: stop_point.level_id,
+            geometry_id: None,
+            equipment_id: None,
+            level_id: None,
         }
     }
 }
@@ -1071,6 +1071,7 @@ pub enum StopType {
 pub struct StopPoint {
     pub id: String,
     pub name: String,
+    pub code: Option<String>,
     #[serde(skip)]
     pub codes: KeysValues,
     #[serde(skip)]
@@ -1120,6 +1121,7 @@ impl GetObjectType for StopPoint {
 pub struct StopLocation {
     pub id: String,
     pub name: String,
+    pub code: Option<String>,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     pub visible: bool,

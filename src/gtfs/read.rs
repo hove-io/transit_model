@@ -90,8 +90,8 @@ impl TryFrom<Stop> for objects::StopArea {
     fn try_from(stop: Stop) -> Result<Self> {
         let mut codes: KeysValues = BTreeSet::new();
         codes.insert(("source".to_string(), stop.id.clone()));
-        if let Some(c) = stop.code {
-            codes.insert(("gtfs_stop_code".to_string(), c));
+        if let Some(c) = stop.code.as_ref() {
+            codes.insert(("gtfs_stop_code".to_string(), c.clone()));
         }
         if stop.name.is_empty() {
             warn!("stop_id: {}: for station stop_name is required", stop.id);
@@ -123,8 +123,8 @@ impl TryFrom<Stop> for objects::StopPoint {
     fn try_from(stop: Stop) -> Result<Self> {
         let mut codes: KeysValues = BTreeSet::new();
         codes.insert(("source".to_string(), stop.id.clone()));
-        if let Some(c) = stop.code {
-            codes.insert(("gtfs_stop_code".to_string(), c));
+        if let Some(c) = stop.code.as_ref() {
+            codes.insert(("gtfs_stop_code".to_string(), c.clone()));
         }
         if stop.name.is_empty() {
             warn!("stop_id: {}: for platform name is required", stop.id);
@@ -140,6 +140,7 @@ impl TryFrom<Stop> for objects::StopPoint {
         let stop_point = objects::StopPoint {
             id: stop.id,
             name: stop.name,
+            code: stop.code,
             codes,
             coord,
             stop_area_id: stop
@@ -196,6 +197,7 @@ impl TryFrom<Stop> for objects::StopLocation {
         let stop_location = StopLocation {
             id: stop.id,
             name: stop.name,
+            code: stop.code,
             comment_links: CommentLinksT::default(),
             visible: false,
             coord,
@@ -1289,8 +1291,8 @@ mod tests {
 
     #[test]
     fn load_one_stop_point() {
-        let stops_content = "stop_id,stop_name,stop_lat,stop_lon\n\
-                             id1,my stop name,0.1,1.2";
+        let stops_content = "stop_id,stop_name,stop_code,stop_lat,stop_lon\n\
+                             id1,my stop name,stopcode,0.1,1.2";
 
         test_in_tmp_dir(|path| {
             let mut handler = PathFileHandler::new(path.to_path_buf());
@@ -1309,6 +1311,7 @@ mod tests {
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
             assert_eq!("Navitia:id1", stop_point.stop_area_id);
+            assert_eq!("stopcode", stop_point.code.as_ref().unwrap());
         });
     }
 
@@ -1371,6 +1374,7 @@ mod tests {
             //validate stop_point code
             assert_eq!(1, stop_points.len());
             let stop_point = stop_points.iter().next().unwrap().1;
+            assert_eq!("1234", stop_point.code.as_ref().unwrap());
             assert_eq!(2, stop_point.codes.len());
             let mut codes_iterator = stop_point.codes.iter();
             let code = codes_iterator.next().unwrap();
