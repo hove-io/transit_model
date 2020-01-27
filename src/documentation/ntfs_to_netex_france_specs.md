@@ -44,9 +44,10 @@ A NTFS feed is not sufficient to generate a valid Netex Profil France feed:
 
 ## Id of objects
 
-According to the Netex Specification, object identifiers should have a specific formating.
-The formating for stops is describe in the [arrets.xml](#arretsxml) part of this specification.
-For the other objects, the following format is used: **FR:[object type]:[object id]:**
+According to the Netex Specification, object identifiers should have a specific formatting.
+The formatting for stops is described in the [arrets.xml](#arretsxml) part of this specification.
+For the other objects, the following format is used: **FR:[object type]:[object id]:**,
+with a replacement of `:` by `_` in `object_id` to avoid conflict between separators.
 
 ## File headers
 
@@ -214,9 +215,9 @@ Example:
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 Network/@version |  |  | fixed value `any`
-Network/@id | networks.txt | network_id | see [id formating](#id-of-objects)
+Network/@id | networks.txt | network_id | see [id formatting](#id-of-objects)
 Network/Name | networks.txt | network_name | 
-Network/members/LineRef[]/@ref | lines.txt | line_id | see [id formating](#id-of-objects)
+Network/members/LineRef[]/@ref | lines.txt | line_id | see [id formatting](#id-of-objects)
 
 
 ### Line
@@ -224,7 +225,7 @@ Network/members/LineRef[]/@ref | lines.txt | line_id | see [id formating](#id-of
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 Line/@version |  |  | fixed value `any`
-Line/@id | lines.txt | line_id | see [id formating](#id-of-objects)
+Line/@id | lines.txt | line_id | see [id formatting](#id-of-objects)
 Line/PublicCode | lines.txt | line_code | If the code line_code is empty, this node is not created.
 Line/Name | lines.txt | line_name | 
 
