@@ -41,6 +41,7 @@ fn test_apply_rules(
             "stops.txt",
             "ticket_use_perimeters.txt",
             "trips.txt",
+            "trip_properties.txt",
         ];
 
         let input_dir = "tests/fixtures/apply_rules/input";

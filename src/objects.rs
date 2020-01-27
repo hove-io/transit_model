@@ -1398,7 +1398,7 @@ impl AddPrefix for Transfer {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Clone)]
 #[derivative(Default)]
 pub enum TransportType {
     #[derivative(Default)]
@@ -1410,7 +1410,7 @@ pub enum TransportType {
     RegularAndSchool,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
 pub struct TripProperty {
     #[serde(rename = "trip_property_id")]
     pub id: String,
@@ -1437,6 +1437,19 @@ impl_id!(TripProperty);
 impl AddPrefix for TripProperty {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
+    }
+}
+
+impl TripProperty {
+    pub fn is_similar(&self, other: &Self) -> bool {
+        self.air_conditioned == other.air_conditioned
+            && self.appropriate_escort == other.appropriate_escort
+            && self.appropriate_signage == other.appropriate_signage
+            && self.audible_announcement == other.audible_announcement
+            && self.bike_accepted == other.bike_accepted
+            && self.school_vehicle_type == other.school_vehicle_type
+            && self.visual_announcement == other.visual_announcement
+            && self.wheelchair_accessible == other.wheelchair_accessible
     }
 }
 

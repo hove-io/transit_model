@@ -63,3 +63,7 @@ stop_point,CHAM,wheelchair_boarding,1,2
 stop_point,DEFR,wheelchair_boarding,*,1
 stop_point,DEFR,sheltered,*,2
 stop_point,GDLR,wheelchair_boarding,*,1
+line,M1,wheelchair_accessible,*,1
+line,M1,air_conditioned,0,1
+line,RERA,bike_accepted,*,1
+line,RERA,air_conditioned,*,3

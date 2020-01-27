@@ -15,7 +15,7 @@
 use crate::{
     common_format::Availability,
     model::Collections,
-    objects::{Coord, Equipment, Geometry, Line, VehicleJourney},
+    objects::{Coord, Equipment, Geometry, Line, TripProperty, VehicleJourney},
     utils::{Report, ReportType},
     Result,
 };
@@ -67,7 +67,7 @@ struct PropertyRule {
     property_value: String,
 }
 
-const _AIR_CONDITIONED: &str = "air_conditioned";
+const AIR_CONDITIONED: &str = "air_conditioned";
 const APPROPRIATE_ESCORT: &str = "appropriate_escort";
 const APPROPRIATE_SIGNAGE: &str = "appropriate_signage";
 const AUDIBLE_ANNOUNCEMENT: &str = "audible_announcement";
@@ -77,7 +77,7 @@ const ELEVATOR: &str = "elevator";
 const ESCALATOR: &str = "escalator";
 const SHELTERED: &str = "sheltered";
 const VISUAL_ANNOUNCEMENT: &str = "visual_announcement";
-const _WHEELCHAIR_ACCESSIBLE: &str = "wheelchair_accessible";
+const WHEELCHAIR_ACCESSIBLE: &str = "wheelchair_accessible";
 const WHEELCHAIR_BOARDING: &str = "wheelchair_boarding";
 
 const STOP_POINT_EQUIPMENTS: &[&str] = &[
@@ -91,6 +91,16 @@ const STOP_POINT_EQUIPMENTS: &[&str] = &[
     SHELTERED,
     VISUAL_ANNOUNCEMENT,
     WHEELCHAIR_BOARDING,
+];
+
+const LINE_TRIP_PROPERTIES: &[&str] = &[
+    AIR_CONDITIONED,
+    APPROPRIATE_ESCORT,
+    APPROPRIATE_SIGNAGE,
+    AUDIBLE_ANNOUNCEMENT,
+    BIKE_ACCEPTED,
+    VISUAL_ANNOUNCEMENT,
+    WHEELCHAIR_ACCESSIBLE,
 ];
 
 fn read_property_rules_files<P: AsRef<Path>>(
@@ -130,8 +140,9 @@ fn read_property_rules_files<P: AsRef<Path>>(
         .filter(|((object_type, object_id, property_name), property)| {
             let is_valid_property = || PROPERTY_UPDATER.contains_key(&(*object_type, property_name));
             let is_physical_mode_property_for_line = || (*object_type, property_name) == (ObjectType::Line, &"physical_mode_id".to_string());
+            let is_trip_property_for_line = || *object_type == ObjectType::Line && LINE_TRIP_PROPERTIES.contains(&property_name.as_str());
             let is_equipment_property_for_stop_point = || *object_type == ObjectType::StopPoint && STOP_POINT_EQUIPMENTS.contains(&property_name.as_str());
-            if !(is_valid_property() || is_physical_mode_property_for_line() || is_equipment_property_for_stop_point()) {
+            if !(is_valid_property() || is_physical_mode_property_for_line() || is_trip_property_for_line() || is_equipment_property_for_stop_point()) {
                 report.add_warning(
                     format!(
                         "object_type={}, object_id={}: unknown property_name {} defined",
@@ -781,16 +792,7 @@ fn get_id_or_create_equipment(
     collection_equipments
         .push(Equipment {
             id: equipment_id.clone(),
-            wheelchair_boarding: equipment.wheelchair_boarding,
-            sheltered: equipment.sheltered,
-            elevator: equipment.elevator,
-            escalator: equipment.escalator,
-            bike_accepted: equipment.bike_accepted,
-            bike_depot: equipment.bike_depot,
-            visual_announcement: equipment.visual_announcement,
-            audible_announcement: equipment.audible_announcement,
-            appropriate_escort: equipment.appropriate_escort,
-            appropriate_signage: equipment.appropriate_signage,
+            ..equipment
         })
         .unwrap();
     equipment_id
@@ -883,6 +885,116 @@ fn update_stop_points_equipments(
     }
 }
 
+fn get_id_or_create_trip_property(
+    trip_property: TripProperty,
+    collection_trip_properties: &mut CollectionWithId<TripProperty>,
+    prefix: &str,
+) -> String {
+    fn generate_trip_property_id(
+        collection_trip_properties: &mut CollectionWithId<TripProperty>,
+        prefix: &str,
+    ) -> String {
+        let mut inc = 0;
+        let mut available = false;
+        let mut trip_property_id = String::new();
+        while !available {
+            inc += 1;
+            trip_property_id = format!("{}{}", prefix, inc);
+            if collection_trip_properties.get(&trip_property_id).is_none() {
+                available = true;
+            }
+        }
+        trip_property_id
+    }
+
+    let similar_trip_properties: Vec<&TripProperty> = collection_trip_properties
+        .values()
+        .filter(|tp| tp.is_similar(&trip_property))
+        .collect();
+
+    if !similar_trip_properties.is_empty() {
+        // Similar trip_properties may exist, especially after a merge of ntfs (with different prefixes)
+        // We take the first one that matches. Rare case.
+        return similar_trip_properties[0].id.clone();
+    }
+
+    let trip_property_id = generate_trip_property_id(collection_trip_properties, prefix);
+
+    collection_trip_properties
+        .push(TripProperty {
+            id: trip_property_id.clone(),
+            ..trip_property
+        })
+        .unwrap();
+    trip_property_id
+}
+
+fn update_lines_trips_properties(
+    lines_trips_properties: BTreeMap<String, Vec<PropertyRule>>,
+    vjs_by_line: &HashMap<String, IdxSet<VehicleJourney>>,
+    report: &mut Report,
+    collections: &mut Collections,
+    prefix: &str,
+) {
+    let any_prop = "*".to_string();
+    for (line_id, trip_properties) in lines_trips_properties {
+        if let Some(vehicles_journeys_idx) = vjs_by_line.get(&line_id) {
+            // Orders vehicles_journeys on ids (through BTreeSet) for determinism
+            for vehicle_journey_id in vehicles_journeys_idx
+                .iter()
+                .map(|idx| collections.vehicle_journeys[*idx].id.clone())
+                .collect::<BTreeSet<_>>()
+            {
+                let mut vj_property = collections
+                    .vehicle_journeys
+                    .get(&vehicle_journey_id)
+                    .and_then(|vj| vj.trip_property_id.as_ref())
+                    .and_then(|tp_id| collections.trip_properties.get(tp_id).cloned())
+                    .unwrap_or_default();
+                for trip_property in &trip_properties {
+                    // Only empty or * are accepted in old value
+                    if let Some(pov) = trip_property.property_old_value.as_ref() {
+                        if *pov != any_prop {
+                            property_old_value_do_not_match(report, &trip_property);
+                            continue;
+                        }
+                    };
+                    // Apply new property on vj_property
+                    let property_value = match trip_property.property_value.as_str() {
+                        "1" => Availability::Available,
+                        "2" => Availability::NotAvailable,
+                        _ => {
+                            property_unknown_value(
+                                report,
+                                &trip_property,
+                                &trip_property.property_value,
+                            );
+                            continue;
+                        }
+                    };
+                    match trip_property.property_name.as_str() {
+                        AIR_CONDITIONED => vj_property.air_conditioned = property_value,
+                        APPROPRIATE_ESCORT => vj_property.appropriate_escort = property_value,
+                        APPROPRIATE_SIGNAGE => vj_property.appropriate_signage = property_value,
+                        AUDIBLE_ANNOUNCEMENT => vj_property.audible_announcement = property_value,
+                        BIKE_ACCEPTED => vj_property.bike_accepted = property_value,
+                        VISUAL_ANNOUNCEMENT => vj_property.visual_announcement = property_value,
+                        WHEELCHAIR_ACCESSIBLE => vj_property.wheelchair_accessible = property_value,
+                        _ => (),
+                    }
+                }
+                if let Some(mut vj) = collections.vehicle_journeys.get_mut(&vehicle_journey_id) {
+                    vj.trip_property_id = Some(get_id_or_create_trip_property(
+                        vj_property,
+                        &mut collections.trip_properties,
+                        prefix,
+                    ));
+                }
+            }
+        }
+    }
+}
+
 pub fn apply_rules<P: AsRef<Path>>(
     rule_files: Vec<P>,
     mut collections: &mut Collections,
@@ -892,6 +1004,7 @@ pub fn apply_rules<P: AsRef<Path>>(
     let properties = read_property_rules_files(rule_files, &mut report)?;
 
     let lines = collections.lines.clone();
+    let mut lines_trips_properties: BTreeMap<String, Vec<PropertyRule>> = BTreeMap::default();
     let mut sp_equipments_properties: BTreeMap<String, Vec<PropertyRule>> = BTreeMap::default();
     let prefix_with_colon = get_prefix(&collections)
         .map(|prefix| prefix + ":")
@@ -921,6 +1034,19 @@ pub fn apply_rules<P: AsRef<Path>>(
                 }
                 _ => false,
             };
+        } else if p.object_type == ObjectType::Line
+            && LINE_TRIP_PROPERTIES.contains(&p.property_name.as_str())
+        {
+            obj_found = match lines.get(&p.object_id) {
+                Some(line) => {
+                    lines_trips_properties
+                        .entry(line.id.clone())
+                        .or_insert_with(Vec::new)
+                        .push(p.clone());
+                    true
+                }
+                _ => false,
+            };
         }
 
         if !obj_found {
@@ -937,6 +1063,13 @@ pub fn apply_rules<P: AsRef<Path>>(
 
     update_stop_points_equipments(
         sp_equipments_properties,
+        &mut report,
+        &mut collections,
+        &prefix_with_colon,
+    );
+    update_lines_trips_properties(
+        lines_trips_properties,
+        vjs_by_line,
         &mut report,
         &mut collections,
         &prefix_with_colon,
