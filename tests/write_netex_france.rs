@@ -19,8 +19,13 @@ fn test_write_netex_france() {
     let model = transit_model::ntfs::read("tests/fixtures/ntfs").unwrap();
     test_in_tmp_dir(|output_dir| {
         let participant_ref = String::from("Participant");
-        let netex_france_exporter =
-            netex_france::Exporter::new(model, participant_ref, get_test_datetime());
+        let stop_provider_code = Some(String::from("ProviderCode"));
+        let netex_france_exporter = netex_france::Exporter::new(
+            &model,
+            participant_ref,
+            stop_provider_code,
+            get_test_datetime(),
+        );
         netex_france_exporter.write(output_dir).unwrap();
         compare_output_dir_with_expected_content(&output_dir, None, "tests/fixtures/netex_france");
     });

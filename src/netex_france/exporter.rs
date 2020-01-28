@@ -13,7 +13,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 //! Exporter for Netex France profile
-use crate::{minidom_utils::ElementWriter, model::Model, Result};
+use crate::{minidom_utils::ElementWriter, model::Model, netex_france::StopExporter, Result};
 use chrono::prelude::*;
 use minidom::Element;
 use std::{
@@ -39,21 +39,28 @@ impl Display for VersionType {
 }
 
 /// Struct that can write an export of Netex France profile from a Model
-pub struct Exporter {
-    _model: Model,
+pub struct Exporter<'a> {
+    model: &'a Model,
     participant_ref: String,
+    stop_provider_code: Option<String>,
     timestamp: NaiveDateTime,
 }
 
 // Publicly exposed methods
-impl Exporter {
+impl<'a> Exporter<'a> {
     /// Build a Netex France profile exporter from the model.
     /// `path` is the expected output Path where the Netex France is going to be
     /// written. It should be a folder that already exists.
-    pub fn new(_model: Model, participant_ref: String, timestamp: NaiveDateTime) -> Self {
+    pub fn new(
+        model: &'a Model,
+        participant_ref: String,
+        stop_provider_code: Option<String>,
+        timestamp: NaiveDateTime,
+    ) -> Self {
         Exporter {
-            _model,
+            model,
             participant_ref,
+            stop_provider_code,
             timestamp,
         }
     }
@@ -69,7 +76,7 @@ impl Exporter {
 }
 
 // Internal methods
-impl Exporter {
+impl Exporter<'_> {
     // Include 'stop_frame' into a complete NeTEx XML tree with
     // 'PublicationDelivery' and 'dataObjects'
     fn wrap_frame(&self, frame: Element, version_type: VersionType) -> Result<Element> {
@@ -87,9 +94,15 @@ impl Exporter {
             .append(frame)
             .build();
         let root = Element::builder("PublicationDelivery")
-            .ns("http://www.netex.org.uk/netex/")
-            .attr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
             .attr("version", format!("1.09:FR-NETEX_{}-2.1-1.0", version_type))
+            .attr("xmlns:siri", "http://www.siri.org.uk/siri")
+            .attr("xmlns:core", "http://www.govtalk.gov.uk/core")
+            .attr("xmlns:gml", "http://www.opengis.net/gml/3.2")
+            .attr("xmlns:ifopt", "http://www.ifopt.org.uk/ifopt")
+            .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
+            .attr("xmlns", "http://www.netex.org.uk/netex")
+            .attr("xsi:schemaLocation", "http://www.netex.org.uk/netex")
+            .attr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
             .append(publication_timestamp)
             .append(participant_ref)
             .append(data_objects)
@@ -112,7 +125,14 @@ impl Exporter {
 
     // Returns a 'GeneralFrame' containing all 'StopArea' and 'Quay'
     fn create_stops_frame(&self) -> Result<Element> {
-        let frame = Element::builder("GeneralFrame").build();
+        let stop_point_exporter = StopExporter::new(
+            &self.model,
+            &self.participant_ref,
+            self.stop_provider_code.as_ref(),
+        )?;
+        let stop_points = stop_point_exporter.export()?;
+        let members = Element::builder("members").append_all(stop_points).build();
+        let frame = Element::builder("GeneralFrame").append(members).build();
         Ok(frame)
     }
 }
