@@ -11,5 +11,5 @@ keywords = ["collection", "index"]
 [dependencies]
 derivative = "1.0"
 serde = { version = "1", features = ["derive"] }
-failure = "0.1.5"
 log = "0.4.8"
+thiserror = "1.0"

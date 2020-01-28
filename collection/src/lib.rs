@@ -16,7 +16,11 @@
 //! support.
 
 /// The error type used by the crate.
-pub type Error = failure::Error;
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Identifier {0} already exists")]
+    IdentifierAlreadyExists(String),
+}
 
 /// The corresponding result type used by the crate.
 pub type Result<T> = std::result::Result<T, Error>;

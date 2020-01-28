@@ -15,7 +15,7 @@
 use crate::objects::Date;
 use chrono::NaiveDate;
 use csv;
-use failure::ResultExt;
+use failure::{format_err, ResultExt};
 use geo_types;
 use log::{debug, error, info};
 use rust_decimal::Decimal;
@@ -338,7 +338,7 @@ where
         .deserialize()
         .collect::<Result<_, _>>()
         .with_context(ctx_from_path!(path))?;
-    CollectionWithId::new(vec)
+    CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
 }
 
 pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> crate::Result<Collection<T>>

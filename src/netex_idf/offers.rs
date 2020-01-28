@@ -440,7 +440,7 @@ fn update_validity_period_from_netex_idf(
     for dataset in &mut datasets {
         validity_period::update_validity_period(dataset, &validity_period);
     }
-    CollectionWithId::new(datasets)
+    CollectionWithId::new(datasets).map_err(|e| format_err!("{}", e))
 }
 
 fn enhance_with_object_code(

@@ -128,7 +128,7 @@ fn update_validity_period_from_transxchange(
     for dataset in &mut datasets {
         validity_period::update_validity_period(dataset, &service_validity_period);
     }
-    CollectionWithId::new(datasets)
+    CollectionWithId::new(datasets).map_err(|e| format_err!("{}", e))
 }
 
 fn load_network(transxchange: &Element) -> Result<Network> {

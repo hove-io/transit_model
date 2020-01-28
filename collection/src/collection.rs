@@ -15,9 +15,8 @@
 //! Collections of objects with typed indices and buildin identifier
 //! support.
 
-use crate::Result;
+use crate::{Error, Result};
 use derivative::Derivative;
-use failure::{bail, ensure};
 use log::warn;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
@@ -432,13 +431,12 @@ impl<T: Id<T>> CollectionWithId<T> {
     pub fn new(v: Vec<T>) -> Result<Self> {
         let mut id_to_idx = HashMap::default();
         for (i, obj) in v.iter().enumerate() {
-            ensure!(
-                id_to_idx
-                    .insert(obj.id().to_string(), Idx::new(i))
-                    .is_none(),
-                "{} already found",
-                obj.id()
-            );
+            if id_to_idx
+                .insert(obj.id().to_string(), Idx::new(i))
+                .is_some()
+            {
+                return Err(Error::IdentifierAlreadyExists(obj.id().to_owned()));
+            }
         }
         Ok(CollectionWithId {
             collection: Collection::new(v),
@@ -570,7 +568,7 @@ impl<T: Id<T>> CollectionWithId<T> {
         let next_index = self.collection.objects.len();
         let idx = Idx::new(next_index);
         match self.id_to_idx.entry(item.id().to_string()) {
-            Occupied(_) => bail!("{} already found", item.id()),
+            Occupied(_) => Err(Error::IdentifierAlreadyExists(item.id().to_owned())),
             Vacant(v) => {
                 v.insert(idx);
                 self.collection.objects.push(item);
