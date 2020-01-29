@@ -35,6 +35,7 @@ members = [
 
 [features]
 stop_location = []
+xmllint = ["proj"]
 
 [dependencies]
 chrono = "0.4"
@@ -81,7 +82,7 @@ required-features = ["proj"]
 [[bench]]
 name = "read_transxchange"
 path = "benches/read_transxchange.rs"
-required-features = ["transxchange"]
+required-features = ["proj"]
 
 [[test]]
 name = "netexidf2ntfs"

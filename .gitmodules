@@ -1,0 +1,3 @@
+[submodule "tests/NeTEx"]
+	path = tests/NeTEx
+	url = https://github.com/NeTEx-CEN/NeTEx.git

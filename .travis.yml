@@ -11,6 +11,7 @@ addons:
       key_url: "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public"
     packages:
     - proj=6.3.0
+    - libxml2-utils
 matrix:
   include:
   - rust: stable
@@ -24,7 +25,7 @@ matrix:
   allow_failures:
   - rust: nightly
 script:
-- cargo test --workspace --verbose --features proj
+- cargo test --workspace --verbose --all-features
 deploy:
   provider: cargo
   on:

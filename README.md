@@ -42,6 +42,20 @@ If you want to use [PROJ](https://proj.org/) in your code, you can if you
 activate the `proj` feature (`cargo build --features=proj`). Then don't forget
 to protect your code with `#[cfg(feature="proj")]`.
 
+### Feature `xmllint`
+`transit_model` is capable of exporting NeTEx France format. In the tests, we're
+automatically verifying that the produced files are matching the NeTEx
+specification.  For that, we're using the tool `xmllint` which can be install
+on Debian with the package `libxml2-utils`. Therefore, these tests are run only
+if you activate them. We also depend on NeTEx specification that are imported as
+a git submodule.
+
+```bash
+git submodule update --init --recursive
+apt install libxml2-utils
+cargo test --features xmllint
+```
+
 ## Benchmarking
 A few benchmarks are available if you want to compare performance of a new
 feature or of an optimization. Benchmarking functionality is only available in
