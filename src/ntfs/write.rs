@@ -396,7 +396,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
                     ticket_use
                         .max_transfers
                         .iter()
-                        .map(|nb_max_transfers| format!("nb_changes<{}", nb_max_transfers)),
+                        .map(|nb_max_transfers| format!("nb_changes<{}", nb_max_transfers + 1)),
                 )
                 .chain(
                     ticket_use
