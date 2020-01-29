@@ -247,17 +247,20 @@ Example:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <CompositeFrame 
-		id="FR:CompositeFrame:NETEX-20190709T093214Z:LOC" 
-		version="1.8">
-	<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX:" />
+			id="FR:CompositeFrame:NETEX_LIGNE:<stop_provider_code>" 
+			version="any">
 	<frames>
-	<!-- Repeat a ServiceFrame node for each Network -->
-	<ServiceFrame version="any" id="">
-		<Network />
-	</ServiceFrame>
-	<ServiceFrame version="any" id="">
-		<lines><!-- One node Line for each Line of the dataset--></lines>
-	</ServiceFrame>
+		<!-- Repeat a ServiceFrame node for each Network -->
+		<ServiceFrame
+				id="FR:ServiceFrame:<network_id>:<stop_provider_code>"
+				version="any">
+			<Network />
+		</ServiceFrame>
+		<ServiceFrame
+				id="FR:ServiceFrame:lines:<stop_provider_code>"
+				version="any">
+			<lines><!-- One node Line for each Line of the dataset--></lines>
+		</ServiceFrame>
 	</frames>
 </CompositeFrame>
 ```

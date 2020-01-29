@@ -23,20 +23,23 @@ use std::{
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub enum FrameType {
+    Composite,
+    Fare,
     General,
     Resource,
     Service,
-    Fare,
 }
 pub type Frames<'a> = HashMap<FrameType, Vec<&'a Element>>;
 
 impl Display for FrameType {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        use FrameType::*;
         match self {
-            FrameType::Fare => write!(f, "Fare"),
-            FrameType::General => write!(f, "General"),
-            FrameType::Resource => write!(f, "Resource"),
-            FrameType::Service => write!(f, "Service"),
+            Composite => write!(f, "CompositeFrame"),
+            Fare => write!(f, "FareFrame"),
+            General => write!(f, "GeneralFrame"),
+            Resource => write!(f, "ResourceFrame"),
+            Service => write!(f, "ServiceFrame"),
         }
     }
 }
@@ -44,11 +47,13 @@ impl Display for FrameType {
 impl FromStr for FrameType {
     type Err = Error;
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        use FrameType::*;
         match s {
-            "FareFrame" => Ok(FrameType::Fare),
-            "GeneralFrame" => Ok(FrameType::General),
-            "ResourceFrame" => Ok(FrameType::Resource),
-            "ServiceFrame" => Ok(FrameType::Service),
+            "CompositeFrame" => Ok(Composite),
+            "FareFrame" => Ok(Fare),
+            "GeneralFrame" => Ok(General),
+            "ResourceFrame" => Ok(Resource),
+            "ServiceFrame" => Ok(Service),
             _ => bail!("Failed to convert '{}' into a FrameType", s),
         }
     }
@@ -168,14 +173,16 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a \\'Service\\' frame in the Netex file")]
+        #[should_panic(expected = "Failed to find a \\'ServiceFrame\\' frame in the Netex file")]
         fn no_frame() {
             let frames = HashMap::new();
             get_only_frame(&frames, FrameType::Service).unwrap();
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a unique \\'Resource\\' frame in the Netex file")]
+        #[should_panic(
+            expected = "Failed to find a unique \\'ResourceFrame\\' frame in the Netex file"
+        )]
         fn multiple_frames() {
             let mut frames = HashMap::new();
             let frame: Element = r#"<frame xmlns="test" />"#.parse().unwrap();

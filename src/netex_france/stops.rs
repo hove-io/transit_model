@@ -20,7 +20,7 @@ use proj::Proj;
 pub struct StopExporter<'a> {
     model: &'a Model,
     participant_ref: &'a str,
-    stop_provider_code: Option<&'a String>,
+    stop_provider_code: &'a str,
     converter: Proj,
 }
 
@@ -29,7 +29,7 @@ impl<'a> StopExporter<'a> {
     pub fn new(
         model: &'a Model,
         participant_ref: &'a str,
-        stop_provider_code: Option<&'a String>,
+        stop_provider_code: &'a str,
     ) -> Result<Self> {
         // FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
         let from = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
@@ -79,13 +79,9 @@ impl<'a> StopExporter<'a> {
 
     fn generate_id(&self, stop_point: &'a StopPoint) -> String {
         let id = stop_point.id.replace(':', "_");
-        let provider_code = self
-            .stop_provider_code
-            .cloned()
-            .unwrap_or_else(|| String::from("LOC"));
         // TODO: Find INSEE code from geolocation of the `stop_point`
         let insee = "XXXXX";
-        format!("FR:{}:ZE:{}:{}", insee, id, provider_code)
+        format!("FR:{}:ZE:{}:{}", insee, id, self.stop_provider_code)
     }
 
     fn generate_name(&self, stop_point: &'a StopPoint) -> Element {

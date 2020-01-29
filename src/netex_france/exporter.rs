@@ -13,9 +13,15 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 //! Exporter for Netex France profile
-use crate::{minidom_utils::ElementWriter, model::Model, netex_france::StopExporter, Result};
+use crate::{
+    minidom_utils::ElementWriter,
+    model::Model,
+    netex_france::{NetworkExporter, StopExporter},
+    netex_utils::FrameType,
+    Result,
+};
 use chrono::prelude::*;
-use minidom::Element;
+use minidom::{Element, Node};
 use std::{
     convert::AsRef,
     fmt::{self, Display, Formatter},
@@ -24,9 +30,11 @@ use std::{
 };
 
 const NETEX_FRANCE_STOPS_FILENAME: &str = "arrets.xml";
+const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
 
 enum VersionType {
     Stops,
+    Lines,
 }
 
 impl Display for VersionType {
@@ -34,6 +42,7 @@ impl Display for VersionType {
         use VersionType::*;
         match self {
             Stops => write!(fmt, "ARRET"),
+            Lines => write!(fmt, "LIGNE"),
         }
     }
 }
@@ -42,7 +51,7 @@ impl Display for VersionType {
 pub struct Exporter<'a> {
     model: &'a Model,
     participant_ref: String,
-    stop_provider_code: Option<String>,
+    stop_provider_code: String,
     timestamp: NaiveDateTime,
 }
 
@@ -57,6 +66,7 @@ impl<'a> Exporter<'a> {
         stop_provider_code: Option<String>,
         timestamp: NaiveDateTime,
     ) -> Self {
+        let stop_provider_code = stop_provider_code.unwrap_or_else(|| String::from("LOC"));
         Exporter {
             model,
             participant_ref,
@@ -70,7 +80,8 @@ impl<'a> Exporter<'a> {
     where
         P: AsRef<Path>,
     {
-        self.write_stops(path)?;
+        self.write_lines(&path)?;
+        self.write_stops(&path)?;
         Ok(())
     }
 }
@@ -110,6 +121,68 @@ impl Exporter<'_> {
         Ok(root)
     }
 
+    fn generate_frame_id(&self, frame_type: FrameType, id: &str) -> String {
+        format!("FR:{}:{}:{}", frame_type, id, self.stop_provider_code)
+    }
+
+    fn create_composite_frame<I, T>(id: String, frames: I) -> Element
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<Node>,
+    {
+        let frame_list = Element::builder("frames").append_all(frames).build();
+        Element::builder("CompositeFrame")
+            .attr("id", id)
+            .attr("version", "any")
+            .append(frame_list)
+            .build()
+    }
+
+    pub(crate) fn create_members<I, T>(members: I) -> Element
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<Node>,
+    {
+        Element::builder("members").append_all(members).build()
+    }
+
+    fn write_lines<P>(&self, path: P) -> Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        let filepath = path.as_ref().join(NETEX_FRANCE_LINES_FILENAME);
+        let mut file = File::create(filepath)?;
+        let network_frames = self.create_networks_frames()?;
+        let composite_frame_id = self.generate_frame_id(
+            FrameType::Composite,
+            &format!("NETEX_{}", VersionType::Lines),
+        );
+        let composite_frame = Self::create_composite_frame(composite_frame_id, network_frames);
+        let netex = self.wrap_frame(composite_frame, VersionType::Lines)?;
+        let writer = ElementWriter::new(netex, true);
+        writer.write(&mut file)?;
+        Ok(())
+    }
+
+    // Returns a list of 'ServiceFrame' each containing a 'Network'
+    fn create_networks_frames(&self) -> Result<Vec<Element>> {
+        let network_exporter = NetworkExporter::new(&self.model);
+        let network_elements = network_exporter.export()?;
+        let frames = network_elements
+            .into_iter()
+            .zip(self.model.networks.values())
+            .map(|(network_element, network)| {
+                let service_frame_id = self.generate_frame_id(FrameType::Service, &network.id);
+                Element::builder("ServiceFrame")
+                    .attr("id", service_frame_id)
+                    .attr("version", "any")
+                    .append(network_element)
+                    .build()
+            })
+            .collect();
+        Ok(frames)
+    }
+
     fn write_stops<P>(&self, path: P) -> Result<()>
     where
         P: AsRef<Path>,
@@ -125,13 +198,10 @@ impl Exporter<'_> {
 
     // Returns a 'GeneralFrame' containing all 'StopArea' and 'Quay'
     fn create_stops_frame(&self) -> Result<Element> {
-        let stop_point_exporter = StopExporter::new(
-            &self.model,
-            &self.participant_ref,
-            self.stop_provider_code.as_ref(),
-        )?;
+        let stop_point_exporter =
+            StopExporter::new(&self.model, &self.participant_ref, &self.stop_provider_code)?;
         let stop_points = stop_point_exporter.export()?;
-        let members = Element::builder("members").append_all(stop_points).build();
+        let members = Self::create_members(stop_points);
         let frame = Element::builder("GeneralFrame").append(members).build();
         Ok(frame)
     }
