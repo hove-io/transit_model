@@ -16,6 +16,8 @@
 
 mod exporter;
 pub use exporter::Exporter;
+mod lines;
+use lines::LineExporter;
 mod networks;
 use networks::NetworkExporter;
 mod stops;

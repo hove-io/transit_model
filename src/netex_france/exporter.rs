@@ -16,7 +16,7 @@
 use crate::{
     minidom_utils::ElementWriter,
     model::Model,
-    netex_france::{NetworkExporter, StopExporter},
+    netex_france::{LineExporter, NetworkExporter, StopExporter},
     netex_utils::FrameType,
     Result,
 };
@@ -26,6 +26,7 @@ use std::{
     convert::AsRef,
     fmt::{self, Display, Formatter},
     fs::File,
+    iter,
     path::Path,
 };
 
@@ -131,7 +132,7 @@ impl Exporter<'_> {
         T: Into<Node>,
     {
         let frame_list = Element::builder("frames").append_all(frames).build();
-        Element::builder("CompositeFrame")
+        Element::builder(FrameType::Composite.to_string())
             .attr("id", id)
             .attr("version", "any")
             .append(frame_list)
@@ -153,11 +154,13 @@ impl Exporter<'_> {
         let filepath = path.as_ref().join(NETEX_FRANCE_LINES_FILENAME);
         let mut file = File::create(filepath)?;
         let network_frames = self.create_networks_frames()?;
+        let lines_frame = self.create_lines_frame()?;
+        let frames = network_frames.into_iter().chain(iter::once(lines_frame));
         let composite_frame_id = self.generate_frame_id(
             FrameType::Composite,
             &format!("NETEX_{}", VersionType::Lines),
         );
-        let composite_frame = Self::create_composite_frame(composite_frame_id, network_frames);
+        let composite_frame = Self::create_composite_frame(composite_frame_id, frames);
         let netex = self.wrap_frame(composite_frame, VersionType::Lines)?;
         let writer = ElementWriter::new(netex, true);
         writer.write(&mut file)?;
@@ -173,7 +176,7 @@ impl Exporter<'_> {
             .zip(self.model.networks.values())
             .map(|(network_element, network)| {
                 let service_frame_id = self.generate_frame_id(FrameType::Service, &network.id);
-                Element::builder("ServiceFrame")
+                Element::builder(FrameType::Service.to_string())
                     .attr("id", service_frame_id)
                     .attr("version", "any")
                     .append(network_element)
@@ -181,6 +184,20 @@ impl Exporter<'_> {
             })
             .collect();
         Ok(frames)
+    }
+
+    // Returns a 'ServiceFrame' containing a list of 'Line' in 'lines'
+    fn create_lines_frame(&self) -> Result<Element> {
+        let line_exporter = LineExporter::new(&self.model);
+        let lines = line_exporter.export()?;
+        let line_list = Element::builder("lines").append_all(lines).build();
+        let service_frame_id = self.generate_frame_id(FrameType::Service, "lines");
+        let frame = Element::builder(FrameType::Service.to_string())
+            .attr("id", service_frame_id)
+            .attr("version", "any")
+            .append(line_list)
+            .build();
+        Ok(frame)
     }
 
     fn write_stops<P>(&self, path: P) -> Result<()>
@@ -202,7 +219,9 @@ impl Exporter<'_> {
             StopExporter::new(&self.model, &self.participant_ref, &self.stop_provider_code)?;
         let stop_points = stop_point_exporter.export()?;
         let members = Self::create_members(stop_points);
-        let frame = Element::builder("GeneralFrame").append(members).build();
+        let frame = Element::builder(FrameType::General.to_string())
+            .append(members)
+            .build();
         Ok(frame)
     }
 }
