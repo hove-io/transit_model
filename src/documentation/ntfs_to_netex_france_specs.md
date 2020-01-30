@@ -9,6 +9,7 @@ This document describes how a [NTFS feed](https://github.com/CanalTP/ntfs-specif
 The resulting ZIP archive is composed of:
 - a `arrets.xml` file containing the description of all stops (Quays and StopPlaces)
 - a `correspondances.xml` file containing all transfers between stops
+- a `calendriers.xml` containing the services
 - a folder for each network containing
   + TBD
 
@@ -283,3 +284,73 @@ Line/@id | lines.txt | line_id | see [id formatting](#id-of-objects)
 Line/PublicCode | lines.txt | line_code | If the code line_code is empty, this node is not created.
 Line/Name | lines.txt | line_name | 
 
+## calendriers.xml
+
+Each `service_id` produce a set of three objects:
+- `DayType`
+- `DayTypeAssignment`
+- `UicOperatingPeriod`
+
+### Top level structure
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<GeneralFrame 
+		id="FR:GeneralFrame:NETEX_CALENDRIER:<stop_provider_code>" 
+		version="any">
+	<ValidBetween>
+		<FromDate>2020-01-01T00:00:00Z</FromDate>
+		<ToDate>2020-12-30T23:59:59Z</ToDate>
+	</ValidBetween>
+	<members>
+		<!-- One DayType for each 'service_id' -->
+		<DayType />
+		<!-- One DayTypeAssignment for each 'service_id' to link
+		     a DayType and a UicOperatingPeriod -->
+		<DayTypeAssignment />
+		<!-- One UicOperatingPeriod for each 'service_id' -->
+		<UicOperatingPeriod />
+	</members>
+</GeneralFrame>
+```
+
+### ValidBetween
+
+Netex field | NTFS file | NTFS field | Note
+ValidBetween/FromDate | feed_infos.txt | feed_start_date | use ISO-8601 date-time format, using `T00:00:00Z` for the time
+ValidBetween/ToDate | feed_infos.txt | feed_end_date | use ISO-8601 date-time format, using `T23:59:59Z` for the time
+
+### DayType
+
+The `DayType` must exist even if intentionally left empty (it is referred to by
+`ServiceJourney`).
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+DayType/@id | calendar.txt or calendar_dates.txt | service_id | see [id formatting](#id-of-objects)
+DayType/@version | | | fixed value `any`
+
+### DayTypeAssignement
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+DayTypeAssignement/@id | calendar.txt | service_id | see [id formatting](#id-of-objects)
+DayTypeAssignement/@version | | | fixed value `any`
+DayTypeAssignement/@order | | | fixed value `0`
+DayTypeAssignement/OperatingPeriodRef/@ref | calendar.txt | service_id | see [id formatting](#id-of-objects) with `OperatingPeriod` as object type
+DayTypeAssignement/DayTypeRef/@ref | calendar.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type
+
+### UicOperatingPeriod
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+UicOperatingPeriod/@id | calendar.txt | service_id | see [id formatting](#id-of-objects) with `OperatingPeriod` as object type
+UicOperatingPeriod/@version | | | fixed value `any`
+UicOperatingPeriod/FromDate | calendar.txt | start_date | use ISO-8601 date-time format, using `T00:00:00Z` for the time
+UicOperatingPeriod/ValidDayBits | | | see (1) below
+
+**(1) Sequence for ValidDayBits**
+
+This is a string sequence of `0` (inactive days) and `1` (active days).  The
+sequence should contains as many `0/1` as there is days in the period.  The
+first character correspond to the first day of the period.
