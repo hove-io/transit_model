@@ -10,8 +10,11 @@ The resulting ZIP archive is composed of:
 - a `arrets.xml` file containing the description of all stops (Quays and StopPlaces)
 - a `correspondances.xml` file containing all transfers between stops
 - a `calendriers.xml` containing the services
-- a folder for each network containing
-  + TBD
+- a folder `reseau_<network_name>_<network_id_md5>` for each network containing
+  (keep only alphanumerical characters for `network_name`)
+  + a `offre_<line_code>_<line_id_md5>.xml` containing the description of
+	routes, and service journeys (keep only alphanumerical characters for
+	`line_code`)
 
 ## Schema Validation
 To validate the produced XML document, you can use `xmllint` tool.  On a
@@ -332,3 +335,144 @@ UicOperatingPeriod/ValidDayBits | | | see (1) below
 This is a string sequence of `0` (inactive days) and `1` (active days).  The
 sequence should contains as many `0/1` as there is days in the period.  The
 first character correspond to the first day of the period.
+
+## offre_<line_code>_<line_id_md5>.xml
+
+The name of the file is composed of the following fields separated by `_`:
+- fixed value `offre`
+- only the alphanumerical characters of the `line_code` (for example, `a:b/c 1.2.3` becomes `abc123`)
+- the MD5 checksum of the `line_id` (for example, `bob` becomes `e01096b9ffe3f416157f6ec46c467725`)
+
+### Top level structure
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<GeneralFrame 
+		id="FR:GeneralFrame:<line_id>:<stop_provider_code>" 
+		version="any">
+	<members>
+		<!-- One Route for each 'route_id' -->
+		<Route />
+		<ServiceJourneyPattern />
+		<!-- One ScheduledStopPoint for each Stop in a Journey Pattern -->
+		<ScheduledStopPoint />
+		<!-- One PassengerStopAssignment for each Stop in a Journey Pattern -->
+		<PassengerStopAssignment />
+		<!-- One ServiceJourney for each 'trip_id' -->
+		<ServiceJourney />
+	</members>
+</GeneralFrame>
+```
+
+### Route
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+Route/@id | routes.txt | route_id | see [id formatting](#id-of-objects)
+Route/@version | | | fixed value `any`
+Route/Name | routes.txt | route_name |
+Route/Distance | | | fixed value `0` (mandatory field in NeTEx France `LinkSequence`)
+Route/LineRef/@ref | routes.txt | line_id | see [id formatting](#id-of-objects) with `Line` as object type
+Route/DirectionType | routes.txt | direction_type | see (1) below
+Route/pointsInSequence/PointOnRoute[] | | | see [`PointOnRoute`](#pointonroute)
+
+**(1) Direction Type**
+
+Use the following mapping to convert the direction type from NTFS to NeTEx
+France.
+
+NTFS Direction Type | NeTEx Direction Type
+--- | ---
+forward | inbound
+backward | outbound
+inbound | inbound
+outbound | outbound
+clockwise | clockwise
+anticlockwise | anticlockwise
+
+#### PointOnRoute
+
+TBD
+
+### ServiceJourneyPattern
+
+A Journey Pattern is created for each unique sequence of stops in the Vehicle
+Journeys. Unicity applies to:
+- `stop_id`
+- `pickup_type`
+- `drop_off_type`
+- `local_zone_id`
+
+Netex field | Note
+--- | ---
+ServiceJourneyPattern/@id | see [id formatting](#id-of-objects) using the first `trip_id` in alphanumerical order
+ServiceJourneyPattern/@version | fixed value `any`
+ServiceJourneyPattern/Distance | fixed value `0` (mandatory field in NeTEx France `LinkSequence`)
+ServiceJourneyPattern/RouteRef/@ref | see [id formatting](#id-of-objects) with `Route` as object type
+ServiceJourneyPattern/pointsInSequence/StopPointInJourneyPattern[] | see section on [`StopPointInJourneyPattern`](#stoppointinjourneypattern)
+
+#### StopPointInJourneyPattern
+
+For each stop of a Journey Pattern, a `StopPointInJourneyPattern` is created,
+with a link to a corresponding `ScheduledStopPoint` (see [related
+section](#scheduledstoppoint)).
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+StopPointInJourneyPattern/@id | | | see (1) below
+StopPointInJourneyPattern/@version | | | fixed value `any`
+StopPointInJourneyPattern/@order | stop_times.txt | stop_sequence | value of `stop_sequence + 1` (because `0` is not a valid value)
+StopPointInJourneyPattern/ScheduledStopPointRef/@ref | | | see `StopPointInJourneyPattern/@id` for ID; see [id formatting](#id-of-objects) with `StopPointInJourneyPattern` as object type for the rest
+StopPointInJourneyPattern/ForAlighting | stop_times.txt | drop_off_type | `0` is set to `true`, `1` is set to `false`
+StopPointInJourneyPattern/ForBoarding | stop_times.txt | pickup_type | `0` is set to `true`, `1` is set to `false`
+
+**(1) identifier for StopPointInJourneyPattern**
+
+The identifier is built from the concatenation of the following fields separated
+by `_`:
+- the `trip_id` used in the corresponding `ServiceJourneyPattern/@id`
+- the `@order`
+
+For the rest of the identifier, use [id formatting](#id-of-objects).
+
+### ScheduledStopPoint
+
+One `ScheduledStopPoint` is created for each Stop Point of a
+`ServiceJourneyPattern`.
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+ScheduledStopPoint/@id | | | see [`StopPointInJourneyPattern/@id`](#stoppointinjourneypattern) with `ScheduledStopPoint` as object type
+ScheduledStopPoint/@version | | | fixed value `any`
+ScheduledStopPoint/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
+
+### PassengerStopAssignment
+
+One `PassengerStopAssignment` is created for each Stop Point of a
+`ServiceJourneyPattern`.
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+PassengerStopAssignment/@id | | | see [`StopPointInJourneyPattern/@id`](#stoppointinjourneypattern) with `PassengerStopAssignment` as object type
+PassengerStopAssignment/@version | | | fixed value `any`
+PassengerStopAssignment/ScheduledStopPointRef/@ref | | | see [`StopPointInJourneyPattern/@id`](#stoppointinjourneypattern) with `ScheduledStopPoint` as object type
+PassengerStopAssignment/StopPlaceRef/@ref | | | refers to the monomodal StopPlace; see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace)
+PassengerStopAssignment/QuayRef/@ref | | | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace)
+
+### ServiceJourney
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+ServiceJourney/@id | trips.txt | trip_id | see [id formatting](#id-of-objects)
+ServiceJourney/@version | | | fixed value `any`
+ServiceJourney/dayTypes/DayTypeRef/@ref | trips.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type
+ServiceJourney/JourneyPatternRef/@ref | trips.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type
+ServiceJourney/passingTimes/TimetabledPassingTime[] | stop_times.txt | | see [`TimetabledPassingTime`](#timetabledpassingtime)
+
+#### TimetabledPassingTime
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+TimetabledPassingTime/ArrivalTime | stop_times.txt | arrival_time | format as `00:00:00` with a modulo on 24 hours (e.g. `25:00:00` becomes `01:00:00`)
+TimetabledPassingTime/DepartureTime | stop_times.txt | departure_time | format as `00:00:00` with a modulo on 24 hours (e.g. `25:00:00` becomes `01:00:00`)
+TimetabledPassingTime/DepartureDayOffset | stop_times.txt | departure_time | number of times 24 hours fits in `departure_time` (e.g. for `50:00:00`, 24 hours fits `2` times)
