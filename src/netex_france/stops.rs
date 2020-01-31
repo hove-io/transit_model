@@ -17,6 +17,7 @@ use crate::{
     Model, Result,
 };
 use failure::format_err;
+use log::warn;
 use minidom::{Element, Node};
 use proj::Proj;
 use std::{
@@ -97,7 +98,13 @@ impl NetexMode {
             "SuspendedCableCar" => Some(Cableway),
             "Train" => Some(Rail),
             "Tramway" => Some(Tram),
-            _ => None,
+            mode => {
+                warn!(
+                    "Physical Mode '{}' is not supported for NeTEx France export.",
+                    mode
+                );
+                None
+            }
         }
     }
 }
@@ -151,12 +158,27 @@ impl<'a> StopExporter<'a> {
             .model
             .stop_points
             .values()
+            // Create Quay only for `stop_point` with a NeTEx mode
+            .filter(|stop_point| self.stop_point_modes.contains_key(stop_point.id.as_str()))
             .map(|stop_point| self.export_stop_point(stop_point))
             .collect::<Result<Vec<Element>>>()?;
         let stop_areas_elements = self
             .model
             .stop_areas
             .values()
+            // Create StopPlace for `stop_area` with at least one `stop_point` with a NeTEx mode
+            .filter(|stop_area| {
+                if let Some(stop_point_ids) = self.stop_area_stop_points.get(stop_area.id.as_str())
+                {
+                    let stop_points_with_netex_modes = stop_point_ids
+                        .iter()
+                        .filter(|stop_point_id| self.stop_point_modes.contains_key(*stop_point_id))
+                        .count();
+                    stop_points_with_netex_modes > 0
+                } else {
+                    false
+                }
+            })
             .map(|stop_area| self.export_stop_area(stop_area))
             .collect::<Result<Vec<Vec<Element>>>>()?;
         let mut elements = stop_points_elements;
