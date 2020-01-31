@@ -144,12 +144,11 @@ Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 Quay/@id | stops.txt | stop_id | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace)
 Quay/@version | | | fixed value `any`.
-Quay/PublicCode | stops.txt | stop_code | This node may not be present if the stop_point has no `stop_code`.
-Quay/Name | stops.txt | stop_name | 
+Quay/Name | stops.txt | stop_name |
 Quay/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
-Quay/ParentSiteRef | stops.txt | parent_station | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace)
 Quay/TransportMode | | | see (2) below
-Quay/tariffZones | stops.txt | fare_zone_id | The fare zone is prefixed by the `ParticipantRef` prefix with a `:` separator
+Quay/tariffZones/TariffZoneRef/@ref | stops.txt | fare_zone_id | The fare zone is prefixed by the `ParticipantRef` prefix with a `:` separator
+Quay/PublicCode | stops.txt | stop_code | This node may not be present if the stop_point has no `stop_code`.
 Quay/AccessibilityAssessment | stops.txt | equipment_id | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.
 
 **(2) definition of the TransportMode**
@@ -222,10 +221,11 @@ Netex field | NTFS file | NTFS field | Note
 StopPlace/@id | stops.txt | stop_id | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace).
 StopPlace/@version | | | fixed value `any`.
 StopPlace/Name | stops.txt | stop_name | 
+StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
 StopPlace/ParentSiteRef | | | link to the corresponding Multimodal `StopPlace`
 StopPlace/TransportMode | | | use the only NeTEx mode
-StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
 StopPlace/StopPlaceType | | | see the section [StopPlaceType mapping](#stopplacetype-mapping)
+StopPlace/quays/QuayRef[]/@ref | | | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace)
 
 #### Multimodal StopPlace
 
@@ -234,8 +234,8 @@ Netex field | NTFS file | NTFS field | Note
 StopPlace/@id | stops.txt | stop_id | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace).
 StopPlace/@version | | | fixed value `any`.
 StopPlace/Name | stops.txt | stop_name | 
-StopPlace/TransportMode | | | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.0/ntfs_fr.md#physical_modestxt-requis))
 StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
+StopPlace/TransportMode | | | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.0/ntfs_fr.md#physical_modestxt-requis))
 StopPlace/StopPlaceType | | | see the section [StopPlaceType mapping](#stopplacetype-mapping)
 
 ## lignes.xml

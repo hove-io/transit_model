@@ -219,7 +219,11 @@ impl Exporter<'_> {
             StopExporter::new(&self.model, &self.participant_ref, &self.stop_provider_code)?;
         let stop_points = stop_point_exporter.export()?;
         let members = Self::create_members(stop_points);
+        let general_frame_id =
+            self.generate_frame_id(FrameType::General, &format!("NETEX_{}", VersionType::Stops));
         let frame = Element::builder(FrameType::General.to_string())
+            .attr("id", general_frame_id)
+            .attr("version", "any")
             .append(members)
             .build();
         Ok(frame)

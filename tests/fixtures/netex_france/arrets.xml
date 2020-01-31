@@ -3,18 +3,15 @@
 	<PublicationTimestamp>2019-04-03T17:19:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
-		<GeneralFrame>
+		<GeneralFrame id="FR:GeneralFrame:NETEX_ARRET:ProviderCode" version="any">
 			<members>
 				<Quay id="FR:XXXXX:ZE:GDLR:ProviderCode" version="any">
 					<Name>Gare de Lyon (RER)</Name>
-					<ParentSiteRef ref="">
-					</ParentSiteRef>
 					<Centroid>
 						<Location>
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
 						</Location>
 					</Centroid>
-					<TransportMode></TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
 						</TariffZoneRef>
@@ -22,14 +19,11 @@
 				</Quay>
 				<Quay id="FR:XXXXX:ZE:GDLM:ProviderCode" version="any">
 					<Name>Gare de Lyon (Metro)</Name>
-					<ParentSiteRef ref="">
-					</ParentSiteRef>
 					<Centroid>
 						<Location>
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
 						</Location>
 					</Centroid>
-					<TransportMode></TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
 						</TariffZoneRef>
@@ -37,14 +31,11 @@
 				</Quay>
 				<Quay id="FR:XXXXX:ZE:GDLB:ProviderCode" version="any">
 					<Name>Gare de Lyon (Bus)</Name>
-					<ParentSiteRef ref="">
-					</ParentSiteRef>
 					<Centroid>
 						<Location>
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
 						</Location>
 					</Centroid>
-					<TransportMode></TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
 						</TariffZoneRef>
@@ -52,14 +43,11 @@
 				</Quay>
 				<Quay id="FR:XXXXX:ZE:NATR:ProviderCode" version="any">
 					<Name>Nation (RER)</Name>
-					<ParentSiteRef ref="">
-					</ParentSiteRef>
 					<Centroid>
 						<Location>
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
 						</Location>
 					</Centroid>
-					<TransportMode></TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
 						</TariffZoneRef>
@@ -67,14 +55,11 @@
 				</Quay>
 				<Quay id="FR:XXXXX:ZE:NATM:ProviderCode" version="any">
 					<Name>Nation (Metro)</Name>
-					<ParentSiteRef ref="">
-					</ParentSiteRef>
 					<Centroid>
 						<Location>
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
 						</Location>
 					</Centroid>
-					<TransportMode></TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
 						</TariffZoneRef>
@@ -82,14 +67,11 @@
 				</Quay>
 				<Quay id="FR:XXXXX:ZE:CDGR:ProviderCode" version="any">
 					<Name>Charles de Gaulle (RER)</Name>
-					<ParentSiteRef ref="">
-					</ParentSiteRef>
 					<Centroid>
 						<Location>
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
 						</Location>
 					</Centroid>
-					<TransportMode></TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneOffParis">
 						</TariffZoneRef>
@@ -97,14 +79,11 @@
 				</Quay>
 				<Quay id="FR:XXXXX:ZE:CDGM:ProviderCode" version="any">
 					<Name>Charles de Gaulle (Metro)</Name>
-					<ParentSiteRef ref="">
-					</ParentSiteRef>
 					<Centroid>
 						<Location>
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
 						</Location>
 					</Centroid>
-					<TransportMode></TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneOffParis">
 						</TariffZoneRef>
@@ -112,14 +91,11 @@
 				</Quay>
 				<Quay id="FR:XXXXX:ZE:DEFR:ProviderCode" version="any">
 					<Name>La Défense (RER)</Name>
-					<ParentSiteRef ref="">
-					</ParentSiteRef>
 					<Centroid>
 						<Location>
 							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
-					<TransportMode></TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneOffParis">
 						</TariffZoneRef>
@@ -127,35 +103,299 @@
 				</Quay>
 				<Quay id="FR:XXXXX:ZE:CHAM:ProviderCode" version="any">
 					<Name>Châtelet (Metro)</Name>
-					<PublicCode>The Big One</PublicCode>
-					<ParentSiteRef ref="">
-					</ParentSiteRef>
 					<Centroid>
 						<Location>
 							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972682</gml:pos>
 						</Location>
 					</Centroid>
-					<TransportMode></TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
 						</TariffZoneRef>
 					</tariffZones>
+					<PublicCode>The Big One</PublicCode>
 				</Quay>
 				<Quay id="FR:XXXXX:ZE:MTPB:ProviderCode" version="any">
 					<Name>Montparnasse (Bus)</Name>
-					<ParentSiteRef ref="">
-					</ParentSiteRef>
 					<Centroid>
 						<Location>
 							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
 						</Location>
 					</Centroid>
-					<TransportMode></TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
 						</TariffZoneRef>
 					</tariffZones>
 				</Quay>
+				<StopPlace id="FR:XXXXX:LMO:GDL_rail:ProviderCode" version="any">
+					<Name>Gare de Lyon</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:GDL:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>rail</TransportMode>
+					<StopPlaceType>railStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:GDLR:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:GDL_metro:ProviderCode" version="any">
+					<Name>Gare de Lyon</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:GDL:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>metro</TransportMode>
+					<StopPlaceType>metroStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:GDLM:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:GDL_bus:ProviderCode" version="any">
+					<Name>Gare de Lyon</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:GDL:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>busStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:GDLB:ProviderCode">
+						</QuayRef>
+						<QuayRef ref="FR:XXXXX:ZE:GDLR:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMU:GDL:ProviderCode" version="any">
+					<Name>Gare de Lyon</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+						</Location>
+					</Centroid>
+					<TransportMode>rail</TransportMode>
+					<StopPlaceType>railStation</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:NAT_rail:ProviderCode" version="any">
+					<Name>Nation</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:NAT:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>rail</TransportMode>
+					<StopPlaceType>railStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:NATR:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:NAT_metro:ProviderCode" version="any">
+					<Name>Nation</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:NAT:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>metro</TransportMode>
+					<StopPlaceType>metroStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:NATM:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:NAT_bus:ProviderCode" version="any">
+					<Name>Nation</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:NAT:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>busStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:NATR:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMU:NAT:ProviderCode" version="any">
+					<Name>Nation</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+						</Location>
+					</Centroid>
+					<TransportMode>rail</TransportMode>
+					<StopPlaceType>railStation</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:CDG_rail:ProviderCode" version="any">
+					<Name>Charles de Gaulle</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:CDG:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>rail</TransportMode>
+					<StopPlaceType>railStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:CDGR:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:CDG_metro:ProviderCode" version="any">
+					<Name>Charles de Gaulle</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:CDG:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>metro</TransportMode>
+					<StopPlaceType>metroStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:CDGM:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:CDG_bus:ProviderCode" version="any">
+					<Name>Charles de Gaulle</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:CDG:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>busStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:CDGR:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMU:CDG:ProviderCode" version="any">
+					<Name>Charles de Gaulle</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+						</Location>
+					</Centroid>
+					<TransportMode>rail</TransportMode>
+					<StopPlaceType>railStation</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:DEF_rail:ProviderCode" version="any">
+					<Name>La Défense</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:DEF:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>rail</TransportMode>
+					<StopPlaceType>railStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:DEFR:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:DEF_bus:ProviderCode" version="any">
+					<Name>La Défense</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:DEF:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>busStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:DEFR:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMU:DEF:ProviderCode" version="any">
+					<Name>La Défense</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
+						</Location>
+					</Centroid>
+					<TransportMode>rail</TransportMode>
+					<StopPlaceType>railStation</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:CHA_metro:ProviderCode" version="any">
+					<Name>Châtelet</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972682</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:CHA:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>metro</TransportMode>
+					<StopPlaceType>metroStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:CHAM:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMU:CHA:ProviderCode" version="any">
+					<Name>Châtelet</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972682</gml:pos>
+						</Location>
+					</Centroid>
+					<TransportMode>metro</TransportMode>
+					<StopPlaceType>metroStation</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMO:MTP_bus:ProviderCode" version="any">
+					<Name>Montparnasse</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+						</Location>
+					</Centroid>
+					<ParentSiteRef ref="FR:XXXXX:LMU:MTP:ProviderCode">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>busStation</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:XXXXX:ZE:MTPB:ProviderCode">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:XXXXX:LMU:MTP:ProviderCode" version="any">
+					<Name>Montparnasse</Name>
+					<Centroid>
+						<Location>
+							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+						</Location>
+					</Centroid>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>busStation</StopPlaceType>
+				</StopPlace>
 			</members>
 		</GeneralFrame>
 	</dataObjects>
