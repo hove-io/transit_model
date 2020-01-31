@@ -19,5 +19,7 @@ mod try_attribute;
 pub use try_attribute::TryAttribute;
 mod try_only_child;
 pub use try_only_child::TryOnlyChild;
+#[cfg(feature = "proj")]
 mod writer;
+#[cfg(feature = "proj")]
 pub use self::writer::ElementWriter;

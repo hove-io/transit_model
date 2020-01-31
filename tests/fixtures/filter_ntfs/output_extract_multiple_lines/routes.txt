@@ -1,0 +1,3 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+route1,route1,,line1,,
+route3,route3,,line3,,
