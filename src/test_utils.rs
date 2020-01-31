@@ -22,13 +22,17 @@ use std::path;
 use std::path::Path;
 use tempfile::tempdir;
 
-pub fn get_file_content<P: AsRef<Path>>(path: P) -> String {
+pub fn get_file_content<P: AsRef<Path>>(path: P) -> Vec<String> {
     let path = path.as_ref();
-    let mut output_file = File::open(path).unwrap_or_else(|_| panic!("file {:?} not found", path));
-    let mut output_contents = String::new();
-    output_file.read_to_string(&mut output_contents).unwrap();
-
-    output_contents
+    let file = File::open(path).unwrap_or_else(|_| panic!("file {:?} not found", path));
+    let reader = BufReader::new(file);
+    let mut vec = Vec::new();
+    for result_line in reader.lines() {
+        let line =
+            result_line.unwrap_or_else(|_| panic!("Cannot parse as a line in file {:?}", path));
+        vec.push(line);
+    }
+    vec
 }
 pub fn get_lines_content<P: AsRef<Path>>(path: P) -> BTreeSet<String> {
     let path = path.as_ref();
@@ -94,7 +98,7 @@ pub fn compare_output_dir_with_expected_content<P: AsRef<Path>>(
         let expected_file_path = format!("{}/{}", work_dir_expected, filename);
         let expected_contents = get_file_content(expected_file_path);
 
-        assert_eq!(expected_contents.trim(), output_contents.trim());
+        assert_eq!(expected_contents, output_contents);
     }
 }
 
