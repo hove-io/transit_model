@@ -12,6 +12,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+#[cfg(feature = "xmllint")]
+use std::{ffi::OsStr, fs, process::Command};
 use transit_model::{self, netex_france, test_utils::*};
 
 #[test]
@@ -29,4 +31,25 @@ fn test_write_netex_france() {
         netex_france_exporter.write(output_dir).unwrap();
         compare_output_dir_with_expected_content(&output_dir, None, "tests/fixtures/netex_france");
     });
+}
+
+#[test]
+#[cfg(feature = "xmllint")]
+fn validate_xml_schemas() {
+    let paths = fs::read_dir("tests/fixtures/netex_france/")
+        .unwrap()
+        .map(|result| result.unwrap())
+        .map(|dir_entry| dir_entry.path())
+        .filter(|path| path.extension() == Some(&OsStr::new("xml")));
+    for path in paths {
+        let status = Command::new("xmllint")
+            .arg("--noout")
+            .arg("--nonet")
+            .arg("--huge")
+            .args(&["--schema", "tests/NeTEx/xsd/NeTEx_publication.xsd"])
+            .arg(path)
+            .status()
+            .unwrap();
+        assert!(status.success());
+    }
 }
