@@ -453,7 +453,7 @@ fn construct_fare_v1_from_v2(
                                     ),
                                     end_trip: end_condition_string.clone(),
                                     global_condition: global_condition.clone(),
-                                    ticket_id: ticket_id.clone(),
+                                    ticket_id: String::new(),
                                 });
                             }
                         }
