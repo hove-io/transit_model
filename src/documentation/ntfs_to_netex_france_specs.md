@@ -318,8 +318,9 @@ Each `service_id` produce a set of three objects:
 ### ValidBetween
 
 Netex field | NTFS file | NTFS field | Note
-ValidBetween/FromDate | feed_infos.txt | feed_start_date | use ISO-8601 date-time format, using `T00:00:00Z` for the time
-ValidBetween/ToDate | feed_infos.txt | feed_end_date | use ISO-8601 date-time format, using `T23:59:59Z` for the time
+--- | --- | --- | ---
+ValidBetween/FromDate | datasets.txt | start_date | minimum from all datasets' `start_date`; use ISO-8601 date-time format, with a time of `00:00:00`
+ValidBetween/ToDate | datasets.txt | end_date | maximum from all datasets' `end_date`; use ISO-8601 date-time format, with a time of `23:59:59`
 
 ### DayType
 

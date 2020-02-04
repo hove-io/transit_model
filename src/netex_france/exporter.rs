@@ -18,6 +18,7 @@ use crate::{
     model::Model,
     netex_france::{CalendarExporter, LineExporter, NetworkExporter, StopExporter},
     netex_utils::FrameType,
+    objects::Date,
     Result,
 };
 use chrono::prelude::*;
@@ -250,6 +251,7 @@ impl Exporter<'_> {
     fn create_calendars_frame(&self) -> Result<Element> {
         let calendar_exporter = CalendarExporter::new(&self.model);
         let calendars = calendar_exporter.export()?;
+        let valid_between = self.create_valid_between()?;
         let members = Self::create_members(calendars);
         let general_frame_id = self.generate_frame_id(
             FrameType::General,
@@ -258,8 +260,27 @@ impl Exporter<'_> {
         let frame = Element::builder(FrameType::General.to_string())
             .attr("id", general_frame_id)
             .attr("version", "any")
+            .append(valid_between)
             .append(members)
             .build();
         Ok(frame)
+    }
+
+    fn create_valid_between(&self) -> Result<Element> {
+        let format_date = |date: Date, hour, minute, second| -> String {
+            DateTime::<Utc>::from_utc(date.and_hms(hour, minute, second), Utc).to_rfc3339()
+        };
+        let (start_date, end_date) = self.model.calculate_validity_period()?;
+        let from_date = Element::builder("FromDate")
+            .append(Node::Text(format_date(start_date, 0, 0, 0)))
+            .build();
+        let to_date = Element::builder("ToDate")
+            .append(Node::Text(format_date(end_date, 23, 59, 59)))
+            .build();
+        let valid_between = Element::builder("ValidBetween")
+            .append(from_date)
+            .append(to_date)
+            .build();
+        Ok(valid_between)
     }
 }
