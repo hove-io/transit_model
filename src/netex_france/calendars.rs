@@ -14,6 +14,20 @@
 
 use crate::{objects::Calendar, Model, Result};
 use minidom::Element;
+use std::fmt::{self, Display, Formatter};
+
+enum ObjectType {
+    DayType,
+}
+
+impl Display for ObjectType {
+    fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), fmt::Error> {
+        use ObjectType::*;
+        match self {
+            DayType => write!(f, "DayType"),
+        }
+    }
+}
 
 pub struct CalendarExporter<'a> {
     model: &'a Model,
@@ -25,7 +39,7 @@ impl<'a> CalendarExporter<'a> {
         CalendarExporter { model }
     }
     pub fn export(&self) -> Result<Vec<Element>> {
-        let _day_types_elements = self
+        let day_types_elements = self
             .model
             .calendars
             .values()
@@ -43,9 +57,7 @@ impl<'a> CalendarExporter<'a> {
             .values()
             .map(|calendar| self.export_uic_operating_period(calendar))
             .collect::<Result<Vec<Element>>>()?;
-        let elements = Vec::new();
-        // TODO: Uncomment below once implemented
-        // let mut elements = day_types_elements;
+        let elements = day_types_elements;
         // elements.extend(day_type_assignments_elements);
         // elements.extend(uic_operating_periods_elements);
         Ok(elements)
@@ -54,9 +66,11 @@ impl<'a> CalendarExporter<'a> {
 
 // Internal methods
 impl<'a> CalendarExporter<'a> {
-    fn export_day_type(&self, _calendar: &'a Calendar) -> Result<Element> {
-        let day_type = Element::builder("DayType").build();
-        Ok(day_type)
+    fn export_day_type(&self, calendar: &'a Calendar) -> Result<Element> {
+        let element_builder = Element::builder("DayType")
+            .attr("id", self.generate_id(&calendar.id, ObjectType::DayType))
+            .attr("version", "any");
+        Ok(element_builder.build())
     }
 
     fn export_day_type_assignement(&self, _calendar: &'a Calendar) -> Result<Element> {
@@ -67,5 +81,10 @@ impl<'a> CalendarExporter<'a> {
     fn export_uic_operating_period(&self, _calendar: &'a Calendar) -> Result<Element> {
         let uic_operating_period = Element::builder("UicOperatingPeriod").build();
         Ok(uic_operating_period)
+    }
+
+    fn generate_id(&self, id: &'a str, object_type: ObjectType) -> String {
+        let id = id.replace(':', "_");
+        format!("FR:{}:{}:", object_type, id)
     }
 }

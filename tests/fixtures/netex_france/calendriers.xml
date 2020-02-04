@@ -4,6 +4,10 @@
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
 		<GeneralFrame id="FR:GeneralFrame:NETEX_CALENDRIER:ProviderCode" version="any">
+			<members>
+				<DayType id="FR:DayType:Week:" version="any">
+				</DayType>
+			</members>
 		</GeneralFrame>
 	</dataObjects>
 </PublicationDelivery>
