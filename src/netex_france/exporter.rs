@@ -16,7 +16,7 @@
 use crate::{
     minidom_utils::ElementWriter,
     model::Model,
-    netex_france::{LineExporter, NetworkExporter, StopExporter},
+    netex_france::{CalendarExporter, LineExporter, NetworkExporter, StopExporter},
     netex_utils::FrameType,
     Result,
 };
@@ -30,20 +30,23 @@ use std::{
     path::Path,
 };
 
-const NETEX_FRANCE_STOPS_FILENAME: &str = "arrets.xml";
+const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
 const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
+const NETEX_FRANCE_STOPS_FILENAME: &str = "arrets.xml";
 
 enum VersionType {
-    Stops,
+    Calendars,
     Lines,
+    Stops,
 }
 
 impl Display for VersionType {
     fn fmt(&self, fmt: &mut Formatter) -> std::result::Result<(), fmt::Error> {
         use VersionType::*;
         match self {
-            Stops => write!(fmt, "ARRET"),
+            Calendars => write!(fmt, "CALENDRIER"),
             Lines => write!(fmt, "LIGNE"),
+            Stops => write!(fmt, "ARRET"),
         }
     }
 }
@@ -83,6 +86,7 @@ impl<'a> Exporter<'a> {
     {
         self.write_lines(&path)?;
         self.write_stops(&path)?;
+        self.write_calendars(&path)?;
         Ok(())
     }
 }
@@ -215,16 +219,47 @@ impl Exporter<'_> {
 
     // Returns a 'GeneralFrame' containing all 'StopArea' and 'Quay'
     fn create_stops_frame(&self) -> Result<Element> {
-        let stop_point_exporter =
+        let stop_exporter =
             StopExporter::new(&self.model, &self.participant_ref, &self.stop_provider_code)?;
-        let stop_points = stop_point_exporter.export()?;
-        let members = Self::create_members(stop_points);
+        let stops = stop_exporter.export()?;
+        let members = Self::create_members(stops);
         let general_frame_id =
             self.generate_frame_id(FrameType::General, &format!("NETEX_{}", VersionType::Stops));
         let frame = Element::builder(FrameType::General.to_string())
             .attr("id", general_frame_id)
             .attr("version", "any")
             .append(members)
+            .build();
+        Ok(frame)
+    }
+
+    fn write_calendars<P>(&self, path: P) -> Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        let filepath = path.as_ref().join(NETEX_FRANCE_CALENDARS_FILENAME);
+        let mut file = File::create(filepath)?;
+        let calendars_frame = self.create_calendars_frame()?;
+        let netex = self.wrap_frame(calendars_frame, VersionType::Calendars)?;
+        let writer = ElementWriter::new(netex, true);
+        writer.write(&mut file)?;
+        Ok(())
+    }
+
+    // Returns a 'GeneralFrame' containing all 'DayType', 'DayTypeAssignment' and 'UicOperatingPeriod'
+    fn create_calendars_frame(&self) -> Result<Element> {
+        let calendar_exporter = CalendarExporter::new(&self.model);
+        let calendars = calendar_exporter.export()?;
+        let _members = Self::create_members(calendars);
+        let general_frame_id = self.generate_frame_id(
+            FrameType::General,
+            &format!("NETEX_{}", VersionType::Calendars),
+        );
+        let frame = Element::builder(FrameType::General.to_string())
+            .attr("id", general_frame_id)
+            .attr("version", "any")
+            // TODO: Uncomment once some members are created
+            // .append(members)
             .build();
         Ok(frame)
     }
