@@ -306,9 +306,7 @@ fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<Pric
     Ok(price_v1)
 }
 
-fn construct_fare_v1_from_v2(
-    fares: &Fares,
-) -> Result<(BTreeSet<PriceV1>, BTreeSet<FareV1>)> {
+fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeSet<FareV1>)> {
     //we check that each ticket_use_id appears only once in ticket_uses
     check_uniqueness_of_ticket_use_ids(fares)?;
 
@@ -407,7 +405,6 @@ fn construct_fare_v1_from_v2(
                         .map(|time_limit| format!("duration<{}", time_limit + 1)),
                 );
 
-
             // will yield a sequence of String
             // each  corresponds to a end_trip condition
             //  in FareV1
@@ -417,7 +414,6 @@ fn construct_fare_v1_from_v2(
                 .alighting_time_limit
                 .iter()
                 .map(|time_limit| format!("duration<{}", time_limit + 1));
-
 
             let transfer_allowed = match ticket_use.max_transfers {
                 None => true,
@@ -433,7 +429,7 @@ fn construct_fare_v1_from_v2(
                         .into_iter()
                         .chain(mandatory_start_conditions.clone())
                         .collect::<Vec<String>>()
-                        .join("&"); 
+                        .join("&");
                     let end_condition_string = extra_end_condition
                         .into_iter()
                         .chain(mandatory_end_condition.clone())
