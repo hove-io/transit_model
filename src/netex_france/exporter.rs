@@ -250,7 +250,7 @@ impl Exporter<'_> {
     fn create_calendars_frame(&self) -> Result<Element> {
         let calendar_exporter = CalendarExporter::new(&self.model);
         let calendars = calendar_exporter.export()?;
-        let _members = Self::create_members(calendars);
+        let members = Self::create_members(calendars);
         let general_frame_id = self.generate_frame_id(
             FrameType::General,
             &format!("NETEX_{}", VersionType::Calendars),
@@ -258,8 +258,7 @@ impl Exporter<'_> {
         let frame = Element::builder(FrameType::General.to_string())
             .attr("id", general_frame_id)
             .attr("version", "any")
-            // TODO: Uncomment once some members are created
-            // .append(members)
+            .append(members)
             .build();
         Ok(frame)
     }
