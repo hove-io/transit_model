@@ -156,7 +156,8 @@ Quay/AccessibilityAssessment | stops.txt | equipment_id | This node is present o
 As a stop_point can be associated to several physical_modes, all the
 physical_modes need to be mapped to the Netex list (see [NeTEx Transport
 Modes](#netex-transport-modes)).
-If more than one Netex mode is associated, the most frequent one is used and a warning is emitted.
+If more than one Netex mode is associated, use the mode of __highest priority__ (see [NTFS
+specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.0/ntfs_fr.md#physical_modestxt-requis)).
 
 
 #### AccessibilityAssessment

@@ -244,8 +244,28 @@ impl<'a> StopExporter<'a> {
             .attr("version", "any");
         let element_builder = element_builder.append(self.generate_name(&stop_point.name));
         let element_builder = element_builder.append(self.generate_centroid(&stop_point.coord)?);
-        // TODO: Find most frequent 'physical_mode' for 'stop_point' after converting to NeTEx modes
-        // let element_builder = element_builder.append(self.generate_transport_mode(stop_point));
+        let netex_modes = self
+            .stop_point_modes
+            .get(stop_point.id.as_str())
+            .ok_or_else(|| {
+                // Should never happen, a Stop Point always have some associated mode
+                format_err!("Unable to find modes for Stop Point '{}'", stop_point.id)
+            })?;
+        if netex_modes.len() > 1 {
+            warn!(
+                "StopPoint '{}' has more than one associated NeTEx mode: {:?}",
+                stop_point.id, netex_modes
+            );
+        }
+        let highest_netex_mode = self.calculate_highest_mode(&netex_modes).ok_or_else(|| {
+            // Should never happen, a Stop Point always have at least one associated mode
+            format_err!(
+                "Unable to resolve main NeTEx mode for Stop Point {}",
+                stop_point.id
+            )
+        })?;
+        let element_builder =
+            element_builder.append(self.generate_transport_mode(highest_netex_mode));
         let element_builder = if let Some(tariff_zones) = self.generate_tariff_zones(stop_point) {
             element_builder.append(tariff_zones)
         } else {
