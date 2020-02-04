@@ -1,4 +1,1 @@
 Origin ID;Origin name;Origin mode;Destination ID;Destination name;Destination mode;ticket_id
-ZoneParis;;zone;ZoneOffParis;;zone;ticket-use.3
-stop_area:NAT;;stop;stop_area:CDG;;stop;ticket-use.2
-stop_area:NAT;;stop;stop_area:CDG;;stop;ticket-use.4

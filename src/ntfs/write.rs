@@ -308,13 +308,12 @@ fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<Pric
 
 fn construct_fare_v1_from_v2(
     fares: &Fares,
-) -> Result<(BTreeSet<PriceV1>, BTreeSet<FareV1>, BTreeSet<ODFareV1>)> {
+) -> Result<(BTreeSet<PriceV1>, BTreeSet<FareV1>)> {
     //we check that each ticket_use_id appears only once in ticket_uses
     check_uniqueness_of_ticket_use_ids(fares)?;
 
     let mut prices_v1: BTreeSet<PriceV1> = BTreeSet::new();
     let mut fares_v1: BTreeSet<FareV1> = BTreeSet::new();
-    let mut od_fares_v1: BTreeSet<ODFareV1> = BTreeSet::new();
 
     // we handle ticket_use one by one
     for ticket_use in fares.ticket_uses.values() {
@@ -408,9 +407,6 @@ fn construct_fare_v1_from_v2(
                         .map(|time_limit| format!("duration<{}", time_limit + 1)),
                 );
 
-            let start_condition_string = mandatory_start_conditions
-                .collect::<Vec<String>>()
-                .join("&");
 
             // will yield a sequence of String
             // each  corresponds to a end_trip condition
@@ -422,7 +418,6 @@ fn construct_fare_v1_from_v2(
                 .iter()
                 .map(|time_limit| format!("duration<{}", time_limit + 1));
 
-            let end_condition_string = mandatory_end_condition.collect::<Vec<String>>().join("&");
 
             let transfer_allowed = match ticket_use.max_transfers {
                 None => true,
@@ -431,15 +426,27 @@ fn construct_fare_v1_from_v2(
             };
 
             let insert_one_ticket =
-                |global_condition: String, ticket_id: String, fares: &mut BTreeSet<FareV1>| {
+                |extra_start_condition: Option<String>,
+                 extra_end_condition: Option<String>,
+                 fares: &mut BTreeSet<FareV1>| {
+                    let start_condition_string = extra_start_condition
+                        .into_iter()
+                        .chain(mandatory_start_conditions.clone())
+                        .collect::<Vec<String>>()
+                        .join("&"); 
+                    let end_condition_string = extra_end_condition
+                        .into_iter()
+                        .chain(mandatory_end_condition.clone())
+                        .collect::<Vec<String>>()
+                        .join("&");
                     for state in states.clone() {
                         fares.insert(FareV1 {
                             before_change: "*".to_owned(),
                             after_change: state.clone(),
                             start_trip: start_condition_string.clone(),
                             end_trip: end_condition_string.clone(),
-                            global_condition: global_condition.clone(),
-                            ticket_id: ticket_id.clone(),
+                            global_condition: String::new(),
+                            ticket_id: ticket_use.id.clone(),
                         });
 
                         if transfer_allowed {
@@ -452,7 +459,7 @@ fn construct_fare_v1_from_v2(
                                         ticket_use.id, start_condition_string
                                     ),
                                     end_trip: end_condition_string.clone(),
-                                    global_condition: global_condition.clone(),
+                                    global_condition: String::new(),
                                     ticket_id: String::new(),
                                 });
                             }
@@ -461,34 +468,35 @@ fn construct_fare_v1_from_v2(
                 };
 
             if restrictions.is_empty() {
-                insert_one_ticket(String::new(), ticket_use.id.clone(), &mut fares_v1);
-            } else if restrictions.len() == 1 {
-                insert_one_ticket("with_changes".to_owned(), String::new(), &mut fares_v1);
+                insert_one_ticket(None, None, &mut fares_v1);
+            } else {
                 for restriction in restrictions {
-                    let (mode, prefix) = match restriction.restriction_type {
-                        RestrictionType::OriginDestination => {
-                            ("stop".to_owned(), "stop_area:".to_owned())
+                    let (extra_start_cond, extra_end_cond) = {
+                        match &restriction.restriction_type {
+                            RestrictionType::Zone => (
+                                Some(format!("zone={}", restriction.use_origin)),
+                                Some(format!("zone={}", restriction.use_destination)),
+                            ),
+                            RestrictionType::OriginDestination => (
+                                Some(format!("stoparea=stop_area:{}", restriction.use_origin)),
+                                Some(format!(
+                                    "stoparea=stop_area:{}",
+                                    restriction.use_destination
+                                )),
+                            ),
                         }
-                        RestrictionType::Zone => ("zone".to_owned(), "".to_owned()),
                     };
-                    od_fares_v1.insert(ODFareV1 {
-                        origin_stop_area_id: prefix.to_owned() + &restriction.use_origin,
-                        origin_name: None,
-                        origin_mode: mode.to_owned(),
-                        destination_stop_area_id: prefix.to_owned() + &restriction.use_destination,
-                        destination_name: None,
-                        destination_mode: mode.to_owned(),
-                        ticket_id: ticket_use.id.to_owned(),
-                    });
+
+                    insert_one_ticket(extra_start_cond, extra_end_cond, &mut fares_v1);
                 }
             }
         }
     }
-    Ok((prices_v1, fares_v1, od_fares_v1))
+    Ok((prices_v1, fares_v1))
 }
 
 fn do_write_fares_v1_from_v2(base_path: &path::Path, fares: &Fares) -> Result<()> {
-    let (prices_v1, fares_v1, od_fare_v1) = construct_fare_v1_from_v2(fares)?;
+    let (prices_v1, fares_v1) = construct_fare_v1_from_v2(fares)?;
 
     if prices_v1.is_empty() || fares_v1.is_empty() {
         bail!("Cannot convert Fares V2 to V1. Prices or fares are empty.")
@@ -496,7 +504,7 @@ fn do_write_fares_v1_from_v2(base_path: &path::Path, fares: &Fares) -> Result<()
     do_write_fares_v1(
         base_path,
         &Collection::new(prices_v1.into_iter().collect()),
-        &Collection::new(od_fare_v1.into_iter().collect()),
+        &Collection::default(),
         &Collection::new(fares_v1.into_iter().collect()),
     )
 }
