@@ -14,6 +14,8 @@
 
 //! Module to handle Netex France profile
 
+mod calendars;
+use calendars::CalendarExporter;
 mod exporter;
 pub use exporter::Exporter;
 mod lines;
