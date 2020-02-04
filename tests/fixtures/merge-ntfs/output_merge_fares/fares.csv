@@ -1,15 +1,12 @@
 avant changement;après changement;début trajet;fin trajet;condition globale;clef ticket
-*;line=line:B42;stoparea=stop_area:NAT&nb_changes<1;stoparea=stop_area:CDG;;ticket-use.2
-*;line=line:M1;stoparea=stop_area:NAT&nb_changes<1;stoparea=stop_area:CDG;;ticket-use.4
+*;line=line:B42;nb_changes<1;;with_changes;
+*;line=line:M1;nb_changes<1;;with_changes;
 *;network=network:OIF:101;line!=line:OIF:002002002:LICOIF829&nb_changes<4;duration<121;;OIF:ticket-use.1
 *;network=network:OIF:102;line!=line:OIF:002002002:LICOIF829&nb_changes<4;duration<121;;OIF:ticket-use.1
+*;network=network:TGN;line!=line:B42&nb_changes<2&duration<31;duration<91;with_changes;
 *;network=network:TGN;nb_changes<1;;;ticket-use.1
-*;network=network:TGN;zone=ZoneParis&line!=line:B42&nb_changes<2&duration<31;zone=ZoneOffParis&duration<91;;ticket-use.3
-line=line:B42;line=line:B42;ticket=ticket-use.2&stoparea=stop_area:NAT&nb_changes<1;stoparea=stop_area:CDG;;
-line=line:M1;line=line:M1;ticket=ticket-use.4&stoparea=stop_area:NAT&nb_changes<1;stoparea=stop_area:CDG;;
 network=network:OIF:101;network=network:OIF:101;ticket=OIF:ticket-use.1&line!=line:OIF:002002002:LICOIF829&nb_changes<4;duration<121;;
 network=network:OIF:101;network=network:OIF:102;ticket=OIF:ticket-use.1&line!=line:OIF:002002002:LICOIF829&nb_changes<4;duration<121;;
 network=network:OIF:102;network=network:OIF:101;ticket=OIF:ticket-use.1&line!=line:OIF:002002002:LICOIF829&nb_changes<4;duration<121;;
 network=network:OIF:102;network=network:OIF:102;ticket=OIF:ticket-use.1&line!=line:OIF:002002002:LICOIF829&nb_changes<4;duration<121;;
-network=network:TGN;network=network:TGN;ticket=ticket-use.1&nb_changes<1;;;
-network=network:TGN;network=network:TGN;ticket=ticket-use.3&zone=ZoneParis&line!=line:B42&nb_changes<2&duration<31;zone=ZoneOffParis&duration<91;;
+network=network:TGN;network=network:TGN;ticket=ticket-use.3&line!=line:B42&nb_changes<2&duration<31;duration<91;with_changes;
