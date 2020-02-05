@@ -151,6 +151,7 @@ impl TryFrom<Stop> for objects::StopPoint {
             stop_type: StopType::Point,
             platform_code: stop.platform_code,
             level_id: stop.level_id,
+            fare_zone_id: stop.fare_zone_id,
             ..Default::default()
         };
         Ok(stop_point)

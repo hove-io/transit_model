@@ -9,9 +9,9 @@
 					<Network id="FR:network:TGN:" version="any">
 						<Name>The Great Network</Name>
 						<members>
-							<LineRef ref="FR:line:M1">
-							</LineRef>
 							<LineRef ref="FR:line:B42">
+							</LineRef>
+							<LineRef ref="FR:line:M1">
 							</LineRef>
 							<LineRef ref="FR:line:RERA">
 							</LineRef>
@@ -20,11 +20,11 @@
 				</ServiceFrame>
 				<ServiceFrame id="FR:ServiceFrame:lines:ProviderCode" version="any">
 					<lines>
-						<Line id="FR:line:M1:" version="any">
-							<Name>Metro 1</Name>
-						</Line>
 						<Line id="FR:line:B42:" version="any">
 							<Name>Bus 42</Name>
+						</Line>
+						<Line id="FR:line:M1:" version="any">
+							<Name>Metro 1</Name>
 						</Line>
 						<Line id="FR:line:RERA:" version="any">
 							<Name>RER A</Name>
