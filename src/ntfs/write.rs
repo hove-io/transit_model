@@ -23,7 +23,7 @@ use csv::Writer;
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap};
 use std::convert::TryFrom;
 use std::fs::File;
 use std::path;
@@ -54,13 +54,12 @@ impl TryFrom<(&Ticket, &TicketPrice)> for PriceV1 {
 
 pub fn write_feed_infos(
     path: &path::Path,
-    feed_infos: &BTreeMap<String, String>,
-    datasets: &CollectionWithId<Dataset>,
+    collections: &Collections,
     current_datetime: NaiveDateTime,
 ) -> Result<()> {
     info!("Writing feed_infos.txt");
     let path = path.join("feed_infos.txt");
-    let mut feed_infos = feed_infos.clone();
+    let mut feed_infos = collections.feed_infos.clone();
     feed_infos.insert(
         "feed_creation_date".to_string(),
         current_datetime.format("%Y%m%d").to_string(),
@@ -70,18 +69,15 @@ pub fn write_feed_infos(
         current_datetime.format("%T").to_string(),
     );
     feed_infos.insert("ntfs_version".to_string(), NTFS_VERSION.to_string());
-    if let Some(d) = datasets.values().min_by_key(|d| d.start_date) {
-        feed_infos.insert(
-            "feed_start_date".to_string(),
-            d.start_date.format("%Y%m%d").to_string(),
-        );
-    }
-    if let Some(d) = datasets.values().max_by_key(|d| d.end_date) {
-        feed_infos.insert(
-            "feed_end_date".to_string(),
-            d.end_date.format("%Y%m%d").to_string(),
-        );
-    }
+    let (start_date, end_date) = collections.calculate_validity_period()?;
+    feed_infos.insert(
+        "feed_start_date".to_string(),
+        start_date.format("%Y%m%d").to_string(),
+    );
+    feed_infos.insert(
+        "feed_end_date".to_string(),
+        end_date.format("%Y%m%d").to_string(),
+    );
 
     let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
     wtr.write_record(&["feed_info_param", "feed_info_value"])

@@ -988,6 +988,24 @@ impl Collections {
 
         self.stop_areas = CollectionWithId::new(updated_stop_areas).unwrap();
     }
+
+    /// Calculate the validity period in the 'Model'.
+    /// The calculation is based on the minimum start date and the maximum end
+    /// date of all the datasets.
+    /// If no dataset is found, an error is returned.
+    pub fn calculate_validity_period(&self) -> Result<(Date, Date)> {
+        let start_date = self
+            .datasets
+            .values()
+            .map(|dataset| dataset.start_date)
+            .min();
+        let end_date = self.datasets.values().map(|dataset| dataset.end_date).max();
+        if let (Some(start_date), Some(end_date)) = (start_date, end_date) {
+            Ok((start_date, end_date))
+        } else {
+            bail!("Cannot calculate validity period because there is no dataset")
+        }
+    }
 }
 
 /// The navitia transit model.

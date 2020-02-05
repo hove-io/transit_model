@@ -233,7 +233,7 @@ pub fn write<P: AsRef<path::Path>>(
     let path = path.as_ref();
     info!("Writing NTFS to {:?}", path);
 
-    write::write_feed_infos(path, &model.feed_infos, &model.datasets, current_datetime)?;
+    write::write_feed_infos(path, &model, current_datetime)?;
     write_collection_with_id(path, "contributors.txt", &model.contributors)?;
     write_collection_with_id(path, "datasets.txt", &model.datasets)?;
     write_collection_with_id(path, "networks.txt", &model.networks)?;
@@ -379,15 +379,10 @@ mod tests {
 
         let mut collections = Collections::default();
         collections.datasets = CollectionWithId::from(dataset);
+        collections.feed_infos = feed_infos;
 
         test_in_tmp_dir(|path| {
-            write::write_feed_infos(
-                path,
-                &feed_infos,
-                &collections.datasets,
-                get_test_datetime(),
-            )
-            .unwrap();
+            write::write_feed_infos(path, &collections, get_test_datetime()).unwrap();
             read::manage_feed_infos(&mut collections, path).unwrap();
             assert_eq!(
                 vec![
