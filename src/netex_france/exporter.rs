@@ -82,7 +82,7 @@ pub struct Exporter<'a> {
     model: &'a Model,
     participant_ref: String,
     _stop_provider_code: String,
-    timestamp: NaiveDateTime,
+    timestamp: DateTime<FixedOffset>,
 }
 
 // Publicly exposed methods
@@ -94,7 +94,7 @@ impl<'a> Exporter<'a> {
         model: &'a Model,
         participant_ref: String,
         stop_provider_code: Option<String>,
-        timestamp: NaiveDateTime,
+        timestamp: DateTime<FixedOffset>,
     ) -> Self {
         let _stop_provider_code = stop_provider_code.unwrap_or_else(|| String::from("LOC"));
         Exporter {
