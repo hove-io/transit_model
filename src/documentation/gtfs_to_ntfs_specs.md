@@ -83,6 +83,7 @@ an error. Likewise for the stop_areas.
 | stops.txt | location_type | Optional | stops.txt | location_type | The value is set to `0` if the input value is `0` or unspecified or invalid, `1` if the input value is `1`, `3` if the input value is `2`, `4` if the input value is `3` and `5` if the input value is `4`
 | stops.txt | parent_station | Optional | stops.txt | parent_station | All slashes `/` are removed (1) |
 | stops.txt | stop_timezone | Optional | stops.txt | stop_timezone |  |
+| stops.txt | fare_zone_id | Optional | stops.txt | zone_id | Only for stop_point (`location_type` = 0) |
 | comments.txt | comment_value | Optional | stops.txt | stop_desc | See (3) for additional properties |
 | equipments.txt | wheelchair_boarding | Optional | stops.txt | wheelchair_boarding | If value is not one of `0`, `1` or `2`, then set to `0`. See (4) for detailed info. |
 
