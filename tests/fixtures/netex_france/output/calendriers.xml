@@ -4,6 +4,10 @@
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
 		<GeneralFrame id="FR:GeneralFrame:NETEX_CALENDRIER:ProviderCode" version="any">
+			<ValidBetween>
+				<FromDate>2018-01-01T00:00:00+00:00</FromDate>
+				<ToDate>2018-12-31T23:59:59+00:00</ToDate>
+			</ValidBetween>
 			<members>
 				<DayType id="FR:DayType:Week:" version="any">
 				</DayType>
