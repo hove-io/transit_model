@@ -28,7 +28,7 @@ use crate::{
     utils::*,
     Result,
 };
-use chrono::NaiveDateTime;
+use chrono::{DateTime, FixedOffset};
 use derivative::Derivative;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -228,7 +228,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
 pub fn write<P: AsRef<path::Path>>(
     model: &Model,
     path: P,
-    current_datetime: NaiveDateTime,
+    current_datetime: DateTime<FixedOffset>,
 ) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to {:?}", path);
@@ -303,7 +303,7 @@ pub fn write<P: AsRef<path::Path>>(
 pub fn write_to_zip<P: AsRef<path::Path>>(
     model: &Model,
     path: P,
-    current_datetime: NaiveDateTime,
+    current_datetime: DateTime<FixedOffset>,
 ) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to ZIP File {:?}", path);
