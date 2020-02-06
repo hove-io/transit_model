@@ -14,11 +14,9 @@
 
 #[cfg(feature = "xmllint")]
 use std::{ffi::OsStr, fs, process::Command};
-use transit_model::{self, netex_france, test_utils::*};
+use transit_model::{self, model::Model, netex_france, test_utils::*};
 
-#[test]
-fn test_write_netex_france() {
-    let model = transit_model::ntfs::read("tests/fixtures/ntfs").unwrap();
+fn test_write_netex_france(model: Model) {
     test_in_tmp_dir(|output_dir| {
         let participant_ref = String::from("Participant");
         let stop_provider_code = Some(String::from("ProviderCode"));
@@ -29,14 +27,36 @@ fn test_write_netex_france() {
             get_test_datetime(),
         );
         netex_france_exporter.write(output_dir).unwrap();
-        compare_output_dir_with_expected_content(&output_dir, None, "tests/fixtures/netex_france");
+        compare_output_dir_with_expected_content(
+            &output_dir,
+            None,
+            "tests/fixtures/netex_france/output",
+        );
     });
+}
+
+#[test]
+fn test_write_netex_france_from_ntfs() {
+    let model = transit_model::ntfs::read("tests/fixtures/netex_france/input_ntfs").unwrap();
+    test_write_netex_france(model);
+}
+
+#[test]
+fn test_write_netex_france_from_gtfs() {
+    let model = transit_model::gtfs::read_from_path(
+        "tests/fixtures/netex_france/input_gtfs",
+        None,
+        None,
+        false,
+    )
+    .unwrap();
+    test_write_netex_france(model);
 }
 
 #[test]
 #[cfg(feature = "xmllint")]
 fn validate_xml_schemas() {
-    let paths = fs::read_dir("tests/fixtures/netex_france/")
+    let paths = fs::read_dir("tests/fixtures/netex_france/output/")
         .unwrap()
         .map(|result| result.unwrap())
         .map(|dir_entry| dir_entry.path())
