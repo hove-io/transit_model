@@ -53,7 +53,7 @@ pub const NTFS_VERSION: &str = "0.11.1";
 
 lazy_static::lazy_static! {
     /// Current datetime
-    pub static ref CURRENT_DATETIME: String = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, false);
+    pub static ref CURRENT_DATETIME: String = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
 }
 
 /// The error type used by the crate.
