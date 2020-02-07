@@ -16,7 +16,9 @@
 use crate::{
     minidom_utils::ElementWriter,
     model::Model,
-    netex_france::{CalendarExporter, LineExporter, NetworkExporter, StopExporter},
+    netex_france::{
+        CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, StopExporter,
+    },
     netex_utils::FrameType,
     objects::Date,
     Result,
@@ -39,6 +41,7 @@ pub(in crate::netex_france) enum ObjectType {
     DayType,
     DayTypeAssignment,
     Line,
+    Operator,
     Network,
     Quay,
     StopPlace,
@@ -52,6 +55,7 @@ impl Display for ObjectType {
             DayType => write!(f, "DayType"),
             DayTypeAssignment => write!(f, "DayTypeAssignment"),
             Line => write!(f, "Line"),
+            Operator => write!(f, "Operator"),
             Network => write!(f, "Network"),
             Quay => write!(f, "Quay"),
             StopPlace => write!(f, "StopPlace"),
@@ -189,7 +193,11 @@ impl Exporter<'_> {
         let mut file = File::create(filepath)?;
         let network_frames = self.create_networks_frames()?;
         let lines_frame = self.create_lines_frame()?;
-        let frames = network_frames.into_iter().chain(iter::once(lines_frame));
+        let companies_frame = self.create_companies_frame();
+        let frames = network_frames
+            .into_iter()
+            .chain(iter::once(lines_frame))
+            .chain(iter::once(companies_frame));
         let composite_frame_id = self.generate_frame_id(
             FrameType::Composite,
             &format!("NETEX_{}", VersionType::Lines),
@@ -232,6 +240,21 @@ impl Exporter<'_> {
             .append(line_list)
             .build();
         Ok(frame)
+    }
+
+    // Returns a 'ServiceFrame' containing a list of 'Operator' in 'organisations'
+    fn create_companies_frame(&self) -> Element {
+        let company_exporter = CompanyExporter::new(&self.model);
+        let companies = company_exporter.export();
+        let companies_list = Element::builder("organisations")
+            .append_all(companies)
+            .build();
+        let resource_frame_id = self.generate_frame_id(FrameType::Resource, "operators");
+        Element::builder(FrameType::Resource.to_string())
+            .attr("id", resource_frame_id)
+            .attr("version", "any")
+            .append(companies_list)
+            .build()
     }
 
     fn write_stops<P>(&self, path: P) -> Result<()>

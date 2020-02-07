@@ -243,7 +243,7 @@ Example:
 			<lines><!-- One node Line for each Line of the dataset--></lines>
 		</ServiceFrame>
 		<ResourceFrame
-				id="FR:ResourceFrame:companies:<stop_provider_code>"
+				id="FR:ResourceFrame:operators:"
 				version="any">
 				<organisations><!-- One node Operator for each company of the dataset --></organisations>
 		</ResourceFrame>

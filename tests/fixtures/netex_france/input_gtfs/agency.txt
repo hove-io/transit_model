@@ -1,2 +1,2 @@
 agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_email
-TGN,The Great Network,http://www.navitia.io/,Europe/Paris,,,
+TGN,The Great Network,https://www.the-great-network.zz,Europe/Paris,,0123456789,the-great-network@tgn.zz
