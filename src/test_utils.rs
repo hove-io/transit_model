@@ -121,5 +121,5 @@ where
 }
 
 pub fn get_test_datetime() -> DateTime<FixedOffset> {
-    DateTime::parse_from_rfc3339("2019-04-03T17:19:00+00:00").unwrap()
+    DateTime::parse_from_rfc3339("2019-04-03T17:19:00Z").unwrap()
 }
