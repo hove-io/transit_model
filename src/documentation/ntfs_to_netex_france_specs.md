@@ -242,6 +242,11 @@ Example:
 				version="any">
 			<lines><!-- One node Line for each Line of the dataset--></lines>
 		</ServiceFrame>
+		<ResourceFrame
+				id="FR:ResourceFrame:companies:<stop_provider_code>"
+				version="any">
+				<organisations><!-- One node Operator for each company of the dataset --></organisations>
+		</ResourceFrame>
 	</frames>
 </CompositeFrame>
 ```
@@ -250,8 +255,8 @@ Example:
 
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
-Network/@version |  |  | fixed value `any`
 Network/@id | networks.txt | network_id | see [id formatting](#id-of-objects)
+Network/@version |  |  | fixed value `any`
 Network/Name | networks.txt | network_name | 
 Network/members/LineRef[]/@ref | lines.txt | line_id | see [id formatting](#id-of-objects)
 
@@ -259,10 +264,22 @@ Network/members/LineRef[]/@ref | lines.txt | line_id | see [id formatting](#id-o
 
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
-Line/@version |  |  | fixed value `any`
 Line/@id | lines.txt | line_id | see [id formatting](#id-of-objects)
+Line/@version |  |  | fixed value `any`
 Line/PublicCode | lines.txt | line_code | If the code line_code is empty, this node is not created.
 Line/Name | lines.txt | line_name | 
+
+### Operator
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+Operator/@id | companies.txt | company_id | see [id formatting](#id-of-objects)
+Operator/@version |  |  | fixed value `any`
+Operator/Name | companies.txt | company_name |
+Operator/ContactDetails/Email | companies.txt | company_mail |
+Operator/ContactDetails/Phone | companies.txt | company_phone |
+Operator/ContactDetails/Url | companies.txt | company_url |
+Operator/OrganisationType | | | fixed value `other`
 
 ## calendriers.xml
 
@@ -455,6 +472,7 @@ Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 PassengerStopAssignment/@id | | | see [`StopPointInJourneyPattern/@id`](#stoppointinjourneypattern) with `PassengerStopAssignment` as object type
 PassengerStopAssignment/@version | | | fixed value `any`
+PassengerStopAssignment/@order | stop_times.txt | stop_sequence | value of `stop_sequence + 1` (because `0` is not a valid value)
 PassengerStopAssignment/ScheduledStopPointRef/@ref | | | see [`StopPointInJourneyPattern/@id`](#stoppointinjourneypattern) with `ScheduledStopPoint` as object type
 PassengerStopAssignment/StopPlaceRef/@ref | | | refers to the monomodal StopPlace; see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace)
 PassengerStopAssignment/QuayRef/@ref | | | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace)
@@ -467,6 +485,7 @@ ServiceJourney/@id | trips.txt | trip_id | see [id formatting](#id-of-objects)
 ServiceJourney/@version | | | fixed value `any`
 ServiceJourney/dayTypes/DayTypeRef/@ref | trips.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type
 ServiceJourney/JourneyPatternRef/@ref | trips.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type
+ServiceJourney/OperatorRef/@ref | trips.txt | company_id | see [id formatting](#id-of-objects) with `Operator` as object type
 ServiceJourney/passingTimes/TimetabledPassingTime[] | stop_times.txt | | see [`TimetabledPassingTime`](#timetabledpassingtime)
 
 #### TimetabledPassingTime
