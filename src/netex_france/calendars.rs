@@ -38,7 +38,7 @@ impl<'a> CalendarExporter<'a> {
             .values()
             .map(|calendar| self.export_day_type(calendar))
             .collect::<Result<Vec<Element>>>()?;
-        let _day_type_assignments_elements = self
+        let day_type_assignments_elements = self
             .model
             .calendars
             .values()
@@ -51,8 +51,7 @@ impl<'a> CalendarExporter<'a> {
             .map(|calendar| self.export_uic_operating_period(calendar))
             .collect::<Result<Vec<Element>>>()?;
         let mut elements = day_types_elements;
-        // TODO: Uncomment once implemented
-        // elements.extend(day_type_assignments_elements);
+        elements.extend(day_type_assignments_elements);
         elements.extend(uic_operating_periods_elements);
         Ok(elements)
     }
@@ -70,9 +69,17 @@ impl<'a> CalendarExporter<'a> {
         Ok(element_builder.build())
     }
 
-    fn export_day_type_assignement(&self, _calendar: &'a Calendar) -> Result<Element> {
-        let day_type_assignment =
-            Element::builder(ObjectType::DayTypeAssignment.to_string()).build();
+    fn export_day_type_assignement(&self, calendar: &'a Calendar) -> Result<Element> {
+        let day_type_assignment = Element::builder(ObjectType::DayTypeAssignment.to_string())
+            .attr(
+                "id",
+                Exporter::generate_id(&calendar.id, ObjectType::DayTypeAssignment),
+            )
+            .attr("version", "any")
+            .attr("order", "0")
+            .append(self.generate_operating_period_ref(&calendar.id))
+            .append(self.generate_day_type_ref(&calendar.id))
+            .build();
         Ok(day_type_assignment)
     }
 
@@ -124,6 +131,21 @@ impl<'a> CalendarExporter<'a> {
         };
         Element::builder("ValidDayBits")
             .append(Node::Text(valid_day_bits_string))
+            .build()
+    }
+
+    fn generate_operating_period_ref(&self, id: &'a str) -> Element {
+        Element::builder("OperatingPeriodRef")
+            .attr(
+                "ref",
+                Exporter::generate_id(id, ObjectType::UicOperatingPeriod),
+            )
+            .build()
+    }
+
+    fn generate_day_type_ref(&self, id: &'a str) -> Element {
+        Element::builder("DayTypeRef")
+            .attr("ref", Exporter::generate_id(id, ObjectType::DayType))
             .build()
     }
 }
