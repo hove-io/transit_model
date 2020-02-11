@@ -365,7 +365,7 @@ The name of the file is composed of the following fields separated by `_`:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <GeneralFrame 
-		id="FR:GeneralFrame:<line_id>:<stop_provider_code>" 
+		id="FR:GeneralFrame:NETEX_HORAIRE:" 
 		version="any">
 	<members>
 		<!-- One Route for each 'route_id' -->

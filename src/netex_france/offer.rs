@@ -12,19 +12,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-//! Module to handle Netex France profile
+use crate::{objects::Line, Model, Result};
+use minidom::Element;
+use transit_model_collection::Idx;
 
-mod calendars;
-use calendars::CalendarExporter;
-mod companies;
-use companies::CompanyExporter;
-mod exporter;
-pub use exporter::Exporter;
-mod lines;
-use lines::LineExporter;
-mod networks;
-use networks::NetworkExporter;
-mod offer;
-use offer::OfferExporter;
-mod stops;
-use stops::StopExporter;
+pub struct OfferExporter<'a> {
+    _model: &'a Model,
+}
+
+// Publicly exposed methods
+impl<'a> OfferExporter<'a> {
+    pub fn new(_model: &'a Model) -> Self {
+        OfferExporter { _model }
+    }
+    pub fn export(&self, _line_idx: Idx<Line>) -> Result<Vec<Element>> {
+        Ok(Vec::new())
+    }
+}
+
+// Internal methods
+impl<'a> OfferExporter<'a> {}
