@@ -3,7 +3,7 @@
 	<PublicationTimestamp>2019-04-03T17:19:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
-		<GeneralFrame id="FR:GeneralFrame:NETEX_ARRET:ProviderCode" version="any">
+		<GeneralFrame id="FR:GeneralFrame:NETEX_ARRET:" version="any">
 			<members>
 				<Quay id="FR:XXXXX:ZE:GDLR:ProviderCode" version="any">
 					<Name>Gare de Lyon (RER)</Name>

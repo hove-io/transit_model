@@ -128,7 +128,7 @@ impl Exporter<'_> {
     }
 
     fn generate_frame_id(&self, frame_type: FrameType, id: &str) -> String {
-        format!("FR:{}:{}:{}", frame_type, id, self.stop_provider_code)
+        format!("FR:{}:{}:", frame_type, id)
     }
 
     fn create_composite_frame<I, T>(id: String, frames: I) -> Element

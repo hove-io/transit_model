@@ -249,17 +249,17 @@ Example:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <CompositeFrame 
-			id="FR:CompositeFrame:NETEX_LIGNE:<stop_provider_code>" 
+			id="FR:CompositeFrame:NETEX_LIGNE:" 
 			version="any">
 	<frames>
 		<!-- Repeat a ServiceFrame node for each Network -->
 		<ServiceFrame
-				id="FR:ServiceFrame:<network_id>:<stop_provider_code>"
+				id="FR:ServiceFrame:<network_id>:"
 				version="any">
 			<Network />
 		</ServiceFrame>
 		<ServiceFrame
-				id="FR:ServiceFrame:lines:<stop_provider_code>"
+				id="FR:ServiceFrame:lines:"
 				version="any">
 			<lines><!-- One node Line for each Line of the dataset--></lines>
 		</ServiceFrame>
@@ -297,7 +297,7 @@ Each `service_id` produce a set of three objects:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <GeneralFrame 
-		id="FR:GeneralFrame:NETEX_CALENDRIER:<stop_provider_code>" 
+		id="FR:GeneralFrame:NETEX_CALENDRIER:" 
 		version="any">
 	<ValidBetween>
 		<FromDate>2020-01-01T00:00:00Z</FromDate>

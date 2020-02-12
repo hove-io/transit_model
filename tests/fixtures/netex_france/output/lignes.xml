@@ -3,9 +3,9 @@
 	<PublicationTimestamp>2019-04-03T17:19:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
-		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE:ProviderCode" version="any">
+		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE:" version="any">
 			<frames>
-				<ServiceFrame id="FR:ServiceFrame:TGN:ProviderCode" version="any">
+				<ServiceFrame id="FR:ServiceFrame:TGN:" version="any">
 					<Network id="FR:network:TGN:" version="any">
 						<Name>The Great Network</Name>
 						<members>
@@ -18,7 +18,7 @@
 						</members>
 					</Network>
 				</ServiceFrame>
-				<ServiceFrame id="FR:ServiceFrame:lines:ProviderCode" version="any">
+				<ServiceFrame id="FR:ServiceFrame:lines:" version="any">
 					<lines>
 						<Line id="FR:line:B42:" version="any">
 							<Name>Bus 42</Name>
