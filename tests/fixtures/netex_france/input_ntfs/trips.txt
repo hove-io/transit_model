@@ -1,7 +1,7 @@
 route_id,service_id,trip_id,company_id,physical_mode_id,dataset_id
-M1F,Week,M1F1,TGN,Metro,TGDS
-M1B,Week,M1B1,TGN,Metro,TGDS
-B42F,Week,B42F1,TGN,Bus,TGDS
-B42B,Week,B42B1,TGN,Bus,TGDS
-RERAF,Week,RERAF1,TGN,RapidTransit,TGDS
-RERAB,Week,RERAB1,TGN,Bus,TGDS
+M1,Week,M1F1,TGN,Metro,TGDS
+M1_R,Week,M1B1,TGN,Metro,TGDS
+B42,Week,B42F1,TGN,Bus,TGDS
+B42_R,Week,B42B1,TGN,Bus,TGDS
+RERA,Week,RERAF1,TGN,RapidTransit,TGDS
+RERA_Bus_R,Week,RERAB1,TGN,Bus,TGDS

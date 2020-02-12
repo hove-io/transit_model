@@ -33,7 +33,7 @@ use failure::{bail, format_err, Error, ResultExt};
 use geo_types::{LineString, Point};
 use log::{info, warn};
 use serde::Deserialize;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
 use std::result::Result as StdResult;
 use transit_model_collection::{Collection, CollectionWithId, Id};
@@ -278,9 +278,9 @@ impl Route {
         (self.agency_id.clone(), name)
     }
 
-    fn get_id_by_direction(&self, d: &DirectionType) -> String {
+    fn get_id_by_direction(&self, d: DirectionType) -> String {
         let id = self.id.clone();
-        match *d {
+        match d {
             DirectionType::Forward => id,
             DirectionType::Backward => id + "_R",
         }
@@ -308,7 +308,7 @@ impl Trip {
             codes,
             object_properties: KeysValues::default(),
             comment_links: CommentLinksT::default(),
-            route_id: route.get_id_by_direction(&self.direction),
+            route_id: route.get_id_by_direction(self.direction),
             physical_mode_id: physical_mode.id,
             dataset_id: dataset.id.clone(),
             service_id: self.service_id.clone(),
@@ -938,7 +938,7 @@ fn make_lines(
 fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<objects::Route> {
     let mut routes = vec![];
 
-    let get_direction_name = |d: &DirectionType| match *d {
+    let get_direction_name = |d: DirectionType| match d {
         DirectionType::Forward => "forward".to_string(),
         DirectionType::Backward => "backward".to_string(),
     };
@@ -946,9 +946,9 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<
     for rs in map_line_routes.values() {
         let sr = get_route_with_smallest_name(rs);
         for r in rs {
-            let mut route_directions: HashSet<&DirectionType> = HashSet::new();
+            let mut route_directions: BTreeSet<DirectionType> = BTreeSet::new();
             for t in gtfs_trips.iter().filter(|t| t.route_id == r.id) {
-                route_directions.insert(&t.direction);
+                route_directions.insert(t.direction);
             }
 
             for d in route_directions {

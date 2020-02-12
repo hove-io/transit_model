@@ -47,6 +47,7 @@ pub(in crate::netex_france) enum ObjectType {
     Operator,
     Network,
     Quay,
+    Route,
     StopPlace,
     UicOperatingPeriod,
 }
@@ -61,6 +62,7 @@ impl Display for ObjectType {
             Operator => write!(f, "Operator"),
             Network => write!(f, "Network"),
             Quay => write!(f, "Quay"),
+            Route => write!(f, "Route"),
             StopPlace => write!(f, "StopPlace"),
             UicOperatingPeriod => write!(f, "UicOperatingPeriod"),
         }
@@ -398,7 +400,7 @@ impl Exporter<'_> {
         line_idx: Idx<Line>,
     ) -> Result<Element> {
         let offer = offer_exporter.export(line_idx)?;
-        let _members = Self::create_members(offer);
+        let members = Self::create_members(offer);
         let general_frame_id = self.generate_frame_id(
             FrameType::General,
             &format!("NETEX_{}", VersionType::Schedule),
@@ -406,8 +408,7 @@ impl Exporter<'_> {
         let frame = Element::builder(FrameType::General.to_string())
             .attr("id", general_frame_id)
             .attr("version", "any")
-            // TODO: Uncomment once we actually have some elements to write
-            // .append(members)
+            .append(members)
             .build();
         Ok(frame)
     }

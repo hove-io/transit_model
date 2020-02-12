@@ -148,13 +148,13 @@ struct Stop {
 
 #[derive(Derivative)]
 #[derivative(Default)]
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum DirectionType {
     #[derivative(Default)]
     #[serde(rename = "0")]
-    Forward,
+    Forward = 0,
     #[serde(rename = "1")]
-    Backward,
+    Backward = 1,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]

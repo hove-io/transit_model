@@ -4,6 +4,22 @@
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
 		<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE:" version="any">
+			<members>
+				<Route id="FR:Route:M1:" version="any">
+					<Name>Metro 1</Name>
+					<Distance>0</Distance>
+					<LineRef ref="FR:Line:M1:">
+					</LineRef>
+					<DirectionType>inbound</DirectionType>
+				</Route>
+				<Route id="FR:Route:M1_R:" version="any">
+					<Name>Metro 1</Name>
+					<Distance>0</Distance>
+					<LineRef ref="FR:Line:M1:">
+					</LineRef>
+					<DirectionType>outbound</DirectionType>
+				</Route>
+			</members>
 		</GeneralFrame>
 	</dataObjects>
 </PublicationDelivery>
