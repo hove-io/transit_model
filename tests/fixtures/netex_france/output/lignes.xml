@@ -6,27 +6,27 @@
 		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE:" version="any">
 			<frames>
 				<ServiceFrame id="FR:ServiceFrame:TGN:" version="any">
-					<Network id="FR:network:TGN:" version="any">
+					<Network id="FR:Network:TGN:" version="any">
 						<Name>The Great Network</Name>
 						<members>
-							<LineRef ref="FR:line:B42">
+							<LineRef ref="FR:Line:B42:">
 							</LineRef>
-							<LineRef ref="FR:line:M1">
+							<LineRef ref="FR:Line:M1:">
 							</LineRef>
-							<LineRef ref="FR:line:RERA">
+							<LineRef ref="FR:Line:RERA:">
 							</LineRef>
 						</members>
 					</Network>
 				</ServiceFrame>
 				<ServiceFrame id="FR:ServiceFrame:lines:" version="any">
 					<lines>
-						<Line id="FR:line:B42:" version="any">
+						<Line id="FR:Line:B42:" version="any">
 							<Name>Bus 42</Name>
 						</Line>
-						<Line id="FR:line:M1:" version="any">
+						<Line id="FR:Line:M1:" version="any">
 							<Name>Metro 1</Name>
 						</Line>
-						<Line id="FR:line:RERA:" version="any">
+						<Line id="FR:Line:RERA:" version="any">
 							<Name>RER A</Name>
 						</Line>
 					</lines>

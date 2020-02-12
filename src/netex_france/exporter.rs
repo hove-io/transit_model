@@ -35,6 +35,27 @@ const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
 const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "arrets.xml";
 
+pub(in crate::netex_france) enum ObjectType {
+    DayType,
+    DayTypeAssignment,
+    Line,
+    Network,
+    UicOperatingPeriod,
+}
+
+impl Display for ObjectType {
+    fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), fmt::Error> {
+        use ObjectType::*;
+        match self {
+            DayType => write!(f, "DayType"),
+            DayTypeAssignment => write!(f, "DayTypeAssignment"),
+            Line => write!(f, "Line"),
+            Network => write!(f, "Network"),
+            UicOperatingPeriod => write!(f, "UicOperatingPeriod"),
+        }
+    }
+}
+
 enum VersionType {
     Calendars,
     Lines,
@@ -89,6 +110,11 @@ impl<'a> Exporter<'a> {
         self.write_stops(&path)?;
         self.write_calendars(&path)?;
         Ok(())
+    }
+
+    pub(in crate::netex_france) fn generate_id(id: &'a str, object_type: ObjectType) -> String {
+        let id = id.replace(':', "_");
+        format!("FR:{}:{}:", object_type, id)
     }
 }
 

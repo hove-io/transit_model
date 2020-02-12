@@ -12,22 +12,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::{objects::Calendar, Model, Result};
+use crate::{
+    netex_france::exporter::{Exporter, ObjectType},
+    objects::Calendar,
+    Model, Result,
+};
 use minidom::Element;
-use std::fmt::{self, Display, Formatter};
-
-enum ObjectType {
-    DayType,
-}
-
-impl Display for ObjectType {
-    fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), fmt::Error> {
-        use ObjectType::*;
-        match self {
-            DayType => write!(f, "DayType"),
-        }
-    }
-}
 
 pub struct CalendarExporter<'a> {
     model: &'a Model,
@@ -67,24 +57,24 @@ impl<'a> CalendarExporter<'a> {
 // Internal methods
 impl<'a> CalendarExporter<'a> {
     fn export_day_type(&self, calendar: &'a Calendar) -> Result<Element> {
-        let element_builder = Element::builder("DayType")
-            .attr("id", self.generate_id(&calendar.id, ObjectType::DayType))
+        let element_builder = Element::builder(ObjectType::DayType.to_string())
+            .attr(
+                "id",
+                Exporter::generate_id(&calendar.id, ObjectType::DayType),
+            )
             .attr("version", "any");
         Ok(element_builder.build())
     }
 
     fn export_day_type_assignement(&self, _calendar: &'a Calendar) -> Result<Element> {
-        let day_type_assignment = Element::builder("DayTypeAssignment").build();
+        let day_type_assignment =
+            Element::builder(ObjectType::DayTypeAssignment.to_string()).build();
         Ok(day_type_assignment)
     }
 
     fn export_uic_operating_period(&self, _calendar: &'a Calendar) -> Result<Element> {
-        let uic_operating_period = Element::builder("UicOperatingPeriod").build();
+        let uic_operating_period =
+            Element::builder(ObjectType::UicOperatingPeriod.to_string()).build();
         Ok(uic_operating_period)
-    }
-
-    fn generate_id(&self, id: &'a str, object_type: ObjectType) -> String {
-        let id = id.replace(':', "_");
-        format!("FR:{}:{}:", object_type, id)
     }
 }
