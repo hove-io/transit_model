@@ -1,7 +1,7 @@
 route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,shape_id,wheelchair_accessible,bikes_allowed
 M1,Week,M1F1,Charles de Gaulle (Metro),Charles de Gaulle (Metro),0,,,0,0
 M1,Week,M1B1,Nation (Metro),Nation (Metro),1,,,0,0
-B42,Week,B42B1,Gare de Lyon (Bus),,0,,,0,0
-B42,Week,B42F1,Montparnasse (Bus),,1,,,0,0
+B42,Week,B42F1,Montparnasse (Bus),,0,,,0,0
+B42,Week,B42B1,Gare de Lyon (Bus),,1,,,0,0
 RERA,Week,RERAF1,La Défense (RER),La Défense (RER),0,,,0,0
 RERA:Bus,Week,RERAB1,Nation (RER),,1,,,0,0

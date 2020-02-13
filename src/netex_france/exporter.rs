@@ -48,6 +48,7 @@ pub(in crate::netex_france) enum ObjectType {
     Network,
     Quay,
     Route,
+    ServiceJourneyPattern,
     StopPlace,
     UicOperatingPeriod,
 }
@@ -63,6 +64,7 @@ impl Display for ObjectType {
             Network => write!(f, "Network"),
             Quay => write!(f, "Quay"),
             Route => write!(f, "Route"),
+            ServiceJourneyPattern => write!(f, "ServiceJourneyPattern"),
             StopPlace => write!(f, "StopPlace"),
             UicOperatingPeriod => write!(f, "UicOperatingPeriod"),
         }

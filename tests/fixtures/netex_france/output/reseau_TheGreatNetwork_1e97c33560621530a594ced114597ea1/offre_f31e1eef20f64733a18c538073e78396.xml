@@ -19,6 +19,16 @@
 					</LineRef>
 					<DirectionType>outbound</DirectionType>
 				</Route>
+				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:M1F1:" version="any">
+					<Distance>0</Distance>
+					<RouteRef ref="FR:Route:M1:">
+					</RouteRef>
+				</ServiceJourneyPattern>
+				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:M1B1:" version="any">
+					<Distance>0</Distance>
+					<RouteRef ref="FR:Route:M1_R:">
+					</RouteRef>
+				</ServiceJourneyPattern>
 			</members>
 		</GeneralFrame>
 	</dataObjects>
