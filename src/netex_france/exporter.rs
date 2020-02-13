@@ -40,6 +40,8 @@ pub(in crate::netex_france) enum ObjectType {
     DayTypeAssignment,
     Line,
     Network,
+    Quay,
+    StopPlace,
     UicOperatingPeriod,
 }
 
@@ -51,6 +53,8 @@ impl Display for ObjectType {
             DayTypeAssignment => write!(f, "DayTypeAssignment"),
             Line => write!(f, "Line"),
             Network => write!(f, "Network"),
+            Quay => write!(f, "Quay"),
+            StopPlace => write!(f, "StopPlace"),
             UicOperatingPeriod => write!(f, "UicOperatingPeriod"),
         }
     }
@@ -77,7 +81,7 @@ impl Display for VersionType {
 pub struct Exporter<'a> {
     model: &'a Model,
     participant_ref: String,
-    stop_provider_code: String,
+    _stop_provider_code: String,
     timestamp: NaiveDateTime,
 }
 
@@ -92,11 +96,11 @@ impl<'a> Exporter<'a> {
         stop_provider_code: Option<String>,
         timestamp: NaiveDateTime,
     ) -> Self {
-        let stop_provider_code = stop_provider_code.unwrap_or_else(|| String::from("LOC"));
+        let _stop_provider_code = stop_provider_code.unwrap_or_else(|| String::from("LOC"));
         Exporter {
             model,
             participant_ref,
-            stop_provider_code,
+            _stop_provider_code,
             timestamp,
         }
     }
@@ -246,8 +250,7 @@ impl Exporter<'_> {
 
     // Returns a 'GeneralFrame' containing all 'StopArea' and 'Quay'
     fn create_stops_frame(&self) -> Result<Element> {
-        let stop_exporter =
-            StopExporter::new(&self.model, &self.participant_ref, &self.stop_provider_code)?;
+        let stop_exporter = StopExporter::new(&self.model, &self.participant_ref)?;
         let stops = stop_exporter.export()?;
         let members = Self::create_members(stops);
         let general_frame_id =
