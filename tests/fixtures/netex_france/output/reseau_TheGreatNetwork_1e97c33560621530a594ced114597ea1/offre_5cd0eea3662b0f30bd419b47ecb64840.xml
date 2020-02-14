@@ -29,6 +29,46 @@
 					<RouteRef ref="FR:Route:RERA_Bus_R:">
 					</RouteRef>
 				</ServiceJourneyPattern>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:RERAF1_1:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:RERAF1_2:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:RERAF1_3:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:RERAF1_5:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:RERAB1_5:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:RERAB1_8:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:RERAB1_13:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:RERAB1_21:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
 			</members>
 		</GeneralFrame>
 	</dataObjects>

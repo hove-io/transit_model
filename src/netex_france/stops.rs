@@ -113,12 +113,7 @@ pub struct StopExporter<'a> {
 // Publicly exposed methods
 impl<'a> StopExporter<'a> {
     pub fn new(model: &'a Model, participant_ref: &'a str) -> Result<Self> {
-        // FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
-        let from = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
-        let to = "EPSG:2154";
-        let converter = Proj::new_known_crs(from, to, None).ok_or_else(|| {
-            format_err!("Proj cannot build a converter from '{}' to '{}'", from, to)
-        })?;
+        let converter = Exporter::get_coordinates_converter()?;
         let stop_point_modes = Self::build_stop_point_modes(model);
         let stop_area_stop_points = Self::build_stop_area_stop_points(model);
         let exporter = StopExporter {

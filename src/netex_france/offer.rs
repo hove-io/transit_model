@@ -14,11 +14,12 @@
 
 use crate::{
     netex_france::exporter::{Exporter, ObjectType},
-    objects::{Line, Route, StopTime, VehicleJourney},
+    objects::{Coord, Line, Route, StopTime, VehicleJourney},
     Model, Result,
 };
 use log::warn;
 use minidom::{Element, Node};
+use proj::Proj;
 use transit_model_collection::Idx;
 use transit_model_relations::IdxSet;
 
@@ -28,12 +29,15 @@ type JourneyPattern = VehicleJourney;
 
 pub struct OfferExporter<'a> {
     model: &'a Model,
+    converter: Proj,
 }
 
 // Publicly exposed methods
 impl<'a> OfferExporter<'a> {
-    pub fn new(model: &'a Model) -> Self {
-        OfferExporter { model }
+    pub fn new(model: &'a Model) -> Result<Self> {
+        let converter = Exporter::get_coordinates_converter()?;
+        let exporter = OfferExporter { model, converter };
+        Ok(exporter)
     }
     pub fn export(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
         let route_elements = self.export_routes(line_idx);
@@ -49,9 +53,20 @@ impl<'a> OfferExporter<'a> {
             .collect();
         let service_journey_pattern_elements =
             self.export_journey_patterns(&journey_pattern_indexes);
+        let scheduled_stop_point_elements = journey_pattern_indexes
+            .iter()
+            .map(|journey_pattern_idx| self.export_scheduled_stop_points(*journey_pattern_idx))
+            .try_fold::<_, _, Result<Vec<Element>>>(
+                Vec::new(),
+                |mut scheduled_stop_point_elements, elements| {
+                    scheduled_stop_point_elements.extend(elements?);
+                    Ok(scheduled_stop_point_elements)
+                },
+            )?;
 
         let mut elements = route_elements;
         elements.extend(service_journey_pattern_elements);
+        elements.extend(scheduled_stop_point_elements);
         Ok(elements)
     }
 }
@@ -107,6 +122,39 @@ impl<'a> OfferExporter<'a> {
             .build()
     }
 
+    fn export_scheduled_stop_points(
+        &self,
+        journey_pattern_idx: Idx<JourneyPattern>,
+    ) -> Result<Vec<Element>> {
+        let vehicle_journey = &self.model.vehicle_journeys[journey_pattern_idx];
+        vehicle_journey
+            .stop_times
+            .iter()
+            .map(|stop_time| self.export_scheduled_stop_point(&vehicle_journey.id, stop_time))
+            .collect()
+    }
+
+    fn export_scheduled_stop_point(
+        &self,
+        vehicle_journey_id: &'a str,
+        stop_time: &'a StopTime,
+    ) -> Result<Element> {
+        let element_builder = Element::builder(ObjectType::ScheduledStopPoint.to_string())
+            .attr(
+                "id",
+                Self::generate_stop_sequence_id(
+                    &vehicle_journey_id,
+                    stop_time.sequence,
+                    ObjectType::ScheduledStopPoint,
+                ),
+            )
+            .attr("version", "any");
+        let location_element =
+            self.generate_location(&self.model.stop_points[stop_time.stop_point_idx].coord)?;
+        let element_builder = element_builder.append(location_element);
+        Ok(element_builder.build())
+    }
+
     fn generate_route_name(route_name: &'a str) -> Element {
         Element::builder("Name")
             .append(Node::Text(route_name.to_owned()))
@@ -149,6 +197,22 @@ impl<'a> OfferExporter<'a> {
                     .append(Node::Text(direction_type))
                     .build()
             })
+    }
+
+    fn generate_stop_sequence_id(id: &str, sequence: u32, object_type: ObjectType) -> String {
+        let order_id = format!("{}_{}", id, sequence);
+        Exporter::generate_id(&order_id, object_type)
+    }
+
+    fn generate_location(&self, coord: &'a Coord) -> Result<Element> {
+        let coord_epsg2154 = self.converter.convert(*coord)?;
+        let coord_text = Node::Text(format!("{} {}", coord_epsg2154.x(), coord_epsg2154.y()));
+        let pos = Element::builder("gml:pos")
+            .attr("srsName", "EPSG:2154")
+            .append(coord_text)
+            .build();
+        let location = Element::builder("Location").append(pos).build();
+        Ok(location)
     }
 
     fn calculate_journey_patterns(
@@ -363,7 +427,7 @@ mod tests {
             })
             .unwrap();
         let model = Model::new(collections).unwrap();
-        let offer_exporter = OfferExporter::new(&model);
+        let offer_exporter = OfferExporter::new(&model).unwrap();
         let route_idx = model.routes.get_idx("route_id").unwrap();
         let journey_pattern_indexes = offer_exporter.calculate_journey_patterns(route_idx);
         assert_eq!(1, journey_pattern_indexes.len());
@@ -405,7 +469,7 @@ mod tests {
             })
             .unwrap();
         let model = Model::new(collections).unwrap();
-        let offer_exporter = OfferExporter::new(&model);
+        let offer_exporter = OfferExporter::new(&model).unwrap();
         let route_idx = model.routes.get_idx("route_id").unwrap();
         let journey_pattern_indexes = offer_exporter.calculate_journey_patterns(route_idx);
         assert_eq!(2, journey_pattern_indexes.len());
@@ -468,7 +532,7 @@ mod tests {
             })
             .unwrap();
         let model = Model::new(collections).unwrap();
-        let offer_exporter = OfferExporter::new(&model);
+        let offer_exporter = OfferExporter::new(&model).unwrap();
         let route_idx = model.routes.get_idx("route_id").unwrap();
         let journey_pattern_indexes = offer_exporter.calculate_journey_patterns(route_idx);
         assert_eq!(2, journey_pattern_indexes.len());

@@ -29,6 +29,46 @@
 					<RouteRef ref="FR:Route:M1_R:">
 					</RouteRef>
 				</ServiceJourneyPattern>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_0:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_1:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_2:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972682</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_3:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_6:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_7:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972682</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_8:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_9:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
 			</members>
 		</GeneralFrame>
 	</dataObjects>

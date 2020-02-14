@@ -29,6 +29,26 @@
 					<RouteRef ref="FR:Route:B42_R:">
 					</RouteRef>
 				</ServiceJourneyPattern>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42F1_10:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42F1_20:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_20:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_30:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
 			</members>
 		</GeneralFrame>
 	</dataObjects>

@@ -25,7 +25,9 @@ use crate::{
     Result,
 };
 use chrono::prelude::*;
+use failure::format_err;
 use minidom::{Element, Node};
+use proj::Proj;
 use std::{
     convert::AsRef,
     fmt::{self, Display, Formatter},
@@ -48,6 +50,7 @@ pub(in crate::netex_france) enum ObjectType {
     Network,
     Quay,
     Route,
+    ScheduledStopPoint,
     ServiceJourneyPattern,
     StopPlace,
     UicOperatingPeriod,
@@ -64,6 +67,7 @@ impl Display for ObjectType {
             Network => write!(f, "Network"),
             Quay => write!(f, "Quay"),
             Route => write!(f, "Route"),
+            ScheduledStopPoint => write!(f, "ScheduledStopPoint"),
             ServiceJourneyPattern => write!(f, "ServiceJourneyPattern"),
             StopPlace => write!(f, "StopPlace"),
             UicOperatingPeriod => write!(f, "UicOperatingPeriod"),
@@ -137,6 +141,14 @@ impl<'a> Exporter<'a> {
     pub(in crate::netex_france) fn generate_id(id: &'a str, object_type: ObjectType) -> String {
         let id = id.replace(':', "_");
         format!("FR:{}:{}:", object_type, id)
+    }
+
+    pub(in crate::netex_france) fn get_coordinates_converter() -> Result<Proj> {
+        // FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
+        let from = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
+        let to = "EPSG:2154";
+        Proj::new_known_crs(from, to, None)
+            .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))
     }
 }
 
@@ -375,7 +387,7 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let line_indexes: IdxSet<Line> = self.model.get_corresponding_from_idx(network_idx);
-        let offer_exporter = OfferExporter::new(&self.model);
+        let offer_exporter = OfferExporter::new(&self.model)?;
         for line_idx in line_indexes {
             let line = &self.model.lines[line_idx];
             let line_id_md5 = md5::compute(line.id.as_bytes());
