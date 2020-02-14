@@ -28,7 +28,7 @@ use std::{
 };
 
 // For the order, see
-// https://github.com/CanalTP/ntfs-specification/blob/v0.11.0/ntfs_fr.md#physical_modestxt-requis
+// https://github.com/CanalTP/ntfs-specification/blob/v0.11.1/ntfs_fr.md#physical_modestxt-requis
 // Note that 2 enum cannot have the same value so `Funicular` and `Cableway`
 // have different values. Same for `Coach` and `Bus`.
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Clone, Copy)]

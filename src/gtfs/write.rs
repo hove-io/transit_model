@@ -887,6 +887,7 @@ mod tests {
                     precision: None,
                 },
             ],
+            journey_pattern_id: Some(String::from("OIF:JP:1")),
         };
 
         let expected = Trip {
@@ -1130,6 +1131,7 @@ mod tests {
             trip_property_id: None,
             geometry_id: None,
             stop_times: stop_times_vec,
+            journey_pattern_id: Some(String::from("jp:01")),
         });
         let mut stop_times_headsigns = HashMap::new();
         stop_times_headsigns.insert(

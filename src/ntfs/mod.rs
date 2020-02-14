@@ -391,7 +391,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.11.0".to_string()),
+                    ("ntfs_version".to_string(), "0.11.1".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -646,6 +646,7 @@ mod tests {
                         precision: Some(StopTimePrecision::Exact),
                     },
                 ],
+                journey_pattern_id: Some(String::from("OIF:JP:1")),
             },
             VehicleJourney {
                 id: "OIF:90014407-1_425283-1".to_string(),
@@ -663,6 +664,7 @@ mod tests {
                 trip_property_id: None,
                 geometry_id: None,
                 stop_times: vec![],
+                journey_pattern_id: Some(String::from("OIF:JP:1")),
             },
         ])
         .unwrap();
@@ -1060,6 +1062,7 @@ mod tests {
                 local_zone_id: None,
                 precision: None,
             }],
+            journey_pattern_id: None,
         });
 
         let networks = CollectionWithId::from(Network {

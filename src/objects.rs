@@ -624,6 +624,7 @@ pub struct VehicleJourney {
     pub geometry_id: Option<String>,
     #[serde(skip)]
     pub stop_times: Vec<StopTime>,
+    pub journey_pattern_id: Option<String>,
 }
 impl Default for VehicleJourney {
     fn default() -> VehicleJourney {
@@ -643,6 +644,7 @@ impl Default for VehicleJourney {
             trip_property_id: None,
             geometry_id: None,
             stop_times: vec![],
+            journey_pattern_id: None,
         }
     }
 }

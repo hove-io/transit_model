@@ -620,6 +620,7 @@ fn make_vjs_and_stop_times(
             trip_property_id: None,
             geometry_id: None,
             stop_times: vec![],
+            journey_pattern_id: None,
         });
 
         map_vj_accs

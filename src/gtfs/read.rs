@@ -319,6 +319,7 @@ impl Trip {
             trip_property_id: trip_property_id.clone(),
             geometry_id: self.shape_id.clone(),
             stop_times: vec![],
+            journey_pattern_id: None,
         })
     }
 }

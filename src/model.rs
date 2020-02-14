@@ -1556,6 +1556,7 @@ mod tests {
                 trip_property_id: None,
                 geometry_id: None,
                 stop_times,
+                journey_pattern_id: None,
             }
         }
 
