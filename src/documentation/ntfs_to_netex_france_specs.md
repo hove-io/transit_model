@@ -46,7 +46,6 @@ A NTFS feed is not sufficient to generate a valid Netex Profil France feed:
 ## Id of objects
 
 According to the Netex Specification, object identifiers should have a specific formatting.
-The formatting for stops is described in the [arrets.xml](#arretsxml) part of this specification.
 For the other objects, the following format is used: **FR:[object type]:[object id]:**,
 with a replacement of `:` by `_` in `object_id` to avoid conflict between separators.
 
@@ -85,29 +84,6 @@ Example:
 
 A `stop_area` is considered monomodal if all the trips having stop_times referencing any of its stop_points have a physical_mode of the same "Netex mode".
 
-### Identifiers for Quay and StopPlace
-
-The id is composed of several parts separated by `:`: 
-- a country code (ISO 3166-1). `FR` for France.
-- a city code (5 character INSEE code for France). Eventually, the city disctrict can be specified with one or two character separated by `-`. For exemple `75056-12`.
-- object type using an enumerate:
-  + `ZE` (ZONE D’EMBARQUEMENT), 
-  + `LMO` (LIEU D’ARRET MONOMODAL), 
-  + `PM` (POLE MONOMODAL), 
-  + `LMU` (LIEU D’ARRET MULTIMODAL), 
-  + `AC` (ACCES)
-- technical code of the stop
-- code of the provider of the technical stop or `LOC` if it's beeing attributed. 
-
-In this version of the connector:
-- the country code will be set to the fixed value `FR`,
-- the city code will be set to the fixed value `XXXXX`,
-- the technical code of the `Quay` will contain the value of `stop_id`, with a
-  replacement of `:` by `_` to avoid conflict between separators,
-- the technical code of a `StopPlace` of type `LMO` is built with `<stop_id>_<netex_mode>`,
-- the technical code of a `StopPlace` of type `LMU`, is `<stop_id>`,
-- the code of the provider will be set to the value of `StopProviderCode` param (if specified) or `LOC` otherwise.
-
 ### NeTEx Transport Modes
 physical_mode_id | TransportMode in Netex
 --- | --- 
@@ -143,7 +119,7 @@ element which itself is wrapped into a `GeneralFrame`.
 
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
-Quay/@id | stops.txt | stop_id | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace)
+Quay/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
 Quay/@version | | | fixed value `any`.
 Quay/Name | stops.txt | stop_name |
 Quay/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
@@ -220,20 +196,20 @@ water | ferryStop
 
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
-StopPlace/@id | stops.txt | stop_id | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace).
+StopPlace/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
 StopPlace/@version | | | fixed value `any`.
 StopPlace/Name | stops.txt | stop_name | 
 StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
 StopPlace/ParentSiteRef | | | link to the corresponding Multimodal `StopPlace`
 StopPlace/TransportMode | | | use the only NeTEx mode
 StopPlace/StopPlaceType | | | see the section [StopPlaceType mapping](#stopplacetype-mapping)
-StopPlace/quays/QuayRef[]/@ref | | | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace)
+StopPlace/quays/QuayRef[]/@ref | | | see [id formatting](#id-of-objects)
 
 #### Multimodal StopPlace
 
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
-StopPlace/@id | stops.txt | stop_id | see the section [Identifiers for Quay and StopPlace](#identifiers-for-quay-and-stopplace).
+StopPlace/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
 StopPlace/@version | | | fixed value `any`.
 StopPlace/Name | stops.txt | stop_name | 
 StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)

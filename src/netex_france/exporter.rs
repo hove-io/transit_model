@@ -35,6 +35,31 @@ const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
 const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "arrets.xml";
 
+pub(in crate::netex_france) enum ObjectType {
+    DayType,
+    DayTypeAssignment,
+    Line,
+    Network,
+    Quay,
+    StopPlace,
+    UicOperatingPeriod,
+}
+
+impl Display for ObjectType {
+    fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), fmt::Error> {
+        use ObjectType::*;
+        match self {
+            DayType => write!(f, "DayType"),
+            DayTypeAssignment => write!(f, "DayTypeAssignment"),
+            Line => write!(f, "Line"),
+            Network => write!(f, "Network"),
+            Quay => write!(f, "Quay"),
+            StopPlace => write!(f, "StopPlace"),
+            UicOperatingPeriod => write!(f, "UicOperatingPeriod"),
+        }
+    }
+}
+
 enum VersionType {
     Calendars,
     Lines,
@@ -56,7 +81,7 @@ impl Display for VersionType {
 pub struct Exporter<'a> {
     model: &'a Model,
     participant_ref: String,
-    stop_provider_code: String,
+    _stop_provider_code: String,
     timestamp: NaiveDateTime,
 }
 
@@ -71,11 +96,11 @@ impl<'a> Exporter<'a> {
         stop_provider_code: Option<String>,
         timestamp: NaiveDateTime,
     ) -> Self {
-        let stop_provider_code = stop_provider_code.unwrap_or_else(|| String::from("LOC"));
+        let _stop_provider_code = stop_provider_code.unwrap_or_else(|| String::from("LOC"));
         Exporter {
             model,
             participant_ref,
-            stop_provider_code,
+            _stop_provider_code,
             timestamp,
         }
     }
@@ -89,6 +114,11 @@ impl<'a> Exporter<'a> {
         self.write_stops(&path)?;
         self.write_calendars(&path)?;
         Ok(())
+    }
+
+    pub(in crate::netex_france) fn generate_id(id: &'a str, object_type: ObjectType) -> String {
+        let id = id.replace(':', "_");
+        format!("FR:{}:{}:", object_type, id)
     }
 }
 
@@ -220,8 +250,7 @@ impl Exporter<'_> {
 
     // Returns a 'GeneralFrame' containing all 'StopArea' and 'Quay'
     fn create_stops_frame(&self) -> Result<Element> {
-        let stop_exporter =
-            StopExporter::new(&self.model, &self.participant_ref, &self.stop_provider_code)?;
+        let stop_exporter = StopExporter::new(&self.model, &self.participant_ref)?;
         let stops = stop_exporter.export()?;
         let members = Self::create_members(stops);
         let general_frame_id =

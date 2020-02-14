@@ -13,6 +13,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
+    netex_france::exporter::{Exporter, ObjectType},
     objects::{Coord, StopArea, StopPoint},
     Model, Result,
 };
@@ -25,24 +26,6 @@ use std::{
     collections::{BTreeSet, HashMap},
     fmt::{self, Display, Formatter},
 };
-
-#[derive(Debug)]
-enum StopType {
-    Quay,
-    MonomodalStopPlace,
-    MultimodalStopPlace,
-}
-
-impl Display for StopType {
-    fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), fmt::Error> {
-        use StopType::*;
-        match self {
-            Quay => write!(f, "ZE"),
-            MonomodalStopPlace => write!(f, "LMO"),
-            MultimodalStopPlace => write!(f, "LMU"),
-        }
-    }
-}
 
 // For the order, see
 // https://github.com/CanalTP/ntfs-specification/blob/v0.11.0/ntfs_fr.md#physical_modestxt-requis
@@ -122,7 +105,6 @@ type StopAreaStopPoints<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 pub struct StopExporter<'a> {
     model: &'a Model,
     participant_ref: &'a str,
-    stop_provider_code: &'a str,
     converter: Proj,
     stop_point_modes: StopPointModes<'a>,
     stop_area_stop_points: StopAreaStopPoints<'a>,
@@ -130,11 +112,7 @@ pub struct StopExporter<'a> {
 
 // Publicly exposed methods
 impl<'a> StopExporter<'a> {
-    pub fn new(
-        model: &'a Model,
-        participant_ref: &'a str,
-        stop_provider_code: &'a str,
-    ) -> Result<Self> {
+    pub fn new(model: &'a Model, participant_ref: &'a str) -> Result<Self> {
         // FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
         let from = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
         let to = "EPSG:2154";
@@ -146,7 +124,6 @@ impl<'a> StopExporter<'a> {
         let exporter = StopExporter {
             model,
             participant_ref,
-            stop_provider_code,
             converter,
             stop_point_modes,
             stop_area_stop_points,
@@ -240,7 +217,10 @@ impl<'a> StopExporter<'a> {
 
     fn export_stop_point(&self, stop_point: &'a StopPoint) -> Result<Element> {
         let element_builder = Element::builder("Quay")
-            .attr("id", self.generate_id(&stop_point.id, StopType::Quay, None))
+            .attr(
+                "id",
+                Exporter::generate_id(&stop_point.id, ObjectType::Quay),
+            )
             .attr("version", "any");
         let element_builder = element_builder.append(self.generate_name(&stop_point.name));
         let element_builder = element_builder.append(self.generate_centroid(&stop_point.coord)?);
@@ -290,8 +270,7 @@ impl<'a> StopExporter<'a> {
                 .collect();
             let mut stop_place_elements = Vec::new();
             let name_element = self.generate_name(&stop_area.name);
-            let parent_station_id =
-                self.generate_id(&stop_area.id, StopType::MultimodalStopPlace, None);
+            let parent_station_id = Exporter::generate_id(&stop_area.id, ObjectType::StopPlace);
             let parent_site_ref_element = self.generate_parent_site_ref(&parent_station_id);
             let centroid = self.generate_centroid(&stop_area.coord)?;
             for netex_mode in &netex_modes {
@@ -308,10 +287,9 @@ impl<'a> StopExporter<'a> {
                 let element_builder = Element::builder("StopPlace")
                     .attr(
                         "id",
-                        self.generate_id(
-                            &stop_area.id,
-                            StopType::MonomodalStopPlace,
-                            Some(*netex_mode),
+                        Exporter::generate_id(
+                            &format!("{}_{}", stop_area.id, *netex_mode),
+                            ObjectType::StopPlace,
                         ),
                     )
                     .attr("version", "any");
@@ -328,7 +306,7 @@ impl<'a> StopExporter<'a> {
             let element_builder = Element::builder("StopPlace")
                 .attr(
                     "id",
-                    self.generate_id(&stop_area.id, StopType::MultimodalStopPlace, None),
+                    Exporter::generate_id(&stop_area.id, ObjectType::StopPlace),
                 )
                 .attr("version", "any");
             let element_builder = element_builder.append(name_element);
@@ -350,27 +328,6 @@ impl<'a> StopExporter<'a> {
         } else {
             Ok(Vec::new())
         }
-    }
-
-    fn generate_id(
-        &self,
-        id: &'a str,
-        stop_type: StopType,
-        netex_mode: Option<NetexMode>,
-    ) -> String {
-        let id = id.replace(':', "_");
-        let id = if let Some(netex_mode) = netex_mode {
-            format!("{}_{}", id, netex_mode)
-        } else {
-            id
-        };
-
-        // TODO: Find INSEE code from geolocation of the `stop_point`
-        let insee = "XXXXX";
-        format!(
-            "FR:{}:{}:{}:{}",
-            insee, stop_type, id, self.stop_provider_code
-        )
     }
 
     fn generate_name(&self, name: &'a str) -> Element {
@@ -435,7 +392,7 @@ impl<'a> StopExporter<'a> {
     {
         let quays = stop_point_ids
             .into_iter()
-            .map(|stop_point_id| self.generate_id(stop_point_id.borrow(), StopType::Quay, None))
+            .map(|stop_point_id| Exporter::generate_id(stop_point_id.borrow(), ObjectType::Quay))
             .map(|quay_id| Element::builder("QuayRef").attr("ref", quay_id).build());
         Element::builder("quays").append_all(quays).build()
     }

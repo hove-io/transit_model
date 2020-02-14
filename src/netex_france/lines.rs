@@ -12,7 +12,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::{objects::Line, Model, Result};
+use crate::{
+    netex_france::exporter::{Exporter, ObjectType},
+    objects::Line,
+    Model, Result,
+};
 use minidom::{Element, Node};
 
 pub struct LineExporter<'a> {
@@ -36,8 +40,8 @@ impl<'a> LineExporter<'a> {
 // Internal methods
 impl<'a> LineExporter<'a> {
     fn export_line(&self, line: &'a Line) -> Result<Element> {
-        let element_builder = Element::builder("Line")
-            .attr("id", self.generate_id(line))
+        let element_builder = Element::builder(ObjectType::Line.to_string())
+            .attr("id", Exporter::generate_id(&line.id, ObjectType::Line))
             .attr("version", "any");
         let element_builder = element_builder.append(self.generate_name(line));
         let element_builder = if let Some(public_code) = self.generate_public_code(line) {
@@ -46,11 +50,6 @@ impl<'a> LineExporter<'a> {
             element_builder
         };
         Ok(element_builder.build())
-    }
-
-    fn generate_id(&self, line: &'a Line) -> String {
-        let id = line.id.replace(':', "_");
-        format!("FR:line:{}:", id)
     }
 
     fn generate_name(&self, line: &'a Line) -> Element {

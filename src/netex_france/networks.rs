@@ -12,8 +12,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::Exporter;
 use crate::{
+    netex_france::exporter::{Exporter, ObjectType},
     objects::{Line, Network},
     Model, Result,
 };
@@ -40,8 +40,11 @@ impl<'a> NetworkExporter<'a> {
 // Internal methods
 impl<'a> NetworkExporter<'a> {
     fn export_network(&self, network: &'a Network) -> Result<Element> {
-        let element_builder = Element::builder("Network")
-            .attr("id", self.generate_id(network))
+        let element_builder = Element::builder(ObjectType::Network.to_string())
+            .attr(
+                "id",
+                Exporter::generate_id(&network.id, ObjectType::Network),
+            )
             .attr("version", "any");
         let element_builder = element_builder.append(self.generate_name(network));
         let line_ref_elements = self
@@ -54,11 +57,6 @@ impl<'a> NetworkExporter<'a> {
         Ok(element_builder.build())
     }
 
-    fn generate_id(&self, network: &'a Network) -> String {
-        let id = network.id.replace(':', "_");
-        format!("FR:network:{}:", id)
-    }
-
     fn generate_name(&self, network: &'a Network) -> Element {
         Element::builder("Name")
             .append(Node::Text(network.name.to_owned()))
@@ -66,8 +64,7 @@ impl<'a> NetworkExporter<'a> {
     }
 
     fn generate_line_ref(&self, line: &'a Line) -> Element {
-        let id = line.id.replace(':', "_");
-        let line_id = format!("FR:line:{}", id);
+        let line_id = Exporter::generate_id(&line.id, ObjectType::Line);
         Element::builder("LineRef").attr("ref", line_id).build()
     }
 }
