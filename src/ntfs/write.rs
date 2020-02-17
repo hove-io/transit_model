@@ -17,7 +17,7 @@ use crate::model::Collections;
 use crate::ntfs::{has_fares_v1, has_fares_v2};
 use crate::objects::*;
 use crate::NTFS_VERSION;
-use chrono::{Duration, NaiveDateTime};
+use chrono::{DateTime, Duration, FixedOffset};
 use csv;
 use csv::Writer;
 use failure::{bail, format_err, ResultExt};
@@ -55,7 +55,7 @@ impl TryFrom<(&Ticket, &TicketPrice)> for PriceV1 {
 pub fn write_feed_infos(
     path: &path::Path,
     collections: &Collections,
-    current_datetime: NaiveDateTime,
+    current_datetime: DateTime<FixedOffset>,
 ) -> Result<()> {
     info!("Writing feed_infos.txt");
     let path = path.join("feed_infos.txt");

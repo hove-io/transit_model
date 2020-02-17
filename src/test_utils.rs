@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::{DateTime, FixedOffset};
 use pretty_assertions::assert_eq;
 use std::collections::BTreeSet;
 use std::fs;
@@ -120,6 +120,6 @@ where
     tmp_dir.close().expect("delete temp dir");
 }
 
-pub fn get_test_datetime() -> NaiveDateTime {
-    NaiveDate::from_ymd(2019, 4, 3).and_hms(17, 19, 0)
+pub fn get_test_datetime() -> DateTime<FixedOffset> {
+    DateTime::parse_from_rfc3339("2019-04-03T17:19:00Z").unwrap()
 }
