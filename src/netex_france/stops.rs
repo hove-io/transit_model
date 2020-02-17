@@ -13,7 +13,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    netex_france::exporter::{Exporter, ObjectType},
+    netex_france::{
+        exporter::{Exporter, ObjectType},
+        NetexMode,
+    },
     objects::{Coord, StopArea, StopPoint},
     Model, Result,
 };
@@ -24,73 +27,7 @@ use proj::Proj;
 use std::{
     borrow::Borrow,
     collections::{BTreeSet, HashMap},
-    fmt::{self, Display, Formatter},
 };
-
-// For the order, see
-// https://github.com/CanalTP/ntfs-specification/blob/v0.11.1/ntfs_fr.md#physical_modestxt-requis
-// Note that 2 enum cannot have the same value so `Funicular` and `Cableway`
-// have different values. Same for `Coach` and `Bus`.
-#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Clone, Copy)]
-enum NetexMode {
-    Air = 1,
-    Water = 2,
-    Rail = 3,
-    Metro = 4,
-    Tram = 5,
-    Funicular = 6,
-    Cableway = 7,
-    Coach = 8,
-    Bus = 9,
-}
-
-impl Display for NetexMode {
-    fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), fmt::Error> {
-        use NetexMode::*;
-        match self {
-            Air => write!(f, "air"),
-            Bus => write!(f, "bus"),
-            Cableway => write!(f, "cableway"),
-            Coach => write!(f, "coach"),
-            Funicular => write!(f, "funicular"),
-            Metro => write!(f, "metro"),
-            Rail => write!(f, "rail"),
-            Tram => write!(f, "tram"),
-            Water => write!(f, "water"),
-        }
-    }
-}
-
-impl NetexMode {
-    fn from_physical_mode_id(physical_mode_id: &str) -> Option<NetexMode> {
-        use NetexMode::*;
-        match physical_mode_id {
-            "Air" => Some(Air),
-            "Boat" => Some(Water),
-            "Bus" => Some(Bus),
-            "BusRapidTransit" => Some(Bus),
-            "Coach" => Some(Coach),
-            "Ferry" => Some(Water),
-            "Funicular" => Some(Funicular),
-            "LocalTrain" => Some(Rail),
-            "LongDistanceTrain" => Some(Rail),
-            "Metro" => Some(Metro),
-            "RapidTransit" => Some(Rail),
-            "RailShuttle" => Some(Rail),
-            "Shuttle" => Some(Bus),
-            "SuspendedCableCar" => Some(Cableway),
-            "Train" => Some(Rail),
-            "Tramway" => Some(Tram),
-            mode => {
-                warn!(
-                    "Physical Mode '{}' is not supported for NeTEx France export.",
-                    mode
-                );
-                None
-            }
-        }
-    }
-}
 
 // `stop_point_modes` is storing all the modes for a StopPoint.
 //
@@ -156,6 +93,16 @@ impl<'a> StopExporter<'a> {
         let mut elements = stop_points_elements;
         elements.extend(stop_areas_elements.into_iter().flatten());
         Ok(elements)
+    }
+
+    pub(in crate::netex_france) fn generate_stop_place_id(
+        stop_area_id: &'a str,
+        netex_mode: NetexMode,
+    ) -> String {
+        Exporter::generate_id(
+            &format!("{}_{}", stop_area_id, netex_mode),
+            ObjectType::StopPlace,
+        )
     }
 }
 
@@ -282,10 +229,7 @@ impl<'a> StopExporter<'a> {
                 let element_builder = Element::builder("StopPlace")
                     .attr(
                         "id",
-                        Exporter::generate_id(
-                            &format!("{}_{}", stop_area.id, *netex_mode),
-                            ObjectType::StopPlace,
-                        ),
+                        Self::generate_stop_place_id(&stop_area.id, *netex_mode),
                     )
                     .attr("version", "any");
                 let element_builder = element_builder.append(name_element.clone());

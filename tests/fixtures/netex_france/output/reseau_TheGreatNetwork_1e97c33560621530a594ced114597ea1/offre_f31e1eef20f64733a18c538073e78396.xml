@@ -121,6 +121,70 @@
 						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:M1F1_0:" order="1" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_0:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:NAT_metro:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:NATM:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:M1F1_1:" order="2" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_1:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:GDL_metro:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:GDLM:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:M1F1_2:" order="3" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_2:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:CHA_metro:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:CHAM:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:M1F1_3:" order="4" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_3:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:CDG_metro:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:CDGM:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:M1B1_6:" order="7" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_6:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:CDG_metro:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:CDGM:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:M1B1_7:" order="8" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_7:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:CHA_metro:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:CHAM:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:M1B1_8:" order="9" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_8:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:GDL_metro:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:GDLM:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:M1B1_9:" order="10" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_9:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:NAT_metro:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:NATM:">
+					</QuayRef>
+				</PassengerStopAssignment>
 			</members>
 		</GeneralFrame>
 	</dataObjects>

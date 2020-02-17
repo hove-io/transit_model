@@ -13,7 +13,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    netex_france::exporter::{Exporter, ObjectType},
+    netex_france::{
+        exporter::{Exporter, ObjectType},
+        NetexMode, StopExporter,
+    },
     objects::{Coord, Line, Route, StopTime, VehicleJourney},
     Model, Result,
 };
@@ -63,10 +66,21 @@ impl<'a> OfferExporter<'a> {
                     Ok(scheduled_stop_point_elements)
                 },
             )?;
+        let passenger_stop_assignment_elements = journey_pattern_indexes
+            .iter()
+            .map(|journey_pattern_idx| self.export_passenger_stop_assignments(*journey_pattern_idx))
+            .fold(
+                Vec::new(),
+                |mut passenger_stop_assignment_elements, elements| {
+                    passenger_stop_assignment_elements.extend(elements);
+                    passenger_stop_assignment_elements
+                },
+            );
 
         let mut elements = route_elements;
         elements.extend(service_journey_pattern_elements);
         elements.extend(scheduled_stop_point_elements);
+        elements.extend(passenger_stop_assignment_elements);
         Ok(elements)
     }
 }
@@ -198,6 +212,52 @@ impl<'a> OfferExporter<'a> {
         Ok(element_builder.build())
     }
 
+    fn export_passenger_stop_assignments(
+        &self,
+        journey_pattern_idx: Idx<JourneyPattern>,
+    ) -> Vec<Element> {
+        let vehicle_journey = &self.model.vehicle_journeys[journey_pattern_idx];
+        vehicle_journey
+            .stop_times
+            .iter()
+            .map(|stop_time| self.export_passenger_stop_assignment(vehicle_journey, stop_time))
+            .collect()
+    }
+
+    fn export_passenger_stop_assignment(
+        &self,
+        vehicle_journey: &'a VehicleJourney,
+        stop_time: &'a StopTime,
+    ) -> Element {
+        let element_builder = Element::builder(ObjectType::PassengerStopAssignment.to_string())
+            .attr(
+                "id",
+                Self::generate_stop_sequence_id(
+                    &vehicle_journey.id,
+                    stop_time.sequence,
+                    ObjectType::PassengerStopAssignment,
+                ),
+            )
+            .attr("version", "any")
+            .attr("order", stop_time.sequence + 1);
+        let element_builder = element_builder.append(Self::generate_scheduled_stop_point_ref(
+            &vehicle_journey.id,
+            stop_time.sequence,
+        ));
+        let element_builder = if let Some(stop_place_ref_element) = self.generate_stop_place_ref(
+            &self.model.stop_points[stop_time.stop_point_idx].stop_area_id,
+            &vehicle_journey.physical_mode_id,
+        ) {
+            element_builder.append(stop_place_ref_element)
+        } else {
+            element_builder
+        };
+        let element_builder = element_builder.append(Self::generate_quay_ref(
+            &self.model.stop_points[stop_time.stop_point_idx].id,
+        ));
+        element_builder.build()
+    }
+
     fn generate_route_name(route_name: &'a str) -> Element {
         Element::builder("Name")
             .append(Node::Text(route_name.to_owned()))
@@ -232,6 +292,25 @@ impl<'a> OfferExporter<'a> {
                     ObjectType::ScheduledStopPoint,
                 ),
             )
+            .build()
+    }
+
+    fn generate_stop_place_ref(
+        &self,
+        stop_area_id: &'a str,
+        physical_mode_id: &'a str,
+    ) -> Option<Element> {
+        let netex_mode = NetexMode::from_physical_mode_id(physical_mode_id)?;
+        let stop_place_id = StopExporter::generate_stop_place_id(stop_area_id, netex_mode);
+        let element = Element::builder("StopPlaceRef")
+            .attr("ref", stop_place_id)
+            .build();
+        Some(element)
+    }
+
+    fn generate_quay_ref(stop_id: &'a str) -> Element {
+        Element::builder("QuayRef")
+            .attr("ref", Exporter::generate_id(stop_id, ObjectType::Quay))
             .build()
     }
 

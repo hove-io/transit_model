@@ -77,6 +77,38 @@
 						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42F1_10:" order="11" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42F1_10:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:GDL_bus:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:GDLB:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42F1_20:" order="21" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42F1_20:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:MTP_bus:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:MTPB:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42B1_20:" order="21" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42B1_20:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:MTP_bus:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:MTPB:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42B1_30:" order="31" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42B1_30:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:GDL_bus:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:GDLB:">
+					</QuayRef>
+				</PassengerStopAssignment>
 			</members>
 		</GeneralFrame>
 	</dataObjects>

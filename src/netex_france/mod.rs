@@ -22,6 +22,8 @@ mod exporter;
 pub use exporter::Exporter;
 mod lines;
 use lines::LineExporter;
+mod modes;
+use modes::NetexMode;
 mod networks;
 use networks::NetworkExporter;
 mod offer;
