@@ -493,5 +493,6 @@ ServiceJourney/passingTimes/TimetabledPassingTime[] | stop_times.txt | | see [`T
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 TimetabledPassingTime/ArrivalTime | stop_times.txt | arrival_time | format as `00:00:00` with a modulo on 24 hours (e.g. `25:00:00` becomes `01:00:00`)
+TimetabledPassingTime/ArrivalDayOffset | stop_times.txt | arrival_time | number of times 24 hours fits in `arrival_time` (e.g. for `50:00:00`, 24 hours fits `2` times)
 TimetabledPassingTime/DepartureTime | stop_times.txt | departure_time | format as `00:00:00` with a modulo on 24 hours (e.g. `25:00:00` becomes `01:00:00`)
 TimetabledPassingTime/DepartureDayOffset | stop_times.txt | departure_time | number of times 24 hours fits in `departure_time` (e.g. for `50:00:00`, 24 hours fits `2` times)

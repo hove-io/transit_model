@@ -17,7 +17,7 @@ use crate::{
         exporter::{Exporter, ObjectType},
         NetexMode, StopExporter,
     },
-    objects::{Coord, Line, Route, StopTime, VehicleJourney},
+    objects::{Coord, Line, Route, StopTime, Time, VehicleJourney},
     Model, Result,
 };
 use log::warn;
@@ -76,11 +76,21 @@ impl<'a> OfferExporter<'a> {
                     passenger_stop_assignment_elements
                 },
             );
+        let service_journey_elements = journey_patterns
+            .iter()
+            .map(|(journey_pattern_idx, vehicle_journey_indexes)| {
+                self.export_service_journeys(*journey_pattern_idx, vehicle_journey_indexes)
+            })
+            .fold(Vec::new(), |mut service_journey_elements, elements| {
+                service_journey_elements.extend(elements);
+                service_journey_elements
+            });
 
         let mut elements = route_elements;
         elements.extend(service_journey_pattern_elements);
         elements.extend(scheduled_stop_point_elements);
         elements.extend(passenger_stop_assignment_elements);
+        elements.extend(service_journey_elements);
         Ok(elements)
     }
 }
@@ -258,6 +268,75 @@ impl<'a> OfferExporter<'a> {
         element_builder.build()
     }
 
+    fn export_service_journeys(
+        &self,
+        journey_pattern_idx: Idx<JourneyPattern>,
+        vehicle_journey_indexes: &[Idx<VehicleJourney>],
+    ) -> Vec<Element> {
+        vehicle_journey_indexes
+            .iter()
+            .map(|vehicle_journey_idx| {
+                self.export_service_journey(journey_pattern_idx, *vehicle_journey_idx)
+            })
+            .collect()
+    }
+
+    fn export_service_journey(
+        &self,
+        journey_pattern_idx: Idx<JourneyPattern>,
+        vehicle_journey_idx: Idx<VehicleJourney>,
+    ) -> Element {
+        let journey_pattern_id = &self.model.vehicle_journeys[journey_pattern_idx].id;
+        let vehicle_journey = &self.model.vehicle_journeys[vehicle_journey_idx];
+        let element_builder = Element::builder(ObjectType::ServiceJourney.to_string())
+            .attr(
+                "id",
+                Exporter::generate_id(&vehicle_journey.id, ObjectType::ServiceJourney),
+            )
+            .attr("version", "any");
+        let element_builder =
+            element_builder.append(Self::generate_day_type_ref(&vehicle_journey.service_id));
+        let element_builder =
+            element_builder.append(Self::generate_journey_pattern_ref(journey_pattern_id));
+        let element_builder =
+            element_builder.append(Self::generate_operator_ref(&vehicle_journey.company_id));
+        let passing_times = Element::builder("passingTimes")
+            .append_all(Self::export_timetabled_passing_times(
+                &vehicle_journey.stop_times,
+            ))
+            .build();
+        let element_builder = element_builder.append(passing_times);
+        element_builder.build()
+    }
+
+    fn export_timetabled_passing_times(stop_times: &'a [StopTime]) -> Vec<Element> {
+        stop_times
+            .iter()
+            .map(|stop_time| Self::export_timetabled_passing_time(stop_time))
+            .collect()
+    }
+
+    fn export_timetabled_passing_time(stop_time: &'a StopTime) -> Element {
+        let arrival_day_offset = stop_time.arrival_time.hours() / 24;
+        let arrival_time = Time::new(
+            stop_time.arrival_time.hours() % 24,
+            stop_time.arrival_time.minutes(),
+            stop_time.arrival_time.seconds(),
+        );
+        let departure_day_offset = stop_time.departure_time.hours() / 24;
+        let departure_time = Time::new(
+            stop_time.departure_time.hours() % 24,
+            stop_time.departure_time.minutes(),
+            stop_time.departure_time.seconds(),
+        );
+        Element::builder(ObjectType::TimetabledPassingTime.to_string())
+            .append(Self::generate_arrival_time(arrival_time))
+            .append(Self::generate_arrival_day_offset(arrival_day_offset))
+            .append(Self::generate_departure_time(departure_time))
+            .append(Self::generate_departure_day_offset(departure_day_offset))
+            .build()
+    }
+
     fn generate_route_name(route_name: &'a str) -> Element {
         Element::builder("Name")
             .append(Node::Text(route_name.to_owned()))
@@ -314,6 +393,36 @@ impl<'a> OfferExporter<'a> {
             .build()
     }
 
+    fn generate_day_type_ref(service_id: &'a str) -> Element {
+        let day_type_ref_element = Element::builder("DayTypeRef")
+            .attr(
+                "ref",
+                Exporter::generate_id(service_id, ObjectType::DayType),
+            )
+            .build();
+        Element::builder("dayTypes")
+            .append(day_type_ref_element)
+            .build()
+    }
+
+    fn generate_journey_pattern_ref(journey_pattern_id: &'a str) -> Element {
+        Element::builder("JourneyPatternRef")
+            .attr(
+                "ref",
+                Exporter::generate_id(journey_pattern_id, ObjectType::ServiceJourneyPattern),
+            )
+            .build()
+    }
+
+    fn generate_operator_ref(company_id: &'a str) -> Element {
+        Element::builder("OperatorRef")
+            .attr(
+                "ref",
+                Exporter::generate_id(company_id, ObjectType::Operator),
+            )
+            .build()
+    }
+
     fn generate_direction_type(direction_type: Option<&str>) -> Option<Element> {
         direction_type
             .and_then(|direction_type| match direction_type {
@@ -361,6 +470,30 @@ impl<'a> OfferExporter<'a> {
         let is_boarding = if pickup_type == 0 { "true" } else { "false" };
         Element::builder("ForBoarding")
             .append(Node::Text(is_boarding.to_owned()))
+            .build()
+    }
+
+    fn generate_arrival_time(arrival_time: Time) -> Element {
+        Element::builder("ArrivalTime")
+            .append(Node::Text(arrival_time.to_string()))
+            .build()
+    }
+
+    fn generate_departure_time(departure_time: Time) -> Element {
+        Element::builder("DepartureTime")
+            .append(Node::Text(departure_time.to_string()))
+            .build()
+    }
+
+    fn generate_arrival_day_offset(arrival_day_offset: u32) -> Element {
+        Element::builder("ArrivalDayOffset")
+            .append(Node::Text(arrival_day_offset.to_string()))
+            .build()
+    }
+
+    fn generate_departure_day_offset(departure_day_offset: u32) -> Element {
+        Element::builder("DepartureDayOffset")
+            .append(Node::Text(departure_day_offset.to_string()))
             .build()
     }
 
