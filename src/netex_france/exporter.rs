@@ -53,6 +53,7 @@ pub(in crate::netex_france) enum ObjectType {
     ScheduledStopPoint,
     ServiceJourneyPattern,
     StopPlace,
+    StopPointInJourneyPattern,
     UicOperatingPeriod,
 }
 
@@ -70,6 +71,7 @@ impl Display for ObjectType {
             ScheduledStopPoint => write!(f, "ScheduledStopPoint"),
             ServiceJourneyPattern => write!(f, "ServiceJourneyPattern"),
             StopPlace => write!(f, "StopPlace"),
+            StopPointInJourneyPattern => write!(f, "StopPointInJourneyPattern"),
             UicOperatingPeriod => write!(f, "UicOperatingPeriod"),
         }
     }

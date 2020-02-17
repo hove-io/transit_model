@@ -23,11 +23,63 @@
 					<Distance>0</Distance>
 					<RouteRef ref="FR:Route:M1:">
 					</RouteRef>
+					<pointsInSequence>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1F1_0:" order="1" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_0:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1F1_1:" order="2" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_1:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1F1_2:" order="3" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_2:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1F1_3:" order="4" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_3:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+					</pointsInSequence>
 				</ServiceJourneyPattern>
 				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:M1B1:" version="any">
 					<Distance>0</Distance>
 					<RouteRef ref="FR:Route:M1_R:">
 					</RouteRef>
+					<pointsInSequence>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1B1_6:" order="7" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_6:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1B1_7:" order="8" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_7:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1B1_8:" order="9" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_8:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1B1_9:" order="10" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_9:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+					</pointsInSequence>
 				</ServiceJourneyPattern>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_0:" version="any">
 					<Location>

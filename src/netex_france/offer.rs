@@ -111,6 +111,9 @@ impl<'a> OfferExporter<'a> {
 
     fn export_journey_pattern(&self, journey_pattern_idx: Idx<JourneyPattern>) -> Element {
         let journey_pattern = &self.model.vehicle_journeys[journey_pattern_idx];
+        let points_in_sequence = Element::builder("pointsInSequence")
+            .append_all(self.export_stop_points_in_journey_pattern(journey_pattern_idx))
+            .build();
         Element::builder(ObjectType::ServiceJourneyPattern.to_string())
             .attr(
                 "id",
@@ -119,6 +122,46 @@ impl<'a> OfferExporter<'a> {
             .attr("version", "any")
             .append(Self::generate_distance())
             .append(Self::generate_route_ref(&journey_pattern.route_id))
+            .append(points_in_sequence)
+            .build()
+    }
+
+    fn export_stop_points_in_journey_pattern(
+        &self,
+        journey_pattern_idx: Idx<JourneyPattern>,
+    ) -> Vec<Element> {
+        let vehicle_journey = &self.model.vehicle_journeys[journey_pattern_idx];
+        vehicle_journey
+            .stop_times
+            .iter()
+            .map(|stop_time| {
+                self.export_stop_point_in_journey_pattern(&vehicle_journey.id, stop_time)
+            })
+            .collect()
+    }
+
+    fn export_stop_point_in_journey_pattern(
+        &self,
+        vehicle_journey_id: &'a str,
+        stop_time: &'a StopTime,
+    ) -> Element {
+        Element::builder(ObjectType::StopPointInJourneyPattern.to_string())
+            .attr(
+                "id",
+                Self::generate_stop_sequence_id(
+                    &vehicle_journey_id,
+                    stop_time.sequence,
+                    ObjectType::StopPointInJourneyPattern,
+                ),
+            )
+            .attr("version", "any")
+            .attr("order", stop_time.sequence + 1)
+            .append(Self::generate_scheduled_stop_point_ref(
+                &vehicle_journey_id,
+                stop_time.sequence,
+            ))
+            .append(Self::generate_for_alighting(stop_time.drop_off_type))
+            .append(Self::generate_for_boarding(stop_time.pickup_type))
             .build()
     }
 
@@ -179,6 +222,19 @@ impl<'a> OfferExporter<'a> {
             .build()
     }
 
+    fn generate_scheduled_stop_point_ref(vehicle_journey_id: &'a str, sequence: u32) -> Element {
+        Element::builder("ScheduledStopPointRef")
+            .attr(
+                "ref",
+                Self::generate_stop_sequence_id(
+                    vehicle_journey_id,
+                    sequence,
+                    ObjectType::ScheduledStopPoint,
+                ),
+            )
+            .build()
+    }
+
     fn generate_direction_type(direction_type: Option<&str>) -> Option<Element> {
         direction_type
             .and_then(|direction_type| match direction_type {
@@ -213,6 +269,20 @@ impl<'a> OfferExporter<'a> {
             .build();
         let location = Element::builder("Location").append(pos).build();
         Ok(location)
+    }
+
+    fn generate_for_alighting(drop_off_type: u8) -> Element {
+        let is_alighting = if drop_off_type == 0 { "true" } else { "false" };
+        Element::builder("ForAlighting")
+            .append(Node::Text(is_alighting.to_owned()))
+            .build()
+    }
+
+    fn generate_for_boarding(pickup_type: u8) -> Element {
+        let is_boarding = if pickup_type == 0 { "true" } else { "false" };
+        Element::builder("ForBoarding")
+            .append(Node::Text(is_boarding.to_owned()))
+            .build()
     }
 
     fn calculate_journey_patterns(

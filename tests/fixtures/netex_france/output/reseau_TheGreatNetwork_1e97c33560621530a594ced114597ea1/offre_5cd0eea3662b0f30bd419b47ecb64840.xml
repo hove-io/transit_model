@@ -23,11 +23,63 @@
 					<Distance>0</Distance>
 					<RouteRef ref="FR:Route:RERA:">
 					</RouteRef>
+					<pointsInSequence>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAF1_1:" order="2" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_1:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAF1_2:" order="3" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_2:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAF1_3:" order="4" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_3:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAF1_5:" order="6" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_5:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+					</pointsInSequence>
 				</ServiceJourneyPattern>
 				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:RERAB1:" version="any">
 					<Distance>0</Distance>
 					<RouteRef ref="FR:Route:RERA_Bus_R:">
 					</RouteRef>
+					<pointsInSequence>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAB1_5:" order="6" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_5:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAB1_8:" order="9" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_8:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAB1_13:" order="14" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_13:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAB1_21:" order="22" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_21:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+					</pointsInSequence>
 				</ServiceJourneyPattern>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:RERAF1_1:" version="any">
 					<Location>
