@@ -23,7 +23,7 @@ use csv::Writer;
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap};
 use std::fs::File;
 use std::path;
 use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
