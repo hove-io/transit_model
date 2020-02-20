@@ -129,8 +129,7 @@ impl Exporter<'_> {
     fn wrap_frame(&self, frame: Element, version_type: VersionType) -> Result<Element> {
         let publication_timestamp = Element::builder("PublicationTimestamp")
             .ns("http://www.netex.org.uk/netex/")
-            // FIXME: This is not compliant with ISO8601 (the final offset is missing)
-            .append(self.timestamp.format("%FT%T").to_string())
+            .append(self.timestamp.to_rfc3339())
             .build();
         let participant_ref = Element::builder("ParticipantRef")
             .ns("http://www.netex.org.uk/netex/")
