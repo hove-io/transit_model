@@ -14,10 +14,13 @@
 
 use crate::{
     netex_france::exporter::{Exporter, ObjectType},
-    objects::Calendar,
+    objects::{Calendar, Date},
     Model, Result,
 };
-use minidom::Element;
+use chrono::prelude::*;
+use failure::bail;
+use minidom::{Element, Node};
+use std::collections::BTreeSet;
 
 pub struct CalendarExporter<'a> {
     model: &'a Model,
@@ -41,15 +44,16 @@ impl<'a> CalendarExporter<'a> {
             .values()
             .map(|calendar| self.export_day_type_assignement(calendar))
             .collect::<Result<Vec<Element>>>()?;
-        let _uic_operating_periods_elements = self
+        let uic_operating_periods_elements = self
             .model
             .calendars
             .values()
             .map(|calendar| self.export_uic_operating_period(calendar))
             .collect::<Result<Vec<Element>>>()?;
-        let elements = day_types_elements;
+        let mut elements = day_types_elements;
+        // TODO: Uncomment once implemented
         // elements.extend(day_type_assignments_elements);
-        // elements.extend(uic_operating_periods_elements);
+        elements.extend(uic_operating_periods_elements);
         Ok(elements)
     }
 }
@@ -72,9 +76,117 @@ impl<'a> CalendarExporter<'a> {
         Ok(day_type_assignment)
     }
 
-    fn export_uic_operating_period(&self, _calendar: &'a Calendar) -> Result<Element> {
-        let uic_operating_period =
-            Element::builder(ObjectType::UicOperatingPeriod.to_string()).build();
-        Ok(uic_operating_period)
+    fn export_uic_operating_period(&self, calendar: &'a Calendar) -> Result<Element> {
+        if let Some(from_date) = calendar.dates.iter().next() {
+            let from_date = Self::generate_from_date(*from_date);
+            let valid_day_bits = Self::generate_valid_day_bits(&calendar.dates);
+            let uic_operating_period = Element::builder(ObjectType::UicOperatingPeriod.to_string())
+                .attr(
+                    "id",
+                    Exporter::generate_id(&calendar.id, ObjectType::UicOperatingPeriod),
+                )
+                .attr("version", "any")
+                .append(from_date)
+                .append(valid_day_bits)
+                .build();
+            Ok(uic_operating_period)
+        } else {
+            bail!(
+                "Calendar '{}' cannot be exported because it contains no date",
+                calendar.id
+            )
+        }
+    }
+
+    fn generate_from_date(date: Date) -> Element {
+        let date_string = DateTime::<Utc>::from_utc(date.and_hms(0, 0, 0), Utc).to_rfc3339();
+        Element::builder("FromDate")
+            .append(Node::Text(date_string))
+            .build()
+    }
+
+    fn generate_valid_day_bits(dates: &'a BTreeSet<Date>) -> Element {
+        let valid_day_bits_string = if dates.is_empty() {
+            String::new()
+        } else {
+            dates
+                .iter()
+                .zip(dates.iter().skip(1))
+                .map(|(date_1, date_2)| *date_2 - *date_1)
+                .map(|duration| duration.num_days())
+                .fold(String::from("1"), |mut valid_day_bits, days_diff| {
+                    for _ in 1..days_diff {
+                        valid_day_bits += "0"
+                    }
+                    valid_day_bits += "1";
+                    valid_day_bits
+                })
+        };
+        Element::builder("ValidDayBits")
+            .append(Node::Text(valid_day_bits_string))
+            .build()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod valid_day_bits {
+        use super::*;
+        use crate::minidom_utils::ElementWriter;
+        use pretty_assertions::assert_eq;
+
+        fn get_valid_day_bits(element: Element) -> String {
+            let writer = ElementWriter::new(element, false);
+            let mut buffer = Vec::<u8>::new();
+            writer.write(&mut buffer).unwrap();
+            String::from_utf8(buffer)
+                .unwrap()
+                .replace(
+                    r#"<?xml version="1.0" encoding="UTF-8"?><ValidDayBits>"#,
+                    "",
+                )
+                .replace(r#"</ValidDayBits>"#, "")
+                .to_owned()
+        }
+
+        #[test]
+        fn empty_validity_pattern() {
+            let valid_day_bits_element =
+                CalendarExporter::generate_valid_day_bits(&BTreeSet::new());
+            assert_eq!("", get_valid_day_bits(valid_day_bits_element));
+        }
+
+        #[test]
+        fn only_one_date() {
+            let dates = vec![NaiveDate::from_ymd(2020, 1, 1)].into_iter().collect();
+            let valid_day_bits_element = CalendarExporter::generate_valid_day_bits(&dates);
+            assert_eq!("1", get_valid_day_bits(valid_day_bits_element));
+        }
+
+        #[test]
+        fn successive_dates() {
+            let dates = vec![
+                NaiveDate::from_ymd(2020, 1, 1),
+                NaiveDate::from_ymd(2020, 1, 2),
+            ]
+            .into_iter()
+            .collect();
+            let valid_day_bits_element = CalendarExporter::generate_valid_day_bits(&dates);
+            assert_eq!("11", get_valid_day_bits(valid_day_bits_element));
+        }
+
+        #[test]
+        fn not_successive_dates() {
+            let dates = vec![
+                NaiveDate::from_ymd(2020, 1, 1),
+                NaiveDate::from_ymd(2020, 1, 3),
+            ]
+            .into_iter()
+            .collect();
+            let valid_day_bits_element = CalendarExporter::generate_valid_day_bits(&dates);
+            assert_eq!("101", get_valid_day_bits(valid_day_bits_element));
+        }
     }
 }
