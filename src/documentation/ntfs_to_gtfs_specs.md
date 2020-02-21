@@ -82,7 +82,7 @@ stop_name | yes | stops.txt | stop_name
 stop_lat | yes | stops.txt | stop_lat
 stop_lon | yes | stops.txt | stop_lon
 zone_id | no | stops.txt | fare_zone_id
-location_type | no | stops.txt | location_type
+location_type | no | stops.txt | location_type | The value is set to `0` if the input value is `0` or invalid or unspecified, `1` if the input value is `1`, `2` if the input value is `3`, `3` if the input value is `4` and `4` if the input value is `5`.
 parent_station | no | stops.txt | parent_station
 timezone | no | stops.txt | timezone
 stop_desc | no | comments.txt, comment_links.txt | comment_name | The value of `comment_name` referenced by the `comment_id` having an `object_type` = `stop_point` or `object_type` = `stop_area` and an `object_id` equal to the corresponding `stop_id`. In case of more than one comments linked to the same trip, the first comment in alphabetical order is taken into account.
