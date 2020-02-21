@@ -73,7 +73,7 @@ If a NTFS `line` contains `trip`s that should be associated with different gtfs 
 
 
 ### stops.txt
-Stops and stations (stops having `location_type` = 0 and 1) are the only objects handled in the current version.
+Stop zones (NTFS stops having `location_type` = 2) are ignored in the current version.
 
 GTFS field | Required | NTFS file | NTFS field | Note
 --- | --- | --- | --- | ---
