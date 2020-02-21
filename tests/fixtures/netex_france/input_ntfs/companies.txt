@@ -1,2 +1,2 @@
-company_id,company_name
-TGC,The Great Company
+company_id,company_name,company_mail,company_phone,company_url
+TGN,The Great Network,the-great-network@tgn.zz,0123456789,https://www.the-great-network.zz

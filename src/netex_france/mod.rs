@@ -16,6 +16,8 @@
 
 mod calendars;
 use calendars::CalendarExporter;
+mod companies;
+use companies::CompanyExporter;
 mod exporter;
 pub use exporter::Exporter;
 mod lines;
