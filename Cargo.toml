@@ -89,6 +89,11 @@ name = "netexidf2ntfs"
 path = "tests/netexidf2ntfs.rs"
 required-features = ["proj"]
 
+[[test]]
+name = "write_netex_france"
+path = "tests/write_netex_france.rs"
+required-features = ["proj"]
+
 [dev-dependencies]
 approx = "0.3"
 rust_decimal_macros = "1.0"

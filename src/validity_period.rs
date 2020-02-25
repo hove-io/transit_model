@@ -65,11 +65,10 @@ pub fn update_validity_period(dataset: &mut Dataset, service_validity_period: &V
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[cfg(feature = "proj")]
     mod update_validity_period {
-        use super::*;
+        use super::super::*;
         use crate::objects::{Dataset, Date, ValidityPeriod};
         use chrono::naive::{MAX_DATE, MIN_DATE};
         use pretty_assertions::assert_eq;
