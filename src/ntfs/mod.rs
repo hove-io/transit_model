@@ -387,11 +387,15 @@ mod tests {
             assert_eq!(
                 vec![
                     ("feed_creation_date".to_string(), "20190403".to_string()),
+                    (
+                        "feed_creation_datetime".to_string(),
+                        "2019-04-03T17:19:00+00:00".to_string()
+                    ),
                     ("feed_creation_time".to_string(), "17:19:00".to_string()),
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.11.1".to_string()),
+                    ("ntfs_version".to_string(), "0.11.2".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
