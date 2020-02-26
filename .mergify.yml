@@ -6,6 +6,10 @@ pull_request_rules:
       - "#review-requested=0"
       - "#changes-requested-reviews-by=0"
       - status-success=continuous-integration/travis-ci/pr
+      - status-success=Continuous Integration / Formatting check (pull_request)
+      - status-success=Continuous Integration / Analyzing code with Clippy (pull_request)
+      - status-success=Continuous Integration / Tests (stable) (pull_request)
+      - status-success=Continuous Integration / Tests (beta) (pull_request)
       - base=master
       - label!=dot_not_merge
       - label!=wip
