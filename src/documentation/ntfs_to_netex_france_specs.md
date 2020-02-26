@@ -219,6 +219,43 @@ StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinat
 StopPlace/TransportMode | | | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.1/ntfs_fr.md#physical_modestxt-requis))
 StopPlace/StopPlaceType | | | see the section [StopPlaceType mapping](#stopplacetype-mapping)
 
+## correspondances.xml
+Each connection between two stops in `transfers.txt` produces a `SiteConnection` element with the `From` and `To` nodes of the connection as well as a `WalkTransferDuration` node.
+All `SiteConnection` elements are grouped in a `members` element inside a `GeneralFrame`.
+
+### Top level structure
+Example:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<GeneralFrame id="FR:GeneralFrame:NETEX_TRANSFER:" version="any">
+	<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_STRUCTURE:"/>
+	<members>
+		<!-- One SiteConnection for each trasnfer in transfers.txt -->
+		<SiteConnection>
+			<From>
+				<!-- Origin stop of the connection -->
+				<QuayRef />
+			</From>
+			<To>
+				<!-- End stop of the connection -->
+				<QuayRef />
+			</To>
+			<WalkTransferDuration>
+				<DefaultDuration><!-- Walking connecting time --></DefaultDuration>
+			</WalkTransferDuration>
+		</SiteConnection>
+	</members>
+</GeneralFrame>
+```
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+SiteConnection/@id | | | The id is built from the concatenation of the origin and end `stop_id` used in the connection. For the rest of the id, use [id formatting](#id-of-objects).
+SiteConnection/@version | | | Fixed value `any`.
+SiteConnection/From/QuayRef/@ref | transfers.txt | from_stop_id | Id of the origin `Quay` of the connection. See [id formatting](#id-of-objects).
+SiteConnection/To/QuayRef/@ref | transfers.txt | to_stop_id | Id of the end `Quay` of the connection. See [id formatting](#id-of-objects).
+SiteConnection/WalkTransferDuration/DefaultDuration | transfers.txt | real_min_transfer_time | Time is given as a [duration](https://en.wikipedia.org/wiki/ISO_8601#Durations) (e.g. PT2M for a transfer time of 2 minutes).
+
 ## lignes.xml
 
 ### Top level structure
