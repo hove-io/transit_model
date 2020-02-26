@@ -110,7 +110,8 @@ Tramway | tram
 
 ### Coordinates conversion
 
-The GTFS stop_lon and stop_lat are specified in WGS84. The coordinates are converted to EPSG:2154 (Lambert 93).  
+The GTFS `stop_lon` and `stop_lat` are specified in WGS84. The coordinates are
+converted to EPSG:2154 (Lambert 93).  
 Example of Netex declaration:
 ><gml:pos srsName="EPSG:2154">662233.0 6861519.0</gml:pos>
 
@@ -125,7 +126,7 @@ Netex field | NTFS file | NTFS field | Note
 Quay/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
 Quay/@version | | | fixed value `any`.
 Quay/Name | stops.txt | stop_name |
-Quay/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
+Quay/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent
 Quay/TransportMode | | | see (2) below
 Quay/tariffZones/TariffZoneRef/@ref | stops.txt | fare_zone_id | The fare zone is prefixed by the `ParticipantRef` prefix with a `:` separator
 Quay/PublicCode | stops.txt | stop_code | This node may not be present if the stop_point has no `stop_code`.
@@ -202,7 +203,7 @@ Netex field | NTFS file | NTFS field | Note
 StopPlace/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
 StopPlace/@version | | | fixed value `any`.
 StopPlace/Name | stops.txt | stop_name | 
-StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
+StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent
 StopPlace/ParentSiteRef | | | link to the corresponding Multimodal `StopPlace`
 StopPlace/TransportMode | | | use the only NeTEx mode
 StopPlace/StopPlaceType | | | see the section [StopPlaceType mapping](#stopplacetype-mapping)
@@ -215,7 +216,7 @@ Netex field | NTFS file | NTFS field | Note
 StopPlace/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
 StopPlace/@version | | | fixed value `any`.
 StopPlace/Name | stops.txt | stop_name | 
-StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
+StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent
 StopPlace/TransportMode | | | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.1/ntfs_fr.md#physical_modestxt-requis))
 StopPlace/StopPlaceType | | | see the section [StopPlaceType mapping](#stopplacetype-mapping)
 
@@ -461,7 +462,7 @@ Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 ScheduledStopPoint/@id | | | see [`StopPointInJourneyPattern/@id`](#stoppointinjourneypattern) with `ScheduledStopPoint` as object type
 ScheduledStopPoint/@version | | | fixed value `any`
-ScheduledStopPoint/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion)
+ScheduledStopPoint/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Location` is absent
 
 ### PassengerStopAssignment
 
