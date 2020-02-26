@@ -22,6 +22,7 @@
 					<lines>
 						<Line id="FR:Line:B42:" version="any">
 							<Name>Bus 42</Name>
+							<PublicCode>Magic Bus!</PublicCode>
 						</Line>
 						<Line id="FR:Line:M1:" version="any">
 							<Name>Metro 1</Name>

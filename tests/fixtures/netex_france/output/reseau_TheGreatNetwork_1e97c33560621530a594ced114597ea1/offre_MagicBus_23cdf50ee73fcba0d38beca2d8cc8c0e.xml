@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery version="1.09:FR-NETEX_HORAIRE-2.1-1.0" xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.netex.org.uk/netex">
+	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
+	<ParticipantRef>Participant</ParticipantRef>
+	<dataObjects>
+		<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE:" version="any">
+			<members>
+				<Route id="FR:Route:B42:" version="any">
+					<Name>Bus 42</Name>
+					<Distance>0</Distance>
+					<LineRef ref="FR:Line:B42:">
+					</LineRef>
+					<DirectionType>inbound</DirectionType>
+				</Route>
+				<Route id="FR:Route:B42_R:" version="any">
+					<Name>Bus 42</Name>
+					<Distance>0</Distance>
+					<LineRef ref="FR:Line:B42:">
+					</LineRef>
+					<DirectionType>outbound</DirectionType>
+				</Route>
+				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:B42F1:" version="any">
+					<Distance>0</Distance>
+					<RouteRef ref="FR:Route:B42:">
+					</RouteRef>
+					<pointsInSequence>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:B42F1_10:" order="11" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42F1_10:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:B42F1_20:" order="21" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42F1_20:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+					</pointsInSequence>
+				</ServiceJourneyPattern>
+				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:B42B1:" version="any">
+					<Distance>0</Distance>
+					<RouteRef ref="FR:Route:B42_R:">
+					</RouteRef>
+					<pointsInSequence>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:B42B1_20:" order="21" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42B1_20:">
+							</ScheduledStopPointRef>
+							<ForAlighting>false</ForAlighting>
+							<ForBoarding>true</ForBoarding>
+						</StopPointInJourneyPattern>
+						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:B42B1_30:" order="31" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42B1_30:">
+							</ScheduledStopPointRef>
+							<ForAlighting>true</ForAlighting>
+							<ForBoarding>false</ForBoarding>
+						</StopPointInJourneyPattern>
+					</pointsInSequence>
+				</ServiceJourneyPattern>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42F1_10:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42F1_20:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_20:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_30:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</ScheduledStopPoint>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42F1_10:" order="11" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42F1_10:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:GDL_bus:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:GDLB:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42F1_20:" order="21" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42F1_20:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:MTP_bus:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:MTPB:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42B1_20:" order="21" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42B1_20:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:MTP_bus:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:MTPB:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42B1_30:" order="31" version="any">
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42B1_30:">
+					</ScheduledStopPointRef>
+					<StopPlaceRef ref="FR:StopPlace:GDL_bus:">
+					</StopPlaceRef>
+					<QuayRef ref="FR:Quay:GDLB:">
+					</QuayRef>
+				</PassengerStopAssignment>
+				<ServiceJourney id="FR:ServiceJourney:B42F1:" version="any">
+					<dayTypes>
+						<DayTypeRef ref="FR:DayType:Week:">
+						</DayTypeRef>
+					</dayTypes>
+					<JourneyPatternRef ref="FR:ServiceJourneyPattern:B42F1:">
+					</JourneyPatternRef>
+					<OperatorRef ref="FR:Operator:TGN:">
+					</OperatorRef>
+					<passingTimes>
+						<TimetabledPassingTime>
+							<ArrivalTime>10:10:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
+							<DepartureTime>10:10:00</DepartureTime>
+							<DepartureDayOffset>0</DepartureDayOffset>
+						</TimetabledPassingTime>
+						<TimetabledPassingTime>
+							<ArrivalTime>10:20:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
+							<DepartureTime>10:20:00</DepartureTime>
+							<DepartureDayOffset>0</DepartureDayOffset>
+						</TimetabledPassingTime>
+					</passingTimes>
+				</ServiceJourney>
+				<ServiceJourney id="FR:ServiceJourney:B42B1:" version="any">
+					<dayTypes>
+						<DayTypeRef ref="FR:DayType:Week:">
+						</DayTypeRef>
+					</dayTypes>
+					<JourneyPatternRef ref="FR:ServiceJourneyPattern:B42B1:">
+					</JourneyPatternRef>
+					<OperatorRef ref="FR:Operator:TGN:">
+					</OperatorRef>
+					<passingTimes>
+						<TimetabledPassingTime>
+							<ArrivalTime>07:00:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
+							<DepartureTime>07:00:00</DepartureTime>
+							<DepartureDayOffset>0</DepartureDayOffset>
+						</TimetabledPassingTime>
+						<TimetabledPassingTime>
+							<ArrivalTime>07:10:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
+							<DepartureTime>07:10:00</DepartureTime>
+							<DepartureDayOffset>0</DepartureDayOffset>
+						</TimetabledPassingTime>
+					</passingTimes>
+				</ServiceJourney>
+			</members>
+		</GeneralFrame>
+	</dataObjects>
+</PublicationDelivery>

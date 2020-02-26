@@ -17,21 +17,26 @@ use crate::{
     minidom_utils::ElementWriter,
     model::Model,
     netex_france::{
-        CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, StopExporter,
+        CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, OfferExporter,
+        StopExporter,
     },
     netex_utils::FrameType,
-    objects::Date,
+    objects::{Date, Line, Network},
     Result,
 };
 use chrono::prelude::*;
+use failure::format_err;
 use minidom::{Element, Node};
+use proj::Proj;
 use std::{
     convert::AsRef,
     fmt::{self, Display, Formatter},
-    fs::File,
+    fs::{self, File},
     iter,
     path::Path,
 };
+use transit_model_collection::Idx;
+use transit_model_relations::IdxSet;
 
 const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
 const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
@@ -41,10 +46,17 @@ pub(in crate::netex_france) enum ObjectType {
     DayType,
     DayTypeAssignment,
     Line,
-    Operator,
     Network,
+    Operator,
+    PassengerStopAssignment,
     Quay,
+    Route,
+    ScheduledStopPoint,
+    ServiceJourney,
+    ServiceJourneyPattern,
     StopPlace,
+    StopPointInJourneyPattern,
+    TimetabledPassingTime,
     UicOperatingPeriod,
 }
 
@@ -55,10 +67,17 @@ impl Display for ObjectType {
             DayType => write!(f, "DayType"),
             DayTypeAssignment => write!(f, "DayTypeAssignment"),
             Line => write!(f, "Line"),
-            Operator => write!(f, "Operator"),
             Network => write!(f, "Network"),
+            Operator => write!(f, "Operator"),
+            PassengerStopAssignment => write!(f, "PassengerStopAssignment"),
             Quay => write!(f, "Quay"),
+            Route => write!(f, "Route"),
+            ScheduledStopPoint => write!(f, "ScheduledStopPoint"),
+            ServiceJourney => write!(f, "ServiceJourney"),
+            ServiceJourneyPattern => write!(f, "ServiceJourneyPattern"),
             StopPlace => write!(f, "StopPlace"),
+            StopPointInJourneyPattern => write!(f, "StopPointInJourneyPattern"),
+            TimetabledPassingTime => write!(f, "TimetabledPassingTime"),
             UicOperatingPeriod => write!(f, "UicOperatingPeriod"),
         }
     }
@@ -67,6 +86,7 @@ impl Display for ObjectType {
 enum VersionType {
     Calendars,
     Lines,
+    Schedule,
     Stops,
 }
 
@@ -76,9 +96,14 @@ impl Display for VersionType {
         match self {
             Calendars => write!(fmt, "CALENDRIER"),
             Lines => write!(fmt, "LIGNE"),
+            Schedule => write!(fmt, "HORAIRE"),
             Stops => write!(fmt, "ARRET"),
         }
     }
+}
+
+fn only_alphanumeric(s: &str) -> String {
+    s.chars().filter(|c| c.is_alphanumeric()).collect()
 }
 
 /// Struct that can write an export of Netex France profile from a Model
@@ -117,12 +142,21 @@ impl<'a> Exporter<'a> {
         self.write_lines(&path)?;
         self.write_stops(&path)?;
         self.write_calendars(&path)?;
+        self.write_offers(&path)?;
         Ok(())
     }
 
     pub(in crate::netex_france) fn generate_id(id: &'a str, object_type: ObjectType) -> String {
         let id = id.replace(':', "_");
         format!("FR:{}:{}:", object_type, id)
+    }
+
+    pub(in crate::netex_france) fn get_coordinates_converter() -> Result<Proj> {
+        // FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
+        let from = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
+        let to = "EPSG:2154";
+        Proj::new_known_crs(from, to, None)
+            .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))
     }
 }
 
@@ -333,5 +367,71 @@ impl Exporter<'_> {
             .append(to_date)
             .build();
         Ok(valid_between)
+    }
+
+    fn write_offers<P>(&self, path: P) -> Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        for network in self.model.networks.values() {
+            let network_id_md5 = md5::compute(network.id.as_bytes());
+            let folder_name = format!(
+                "reseau_{}_{:x}",
+                only_alphanumeric(&network.name),
+                network_id_md5
+            );
+            let network_path = path.as_ref().join(folder_name);
+            fs::create_dir(&network_path)?;
+
+            // Unwrap is safe because we're iterating over existing networks
+            let network_idx = self.model.networks.get_idx(&network.id).unwrap();
+            self.write_network_offers(&network_path, network_idx)?;
+        }
+        Ok(())
+    }
+
+    fn write_network_offers<P>(&self, network_path: P, network_idx: Idx<Network>) -> Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        let line_indexes: IdxSet<Line> = self.model.get_corresponding_from_idx(network_idx);
+        let offer_exporter = OfferExporter::new(&self.model)?;
+        for line_idx in line_indexes {
+            let line = &self.model.lines[line_idx];
+            let line_id_md5 = md5::compute(line.id.as_bytes());
+            let line_code = if let Some(line_code) = line.code.as_ref() {
+                format!("{}_", only_alphanumeric(line_code))
+            } else {
+                String::new()
+            };
+            let file_name = format!("offre_{}{:x}.xml", line_code, line_id_md5);
+            let filepath = network_path.as_ref().join(file_name);
+            let mut file = File::create(&filepath)?;
+            let offer_frame = self.create_offer_frame(&offer_exporter, line_idx)?;
+            let netex = self.wrap_frame(offer_frame, VersionType::Schedule)?;
+            let writer = ElementWriter::new(netex, true);
+            writer.write(&mut file)?;
+        }
+        Ok(())
+    }
+
+    // Returns a 'GeneralFrame' containing all the schedules for a line
+    fn create_offer_frame(
+        &self,
+        offer_exporter: &OfferExporter,
+        line_idx: Idx<Line>,
+    ) -> Result<Element> {
+        let offer = offer_exporter.export(line_idx)?;
+        let members = Self::create_members(offer);
+        let general_frame_id = self.generate_frame_id(
+            FrameType::General,
+            &format!("NETEX_{}", VersionType::Schedule),
+        );
+        let frame = Element::builder(FrameType::General.to_string())
+            .attr("id", general_frame_id)
+            .attr("version", "any")
+            .append(members)
+            .build();
+        Ok(frame)
     }
 }

@@ -54,7 +54,9 @@ where
     match files_to_check {
         None => fs::read_dir(output_dir.as_ref())
             .unwrap()
-            .map(|f| f.unwrap().file_name().into_string().unwrap())
+            .map(|file| file.unwrap())
+            .filter(|file| file.path().is_file())
+            .map(|file| file.file_name().into_string().unwrap())
             .collect(),
         Some(v) => v.iter().map(|&f| f.to_string()).collect(),
     }

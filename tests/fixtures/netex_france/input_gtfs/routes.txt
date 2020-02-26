@@ -1,5 +1,5 @@
 route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color,route_sort_order
 M1,TGN,,Metro 1,,1,,,,
-B42,TGN,,Bus 42,,3,,,,
+B42,TGN,Magic Bus!,Bus 42,,3,,,,
 RERA,TGN,,RER A,,2,,,,
 RERA:Bus,TGN,,RER A,,3,,,,
