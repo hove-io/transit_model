@@ -30,3 +30,5 @@ mod offer;
 use offer::OfferExporter;
 mod stops;
 use stops::StopExporter;
+mod transfers;
+use transfers::TransferExporter;

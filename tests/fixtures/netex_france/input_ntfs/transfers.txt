@@ -1,0 +1,7 @@
+from_stop_id,to_stop_id,real_min_transfer_time
+GDLR,GDLM,180
+GDLM,GDLR,200
+GDLR,GDLB,600
+GDLB,GDLR,0
+GDLM,GDLB,120
+GDLB,GDLM,120

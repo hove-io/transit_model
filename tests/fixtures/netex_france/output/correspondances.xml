@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery version="1.09:FR-NETEX_RESEAU-2.1-1.0" xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.netex.org.uk/netex">
+	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
+	<ParticipantRef>Participant</ParticipantRef>
+	<dataObjects>
+		<GeneralFrame id="FR:GeneralFrame:NETEX_RESEAU:" version="any">
+			<members>
+				<SiteConnection id="FR:SiteConnection:GDLR_GDLM:" version="any">
+					<WalkTransferDuration>
+						<DefaultDuration>PT180S</DefaultDuration>
+					</WalkTransferDuration>
+					<From>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLR:">
+						</QuayRef>
+					</From>
+					<To>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLM:">
+						</QuayRef>
+					</To>
+				</SiteConnection>
+				<SiteConnection id="FR:SiteConnection:GDLM_GDLR:" version="any">
+					<WalkTransferDuration>
+						<DefaultDuration>PT200S</DefaultDuration>
+					</WalkTransferDuration>
+					<From>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLM:">
+						</QuayRef>
+					</From>
+					<To>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLR:">
+						</QuayRef>
+					</To>
+				</SiteConnection>
+				<SiteConnection id="FR:SiteConnection:GDLR_GDLB:" version="any">
+					<WalkTransferDuration>
+						<DefaultDuration>PT600S</DefaultDuration>
+					</WalkTransferDuration>
+					<From>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLR:">
+						</QuayRef>
+					</From>
+					<To>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLB:">
+						</QuayRef>
+					</To>
+				</SiteConnection>
+				<SiteConnection id="FR:SiteConnection:GDLB_GDLR:" version="any">
+					<WalkTransferDuration>
+						<DefaultDuration>PT0S</DefaultDuration>
+					</WalkTransferDuration>
+					<From>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLB:">
+						</QuayRef>
+					</From>
+					<To>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLR:">
+						</QuayRef>
+					</To>
+				</SiteConnection>
+				<SiteConnection id="FR:SiteConnection:GDLM_GDLB:" version="any">
+					<WalkTransferDuration>
+						<DefaultDuration>PT120S</DefaultDuration>
+					</WalkTransferDuration>
+					<From>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLM:">
+						</QuayRef>
+					</From>
+					<To>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLB:">
+						</QuayRef>
+					</To>
+				</SiteConnection>
+				<SiteConnection id="FR:SiteConnection:GDLB_GDLM:" version="any">
+					<WalkTransferDuration>
+						<DefaultDuration>PT120S</DefaultDuration>
+					</WalkTransferDuration>
+					<From>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLB:">
+						</QuayRef>
+					</From>
+					<To>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLM:">
+						</QuayRef>
+					</To>
+				</SiteConnection>
+			</members>
+		</GeneralFrame>
+	</dataObjects>
+</PublicationDelivery>
