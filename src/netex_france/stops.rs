@@ -165,7 +165,12 @@ impl<'a> StopExporter<'a> {
             )
             .attr("version", "any");
         let element_builder = element_builder.append(self.generate_name(&stop_point.name));
-        let element_builder = element_builder.append(self.generate_centroid(&stop_point.coord)?);
+        let element_builder =
+            if let Some(centroid_element) = self.generate_centroid(&stop_point.coord)? {
+                element_builder.append(centroid_element)
+            } else {
+                element_builder
+            };
         let netex_modes = self
             .stop_point_modes
             .get(stop_point.id.as_str())
@@ -233,7 +238,12 @@ impl<'a> StopExporter<'a> {
                     )
                     .attr("version", "any");
                 let element_builder = element_builder.append(name_element.clone());
-                let element_builder = element_builder.append(centroid.clone());
+
+                let element_builder = if let Some(centroid_element) = centroid.as_ref() {
+                    element_builder.append(centroid_element.clone())
+                } else {
+                    element_builder
+                };
                 let element_builder = element_builder.append(parent_site_ref_element.clone());
                 let element_builder =
                     element_builder.append(self.generate_transport_mode(*netex_mode));
@@ -249,7 +259,11 @@ impl<'a> StopExporter<'a> {
                 )
                 .attr("version", "any");
             let element_builder = element_builder.append(name_element);
-            let element_builder = element_builder.append(centroid);
+            let element_builder = if let Some(centroid_element) = centroid {
+                element_builder.append(centroid_element)
+            } else {
+                element_builder
+            };
             let highest_netex_mode =
                 self.calculate_highest_mode(&netex_modes).ok_or_else(|| {
                     // Should never happen, a Stop Area always have at least one associated mode
@@ -283,7 +297,10 @@ impl<'a> StopExporter<'a> {
         })
     }
 
-    fn generate_centroid(&self, coord: &'a Coord) -> Result<Element> {
+    fn generate_centroid(&self, coord: &'a Coord) -> Result<Option<Element>> {
+        if *coord == Coord::default() {
+            return Ok(None);
+        }
         let coord_epsg2154 = self.converter.convert(*coord)?;
         let coord_text = Node::Text(format!("{} {}", coord_epsg2154.x(), coord_epsg2154.y()));
         let pos = Element::builder("gml:pos")
@@ -292,7 +309,7 @@ impl<'a> StopExporter<'a> {
             .build();
         let location = Element::builder("Location").append(pos).build();
         let centroid = Element::builder("Centroid").append(location).build();
-        Ok(centroid)
+        Ok(Some(centroid))
     }
 
     fn generate_parent_site_ref(&self, parent_station_id: &'a str) -> Element {

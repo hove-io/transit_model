@@ -216,9 +216,13 @@ impl<'a> OfferExporter<'a> {
                 ),
             )
             .attr("version", "any");
-        let location_element =
-            self.generate_location(&self.model.stop_points[stop_time.stop_point_idx].coord)?;
-        let element_builder = element_builder.append(location_element);
+        let element_builder = if let Some(location_element) =
+            self.generate_location(&self.model.stop_points[stop_time.stop_point_idx].coord)?
+        {
+            element_builder.append(location_element)
+        } else {
+            element_builder
+        };
         Ok(element_builder.build())
     }
 
@@ -448,7 +452,10 @@ impl<'a> OfferExporter<'a> {
         Exporter::generate_id(&order_id, object_type)
     }
 
-    fn generate_location(&self, coord: &'a Coord) -> Result<Element> {
+    fn generate_location(&self, coord: &'a Coord) -> Result<Option<Element>> {
+        if *coord == Coord::default() {
+            return Ok(None);
+        }
         let coord_epsg2154 = self.converter.convert(*coord)?;
         let coord_text = Node::Text(format!("{} {}", coord_epsg2154.x(), coord_epsg2154.y()));
         let pos = Element::builder("gml:pos")
@@ -456,7 +463,7 @@ impl<'a> OfferExporter<'a> {
             .append(coord_text)
             .build();
         let location = Element::builder("Location").append(pos).build();
-        Ok(location)
+        Ok(Some(location))
     }
 
     fn generate_for_alighting(drop_off_type: u8) -> Element {

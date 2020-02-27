@@ -12,6 +12,6 @@ CDGM,Charles de Gaulle (Metro),,48.873965,2.295354,,CDG,ZoneOffParis
 DEF,La Défense,,48.891737,2.238964,1,,
 DEFR,La Défense (RER),,48.891737,2.238964,0,DEF,ZoneOffParis
 CHA,Châtelet,,48.858137,2.348145,1,,
-CHAM,Châtelet (Metro),The Big One,48.858137,2.348145,0,CHA,ZoneParis
+CHAM,Châtelet (Metro),The Big One,,,0,CHA,ZoneParis
 MTP,Montparnasse,,48.842481,2.321783,1,,
 MTPB,Montparnasse (Bus),,48.842481,2.321783,0,MTP,ZoneParis

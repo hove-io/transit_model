@@ -111,11 +111,6 @@
 				</Quay>
 				<Quay id="FR:Quay:CHAM:" version="any">
 					<Name>Châtelet (Metro)</Name>
-					<Centroid>
-						<Location>
-							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972682</gml:pos>
-						</Location>
-					</Centroid>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
