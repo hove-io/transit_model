@@ -137,7 +137,7 @@ As a stop_point can be associated to several physical_modes, all the
 physical_modes need to be mapped to the Netex list (see [NeTEx Transport
 Modes](#netex-transport-modes)).
 If more than one Netex mode is associated, use the mode of __highest priority__ (see [NTFS
-specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.1/ntfs_fr.md#physical_modestxt-requis)).
+specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis)).
 
 
 #### AccessibilityAssessment
@@ -217,7 +217,7 @@ StopPlace/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
 StopPlace/@version | | | fixed value `any`.
 StopPlace/Name | stops.txt | stop_name | 
 StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent
-StopPlace/TransportMode | | | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.1/ntfs_fr.md#physical_modestxt-requis))
+StopPlace/TransportMode | | | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis))
 StopPlace/StopPlaceType | | | see the section [StopPlaceType mapping](#stopplacetype-mapping)
 
 ## lignes.xml

@@ -104,7 +104,7 @@ cargo test
 ```
 
 ## NTFS: Level of Support
-`transit_model` is partially supporting `v0.11.1` of NTFS (see [CHANGELOG in
+`transit_model` is partially supporting `v0.11.2` of NTFS (see [CHANGELOG in
 French](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_changelog_fr.md)).
 From the standard, some of the functionalities are not fully supported:
 - No support for Line Groups (files `line_groups.txt` and `line_group_links.txt`)

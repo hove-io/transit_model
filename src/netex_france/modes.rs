@@ -16,7 +16,7 @@ use log::warn;
 use std::fmt::{self, Display, Formatter};
 
 // For the order, see
-// https://github.com/CanalTP/ntfs-specification/blob/v0.11.1/ntfs_fr.md#physical_modestxt-requis
+// https://github.com/CanalTP/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis
 // Note that 2 enum cannot have the same value so `Funicular` and `Cableway`
 // have different values. Same for `Coach` and `Bus`.
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Clone, Copy)]

@@ -1,6 +1,7 @@
 feed_info_param,feed_info_value
 feed_creation_date,20190403
 feed_creation_time,17:19:00
+feed_creation_datetime,2019-04-03T17:19:00+00:00
 feed_end_date,20170702
 feed_license,
 feed_publisher_name,France - Île-de-France
@@ -8,4 +9,4 @@ feed_publisher_url,
 feed_start_date,20170607
 fusio_url,http://vip-fusio-ihm.FR-IDF-OPEN.prod.canaltp.fr/
 fusio_version,1.10.89.209
-ntfs_version,0.11.1
+ntfs_version,0.11.2

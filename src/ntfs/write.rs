@@ -68,6 +68,10 @@ pub fn write_feed_infos(
         "feed_creation_time".to_string(),
         current_datetime.format("%T").to_string(),
     );
+    feed_infos.insert(
+        "feed_creation_datetime".to_string(),
+        current_datetime.to_rfc3339(),
+    );
     feed_infos.insert("ntfs_version".to_string(), NTFS_VERSION.to_string());
     let (start_date, end_date) = collections.calculate_validity_period()?;
     feed_infos.insert(
