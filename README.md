@@ -1,4 +1,8 @@
-# transit_model [![Build Status](https://travis-ci.org/CanalTP/transit_model.svg?branch=master)](https://travis-ci.org/CanalTP/transit_model)
+# transit_model &emsp; [![Travis Status]][travis] ![Github Actions Status][github_actions]
+
+[Travis Status]: https://travis-ci.org/CanalTP/transit_model.svg?branch=master
+[travis]: https://travis-ci.org/CanalTP/transit_model
+[github_actions]: https://github.com/CanalTP/transit_model/workflows/Continuous%20Integration/badge.svg
 
 `transit_model` is a Rust crate managing transit data by implementing the NTFS
 model (used  in [navitia](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)). See the
