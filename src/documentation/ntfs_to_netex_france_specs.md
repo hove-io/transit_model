@@ -228,9 +228,8 @@ Example:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <GeneralFrame id="FR:GeneralFrame:NETEX_RESEAU:" version="any">
-	<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_RESEAU:"/>
 	<members>
-		<!-- One SiteConnection for each trasnfer in transfers.txt -->
+		<!-- One SiteConnection for each transfer in transfers.txt -->
 		<SiteConnection>
 			<WalkTransferDuration>
 				<DefaultDuration><!-- Walking connecting time --></DefaultDuration>
@@ -252,13 +251,13 @@ Example:
 
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
-SiteConnection/@id | | | The id is built from the concatenation of the origin and end `stop_id` used in the connection. For the rest of the id, use [id formatting](#id-of-objects).
+SiteConnection/@id | | | The id is built from the concatenation (joined with `_`) of the origin and end `stop_id` used in the connection. For the rest of the id, use [id formatting](#id-of-objects).
 SiteConnection/@version | | | Fixed value `any`.
+SiteConnection/WalkTransferDuration/DefaultDuration | transfers.txt | real_min_transfer_time | Time is given as a [duration](https://en.wikipedia.org/wiki/ISO_8601#Durations) (e.g. PT120S for a transfer time of 2 minutes).
 SiteConnection/From/StopPlaceRef/@ref | | | Id of the multimodal `StopPlace` that contains the origin `Quay` of the connection. See [id formatting](#id-of-objects).
 SiteConnection/From/QuayRef/@ref | transfers.txt | from_stop_id | Id of the origin `Quay` of the connection. See [id formatting](#id-of-objects).
 SiteConnection/To/StopPlaceRef/@ref | | | Id of the multimodal `StopPlace` that contains the end `Quay` of the connection. See [id formatting](#id-of-objects).
 SiteConnection/To/QuayRef/@ref | transfers.txt | to_stop_id | Id of the end `Quay` of the connection. See [id formatting](#id-of-objects).
-SiteConnection/WalkTransferDuration/DefaultDuration | transfers.txt | real_min_transfer_time | Time is given as a [duration](https://en.wikipedia.org/wiki/ISO_8601#Durations) (e.g. PT2M for a transfer time of 2 minutes).
 
 ## lignes.xml
 
