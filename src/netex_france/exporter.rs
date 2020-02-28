@@ -18,7 +18,7 @@ use crate::{
     model::Model,
     netex_france::{
         CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, OfferExporter,
-        StopExporter,
+        StopExporter, TransferExporter,
     },
     netex_utils::FrameType,
     objects::{Date, Line, Network},
@@ -39,6 +39,7 @@ use transit_model_collection::Idx;
 use transit_model_relations::IdxSet;
 
 const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
+const NETEX_FRANCE_TRANSFERS_FILENAME: &str = "correspondances.xml";
 const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "arrets.xml";
 
@@ -54,6 +55,7 @@ pub(in crate::netex_france) enum ObjectType {
     ScheduledStopPoint,
     ServiceJourney,
     ServiceJourneyPattern,
+    SiteConnection,
     StopPlace,
     StopPointInJourneyPattern,
     TimetabledPassingTime,
@@ -75,6 +77,7 @@ impl Display for ObjectType {
             ScheduledStopPoint => write!(f, "ScheduledStopPoint"),
             ServiceJourney => write!(f, "ServiceJourney"),
             ServiceJourneyPattern => write!(f, "ServiceJourneyPattern"),
+            SiteConnection => write!(f, "SiteConnection"),
             StopPlace => write!(f, "StopPlace"),
             StopPointInJourneyPattern => write!(f, "StopPointInJourneyPattern"),
             TimetabledPassingTime => write!(f, "TimetabledPassingTime"),
@@ -88,6 +91,7 @@ enum VersionType {
     Lines,
     Schedule,
     Stops,
+    Transfers,
 }
 
 impl Display for VersionType {
@@ -98,6 +102,7 @@ impl Display for VersionType {
             Lines => write!(fmt, "LIGNE"),
             Schedule => write!(fmt, "HORAIRE"),
             Stops => write!(fmt, "ARRET"),
+            Transfers => write!(fmt, "RESEAU"),
         }
     }
 }
@@ -142,6 +147,7 @@ impl<'a> Exporter<'a> {
         self.write_lines(&path)?;
         self.write_stops(&path)?;
         self.write_calendars(&path)?;
+        self.write_transfers(&path)?;
         self.write_offers(&path)?;
         Ok(())
     }
@@ -367,6 +373,36 @@ impl Exporter<'_> {
             .append(to_date)
             .build();
         Ok(valid_between)
+    }
+
+    fn write_transfers<P>(&self, path: P) -> Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        let filepath = path.as_ref().join(NETEX_FRANCE_TRANSFERS_FILENAME);
+        let mut file = File::create(filepath)?;
+        let transfers_frame = self.create_transfers_frame()?;
+        let netex = self.wrap_frame(transfers_frame, VersionType::Transfers)?;
+        let writer = ElementWriter::new(netex, true);
+        writer.write(&mut file)?;
+        Ok(())
+    }
+
+    // Returns a 'GeneralFrame' containing all 'SiteConnection'
+    fn create_transfers_frame(&self) -> Result<Element> {
+        let transfer_exporter = TransferExporter::new(&self.model);
+        let transfers = transfer_exporter.export()?;
+        let members = Self::create_members(transfers);
+        let general_frame_id = self.generate_frame_id(
+            FrameType::General,
+            &format!("NETEX_{}", VersionType::Transfers),
+        );
+        let frame = Element::builder(FrameType::General.to_string())
+            .attr("id", general_frame_id)
+            .attr("version", "any")
+            .append(members)
+            .build();
+        Ok(frame)
     }
 
     fn write_offers<P>(&self, path: P) -> Result<()>
