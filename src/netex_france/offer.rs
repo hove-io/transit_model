@@ -14,15 +14,18 @@
 
 use crate::{
     netex_france::{
+        self,
         exporter::{Exporter, ObjectType},
         NetexMode, StopExporter,
     },
-    objects::{Coord, Line, Route, StopTime, Time, VehicleJourney},
+    objects::{Coord, Line, Route, StopPoint, StopTime, Time, VehicleJourney},
     Model, Result,
 };
+use failure::format_err;
 use log::warn;
 use minidom::{Element, Node};
 use proj::Proj;
+use std::collections::BTreeMap;
 use transit_model_collection::Idx;
 use transit_model_relations::IdxSet;
 
@@ -33,17 +36,54 @@ type JourneyPattern = VehicleJourney;
 pub struct OfferExporter<'a> {
     model: &'a Model,
     converter: Proj,
+    // Precalculation of the Stop Points per Route
+    route_points: BTreeMap<&'a str, Vec<Idx<StopPoint>>>,
+}
+
+fn calculate_route_points<'a>(model: &'a Model) -> BTreeMap<&'a str, Vec<Idx<StopPoint>>> {
+    model
+        .routes
+        .iter()
+        .map(|(route_idx, route)| {
+            let vehicle_journeys_indexes: IdxSet<VehicleJourney> =
+                model.get_corresponding_from_idx(route_idx);
+            let mut vehicle_journeys: Vec<&'a VehicleJourney> = vehicle_journeys_indexes
+                .into_iter()
+                .map(|idx| &model.vehicle_journeys[idx])
+                .collect();
+            // Order the vehicle journey with the following priority:
+            // - Stop point identifier of the first stop time of the vehicle journey
+            // - Then by departure time of the first stop time of the vehicle journey
+            // Since the `sort_by_key()` is a stable sort, we can first sort by
+            // `stop_point.departure_time` then by `stop_time.stop_point.id`
+            vehicle_journeys
+                .sort_by_key(|vehicle_journey| &vehicle_journey.stop_times[0].departure_time);
+            vehicle_journeys.sort_by_key(|vehicle_journey| {
+                &model.stop_points[vehicle_journey.stop_times[0].stop_point_idx].id
+            });
+            (
+                route.id.as_str(),
+                netex_france::build_route_points(vehicle_journeys),
+            )
+        })
+        .collect()
 }
 
 // Publicly exposed methods
 impl<'a> OfferExporter<'a> {
     pub fn new(model: &'a Model) -> Result<Self> {
         let converter = Exporter::get_coordinates_converter()?;
-        let exporter = OfferExporter { model, converter };
+        let route_points = calculate_route_points(model);
+        let exporter = OfferExporter {
+            model,
+            converter,
+            route_points,
+        };
         Ok(exporter)
     }
     pub fn export(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
-        let route_elements = self.export_routes(line_idx);
+        let route_elements = self.export_routes(line_idx)?;
+        let route_point_elements = self.export_route_points(line_idx)?;
         let journey_patterns: Vec<(Idx<JourneyPattern>, Vec<Idx<VehicleJourney>>)> = self
             .model
             .get_corresponding_from_idx(line_idx)
@@ -87,6 +127,7 @@ impl<'a> OfferExporter<'a> {
             });
 
         let mut elements = route_elements;
+        elements.extend(route_point_elements);
         elements.extend(service_journey_pattern_elements);
         elements.extend(scheduled_stop_point_elements);
         elements.extend(passenger_stop_assignment_elements);
@@ -97,7 +138,7 @@ impl<'a> OfferExporter<'a> {
 
 // Internal methods
 impl<'a> OfferExporter<'a> {
-    fn export_routes(&self, line_idx: Idx<Line>) -> Vec<Element> {
+    fn export_routes(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
         let route_indexes: IdxSet<Route> = self.model.get_corresponding_from_idx(line_idx);
         route_indexes
             .into_iter()
@@ -105,7 +146,7 @@ impl<'a> OfferExporter<'a> {
             .collect()
     }
 
-    fn export_route(&self, route_idx: Idx<Route>) -> Element {
+    fn export_route(&self, route_idx: Idx<Route>) -> Result<Element> {
         let route = &self.model.routes[route_idx];
         let element_builder = Element::builder(ObjectType::Route.to_string())
             .attr("id", Exporter::generate_id(&route.id, ObjectType::Route))
@@ -120,7 +161,36 @@ impl<'a> OfferExporter<'a> {
         } else {
             element_builder
         };
-        element_builder.build()
+        let element_builder = element_builder.append(self.generate_points_on_route(&route.id)?);
+        Ok(element_builder.build())
+    }
+
+    fn export_route_points(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
+        let route_indexes: IdxSet<Route> = self.model.get_corresponding_from_idx(line_idx);
+        let mut route_point_elements = Vec::new();
+        for route_idx in route_indexes {
+            let route = &self.model.routes[route_idx];
+            let elements = self.export_route_points_by_route(&route.id)?;
+            route_point_elements.extend(elements);
+        }
+        Ok(route_point_elements)
+    }
+
+    fn export_route_points_by_route(&self, route_id: &'a str) -> Result<Vec<Element>> {
+        let route_points = self
+            .route_points
+            .get(route_id)
+            .ok_or_else(|| format_err!("Failed to generate RoutePoint for Route '{}'", route_id))?;
+        route_points
+            .iter()
+            .enumerate()
+            .map(|(order, route_point_idx)| {
+                // order must start at ONE but 'enumerate()' starts at ZERO
+                let order = order + 1;
+                let stop_point = &self.model.stop_points[*route_point_idx];
+                self.generate_route_point(route_id, order, stop_point)
+            })
+            .collect()
     }
 
     fn export_journey_patterns(
@@ -351,6 +421,63 @@ impl<'a> OfferExporter<'a> {
         Element::builder("Distance")
             .append(Node::Text(String::from("0")))
             .build()
+    }
+
+    fn generate_points_on_route(&self, route_id: &'a str) -> Result<Element> {
+        let route_points = self.route_points.get(route_id).ok_or_else(|| {
+            format_err!("Failed to generate PointOnRoute for Route '{}'", route_id)
+        })?;
+        let points_on_route =
+            (1..=route_points.len()).map(|order| self.generate_point_on_route(route_id, order));
+        let points_in_sequence = Element::builder("pointsInSequence")
+            .append_all(points_on_route)
+            .build();
+        Ok(points_in_sequence)
+    }
+
+    fn generate_route_point_id(route_id: &str, order: usize) -> String {
+        format!("{}_{}", route_id, order)
+    }
+
+    fn generate_point_on_route(&self, route_id: &'a str, order: usize) -> Element {
+        let route_point_id = Self::generate_route_point_id(route_id, order);
+        let route_point_ref = Element::builder("RoutePointRef")
+            .attr(
+                "ref",
+                Exporter::generate_id(&route_point_id, ObjectType::RoutePoint),
+            )
+            .build();
+        Element::builder(ObjectType::PointOnRoute.to_string())
+            .attr(
+                "id",
+                Exporter::generate_id(&route_point_id, ObjectType::PointOnRoute),
+            )
+            .attr("version", "any")
+            .attr("order", order)
+            .append(route_point_ref)
+            .build()
+    }
+
+    fn generate_route_point(
+        &self,
+        route_id: &'a str,
+        order: usize,
+        stop_point: &'a StopPoint,
+    ) -> Result<Element> {
+        let route_point_id = Self::generate_route_point_id(route_id, order);
+        let element_builder = Element::builder(ObjectType::RoutePoint.to_string())
+            .attr(
+                "id",
+                Exporter::generate_id(&route_point_id, ObjectType::RoutePoint),
+            )
+            .attr("version", "any");
+        let element_builder =
+            if let Some(location_element) = self.generate_location(&stop_point.coord)? {
+                element_builder.append(location_element)
+            } else {
+                element_builder
+            };
+        Ok(element_builder.build())
     }
 
     fn generate_line_ref(line_id: &str) -> Element {

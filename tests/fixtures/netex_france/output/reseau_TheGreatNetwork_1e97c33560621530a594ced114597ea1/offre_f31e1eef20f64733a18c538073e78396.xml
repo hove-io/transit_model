@@ -11,6 +11,24 @@
 					<LineRef ref="FR:Line:M1:">
 					</LineRef>
 					<DirectionType>inbound</DirectionType>
+					<pointsInSequence>
+						<PointOnRoute id="FR:PointOnRoute:M1_1:" order="1" version="any">
+							<RoutePointRef ref="FR:RoutePoint:M1_1:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:M1_2:" order="2" version="any">
+							<RoutePointRef ref="FR:RoutePoint:M1_2:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:M1_3:" order="3" version="any">
+							<RoutePointRef ref="FR:RoutePoint:M1_3:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:M1_4:" order="4" version="any">
+							<RoutePointRef ref="FR:RoutePoint:M1_4:">
+							</RoutePointRef>
+						</PointOnRoute>
+					</pointsInSequence>
 				</Route>
 				<Route id="FR:Route:M1_R:" version="any">
 					<Name>Metro 1</Name>
@@ -18,7 +36,59 @@
 					<LineRef ref="FR:Line:M1:">
 					</LineRef>
 					<DirectionType>outbound</DirectionType>
+					<pointsInSequence>
+						<PointOnRoute id="FR:PointOnRoute:M1_R_1:" order="1" version="any">
+							<RoutePointRef ref="FR:RoutePoint:M1_R_1:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:M1_R_2:" order="2" version="any">
+							<RoutePointRef ref="FR:RoutePoint:M1_R_2:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:M1_R_3:" order="3" version="any">
+							<RoutePointRef ref="FR:RoutePoint:M1_R_3:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:M1_R_4:" order="4" version="any">
+							<RoutePointRef ref="FR:RoutePoint:M1_R_4:">
+							</RoutePointRef>
+						</PointOnRoute>
+					</pointsInSequence>
 				</Route>
+				<RoutePoint id="FR:RoutePoint:M1_1:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:M1_2:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:M1_3:" version="any">
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:M1_4:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:M1_R_1:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:M1_R_2:" version="any">
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:M1_R_3:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:M1_R_4:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+					</Location>
+				</RoutePoint>
 				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:M1F1:" version="any">
 					<Distance>0</Distance>
 					<RouteRef ref="FR:Route:M1:">
