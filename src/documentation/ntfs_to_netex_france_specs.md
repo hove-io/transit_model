@@ -8,7 +8,8 @@ This document describes how a [NTFS feed](https://github.com/CanalTP/ntfs-specif
 
 The resulting ZIP archive is composed of:
 - a `arrets.xml` file containing the description of all stops (Quays and StopPlaces)
-- a `correspondances.xml` file containing all transfers between stops
+- a `correspondances.xml` file containing all transfers between stops (if no
+  `transfer`, the file is not created)
 - a `calendriers.xml` containing the services
 - a folder `reseau_<network_name>_<network_id_md5>` for each network containing
   (keep only alphanumerical characters for `network_name`)
