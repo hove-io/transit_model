@@ -72,8 +72,8 @@ fares.csv
 
 | avant changement | apres changement   | debut trajet                                      | fin trajet    | condition globale | clef ticket |
 | ---              |    ---             |  ---                                              | ---           |   ---             |  ---        |
-|                  | network=my_network | line!=excluded_line & duration<61 & nb_changes<3  | duration<90   |                   | my_use_id   |
-|                  | line=my_line       | line!=excluded_line & duration<61 & nb_changes<3  | duration<90   |                   | my_use_id   |
+|                  | network=my_network | line!=excluded_line & duration<61 & nb_changes<3  | duration<91   |                   | my_use_id   |
+|                  | line=my_line       | line!=excluded_line & duration<61 & nb_changes<3  | duration<91   |                   | my_use_id   |
 
 Each line allows entering one of the two included perimeters : the network my_network and the line my_line.
 Note that the exluded perimeter (excluded line) is added as a condition "debut trajet".
@@ -90,10 +90,10 @@ fares.csv (continued)
 
 | avant changement    | apres changement   | debut trajet                                                         | fin trajet    | condition globale | clef ticket |
 | ---                 |    ---             |  ---                                                                 | ---           |   ---             |  --- |
-|  network=my_network | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3  | duration<90   |                   |      |
-|  line=my_line       | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3  | duration<90   |                   |      |
-|  network=my_network | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3  | duration<90   |                   |      |
-|  line=my_line       | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3  | duration<90   |                   |      |
+|  network=my_network | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3  | duration<91   |                   |      |
+|  line=my_line       | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3  | duration<91   |                   |      |
+|  network=my_network | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3  | duration<91   |                   |      |
+|  line=my_line       | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3  | duration<91   |                   |      |
  
 We add a line for each pair of included perimeters, so as to allow transfers between all perimeters.
 We add a constraint "ticket=my_use_id" so as to allow these transfers only if a ticket my_use_id has already been punched (and not another one).
@@ -118,18 +118,18 @@ enhanced with the extra constraints corresponding to the restriction.
 
 | avant changement    | apres changement   | debut trajet                                                                                | fin trajet                                | condition globale | clef ticket |
 | ---                 |    ---             |  ---                                                                                        | ---                                       |   ---             |  ---        |
-|                     | network=my_network | line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin                     | duration<90  & stoparea = my_destination  |                   | my_use_id   |
-|                     | line=my_line       | line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin                     | duration<90  & stoparea = my_destination  |                   | my_use_id   |
-|  network=my_network | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin  | duration<90  & stoparea = my_destination  |                   |             |
-|  line=my_line       | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin  | duration<90  & stoparea = my_destination  |                   |             |
-|  network=my_network | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin  | duration<90  & stoparea = my_destination  |                   |             |
-|  line=my_line       | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin  | duration<90  & stoparea = my_destination  |                   |             |
-|                     | network=my_network | line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone                           | duration<90  & zone = my_zone             |                   | my_use_id   |
-|                     | line=my_line       | line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone                           | duration<90  & zone = my_zone             |                   | my_use_id   |
-|  network=my_network | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone        | duration<90  & zone = my_zone             |                   |             |
-|  line=my_line       | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone        | duration<90  & zone = my_zone             |                   |             |
-|  network=my_network | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone        | duration<90  & zone = my_zone             |                   |             |
-|  line=my_line       | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone        | duration<90  & zone = my_zone             |                   |             |
+|                     | network=my_network | line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin                     | duration<91  & stoparea = my_destination  |                   | my_use_id   |
+|                     | line=my_line       | line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin                     | duration<91  & stoparea = my_destination  |                   | my_use_id   |
+|  network=my_network | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin  | duration<91  & stoparea = my_destination  |                   |             |
+|  line=my_line       | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin  | duration<91  & stoparea = my_destination  |                   |             |
+|  network=my_network | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin  | duration<91  & stoparea = my_destination  |                   |             |
+|  line=my_line       | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & stoparea = my_origin  | duration<91  & stoparea = my_destination  |                   |             |
+|                     | network=my_network | line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone                           | duration<91  & zone = my_zone             |                   | my_use_id   |
+|                     | line=my_line       | line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone                           | duration<91  & zone = my_zone             |                   | my_use_id   |
+|  network=my_network | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone        | duration<91  & zone = my_zone             |                   |             |
+|  line=my_line       | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone        | duration<91  & zone = my_zone             |                   |             |
+|  network=my_network | line=my_line       | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone        | duration<91  & zone = my_zone             |                   |             |
+|  line=my_line       | network=my_network | ticket=my_use_id & line!=excluded_line & duration<61 & nb_changes<3 & zone = my_zone        | duration<91  & zone = my_zone             |                   |             |
 
 
 
