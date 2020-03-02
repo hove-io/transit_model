@@ -13,11 +13,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
+    common_format::Availability,
     netex_france::{
         exporter::{Exporter, ObjectType},
         NetexMode,
     },
-    objects::{Coord, StopArea, StopPoint},
+    objects::{Coord, Equipment, StopArea, StopPoint},
     Model, Result,
 };
 use failure::format_err;
@@ -171,6 +172,14 @@ impl<'a> StopExporter<'a> {
             } else {
                 element_builder
             };
+
+        let element_builder = if let Some(accessibility_element) =
+            self.generate_quay_accessibility(stop_point.equipment_id.as_ref().map(String::as_str))
+        {
+            element_builder.append(accessibility_element)
+        } else {
+            element_builder
+        };
         let netex_modes = self
             .stop_point_modes
             .get(stop_point.id.as_str())
@@ -310,6 +319,61 @@ impl<'a> StopExporter<'a> {
         let location = Element::builder("Location").append(pos).build();
         let centroid = Element::builder("Centroid").append(location).build();
         Ok(Some(centroid))
+    }
+
+    fn generate_quay_accessibility(&self, equipment_id: Option<&str>) -> Option<Element> {
+        equipment_id
+            .and_then(|eq_id| self.model.equipments.get(eq_id))
+            .map(|eq| {
+                Element::builder("AccessibilityAssessment")
+                    .attr(
+                        "id",
+                        Exporter::generate_id(&eq.id, ObjectType::AccessibilityAssessment),
+                    )
+                    .attr("version", "any")
+                    .append(self.generate_mobility_impaired_access(eq))
+                    .append(self.generate_accessibility_limitations(eq))
+                    .build()
+            })
+    }
+
+    fn generate_mobility_impaired_access(&self, equipment: &Equipment) -> Element {
+        use Availability::*;
+        let impaired_access = match (
+            equipment.wheelchair_boarding,
+            equipment.audible_announcement,
+            equipment.visual_announcement,
+        ) {
+            (Available, Available, Available) => "true",
+            (NotAvailable, NotAvailable, NotAvailable) => "false",
+            (Available, _, _) | (_, Available, _) | (_, _, Available) => "partial",
+            _ => "unknown",
+        };
+        Element::builder("MobilityImpairedAccess")
+            .append(Node::Text(impaired_access.to_owned()))
+            .build()
+    }
+
+    fn generate_accessibility_limitations(&self, eq: &Equipment) -> Element {
+        let accessibility_limitations = Element::builder("AccessibilityLimitation")
+            .append(self.generate_limitation("WheelchairAccess", eq.wheelchair_boarding))
+            .append(self.generate_limitation("AudibleSignalsAvailable", eq.audible_announcement))
+            .append(self.generate_limitation("VisualSignsAvailable", eq.visual_announcement))
+            .build();
+        Element::builder("limitations")
+            .append(accessibility_limitations)
+            .build()
+    }
+
+    fn generate_limitation(&self, name: &str, availability: Availability) -> Element {
+        let availability = match availability {
+            Availability::Available => "true",
+            Availability::NotAvailable => "false",
+            _ => "unknown",
+        };
+        Element::builder(name)
+            .append(Node::Text(availability.to_owned()))
+            .build()
     }
 
     fn generate_parent_site_ref(&self, parent_station_id: &'a str) -> Element {
