@@ -150,6 +150,8 @@ Netex field | NTFS file | NTFS field | Note
 AccessibilityAssessment/@id | stops.txt | equipment_id | 
 AccessibilityAssessment/MobilityImpairedAccess | | | see (1) below
 AccessibilityAssessment/ limitations/AccessibilityLimitation/ WheelchairAccess | equipments.txt | wheelchair_boarding | see (2) below
+AccessibilityAssessment/ limitations/AccessibilityLimitation/ EscalatorFreeAccess | equipments.txt | escalator | see (2) below
+AccessibilityAssessment/ limitations/AccessibilityLimitation/ LiftFreeAccess | equipments.txt | elevator | see (2) below
 AccessibilityAssessment/ limitations/AccessibilityLimitation/ AudibleSignsAvailable | equipments.txt | audible_announcement | see (2) below
 AccessibilityAssessment/ limitations/AccessibilityLimitation/ VisualSignsAvailable | equipments.txt | visual_announcement | see (2) below
 
@@ -182,6 +184,9 @@ NTFS accessibility value | Netex accessibility value
 Modes](#netex-transport-modes)).  For each mode, a `StopPlace` of type `LMO` is
 created.  An additionnal `LMU` is created to regroup them.
 
+Station entrances/exits (stops with `location_type` = 3) are defined in a 
+monomodal `StopPlace` whose `ParentSiteRef` matches the stop's `parent_station`.
+
 #### StopPlaceType mapping
 The `StopPlace/StopPlaceType` is defined from its `StopPlace/TransportMode`.
 
@@ -205,10 +210,23 @@ StopPlace/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
 StopPlace/@version | | | fixed value `any`.
 StopPlace/Name | stops.txt | stop_name | 
 StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent
+StopPlace/entrances[] | | | Link to the station entrances/exits, if present. See [entrances](#entrances).
 StopPlace/ParentSiteRef | | | link to the corresponding Multimodal `StopPlace`
 StopPlace/TransportMode | | | use the only NeTEx mode
 StopPlace/StopPlaceType | | | see the section [StopPlaceType mapping](#stopplacetype-mapping)
 StopPlace/quays/QuayRef[]/@ref | | | see [id formatting](#id-of-objects)
+
+#### Entrances
+A `StopPlaceEntrance` node is created for each entrance/exit (stop with `location_type` = 3).
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+StopPlaceEntrance/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
+StopPlaceEntrance/@version | | | fixed value `any`.
+StopPlaceEntrance/Name | stops.txt | stop_name |
+StopPlaceEntrance/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent
+StopPlaceEntrance/isEntry |  |  | fixed value `true`
+StopPlaceEntrance/isExit |  |  | fixed value `true`
 
 #### Multimodal StopPlace
 
@@ -220,6 +238,7 @@ StopPlace/Name | stops.txt | stop_name |
 StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent
 StopPlace/TransportMode | | | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis))
 StopPlace/StopPlaceType | | | see the section [StopPlaceType mapping](#stopplacetype-mapping)
+StopPlace/AccessibilityAssessment | stops.txt | equipment_id | This node is present only if the `equipment_id` is specified. See [`AccessibilityAssessment`](#accessibilityassessment).
 
 ## correspondances.xml
 Each connection between two stops in `transfers.txt` produces a `SiteConnection` element with the `From` and `To` nodes of the connection as well as a `WalkTransferDuration` node.
@@ -310,6 +329,7 @@ Line/@id | lines.txt | line_id | see [id formatting](#id-of-objects)
 Line/@version |  |  | fixed value `any`
 Line/PublicCode | lines.txt | line_code | If the code line_code is empty, this node is not created.
 Line/Name | lines.txt | line_name | 
+Line/TransportMode | | | Refers to the most frequent mode of the trips associated to the line, see [NeTEx Transport Modes](#netex-transport-modes))
 
 ### Operator
 
