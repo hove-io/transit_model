@@ -150,7 +150,6 @@ fn test_gtfs_with_platforms() {
     });
 }
 
-#[cfg(feature = "stop_location")]
 #[test]
 fn test_gtfs_with_levels() {
     test_in_tmp_dir(|path| {

@@ -34,7 +34,6 @@ members = [
 ]
 
 [features]
-stop_location = []
 xmllint = ["proj"]
 
 [dependencies]

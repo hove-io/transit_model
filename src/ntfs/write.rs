@@ -445,14 +445,6 @@ pub fn write_stops(
     stop_areas: &CollectionWithId<StopArea>,
     stop_locations: &CollectionWithId<StopLocation>,
 ) -> Result<()> {
-    #[cfg(not(feature = "stop_location"))]
-    fn write_stop_locations(
-        _wtr: &mut Writer<File>,
-        _stop_locations: &CollectionWithId<StopLocation>,
-    ) -> Result<()> {
-        Ok(())
-    }
-    #[cfg(feature = "stop_location")]
     fn write_stop_locations(
         wtr: &mut Writer<File>,
         stop_locations: &CollectionWithId<StopLocation>,
