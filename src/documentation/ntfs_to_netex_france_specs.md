@@ -149,10 +149,10 @@ Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 AccessibilityAssessment/@id | stops.txt | equipment_id | 
 AccessibilityAssessment/MobilityImpairedAccess | | | see (1) below
-AccessibilityAssessment/ limitations/AccessibilityLimitation/ WheelchairAccess | equipments.txt | wheelchair_boarding | see (2) below
-AccessibilityAssessment/ limitations/AccessibilityLimitation/ EscalatorFreeAccess | equipments.txt | escalator | see (2) below
-AccessibilityAssessment/ limitations/AccessibilityLimitation/ LiftFreeAccess | equipments.txt | elevator | see (2) below
-AccessibilityAssessment/ limitations/AccessibilityLimitation/ AudibleSignsAvailable | equipments.txt | audible_announcement | see (2) below
+AccessibilityAssessment/limitations/AccessibilityLimitation/WheelchairAccess | equipments.txt | wheelchair_boarding | see (2) below
+AccessibilityAssessment/limitations/AccessibilityLimitation/EscalatorFreeAccess | equipments.txt | escalator | see (2) below
+AccessibilityAssessment/limitations/AccessibilityLimitation/LiftFreeAccess | equipments.txt | elevator | see (2) below
+AccessibilityAssessment/limitations/AccessibilityLimitation/AudibleSignsAvailable | equipments.txt | audible_announcement | see (2) below
 AccessibilityAssessment/ limitations/AccessibilityLimitation/ VisualSignsAvailable | equipments.txt | visual_announcement | see (2) below
 
 **(1) definition of MobilityImpairedAccess**
