@@ -174,7 +174,7 @@ impl<'a> StopExporter<'a> {
             };
 
         let element_builder = if let Some(accessibility_element) =
-            self.generate_quay_accessibility(stop_point.equipment_id.as_ref().map(String::as_str))
+            self.generate_quay_accessibility(stop_point.equipment_id.as_ref())
         {
             element_builder.append(accessibility_element)
         } else {
@@ -321,7 +321,7 @@ impl<'a> StopExporter<'a> {
         Ok(Some(centroid))
     }
 
-    fn generate_quay_accessibility(&self, equipment_id: Option<&str>) -> Option<Element> {
+    fn generate_quay_accessibility(&self, equipment_id: Option<&'a String>) -> Option<Element> {
         equipment_id
             .and_then(|eq_id| self.model.equipments.get(eq_id))
             .map(|eq| {
@@ -337,7 +337,7 @@ impl<'a> StopExporter<'a> {
             })
     }
 
-    fn generate_mobility_impaired_access(&self, equipment: &Equipment) -> Element {
+    fn generate_mobility_impaired_access(&self, equipment: &'a Equipment) -> Element {
         use Availability::*;
         let impaired_access = match (
             equipment.wheelchair_boarding,
@@ -354,7 +354,7 @@ impl<'a> StopExporter<'a> {
             .build()
     }
 
-    fn generate_accessibility_limitations(&self, eq: &Equipment) -> Element {
+    fn generate_accessibility_limitations(&self, eq: &'a Equipment) -> Element {
         let accessibility_limitations = Element::builder("AccessibilityLimitation")
             .append(self.generate_limitation("WheelchairAccess", eq.wheelchair_boarding))
             .append(self.generate_limitation("AudibleSignalsAvailable", eq.audible_announcement))

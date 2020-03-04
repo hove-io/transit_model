@@ -157,7 +157,7 @@ AccessibilityAssessment/limitations/AccessibilityLimitation/VisualSignsAvailable
 **(1) definition of MobilityImpairedAccess**
 
 As stated in `NF_Profil NeTEx éléments communs(F) - v2.1.pdf` in chapter 5.10:
-`AccessibilityAssessment` is optional, but if it's present, `MobilityImpairedAccess` is mandatory. Therefore, `MobilityImpairedAccess` sould be set to:
+`AccessibilityAssessment` is optional, but if it's present, `MobilityImpairedAccess` is mandatory. Therefore, `MobilityImpairedAccess` should be set to:
 - `true` if all `AccessibilityLimitation` are set to `true`
 - `false` if all `AccessibilityLimitation` are set to `false`
 - `partial` if some `AccessibilityLimitation` are set to `true`
