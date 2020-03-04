@@ -435,3 +435,97 @@ impl<'a> StopExporter<'a> {
             .build()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod valid_impaired_access {
+        use super::*;
+        use crate::model::{Collections, Model};
+        use pretty_assertions::assert_eq;
+        use Availability::*;
+
+        fn get_mobility_impaired_access(element: Element) -> String {
+            element
+                .nodes()
+                .next()
+                .unwrap()
+                .as_text()
+                .unwrap()
+                .to_string()
+        }
+
+        fn generate_equipment((w, v, a): (Availability, Availability, Availability)) -> Equipment {
+            Equipment {
+                id: "Eq1".to_string(),
+                wheelchair_boarding: w,
+                visual_announcement: v,
+                audible_announcement: a,
+                ..Default::default()
+            }
+        }
+
+        fn get_mobility_impaired_access_value<'a>(
+            stop_exporter: &'a StopExporter,
+            (w, v, a): (Availability, Availability, Availability),
+        ) -> String {
+            get_mobility_impaired_access(StopExporter::generate_mobility_impaired_access(
+                stop_exporter,
+                &generate_equipment((w, v, a)),
+            ))
+        }
+
+        #[test]
+        fn test_impaired_access_true() {
+            let model = Model::new(Collections::default()).unwrap();
+            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            assert_eq!(
+                "true",
+                get_mobility_impaired_access_value(
+                    &stop_exporter,
+                    (Available, Available, Available)
+                )
+            );
+        }
+
+        #[test]
+        fn test_impaired_access_false() {
+            let model = Model::new(Collections::default()).unwrap();
+            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            assert_eq!(
+                "false",
+                get_mobility_impaired_access_value(
+                    &stop_exporter,
+                    (NotAvailable, NotAvailable, NotAvailable)
+                )
+            );
+        }
+
+        #[test]
+        fn test_impaired_access_partial() {
+            let model = Model::new(Collections::default()).unwrap();
+            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            assert_eq!(
+                "partial",
+                get_mobility_impaired_access_value(
+                    &stop_exporter,
+                    (InformationNotAvailable, InformationNotAvailable, Available)
+                )
+            );
+        }
+
+        #[test]
+        fn test_impaired_access_unknown() {
+            let model = Model::new(Collections::default()).unwrap();
+            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            assert_eq!(
+                "unknown",
+                get_mobility_impaired_access_value(
+                    &stop_exporter,
+                    (NotAvailable, NotAvailable, InformationNotAvailable)
+                )
+            );
+        }
+    }
+}
