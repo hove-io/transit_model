@@ -1076,3 +1076,36 @@ pub fn apply_rules<P: AsRef<Path>>(
     );
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn incorrect_geometry() {
+        let mut property_rule = PropertyRule {
+            object_type: ObjectType::Line,
+            object_id: String::from("line_id"),
+            property_name: String::from("geometry_wkt"),
+            property_old_value: Some(String::from("LINESTRING(10.1 20.2,30.3 40.4)")),
+            property_value: String::from("LINESTRING(40.1 30.2,20.3 10.4)"),
+        };
+        let mut field = Some(String::from("geometry_id"));
+        let mut geometries = CollectionWithId::default();
+        let mut report = Report::default();
+
+        update_geometry(&mut property_rule, &mut field, &mut geometries, &mut report);
+
+        use serde::Serialize;
+        let writer = Vec::<u8>::new();
+        let mut serializer = serde_json::Serializer::new(writer);
+        report.serialize(&mut serializer).unwrap();
+        let writer = serializer.into_inner();
+        let report_string = String::from_utf8(writer).unwrap();
+        assert_eq!(
+            r#"{"errors":[],"warnings":[{"category":"ObjectNotFound","message":"object_type=line, object_id=line_id: geometry geometry_id not found"}]}"#,
+            report_string.as_str()
+        );
+    }
+}

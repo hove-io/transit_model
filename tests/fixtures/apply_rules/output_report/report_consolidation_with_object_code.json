@@ -66,8 +66,8 @@
       "message": "object_type=route, object_id=RERAB:2, property_name=route_geometry: property_old_value does not match the value found in the data"
     },
     {
-      "category": "ObjectNotFound",
-      "message": "object_type=route, object_id=RERAF: geometry unknown not found"
+      "category": "OldPropertyValueDoesNotMatch",
+      "message": "object_type=route, object_id=RERAF, property_name=route_geometry: property_old_value does not match the value found in the data"
     },
     {
       "category": "ObjectNotFound",

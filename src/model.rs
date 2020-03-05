@@ -989,6 +989,42 @@ impl Collections {
         self.stop_areas = CollectionWithId::new(updated_stop_areas).unwrap();
     }
 
+    /// Check that all references to geometries actually points towards existing
+    /// `Geometry`. This is a common problem where a `geometries.txt` is read in
+    /// NTFS, a line of this file is not a valid WKT format, then the `Geometry`
+    /// is not created. However, the object that references this `Geometry` will
+    /// very likely be created (for example, a `Route` from `routes.txt`). This
+    /// creates an incoherent model where a `Route` points to a `Geometry` which
+    /// doesn't exist.
+    ///
+    /// This function checks that all objects points to existing `Geometry` and,
+    /// in the case it doesn't, fix the model by removing this pointer.
+    fn check_geometries_coherence(&mut self) {
+        macro_rules! check_and_fix_object_geometries {
+            ($collection:expr) => {
+                let objects_to_fix: Vec<String> = $collection
+                    .values()
+                    .filter(|object| {
+                        object
+                            .geometry_id
+                            .as_ref()
+                            .map(|geometry_id| self.geometries.get(geometry_id).is_none())
+                            .unwrap_or(false)
+                    })
+                    .map(|object| object.id.clone())
+                    .collect();
+                for object_id in objects_to_fix {
+                    $collection.get_mut(&object_id).unwrap().geometry_id = None;
+                }
+            };
+        }
+        check_and_fix_object_geometries!(self.lines);
+        check_and_fix_object_geometries!(self.routes);
+        check_and_fix_object_geometries!(self.vehicle_journeys);
+        check_and_fix_object_geometries!(self.stop_points);
+        check_and_fix_object_geometries!(self.stop_areas);
+    }
+
     /// Calculate the validity period in the 'Model'.
     /// The calculation is based on the minimum start date and the maximum end
     /// date of all the datasets.
@@ -1079,6 +1115,7 @@ impl Model {
             collections.enhance_with_co2();
             collections.enhance_trip_headsign();
             collections.enhance_route_names();
+            collections.check_geometries_coherence();
             collections.sanitize()
         }
         apply_generic_business_rules(&mut c)?;
@@ -1673,6 +1710,57 @@ mod tests {
             let route = collections.routes.get("route_id").unwrap();
             // 'Stop Area 1' is before 'Stop Area 3' in alphabetical order
             assert_eq!("Stop Area 1 - Stop Area 1", route.name);
+        }
+    }
+
+    mod check_geometries_coherence {
+        use super::*;
+        use geo_types::{Geometry as GeoGeometry, Point as GeoPoint};
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn remove_dead_reference() {
+            let mut collections = Collections::default();
+            collections.vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+                id: String::from("vehicle_journey_id"),
+                geometry_id: Some(String::from("geometry_id")),
+                ..Default::default()
+            }])
+            .unwrap();
+            collections.check_geometries_coherence();
+            assert_eq!(
+                None,
+                collections
+                    .vehicle_journeys
+                    .get("vehicle_journey_id")
+                    .unwrap()
+                    .geometry_id
+            );
+        }
+
+        #[test]
+        fn preserve_valid_reference() {
+            let mut collections = Collections::default();
+            collections.vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+                id: String::from("vehicle_journey_id"),
+                geometry_id: Some(String::from("geometry_id")),
+                ..Default::default()
+            }])
+            .unwrap();
+            collections.geometries = CollectionWithId::new(vec![Geometry {
+                id: String::from("geometry_id"),
+                geometry: GeoGeometry::Point(GeoPoint::new(0.0, 0.0)),
+            }])
+            .unwrap();
+            collections.check_geometries_coherence();
+            assert_eq!(
+                Some(String::from("geometry_id")),
+                collections
+                    .vehicle_journeys
+                    .get("vehicle_journey_id")
+                    .unwrap()
+                    .geometry_id
+            );
         }
     }
 
