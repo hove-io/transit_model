@@ -208,6 +208,28 @@
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
 						</Location>
 					</Centroid>
+					<entrances>
+						<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G1:" version="any">
+							<Name>Gate 1</Name>
+							<Centroid>
+								<Location>
+									<gml:pos srsName="EPSG:2154">654143.0840251445 6860726.200273179</gml:pos>
+								</Location>
+							</Centroid>
+							<IsEntry>true</IsEntry>
+							<IsExit>true</IsExit>
+						</StopPlaceEntrance>
+						<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G2:" version="any">
+							<Name>Gate 2</Name>
+							<Centroid>
+								<Location>
+									<gml:pos srsName="EPSG:2154">654109.4203976962 6860534.540309813</gml:pos>
+								</Location>
+							</Centroid>
+							<IsEntry>true</IsEntry>
+							<IsExit>true</IsExit>
+						</StopPlaceEntrance>
+					</entrances>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
 				</StopPlace>
@@ -324,6 +346,18 @@
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
 						</Location>
 					</Centroid>
+					<entrances>
+						<StopPlaceEntrance id="FR:StopPlaceEntrance:CDG-GA:" version="any">
+							<Name>Gate A</Name>
+							<Centroid>
+								<Location>
+									<gml:pos srsName="EPSG:2154">648335.545974931 6863941.034152591</gml:pos>
+								</Location>
+							</Centroid>
+							<IsEntry>true</IsEntry>
+							<IsExit>true</IsExit>
+						</StopPlaceEntrance>
+					</entrances>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
 				</StopPlace>

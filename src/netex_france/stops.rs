@@ -18,7 +18,7 @@ use crate::{
         exporter::{Exporter, ObjectType},
         NetexMode,
     },
-    objects::{Coord, Equipment, StopArea, StopPoint},
+    objects::{Coord, Equipment, StopArea, StopLocation, StopPoint, StopType},
     Model, Result,
 };
 use failure::format_err;
@@ -229,6 +229,7 @@ impl<'a> StopExporter<'a> {
             let parent_station_id = Exporter::generate_id(&stop_area.id, ObjectType::StopPlace);
             let parent_site_ref_element = self.generate_parent_site_ref(&parent_station_id);
             let centroid = self.generate_centroid(&stop_area.coord)?;
+            // *** Monomodal stopplaces generation ***
             for netex_mode in &netex_modes {
                 // Get only Stop Points with the current NeTEx mode
                 let stop_point_ids = stop_point_ids
@@ -261,6 +262,7 @@ impl<'a> StopExporter<'a> {
                 let element_builder = element_builder.append(self.generate_quays(stop_point_ids));
                 stop_place_elements.push(element_builder.build());
             }
+            // *** Multimodal stopplaces generation ***
             let element_builder = Element::builder("StopPlace")
                 .attr(
                     "id",
@@ -270,6 +272,11 @@ impl<'a> StopExporter<'a> {
             let element_builder = element_builder.append(name_element);
             let element_builder = if let Some(centroid_element) = centroid {
                 element_builder.append(centroid_element)
+            } else {
+                element_builder
+            };
+            let element_builder = if let Some(entrances) = self.generate_entrances(&stop_area.id)? {
+                element_builder.append(entrances)
             } else {
                 element_builder
             };
@@ -386,6 +393,51 @@ impl<'a> StopExporter<'a> {
         let transport_mode_text = Node::Text(netex_mode.to_string());
         Element::builder("TransportMode")
             .append(transport_mode_text)
+            .build()
+    }
+
+    fn generate_entrances(&self, stop_area_id: &'a str) -> Result<Option<Element>> {
+        let stop_place_entrances = self
+            .model
+            .stop_locations
+            .values()
+            .filter(|sl| sl.parent_id == Some(stop_area_id.to_string()))
+            .filter(|sl| sl.stop_type == StopType::StopEntrance)
+            .map(|sl| self.generate_stop_place_entrance(sl))
+            .collect::<Result<Vec<Element>>>()?;
+        if stop_place_entrances.is_empty() {
+            return Ok(None);
+        }
+        let entrances = Element::builder("entrances")
+            .append_all(stop_place_entrances)
+            .build();
+        Ok(Some(entrances))
+    }
+
+    fn generate_stop_place_entrance(&self, stop_location: &'a StopLocation) -> Result<Element> {
+        let element_builder = Element::builder("StopPlaceEntrance")
+            .attr(
+                "id",
+                Exporter::generate_id(&stop_location.id, ObjectType::StopPlaceEntrance),
+            )
+            .attr("version", "any")
+            .append(self.generate_name(&stop_location.name));
+        let element_builder =
+            if let Some(centroid_element) = self.generate_centroid(&stop_location.coord)? {
+                element_builder.append(centroid_element)
+            } else {
+                element_builder
+            };
+        let element_builder = element_builder
+            .append(self.generate_is_entry_exit("IsEntry"))
+            .append(self.generate_is_entry_exit("IsExit"));
+
+        Ok(element_builder.build())
+    }
+
+    fn generate_is_entry_exit(&self, node_name: &'a str) -> Element {
+        Element::builder(node_name)
+            .append(Node::Text("true".to_string()))
             .build()
     }
 
