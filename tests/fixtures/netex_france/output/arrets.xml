@@ -12,6 +12,16 @@
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
 						</Location>
 					</Centroid>
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:0:" version="any">
+						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
+						<limitations>
+							<AccessibilityLimitation>
+								<WheelchairAccess>true</WheelchairAccess>
+								<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+								<VisualSignsAvailable>unknown</VisualSignsAvailable>
+							</AccessibilityLimitation>
+						</limitations>
+					</AccessibilityAssessment>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
@@ -25,6 +35,16 @@
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
 						</Location>
 					</Centroid>
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:1:" version="any">
+						<MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+						<limitations>
+							<AccessibilityLimitation>
+								<WheelchairAccess>false</WheelchairAccess>
+								<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+								<VisualSignsAvailable>unknown</VisualSignsAvailable>
+							</AccessibilityLimitation>
+						</limitations>
+					</AccessibilityAssessment>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">

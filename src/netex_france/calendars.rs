@@ -156,21 +156,16 @@ mod tests {
 
     mod valid_day_bits {
         use super::*;
-        use crate::minidom_utils::ElementWriter;
         use pretty_assertions::assert_eq;
 
         fn get_valid_day_bits(element: Element) -> String {
-            let writer = ElementWriter::new(element, false);
-            let mut buffer = Vec::<u8>::new();
-            writer.write(&mut buffer).unwrap();
-            String::from_utf8(buffer)
+            element
+                .nodes()
+                .next()
                 .unwrap()
-                .replace(
-                    r#"<?xml version="1.0" encoding="UTF-8"?><ValidDayBits>"#,
-                    "",
-                )
-                .replace(r#"</ValidDayBits>"#, "")
-                .to_owned()
+                .as_text()
+                .unwrap()
+                .to_string()
         }
 
         #[test]

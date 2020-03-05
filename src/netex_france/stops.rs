@@ -13,11 +13,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
+    common_format::Availability,
     netex_france::{
         exporter::{Exporter, ObjectType},
         NetexMode,
     },
-    objects::{Coord, StopArea, StopPoint},
+    objects::{Coord, Equipment, StopArea, StopPoint},
     Model, Result,
 };
 use failure::format_err;
@@ -171,6 +172,14 @@ impl<'a> StopExporter<'a> {
             } else {
                 element_builder
             };
+
+        let element_builder = if let Some(accessibility_element) =
+            self.generate_quay_accessibility(stop_point.equipment_id.as_ref())
+        {
+            element_builder.append(accessibility_element)
+        } else {
+            element_builder
+        };
         let netex_modes = self
             .stop_point_modes
             .get(stop_point.id.as_str())
@@ -312,6 +321,61 @@ impl<'a> StopExporter<'a> {
         Ok(Some(centroid))
     }
 
+    fn generate_quay_accessibility(&self, equipment_id: Option<&'a String>) -> Option<Element> {
+        equipment_id
+            .and_then(|eq_id| self.model.equipments.get(eq_id))
+            .map(|eq| {
+                Element::builder("AccessibilityAssessment")
+                    .attr(
+                        "id",
+                        Exporter::generate_id(&eq.id, ObjectType::AccessibilityAssessment),
+                    )
+                    .attr("version", "any")
+                    .append(self.generate_mobility_impaired_access(eq))
+                    .append(self.generate_accessibility_limitations(eq))
+                    .build()
+            })
+    }
+
+    fn generate_mobility_impaired_access(&self, equipment: &'a Equipment) -> Element {
+        use Availability::*;
+        let impaired_access = match (
+            equipment.wheelchair_boarding,
+            equipment.audible_announcement,
+            equipment.visual_announcement,
+        ) {
+            (Available, Available, Available) => "true",
+            (NotAvailable, NotAvailable, NotAvailable) => "false",
+            (Available, _, _) | (_, Available, _) | (_, _, Available) => "partial",
+            _ => "unknown",
+        };
+        Element::builder("MobilityImpairedAccess")
+            .append(Node::Text(impaired_access.to_owned()))
+            .build()
+    }
+
+    fn generate_accessibility_limitations(&self, eq: &'a Equipment) -> Element {
+        let accessibility_limitations = Element::builder("AccessibilityLimitation")
+            .append(self.generate_limitation("WheelchairAccess", eq.wheelchair_boarding))
+            .append(self.generate_limitation("AudibleSignalsAvailable", eq.audible_announcement))
+            .append(self.generate_limitation("VisualSignsAvailable", eq.visual_announcement))
+            .build();
+        Element::builder("limitations")
+            .append(accessibility_limitations)
+            .build()
+    }
+
+    fn generate_limitation(&self, name: &str, availability: Availability) -> Element {
+        let availability = match availability {
+            Availability::Available => "true",
+            Availability::NotAvailable => "false",
+            _ => "unknown",
+        };
+        Element::builder(name)
+            .append(Node::Text(availability.to_owned()))
+            .build()
+    }
+
     fn generate_parent_site_ref(&self, parent_station_id: &'a str) -> Element {
         Element::builder("ParentSiteRef")
             .attr("ref", parent_station_id)
@@ -369,5 +433,99 @@ impl<'a> StopExporter<'a> {
         Element::builder("StopPlaceType")
             .append(Node::Text(stop_place_type.to_owned()))
             .build()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod valid_impaired_access {
+        use super::*;
+        use crate::model::{Collections, Model};
+        use pretty_assertions::assert_eq;
+        use Availability::*;
+
+        fn get_mobility_impaired_access(element: Element) -> String {
+            element
+                .nodes()
+                .next()
+                .unwrap()
+                .as_text()
+                .unwrap()
+                .to_string()
+        }
+
+        fn generate_equipment((w, v, a): (Availability, Availability, Availability)) -> Equipment {
+            Equipment {
+                id: "Eq1".to_string(),
+                wheelchair_boarding: w,
+                visual_announcement: v,
+                audible_announcement: a,
+                ..Default::default()
+            }
+        }
+
+        fn get_mobility_impaired_access_value<'a>(
+            stop_exporter: &'a StopExporter,
+            (w, v, a): (Availability, Availability, Availability),
+        ) -> String {
+            get_mobility_impaired_access(StopExporter::generate_mobility_impaired_access(
+                stop_exporter,
+                &generate_equipment((w, v, a)),
+            ))
+        }
+
+        #[test]
+        fn test_impaired_access_true() {
+            let model = Model::new(Collections::default()).unwrap();
+            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            assert_eq!(
+                "true",
+                get_mobility_impaired_access_value(
+                    &stop_exporter,
+                    (Available, Available, Available)
+                )
+            );
+        }
+
+        #[test]
+        fn test_impaired_access_false() {
+            let model = Model::new(Collections::default()).unwrap();
+            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            assert_eq!(
+                "false",
+                get_mobility_impaired_access_value(
+                    &stop_exporter,
+                    (NotAvailable, NotAvailable, NotAvailable)
+                )
+            );
+        }
+
+        #[test]
+        fn test_impaired_access_partial() {
+            let model = Model::new(Collections::default()).unwrap();
+            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            assert_eq!(
+                "partial",
+                get_mobility_impaired_access_value(
+                    &stop_exporter,
+                    (InformationNotAvailable, InformationNotAvailable, Available)
+                )
+            );
+        }
+
+        #[test]
+        fn test_impaired_access_unknown() {
+            let model = Model::new(Collections::default()).unwrap();
+            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            assert_eq!(
+                "unknown",
+                get_mobility_impaired_access_value(
+                    &stop_exporter,
+                    (NotAvailable, NotAvailable, InformationNotAvailable)
+                )
+            );
+        }
     }
 }

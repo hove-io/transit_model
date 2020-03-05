@@ -45,6 +45,7 @@ const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "arrets.xml";
 
 pub(in crate::netex_france) enum ObjectType {
+    AccessibilityAssessment,
     DayType,
     DayTypeAssignment,
     Line,
@@ -67,6 +68,7 @@ impl Display for ObjectType {
     fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), fmt::Error> {
         use ObjectType::*;
         match self {
+            AccessibilityAssessment => write!(f, "AccessibilityAssessment"),
             DayType => write!(f, "DayType"),
             DayTypeAssignment => write!(f, "DayTypeAssignment"),
             Line => write!(f, "Line"),

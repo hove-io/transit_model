@@ -128,10 +128,10 @@ Quay/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
 Quay/@version | | | fixed value `any`.
 Quay/Name | stops.txt | stop_name |
 Quay/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent
+Quay/AccessibilityAssessment | stops.txt | equipment_id | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.
 Quay/TransportMode | | | see (2) below
 Quay/tariffZones/TariffZoneRef/@ref | stops.txt | fare_zone_id | The fare zone is prefixed by the `ParticipantRef` prefix with a `:` separator
 Quay/PublicCode | stops.txt | stop_code | This node may not be present if the stop_point has no `stop_code`.
-Quay/AccessibilityAssessment | stops.txt | equipment_id | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.
 
 **(2) definition of the TransportMode**
 As a stop_point can be associated to several physical_modes, all the
@@ -148,19 +148,20 @@ If the stop_point is associated to an equipment, a node `AccessibilityAssessment
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 AccessibilityAssessment/@id | stops.txt | equipment_id | 
+AccessibilityAssessment/@version | | | fixed value `any`.
 AccessibilityAssessment/MobilityImpairedAccess | | | see (1) below
-AccessibilityAssessment/ limitations/AccessibilityLimitation/ WheelchairAccess | equipments.txt | wheelchair_boarding | see (2) below
-AccessibilityAssessment/ limitations/AccessibilityLimitation/ AudibleSignsAvailable | equipments.txt | audible_announcement | see (2) below
-AccessibilityAssessment/ limitations/AccessibilityLimitation/ VisualSignsAvailable | equipments.txt | visual_announcement | see (2) below
+AccessibilityAssessment/limitations/AccessibilityLimitation/WheelchairAccess | equipments.txt | wheelchair_boarding | see (2) below
+AccessibilityAssessment/limitations/AccessibilityLimitation/AudibleSignsAvailable | equipments.txt | audible_announcement | see (2) below
+AccessibilityAssessment/limitations/AccessibilityLimitation/VisualSignsAvailable | equipments.txt | visual_announcement | see (2) below
 
 **(1) definition of MobilityImpairedAccess**
 
 As stated in `NF_Profil NeTEx éléments communs(F) - v2.1.pdf` in chapter 5.10:
-`AccessibilityAssessment` is optional, but if it's present, `MobilityImpairedAccess` is mandatory. Therefore, `MobilityImpairedAccess` sould be set to:
+`AccessibilityAssessment` is optional, but if it's present, `MobilityImpairedAccess` is mandatory. Therefore, `MobilityImpairedAccess` should be set to:
 - `true` if all `AccessibilityLimitation` are set to `true`
 - `false` if all `AccessibilityLimitation` are set to `false`
 - `partial` if some `AccessibilityLimitation` are set to `true`
-- `unknow` in other cases
+- `unknown` in other cases
 
 **(2) value of limitations**
 
