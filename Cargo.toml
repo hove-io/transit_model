@@ -52,9 +52,6 @@ num-traits = "0.2"
 pretty_assertions = "0.6"
 proj = { version = "0.14", optional = true }
 quick-xml = "0.17"
-# Version 1.0.3 of 'quote' introduce a breaking change
-# https://users.rust-lang.org/t/failure-derive-compilation-error/39062
-quote = "=1.0.2"
 rust_decimal = "1.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
