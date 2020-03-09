@@ -40,12 +40,14 @@ use std::{
 // why we process it at construction of `StopExporter` and then store it.
 type StopPointModes<'a> = HashMap<&'a str, BTreeSet<NetexMode>>;
 type StopAreaStopPoints<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
+type StopAreaEntrances<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 pub struct StopExporter<'a> {
     model: &'a Model,
     participant_ref: &'a str,
     converter: Proj,
     stop_point_modes: StopPointModes<'a>,
     stop_area_stop_points: StopAreaStopPoints<'a>,
+    stop_area_entrances: StopAreaEntrances<'a>,
 }
 
 // Publicly exposed methods
@@ -54,12 +56,14 @@ impl<'a> StopExporter<'a> {
         let converter = Exporter::get_coordinates_converter()?;
         let stop_point_modes = Self::build_stop_point_modes(model);
         let stop_area_stop_points = Self::build_stop_area_stop_points(model);
+        let stop_area_entrances = Self::build_stop_area_entrances(model);
         let exporter = StopExporter {
             model,
             participant_ref,
             converter,
             stop_point_modes,
             stop_area_stop_points,
+            stop_area_entrances,
         };
         Ok(exporter)
     }
@@ -155,6 +159,22 @@ impl<'a> StopExporter<'a> {
                     .or_insert_with(BTreeSet::new)
                     .insert(&stop_point.id);
                 stop_area_stop_points
+            })
+    }
+
+    fn build_stop_area_entrances(model: &'a Model) -> StopAreaEntrances<'a> {
+        model
+            .stop_locations
+            .values()
+            .filter(|sl| sl.stop_type == StopType::StopEntrance)
+            .fold(HashMap::new(), |mut stop_area_entrances, stop_location| {
+                if let Some(stop_area_id) = stop_location.parent_id.as_ref() {
+                    stop_area_entrances
+                        .entry(stop_area_id)
+                        .or_insert_with(BTreeSet::new)
+                        .insert(&stop_location.id);
+                };
+                stop_area_entrances
             })
     }
 
@@ -397,19 +417,19 @@ impl<'a> StopExporter<'a> {
     }
 
     fn generate_entrances(&self, stop_area_id: &'a str) -> Result<Option<Element>> {
-        let stop_place_entrances = self
-            .model
-            .stop_locations
-            .values()
-            .filter(|sl| sl.parent_id == Some(stop_area_id.to_string()))
-            .filter(|sl| sl.stop_type == StopType::StopEntrance)
+        let sa_entrances = self
+            .stop_area_entrances
+            .get(stop_area_id)
+            .iter()
+            .flat_map(|s| s.iter())
+            .filter_map(|sl_id| self.model.stop_locations.get(sl_id))
             .map(|sl| self.generate_stop_place_entrance(sl))
             .collect::<Result<Vec<Element>>>()?;
-        if stop_place_entrances.is_empty() {
+        if sa_entrances.is_empty() {
             return Ok(None);
         }
         let entrances = Element::builder("entrances")
-            .append_all(stop_place_entrances)
+            .append_all(sa_entrances)
             .build();
         Ok(Some(entrances))
     }
