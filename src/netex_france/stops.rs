@@ -18,7 +18,7 @@ use crate::{
         exporter::{Exporter, ObjectType},
         NetexMode,
     },
-    objects::{Coord, Equipment, StopArea, StopPoint},
+    objects::{Coord, Equipment, StopArea, StopLocation, StopPoint, StopType},
     Model, Result,
 };
 use failure::format_err;
@@ -40,12 +40,14 @@ use std::{
 // why we process it at construction of `StopExporter` and then store it.
 type StopPointModes<'a> = HashMap<&'a str, BTreeSet<NetexMode>>;
 type StopAreaStopPoints<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
+type StopAreaEntrances<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 pub struct StopExporter<'a> {
     model: &'a Model,
     participant_ref: &'a str,
     converter: Proj,
     stop_point_modes: StopPointModes<'a>,
     stop_area_stop_points: StopAreaStopPoints<'a>,
+    stop_area_entrances: StopAreaEntrances<'a>,
 }
 
 // Publicly exposed methods
@@ -54,12 +56,14 @@ impl<'a> StopExporter<'a> {
         let converter = Exporter::get_coordinates_converter()?;
         let stop_point_modes = Self::build_stop_point_modes(model);
         let stop_area_stop_points = Self::build_stop_area_stop_points(model);
+        let stop_area_entrances = Self::build_stop_area_entrances(model);
         let exporter = StopExporter {
             model,
             participant_ref,
             converter,
             stop_point_modes,
             stop_area_stop_points,
+            stop_area_entrances,
         };
         Ok(exporter)
     }
@@ -158,6 +162,22 @@ impl<'a> StopExporter<'a> {
             })
     }
 
+    fn build_stop_area_entrances(model: &'a Model) -> StopAreaEntrances<'a> {
+        model
+            .stop_locations
+            .values()
+            .filter(|sl| sl.stop_type == StopType::StopEntrance)
+            .fold(HashMap::new(), |mut stop_area_entrances, stop_location| {
+                if let Some(stop_area_id) = stop_location.parent_id.as_ref() {
+                    stop_area_entrances
+                        .entry(stop_area_id)
+                        .or_insert_with(BTreeSet::new)
+                        .insert(&stop_location.id);
+                };
+                stop_area_entrances
+            })
+    }
+
     fn export_stop_point(&self, stop_point: &'a StopPoint) -> Result<Element> {
         let element_builder = Element::builder("Quay")
             .attr(
@@ -167,7 +187,7 @@ impl<'a> StopExporter<'a> {
             .attr("version", "any");
         let element_builder = element_builder.append(self.generate_name(&stop_point.name));
         let element_builder =
-            if let Some(centroid_element) = self.generate_centroid(&stop_point.coord)? {
+            if let Some(centroid_element) = self.generate_centroid(&stop_point.coord) {
                 element_builder.append(centroid_element)
             } else {
                 element_builder
@@ -228,7 +248,8 @@ impl<'a> StopExporter<'a> {
             let name_element = self.generate_name(&stop_area.name);
             let parent_station_id = Exporter::generate_id(&stop_area.id, ObjectType::StopPlace);
             let parent_site_ref_element = self.generate_parent_site_ref(&parent_station_id);
-            let centroid = self.generate_centroid(&stop_area.coord)?;
+            let centroid = self.generate_centroid(&stop_area.coord);
+            // *** Monomodal stopplaces generation ***
             for netex_mode in &netex_modes {
                 // Get only Stop Points with the current NeTEx mode
                 let stop_point_ids = stop_point_ids
@@ -261,6 +282,7 @@ impl<'a> StopExporter<'a> {
                 let element_builder = element_builder.append(self.generate_quays(stop_point_ids));
                 stop_place_elements.push(element_builder.build());
             }
+            // *** Multimodal stopplaces generation ***
             let element_builder = Element::builder("StopPlace")
                 .attr(
                     "id",
@@ -270,6 +292,11 @@ impl<'a> StopExporter<'a> {
             let element_builder = element_builder.append(name_element);
             let element_builder = if let Some(centroid_element) = centroid {
                 element_builder.append(centroid_element)
+            } else {
+                element_builder
+            };
+            let element_builder = if let Some(entrances) = self.generate_entrances(&stop_area.id) {
+                element_builder.append(entrances)
             } else {
                 element_builder
             };
@@ -306,19 +333,21 @@ impl<'a> StopExporter<'a> {
         })
     }
 
-    fn generate_centroid(&self, coord: &'a Coord) -> Result<Option<Element>> {
-        if *coord == Coord::default() {
-            return Ok(None);
+    fn generate_centroid(&self, coord: &'a Coord) -> Option<Element> {
+        if *coord != Coord::default() {
+            if let Ok(coord_epsg2154) = self.converter.convert(*coord) {
+                let coord_text =
+                    Node::Text(format!("{} {}", coord_epsg2154.x(), coord_epsg2154.y()));
+                let pos = Element::builder("gml:pos")
+                    .attr("srsName", "EPSG:2154")
+                    .append(coord_text)
+                    .build();
+                let location = Element::builder("Location").append(pos).build();
+                let centroid = Element::builder("Centroid").append(location).build();
+                return Some(centroid);
+            }
         }
-        let coord_epsg2154 = self.converter.convert(*coord)?;
-        let coord_text = Node::Text(format!("{} {}", coord_epsg2154.x(), coord_epsg2154.y()));
-        let pos = Element::builder("gml:pos")
-            .attr("srsName", "EPSG:2154")
-            .append(coord_text)
-            .build();
-        let location = Element::builder("Location").append(pos).build();
-        let centroid = Element::builder("Centroid").append(location).build();
-        Ok(Some(centroid))
+        None
     }
 
     fn generate_quay_accessibility(&self, equipment_id: Option<&'a String>) -> Option<Element> {
@@ -386,6 +415,51 @@ impl<'a> StopExporter<'a> {
         let transport_mode_text = Node::Text(netex_mode.to_string());
         Element::builder("TransportMode")
             .append(transport_mode_text)
+            .build()
+    }
+
+    fn generate_entrances(&self, stop_area_id: &'a str) -> Option<Element> {
+        let stop_place_entrances = self
+            .stop_area_entrances
+            .get(stop_area_id)
+            .into_iter()
+            .flatten()
+            .filter_map(|sl_id| self.model.stop_locations.get(sl_id))
+            .map(|sl| self.generate_stop_place_entrance(sl));
+        let entrances = Element::builder("entrances")
+            .append_all(stop_place_entrances)
+            .build();
+        if entrances.children().count() == 0 {
+            None
+        } else {
+            Some(entrances)
+        }
+    }
+
+    fn generate_stop_place_entrance(&self, stop_location: &'a StopLocation) -> Element {
+        let element_builder = Element::builder("StopPlaceEntrance")
+            .attr(
+                "id",
+                Exporter::generate_id(&stop_location.id, ObjectType::StopPlaceEntrance),
+            )
+            .attr("version", "any")
+            .append(self.generate_name(&stop_location.name));
+        let element_builder =
+            if let Some(centroid_element) = self.generate_centroid(&stop_location.coord) {
+                element_builder.append(centroid_element)
+            } else {
+                element_builder
+            };
+        let element_builder = element_builder
+            .append(self.generate_is_entry_exit("IsEntry"))
+            .append(self.generate_is_entry_exit("IsExit"));
+
+        element_builder.build()
+    }
+
+    fn generate_is_entry_exit(&self, node_name: &'a str) -> Element {
+        Element::builder(node_name)
+            .append(Node::Text("true".to_string()))
             .build()
     }
 

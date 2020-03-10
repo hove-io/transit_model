@@ -183,6 +183,8 @@ NTFS accessibility value | Netex accessibility value
 Modes](#netex-transport-modes)).  For each mode, a `StopPlace` of type `LMO` is
 created.  An additionnal `LMU` is created to regroup them.
 
+Station entrances/exits (stops with `location_type` = 3) are defined in a multimodal `StopPlace` to which they belong.
+
 #### StopPlaceType mapping
 The `StopPlace/StopPlaceType` is defined from its `StopPlace/TransportMode`.
 
@@ -219,8 +221,21 @@ StopPlace/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
 StopPlace/@version | | | fixed value `any`.
 StopPlace/Name | stops.txt | stop_name | 
 StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent
+StopPlace/entrances[] | | | Link to the station entrances/exits, if present. See [StopPlaceEntrance](#stopplaceentrance).
 StopPlace/TransportMode | | | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis))
 StopPlace/StopPlaceType | | | see the section [StopPlaceType mapping](#stopplacetype-mapping)
+
+#### StopPlaceEntrance
+A `StopPlaceEntrance` node is created for each entrance/exit (stop with `location_type` = 3).
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+StopPlaceEntrance/@id | stops.txt | stop_id | see [id formatting](#id-of-objects)
+StopPlaceEntrance/@version | | | fixed value `any`.
+StopPlaceEntrance/Name | stops.txt | stop_name |
+StopPlaceEntrance/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent
+StopPlaceEntrance/IsEntry |  |  | fixed value `true`
+StopPlaceEntrance/IsExit |  |  | fixed value `true`
 
 ## correspondances.xml
 Each connection between two stops in `transfers.txt` produces a `SiteConnection` element with the `From` and `To` nodes of the connection as well as a `WalkTransferDuration` node.
