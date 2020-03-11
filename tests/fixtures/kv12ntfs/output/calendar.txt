@@ -1,4 +1,0 @@
-service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
-prefix:2029:1:1,0,0,0,0,0,0,1,20190428,20190530
-prefix:2030:15:15,1,0,0,0,0,0,0,20190429,20190429
-prefix:3170:1003:1003,0,0,1,0,0,0,0,20190424,20190424

@@ -1,2 +1,0 @@
-contributor_id,contributor_name,contributor_license,contributor_website
-prefix:SYNTUS,SYNTUS,license,http://www.datasource-website.com
