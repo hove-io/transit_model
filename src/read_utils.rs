@@ -102,7 +102,10 @@ impl<'a, P: AsRef<Path>> FileHandler for &'a mut PathFileHandler<P> {
     fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
         let f = self.base_path.as_ref().join(name);
         if f.exists() {
-            Ok((Some(File::open(&f).with_context(ctx_from_path!(&f))?), f))
+            Ok((
+                Some(File::open(&f).with_context(|_| format!("Error reading {:?}", &f))?),
+                f,
+            ))
         } else {
             Ok((None, f))
         }
@@ -170,7 +173,7 @@ where
     Ok(rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?)
+        .with_context(|_| format!("Error reading {:?}", path))?)
 }
 
 pub fn read_opt_objects<H, O>(file_handler: &mut H, file_name: &str) -> Result<Vec<O>>
@@ -193,7 +196,7 @@ where
             Ok(rdr
                 .deserialize()
                 .collect::<StdResult<_, _>>()
-                .with_context(ctx_from_path!(path))?)
+                .with_context(|_| format!("Error reading {:?}", path))?)
         }
     }
 }

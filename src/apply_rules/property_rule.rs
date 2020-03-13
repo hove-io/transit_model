@@ -115,7 +115,7 @@ fn read_property_rules_files<P: AsRef<Path>>(
         let mut rdr = csv::ReaderBuilder::new()
             .trim(csv::Trim::All)
             .from_path(&path)
-            .with_context(ctx_from_path!(path))?;
+            .with_context(|_| format!("Error reading {:?}", path))?;
         for p in rdr.deserialize() {
             let p: PropertyRule = match p {
                 Ok(val) => val,

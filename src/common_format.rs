@@ -143,7 +143,7 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             for calendar_date in rdr.deserialize() {
                 let calendar_date: CalendarDate =
-                    calendar_date.with_context(ctx_from_path!(path))?;
+                    calendar_date.with_context(|_| format!("Error reading {:?}", path))?;
 
                 let is_inserted =
                     calendars
@@ -191,7 +191,8 @@ where
                 info!("Reading {}", file);
                 let mut rdr = csv::Reader::from_reader(calendar_reader);
                 for calendar in rdr.deserialize() {
-                    let calendar: Calendar = calendar.with_context(ctx_from_path!(path))?;
+                    let calendar: Calendar =
+                        calendar.with_context(|_| format!("Error reading {:?}", path))?;
                     let dates = calendar.get_valid_dates();
                     if !dates.is_empty() {
                         calendars.push(objects::Calendar {
@@ -248,13 +249,13 @@ pub fn write_calendar_dates(
     }
     if !exceptions.is_empty() {
         let mut wtr = csv::Writer::from_path(&calendar_dates_path)
-            .with_context(ctx_from_path!(calendar_dates_path))?;
+            .with_context(|_| format!("Error reading {:?}", calendar_dates_path))?;
         for e in exceptions {
             wtr.serialize(&e)
-                .with_context(ctx_from_path!(calendar_dates_path))?;
+                .with_context(|_| format!("Error reading {:?}", calendar_dates_path))?;
         }
         wtr.flush()
-            .with_context(ctx_from_path!(calendar_dates_path))?;
+            .with_context(|_| format!("Error reading {:?}", calendar_dates_path))?;
     }
     write_calendar(path, &translations)
 }
@@ -266,12 +267,13 @@ pub fn write_calendar(path: &path::Path, calendars: &[Calendar]) -> Result<()> {
     }
 
     let calendar_path = path.join("calendar.txt");
-    let mut wtr =
-        csv::Writer::from_path(&calendar_path).with_context(ctx_from_path!(calendar_path))?;
+    let mut wtr = csv::Writer::from_path(&calendar_path)
+        .with_context(|_| format!("Error reading {:?}", calendar_path))?;
     for calendar in calendars {
         wtr.serialize(calendar)
-            .with_context(ctx_from_path!(calendar_path))?;
+            .with_context(|_| format!("Error reading {:?}", calendar_path))?;
     }
-    wtr.flush().with_context(ctx_from_path!(calendar_path))?;
+    wtr.flush()
+        .with_context(|_| format!("Error reading {:?}", calendar_path))?;
     Ok(())
 }

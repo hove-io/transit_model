@@ -273,7 +273,7 @@ pub fn from_path(
     collections: &mut Collections,
 ) -> Result<CollectionWithId<LineNetexIDF>> {
     info!("Reading {:?}", path);
-    let mut file = File::open(&path).with_context(ctx_from_path!(path))?;
+    let mut file = File::open(&path).with_context(|_| format!("Error reading {:?}", path))?;
     let mut file_content = String::new();
     file.read_to_string(&mut file_content)?;
 

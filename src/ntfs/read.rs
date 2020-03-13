@@ -155,13 +155,14 @@ impl TryFrom<Stop> for StopLocation {
 pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<()> {
     info!("Reading stops.txt");
     let path = path.join("stops.txt");
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr =
+        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
 
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
     let mut stop_locations = vec![];
     for stop in rdr.deserialize() {
-        let stop: Stop = stop.with_context(ctx_from_path!(path))?;
+        let stop: Stop = stop.with_context(|_| format!("Error reading {:?}", path))?;
         match stop.location_type {
             StopLocationType::StopPoint | StopLocationType::GeographicArea => {
                 let mut stop_point = skip_fail!(StopPoint::try_from(stop.clone()));
@@ -209,11 +210,11 @@ pub fn manage_fares_v1(collections: &mut Collections, base_path: &path::Path) ->
     let path = base_path.join(file_prices);
     let mut rdr = builder
         .from_path(&path)
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
     let prices_v1 = rdr
         .deserialize()
         .collect::<std::result::Result<Vec<PriceV1>, _>>()
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
     collections.prices_v1 = Collection::new(prices_v1);
 
     builder.has_headers(true);
@@ -222,11 +223,11 @@ pub fn manage_fares_v1(collections: &mut Collections, base_path: &path::Path) ->
     let path = base_path.join(file_od_fares);
     let mut rdr = builder
         .from_path(&path)
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
     let od_fares_v1 = rdr
         .deserialize()
         .collect::<std::result::Result<Vec<ODFareV1>, _>>()
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
     collections.od_fares_v1 = Collection::new(od_fares_v1);
 
     if !base_path.join(file_fares).exists() {
@@ -238,11 +239,11 @@ pub fn manage_fares_v1(collections: &mut Collections, base_path: &path::Path) ->
     let path = base_path.join(file_fares);
     let mut rdr = builder
         .from_path(&path)
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
     let fares_v1 = rdr
         .deserialize()
         .collect::<std::result::Result<Vec<FareV1>, _>>()
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
     collections.fares_v1 = Collection::new(fares_v1);
 
     Ok(())
@@ -251,11 +252,13 @@ pub fn manage_fares_v1(collections: &mut Collections, base_path: &path::Path) ->
 pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Result<()> {
     info!("Reading stop_times.txt");
     let path = path.join("stop_times.txt");
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr =
+        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     let mut headsigns = HashMap::new();
     let mut stop_time_ids = HashMap::new();
     for stop_time in rdr.deserialize() {
-        let stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
+        let stop_time: StopTime =
+            stop_time.with_context(|_| format!("Error reading {:?}", path))?;
         let stop_point_idx = collections
             .stop_points
             .get_idx(&stop_time.stop_id)
@@ -363,9 +366,10 @@ pub fn manage_codes(collections: &mut Collections, path: &path::Path) -> Result<
     }
     info!("Reading {}", file);
     let path = path.join(file);
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr =
+        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     for code in rdr.deserialize() {
-        let code: Code = code.with_context(ctx_from_path!(path))?;
+        let code: Code = code.with_context(|_| format!("Error reading {:?}", path))?;
         match code.object_type {
             ObjectType::StopArea => insert_code(&mut collections.stop_areas, code),
             ObjectType::StopPoint => insert_code(&mut collections.stop_points, code),
@@ -394,10 +398,12 @@ struct FeedInfo {
 pub fn manage_feed_infos(collections: &mut Collections, path: &path::Path) -> Result<()> {
     info!("Reading feed_infos.txt");
     let path = path.join("feed_infos.txt");
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr =
+        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     collections.feed_infos.clear();
     for feed_info in rdr.deserialize() {
-        let feed_info: FeedInfo = feed_info.with_context(ctx_from_path!(path))?;
+        let feed_info: FeedInfo =
+            feed_info.with_context(|_| format!("Error reading {:?}", path))?;
         ensure!(
             collections
                 .feed_infos
@@ -486,7 +492,8 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Resu
                 .collect();
             info!("Reading comment_links.txt");
             for comment_link in rdr.deserialize() {
-                let comment_link: CommentLink = comment_link.with_context(ctx_from_path!(path))?;
+                let comment_link: CommentLink =
+                    comment_link.with_context(|_| format!("Error reading {:?}", path))?;
                 match comment_link.object_type {
                     ObjectType::StopArea => insert_comment_link(
                         &mut collections.stop_areas,
@@ -560,9 +567,11 @@ pub fn manage_object_properties(collections: &mut Collections, path: &path::Path
         return Ok(());
     }
     info!("Reading {}", file);
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr =
+        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     for obj_prop in rdr.deserialize() {
-        let obj_prop: ObjectProperty = obj_prop.with_context(ctx_from_path!(path))?;
+        let obj_prop: ObjectProperty =
+            obj_prop.with_context(|_| format!("Error reading {:?}", path))?;
         match obj_prop.object_type {
             ObjectType::StopArea => insert_object_property(&mut collections.stop_areas, obj_prop),
             ObjectType::StopPoint => insert_object_property(&mut collections.stop_points, obj_prop),
@@ -592,7 +601,8 @@ pub fn manage_geometries(collections: &mut Collections, path: &path::Path) -> Re
     info!("Reading {}", file);
 
     let mut geometries: Vec<Geometry> = vec![];
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr =
+        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     for geometry in rdr.deserialize() {
         let geometry: Geometry = skip_fail!(geometry);
         geometries.push(geometry)
@@ -636,8 +646,8 @@ pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Resu
 
     info!("Reading {}", file);
     let mut pathways = vec![];
-    let mut rdr =
-        csv::Reader::from_path(&pathway_path).with_context(ctx_from_path!(pathway_path))?;
+    let mut rdr = csv::Reader::from_path(&pathway_path)
+        .with_context(|_| format!("Error reading {:?}", pathway_path))?;
 
     for pathway in rdr.deserialize() {
         let mut pathway: Pathway = skip_fail!(pathway.map_err(|e| format_err!("{}", e)));

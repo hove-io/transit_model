@@ -63,7 +63,7 @@ fn read_complementary_code_rules_files<P: AsRef<Path>>(
         let mut rdr = csv::ReaderBuilder::new()
             .trim(csv::Trim::All)
             .from_path(&path)
-            .with_context(ctx_from_path!(path))?;
+            .with_context(|_| format!("Error reading {:?}", path))?;
         for c in rdr.deserialize() {
             let c: ComplementaryCode = match c {
                 Ok(val) => val,

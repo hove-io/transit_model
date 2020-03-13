@@ -157,8 +157,8 @@ pub fn read_offer_folder(
 ) -> Result<()> {
     let calendars_path = offer_folder.join(CALENDARS_FILENAME);
     let (map_daytypes, validity_period) = if calendars_path.exists() {
-        let mut calendars_file =
-            File::open(&calendars_path).with_context(ctx_from_path!(calendars_path))?;
+        let mut calendars_file = File::open(&calendars_path)
+            .with_context(|_| format!("Error reading {:?}", calendars_path))?;
         let mut calendars_file_content = String::new();
         calendars_file.read_to_string(&mut calendars_file_content)?;
         let calendars: Element = calendars_file_content
@@ -177,7 +177,8 @@ pub fn read_offer_folder(
 
     let common_path = offer_folder.join(COMMON_FILENAME);
     let comments = if common_path.exists() {
-        let mut common_file = File::open(&common_path).with_context(ctx_from_path!(common_path))?;
+        let mut common_file = File::open(&common_path)
+            .with_context(|_| format!("Error reading {:?}", common_path))?;
         let mut common_file_content = String::new();
         common_file.read_to_string(&mut common_file_content)?;
         let common: Element = common_file_content
@@ -204,7 +205,8 @@ pub fn read_offer_folder(
         })
     {
         let offer_path = offer_entry.path();
-        let mut offer_file = File::open(offer_path).with_context(ctx_from_path!(offer_path))?;
+        let mut offer_file =
+            File::open(offer_path).with_context(|_| format!("Error reading {:?}", offer_path))?;
         let mut offer_file_content = String::new();
         offer_file.read_to_string(&mut offer_file_content)?;
         let offer: Element = offer_file_content

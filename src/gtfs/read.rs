@@ -340,7 +340,8 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             let mut shapes = vec![];
             for shape in rdr.deserialize() {
-                let shape: Shape = skip_fail!(shape.with_context(ctx_from_path!(path)));
+                let shape: Shape =
+                    skip_fail!(shape.with_context(|_| format!("Error reading {:?}", path)));
                 shapes.push(shape);
             }
 
@@ -388,7 +389,8 @@ where
     let mut headsigns = HashMap::new();
     let mut tmp_vjs = HashMap::new();
     for stop_time in rdr.deserialize() {
-        let mut stop_time: StopTime = stop_time.with_context(ctx_from_path!(path))?;
+        let mut stop_time: StopTime =
+            stop_time.with_context(|_| format!("Error reading {:?}", path))?;
         let vj_idx = collections
             .vehicle_journeys
             .get_idx(&stop_time.trip_id)
@@ -651,7 +653,7 @@ where
     let gtfs_stops: Vec<Stop> = rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
 
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
@@ -1047,7 +1049,7 @@ where
         &collections.datasets,
         &collections.networks,
     )
-    .with_context(ctx_from_path!("trips.txt"))?;
+    .with_context(|_| format!("Error reading {:?}", "trips.txt"))?;
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     collections.trip_properties = CollectionWithId::new(trip_properties)?;
 
@@ -1088,10 +1090,10 @@ where
         }
         Some(reader) => {
             let mut rdr = csv::Reader::from_reader(reader);
-            let gtfs_frequencies: Vec<Frequency> = rdr
-                .deserialize()
-                .collect::<StdResult<_, _>>()
-                .with_context(ctx_from_path!(path))?;
+            let gtfs_frequencies: Vec<Frequency> =
+                rdr.deserialize()
+                    .collect::<StdResult<_, _>>()
+                    .with_context(|_| format!("Error reading {:?}", path))?;
             let mut trip_id_sequence: HashMap<String, u32> = HashMap::new();
             let mut new_vehicle_journeys: Vec<VehicleJourney> = vec![];
             for frequency in &gtfs_frequencies {
