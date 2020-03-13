@@ -91,7 +91,7 @@ lazy_static! {
                 Ok(model
                     .lines
                     .values()
-                    .filter(|line| line.code.as_ref().map(|line_code| line_code.as_str()) == Some(line_code))
+                    .filter(|line| line.code.as_deref() == Some(line_code))
                     // Unwrap is safe because we're iterating on model.lines already
                     .map(|line| model.lines.get_idx(&line.id).unwrap())
                     .flat_map(|line_idx| model.get_corresponding_from_idx(line_idx))

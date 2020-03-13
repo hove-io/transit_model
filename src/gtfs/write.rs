@@ -226,7 +226,7 @@ fn get_gtfs_trip_shortname_and_headsign_from_ntfs_vj(
 }
 
 fn get_gtfs_direction_id_from_ntfs_route(route: &objects::Route) -> DirectionType {
-    match route.direction_type.as_ref().map(|s| s.as_str()) {
+    match route.direction_type.as_deref() {
         Some("forward") | Some("clockwise") | Some("inbound") => DirectionType::Forward,
         _ => DirectionType::Backward,
     }
