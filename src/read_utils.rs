@@ -11,6 +11,7 @@
 
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
+//! Some utilities for input dataset to the library.
 
 use crate::{
     objects::{self, Contributor},
@@ -39,6 +40,31 @@ struct Config {
     feed_infos: Option<BTreeMap<String, String>>,
 }
 
+/// Read a JSON configuration file to facilitate the creation of:
+/// - a Contributor
+/// - a Dataset
+/// - a list of key/value which will be used in 'feed_infos.txt'
+/// Below is an example of this file
+/// ```ignore
+/// {
+///     "contributor": {
+///         "contributor_id": "contributor_id",
+///         "contributor_name": "Contributor Name",
+///         "contributor_license": "AGPIT",
+///         "contributor_website": "http://www.datasource-website.com"
+///     },
+///     "dataset": {
+///         "dataset_id": "dataset-id"
+///     },
+///     "feed_infos": {
+///         "feed_publisher_name": "The Great Data Publisher",
+///         "feed_license": "AGPIT",
+///         "feed_license_url": "http://www.datasource-website.com",
+///         "tartare_platform": "dev",
+///         "tartare_contributor_id": "contributor_id"
+///     }
+/// }
+/// ```
 pub fn read_config<P: AsRef<path::Path>>(
     config_path: Option<P>,
 ) -> Result<(
@@ -69,7 +95,7 @@ pub fn read_config<P: AsRef<path::Path>>(
     Ok((contributor, dataset, feed_infos))
 }
 
-pub trait FileHandler
+pub(crate) trait FileHandler
 where
     Self: std::marker::Sized,
 {
@@ -87,12 +113,12 @@ where
 }
 
 /// PathFileHandler is used to read files for a directory
-pub struct PathFileHandler<P: AsRef<Path>> {
+pub(crate) struct PathFileHandler<P: AsRef<Path>> {
     base_path: P,
 }
 
 impl<P: AsRef<Path>> PathFileHandler<P> {
-    pub fn new(path: P) -> Self {
+    pub(crate) fn new(path: P) -> Self {
         PathFileHandler { base_path: path }
     }
 }
@@ -115,14 +141,14 @@ impl<'a, P: AsRef<Path>> FileHandler for &'a mut PathFileHandler<P> {
 /// Unlike ZipArchive, it gives access to a file by its name not regarding its path in the ZipArchive
 /// It thus cannot be correct if there are 2 files with the same name in the archive,
 /// but for transport data if will make it possible to handle a zip with a sub directory
-pub struct ZipHandler {
+pub(crate) struct ZipHandler {
     archive: zip::ZipArchive<File>,
     archive_path: PathBuf,
     index_by_name: BTreeMap<String, usize>,
 }
 
 impl ZipHandler {
-    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub(crate) fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
         let file = File::open(path.as_ref())?;
         let mut archive = zip::ZipArchive::new(file)?;
         Ok(ZipHandler {
@@ -157,7 +183,7 @@ impl<'a> FileHandler for &'a mut ZipHandler {
 }
 
 /// Read a vector of objects from a zip in a file_handler
-pub fn read_objects<H, O>(file_handler: &mut H, file_name: &str) -> Result<Vec<O>>
+pub(crate) fn read_objects<H, O>(file_handler: &mut H, file_name: &str) -> Result<Vec<O>>
 where
     for<'a> &'a mut H: FileHandler,
     O: for<'de> serde::Deserialize<'de>,
@@ -173,7 +199,7 @@ where
         .with_context(ctx_from_path!(path))?)
 }
 
-pub fn read_opt_objects<H, O>(file_handler: &mut H, file_name: &str) -> Result<Vec<O>>
+pub(crate) fn read_opt_objects<H, O>(file_handler: &mut H, file_name: &str) -> Result<Vec<O>>
 where
     for<'a> &'a mut H: FileHandler,
     O: for<'de> serde::Deserialize<'de>,
@@ -199,7 +225,10 @@ where
 }
 
 /// Read a CollectionId from a zip in a file_handler
-pub fn read_collection<H, O>(file_handler: &mut H, file_name: &str) -> Result<CollectionWithId<O>>
+pub(crate) fn read_collection<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+) -> Result<CollectionWithId<O>>
 where
     for<'a> &'a mut H: FileHandler,
     O: for<'de> serde::Deserialize<'de> + Id<O>,
@@ -208,7 +237,7 @@ where
     CollectionWithId::new(vec)
 }
 
-pub fn read_opt_collection<H, O>(
+pub(crate) fn read_opt_collection<H, O>(
     file_handler: &mut H,
     file_name: &str,
 ) -> Result<CollectionWithId<O>>

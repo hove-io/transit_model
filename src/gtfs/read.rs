@@ -324,7 +324,10 @@ impl Trip {
     }
 }
 
-pub fn manage_shapes<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+pub(in crate::gtfs) fn manage_shapes<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -370,7 +373,7 @@ where
     }
 }
 
-pub fn manage_stop_times<H>(
+pub(in crate::gtfs) fn manage_stop_times<H>(
     collections: &mut Collections,
     file_handler: &mut H,
     on_demand_transport: bool,
@@ -533,7 +536,7 @@ fn interpolate_undefined_stop_times(
     }
 }
 
-pub fn read_agency<H>(
+pub(in crate::gtfs) fn read_agency<H>(
     file_handler: &mut H,
 ) -> Result<(
     CollectionWithId<objects::Network>,
@@ -629,7 +632,7 @@ fn get_equipment_id_and_populate_equipments(
     }
 }
 
-pub fn read_stops<H>(
+pub(in crate::gtfs) fn read_stops<H>(
     file_handler: &mut H,
     comments: &mut CollectionWithId<objects::Comment>,
     equipments: &mut EquipmentList,
@@ -691,7 +694,10 @@ where
     Ok((stopareas, stoppoints, stoplocations))
 }
 
-pub fn manage_pathways<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+pub(in crate::gtfs) fn manage_pathways<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -747,7 +753,7 @@ where
     Ok(())
 }
 
-pub fn read_transfers<H>(
+pub(in crate::gtfs) fn read_transfers<H>(
     file_handler: &mut H,
     stop_points: &CollectionWithId<objects::StopPoint>,
 ) -> Result<Collection<objects::Transfer>>
@@ -1023,7 +1029,10 @@ fn make_ntfs_vehicle_journeys(
     Ok((vehicle_journeys, trip_properties))
 }
 
-pub fn read_routes<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+pub(in crate::gtfs) fn read_routes<H>(
+    file_handler: &mut H,
+    collections: &mut Collections,
+) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -1074,7 +1083,10 @@ struct Frequency {
     exact_times: FrequencyPrecision,
 }
 
-pub fn manage_frequencies<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+pub(in crate::gtfs) fn manage_frequencies<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
