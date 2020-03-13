@@ -155,7 +155,7 @@ impl<'a> OfferExporter<'a> {
         let element_builder = element_builder.append(Self::generate_distance());
         let element_builder = element_builder.append(Self::generate_line_ref(&route.line_id));
         let element_builder = if let Some(direction_type_element) =
-            Self::generate_direction_type(route.direction_type.as_ref().map(String::as_str))
+            Self::generate_direction_type(route.direction_type.as_deref())
         {
             element_builder.append(direction_type_element)
         } else {
