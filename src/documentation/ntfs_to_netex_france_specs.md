@@ -467,7 +467,63 @@ anticlockwise | anticlockwise
 
 #### PointOnRoute
 
-TBD
+For each `stop_point` of all the `vehicle_journey` of the current `route`, a
+`PointOnRoute` is created, with a link to a corresponding `RoutePoint` (see
+[related section](#routepoint)).
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+PointOnRoute/@id | | | see (1) below
+PointOnRoute/@version | | | fixed value `any`
+PointOnRoute/@order | | | see (2) below
+PointOnRoute/RoutePointRef/@ref | | | see (1) below; see [id formatting](#id-of-objects) with `RoutePoint` as object type for the rest
+
+**(1) identifier for PointOnRoute**
+
+The identifier is built from the concatenation of the following fields separated
+by `_`:
+- the `route_id`
+- the `@order`
+
+For the rest of the identifier, use [id formatting](#id-of-objects).
+
+**(2) `@order` of the PointOnRoute**
+
+All the `stop_point` of the `route` are inserted with the following rules
+(`@order` is auto-incremented from `1`).
+
+The `vehicle_journeys` are processed in order. The ordering is done using the
+following keys in this order of priority:
+1. `stop_time[0].stop_id`: the `stop_point` of the first `stop_time` of the
+   `vehicle_journey`
+2. `stop_time[0].departure_time`: the `departure_time` of the first `stop_time`
+   of the `vehicle_journey`
+All the `stop_points` of the first `vehicle_journey` are inserted
+in the list of `PointOnRoute`. Then, for the second `vehicle_journey`, insert
+only the `stop_points` that are not already present, but in a manner that the
+order of the `stop_points` in the `vehicle_journey` is preserved (priority to
+the `stop_points` of the previous `vehicle_journeys`).
+
+Below is an example with 2 `vehicle_journeys`, `VJ1` (in red) and `VJ2` (in
+blue); `stop_points` are colored accordingly (mixed colors means they're part of
+both `vehicle_journeys`).
+
+![](./netex_france_point_on_route_vehicle_journeys.png "Example of 2 Vehicle Journeys")
+
+Below is the final sequence of `PointOnRoute` with their corresponding order.
+
+![](./netex_france_point_on_route.png "Final sequence of PointOnRoute for 2 Vehicle Journeys")
+
+### RoutePoint
+
+One `RoutePoint` is created for each `stop_point` of all `vehicle_journeys` of a
+`Route`.
+
+Netex field | NTFS file | NTFS field | Note
+--- | --- | --- | ---
+RoutePoint/@id | | | see [`PointOnRoute/@id`](#pointonroute) with `RoutePoint` as object type
+RoutePoint/@version | | | fixed value `any`
+RoutePoint/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Location` is absent
 
 ### ServiceJourneyPattern
 
@@ -497,7 +553,7 @@ Netex field | NTFS file | NTFS field | Note
 StopPointInJourneyPattern/@id | | | see (1) below
 StopPointInJourneyPattern/@version | | | fixed value `any`
 StopPointInJourneyPattern/@order | stop_times.txt | stop_sequence | value of `stop_sequence + 1` (because `0` is not a valid value)
-StopPointInJourneyPattern/ScheduledStopPointRef/@ref | | | see `StopPointInJourneyPattern/@id` for ID; see [id formatting](#id-of-objects) with `StopPointInJourneyPattern` as object type for the rest
+StopPointInJourneyPattern/ScheduledStopPointRef/@ref | | | see (1) below; see [id formatting](#id-of-objects) with `StopPointInJourneyPattern` as object type for the rest
 StopPointInJourneyPattern/ForAlighting | stop_times.txt | drop_off_type | `0` is set to `true`, `1` is set to `false`
 StopPointInJourneyPattern/ForBoarding | stop_times.txt | pickup_type | `0` is set to `true`, `1` is set to `false`
 

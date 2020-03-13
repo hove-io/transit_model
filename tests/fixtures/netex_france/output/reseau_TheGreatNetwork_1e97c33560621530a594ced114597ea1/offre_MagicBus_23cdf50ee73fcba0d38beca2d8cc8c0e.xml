@@ -11,6 +11,16 @@
 					<LineRef ref="FR:Line:B42:">
 					</LineRef>
 					<DirectionType>inbound</DirectionType>
+					<pointsInSequence>
+						<PointOnRoute id="FR:PointOnRoute:B42_1:" order="1" version="any">
+							<RoutePointRef ref="FR:RoutePoint:B42_1:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:B42_2:" order="2" version="any">
+							<RoutePointRef ref="FR:RoutePoint:B42_2:">
+							</RoutePointRef>
+						</PointOnRoute>
+					</pointsInSequence>
 				</Route>
 				<Route id="FR:Route:B42_R:" version="any">
 					<Name>Bus 42</Name>
@@ -18,7 +28,37 @@
 					<LineRef ref="FR:Line:B42:">
 					</LineRef>
 					<DirectionType>outbound</DirectionType>
+					<pointsInSequence>
+						<PointOnRoute id="FR:PointOnRoute:B42_R_1:" order="1" version="any">
+							<RoutePointRef ref="FR:RoutePoint:B42_R_1:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:B42_R_2:" order="2" version="any">
+							<RoutePointRef ref="FR:RoutePoint:B42_R_2:">
+							</RoutePointRef>
+						</PointOnRoute>
+					</pointsInSequence>
 				</Route>
+				<RoutePoint id="FR:RoutePoint:B42_1:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:B42_2:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:B42_R_1:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:B42_R_2:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</RoutePoint>
 				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:B42F1:" version="any">
 					<Distance>0</Distance>
 					<RouteRef ref="FR:Route:B42:">

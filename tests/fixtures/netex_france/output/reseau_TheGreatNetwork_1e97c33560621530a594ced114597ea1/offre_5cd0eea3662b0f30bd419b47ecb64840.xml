@@ -11,6 +11,24 @@
 					<LineRef ref="FR:Line:RERA:">
 					</LineRef>
 					<DirectionType>inbound</DirectionType>
+					<pointsInSequence>
+						<PointOnRoute id="FR:PointOnRoute:RERA_1:" order="1" version="any">
+							<RoutePointRef ref="FR:RoutePoint:RERA_1:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:RERA_2:" order="2" version="any">
+							<RoutePointRef ref="FR:RoutePoint:RERA_2:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:RERA_3:" order="3" version="any">
+							<RoutePointRef ref="FR:RoutePoint:RERA_3:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:RERA_4:" order="4" version="any">
+							<RoutePointRef ref="FR:RoutePoint:RERA_4:">
+							</RoutePointRef>
+						</PointOnRoute>
+					</pointsInSequence>
 				</Route>
 				<Route id="FR:Route:RERA_Bus_R:" version="any">
 					<Name>RER A</Name>
@@ -18,7 +36,65 @@
 					<LineRef ref="FR:Line:RERA:">
 					</LineRef>
 					<DirectionType>outbound</DirectionType>
+					<pointsInSequence>
+						<PointOnRoute id="FR:PointOnRoute:RERA_Bus_R_1:" order="1" version="any">
+							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_1:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:RERA_Bus_R_2:" order="2" version="any">
+							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_2:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:RERA_Bus_R_3:" order="3" version="any">
+							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_3:">
+							</RoutePointRef>
+						</PointOnRoute>
+						<PointOnRoute id="FR:PointOnRoute:RERA_Bus_R_4:" order="4" version="any">
+							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_4:">
+							</RoutePointRef>
+						</PointOnRoute>
+					</pointsInSequence>
 				</Route>
+				<RoutePoint id="FR:RoutePoint:RERA_1:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:RERA_2:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:RERA_3:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:RERA_4:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:RERA_Bus_R_1:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:RERA_Bus_R_2:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:RERA_Bus_R_3:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+					</Location>
+				</RoutePoint>
+				<RoutePoint id="FR:RoutePoint:RERA_Bus_R_4:" version="any">
+					<Location>
+						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+					</Location>
+				</RoutePoint>
 				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:RERAF1:" version="any">
 					<Distance>0</Distance>
 					<RouteRef ref="FR:Route:RERA:">
