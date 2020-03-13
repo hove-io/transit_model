@@ -13,12 +13,11 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    common_format::Availability,
     netex_france::{
         exporter::{Exporter, ObjectType},
         NetexMode,
     },
-    objects::{Coord, Equipment, StopArea, StopLocation, StopPoint, StopType},
+    objects::{Availability, Coord, Equipment, StopArea, StopLocation, StopPoint, StopType},
     Model, Result,
 };
 use failure::format_err;

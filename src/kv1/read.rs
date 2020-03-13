@@ -13,11 +13,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    common_format::{Availability, CalendarDate},
-    model::Collections,
-    objects::*,
-    read_utils::FileHandler,
-    Result,
+    common_format::CalendarDate, model::Collections, objects::*, read_utils::FileHandler, Result,
 };
 use chrono::NaiveDate;
 use csv;

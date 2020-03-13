@@ -18,11 +18,11 @@ mod read;
 mod write;
 
 use crate::{
-    common_format::{manage_calendars, write_calendar_dates, Availability},
+    common_format::{manage_calendars, write_calendar_dates},
     gtfs::read::EquipmentList,
     model::{Collections, Model},
     objects,
-    objects::{StopPoint, StopType, Time},
+    objects::{Availability, StopPoint, StopType, Time},
     read_utils,
     utils::*,
     validity_period, AddPrefix, Result,

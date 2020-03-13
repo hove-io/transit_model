@@ -21,25 +21,12 @@ use crate::vptranslator::translate;
 use crate::Result;
 use chrono::{self, Datelike, Weekday};
 use csv;
-use derivative::Derivative;
 use failure::{bail, format_err, ResultExt};
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::path;
 use transit_model_collection::*;
-
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
-#[derivative(Default)]
-pub enum Availability {
-    #[derivative(Default)]
-    #[serde(rename = "0")]
-    InformationNotAvailable,
-    #[serde(rename = "1")]
-    Available,
-    #[serde(rename = "2")]
-    NotAvailable,
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CalendarDate {

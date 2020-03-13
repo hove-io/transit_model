@@ -319,7 +319,8 @@ mod tests {
     use super::Collections;
     use super::*;
     use super::{read, write};
-    use crate::common_format::{manage_calendars, write_calendar_dates, Availability};
+    use crate::common_format::{manage_calendars, write_calendar_dates};
+    use crate::objects::Availability;
     use crate::{read_utils::PathFileHandler, test_utils::*};
     use geo_types::line_string;
     use pretty_assertions::assert_eq;
