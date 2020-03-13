@@ -22,13 +22,16 @@
 					<lines>
 						<Line id="FR:Line:B42:" version="any">
 							<Name>Bus 42</Name>
+							<TransportMode>bus</TransportMode>
 							<PublicCode>Magic Bus!</PublicCode>
 						</Line>
 						<Line id="FR:Line:M1:" version="any">
 							<Name>Metro 1</Name>
+							<TransportMode>metro</TransportMode>
 						</Line>
 						<Line id="FR:Line:RERA:" version="any">
 							<Name>RER A</Name>
+							<TransportMode>rail</TransportMode>
 						</Line>
 					</lines>
 				</ServiceFrame>

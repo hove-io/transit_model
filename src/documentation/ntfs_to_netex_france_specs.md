@@ -324,8 +324,9 @@ Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 Line/@id | lines.txt | line_id | see [id formatting](#id-of-objects)
 Line/@version |  |  | fixed value `any`
-Line/PublicCode | lines.txt | line_code | If the code line_code is empty, this node is not created.
 Line/Name | lines.txt | line_name | 
+Line/TransportMode | | | Refers to the mode with __highest priority__  of the trips associated to the line, see [NeTEx Transport Modes](#netex-transport-modes) and [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis)
+Line/PublicCode | lines.txt | line_code | If the code line_code is empty, this node is not created.
 
 ### Operator
 

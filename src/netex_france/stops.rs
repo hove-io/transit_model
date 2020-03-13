@@ -212,13 +212,14 @@ impl<'a> StopExporter<'a> {
                 stop_point.id, netex_modes
             );
         }
-        let highest_netex_mode = self.calculate_highest_mode(&netex_modes).ok_or_else(|| {
-            // Should never happen, a Stop Point always have at least one associated mode
-            format_err!(
-                "Unable to resolve main NeTEx mode for Stop Point {}",
-                stop_point.id
-            )
-        })?;
+        let highest_netex_mode =
+            NetexMode::calculate_highest_mode(&netex_modes).ok_or_else(|| {
+                // Should never happen, a Stop Point always have at least one associated mode
+                format_err!(
+                    "Unable to resolve main NeTEx mode for Stop Point {}",
+                    stop_point.id
+                )
+            })?;
         let element_builder =
             element_builder.append(self.generate_transport_mode(highest_netex_mode));
         let element_builder = if let Some(tariff_zones) = self.generate_tariff_zones(stop_point) {
@@ -300,7 +301,7 @@ impl<'a> StopExporter<'a> {
                 element_builder
             };
             let highest_netex_mode =
-                self.calculate_highest_mode(&netex_modes).ok_or_else(|| {
+                NetexMode::calculate_highest_mode(&netex_modes).ok_or_else(|| {
                     // Should never happen, a Stop Area always have at least one associated mode
                     format_err!(
                         "Unable to resolve main NeTEx mode for Stop Area {}",
@@ -460,11 +461,6 @@ impl<'a> StopExporter<'a> {
         Element::builder(node_name)
             .append(Node::Text("true".to_string()))
             .build()
-    }
-
-    fn calculate_highest_mode(&self, netex_modes: &BTreeSet<NetexMode>) -> Option<NetexMode> {
-        // Since `BTreeSet is ordered, the first one in the list is of highest priority
-        netex_modes.iter().next().cloned()
     }
 
     fn generate_tariff_zones(&self, stop_point: &'a StopPoint) -> Option<Element> {
