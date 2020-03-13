@@ -24,7 +24,7 @@ extern crate transit_model_collection;
 #[macro_use]
 mod utils;
 mod add_prefix;
-use add_prefix::AddPrefix;
+pub use add_prefix::AddPrefix;
 pub mod apply_rules;
 mod common_format;
 #[macro_use]
