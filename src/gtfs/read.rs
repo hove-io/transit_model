@@ -36,7 +36,7 @@ use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
 use std::result::Result as StdResult;
-use transit_model_collection::{Collection, CollectionWithId, Id};
+use transit_model_collection::{Collection, CollectionWithId};
 
 fn default_agency_id() -> String {
     1.to_string()
@@ -1217,6 +1217,7 @@ mod tests {
     };
     use geo_types::line_string;
     use pretty_assertions::assert_eq;
+    use transit_model_collection::Id;
 
     fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
         let mut extracted_props: Vec<S> = c.values().map(|l| f(l)).collect();

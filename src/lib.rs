@@ -19,6 +19,9 @@
 #![deny(missing_docs)]
 
 #[macro_use]
+extern crate transit_model_collection;
+
+#[macro_use]
 mod utils;
 mod add_prefix;
 use add_prefix::AddPrefix;

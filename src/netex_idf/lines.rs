@@ -31,7 +31,7 @@ use std::{
     fs::File,
     io::Read,
 };
-use transit_model_collection::{CollectionWithId, Id};
+use transit_model_collection::CollectionWithId;
 
 // #000000
 const DEFAULT_COLOR: Rgb = Rgb {
