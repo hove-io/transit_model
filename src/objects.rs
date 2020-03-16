@@ -28,7 +28,7 @@ use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::str::FromStr;
-use transit_model_collection::{Id, Idx, WithId};
+use transit_model_collection::{Idx, WithId};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -131,23 +131,6 @@ macro_rules! impl_with_id {
                 r
             }
         }
-    };
-}
-
-macro_rules! impl_id {
-    ($ty:ty, $gen:ty, $id: ident) => {
-        impl Id<$gen> for $ty {
-            fn id(&self) -> &str {
-                &self.$id
-            }
-
-            fn set_id(&mut self, id: String) {
-                self.$id = id;
-            }
-        }
-    };
-    ($ty:ty) => {
-        impl_id!($ty, $ty, id);
     };
 }
 

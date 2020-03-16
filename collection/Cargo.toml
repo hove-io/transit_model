@@ -1,7 +1,7 @@
 [package]
 name = "transit_model_collection"
 description = "Manage collection of objects"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Kisio Digital <team.coretools@kisio.org>"]
 edition = "2018"
 license = "AGPL-3.0-only"
