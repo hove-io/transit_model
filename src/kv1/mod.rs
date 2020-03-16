@@ -20,40 +20,13 @@ use crate::{
     model::{Collections, Model},
     read_utils, validity_period, AddPrefix, Result,
 };
-use std::path::Path;
+use std::{
+    fs::File,
+    io::{Read, Write},
+    path::Path,
+};
+use tempdir::TempDir;
 use transit_model_collection::CollectionWithId;
-
-fn read<H>(
-    file_handler: &mut H,
-    config_path: Option<impl AsRef<Path>>,
-    prefix: Option<String>,
-) -> Result<Model>
-where
-    for<'a> &'a mut H: read_utils::FileHandler,
-{
-    let mut collections = Collections::default();
-
-    read::read_operday(file_handler, &mut collections)?;
-
-    let (contributor, mut dataset, feed_infos) = read_utils::read_config(config_path)?;
-    validity_period::set_dataset_validity_period(&mut dataset, &collections.calendars)?;
-
-    collections.contributors = CollectionWithId::new(vec![contributor])?;
-    collections.datasets = CollectionWithId::new(vec![dataset])?;
-    collections.feed_infos = feed_infos;
-
-    read::read_usrstop_point(file_handler, &mut collections)?;
-    read::read_notice(file_handler, &mut collections)?;
-    read::read_jopa_pujopass_line(file_handler, &mut collections)?;
-
-    //add prefixes
-    if let Some(prefix) = prefix {
-        collections.add_prefix_with_sep(prefix.as_str(), ":");
-    }
-
-    collections.calendar_deduplication();
-    Model::new(collections)
-}
 
 /// Imports a `Model` from the KV1 files in the `path` directory.
 ///
@@ -64,13 +37,33 @@ where
 /// The `prefix` argument is a string that will be prepended to every
 /// identifiers, allowing to namespace the dataset. By default, no
 /// prefix will be added to the identifiers.
-pub fn read_from_path<P: AsRef<Path>>(
-    p: P,
-    config_path: Option<P>,
+pub fn read_from_path<P: AsRef<Path>, Q: AsRef<Path>>(
+    path: P,
+    config_path: Option<Q>,
     prefix: Option<String>,
 ) -> Result<Model> {
-    let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
-    read(&mut file_handle, config_path, prefix)
+    let mut collections = Collections::default();
+
+    read::read_operday(&path, &mut collections)?;
+
+    let (contributor, mut dataset, feed_infos) = read_utils::read_config(config_path)?;
+    validity_period::set_dataset_validity_period(&mut dataset, &collections.calendars)?;
+
+    collections.contributors = CollectionWithId::new(vec![contributor])?;
+    collections.datasets = CollectionWithId::new(vec![dataset])?;
+    collections.feed_infos = feed_infos;
+
+    read::read_usrstop_point(&path, &mut collections)?;
+    read::read_notice(&path, &mut collections)?;
+    read::read_jopa_pujopass_line(&path, &mut collections)?;
+
+    //add prefixes
+    if let Some(prefix) = prefix {
+        collections.add_prefix_with_sep(prefix.as_str(), ":");
+    }
+
+    collections.calendar_deduplication();
+    Model::new(collections)
 }
 
 /// Imports a `Model` from a zip file containing the KV1.
@@ -82,11 +75,29 @@ pub fn read_from_path<P: AsRef<Path>>(
 /// The `prefix` argument is a string that will be prepended to every
 /// identifiers, allowing to namespace the dataset. By default, no
 /// prefix will be added to the identifiers.
-pub fn read_from_zip<P: AsRef<Path>>(
+pub fn read_from_zip<P: AsRef<Path>, Q: AsRef<Path>>(
     path: P,
-    config_path: Option<P>,
+    config_path: Option<Q>,
     prefix: Option<String>,
 ) -> Result<Model> {
-    let mut file_handler = read_utils::ZipHandler::new(path)?;
-    read(&mut file_handler, config_path, prefix)
+    let file = File::open(path.as_ref())?;
+    let mut archive = zip::ZipArchive::new(file)?;
+    let unzipped_folder = TempDir::new("transit_model_")?;
+    for file_index in 0..archive.len() {
+        let mut file = archive.by_index(file_index)?;
+        if file.is_file() {
+            let unziped_filepath = unzipped_folder.as_ref().join(file.sanitized_name());
+            let mut unziped_file = File::create(unziped_filepath)?;
+            let mut buffer = [0u8; 8];
+            loop {
+                let read_bytes = file.read(&mut buffer)?;
+                if read_bytes != 0 {
+                    unziped_file.write_all(&buffer[0..read_bytes])?;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    read_from_path(unzipped_folder, config_path, prefix)
 }

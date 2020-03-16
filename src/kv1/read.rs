@@ -12,9 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::{
-    common_format::CalendarDate, model::Collections, objects::*, read_utils::FileHandler, Result,
-};
+use crate::{common_format::CalendarDate, model::Collections, objects::*, Result};
 use chrono::NaiveDate;
 use csv;
 use failure::{bail, format_err, ResultExt};
@@ -22,8 +20,12 @@ use lazy_static::lazy_static;
 use log::info;
 use proj::Proj;
 use serde::Deserialize;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::result::Result as StdResult;
+use std::{
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    fs::File,
+    path::Path,
+    result::Result as StdResult,
+};
 use transit_model_collection::CollectionWithId;
 
 /// Deserialize kv1 string date (Y-m-d) to NaiveDate
@@ -193,24 +195,22 @@ type PujoJopaMap = HashMap<(String, String), Vec<PujoPass>>;
 type JopaMap<'a> = BTreeMap<(String, String), &'a Jopa>;
 
 /// Generates calendars
-pub(in crate::kv1) fn read_operday<H>(
-    file_handler: &mut H,
+pub(in crate::kv1) fn read_operday<P: AsRef<Path>>(
+    path: P,
     collections: &mut Collections,
-) -> Result<()>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let file = "OPERDAYXXX.TMI";
-    let (reader, path) = file_handler.get_file(file)?;
-    info!("Reading {} and generating calendars", file);
+) -> Result<()> {
+    let filename = "OPERDAYXXX.TMI";
+    let filepath = path.as_ref().join(filename);
+    let file = File::open(&filepath)?;
+    info!("Reading {} and generating calendars", filename);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
         .trim(csv::Trim::All)
-        .from_reader(reader);
+        .from_reader(file);
 
     for opd in rdr.deserialize() {
-        let opd: OPerDay = opd.with_context(|_| format!("Error reading {:?}", path))?;
+        let opd: OPerDay = opd.with_context(|_| format!("Error reading {:?}", filepath))?;
 
         let calendar_date: CalendarDate = CalendarDate {
             service_id: format!(
@@ -280,18 +280,16 @@ fn make_physical_and_commercial_modes(
 }
 
 /// Read stop coordinates
-fn read_point<H>(file_handler: &mut H) -> Result<BTreeMap<String, Coord>>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let file = "POINTXXXXX.TMI";
-    let (file_reader, path) = file_handler.get_file(file)?;
-    info!("Reading {}", file);
+fn read_point<P: AsRef<Path>>(path: P) -> Result<BTreeMap<String, Coord>> {
+    let filename = "POINTXXXXX.TMI";
+    let filepath = path.as_ref().join(filename);
+    let file = File::open(&filepath)?;
+    info!("Reading {}", filename);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
         .trim(csv::Trim::All)
-        .from_reader(file_reader);
+        .from_reader(file);
 
     let mut point_map = BTreeMap::new();
     let from = "EPSG:28992";
@@ -302,7 +300,7 @@ where
         None => bail!("Proj cannot build a converter from {} to {}", from, to),
     };
     for point in rdr.deserialize() {
-        let point: Point = point.with_context(|_| format!("Error reading {:?}", path))?;
+        let point: Point = point.with_context(|_| format!("Error reading {:?}", filepath))?;
         if point.category == "SP" {
             let coords = proj.convert((point.lon, point.lat)).map(Coord::from)?;
             point_map.insert(point.code, coords);
@@ -312,49 +310,49 @@ where
 }
 
 /// Read stop areas
-fn read_usrstar<H>(file_handler: &mut H) -> Result<BTreeMap<String, UsrStopArea>>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let file = "USRSTARXXX.TMI";
-    let (file_reader, path) = file_handler.get_file(file)?;
-    info!("Reading {}", file);
+fn read_usrstar<P: AsRef<Path>>(path: P) -> Result<BTreeMap<String, UsrStopArea>> {
+    let filename = "USRSTARXXX.TMI";
+    let filepath = path.as_ref().join(filename);
+    let file = File::open(&filepath)?;
+    info!("Reading {}", filename);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
         .trim(csv::Trim::All)
-        .from_reader(file_reader);
+        .from_reader(file);
     let mut usr_stop_area_map = BTreeMap::new();
     for usr_stop_area in rdr.deserialize() {
         let usr_stop_area: UsrStopArea =
-            usr_stop_area.with_context(|_| format!("Error reading {:?}", path))?;
+            usr_stop_area.with_context(|_| format!("Error reading {:?}", filepath))?;
         usr_stop_area_map.insert(usr_stop_area.id.clone(), usr_stop_area);
     }
     Ok(usr_stop_area_map)
 }
 
 /// Generates stop_points
-pub(in crate::kv1) fn read_usrstop_point<H>(
-    file_handler: &mut H,
+pub(in crate::kv1) fn read_usrstop_point<P: AsRef<Path>>(
+    path: P,
     collections: &mut Collections,
-) -> Result<()>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let point_map = read_point(file_handler)?;
-    let usr_stop_area_map = read_usrstar(file_handler)?;
+) -> Result<()> {
+    let point_map = read_point(&path)?;
+    let usr_stop_area_map = read_usrstar(&path)?;
 
-    let file = "USRSTOPXXX.TMI";
-    let (file_reader, path) = file_handler.get_file(file)?;
-    info!("Reading {} and generating stop points and stop areas", file);
+    let filename = "USRSTOPXXX.TMI";
+    let filepath = path.as_ref().join(filename);
+    let file = File::open(&filepath)?;
+    info!(
+        "Reading {} and generating stop points and stop areas",
+        filename
+    );
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
         .trim(csv::Trim::All)
-        .from_reader(file_reader);
+        .from_reader(file);
 
     for usr_stop in rdr.deserialize() {
-        let usr_stop: UsrStop = usr_stop.with_context(|_| format!("Error reading {:?}", path))?;
+        let usr_stop: UsrStop =
+            usr_stop.with_context(|_| format!("Error reading {:?}", filepath))?;
         let coord = match point_map.get(&usr_stop.point_code) {
             Some(c) => *c,
             None => bail!("Point code {} does not exist.", usr_stop.point_code),
@@ -398,42 +396,38 @@ where
     Ok(())
 }
 
-fn read_jopa<H>(file_handler: &mut H) -> Result<Vec<Jopa>>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let file = "JOPAXXXXXX.TMI";
-    let (reader, path) = file_handler.get_file(file)?;
-    info!("Reading {}", file);
+fn read_jopa<P: AsRef<Path>>(path: P) -> Result<Vec<Jopa>> {
+    let filename = "JOPAXXXXXX.TMI";
+    let filepath = path.as_ref().join(filename);
+    let file = File::open(&filepath)?;
+    info!("Reading {}", filename);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
         .trim(csv::Trim::All)
-        .from_reader(reader);
+        .from_reader(file);
 
     let jopas = rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
-        .with_context(|_| format!("Error reading {:?}", path))?;
+        .with_context(|_| format!("Error reading {:?}", filepath))?;
     Ok(jopas)
 }
 
-fn read_line<H>(file_handler: &mut H) -> Result<CollectionWithId<Kv1Line>>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let file = "LINEXXXXXX.TMI";
-    let (reader, path) = file_handler.get_file(file)?;
-    info!("Reading {}", file);
+fn read_line<P: AsRef<Path>>(path: P) -> Result<CollectionWithId<Kv1Line>> {
+    let filename = "LINEXXXXXX.TMI";
+    let filepath = path.as_ref().join(filename);
+    let file = File::open(&filepath)?;
+    info!("Reading {}", filename);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
         .trim(csv::Trim::All)
-        .from_reader(reader);
+        .from_reader(file);
     let lines = rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
-        .with_context(|_| format!("Error reading {:?}", path))?;
+        .with_context(|_| format!("Error reading {:?}", filepath))?;
     Ok(CollectionWithId::new(lines)?)
 }
 
@@ -517,22 +511,21 @@ fn make_trip_properties(
     Ok(())
 }
 
-fn read_pujopass<H>(file_handler: &mut H) -> Result<PujoJopaMap>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let pujopass_file = "PUJOPASSXX.TMI";
-    let (reader, path) = file_handler.get_file(pujopass_file)?;
-    info!("Reading {}", pujopass_file);
+fn read_pujopass<P: AsRef<Path>>(path: P) -> Result<PujoJopaMap> {
+    let filename = "PUJOPASSXX.TMI";
+    let filepath = path.as_ref().join(filename);
+    let file = File::open(&filepath)?;
+    info!("Reading {}", filename);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
         .trim(csv::Trim::All)
-        .from_reader(reader);
+        .from_reader(file);
 
     let mut map: PujoJopaMap = HashMap::new();
     for pujopass in rdr.deserialize() {
-        let pujopass: PujoPass = pujopass.with_context(|_| format!("Error reading {:?}", path))?;
+        let pujopass: PujoPass =
+            pujopass.with_context(|_| format!("Error reading {:?}", filepath))?;
         map.entry((
             pujopass.line_planning_number.clone(),
             pujopass.journey_number.clone(),
@@ -767,45 +760,40 @@ fn make_lines(collections: &mut Collections, lines: &CollectionWithId<Kv1Line>) 
 }
 
 /// Generates networks, companies, stop_times, vehicle_journeys, comments, routes and lines
-pub(in crate::kv1) fn read_jopa_pujopass_line<H>(
-    file_handler: &mut H,
+pub(in crate::kv1) fn read_jopa_pujopass_line<P: AsRef<Path>>(
+    path: P,
     collections: &mut Collections,
-) -> Result<()>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let kv1_lines = read_line(file_handler)?;
-    let list_jopas = read_jopa(file_handler)?;
-    let map_pujopas = read_pujopass(file_handler)?;
+) -> Result<()> {
+    let kv1_lines = read_line(&path)?;
+    let list_jopas = read_jopa(&path)?;
+    let map_pujopas = read_pujopass(&path)?;
 
     make_physical_and_commercial_modes(collections, &kv1_lines)?;
     make_networks_and_companies(collections, &kv1_lines)?;
     make_vjs_and_stop_times(collections, &list_jopas, &map_pujopas, &kv1_lines)?;
     make_routes(collections, &list_jopas)?;
-    read_ntcassgn(file_handler, collections, &map_pujopas)?;
+    read_ntcassgn(path, collections, &map_pujopas)?;
     make_lines(collections, &kv1_lines)?;
 
     Ok(())
 }
 
-pub(in crate::kv1) fn read_notice<H>(
-    file_handler: &mut H,
+pub(in crate::kv1) fn read_notice<P: AsRef<Path>>(
+    path: P,
     collections: &mut Collections,
-) -> Result<()>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let file = "NOTICEXXXX.TMI";
-    let (reader, path) = file_handler.get_file(file)?;
-    info!("Reading {} and generating comments", file);
+) -> Result<()> {
+    let filename = "NOTICEXXXX.TMI";
+    let filepath = path.as_ref().join(filename);
+    let file = File::open(&filepath)?;
+    info!("Reading {} and generating comments", filename);
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
         .trim(csv::Trim::All)
-        .from_reader(reader);
+        .from_reader(file);
 
     for notice in rdr.deserialize() {
-        let notice: Notice = notice.with_context(|_| format!("Error reading {:?}", path))?;
+        let notice: Notice = notice.with_context(|_| format!("Error reading {:?}", filepath))?;
         collections
             .comments
             .push(Comment {
@@ -821,29 +809,27 @@ where
     Ok(())
 }
 
-fn read_ntcassgn<H>(
-    file_handler: &mut H,
+fn read_ntcassgn<P: AsRef<Path>>(
+    path: P,
     collections: &mut Collections,
     map_pujopass: &PujoJopaMap,
-) -> Result<()>
-where
-    for<'a> &'a mut H: FileHandler,
-{
-    let file = "NTCASSGNMX.TMI";
-    let (reader, path) = file_handler.get_file(file)?;
+) -> Result<()> {
+    let filename = "NTCASSGNMX.TMI";
+    let filepath = path.as_ref().join(filename);
+    let file = File::open(&filepath)?;
     info!(
         "Reading {} and generating comment links on vehicle journeys",
-        file
+        filename
     );
 
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(b'|')
         .trim(csv::Trim::All)
-        .from_reader(reader);
+        .from_reader(file);
 
     for notice_assignment in rdr.deserialize() {
         let notice_assignment: NoticeAssignment =
-            notice_assignment.with_context(|_| format!("Error reading {:?}", path))?;
+            notice_assignment.with_context(|_| format!("Error reading {:?}", filepath))?;
 
         if let Some(comment_idx) = collections.comments.get_idx(&notice_assignment.notice_code) {
             if let Some(pujopasses) = map_pujopass.get(&(
@@ -868,7 +854,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{read_utils::PathFileHandler, test_utils::*};
+    use crate::test_utils::*;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -879,10 +865,9 @@ mod tests {
                 2029|1|1|20190428";
 
         test_in_tmp_dir(|path| {
-            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "OPERDAYXXX.TMI", operday_content);
             let mut collections = Collections::default();
-            super::read_operday(&mut handler, &mut collections).unwrap();
+            super::read_operday(path, &mut collections).unwrap();
         });
     }
 
