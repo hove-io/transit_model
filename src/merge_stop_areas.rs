@@ -138,11 +138,12 @@ fn read_rules<P: AsRef<path::Path>>(
     let mut rules: Vec<StopAreaGroupRule> = vec![];
     for rule_path in paths {
         let rule_path = rule_path.as_ref();
-        let mut rdr = csv::Reader::from_path(&rule_path).with_context(ctx_from_path!(rule_path))?;
+        let mut rdr = csv::Reader::from_path(&rule_path)
+            .with_context(|_| format!("Error reading {:?}", rule_path))?;
         let file_rules: Vec<StopAreaMergeRule> = rdr
             .deserialize()
             .collect::<StdResult<_, _>>()
-            .with_context(ctx_from_path!(rule_path))?;
+            .with_context(|_| format!("Error reading {:?}", rule_path))?;
         rules.extend(group_rules_from_file_rules(file_rules, report));
     }
     Ok(rules)

@@ -211,7 +211,7 @@ where
         .from_reader(reader);
 
     for opd in rdr.deserialize() {
-        let opd: OPerDay = opd.with_context(ctx_from_path!(path))?;
+        let opd: OPerDay = opd.with_context(|_| format!("Error reading {:?}", path))?;
 
         let calendar_date: CalendarDate = CalendarDate {
             service_id: format!(
@@ -303,7 +303,7 @@ where
         None => bail!("Proj cannot build a converter from {} to {}", from, to),
     };
     for point in rdr.deserialize() {
-        let point: Point = point.with_context(ctx_from_path!(path))?;
+        let point: Point = point.with_context(|_| format!("Error reading {:?}", path))?;
         if point.category == "SP" {
             let coords = proj.convert((point.lon, point.lat)).map(Coord::from)?;
             point_map.insert(point.code, coords);
@@ -327,7 +327,8 @@ where
         .from_reader(file_reader);
     let mut usr_stop_area_map = BTreeMap::new();
     for usr_stop_area in rdr.deserialize() {
-        let usr_stop_area: UsrStopArea = usr_stop_area.with_context(ctx_from_path!(path))?;
+        let usr_stop_area: UsrStopArea =
+            usr_stop_area.with_context(|_| format!("Error reading {:?}", path))?;
         usr_stop_area_map.insert(usr_stop_area.id.clone(), usr_stop_area);
     }
     Ok(usr_stop_area_map)
@@ -351,7 +352,7 @@ where
         .from_reader(file_reader);
 
     for usr_stop in rdr.deserialize() {
-        let usr_stop: UsrStop = usr_stop.with_context(ctx_from_path!(path))?;
+        let usr_stop: UsrStop = usr_stop.with_context(|_| format!("Error reading {:?}", path))?;
         let coord = match point_map.get(&usr_stop.point_code) {
             Some(c) => *c,
             None => bail!("Point code {} does not exist.", usr_stop.point_code),
@@ -411,7 +412,7 @@ where
     let jopas = rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
     Ok(jopas)
 }
 
@@ -430,7 +431,7 @@ where
     let lines = rdr
         .deserialize()
         .collect::<StdResult<_, _>>()
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
     Ok(CollectionWithId::new(lines)?)
 }
 
@@ -529,7 +530,7 @@ where
 
     let mut map: PujoJopaMap = HashMap::new();
     for pujopass in rdr.deserialize() {
-        let pujopass: PujoPass = pujopass.with_context(ctx_from_path!(path))?;
+        let pujopass: PujoPass = pujopass.with_context(|_| format!("Error reading {:?}", path))?;
         map.entry((
             pujopass.line_planning_number.clone(),
             pujopass.journey_number.clone(),
@@ -796,7 +797,7 @@ where
         .from_reader(reader);
 
     for notice in rdr.deserialize() {
-        let notice: Notice = notice.with_context(ctx_from_path!(path))?;
+        let notice: Notice = notice.with_context(|_| format!("Error reading {:?}", path))?;
         collections
             .comments
             .push(Comment {
@@ -834,7 +835,7 @@ where
 
     for notice_assignment in rdr.deserialize() {
         let notice_assignment: NoticeAssignment =
-            notice_assignment.with_context(ctx_from_path!(path))?;
+            notice_assignment.with_context(|_| format!("Error reading {:?}", path))?;
 
         if let Some(comment_idx) = collections.comments.get_idx(&notice_assignment.notice_code) {
             if let Some(pujopasses) = map_pujopass.get(&(

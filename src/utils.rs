@@ -303,12 +303,6 @@ where
     }
 }
 
-macro_rules! ctx_from_path {
-    ($path:expr) => {
-        |_| format!("Error reading {:?}", $path)
-    };
-}
-
 pub fn make_opt_collection_with_id<T>(
     path: &path::Path,
     file: &str,
@@ -333,11 +327,12 @@ where
 {
     info!("Reading {}", file);
     let path = path.join(file);
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr =
+        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     let vec = rdr
         .deserialize()
         .collect::<Result<_, _>>()
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
     CollectionWithId::new(vec)
 }
 
@@ -359,11 +354,12 @@ where
 {
     info!("Reading {}", file);
     let path = path.join(file);
-    let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut rdr =
+        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     let vec = rdr
         .deserialize()
         .collect::<Result<_, _>>()
-        .with_context(ctx_from_path!(path))?;
+        .with_context(|_| format!("Error reading {:?}", path))?;
     Ok(Collection::new(vec))
 }
 
@@ -380,11 +376,14 @@ where
     }
     info!("Writing {}", file);
     let path = path.join(file);
-    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut wtr =
+        csv::Writer::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     for obj in collection.values() {
-        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
+        wtr.serialize(obj)
+            .with_context(|_| format!("Error reading {:?}", path))?;
     }
-    wtr.flush().with_context(ctx_from_path!(path))?;
+    wtr.flush()
+        .with_context(|_| format!("Error reading {:?}", path))?;
 
     Ok(())
 }
@@ -402,11 +401,14 @@ where
     }
     info!("Writing {}", file);
     let path = path.join(file);
-    let mut wtr = csv::Writer::from_path(&path).with_context(ctx_from_path!(path))?;
+    let mut wtr =
+        csv::Writer::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     for obj in collection.values() {
-        wtr.serialize(obj).with_context(ctx_from_path!(path))?;
+        wtr.serialize(obj)
+            .with_context(|_| format!("Error reading {:?}", path))?;
     }
-    wtr.flush().with_context(ctx_from_path!(path))?;
+    wtr.flush()
+        .with_context(|_| format!("Error reading {:?}", path))?;
 
     Ok(())
 }

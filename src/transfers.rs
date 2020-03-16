@@ -104,10 +104,11 @@ fn read_rules<P: AsRef<Path>>(
     let mut rules = HashMap::new();
     for rule_path in rule_files {
         let path = rule_path.as_ref();
-        let mut rdr = csv::Reader::from_path(&path).with_context(ctx_from_path!(path))?;
+        let mut rdr =
+            csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
 
         for rule in rdr.deserialize() {
-            let rule: Rule = rule.with_context(ctx_from_path!(path))?;
+            let rule: Rule = rule.with_context(|_| format!("Error reading {:?}", path))?;
             match (
                 model.stop_points.get_idx(&rule.from_stop_id),
                 model.stop_points.get_idx(&rule.to_stop_id),
