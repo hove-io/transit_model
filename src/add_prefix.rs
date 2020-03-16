@@ -17,8 +17,12 @@
 use crate::model::Collections;
 use transit_model_collection::{Collection, CollectionWithId, Id};
 
+/// Trait for object that can be prefixed
 pub trait AddPrefix {
+    /// Add the prefix to all elements of the object that needs to be prefixed.
     fn add_prefix(&mut self, prefix: &str);
+    /// Add the prefix to all elements of the object that needs to be prefixed.
+    /// A separator will be placed between the prefix and the identifier.
     fn add_prefix_with_sep(&mut self, prefix: &str, sep: &str) {
         let prefix = format!("{}{}", prefix, sep);
         self.add_prefix(&prefix);
