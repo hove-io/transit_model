@@ -16,7 +16,6 @@ use super::{
     Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
     Trip,
 };
-use crate::common_format::Availability;
 use crate::model::{GetCorresponding, Model};
 use crate::objects;
 use crate::objects::Transfer as NtfsTransfer;

@@ -13,9 +13,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    common_format::Availability,
     model::Collections,
-    objects::{Coord, Equipment, Geometry, Line, TripProperty, VehicleJourney},
+    objects::{Availability, Coord, Equipment, Geometry, Line, TripProperty, VehicleJourney},
     utils::{Report, ReportType},
     Result,
 };

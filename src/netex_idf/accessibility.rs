@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::{common_format::Availability, minidom_utils::TryOnlyChild};
+use crate::{minidom_utils::TryOnlyChild, objects::Availability};
 use minidom::Element;
 
 #[derive(Eq, PartialEq, Hash, Clone)]

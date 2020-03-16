@@ -17,11 +17,10 @@ use super::{
     TransferType, Trip,
 };
 use crate::{
-    common_format::Availability,
     model::Collections,
     objects::{
-        self, CommentLinksT, Coord, KeysValues, Pathway, StopLocation, StopTime as NtfsStopTime,
-        StopTimePrecision, StopType, Time, TransportType, VehicleJourney,
+        self, Availability, CommentLinksT, Coord, KeysValues, Pathway, StopLocation,
+        StopTime as NtfsStopTime, StopTimePrecision, StopType, Time, TransportType, VehicleJourney,
     },
     read_utils::{read_collection, read_objects, FileHandler},
     utils::*,
@@ -2220,33 +2219,34 @@ mod tests {
                 vec![&None, &Some("1".to_string())],
                 extract(|sa| &sa.equipment_id, &stop_areas)
             );
+            use objects::Availability::*;
             assert_eq!(
                 vec![
                     Equipment {
                         id: "0".to_string(),
-                        wheelchair_boarding: common_format::Availability::Available,
-                        sheltered: common_format::Availability::InformationNotAvailable,
-                        elevator: common_format::Availability::InformationNotAvailable,
-                        escalator: common_format::Availability::InformationNotAvailable,
-                        bike_accepted: common_format::Availability::InformationNotAvailable,
-                        bike_depot: common_format::Availability::InformationNotAvailable,
-                        visual_announcement: common_format::Availability::InformationNotAvailable,
-                        audible_announcement: common_format::Availability::InformationNotAvailable,
-                        appropriate_escort: common_format::Availability::InformationNotAvailable,
-                        appropriate_signage: common_format::Availability::InformationNotAvailable,
+                        wheelchair_boarding: Available,
+                        sheltered: InformationNotAvailable,
+                        elevator: InformationNotAvailable,
+                        escalator: InformationNotAvailable,
+                        bike_accepted: InformationNotAvailable,
+                        bike_depot: InformationNotAvailable,
+                        visual_announcement: InformationNotAvailable,
+                        audible_announcement: InformationNotAvailable,
+                        appropriate_escort: InformationNotAvailable,
+                        appropriate_signage: InformationNotAvailable,
                     },
                     Equipment {
                         id: "1".to_string(),
-                        wheelchair_boarding: common_format::Availability::NotAvailable,
-                        sheltered: common_format::Availability::InformationNotAvailable,
-                        elevator: common_format::Availability::InformationNotAvailable,
-                        escalator: common_format::Availability::InformationNotAvailable,
-                        bike_accepted: common_format::Availability::InformationNotAvailable,
-                        bike_depot: common_format::Availability::InformationNotAvailable,
-                        visual_announcement: common_format::Availability::InformationNotAvailable,
-                        audible_announcement: common_format::Availability::InformationNotAvailable,
-                        appropriate_escort: common_format::Availability::InformationNotAvailable,
-                        appropriate_signage: common_format::Availability::InformationNotAvailable,
+                        wheelchair_boarding: NotAvailable,
+                        sheltered: InformationNotAvailable,
+                        elevator: InformationNotAvailable,
+                        escalator: InformationNotAvailable,
+                        bike_accepted: InformationNotAvailable,
+                        bike_depot: InformationNotAvailable,
+                        visual_announcement: InformationNotAvailable,
+                        audible_announcement: InformationNotAvailable,
+                        appropriate_escort: InformationNotAvailable,
+                        appropriate_signage: InformationNotAvailable,
                     },
                 ],
                 equipments_collection.into_vec()
@@ -2283,19 +2283,20 @@ mod tests {
                 stop_point_equipment_ids
             );
 
+            use objects::Availability::*;
             assert_eq!(
                 vec![Equipment {
                     id: "0".to_string(),
-                    wheelchair_boarding: common_format::Availability::Available,
-                    sheltered: common_format::Availability::InformationNotAvailable,
-                    elevator: common_format::Availability::InformationNotAvailable,
-                    escalator: common_format::Availability::InformationNotAvailable,
-                    bike_accepted: common_format::Availability::InformationNotAvailable,
-                    bike_depot: common_format::Availability::InformationNotAvailable,
-                    visual_announcement: common_format::Availability::InformationNotAvailable,
-                    audible_announcement: common_format::Availability::InformationNotAvailable,
-                    appropriate_escort: common_format::Availability::InformationNotAvailable,
-                    appropriate_signage: common_format::Availability::InformationNotAvailable,
+                    wheelchair_boarding: Available,
+                    sheltered: InformationNotAvailable,
+                    elevator: InformationNotAvailable,
+                    escalator: InformationNotAvailable,
+                    bike_accepted: InformationNotAvailable,
+                    bike_depot: InformationNotAvailable,
+                    visual_announcement: InformationNotAvailable,
+                    audible_announcement: InformationNotAvailable,
+                    appropriate_escort: InformationNotAvailable,
+                    appropriate_signage: InformationNotAvailable,
                 }],
                 equipments_collection.into_vec()
             );

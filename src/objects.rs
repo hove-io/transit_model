@@ -16,7 +16,7 @@
 
 #![allow(missing_docs)]
 
-use crate::{common_format::Availability, utils::*, AddPrefix};
+use crate::{utils::*, AddPrefix};
 use chrono;
 use chrono::NaiveDate;
 use derivative::Derivative;
@@ -1318,6 +1318,18 @@ impl AddPrefix for Comment {
     fn add_prefix(&mut self, prefix: &str) {
         self.id = prefix.to_string() + &self.id;
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Hash, Clone, Copy)]
+#[derivative(Default)]
+pub enum Availability {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    InformationNotAvailable,
+    #[serde(rename = "1")]
+    Available,
+    #[serde(rename = "2")]
+    NotAvailable,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Default, Clone)]
