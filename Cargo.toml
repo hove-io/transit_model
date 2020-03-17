@@ -24,7 +24,8 @@ travis-ci = { repository = "CanalTP/transit_model" }
 
 [workspace]
 members = [
-  "gtfs2netexfr",
+	"gtfs2netexfr",
+	"gtfs2ntfs",
 ]
 
 [features]
