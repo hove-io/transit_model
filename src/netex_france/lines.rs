@@ -57,14 +57,13 @@ impl<'a> LineExporter<'a> {
             .filter_map(|vehicle_journey| {
                 NetexMode::from_physical_mode_id(&vehicle_journey.physical_mode_id)
                     .map(move |netex_mode| (vehicle_journey, netex_mode))
-            })
-            .map(|(vehicle_journey, netex_mode)| {
-                let line_id = model
-                    .routes
-                    .get(&vehicle_journey.route_id)
-                    .map(|route| &route.line_id)
-                    .unwrap();
-                (line_id, netex_mode)
+                    .and_then(|(vehicle_journey, netex_mode)| {
+                        model
+                            .routes
+                            .get(&vehicle_journey.route_id)
+                            .map(|route| &route.line_id)
+                            .map(|line_id| (line_id, netex_mode))
+                    })
             })
             .fold(HashMap::new(), |mut line_modes, (line_id, netex_mode)| {
                 line_modes
