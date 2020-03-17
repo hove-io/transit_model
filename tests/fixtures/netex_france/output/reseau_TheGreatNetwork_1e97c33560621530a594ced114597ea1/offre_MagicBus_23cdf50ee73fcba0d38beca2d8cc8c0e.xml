@@ -150,6 +150,7 @@
 					</QuayRef>
 				</PassengerStopAssignment>
 				<ServiceJourney id="FR:ServiceJourney:B42F1:" version="any">
+					<TransportMode>bus</TransportMode>
 					<dayTypes>
 						<DayTypeRef ref="FR:DayType:Week:">
 						</DayTypeRef>
@@ -174,6 +175,7 @@
 					</passingTimes>
 				</ServiceJourney>
 				<ServiceJourney id="FR:ServiceJourney:B42B1:" version="any">
+					<TransportMode>bus</TransportMode>
 					<dayTypes>
 						<DayTypeRef ref="FR:DayType:Week:">
 						</DayTypeRef>

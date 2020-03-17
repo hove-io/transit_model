@@ -598,6 +598,7 @@ Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 ServiceJourney/@id | trips.txt | trip_id | see [id formatting](#id-of-objects)
 ServiceJourney/@version | | | fixed value `any`
+ServiceJourney/TransportMode | | | use the only NeTEx mode, see [NeTEx Transport Modes](#netex-transport-modes)
 ServiceJourney/dayTypes/DayTypeRef/@ref | trips.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type
 ServiceJourney/JourneyPatternRef/@ref | trips.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type
 ServiceJourney/OperatorRef/@ref | trips.txt | company_id | see [id formatting](#id-of-objects) with `Operator` as object type

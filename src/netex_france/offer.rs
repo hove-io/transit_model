@@ -368,6 +368,13 @@ impl<'a> OfferExporter<'a> {
                 Exporter::generate_id(&vehicle_journey.id, ObjectType::ServiceJourney),
             )
             .attr("version", "any");
+        let element_builder = if let Some(netex_mode) =
+            NetexMode::from_physical_mode_id(&vehicle_journey.physical_mode_id)
+        {
+            element_builder.append(Self::generate_transport_mode(netex_mode))
+        } else {
+            element_builder
+        };
         let element_builder =
             element_builder.append(Self::generate_day_type_ref(&vehicle_journey.service_id));
         let element_builder =
@@ -521,6 +528,13 @@ impl<'a> OfferExporter<'a> {
     fn generate_quay_ref(stop_id: &'a str) -> Element {
         Element::builder("QuayRef")
             .attr("ref", Exporter::generate_id(stop_id, ObjectType::Quay))
+            .build()
+    }
+
+    fn generate_transport_mode(netex_mode: NetexMode) -> Element {
+        let transport_mode_text = Node::Text(netex_mode.to_string());
+        Element::builder("TransportMode")
+            .append(transport_mode_text)
             .build()
     }
 
