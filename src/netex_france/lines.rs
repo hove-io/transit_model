@@ -13,20 +13,31 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    netex_france::exporter::{Exporter, ObjectType},
+    netex_france::{
+        exporter::{Exporter, ObjectType},
+        NetexMode,
+    },
     objects::Line,
     Model, Result,
 };
+use failure::format_err;
 use minidom::{Element, Node};
+use std::collections::{BTreeSet, HashMap};
+
+// `line_modes` is storing all the Netex modes for a Line.
+// A line can have multiple associated modes in NTM model (through trips).
+type LineModes<'a> = HashMap<&'a str, BTreeSet<NetexMode>>;
 
 pub struct LineExporter<'a> {
     model: &'a Model,
+    line_modes: LineModes<'a>,
 }
 
 // Publicly exposed methods
 impl<'a> LineExporter<'a> {
     pub fn new(model: &'a Model) -> Self {
-        LineExporter { model }
+        let line_modes = Self::build_line_modes(model);
+        LineExporter { model, line_modes }
     }
     pub fn export(&self) -> Result<Vec<Element>> {
         self.model
@@ -39,11 +50,44 @@ impl<'a> LineExporter<'a> {
 
 // Internal methods
 impl<'a> LineExporter<'a> {
+    fn build_line_modes(model: &'a Model) -> LineModes<'a> {
+        model
+            .vehicle_journeys
+            .values()
+            .filter_map(|vehicle_journey| {
+                NetexMode::from_physical_mode_id(&vehicle_journey.physical_mode_id)
+                    .map(move |netex_mode| (vehicle_journey, netex_mode))
+                    .and_then(|(vehicle_journey, netex_mode)| {
+                        model
+                            .routes
+                            .get(&vehicle_journey.route_id)
+                            .map(|route| &route.line_id)
+                            .map(|line_id| (line_id, netex_mode))
+                    })
+            })
+            .fold(HashMap::new(), |mut line_modes, (line_id, netex_mode)| {
+                line_modes
+                    .entry(line_id)
+                    .or_insert_with(BTreeSet::new)
+                    .insert(netex_mode);
+                line_modes
+            })
+    }
+
     fn export_line(&self, line: &'a Line) -> Result<Element> {
         let element_builder = Element::builder(ObjectType::Line.to_string())
             .attr("id", Exporter::generate_id(&line.id, ObjectType::Line))
             .attr("version", "any");
-        let element_builder = element_builder.append(self.generate_name(line));
+        // Errors should never happen; a line always have one trip with associated mode
+        let netex_modes = self
+            .line_modes
+            .get(line.id.as_str())
+            .ok_or_else(|| format_err!("Unable to find modes for Line '{}'", line.id))?;
+        let highest_netex_mode = NetexMode::calculate_highest_mode(&netex_modes)
+            .ok_or_else(|| format_err!("Unable to resolve main NeTEx mode for Line {}", line.id))?;
+        let element_builder = element_builder
+            .append(self.generate_name(line))
+            .append(self.generate_transport_mode(highest_netex_mode));
         let element_builder = if let Some(public_code) = self.generate_public_code(line) {
             element_builder.append(public_code)
         } else {
@@ -55,6 +99,13 @@ impl<'a> LineExporter<'a> {
     fn generate_name(&self, line: &'a Line) -> Element {
         Element::builder("Name")
             .append(Node::Text(line.name.to_owned()))
+            .build()
+    }
+
+    fn generate_transport_mode(&self, netex_mode: NetexMode) -> Element {
+        let transport_mode_text = Node::Text(netex_mode.to_string());
+        Element::builder("TransportMode")
+            .append(transport_mode_text)
             .build()
     }
 

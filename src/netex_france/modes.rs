@@ -13,6 +13,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use log::warn;
+use std::collections::BTreeSet;
 use std::fmt::{self, Display, Formatter};
 
 // For the order, see
@@ -77,5 +78,9 @@ impl NetexMode {
                 None
             }
         }
+    }
+    pub fn calculate_highest_mode(netex_modes: &BTreeSet<NetexMode>) -> Option<NetexMode> {
+        // Since `BTreeSet is ordered, the first one in the list is of highest priority
+        netex_modes.iter().next().cloned()
     }
 }
