@@ -40,7 +40,11 @@ impl TryAttribute for Element {
         F: FromStr,
     {
         let value = self.attr(attr_name).ok_or_else(|| {
-            format_err!("Failed to find attribute 'id' in element '{}'", self.name())
+            format_err!(
+                "Failed to find attribute '{}' in element '{}'",
+                attr_name,
+                self.name()
+            )
         })?;
         value
             .parse()

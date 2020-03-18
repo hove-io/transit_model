@@ -1038,7 +1038,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find attribute \\'id\\' in element \\'StartStopPointRef\\'"
+            expected = "Failed to find attribute \\'ref\\' in element \\'StartStopPointRef\\'"
         )]
         fn no_start_stop_point_ref_reference() {
             let collections = init_collections();
