@@ -26,7 +26,7 @@ use std::collections::{BTreeSet, HashMap};
 
 // `line_modes` is storing all the Netex modes for a Line.
 // A line can have multiple associated modes in NTM model (through trips).
-type LineModes<'a> = HashMap<&'a str, BTreeSet<NetexMode>>;
+pub type LineModes<'a> = HashMap<&'a str, BTreeSet<NetexMode>>;
 
 pub struct LineExporter<'a> {
     model: &'a Model,
@@ -46,11 +46,7 @@ impl<'a> LineExporter<'a> {
             .map(|line| self.export_line(line))
             .collect()
     }
-}
-
-// Internal methods
-impl<'a> LineExporter<'a> {
-    fn build_line_modes(model: &'a Model) -> LineModes<'a> {
+    pub fn build_line_modes(model: &'a Model) -> LineModes<'a> {
         model
             .vehicle_journeys
             .values()
@@ -73,7 +69,10 @@ impl<'a> LineExporter<'a> {
                 line_modes
             })
     }
+}
 
+// Internal methods
+impl<'a> LineExporter<'a> {
     fn export_line(&self, line: &'a Line) -> Result<Element> {
         let element_builder = Element::builder(ObjectType::Line.to_string())
             .attr("id", Exporter::generate_id(&line.id, ObjectType::Line))

@@ -598,11 +598,16 @@ Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
 ServiceJourney/@id | trips.txt | trip_id | see [id formatting](#id-of-objects)
 ServiceJourney/@version | | | fixed value `any`
-ServiceJourney/TransportMode | | | use the only NeTEx mode, see [NeTEx Transport Modes](#netex-transport-modes)
+ServiceJourney/TransportMode | trips.txt | physical_mode_id | use the only NeTEx mode. See (1) below and [NeTEx Transport Modes](#netex-transport-modes).
 ServiceJourney/dayTypes/DayTypeRef/@ref | trips.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type
 ServiceJourney/JourneyPatternRef/@ref | trips.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type
 ServiceJourney/OperatorRef/@ref | trips.txt | company_id | see [id formatting](#id-of-objects) with `Operator` as object type
 ServiceJourney/passingTimes/TimetabledPassingTime[] | stop_times.txt | | see [`TimetabledPassingTime`](#timetabledpassingtime)
+
+**(1) definition of TransportMode for ServiceJourney**
+
+As stated in `NF_Profil NeTEx pour les Horaires(F) - v2.1.pdf` in chapter 5.2:
+`TransportMode` for `ServiceJourney` is optional, but is present if it differs from that of its line.
 
 #### TimetabledPassingTime
 

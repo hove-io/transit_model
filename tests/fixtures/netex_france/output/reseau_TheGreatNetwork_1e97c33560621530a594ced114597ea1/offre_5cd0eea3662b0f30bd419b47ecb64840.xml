@@ -262,7 +262,6 @@
 					</QuayRef>
 				</PassengerStopAssignment>
 				<ServiceJourney id="FR:ServiceJourney:RERAF1:" version="any">
-					<TransportMode>rail</TransportMode>
 					<dayTypes>
 						<DayTypeRef ref="FR:DayType:Week:">
 						</DayTypeRef>
