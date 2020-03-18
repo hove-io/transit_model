@@ -54,10 +54,9 @@ A stop_area can therefore be:
 
 A `stop_area` is created for each `StopPlace` not containing a `StopPlace/ParentSiteRef` tag or referencing by `StopPlace/ParentSiteRef/@ref` a `StopPlace` that does not exist in the feed.
 
-
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-stop_id | StopPlace/@id | This field is prefixed. 
+stop_id | StopPlace/@id | This field is prefixed. The technical part of the NeTEx identifier is used. For example, in `FR::multimodalStopPlace:69406:FR1`, the `stop_area` identifier is `<prefix>:69406` (fourth field with colon `:` separator). In the case of a `stop_area` created from a monomodal `StopPlace`, identifier of the `stop_area` is `<prefix>:monomodalStopPlace:411396` (third and fourth fields with a colon `:` separator)
 stop_name | StopPlace/Name | 
 location_type | | Fixed value `1` (stop_area)
 stop_lat | StopPlace/Centroid/Location | see (1) below
@@ -77,7 +76,7 @@ No complementary properties on `stop_area`.
 
 **Complementary object_codes**
 
-No complementary code on `stop_area`.
+The `stop_area` has a complementary code `source` with the identifier of the original associated `StopPlace`.
 
 ### For stop_points
 `stop_point` objects in the output NTFS are the lowest level `Quays` (those provided by operators).
@@ -89,7 +88,7 @@ The `Quay` nodes with a `FR1-ARRET_AUTO` value in `Quay/@dataSourceRef` property
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-stop_id | Quay/@id | This field is prefixed. 
+stop_id | Quay/@id | This field is prefixed. The technical part of the NeTEx identifier is used. For example, in `FR::Quay:50117139:FR1`, the `stop_point` identifier is `<prefix>:50117139` (fourth field with colon `:` separator).
 stop_name | Quay/Name | 
 location_type | | Fixed value `0` (stop_point)
 stop_lat | Quay/Centroid/Location | see (1) below
@@ -124,6 +123,9 @@ wheelchair_boarding | Quay/AccessibilityAssessment/MobilityImpairedAccess | If t
 visual_announcement | Quay/AccessibilityAssessment/ limitations/AccessibilityLimitation/VisualSignsAvailable | same rule as `wheelchair_boarding`
 audible_announcement | Quay/AccessibilityAssessment/ limitations/AccessibilityLimitation/AudibleSignalsAvailable | same rule as `wheelchair_boarding`
 
+**Complementary object_codes**
+
+The `stop_point` has a complementary code `source` with the identifier of the original associated `Quay`.
 
 ## Reading of the "lignes.xml" file
 

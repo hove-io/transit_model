@@ -13,10 +13,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{
+    attribute_with::AttributeWith,
     calendars::{self, DayTypes},
     common,
     lines::LineNetexIDF,
     modes::MODES,
+    stops,
 };
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
@@ -407,7 +409,9 @@ where
             let scheduled_stop_point_ref: String = psa_element
                 .only_child("ScheduledStopPointRef")?
                 .attribute("ref")?;
-            let quay_ref: String = psa_element.only_child("QuayRef")?.attribute("ref")?;
+            let quay_ref: String = psa_element
+                .only_child("QuayRef")?
+                .attribute_with("ref", stops::extract_quay_id)?;
             Some((scheduled_stop_point_ref, quay_ref))
         })
         .collect()
