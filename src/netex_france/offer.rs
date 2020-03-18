@@ -16,7 +16,7 @@ use crate::{
     netex_france::{
         self,
         exporter::{Exporter, ObjectType},
-        NetexMode, StopExporter,
+        LineExporter, LineModes, NetexMode, StopExporter,
     },
     objects::{Coord, Line, Route, StopPoint, StopTime, Time, VehicleJourney},
     Model, Result,
@@ -38,6 +38,8 @@ pub struct OfferExporter<'a> {
     converter: Proj,
     // Precalculation of the Stop Points per Route
     route_points: BTreeMap<&'a str, Vec<Idx<StopPoint>>>,
+    // Precalculation of the Netex Modes per Line
+    line_modes: LineModes<'a>,
 }
 
 fn calculate_route_points<'a>(model: &'a Model) -> BTreeMap<&'a str, Vec<Idx<StopPoint>>> {
@@ -74,10 +76,12 @@ impl<'a> OfferExporter<'a> {
     pub fn new(model: &'a Model) -> Result<Self> {
         let converter = Exporter::get_coordinates_converter()?;
         let route_points = calculate_route_points(model);
+        let line_modes = LineExporter::build_line_modes(model);
         let exporter = OfferExporter {
             model,
             converter,
             route_points,
+            line_modes,
         };
         Ok(exporter)
     }
@@ -119,7 +123,11 @@ impl<'a> OfferExporter<'a> {
         let service_journey_elements = journey_patterns
             .iter()
             .map(|(journey_pattern_idx, vehicle_journey_indexes)| {
-                self.export_service_journeys(*journey_pattern_idx, vehicle_journey_indexes)
+                self.export_service_journeys(
+                    *journey_pattern_idx,
+                    vehicle_journey_indexes,
+                    line_idx,
+                )
             })
             .fold(Vec::new(), |mut service_journey_elements, elements| {
                 service_journey_elements.extend(elements);
@@ -346,11 +354,12 @@ impl<'a> OfferExporter<'a> {
         &self,
         journey_pattern_idx: Idx<JourneyPattern>,
         vehicle_journey_indexes: &[Idx<VehicleJourney>],
+        line_idx: Idx<Line>,
     ) -> Vec<Element> {
         vehicle_journey_indexes
             .iter()
             .map(|vehicle_journey_idx| {
-                self.export_service_journey(journey_pattern_idx, *vehicle_journey_idx)
+                self.export_service_journey(journey_pattern_idx, *vehicle_journey_idx, line_idx)
             })
             .collect()
     }
@@ -359,15 +368,30 @@ impl<'a> OfferExporter<'a> {
         &self,
         journey_pattern_idx: Idx<JourneyPattern>,
         vehicle_journey_idx: Idx<VehicleJourney>,
+        line_idx: Idx<Line>,
     ) -> Element {
         let journey_pattern_id = &self.model.vehicle_journeys[journey_pattern_idx].id;
         let vehicle_journey = &self.model.vehicle_journeys[vehicle_journey_idx];
+        let line_id = &self.model.lines[line_idx].id;
+        let line_netex_mode = &self
+            .line_modes
+            .get(line_id.as_str())
+            .and_then(|line_netex_modes| NetexMode::calculate_highest_mode(line_netex_modes));
+
         let element_builder = Element::builder(ObjectType::ServiceJourney.to_string())
             .attr(
                 "id",
                 Exporter::generate_id(&vehicle_journey.id, ObjectType::ServiceJourney),
             )
             .attr("version", "any");
+        let element_builder = if let Some(netex_mode) =
+            NetexMode::from_physical_mode_id(&vehicle_journey.physical_mode_id)
+                .filter(|mode| Some(mode) != line_netex_mode.as_ref())
+        {
+            element_builder.append(Self::generate_transport_mode(netex_mode))
+        } else {
+            element_builder
+        };
         let element_builder =
             element_builder.append(Self::generate_day_type_ref(&vehicle_journey.service_id));
         let element_builder =
@@ -521,6 +545,13 @@ impl<'a> OfferExporter<'a> {
     fn generate_quay_ref(stop_id: &'a str) -> Element {
         Element::builder("QuayRef")
             .attr("ref", Exporter::generate_id(stop_id, ObjectType::Quay))
+            .build()
+    }
+
+    fn generate_transport_mode(netex_mode: NetexMode) -> Element {
+        let transport_mode_text = Node::Text(netex_mode.to_string());
+        Element::builder("TransportMode")
+            .append(transport_mode_text)
             .build()
     }
 
