@@ -42,7 +42,7 @@ pub mod netex_france;
 pub mod netex_idf;
 mod netex_utils;
 pub mod ntfs;
-mod read_utils;
+pub mod read_utils;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;

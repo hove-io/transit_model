@@ -107,7 +107,7 @@ impl Calendar {
     }
 }
 
-fn manage_calendar_dates<H>(
+pub(crate) fn manage_calendar_dates<H>(
     calendars: &mut CollectionWithId<objects::Calendar>,
     file_handler: &mut H,
     calendar_exists: bool,
@@ -161,7 +161,7 @@ where
     Ok(())
 }
 
-pub fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+pub(crate) fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {

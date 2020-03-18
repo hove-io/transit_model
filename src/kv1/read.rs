@@ -193,7 +193,10 @@ type PujoJopaMap = HashMap<(String, String), Vec<PujoPass>>;
 type JopaMap<'a> = BTreeMap<(String, String), &'a Jopa>;
 
 /// Generates calendars
-pub fn read_operday<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+pub(in crate::kv1) fn read_operday<H>(
+    file_handler: &mut H,
+    collections: &mut Collections,
+) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -331,7 +334,10 @@ where
 }
 
 /// Generates stop_points
-pub fn read_usrstop_point<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+pub(in crate::kv1) fn read_usrstop_point<H>(
+    file_handler: &mut H,
+    collections: &mut Collections,
+) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -761,7 +767,10 @@ fn make_lines(collections: &mut Collections, lines: &CollectionWithId<Kv1Line>) 
 }
 
 /// Generates networks, companies, stop_times, vehicle_journeys, comments, routes and lines
-pub fn read_jopa_pujopass_line<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+pub(in crate::kv1) fn read_jopa_pujopass_line<H>(
+    file_handler: &mut H,
+    collections: &mut Collections,
+) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -779,7 +788,10 @@ where
     Ok(())
 }
 
-pub fn read_notice<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+pub(in crate::kv1) fn read_notice<H>(
+    file_handler: &mut H,
+    collections: &mut Collections,
+) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
