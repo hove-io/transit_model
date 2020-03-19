@@ -134,9 +134,11 @@ The `stop_point` has a complementary code `source` with the identifier of the or
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-network_id | Network/@id | This field is prefixed. 
+network_id | Network/@id | This field is prefixed. The technical part of the NeTEx identifier is used. For example, in `FR1:Network:1046:LOC`, the `network` identifier is `<prefix>:1046` (third field with colon `:` separator).
 network_name | Network/Name | 
 network_timezone | | Fixed value `Europe/Paris`.
+
+The `network` has a complementary code `source` with the identifier of the original associated `Network`.
 
 ### companies.txt
 `companies` (aka operators) are provided in the nodes **CompositeFrame/frames/ResourceFrame/organisations/Operator[]**. There is only one `ResourceFrame` in the file.
