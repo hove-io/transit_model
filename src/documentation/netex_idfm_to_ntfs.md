@@ -145,7 +145,7 @@ The `network` has a complementary code `source` with the identifier of the origi
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-company_id | Operator/@id | This field is prefixed. 
+company_id | Operator/@id | This field is prefixed. The technical part of the NeTEx identifier is used. For example, in `FR1:Operator:800:LOC`, the `company` identifier is `<prefix>:800` (third field with colon `:` separator). 
 company_name | Operator/Name | 
 
 

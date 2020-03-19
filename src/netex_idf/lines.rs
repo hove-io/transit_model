@@ -71,6 +71,13 @@ fn extract_network_id(raw_id: &str) -> Result<&str> {
         .ok_or_else(|| format_err!("Cannot extract Network identifier from '{}'", raw_id))
 }
 
+fn extract_company_id(raw_id: &str) -> Result<&str> {
+    raw_id
+        .split(':')
+        .nth(2)
+        .ok_or_else(|| format_err!("Cannot extract Company identifier from '{}'", raw_id))
+}
+
 fn line_color(line: &Element, child_name: &str) -> Option<Rgb> {
     line.only_child("Presentation")
         .and_then(|p| p.only_child(child_name)?.text().parse().ok())
@@ -134,8 +141,9 @@ fn load_netex_lines(
                     warn!("Failed to find network {} for line {}", network_id, id);
                     continue;
                 }
-                let company_id: String =
-                    line.try_only_child("OperatorRef")?.try_attribute("ref")?;
+                let company_id: String = line
+                    .try_only_child("OperatorRef")?
+                    .try_attribute_with("ref", extract_company_id)?;
                 if !companies.contains_id(&company_id) {
                     warn!("Failed to find company {} for line {}", company_id, id);
                     continue;
@@ -238,7 +246,7 @@ fn make_networks_companies(
     for frame in frames.get(&FrameType::Resource).unwrap_or(&vec![]) {
         if let Ok(organisations) = frame.try_only_child("organisations") {
             for operator in organisations.children().filter(|e| e.name() == "Operator") {
-                let id = operator.try_attribute("id")?;
+                let id = operator.try_attribute_with("id", extract_company_id)?;
                 let name = operator.try_only_child("Name")?.text().parse()?;
                 companies.push(Company {
                     id,
@@ -352,7 +360,7 @@ mod tests {
         }])
         .unwrap();
         let companies = CollectionWithId::new(vec![Company {
-            id: String::from("FR1:Operator:1:LOC"),
+            id: String::from("1"),
             name: String::from("Operator1"),
             ..Default::default()
         }])
@@ -392,7 +400,7 @@ mod tests {
         }])
         .unwrap();
         let companies = CollectionWithId::new(vec![Company {
-            id: String::from("FR1:Operator:1:LOC"),
+            id: String::from("1"),
             name: String::from("Operator1"),
             ..Default::default()
         }])
