@@ -27,8 +27,9 @@ use crate::Result;
 use chrono::{self, Datelike, Weekday};
 use csv;
 use failure::{bail, format_err, ResultExt};
-use log::info;
+use log::{info, Level as LogLevel};
 use serde::{Deserialize, Serialize};
+use skip_error::skip_error_and_log;
 use std::collections::BTreeSet;
 use std::path;
 use transit_model_collection::*;
@@ -231,9 +232,13 @@ pub fn write_calendar_dates(
     for c in calendars.values() {
         let translation = translate(&c.dates);
         if !translation.operating_days.is_empty() {
-            let validity_period = skip_fail!(translation.validity_period.ok_or_else(
-                || format_err!("Validity period not found for service id {}", c.id.clone())
-            ));
+            let validity_period = skip_error_and_log!(
+                translation.validity_period.ok_or_else(|| format_err!(
+                    "Validity period not found for service id {}",
+                    c.id.clone()
+                )),
+                LogLevel::Warn
+            );
             translations.push(Calendar {
                 id: c.id.clone(),
                 monday: translation.operating_days.contains(&Weekday::Mon),

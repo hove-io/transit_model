@@ -413,19 +413,6 @@ where
     Ok(())
 }
 
-macro_rules! skip_fail {
-    ($res:expr) => {{
-        use log::warn;
-        match $res {
-            Ok(val) => val,
-            Err(e) => {
-                warn!("{}", e);
-                continue;
-            }
-        }
-    }};
-}
-
 #[derive(Debug, Serialize, PartialEq)]
 pub enum ReportType {
     // merge stop areas types

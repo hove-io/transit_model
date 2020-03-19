@@ -25,8 +25,9 @@ use chrono::{
 };
 use failure::{bail, format_err};
 use lazy_static::lazy_static;
-use log::{info, warn};
+use log::{info, warn, Level as LogLevel};
 use minidom::Element;
+use skip_error::skip_error_and_log;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
     convert::TryFrom,
@@ -575,24 +576,35 @@ fn load_routes_vehicle_journeys_calendars(
         let service_id = dup_calendar
             .map(|c| c.id.clone())
             .unwrap_or_else(|| calendar.id.clone());
-        let journey_pattern = skip_fail!(get_journey_pattern(transxchange, vehicle_journey));
-        let journey_pattern_section =
-            skip_fail!(get_journey_pattern_section(transxchange, journey_pattern));
-        let departure_time: Time = skip_fail!(vehicle_journey
-            .try_only_child("DepartureTime")?
-            .text()
-            .parse());
+        let journey_pattern = skip_error_and_log!(
+            get_journey_pattern(transxchange, vehicle_journey),
+            LogLevel::Warn
+        );
+        let journey_pattern_section = skip_error_and_log!(
+            get_journey_pattern_section(transxchange, journey_pattern),
+            LogLevel::Warn
+        );
+        let departure_time: Time = skip_error_and_log!(
+            vehicle_journey
+                .try_only_child("DepartureTime")?
+                .text()
+                .parse(),
+            LogLevel::Warn
+        );
         let vehicle_journey_timing_links = vehicle_journey
             .children()
             .filter(|child| child.name() == "VehicleJourneyTimingLink")
             .collect::<Vec<_>>();
-        let stop_times = skip_fail!(calculate_stop_times(
-            &collections.stop_points,
-            &journey_pattern_section,
-            departure_time,
-            &vehicle_journey_timing_links
-        )
-        .map_err(|e| format_err!("{} / vehiclejourney {} skipped", e, id)));
+        let stop_times = skip_error_and_log!(
+            calculate_stop_times(
+                &collections.stop_points,
+                &journey_pattern_section,
+                departure_time,
+                &vehicle_journey_timing_links
+            )
+            .map_err(|e| format_err!("{} / vehiclejourney {} skipped", e, id)),
+            LogLevel::Warn
+        );
 
         let operator_ref = vehicle_journey
             .try_only_child("OperatorRef")

@@ -17,9 +17,10 @@ use chrono::NaiveDate;
 use csv;
 use failure::{bail, format_err, ResultExt};
 use lazy_static::lazy_static;
-use log::info;
+use log::{info, Level as LogLevel};
 use proj::Proj;
 use serde::Deserialize;
+use skip_error::skip_error_and_log;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     fs::File,
@@ -728,9 +729,12 @@ fn make_lines(collections: &mut Collections, lines: &CollectionWithId<Kv1Line>) 
             .filter(|r| r.line_id == l.id)
             .collect();
         let backward_route = route_name_by_direction(&corresponding_routes, "backward");
-        let forward_route = skip_fail!(route_name_by_direction(&corresponding_routes, "forward")
-            .or(backward_route)
-            .ok_or_else(|| format_err!("no routes found with line_id={}", l.id,)));
+        let forward_route = skip_error_and_log!(
+            route_name_by_direction(&corresponding_routes, "forward")
+                .or(backward_route)
+                .ok_or_else(|| format_err!("no routes found with line_id={}", l.id,)),
+            LogLevel::Warn
+        );
 
         collections
             .lines

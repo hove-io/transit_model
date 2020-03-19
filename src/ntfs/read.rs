@@ -22,8 +22,9 @@ use crate::objects::*;
 use crate::utils::make_collection_with_id;
 use crate::Result;
 use failure::{bail, ensure, format_err, ResultExt};
-use log::{error, info, warn};
+use log::{error, info, warn, Level as LogLevel};
 use serde::{Deserialize, Serialize};
+use skip_error::skip_error_and_log;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use transit_model_collection::*;
@@ -165,7 +166,8 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
         let stop: Stop = stop.with_context(|_| format!("Error reading {:?}", path))?;
         match stop.location_type {
             StopLocationType::StopPoint | StopLocationType::GeographicArea => {
-                let mut stop_point = skip_fail!(StopPoint::try_from(stop.clone()));
+                let mut stop_point =
+                    skip_error_and_log!(StopPoint::try_from(stop.clone()), LogLevel::Warn);
                 if stop.parent_station.is_none() {
                     let mut stop_area = StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
@@ -174,9 +176,15 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
                 };
                 stop_points.push(stop_point);
             }
-            StopLocationType::StopArea => stop_areas.push(skip_fail!(StopArea::try_from(stop))),
+            StopLocationType::StopArea => stop_areas.push(skip_error_and_log!(
+                StopArea::try_from(stop),
+                LogLevel::Warn
+            )),
             _ => {
-                stop_locations.push(skip_fail!(StopLocation::try_from(stop)));
+                stop_locations.push(skip_error_and_log!(
+                    StopLocation::try_from(stop),
+                    LogLevel::Warn
+                ));
             }
         }
     }
@@ -604,7 +612,7 @@ pub fn manage_geometries(collections: &mut Collections, path: &path::Path) -> Re
     let mut rdr =
         csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     for geometry in rdr.deserialize() {
-        let geometry: Geometry = skip_fail!(geometry);
+        let geometry: Geometry = skip_error_and_log!(geometry, LogLevel::Warn);
         geometries.push(geometry)
     }
 
@@ -650,39 +658,46 @@ pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Resu
         .with_context(|_| format!("Error reading {:?}", pathway_path))?;
 
     for pathway in rdr.deserialize() {
-        let mut pathway: Pathway = skip_fail!(pathway.map_err(|e| format_err!("{}", e)));
+        let mut pathway: Pathway =
+            skip_error_and_log!(pathway.map_err(|e| format_err!("{}", e)), LogLevel::Warn);
 
-        pathway.from_stop_type = skip_fail!(collections
-            .stop_points
-            .get(&pathway.from_stop_id)
-            .map(|st| st.stop_type.clone())
-            .or_else(|| collections
-                .stop_locations
+        pathway.from_stop_type = skip_error_and_log!(
+            collections
+                .stop_points
                 .get(&pathway.from_stop_id)
-                .map(|sl| sl.stop_type.clone()))
-            .ok_or_else(|| {
-                format_err!(
-                    "Problem reading {:?}: from_stop_id={:?} not found",
-                    file,
-                    pathway.from_stop_id
-                )
-            }));
+                .map(|st| st.stop_type.clone())
+                .or_else(|| collections
+                    .stop_locations
+                    .get(&pathway.from_stop_id)
+                    .map(|sl| sl.stop_type.clone()))
+                .ok_or_else(|| {
+                    format_err!(
+                        "Problem reading {:?}: from_stop_id={:?} not found",
+                        file,
+                        pathway.from_stop_id
+                    )
+                }),
+            LogLevel::Warn
+        );
 
-        pathway.to_stop_type = skip_fail!(collections
-            .stop_points
-            .get(&pathway.to_stop_id)
-            .map(|st| st.stop_type.clone())
-            .or_else(|| collections
-                .stop_locations
+        pathway.to_stop_type = skip_error_and_log!(
+            collections
+                .stop_points
                 .get(&pathway.to_stop_id)
-                .map(|sl| sl.stop_type.clone()))
-            .ok_or_else(|| {
-                format_err!(
-                    "Problem reading {:?}: to_stop_id={:?} not found",
-                    file,
-                    pathway.to_stop_id
-                )
-            }));
+                .map(|st| st.stop_type.clone())
+                .or_else(|| collections
+                    .stop_locations
+                    .get(&pathway.to_stop_id)
+                    .map(|sl| sl.stop_type.clone()))
+                .ok_or_else(|| {
+                    format_err!(
+                        "Problem reading {:?}: to_stop_id={:?} not found",
+                        file,
+                        pathway.to_stop_id
+                    )
+                }),
+            LogLevel::Warn
+        );
         pathways.push(pathway);
     }
 
