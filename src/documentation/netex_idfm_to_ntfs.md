@@ -245,13 +245,14 @@ NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 route_id | ServiceJourney/JourneyPatternRef/@ref | route_id of the Route containing the `JourneyPatternRef` as an object_code.
 service_id |  | Defined using `ServiceJourney/DayTypeRef`, see (calendar.txt and calendar_dates.txt)[]
-trip_id | ServiceJourney/@id | This field is prefixed. 
+trip_id | ServiceJourney/@id | This field is prefixed. The source and technical part of the NeTEx identifier are used. For example, in `STRAV:ServiceJourney:200-C00573-5897063:LOC`, the `trip` identifier is `<prefix>:STRAV:200-C00573-5897063` (first and third field with colon `:` separator).
 trip_headsign | ServiceJourneyPattern/DestinationDisplayRef | Content of the `DestinationDisplay/FrontText` node. If not available, the name of the `stop_point` of the last `stop_time` is used.
 trip_short_name | ServiceJourneyPattern/DestinationDisplayRef | Content of the `DestinationDisplay/PublicCode` node. If not available, this field is empty.
 company_id | ServiceJourney/OperatorRef | if `ServiceJourney/OperatorRef` is not defined, use `Line/OperatorRef` in [*lines.xml*](#linestxt) file. This field is prefixed.
 physical_mode_id | Line/TransportMode | see physical_modes definition (this field is **not** prefixed)
 trip_property_id |  | see [trip_properties.txt](#trip_propertiestxt)
 
+The `trip` has a complementary code `source` with the identifier of the original associated `ServiceJourney`.
 
 **comment_links for a trip**
 

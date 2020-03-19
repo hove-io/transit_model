@@ -169,6 +169,22 @@ fn extract_route_id(raw_id: &str) -> Result<String> {
     Ok(format!("{}:{}", operator, id))
 }
 
+fn extract_vehicle_journey_id(raw_id: &str) -> Result<String> {
+    let error = || {
+        format_err!(
+            "Cannot extract Vehicle Journey identifier from '{}'",
+            raw_id
+        )
+    };
+    let indices: Vec<_> = raw_id.match_indices(':').collect();
+    let operator_right_bound = indices.get(0).ok_or_else(error)?.0;
+    let id_left_bound = indices.get(1).ok_or_else(error)?.0 + 1;
+    let id_right_bound = indices.get(2).ok_or_else(error)?.0;
+    let operator = &raw_id[0..operator_right_bound];
+    let id = &raw_id[id_left_bound..id_right_bound];
+    Ok(format!("{}:{}", operator, id))
+}
+
 pub fn read_offer_folder(
     offer_folder: &Path,
     collections: &mut Collections,
@@ -635,7 +651,8 @@ where
         routes: &CollectionWithId<Route>,
         journey_patterns: &JourneyPatterns,
     ) -> Result<VehicleJourney> {
-        let id = service_journey_element.try_attribute("id")?;
+        let raw_vehicle_journey_id = service_journey_element.try_attribute("id")?;
+        let id = service_journey_element.try_attribute_with("id", extract_vehicle_journey_id)?;
         let journey_pattern_ref: String = service_journey_element
             .try_only_child("JourneyPatternRef")?
             .try_attribute("ref")?;
@@ -696,6 +713,8 @@ where
             )
             .collect();
         let trip_property_id = line_netex_idf.trip_property_id.clone();
+        let mut codes = KeysValues::default();
+        codes.insert((String::from("source"), raw_vehicle_journey_id));
         let vehicle_journey = VehicleJourney {
             id,
             route_id,
@@ -706,6 +725,7 @@ where
             short_name,
             comment_links,
             trip_property_id,
+            codes,
             ..Default::default()
         };
         Ok(vehicle_journey)
@@ -1064,7 +1084,7 @@ mod tests {
         }
 
         fn service_journey() -> Element {
-            let service_journey_xml = r#"<ServiceJourney id="service_journey_id">
+            let service_journey_xml = r#"<ServiceJourney id="stif:ServiceJourney:service_journey_id:">
                     <JourneyPatternRef ref="journey_pattern_id" />
                     <dayTypes>
                         <DayTypeRef ref="day_type_id_1" />
@@ -1157,7 +1177,7 @@ mod tests {
         #[test]
         fn parse_vehicle_journey() {
             let service_journey_element = service_journey();
-            let service_journey_xml = r#"<ServiceJourney id="service_journey_id_1">
+            let service_journey_xml = r#"<ServiceJourney id="stif:ServiceJourney:service_journey_id_1:">
                     <JourneyPatternRef ref="journey_pattern_id" />
                     <dayTypes>
                         <DayTypeRef ref="day_type_id_1" />
@@ -1188,7 +1208,7 @@ mod tests {
             .unwrap();
 
             assert_eq!(2, vehicle_journeys.len());
-            let vehicle_journey = vehicle_journeys.get("service_journey_id").unwrap();
+            let vehicle_journey = vehicle_journeys.get("stif:service_journey_id").unwrap();
             assert_eq!("stif:route_id", vehicle_journey.route_id.as_str());
             assert_eq!("dataset_id", vehicle_journey.dataset_id.as_str());
             assert_eq!("company_id", vehicle_journey.company_id.as_str());
@@ -1209,7 +1229,7 @@ mod tests {
             assert_eq!(0, stop_time.alighting_duration);
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let vehicle_journey = vehicle_journeys.get("service_journey_id_1").unwrap();
+            let vehicle_journey = vehicle_journeys.get("stif:service_journey_id_1").unwrap();
             assert_eq!("stif:route_id", vehicle_journey.route_id.as_str());
             assert_eq!("dataset_id", vehicle_journey.dataset_id.as_str());
             assert_eq!("company_id", vehicle_journey.company_id.as_str());
