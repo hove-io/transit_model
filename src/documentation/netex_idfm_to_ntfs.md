@@ -214,11 +214,13 @@ In a **offre_*.xml** file, 2 **GeneralFrame** are expected in a **CompositeFrame
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-route_id | Route/@id | This field is prefixed. 
+route_id | Route/@id | This field is prefixed. The source and technical part of the NeTEx identifier are used. For example, in `SNCF:Route:937-C01738-9c749775-ca06-350a-9726-f27b7265ea34:LOC`, the `route` identifier is `<prefix>:SNCF:937-C01738-9c749775-ca06-350a-9726-f27b7265ea34` (first and third field with colon `:` separator).
 line_id | Route/LineRef/@ref | This field is prefixed. 
 route_name | Route/Name | See [`common.md`](common.md#general-rules) to generate the `name`
 direction_type | Route/DirectionType | The value of this field is used without transformation.
 destination_id |  | The `DirectionRef` of the Route doesn't link to a stop (neither stop_point nor stop_area), thus its value is not used. See [`common.md`](common.md#general-rules) to generate the `destination_id`
+
+The `route` has a complementary code `source` with the identifier of the original associated `Route`.
 
 **ServiceJourneyPattern references**
 

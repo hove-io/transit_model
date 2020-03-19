@@ -2,8 +2,10 @@ object_type,object_id,object_system,object_code
 network,prefix:212,source,FR1:Network:212:LOC
 line,prefix:C00114,source,FR1:Line:C00114:
 line,prefix:C00114,Netex_PrivateCode,011011019
-route,prefix:stif:Route:local-26-C00114-1:LOC,Netex_ServiceJourneyPattern,stif:JourneyPattern:local-26-C00114-1:LOC
-route,prefix:stif:Route:local-26-C00114-2:LOC,Netex_ServiceJourneyPattern,stif:JourneyPattern:local-26-C00114-2:LOC
+route,prefix:stif:local-26-C00114-1,Netex_ServiceJourneyPattern,stif:JourneyPattern:local-26-C00114-1:LOC
+route,prefix:stif:local-26-C00114-1,source,stif:Route:local-26-C00114-1:LOC
+route,prefix:stif:local-26-C00114-2,Netex_ServiceJourneyPattern,stif:JourneyPattern:local-26-C00114-2:LOC
+route,prefix:stif:local-26-C00114-2,source,stif:Route:local-26-C00114-2:LOC
 stop_area,prefix:monomodalStopPlace:sp_with_parent_not_found,source,FR::monomodalStopPlace:sp_with_parent_not_found:FR1
 stop_area,prefix:stop_area_1,source,FR::multimodalStopPlace:stop_area_1:FR1
 stop_area,prefix:stop_area_2,source,FR::multimodalStopPlace:stop_area_2:FR1
