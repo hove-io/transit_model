@@ -15,7 +15,7 @@
 use super::{
     attribute_with::AttributeWith,
     calendars::{self, DayTypes},
-    common,
+    common, lines,
     lines::LineNetexIDF,
     modes::MODES,
     stops,
@@ -133,7 +133,7 @@ impl TryFrom<&Element> for Route {
         let id = route_element.try_attribute("id")?;
         let line_id = route_element
             .try_only_child("LineRef")?
-            .try_attribute("ref")?;
+            .try_attribute_with("ref", lines::extract_line_id)?;
         let name = route_element
             .try_only_child("Name")?
             .text()
@@ -919,7 +919,7 @@ mod tests {
         fn routes() {
             let xml = r#"<Route id="route_id">
                     <Name>Route name</Name>
-                    <LineRef ref="line_id" />
+                    <LineRef ref="FR:Line:line_id:" />
                     <DirectionType>inbound</DirectionType>
                 </Route>"#;
             let root: Element = xml.parse().unwrap();
@@ -1116,6 +1116,7 @@ mod tests {
                 id: String::from("line_id"),
                 name: String::from("The Line"),
                 code: None,
+                source_code: String::from("FR:Line:line_id:"),
                 private_code: None,
                 network_id: String::from("network_id"),
                 company_id: String::from("company_id"),

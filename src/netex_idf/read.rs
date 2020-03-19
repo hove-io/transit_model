@@ -127,6 +127,7 @@ mod tests {
             id: String::from("line_id"),
             name: String::from("Line Name"),
             code: None,
+            source_code: String::from("FR:Line:line_id:"),
             private_code: None,
             network_id: String::from("network_id"),
             company_id: String::from("company_id"),
