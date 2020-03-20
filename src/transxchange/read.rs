@@ -126,7 +126,7 @@ fn update_validity_period_from_transxchange(
     let service_validity_period = get_service_validity_period(transxchange, max_end_date)?;
     let mut datasets = datasets.take();
     for dataset in &mut datasets {
-        validity_period::update_validity_period(dataset, &service_validity_period);
+        validity_period::set_dataset_validity_period(dataset, &service_validity_period);
     }
     CollectionWithId::new(datasets)
 }

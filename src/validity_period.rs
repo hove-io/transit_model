@@ -20,7 +20,7 @@ use crate::{
 use std::collections::BTreeSet;
 use transit_model_collection::CollectionWithId;
 
-pub fn get_validity_period(calendars: &CollectionWithId<Calendar>) -> Option<ValidityPeriod> {
+fn get_validity_period(calendars: &CollectionWithId<Calendar>) -> Option<ValidityPeriod> {
     let dates = calendars.values().fold(BTreeSet::new(), |acc, c| {
         acc.union(&c.dates).cloned().collect()
     });
@@ -35,7 +35,8 @@ pub fn get_validity_period(calendars: &CollectionWithId<Calendar>) -> Option<Val
     })
 }
 
-pub fn set_dataset_validity_period(
+/// Define the Validity Period of the dataset from all the available services.
+pub fn calculate_dataset_validity_period(
     dataset: &mut Dataset,
     calendars: &CollectionWithId<Calendar>,
 ) -> Result<()> {
@@ -49,8 +50,14 @@ pub fn set_dataset_validity_period(
     Ok(())
 }
 
-#[cfg(feature = "proj")]
-pub fn update_validity_period(dataset: &mut Dataset, service_validity_period: &ValidityPeriod) {
+/// Set the validity period of a dataset.
+///
+/// Take also a look at the `calculate_dataset_validity_period` function that
+/// can automatically calculate the validity period from the Services dates.
+pub fn set_dataset_validity_period(
+    dataset: &mut Dataset,
+    service_validity_period: &ValidityPeriod,
+) {
     dataset.start_date = if service_validity_period.start_date < dataset.start_date {
         service_validity_period.start_date
     } else {
@@ -66,8 +73,7 @@ pub fn update_validity_period(dataset: &mut Dataset, service_validity_period: &V
 #[cfg(test)]
 mod tests {
 
-    #[cfg(feature = "proj")]
-    mod update_validity_period {
+    mod set_validity_period {
         use super::super::*;
         use crate::objects::{Dataset, Date, ValidityPeriod};
         use chrono::naive::{MAX_DATE, MIN_DATE};
@@ -88,7 +94,7 @@ mod tests {
                 start_date,
                 end_date,
             };
-            update_validity_period(&mut dataset, &service_validity_period);
+            set_dataset_validity_period(&mut dataset, &service_validity_period);
             assert_eq!(start_date, dataset.start_date);
             assert_eq!(end_date, dataset.end_date);
         }
@@ -108,7 +114,7 @@ mod tests {
                 start_date,
                 end_date,
             };
-            update_validity_period(&mut dataset, &service_validity_period);
+            set_dataset_validity_period(&mut dataset, &service_validity_period);
             assert_eq!(start_date, dataset.start_date);
             assert_eq!(end_date, dataset.end_date);
         }
@@ -128,7 +134,7 @@ mod tests {
                 start_date: Date::from_ymd(2019, 3, 1),
                 end_date: Date::from_ymd(2019, 4, 30),
             };
-            update_validity_period(&mut dataset, &service_validity_period);
+            set_dataset_validity_period(&mut dataset, &service_validity_period);
             assert_eq!(start_date, dataset.start_date);
             assert_eq!(end_date, dataset.end_date);
         }
