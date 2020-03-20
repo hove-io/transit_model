@@ -25,7 +25,7 @@ use std::{
     io::{Read, Write},
     path::Path,
 };
-use tempdir::TempDir;
+use tempfile::TempDir;
 use transit_model_collection::CollectionWithId;
 
 /// Imports a `Model` from the KV1 files in the `path` directory.
@@ -82,7 +82,7 @@ pub fn read_from_zip<P: AsRef<Path>, Q: AsRef<Path>>(
 ) -> Result<Model> {
     let file = File::open(path.as_ref())?;
     let mut archive = zip::ZipArchive::new(file)?;
-    let unzipped_folder = TempDir::new("transit_model_")?;
+    let unzipped_folder = TempDir::new()?;
     for file_index in 0..archive.len() {
         let mut file = archive.by_index(file_index)?;
         if file.is_file() {
