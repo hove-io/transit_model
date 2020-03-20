@@ -18,7 +18,7 @@ mod read;
 mod write;
 
 use crate::{
-    common_format::{manage_calendars, write_calendar_dates},
+    calendars::{manage_calendars, write_calendar_dates},
     gtfs::read::EquipmentList,
     model::{Collections, Model},
     objects,

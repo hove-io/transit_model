@@ -21,7 +21,7 @@ mod read;
 mod write;
 
 use crate::{
-    common_format::{manage_calendars, write_calendar_dates},
+    calendars::{manage_calendars, write_calendar_dates},
     model::{Collections, Model},
     objects::*,
     read_utils,
@@ -319,7 +319,7 @@ mod tests {
     use super::Collections;
     use super::*;
     use super::{read, write};
-    use crate::common_format::{manage_calendars, write_calendar_dates};
+    use crate::calendars::{manage_calendars, write_calendar_dates};
     use crate::objects::Availability;
     use crate::{read_utils::PathFileHandler, test_utils::*};
     use geo_types::line_string;
