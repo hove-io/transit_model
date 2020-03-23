@@ -23,20 +23,22 @@ use transit_model::objects::{Comment, CommentLinks, StopPoint, VehicleJourney};
 use transit_model::test_utils::*;
 use transit_model::transfers;
 use transit_model::transfers::TransfersMode;
-use transit_model_collection::CollectionWithId;
-use transit_model_collection::Idx;
+use typed_index_collection::CollectionWithId;
+use typed_index_collection::Idx;
 
 #[test]
-#[should_panic(expected = "TGC already found")] // first collision is on contributor id
 fn merge_collections_with_collisions() {
     let mut collections = Collections::default();
     let input_collisions = ["tests/fixtures/ntfs", "tests/fixtures/ntfs"];
-    for input_directory in input_collisions.iter() {
-        let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
-        collections
-            .try_merge(to_append_model.into_collections())
-            .unwrap();
-    }
+
+    let error_message = input_collisions
+        .iter()
+        .map(|input_directory| transit_model::ntfs::read(input_directory).unwrap())
+        .map(|model| collections.try_merge(model.into_collections()))
+        .collect::<Result<(), _>>()
+        .unwrap_err()
+        .to_string();
+    assert_eq!("identifier TGC already exists", error_message);
 }
 
 #[test]
@@ -364,20 +366,21 @@ fn merge_collections_fares_v2() {
 }
 
 #[test]
-#[should_panic(expected = "ticket.1 already found")]
 fn merge_collections_fares_v2_with_collisions() {
     let mut collections = Collections::default();
     let input_dirs = [
         "tests/fixtures/ntfs",
         "tests/fixtures/merge-ntfs/input_farev2_conflicts",
     ];
-    for input_directory in input_dirs.iter() {
-        let to_append_model = transit_model::ntfs::read(input_directory).unwrap();
 
-        collections
-            .try_merge(to_append_model.into_collections())
-            .unwrap();
-    }
+    let error_message = input_dirs
+        .iter()
+        .map(|input_directory| transit_model::ntfs::read(input_directory).unwrap())
+        .map(|model| collections.try_merge(model.into_collections()))
+        .collect::<Result<(), _>>()
+        .unwrap_err()
+        .to_string();
+    assert_eq!("identifier ticket.1 already exists", error_message);
 }
 
 #[test]

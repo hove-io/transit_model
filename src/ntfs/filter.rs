@@ -20,8 +20,8 @@ use crate::{objects::VehicleJourney, Model, Result};
 use failure::{bail, format_err};
 use lazy_static::lazy_static;
 use std::collections::{HashMap, HashSet};
-use transit_model_collection::{CollectionWithId, Id, Idx};
 use transit_model_relations::IdxSet;
+use typed_index_collection::{CollectionWithId, Id, Idx};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Action {

@@ -26,8 +26,8 @@ use log::warn;
 use minidom::{Element, Node};
 use proj::Proj;
 use std::collections::BTreeMap;
-use transit_model_collection::Idx;
 use transit_model_relations::IdxSet;
+use typed_index_collection::Idx;
 
 // A journey pattern is the sequence of stops of a particular trip.
 // Modelization of JourneyPattern by a VehicleJourney is sufficient for now.
@@ -722,7 +722,7 @@ mod tests {
         },
     };
     use pretty_assertions::assert_eq;
-    use transit_model_collection::CollectionWithId;
+    use typed_index_collection::CollectionWithId;
 
     fn default_collections() -> Collections {
         let mut collections = Collections::default();

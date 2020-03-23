@@ -14,7 +14,6 @@ exclude = [
 	"CONTRIBUTING.md",
 	"README.md",
 	"benches/",
-	"collection/",
 	"examples/",
 	"model-builder/",
 	"relations/",
@@ -28,7 +27,6 @@ travis-ci = { repository = "CanalTP/transit_model" }
 
 [workspace]
 members = [
-  "collection",
   "relations",
   "transit_model_procmacro",
 ]
@@ -61,7 +59,7 @@ time-parse = "0.1"
 walkdir = "2.1"
 wkt = "0.5"
 zip = "0.5"
-transit_model_collection = { version = "0.1", path = "./collection" }
+typed_index_collection = "1"
 transit_model_procmacro = { version = "0.1", path = "./transit_model_procmacro" }
 transit_model_relations = { version = "0.1", path = "./relations" }
 
@@ -95,6 +93,6 @@ name = "write_netex_france"
 path = "tests/write_netex_france.rs"
 required-features = ["proj"]
 
-[dev-dependencies]
+[dev_dependencies]
 approx = "0.3"
 rust_decimal_macros = "1.0"

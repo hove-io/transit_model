@@ -36,8 +36,8 @@ use std::{
     iter,
     path::Path,
 };
-use transit_model_collection::Idx;
 use transit_model_relations::IdxSet;
+use typed_index_collection::Idx;
 
 const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
 const NETEX_FRANCE_TRANSFERS_FILENAME: &str = "correspondances.xml";

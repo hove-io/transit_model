@@ -27,10 +27,10 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use transit_model_collection::*;
+use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 impl TryFrom<Stop> for StopArea {
-    type Error = Error;
+    type Error = failure::Error;
     fn try_from(stop: Stop) -> Result<Self> {
         if stop.name.is_empty() {
             warn!("stop_id: {}: for platform stop_name is required", stop.id);
@@ -61,7 +61,7 @@ impl TryFrom<Stop> for StopArea {
 }
 
 impl TryFrom<Stop> for StopPoint {
-    type Error = Error;
+    type Error = failure::Error;
     fn try_from(stop: Stop) -> Result<Self> {
         if stop.name.is_empty() {
             warn!("stop_id: {}: for platform name is required", stop.id);
@@ -97,7 +97,7 @@ impl TryFrom<Stop> for StopPoint {
 }
 
 impl TryFrom<Stop> for StopLocation {
-    type Error = Error;
+    type Error = failure::Error;
     fn try_from(stop: Stop) -> Result<Self> {
         let coord = Coord::from((stop.lon, stop.lat));
 

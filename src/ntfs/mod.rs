@@ -329,7 +329,7 @@ mod tests {
         collections::{BTreeMap, BTreeSet, HashMap},
         fmt::Debug,
     };
-    use transit_model_collection::{Collection, CollectionWithId, Id};
+    use typed_index_collection::{Collection, CollectionWithId, Id};
 
     fn test_serialize_deserialize_collection_with_id<T>(objects: Vec<T>)
     where

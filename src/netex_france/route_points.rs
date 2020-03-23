@@ -16,7 +16,7 @@
 // https://github.com/CanalTP/navitia/blob/dev/documentation/rfc/sorting_vehicles_route_schedules.md
 
 use crate::objects::{StopPoint, VehicleJourney};
-use transit_model_collection::Idx;
+use typed_index_collection::Idx;
 
 pub fn build_route_points<'m, I>(vehicle_journeys: I) -> Vec<Idx<StopPoint>>
 where
@@ -57,7 +57,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use transit_model_collection::CollectionWithId;
+    use typed_index_collection::CollectionWithId;
 
     fn stop_points() -> CollectionWithId<StopPoint> {
         CollectionWithId::new(vec![

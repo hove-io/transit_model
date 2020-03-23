@@ -14,11 +14,11 @@ proc-macro = true
 syn = "0.11.11"
 quote = "0.3.15"
 
-[dev-dependencies]
+[dev_dependencies]
 pretty_assertions = "0.6"
 trybuild = "1"
 transit_model = { path = "../" }
-transit_model_collection = { path = "../collection" }
+typed_index_collection = "1"
 transit_model_relations = { path = "../relations" }
 
 [[test]]

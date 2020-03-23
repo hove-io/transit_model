@@ -15,7 +15,7 @@
 use crate::objects::Date;
 use chrono::NaiveDate;
 use csv;
-use failure::ResultExt;
+use failure::{format_err, ResultExt};
 use geo_types;
 use log::{debug, error, info};
 use rust_decimal::Decimal;
@@ -23,7 +23,7 @@ use serde::Serialize;
 use std::fs;
 use std::io::{Read, Write};
 use std::path;
-use transit_model_collection::{Collection, CollectionWithId, Id};
+use typed_index_collection::{Collection, CollectionWithId, Id};
 use walkdir::WalkDir;
 use wkt::{self, conversion::try_into_geometry, ToWkt};
 use zip;
@@ -333,7 +333,7 @@ where
         .deserialize()
         .collect::<Result<_, _>>()
         .with_context(|_| format!("Error reading {:?}", path))?;
-    CollectionWithId::new(vec)
+    CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
 }
 
 pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> crate::Result<Collection<T>>

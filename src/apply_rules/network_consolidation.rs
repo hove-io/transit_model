@@ -26,8 +26,8 @@ use std::{
     fs::File,
     path::Path,
 };
-use transit_model_collection::CollectionWithId;
 use transit_model_relations::IdxSet;
+use typed_index_collection::CollectionWithId;
 
 #[derive(Clone, Default, Debug, Deserialize)]
 struct NetworkConsolidation {

@@ -28,7 +28,7 @@ use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::str::FromStr;
-use transit_model_collection::{Idx, WithId};
+use typed_index_collection::{impl_id, Idx, WithId};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]

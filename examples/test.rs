@@ -14,8 +14,8 @@
 
 use transit_model::model::GetCorresponding;
 use transit_model::{Model, Result};
-use transit_model_collection::{CollectionWithId, Id, Idx};
 use transit_model_relations::IdxSet;
+use typed_index_collection::{CollectionWithId, Id, Idx};
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>
 where

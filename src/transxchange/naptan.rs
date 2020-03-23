@@ -28,7 +28,7 @@ use log::{info, warn};
 use proj::Proj;
 use serde::Deserialize;
 use std::{collections::HashMap, io::Read, path::Path};
-use transit_model_collection::CollectionWithId;
+use typed_index_collection::CollectionWithId;
 
 #[derive(Debug, Deserialize)]
 pub struct NaPTANStop {

@@ -11,7 +11,7 @@ keywords = ["relations", "collection"]
 [dependencies]
 derivative = "1.0.3"
 failure = "0.1.5"
-transit_model_collection = { version = "0.1", path = "../collection" }
+typed_index_collection = "1"
 
-[dev-dependencies]
+[dev_dependencies]
 transit_model_procmacro = { version = "0.1", path = "../transit_model_procmacro" }

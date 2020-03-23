@@ -27,7 +27,7 @@ use std::{
     path::Path,
     result::Result as StdResult,
 };
-use transit_model_collection::CollectionWithId;
+use typed_index_collection::{impl_id, CollectionWithId};
 
 /// Deserialize kv1 string date (Y-m-d) to NaiveDate
 fn de_from_date_string<'de, D>(deserializer: D) -> StdResult<Date, D::Error>

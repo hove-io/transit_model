@@ -22,7 +22,7 @@ use failure::ResultExt;
 use log::info;
 use serde::Deserialize;
 use std::{collections::BTreeSet, path::Path};
-use transit_model_collection::{CollectionWithId, Id};
+use typed_index_collection::{CollectionWithId, Id};
 
 #[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Copy)]
 #[serde(rename_all = "snake_case")]

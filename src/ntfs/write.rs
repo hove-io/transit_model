@@ -27,7 +27,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::convert::TryFrom;
 use std::fs::File;
 use std::path;
-use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
+use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 impl TryFrom<(&Ticket, &TicketPrice)> for PriceV1 {
     type Error = failure::Error;

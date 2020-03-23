@@ -32,7 +32,7 @@
 
 use crate::model::{Collections, Model};
 use crate::objects::{Calendar, Route, StopPoint, StopTime, Time, VehicleJourney};
-use transit_model_collection::Idx;
+use typed_index_collection::Idx;
 
 /// Builder used to easily create a `Model`
 #[derive(Default)]

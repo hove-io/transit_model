@@ -25,7 +25,7 @@ use chrono::naive::{MAX_DATE, MIN_DATE};
 use log::{info, warn, Level as LogLevel};
 use skip_error::skip_error_and_log;
 use std::path::Path;
-use transit_model_collection::CollectionWithId;
+use typed_index_collection::CollectionWithId;
 use walkdir::WalkDir;
 
 const STOPS_FILENAME: &str = "arrets.xml";

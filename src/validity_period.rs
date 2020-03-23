@@ -18,7 +18,7 @@ use crate::{
     Result,
 };
 use std::collections::BTreeSet;
-use transit_model_collection::CollectionWithId;
+use typed_index_collection::CollectionWithId;
 
 fn get_validity_period(calendars: &CollectionWithId<Calendar>) -> Option<ValidityPeriod> {
     let dates = calendars.values().fold(BTreeSet::new(), |acc, c| {

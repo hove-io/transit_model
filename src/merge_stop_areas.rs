@@ -31,7 +31,7 @@ use std::fs;
 use std::path;
 use std::path::PathBuf;
 use std::result::Result as StdResult;
-use transit_model_collection::{Collection, CollectionWithId};
+use typed_index_collection::{Collection, CollectionWithId};
 
 #[derive(Deserialize, Debug)]
 struct StopAreaMergeRule {

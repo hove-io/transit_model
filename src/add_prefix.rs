@@ -15,7 +15,7 @@
 //! A trait for every structure that needs to be updated with a prefix
 
 use crate::model::Collections;
-use transit_model_collection::{Collection, CollectionWithId, Id};
+use typed_index_collection::{Collection, CollectionWithId, Id};
 
 /// Trait for object that can be prefixed
 pub trait AddPrefix {
