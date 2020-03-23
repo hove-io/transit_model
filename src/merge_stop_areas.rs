@@ -23,7 +23,9 @@ use crate::utils::{Report, ReportType};
 use crate::Result;
 use csv;
 use failure::{bail, ResultExt};
+use log::Level as LogLevel;
 use serde::Deserialize;
+use skip_error::skip_error_and_log;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path;
@@ -191,7 +193,10 @@ fn apply_rules(
         .collect::<Vec<String>>();
     for mut rule in rules {
         stop_area_ids.retain(|id| !stop_areas_to_remove.contains(id));
-        rule = skip_fail!(rule.ensure_rule_valid(&stop_area_ids, report));
+        rule = skip_error_and_log!(
+            rule.ensure_rule_valid(&stop_area_ids, report),
+            LogLevel::Warn
+        );
         for stop_point in &mut stop_points_updated {
             if rule
                 .to_merge_stop_area_ids

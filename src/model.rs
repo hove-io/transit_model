@@ -21,8 +21,9 @@ use failure::{bail, format_err};
 use geo::algorithm::centroid::Centroid;
 use geo_types::MultiPoint;
 use lazy_static::lazy_static;
-use log::{debug, warn};
+use log::{debug, warn, Level as LogLevel};
 use serde::{Deserialize, Serialize};
+use skip_error::skip_error_and_log;
 use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops;
@@ -951,8 +952,10 @@ impl Collections {
         let mut routes = self.routes.take();
         for mut route in &mut routes {
             if route.name.is_empty() {
-                let (origin, destination) =
-                    skip_fail!(find_best_origin_destination(&route.id, &self));
+                let (origin, destination) = skip_error_and_log!(
+                    find_best_origin_destination(&route.id, &self),
+                    LogLevel::Warn
+                );
                 route.destination_id = Some(destination.id.clone());
                 route.name = format!("{} - {}", origin.name, destination.name);
             }

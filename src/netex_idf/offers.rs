@@ -28,8 +28,9 @@ use crate::{
     validity_period, Result,
 };
 use failure::{bail, format_err, ResultExt};
-use log::{info, warn};
+use log::{info, warn, Level as LogLevel};
 use minidom::Element;
+use skip_error::skip_error_and_log;
 use std::{
     collections::{BTreeSet, HashMap},
     convert::TryFrom,
@@ -213,11 +214,11 @@ pub fn read_offer_folder(
             .parse()
             .map_err(|_| format_err!("Failed to open {}", offer_path.display()))?;
         info!("Reading {}", offer_path.display());
-        let (routes, vehicle_journeys, calendars) =
-            skip_fail!(
-                parse_offer(&offer, collections, lines_netex_idf, &map_daytypes)
-                    .map_err(|e| format_err!("Skip file {}: {}", offer_path.display(), e))
-            );
+        let (routes, vehicle_journeys, calendars) = skip_error_and_log!(
+            parse_offer(&offer, collections, lines_netex_idf, &map_daytypes)
+                .map_err(|e| format_err!("Skip file {}: {}", offer_path.display(), e)),
+            LogLevel::Warn
+        );
         collections.routes.try_merge(routes)?;
         collections.vehicle_journeys.try_merge(vehicle_journeys)?;
         collections.calendars.try_merge(calendars)?;
@@ -421,7 +422,7 @@ where
 {
     let mut routes = CollectionWithId::default();
     for route_element in route_elements {
-        let route = skip_fail!(Route::try_from(route_element));
+        let route = skip_error_and_log!(Route::try_from(route_element), LogLevel::Warn);
         if !collections.lines.contains_id(&route.line_id) {
             warn!(
                 "Failed to create route {} because line {} doesn't exist.",
@@ -455,13 +456,15 @@ fn enhance_with_object_code(
         .map(|(jp_id, journey_pattern)| (&journey_pattern.route.id, jp_id.clone()))
         .collect();
     for route in routes.values() {
-        let journey_pattern_ref =
-            skip_fail!(map_routes_journeypatterns.get(&route.id).ok_or_else(|| {
+        let journey_pattern_ref = skip_error_and_log!(
+            map_routes_journeypatterns.get(&route.id).ok_or_else(|| {
                 format_err!(
                     "Route {} doesn't have any ServiceJourneyPattern associated",
                     route.id
                 )
-            }));
+            }),
+            LogLevel::Warn
+        );
         let codes = vec![(
             String::from("Netex_ServiceJourneyPattern"),
             journey_pattern_ref.clone(),
@@ -697,13 +700,16 @@ where
         .max()
         .unwrap_or(0);
     for service_journey_element in service_journey_elements {
-        let vehicle_journey = skip_fail!(parse_service_journey(
-            service_journey_element,
-            collections,
-            lines_netex_idf,
-            routes,
-            journey_patterns,
-        ));
+        let vehicle_journey = skip_error_and_log!(
+            parse_service_journey(
+                service_journey_element,
+                collections,
+                lines_netex_idf,
+                routes,
+                journey_patterns,
+            ),
+            LogLevel::Warn
+        );
         if !collections.routes.contains_id(&vehicle_journey.route_id)
             && !routes.contains_id(&vehicle_journey.route_id)
         {
@@ -714,7 +720,10 @@ where
             continue;
         }
 
-        let stop_times = skip_fail!(stop_times(service_journey_element, &journey_patterns));
+        let stop_times = skip_error_and_log!(
+            stop_times(service_journey_element, &journey_patterns),
+            LogLevel::Warn
+        );
         if stop_times.is_empty() {
             warn!(
                 "no stop times for vehicle journey {} found",

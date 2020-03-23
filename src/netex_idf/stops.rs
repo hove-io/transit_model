@@ -22,9 +22,10 @@ use crate::{
     Result,
 };
 use failure::{bail, format_err, ResultExt};
-use log::{info, warn};
+use log::{info, warn, Level as LogLevel};
 use minidom::Element;
 use proj::Proj;
+use skip_error::skip_error_and_log;
 use std::{collections::HashMap, fs::File, io::Read};
 use transit_model_collection::CollectionWithId;
 
@@ -182,11 +183,14 @@ fn load_stop_points<'a>(
 
     for quay in quays.iter().filter(|q| !is_referential_quay(*q)) {
         let id: String = quay.try_attribute("id")?;
-        let coords = skip_fail!(load_coords(quay).map_err(|e| format_err!(
-            "unable to parse coordinates of quay {}: {}",
-            id,
-            e
-        )));
+        let coords = skip_error_and_log!(
+            load_coords(quay).map_err(|e| format_err!(
+                "unable to parse coordinates of quay {}: {}",
+                id,
+                e
+            )),
+            LogLevel::Warn
+        );
 
         let mut stop_point = StopPoint {
             id: quay.try_attribute("id")?,

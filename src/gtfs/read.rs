@@ -30,8 +30,9 @@ use csv;
 use derivative::Derivative;
 use failure::{bail, format_err, Error, ResultExt};
 use geo_types::{LineString, Point};
-use log::{info, warn};
+use log::{info, warn, Level as LogLevel};
 use serde::Deserialize;
+use skip_error::skip_error_and_log;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
 use std::result::Result as StdResult;
@@ -342,8 +343,10 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             let mut shapes = vec![];
             for shape in rdr.deserialize() {
-                let shape: Shape =
-                    skip_fail!(shape.with_context(|_| format!("Error reading {:?}", path)));
+                let shape: Shape = skip_error_and_log!(
+                    shape.with_context(|_| format!("Error reading {:?}", path)),
+                    LogLevel::Warn
+                );
                 shapes.push(shape);
             }
 
@@ -665,7 +668,8 @@ where
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
             StopLocationType::StopPoint => {
-                let mut stop_point = skip_fail!(objects::StopPoint::try_from(stop.clone()));
+                let mut stop_point =
+                    skip_error_and_log!(objects::StopPoint::try_from(stop.clone()), LogLevel::Warn);
                 if stop.parent_station.is_none() {
                     let stop_area = objects::StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
@@ -676,13 +680,15 @@ where
                 stop_points.push(stop_point);
             }
             StopLocationType::StopArea => {
-                let mut stop_area = skip_fail!(objects::StopArea::try_from(stop));
+                let mut stop_area =
+                    skip_error_and_log!(objects::StopArea::try_from(stop), LogLevel::Warn);
                 stop_area.comment_links = comment_links;
                 stop_area.equipment_id = equipment_id;
                 stop_areas.push(stop_area);
             }
             _ => {
-                let mut stop_location = skip_fail!(objects::StopLocation::try_from(stop));
+                let mut stop_location =
+                    skip_error_and_log!(objects::StopLocation::try_from(stop), LogLevel::Warn);
                 stop_location.comment_links = comment_links;
                 stop_location.equipment_id = equipment_id;
                 stop_locations.push(stop_location);
@@ -713,39 +719,46 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             let mut pathways = vec![];
             for pathway in rdr.deserialize() {
-                let mut pathway: Pathway = skip_fail!(pathway.map_err(|e| format_err!("{}", e)));
+                let mut pathway: Pathway =
+                    skip_error_and_log!(pathway.map_err(|e| format_err!("{}", e)), LogLevel::Warn);
 
-                pathway.from_stop_type = skip_fail!(collections
-                    .stop_points
-                    .get(&pathway.from_stop_id)
-                    .map(|st| st.stop_type.clone())
-                    .or_else(|| collections
-                        .stop_locations
+                pathway.from_stop_type = skip_error_and_log!(
+                    collections
+                        .stop_points
                         .get(&pathway.from_stop_id)
-                        .map(|sl| sl.stop_type.clone()))
-                    .ok_or_else(|| {
-                        format_err!(
-                            "Problem reading {:?}: from_stop_id={:?} not found",
-                            file,
-                            pathway.from_stop_id
-                        )
-                    }));
+                        .map(|st| st.stop_type.clone())
+                        .or_else(|| collections
+                            .stop_locations
+                            .get(&pathway.from_stop_id)
+                            .map(|sl| sl.stop_type.clone()))
+                        .ok_or_else(|| {
+                            format_err!(
+                                "Problem reading {:?}: from_stop_id={:?} not found",
+                                file,
+                                pathway.from_stop_id
+                            )
+                        }),
+                    LogLevel::Warn
+                );
 
-                pathway.to_stop_type = skip_fail!(collections
-                    .stop_points
-                    .get(&pathway.to_stop_id)
-                    .map(|st| st.stop_type.clone())
-                    .or_else(|| collections
-                        .stop_locations
+                pathway.to_stop_type = skip_error_and_log!(
+                    collections
+                        .stop_points
                         .get(&pathway.to_stop_id)
-                        .map(|sl| sl.stop_type.clone()))
-                    .ok_or_else(|| {
-                        format_err!(
-                            "Problem reading {:?}: to_stop_id={:?} not found",
-                            file,
-                            pathway.to_stop_id
-                        )
-                    }));
+                        .map(|st| st.stop_type.clone())
+                        .or_else(|| collections
+                            .stop_locations
+                            .get(&pathway.to_stop_id)
+                            .map(|sl| sl.stop_type.clone()))
+                        .ok_or_else(|| {
+                            format_err!(
+                                "Problem reading {:?}: to_stop_id={:?} not found",
+                                file,
+                                pathway.to_stop_id
+                            )
+                        }),
+                    LogLevel::Warn
+                );
                 pathways.push(pathway);
             }
             collections.pathways = CollectionWithId::new(pathways)?;
@@ -773,28 +786,32 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             let mut transfers = vec![];
             for transfer in rdr.deserialize() {
-                let transfer: Transfer = skip_fail!(transfer.map_err(|e| format_err!(
-                    "Problem reading {:?}: {}",
-                    file,
-                    e
-                )));
+                let transfer: Transfer = skip_error_and_log!(
+                    transfer.map_err(|e| format_err!("Problem reading {:?}: {}", file, e)),
+                    LogLevel::Warn
+                );
 
-                let from_stop_point = skip_fail!(stop_points
-                    .get(&transfer.from_stop_id)
-                    .ok_or_else(|| format_err!(
-                        "Problem reading {:?}: from_stop_id={:?} not found",
-                        file,
-                        transfer.from_stop_id
-                    )));
+                let from_stop_point = skip_error_and_log!(
+                    stop_points
+                        .get(&transfer.from_stop_id)
+                        .ok_or_else(|| format_err!(
+                            "Problem reading {:?}: from_stop_id={:?} not found",
+                            file,
+                            transfer.from_stop_id
+                        )),
+                    LogLevel::Warn
+                );
 
-                let to_stop_point =
-                    skip_fail!(stop_points
+                let to_stop_point = skip_error_and_log!(
+                    stop_points
                         .get(&transfer.to_stop_id)
                         .ok_or_else(|| format_err!(
                             "Problem reading {:?}: to_stop_id={:?} not found",
                             file,
                             transfer.to_stop_id
-                        )));
+                        )),
+                    LogLevel::Warn
+                );
 
                 let (min_transfer_time, real_min_transfer_time) = match transfer.transfer_type {
                     TransferType::Recommended => {
@@ -1018,12 +1035,10 @@ fn make_ntfs_vehicle_journeys(
             id_incr += 1;
         }
         for t in trips {
-            vehicle_journeys.push(skip_fail!(t.to_ntfs_vehicle_journey(
-                routes,
-                dataset,
-                &property_id,
-                networks,
-            )));
+            vehicle_journeys.push(skip_error_and_log!(
+                t.to_ntfs_vehicle_journey(routes, dataset, &property_id, networks,),
+                LogLevel::Warn
+            ));
         }
     }
 
@@ -1119,14 +1134,17 @@ where
                     FrequencyPrecision::Exact => false,
                     FrequencyPrecision::Inexact => true,
                 };
-                let corresponding_vj = skip_fail!(collections
-                    .vehicle_journeys
-                    .get(&frequency.trip_id)
-                    .cloned()
-                    .ok_or_else(|| format_err!(
-                        "frequency mapped to an unexisting trip {:?}",
-                        frequency.trip_id
-                    )));
+                let corresponding_vj = skip_error_and_log!(
+                    collections
+                        .vehicle_journeys
+                        .get(&frequency.trip_id)
+                        .cloned()
+                        .ok_or_else(|| format_err!(
+                            "frequency mapped to an unexisting trip {:?}",
+                            frequency.trip_id
+                        )),
+                    LogLevel::Warn
+                );
                 let mut start_time = frequency.start_time;
                 let mut arrival_time_delta = match corresponding_vj.stop_times.iter().min() {
                     None => {

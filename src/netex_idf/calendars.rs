@@ -22,8 +22,9 @@ use crate::{
 };
 use chrono::{Datelike, NaiveDateTime, Weekday};
 use failure::format_err;
-use log::warn;
+use log::{warn, Level as LogLevel};
 use minidom::Element;
+use skip_error::skip_error_and_log;
 use std::{
     cmp::{Ord, Ordering, PartialOrd},
     collections::{BTreeSet, HashMap, HashSet},
@@ -157,25 +158,31 @@ where
 {
     let mut day_type_assignments = DayTypeAssignments::default();
     for dta_element in day_type_assignment_elements {
-        let day_type_ref: String = skip_fail!(dta_element
-            .try_only_child("DayTypeRef")
-            .and_then(|dtr_element| dtr_element.try_attribute("ref")));
+        let day_type_ref: String = skip_error_and_log!(
+            dta_element
+                .try_only_child("DayTypeRef")
+                .and_then(|dtr_element| dtr_element.try_attribute("ref")),
+            LogLevel::Warn
+        );
         if let Some(operating_period_ref_element) = dta_element.only_child("OperatingPeriodRef") {
-            let operating_period = skip_fail!(operating_period_ref_element
-                .attribute::<String>("ref")
-                .and_then(|op_ref| operating_periods.get(&op_ref))
-                .ok_or_else(|| {
-                    format_err!(
-                        "OperatingPeriod referenced by DayTypeAssignment '{}' can't be found",
-                        dta_element.attribute("id").unwrap_or_else(String::new),
-                    )
-                }));
+            let operating_period = skip_error_and_log!(
+                operating_period_ref_element
+                    .attribute::<String>("ref")
+                    .and_then(|op_ref| operating_periods.get(&op_ref))
+                    .ok_or_else(|| {
+                        format_err!(
+                            "OperatingPeriod referenced by DayTypeAssignment '{}' can't be found",
+                            dta_element.attribute("id").unwrap_or_else(String::new),
+                        )
+                    }),
+                LogLevel::Warn
+            );
             day_type_assignments
                 .entry(day_type_ref)
                 .or_insert_with(BTreeSet::new)
                 .insert(DayTypeAssignment::OperatingPeriod(operating_period));
         } else if let Some(date_element) = dta_element.only_child("Date") {
-            let date = skip_fail!(date_element.text().parse::<Date>());
+            let date = skip_error_and_log!(date_element.text().parse::<Date>(), LogLevel::Warn);
             let status = dta_element
                 .only_child("isAvailable")
                 .and_then(|el| el.text().parse::<bool>().ok())
@@ -225,7 +232,7 @@ where
     }
     let mut day_types = DayTypes::default();
     for dt_element in day_type_elements {
-        let id: String = skip_fail!(dt_element.try_attribute("id"));
+        let id: String = skip_error_and_log!(dt_element.try_attribute("id"), LogLevel::Warn);
         let weekdays: HashSet<_> = dt_element
             .only_child("properties")
             .map(|properties| {

@@ -22,9 +22,10 @@ use crate::{
     AddPrefix, Result,
 };
 use failure::{bail, format_err};
-use log::{info, warn};
+use log::{info, warn, Level as LogLevel};
 use minidom::Element;
 use rust_decimal::Decimal;
+use skip_error::skip_error_and_log;
 use std::{
     collections::BTreeSet,
     convert::{From, TryFrom},
@@ -411,7 +412,7 @@ pub fn enrich_with_hellogo_fares<P: AsRef<Path>>(
     }
     for file_path in file_paths {
         let zip_file = fs::File::open(file_path)?;
-        let mut zip_archive = skip_fail!(ZipArchive::new(zip_file));
+        let mut zip_archive = skip_error_and_log!(ZipArchive::new(zip_file), LogLevel::Warn);
         for i in 0..zip_archive.len() {
             let mut zip_file = zip_archive.by_index(i)?;
             match zip_file.sanitized_name().extension() {

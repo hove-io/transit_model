@@ -24,8 +24,9 @@ use crate::{
     Result,
 };
 use failure::{bail, format_err, ResultExt};
-use log::{info, warn};
+use log::{info, warn, Level as LogLevel};
 use minidom::Element;
+use skip_error::skip_error_and_log;
 use std::{
     collections::{BTreeSet, HashMap},
     fs::File,
@@ -116,9 +117,11 @@ fn load_netex_lines(
                     .map(Element::text)
                     .ok();
                 let private_code = line.only_child("PrivateCode").map(Element::text);
-                let network_id: String = skip_fail!(line
-                    .try_only_child("RepresentedByGroupRef")
-                    .and_then(|netref| netref.try_attribute("ref")));
+                let network_id: String = skip_error_and_log!(
+                    line.try_only_child("RepresentedByGroupRef")
+                        .and_then(|netref| netref.try_attribute("ref")),
+                    LogLevel::Warn
+                );
                 if !networks.contains_id(&network_id) {
                     warn!("Failed to find network {} for line {}", network_id, id);
                     continue;
@@ -174,10 +177,13 @@ fn load_netex_lines(
 fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<CollectionWithId<Line>> {
     let mut lines = CollectionWithId::default();
     for ln in lines_netex_idf.values() {
-        let commercial_mode_id = skip_fail!(MODES
-            .get(ln.mode.as_str())
-            .map(|m| { m.commercial_mode.0.to_string() })
-            .ok_or_else(|| format_err!("{} not found", ln.mode)));
+        let commercial_mode_id = skip_error_and_log!(
+            MODES
+                .get(ln.mode.as_str())
+                .map(|m| { m.commercial_mode.0.to_string() })
+                .ok_or_else(|| format_err!("{} not found", ln.mode)),
+            LogLevel::Warn
+        );
 
         let codes: KeysValues = ln
             .private_code
@@ -243,8 +249,8 @@ fn make_physical_and_commercial_modes(
     let mut commercial_modes = CollectionWithId::default();
     let modes: BTreeSet<_> = lines_netex_idf.values().map(|l| &l.mode).collect();
     for m in modes {
-        let (physical_mode_id, physical_mode_name, commercial_mode_id, commercial_mode_name) =
-            skip_fail!(MODES
+        let (physical_mode_id, physical_mode_name, commercial_mode_id, commercial_mode_name) = skip_error_and_log!(
+            MODES
                 .get(m.as_str())
                 .map(|m| {
                     (
@@ -254,7 +260,9 @@ fn make_physical_and_commercial_modes(
                         m.commercial_mode.1,
                     )
                 })
-                .ok_or_else(|| format_err!("{} not found", m)));
+                .ok_or_else(|| format_err!("{} not found", m)),
+            LogLevel::Warn
+        );
         physical_modes.push(PhysicalMode {
             id: physical_mode_id.to_string(),
             name: physical_mode_name.to_string(),

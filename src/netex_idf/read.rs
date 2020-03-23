@@ -22,7 +22,8 @@ use crate::{
     AddPrefix, Result,
 };
 use chrono::naive::{MAX_DATE, MIN_DATE};
-use log::{info, warn};
+use log::{info, warn, Level as LogLevel};
+use skip_error::skip_error_and_log;
 use std::path::Path;
 use transit_model_collection::CollectionWithId;
 use walkdir::WalkDir;
@@ -57,11 +58,10 @@ where
         .filter(|dir_entry| dir_entry.file_type().is_dir())
     {
         info!("Reading offer in folder {:?}", offer_folder.path());
-        skip_fail!(offers::read_offer_folder(
-            offer_folder.path(),
-            &mut collections,
-            &lines_netex_idf
-        ));
+        skip_error_and_log!(
+            offers::read_offer_folder(offer_folder.path(), &mut collections, &lines_netex_idf),
+            LogLevel::Warn
+        );
     }
     enhance_with_line_comments(&mut collections, &lines_netex_idf);
 
