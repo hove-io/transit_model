@@ -26,7 +26,7 @@ mod utils;
 mod add_prefix;
 pub use add_prefix::AddPrefix;
 pub mod apply_rules;
-mod calendars;
+pub mod calendars;
 #[macro_use]
 pub mod objects;
 pub mod gtfs;
