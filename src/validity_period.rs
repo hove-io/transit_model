@@ -36,7 +36,7 @@ fn get_validity_period(calendars: &CollectionWithId<Calendar>) -> Option<Validit
 }
 
 /// Define the Validity Period of the dataset from all the available services.
-pub fn calculate_dataset_validity_period(
+pub fn compute_dataset_validity_period(
     dataset: &mut Dataset,
     calendars: &CollectionWithId<Calendar>,
 ) -> Result<()> {
@@ -52,7 +52,7 @@ pub fn calculate_dataset_validity_period(
 
 /// Set the validity period of a dataset.
 ///
-/// Take also a look at the `calculate_dataset_validity_period` function that
+/// Take also a look at the `compute_dataset_validity_period` function that
 /// can automatically calculate the validity period from the Services dates.
 pub fn set_dataset_validity_period(
     dataset: &mut Dataset,
