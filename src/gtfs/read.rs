@@ -1217,7 +1217,7 @@ where
 mod tests {
     use super::*;
     use crate::{
-        common_format,
+        calendars,
         gtfs::read::EquipmentList,
         model::Collections,
         objects::*,
@@ -1890,7 +1890,7 @@ mod tests {
             collections.comments = comments;
             super::read_routes(&mut handler, &mut collections).unwrap();
             super::manage_shapes(&mut collections, &mut handler).unwrap();
-            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
             collections.add_prefix_with_sep("my_prefix", ":");
 
@@ -2590,7 +2590,7 @@ mod tests {
             create_file_with_content(path, "calendar.txt", content);
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
@@ -2617,7 +2617,7 @@ mod tests {
             create_file_with_content(path, "calendar_dates.txt", content);
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 2, 12));
@@ -2649,7 +2649,7 @@ mod tests {
             create_file_with_content(path, "calendar_dates.txt", calendar_dates_content);
 
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
@@ -2676,7 +2676,7 @@ mod tests {
         test_in_tmp_dir(|path| {
             let mut handler = PathFileHandler::new(path.to_path_buf());
             let mut collections = Collections::default();
-            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
         });
     }
 
@@ -2697,7 +2697,7 @@ mod tests {
             let mut collections = Collections::default();
             let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
 
-            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
             validity_period::compute_dataset_validity_period(&mut dataset, &collections.calendars)
                 .unwrap();
 
@@ -2729,7 +2729,7 @@ mod tests {
             let mut collections = Collections::default();
             let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
 
-            common_format::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
             validity_period::compute_dataset_validity_period(&mut dataset, &collections.calendars)
                 .unwrap();
 

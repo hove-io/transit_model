@@ -525,7 +525,7 @@ pub fn write_shapes(
 mod tests {
     use super::*;
     use crate::{
-        common_format::write_calendar_dates,
+        calendars::write_calendar_dates,
         gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType},
         objects::{
             Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime,

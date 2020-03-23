@@ -693,7 +693,7 @@ pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common_format;
+    use crate::calendars;
     use crate::objects;
     use crate::read_utils;
     use crate::test_utils::*;
@@ -792,7 +792,7 @@ mod tests {
             collections.physical_modes =
                 make_collection_with_id(path, "physical_modes.txt").unwrap();
             collections.companies = make_collection_with_id(path, "companies.txt").unwrap();
-            common_format::manage_calendars(&mut file_handle, &mut collections).unwrap();
+            calendars::manage_calendars(&mut file_handle, &mut collections).unwrap();
             manage_stops(&mut collections, path).unwrap();
             manage_stop_times(&mut collections, path).unwrap();
 

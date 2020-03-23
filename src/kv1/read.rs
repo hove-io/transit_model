@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::{common_format::CalendarDate, model::Collections, objects::*, Result};
+use crate::{calendars::CalendarDate, model::Collections, objects::*, Result};
 use chrono::NaiveDate;
 use csv;
 use failure::{bail, format_err, ResultExt};

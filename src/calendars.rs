@@ -11,6 +11,11 @@
 
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
+//! This exposes common information between GTFS and NTFS
+//! Mainly 2 common things are grouped here:
+//! - Accessibility of some equipments
+//! - calendar.txt and calendar_dates.txt format are identical between the GTFS
+//!   and NTFS
 
 use crate::model::Collections;
 use crate::objects::{self, Date, ExceptionType};
@@ -28,40 +33,55 @@ use std::collections::BTreeSet;
 use std::path;
 use transit_model_collection::*;
 
+/// Structure to serialize/deserialize the file calendar_dates.txt
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CalendarDate {
+    /// Identifiers of the Service
     pub service_id: String,
     #[serde(
         deserialize_with = "de_from_date_string",
         serialize_with = "ser_from_naive_date"
     )]
+    /// Date at which the CalendarDate applies
     pub date: Date,
+    /// Is the CalendarDate included or excluded
     pub exception_type: ExceptionType,
 }
 
+/// Structure to serialize/deserialize the file calendar.txt
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Calendar {
+    /// Identifiers of the Service
     #[serde(rename = "service_id")]
     id: String,
+    /// True if the Service is active on Mondays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     monday: bool,
+    /// True if the Service is active on Tuesdays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     tuesday: bool,
+    /// True if the Service is active on Wednesdays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     wednesday: bool,
+    /// True if the Service is active on Thursdays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     thursday: bool,
+    /// True if the Service is active on Fridays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     friday: bool,
+    /// True if the Service is active on Saturdays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     saturday: bool,
+    /// True if the Service is active on Sundays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
     sunday: bool,
+    /// The Service is active starting from this date
     #[serde(
         deserialize_with = "de_from_date_string",
         serialize_with = "ser_from_naive_date"
     )]
     start_date: Date,
+    /// The Service is active until this date
     #[serde(
         deserialize_with = "de_from_date_string",
         serialize_with = "ser_from_naive_date"
@@ -107,7 +127,7 @@ impl Calendar {
     }
 }
 
-pub(crate) fn manage_calendar_dates<H>(
+fn manage_calendar_dates<H>(
     calendars: &mut CollectionWithId<objects::Calendar>,
     file_handler: &mut H,
     calendar_exists: bool,
@@ -199,6 +219,7 @@ where
     Ok(())
 }
 
+/// Write the calendar_dates.txt file into a Path from a list of Calendar
 pub fn write_calendar_dates(
     path: &path::Path,
     calendars: &CollectionWithId<objects::Calendar>,
@@ -247,6 +268,7 @@ pub fn write_calendar_dates(
     write_calendar(path, &translations)
 }
 
+/// Write the calendar.txt file into a Path from a list of Calendar
 pub fn write_calendar(path: &path::Path, calendars: &[Calendar]) -> Result<()> {
     info!("Writing calendar.txt");
     if calendars.is_empty() {
