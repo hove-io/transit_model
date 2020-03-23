@@ -2698,11 +2698,8 @@ mod tests {
             let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
 
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
-            validity_period::calculate_dataset_validity_period(
-                &mut dataset,
-                &collections.calendars,
-            )
-            .unwrap();
+            validity_period::compute_dataset_validity_period(&mut dataset, &collections.calendars)
+                .unwrap();
 
             assert_eq!(
                 Dataset {
@@ -2733,11 +2730,8 @@ mod tests {
             let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
 
             common_format::manage_calendars(&mut handler, &mut collections).unwrap();
-            validity_period::calculate_dataset_validity_period(
-                &mut dataset,
-                &collections.calendars,
-            )
-            .unwrap();
+            validity_period::compute_dataset_validity_period(&mut dataset, &collections.calendars)
+                .unwrap();
 
             assert_eq!(
                 Dataset {
