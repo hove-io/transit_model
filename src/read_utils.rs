@@ -45,7 +45,7 @@ struct Config {
 /// - a Dataset
 /// - a list of key/value which will be used in 'feed_infos.txt'
 /// Below is an example of this file
-/// ```ignore
+/// ```text
 /// {
 ///     "contributor": {
 ///         "contributor_id": "contributor_id",
