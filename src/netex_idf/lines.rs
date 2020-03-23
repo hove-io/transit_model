@@ -12,7 +12,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{accessibility::*, attribute_with::AttributeWith, modes::MODES, EUROPE_PARIS_TIMEZONE};
+use super::{
+    accessibility::*,
+    attribute_with::AttributeWith,
+    modes::{IDFMMode, MODES},
+    EUROPE_PARIS_TIMEZONE,
+};
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
@@ -29,6 +34,7 @@ use minidom::Element;
 use skip_error::skip_error_and_log;
 use std::{
     collections::{BTreeSet, HashMap},
+    convert::TryFrom,
     fs::File,
     io::Read,
 };
@@ -57,7 +63,7 @@ pub struct LineNetexIDF {
     pub private_code: Option<String>,
     pub network_id: String,
     pub company_id: String,
-    pub mode: String,
+    pub mode: IDFMMode,
     pub color: Option<Rgb>,
     pub text_color: Option<Rgb>,
     pub comment_ids: BTreeSet<String>,
@@ -184,10 +190,10 @@ fn load_netex_lines(
                         }
                         Ok(network_id)
                     })?;
-                let mode: String = line.try_only_child("TransportMode")?.text().parse()?;
+                let mode = skip_error_and_log!(IDFMMode::try_from(line), LogLevel::Warn);
                 MODES
-                    .get(mode.as_str())
-                    .ok_or_else(|| format_err!("Unknown mode {} found for line {}", mode, id))?;
+                    .get(&mode)
+                    .ok_or_else(|| format_err!("Unknown mode {:?} found for line {}", mode, id))?;
                 let comment_ids = line
                     .only_child("noticeAssignments")
                     .iter()
@@ -232,7 +238,7 @@ fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<Collec
     for ln in lines_netex_idf.values() {
         let commercial_mode_id = skip_error_and_log!(
             MODES
-                .get(ln.mode.as_str())
+                .get(&ln.mode)
                 .map(|m| { m.commercial_mode.0.to_string() })
                 .ok_or_else(|| format_err!("{} not found", ln.mode)),
             LogLevel::Warn
@@ -308,7 +314,7 @@ fn make_physical_and_commercial_modes(
     for m in modes {
         let (physical_mode_id, physical_mode_name, commercial_mode_id, commercial_mode_name) = skip_error_and_log!(
             MODES
-                .get(m.as_str())
+                .get(m)
                 .map(|m| {
                     (
                         m.physical_mode.0,
@@ -317,7 +323,7 @@ fn make_physical_and_commercial_modes(
                         m.commercial_mode.1,
                     )
                 })
-                .ok_or_else(|| format_err!("{} not found", m)),
+                .ok_or_else(|| format_err!("{:?} not found", m)),
             LogLevel::Warn
         );
         physical_modes.push(PhysicalMode {
@@ -373,41 +379,6 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    #[should_panic(expected = "Unknown mode UNKNOWN found for line C00001")]
-    fn test_load_netex_lines_unknown_mode() {
-        let xml = r#"
-            <ServiceFrame>
-               <lines>
-                  <Line id="FR1:Line:C00001:">
-                     <Name>Line 01</Name>
-                     <ShortName>01</ShortName>
-                     <TransportMode>UNKNOWN</TransportMode>
-                     <RepresentedByGroupRef ref="FR1:Network:1:LOC"/>
-                     <OperatorRef ref="FR1:Operator:1:LOC"/>
-                  </Line>
-               </lines>
-            </ServiceFrame>"#;
-        let mut frames = HashMap::new();
-        let service_frame_lines: Element = xml.parse().unwrap();
-        frames.insert(FrameType::Service, vec![&service_frame_lines]);
-
-        let mut networks = CollectionWithId::new(vec![Network {
-            id: String::from("1"),
-            name: String::from("Network1"),
-            ..Default::default()
-        }])
-        .unwrap();
-        let companies = CollectionWithId::new(vec![Company {
-            id: String::from("1"),
-            name: String::from("Operator1"),
-            ..Default::default()
-        }])
-        .unwrap();
-
-        load_netex_lines(&frames, &mut networks, &companies).unwrap();
-    }
-
-    #[test]
     fn test_load_netex_lines_with_one_without_network() {
         let xml = r#"
             <ServiceFrame>
@@ -422,7 +393,7 @@ mod tests {
                   <Line id="FR1:Line:C00002:">
                      <Name>Line 02</Name>
                      <ShortName>02</ShortName>
-                     <TransportMode>bus</TransportMode>                     
+                     <TransportMode>bus</TransportMode>
                      <OperatorRef ref="FR1:Operator:1:LOC"/>
                   </Line>
                </lines>
@@ -472,7 +443,7 @@ mod tests {
                   <Line id="FR1:Line:C00002:">
                      <Name>Line 02</Name>
                      <ShortName>02</ShortName>
-                     <TransportMode>bus</TransportMode>                     
+                     <TransportMode>bus</TransportMode>
                      <OperatorRef ref="FR1:Operator:1:LOC"/>
                   </Line>
                </lines>

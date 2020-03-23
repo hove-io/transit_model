@@ -681,8 +681,8 @@ where
             .map(Element::text)
             .unwrap_or_else(|| line_netex_idf.company_id.clone());
         let physical_mode_id = MODES
-            .get(line_netex_idf.mode.as_str())
-            .ok_or_else(|| format_err!("Mode {} doesn't exist", line_netex_idf.mode))?
+            .get(&line_netex_idf.mode)
+            .ok_or_else(|| format_err!("Mode {:?} doesn't exist", line_netex_idf.mode))?
             .physical_mode
             .0
             .to_string();
@@ -1050,7 +1050,10 @@ mod tests {
 
     mod parse_vehicle_journeys {
         use super::*;
-        use crate::objects::{Comment, CommentType, Dataset};
+        use crate::{
+            netex_idf::modes::IDFMMode,
+            objects::{Comment, CommentType, Dataset},
+        };
         use pretty_assertions::assert_eq;
 
         fn collections() -> Collections {
@@ -1155,7 +1158,7 @@ mod tests {
                 private_code: None,
                 network_id: String::from("network_id"),
                 company_id: String::from("company_id"),
-                mode: String::from("bus"),
+                mode: IDFMMode::Bus,
                 color: None,
                 text_color: None,
                 comment_ids: BTreeSet::new(),
@@ -1313,30 +1316,6 @@ mod tests {
                     ..Default::default()
                 })
                 .unwrap();
-            let destination_displays = destination_displays();
-            let journey_patterns = journey_patterns(&collections.routes, &destination_displays);
-            let (vehicle_journeys, calendars) = parse_vehicle_journeys(
-                vec![service_journey_element].iter(),
-                &collections,
-                &lines_netex_idf,
-                &CollectionWithId::default(),
-                &journey_patterns,
-                &day_types,
-            )
-            .unwrap();
-            assert_eq!(0, vehicle_journeys.len());
-            assert_eq!(0, calendars.len());
-        }
-
-        #[test]
-        fn ignore_vehicle_journey_without_physical_mode() {
-            let service_journey_element = service_journey();
-            let mut lines_netex_idf = lines_netex_idf();
-            use std::ops::DerefMut;
-            lines_netex_idf.get_mut("line_id").unwrap().deref_mut().mode =
-                String::from("unknown_mode_id");
-            let day_types = day_types();
-            let collections = collections();
             let destination_displays = destination_displays();
             let journey_patterns = journey_patterns(&collections.routes, &destination_displays);
             let (vehicle_journeys, calendars) = parse_vehicle_journeys(
