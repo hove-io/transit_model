@@ -47,7 +47,7 @@ pub fn read_from_path<P: AsRef<Path>, Q: AsRef<Path>>(
     read::read_operday(&path, &mut collections)?;
 
     let (contributor, mut dataset, feed_infos) = read_utils::read_config(config_path)?;
-    validity_period::set_dataset_validity_period(&mut dataset, &collections.calendars)?;
+    validity_period::calculate_dataset_validity_period(&mut dataset, &collections.calendars)?;
 
     collections.contributors = CollectionWithId::new(vec![contributor])?;
     collections.datasets = CollectionWithId::new(vec![dataset])?;

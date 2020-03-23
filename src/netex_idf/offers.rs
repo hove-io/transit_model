@@ -440,7 +440,7 @@ fn update_validity_period_from_netex_idf(
 ) -> Result<CollectionWithId<Dataset>> {
     let mut datasets = datasets.take();
     for dataset in &mut datasets {
-        validity_period::update_validity_period(dataset, &validity_period);
+        validity_period::set_dataset_validity_period(dataset, &validity_period);
     }
     CollectionWithId::new(datasets)
 }
