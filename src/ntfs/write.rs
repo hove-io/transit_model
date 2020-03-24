@@ -347,7 +347,8 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
                     included_lines
                         .iter()
                         .map(|line| format!("line=line:{}", line)),
-                );
+                )
+                .collect::<Vec<String>>();
 
             // will yield a sequence of String
             // each  corresponds to a start_trip condition
@@ -400,7 +401,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
                         .chain(mandatory_end_condition.clone())
                         .collect::<Vec<String>>()
                         .join("&");
-                    for state in states.clone() {
+                    for state in &states {
                         fares.insert(FareV1 {
                             before_change: "*".to_owned(),
                             after_change: state.clone(),
