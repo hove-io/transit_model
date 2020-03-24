@@ -412,7 +412,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
                         });
 
                         if transfer_allowed {
-                            for state2 in states.clone() {
+                            for state2 in &states {
                                 fares.insert(FareV1 {
                                     before_change: state.clone(),
                                     after_change: state2.clone(),
