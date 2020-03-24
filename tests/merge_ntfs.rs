@@ -23,8 +23,7 @@ use transit_model::objects::{Comment, CommentLinks, StopPoint, VehicleJourney};
 use transit_model::test_utils::*;
 use transit_model::transfers;
 use transit_model::transfers::TransfersMode;
-use typed_index_collection::CollectionWithId;
-use typed_index_collection::Idx;
+use typed_index_collection::{CollectionWithId, Idx};
 
 #[test]
 fn merge_collections_with_collisions() {

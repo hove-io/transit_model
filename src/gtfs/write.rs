@@ -537,7 +537,6 @@ mod tests {
     use pretty_assertions::assert_eq;
     use std::{collections::BTreeSet, fs::File, io::Read};
     use tempfile::tempdir;
-    use typed_index_collection::CollectionWithId;
 
     #[test]
     fn write_agency() {

@@ -93,6 +93,6 @@ name = "write_netex_france"
 path = "tests/write_netex_france.rs"
 required-features = ["proj"]
 
-[dev_dependencies]
+[dev-dependencies]
 approx = "0.3"
 rust_decimal_macros = "1.0"
