@@ -7,3 +7,4 @@ ticket-use.4,line,M1,1
 OIF:ticket-use.1,network,OIF:101,1
 OIF:ticket-use.1,network,OIF:102,1
 OIF:ticket-use.1,line,OIF:002002002:LICOIF829,2
+OIF:ticket-use.2,line,OIF:002002002:LICOIF829,1
