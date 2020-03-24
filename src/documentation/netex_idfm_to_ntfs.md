@@ -138,7 +138,16 @@ network_id | Network/@id | This field is prefixed. The technical part of the NeT
 network_name | Network/Name | 
 network_timezone | | Fixed value `Europe/Paris`.
 
-The `network` has a complementary code `source` with the identifier of the original associated `Network`.
+In the case of a line without an associated network, the associated operator is
+used as a network. If there is no associated operator, the line is ignored.
+
+NTFS field | Netex-IDFM element | Mapping rule/Comment
+--- | --- | ---
+network_id | Operator/@id | This field is prefixed. The technical part of the NeTEx identifier is used, prefixed with `Operator_`. For example, in `FR1:Operator:800:LOC`, the `network` identifier is `<prefix>:Operator_800` (third field with colon `:` separator).
+network_name | Operator/Name | 
+network_timezone | | Fixed value `Europe/Paris`.
+
+The `network` has a complementary code `source` with the identifier of the original associated `Network` (or the original associated `Operator`).
 
 ### companies.txt
 `companies` (aka operators) are provided in the nodes **CompositeFrame/frames/ResourceFrame/organisations/Operator[]**. There is only one `ResourceFrame` in the file.
