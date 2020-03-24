@@ -28,7 +28,7 @@ ticket_uses.txt
 
 ticket_use_id | ticket_id    | max_transfers | boarding_time_limit | alighting_time_limit
 ---           | ---          | ---           | ---                 | ----
-my_use_id     | my_ticket_id |   3           |   60                | 90 
+my_use_id     | my_ticket_id |   2           |   60                | 90 
 
 
 ticket_use_perimeters.txt

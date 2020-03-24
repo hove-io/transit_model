@@ -215,37 +215,6 @@ struct Fares<'a> {
     ticket_use_restrictions: &'a Collection<TicketUseRestriction>,
 }
 
-// Returns Ok(()) if each ticket_use_id appears at most once in fares
-// returns an error otherwise
-fn check_uniqueness_of_ticket_use_ids(fares: &Fares) -> Result<()> {
-    let unique_ids: BTreeSet<&str> = fares
-        .ticket_uses
-        .values()
-        .map(|ticket_use| ticket_use.id.as_str())
-        .collect();
-    if unique_ids.len() != fares.ticket_uses.len() {
-        let duplicated_ids: Vec<&str> = unique_ids
-            .iter()
-            .filter(|&unique_id| {
-                fares
-                    .ticket_uses
-                    .values()
-                    .filter(|ticket_use| ticket_use.id.as_str() == *unique_id)
-                    .count()
-                    > 1
-            })
-            .copied()
-            .collect();
-        bail!(
-            "ticket_uses.txt contains multiple time the same ticket_use_id, \
-             whereas a ticket_use_id must appears only once.\n\
-             Duplicated ticket_use_ids : {:?}",
-            duplicated_ids
-        );
-    }
-    Ok(())
-}
-
 fn extract_perimeter_for_ticket_use<'id, 'p>(
     ticket_use_id: &'id str,
     ticket_use_perimeters: &'p Collection<TicketUsePerimeter>,
@@ -253,10 +222,10 @@ fn extract_perimeter_for_ticket_use<'id, 'p>(
     let mut included_networks = Vec::new();
     let mut included_lines = Vec::new();
     let mut excluded_lines = Vec::new();
-    for perimeter in ticket_use_perimeters.values() {
-        if perimeter.ticket_use_id != ticket_use_id {
-            continue;
-        }
+    for perimeter in ticket_use_perimeters
+        .values()
+        .filter(|p| p.ticket_use_id == ticket_use_id)
+    {
         match (&perimeter.object_type, &perimeter.perimeter_action) {
             (ObjectType::Network, PerimeterAction::Included) => {
                 included_networks.push(perimeter.object_id.as_str());
@@ -306,9 +275,6 @@ fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<Pric
 }
 
 fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeSet<FareV1>)> {
-    //we check that each ticket_use_id appears only once in ticket_uses
-    check_uniqueness_of_ticket_use_ids(fares)?;
-
     let mut prices_v1: BTreeSet<PriceV1> = BTreeSet::new();
     let mut fares_v1: BTreeSet<FareV1> = BTreeSet::new();
 
@@ -332,7 +298,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
         let restrictions: Vec<&TicketUseRestriction> = fares
             .ticket_use_restrictions
             .values()
-            .filter(|restriction| restriction.ticket_use_id.as_str() == ticket_use.id)
+            .filter(|restriction| restriction.ticket_use_id == ticket_use.id)
             .collect();
 
         // Now the ticket for our ticket_use_id.
@@ -353,7 +319,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
         for price in fares
             .ticket_prices
             .values()
-            .filter(|&ticket_price| ticket_price.ticket_id == ticket.id)
+            .filter(|ticket_price| ticket_price.ticket_id == ticket.id)
         {
             // For now we restrict to EUR only.
             // There is several reasons to that :
@@ -368,7 +334,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
                 );
                 continue;
             }
-            let price_v1 = build_price_v1(&ticket_use.id, ticket, price)?;
+            let price_v1 = build_price_v1(&ticket_use.id, &ticket, &price)?;
             prices_v1.insert(price_v1);
         }
 
@@ -386,7 +352,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
             // will yield a sequence of String
             // each  corresponds to a start_trip condition
             //  in FareV1
-            // these conditions must appears in all transitions (i.e. lines of fares.txt)
+            // these conditions must appears in all transitions (i.e. lines of fares.csv)
             //  used to model this ticket_use_id
             let mandatory_start_conditions = excluded_lines
                 .iter()
@@ -407,7 +373,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
             // will yield a sequence of String
             // each  corresponds to a end_trip condition
             //  in FareV1
-            // these conditions must appears in all transitions (i.e. lines of fares.txt)
+            // these conditions must appears in all transitions (i.e. lines of fares.csv)
             //  used to model this ticket_use_id
             let mandatory_end_condition = ticket_use
                 .alighting_time_limit
