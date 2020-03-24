@@ -60,6 +60,7 @@ There are several things to notice :
   as "the latest authorized day"
 - the price value is converted to "centimes" because the NTFS fare model expect an integer value. Consequently, we support only prices in EUR
   in the NTFS fare model. Tickets with a price not given in EUR will be throwed away during the conversion.
+- if no (valid) price is found for a ticket it will be skipped / omitted
 
 
 ### Without ticket_use_restrictions
