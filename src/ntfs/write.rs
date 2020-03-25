@@ -215,10 +215,16 @@ struct Fares<'a> {
     ticket_use_restrictions: &'a Collection<TicketUseRestriction>,
 }
 
+struct Perimeter<'p> {
+    included_networks: Vec<&'p str>,
+    included_lines: Vec<&'p str>,
+    excluded_lines: Vec<&'p str>,
+}
+
 fn extract_perimeter_for_ticket_use<'id, 'p>(
     ticket_use_id: &'id str,
     ticket_use_perimeters: &'p Collection<TicketUsePerimeter>,
-) -> Result<(Vec<&'p str>, Vec<&'p str>, Vec<&'p str>)> {
+) -> Result<Perimeter<'p>> {
     let mut included_networks = Vec::new();
     let mut included_lines = Vec::new();
     let mut excluded_lines = Vec::new();
@@ -249,7 +255,11 @@ fn extract_perimeter_for_ticket_use<'id, 'p>(
             }
         }
     }
-    Ok((included_networks, included_lines, excluded_lines))
+    Ok(Perimeter {
+        included_networks,
+        included_lines,
+        excluded_lines,
+    })
 }
 
 fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<PriceV1> {
@@ -282,10 +292,10 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
     for ticket_use in fares.ticket_uses.values() {
         // let's recover the included and excluded perimeters
         // associated to our ticket_use_id
-        let (included_networks, included_lines, excluded_lines) =
+        let perimeter =
             extract_perimeter_for_ticket_use(&ticket_use.id, fares.ticket_use_perimeters)?;
 
-        if included_lines.len() + included_networks.len() == 0 {
+        if perimeter.included_lines.len() + perimeter.included_networks.len() == 0 {
             warn!(
                 "The ticket_use_id {} is ignored since it has no included line or network, \
                  and at least one must exists for a ticket_use_id to be valid.",
@@ -351,11 +361,13 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
 
         //now fares_v1
         {
-            let states = included_networks
+            let states = perimeter
+                .included_networks
                 .iter()
                 .map(|network| format!("network=network:{}", network))
                 .chain(
-                    included_lines
+                    perimeter
+                        .included_lines
                         .iter()
                         .map(|line| format!("line=line:{}", line)),
                 )
@@ -366,7 +378,8 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
             //  in FareV1
             // these conditions must appears in all transitions (i.e. lines of fares.csv)
             //  used to model this ticket_use_id
-            let mandatory_start_conditions = excluded_lines
+            let mandatory_start_conditions = perimeter
+                .excluded_lines
                 .iter()
                 .map(|line| format!("line!=line:{}", line))
                 .chain(
