@@ -78,7 +78,7 @@ fares.csv
 
 Each line allows entering one of the two included perimeters : the network my_network and the line my_line.
 Note that the exluded perimeter (excluded line) is added as a condition "debut trajet".
-The conditition "debut trajet" also encodes the contraints on the boarding duration and the number of transfers.
+The condition "debut trajet" also encodes the constraints on the boarding duration and the number of transfers.
 The condition "fin trajet" encodes the constraint on the alighting duration.
 The value my_use_id in the "clef ticket" field means that we will punch (and thus pay for) a ticket my_use_id when using these transitions.
 
