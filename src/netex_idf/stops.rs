@@ -27,7 +27,7 @@ use minidom::Element;
 use proj::Proj;
 use skip_error::skip_error_and_log;
 use std::{collections::HashMap, fs::File, io::Read};
-use transit_model_collection::CollectionWithId;
+use typed_index_collection::CollectionWithId;
 
 // load a stop area
 // coordinates will be computed with centroid of stop points if the stop area

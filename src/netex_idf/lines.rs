@@ -32,7 +32,7 @@ use std::{
     fs::File,
     io::Read,
 };
-use transit_model_collection::CollectionWithId;
+use typed_index_collection::{impl_id, CollectionWithId};
 
 // #000000
 const DEFAULT_COLOR: Rgb = Rgb {

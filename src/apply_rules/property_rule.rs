@@ -29,8 +29,8 @@ use std::{
     path::Path,
     str::FromStr,
 };
-use transit_model_collection::{CollectionWithId, Idx};
 use transit_model_relations::IdxSet;
+use typed_index_collection::{CollectionWithId, Idx};
 use wkt::{self, conversion::try_into_geometry};
 
 #[derive(Deserialize, Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Hash)]

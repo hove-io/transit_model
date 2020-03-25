@@ -10,5 +10,4 @@ description = "A crate to easily build a transit_model::Model"
 # Swap the next two lines when publishing
 # transit_model = "0.6"
 transit_model = { path = "../" }
-# transit_model_collection = "0.1"
-transit_model_collection = { path = "../collection" }
+typed_index_collection = "1"

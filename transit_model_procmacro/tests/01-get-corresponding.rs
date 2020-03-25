@@ -1,5 +1,5 @@
 use transit_model::objects::*;
-use transit_model_collection::*;
+use typed_index_collection::*;
 use transit_model_procmacro::*;
 use transit_model_relations::*;
 

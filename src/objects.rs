@@ -28,7 +28,7 @@ use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Sub};
 use std::str::FromStr;
-use transit_model_collection::{Idx, WithId};
+use typed_index_collection::{impl_id, impl_with_id, Idx, WithId};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -116,19 +116,6 @@ macro_rules! impl_comment_links {
             }
             fn comment_links_mut(&mut self) -> &mut CommentLinksT {
                 &mut self.comment_links
-            }
-        }
-    };
-}
-
-macro_rules! impl_with_id {
-    ($ty:ty) => {
-        impl WithId for $ty {
-            fn with_id(id: &str) -> Self {
-                let mut r = Self::default();
-                r.id = id.to_owned();
-                r.name = id.to_owned();
-                r
             }
         }
     };

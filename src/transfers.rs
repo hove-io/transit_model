@@ -28,7 +28,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
-use transit_model_collection::{Collection, CollectionWithId, Idx};
+use typed_index_collection::{Collection, CollectionWithId, Idx};
 
 #[derive(Deserialize, Debug)]
 struct Rule {

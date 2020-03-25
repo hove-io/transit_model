@@ -28,8 +28,8 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path;
-use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
 use transit_model_relations::IdxSet;
+use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) -> Result<()> {
     if transfers.is_empty() {
@@ -537,7 +537,6 @@ mod tests {
     use pretty_assertions::assert_eq;
     use std::{collections::BTreeSet, fs::File, io::Read};
     use tempfile::tempdir;
-    use transit_model_collection::CollectionWithId;
 
     #[test]
     fn write_agency() {

@@ -38,7 +38,7 @@ use std::{
     io::Read,
     path::Path,
 };
-use transit_model_collection::{CollectionWithId, Idx};
+use typed_index_collection::{CollectionWithId, Idx};
 use walkdir::WalkDir;
 
 pub const CALENDARS_FILENAME: &str = "calendriers.xml";
@@ -443,7 +443,7 @@ fn update_validity_period_from_netex_idf(
     for dataset in &mut datasets {
         validity_period::set_dataset_validity_period(dataset, &validity_period);
     }
-    CollectionWithId::new(datasets)
+    CollectionWithId::new(datasets).map_err(|e| format_err!("{}", e))
 }
 
 fn enhance_with_object_code(

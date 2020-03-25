@@ -32,7 +32,7 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::path::Path;
-use transit_model_collection::{CollectionWithId, Idx};
+use typed_index_collection::{CollectionWithId, Idx};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Agency {

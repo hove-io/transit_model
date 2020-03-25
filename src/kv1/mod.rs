@@ -26,7 +26,7 @@ use std::{
     path::Path,
 };
 use tempfile::TempDir;
-use transit_model_collection::CollectionWithId;
+use typed_index_collection::CollectionWithId;
 
 /// Imports a `Model` from the KV1 files in the `path` directory.
 ///

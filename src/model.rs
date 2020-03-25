@@ -28,9 +28,9 @@ use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops;
 use std::result::Result as StdResult;
-use transit_model_collection::{Collection, CollectionWithId, Id, Idx};
 use transit_model_procmacro::*;
 use transit_model_relations::{IdxSet, ManyToMany, OneToMany, Relation};
+use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 const AIR_PHYSICAL_MODE: &str = "Air";
 const BIKE_PHYSICAL_MODE: &str = "Bike";
@@ -1098,7 +1098,7 @@ impl Model {
     ///
     /// ```
     /// # use transit_model::model::*;
-    /// # use transit_model_collection::Collection;
+    /// # use typed_index_collection::Collection;
     /// # use transit_model::objects::Transfer;
     /// let mut collections = Collections::default();
     /// // This transfer is invalid as there is no stop points in collections

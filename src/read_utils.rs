@@ -26,7 +26,7 @@ use std::fs::File;
 use std::path;
 use std::path::{Path, PathBuf};
 use std::result::Result as StdResult;
-use transit_model_collection::{CollectionWithId, Id};
+use typed_index_collection::{CollectionWithId, Id};
 
 #[derive(Deserialize, Debug)]
 struct ConfigDataset {
@@ -237,7 +237,7 @@ where
     O: for<'de> serde::Deserialize<'de> + Id<O>,
 {
     let vec = read_objects(file_handler, file_name)?;
-    CollectionWithId::new(vec)
+    CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
 }
 
 pub(crate) fn read_opt_collection<H, O>(
@@ -249,7 +249,7 @@ where
     O: for<'de> serde::Deserialize<'de> + Id<O>,
 {
     let vec = read_opt_objects(file_handler, file_name)?;
-    CollectionWithId::new(vec)
+    CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
 }
 
 #[cfg(test)]

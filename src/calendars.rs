@@ -32,7 +32,7 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::collections::BTreeSet;
 use std::path;
-use transit_model_collection::*;
+use typed_index_collection::*;
 
 /// Structure to serialize/deserialize the file calendar_dates.txt
 #[derive(Serialize, Deserialize, Debug)]
