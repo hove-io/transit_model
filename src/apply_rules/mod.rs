@@ -24,8 +24,8 @@ use crate::{
     Model, Result,
 };
 use log::info;
+use relational_types::IdxSet;
 use std::{collections::HashMap, fs, path::PathBuf};
-use transit_model_relations::IdxSet;
 
 /// Applying rules
 ///

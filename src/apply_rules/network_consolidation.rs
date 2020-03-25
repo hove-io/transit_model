@@ -20,13 +20,13 @@ use crate::{
 };
 use failure::{bail, format_err};
 use log::info;
+use relational_types::IdxSet;
 use serde::Deserialize;
 use std::{
     collections::{HashMap, HashSet},
     fs::File,
     path::Path,
 };
-use transit_model_relations::IdxSet;
 use typed_index_collection::CollectionWithId;
 
 #[derive(Clone, Default, Debug, Deserialize)]
