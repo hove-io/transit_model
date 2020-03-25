@@ -1,5 +1,8 @@
 avant changement;après changement;début trajet;fin trajet;condition globale;clef ticket
-*;line=line:B42;stoparea=stop_area:NAT;stoparea=stop_area:CDG;;ticket.2
-*;line=line:M1;stoparea=stop_area:NAT;stoparea=stop_area:CDG;;ticket.4
-*;network=network:TGN;;;;ticket.1
-network=network:TGN;network=network:TGN;;;;
+*;line=line:B42;stoparea=stop_area:CDG&nb_changes<1;stoparea=stop_area:NAT;;ticket-use.2
+*;line=line:B42;stoparea=stop_area:NAT&nb_changes<1;stoparea=stop_area:CDG;;ticket-use.2
+*;line=line:M1;stoparea=stop_area:NAT&nb_changes<1;stoparea=stop_area:CDG;;ticket-use.4
+*;network=network:TGN;;;;ticket-use.1
+*;network=network:TGN;zone=ZoneParis&line!=line:B42&nb_changes<2&duration<31;zone=ZoneOffParis&duration<91;;ticket-use.3
+network=network:TGN;network=network:TGN;ticket=ticket-use.1&;;;
+network=network:TGN;network=network:TGN;ticket=ticket-use.3&zone=ZoneParis&line!=line:B42&nb_changes<2&duration<31;zone=ZoneOffParis&duration<91;;

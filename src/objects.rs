@@ -1503,7 +1503,7 @@ impl AddPrefix for PriceV1 {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ODFareV1 {
     #[serde(rename = "Origin ID")]
     pub origin_stop_area_id: String,

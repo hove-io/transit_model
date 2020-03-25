@@ -1,4 +1,8 @@
-OIF:ticket.1;20190101;20190701;314;;;;centime
-ticket.1;20190101;20200101;90;;;;centime
-ticket.2;20190101;20200101;113;;;;centime
-ticket.4;20190101;20200101;116;;;;centime
+OIF:ticket-use.1;20190101;20190401;314;;;;centime
+OIF:ticket-use.1;20190401;20190701;315;;;;centime
+OIF:ticket-use.2;20190101;20190401;314;;;;centime
+OIF:ticket-use.2;20190401;20190701;315;;;;centime
+ticket-use.1;20190101;20200101;90;;;;centime
+ticket-use.2;20190101;20200101;113;;;;centime
+ticket-use.3;20190101;20200101;138;;;;centime
+ticket-use.4;20190101;20200101;116;;;;centime
