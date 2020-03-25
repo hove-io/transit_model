@@ -316,6 +316,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
         //first  prices_v1
         // we find all prices with id ticket.id
         // and for each we create a price_v1 with id ticket_use_id (as ticket_use_id of fare v2 plays the role of ticket_id in fare v1)
+        let mut at_least_one_price = false;
         for price in fares
             .ticket_prices
             .values()
@@ -336,6 +337,16 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
             }
             let price_v1 = build_price_v1(&ticket_use.id, &ticket, &price)?;
             prices_v1.insert(price_v1);
+            at_least_one_price = true;
+        }
+        // A ticket in fare v1 model needs a least one price to work
+        // Ticket is skipped if there is not at least one valid price
+        if !at_least_one_price {
+            warn!(
+                "The ticket_use_id {} is ignored because it does not contain any valid price (necessary in fare v1).",
+                ticket_use.id
+            );
+            continue;
         }
 
         //now fares_v1
