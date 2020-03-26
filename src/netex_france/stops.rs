@@ -192,13 +192,12 @@ impl<'a> StopExporter<'a> {
                 element_builder
             };
 
-        let element_builder = if let Some(accessibility_element) =
-            self.generate_quay_accessibility(&stop_point.id, stop_point.equipment_id.as_ref())
-        {
-            element_builder.append(accessibility_element)
-        } else {
-            element_builder
-        };
+        let element_builder =
+            if let Some(accessibility_element) = self.generate_quay_accessibility(&stop_point) {
+                element_builder.append(accessibility_element)
+            } else {
+                element_builder
+            };
         let netex_modes = self
             .stop_point_modes
             .get(stop_point.id.as_str())
@@ -350,19 +349,17 @@ impl<'a> StopExporter<'a> {
         None
     }
 
-    fn generate_quay_accessibility(
-        &self,
-        stop_point_id: &'a str,
-        equipment_id: Option<&'a String>,
-    ) -> Option<Element> {
-        equipment_id
+    fn generate_quay_accessibility(&self, stop_point: &'a StopPoint) -> Option<Element> {
+        stop_point
+            .equipment_id
+            .as_ref()
             .and_then(|eq_id| self.model.equipments.get(eq_id))
             .map(|eq| {
                 Element::builder("AccessibilityAssessment")
                     .attr(
                         "id",
                         Exporter::generate_id(
-                            &format!("{}_{}", stop_point_id, eq.id),
+                            &format!("{}_{}", stop_point.id, eq.id),
                             ObjectType::AccessibilityAssessment,
                         ),
                     )
