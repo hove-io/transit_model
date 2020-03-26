@@ -25,8 +25,8 @@ use failure::format_err;
 use log::warn;
 use minidom::{Element, Node};
 use proj::Proj;
+use relations::IdxSet;
 use std::collections::BTreeMap;
-use transit_model_relations::IdxSet;
 use typed_index_collection::Idx;
 
 // A journey pattern is the sequence of stops of a particular trip.

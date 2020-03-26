@@ -1,7 +1,0 @@
-error: proc-macro derive panicked
- --> $DIR/03-non-supported-argument.rs:6:10
-  |
-6 | #[derive(GetCorresponding)]
-  |          ^^^^^^^^^^^^^^^^
-  |
-  = help: message: Only `key = "value"` attributes supported.

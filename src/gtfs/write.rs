@@ -25,10 +25,10 @@ use csv;
 use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
 use log::{info, warn};
+use relations::IdxSet;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path;
-use transit_model_relations::IdxSet;
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) -> Result<()> {

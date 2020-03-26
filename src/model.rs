@@ -22,14 +22,14 @@ use geo::algorithm::centroid::Centroid;
 use geo_types::MultiPoint;
 use lazy_static::lazy_static;
 use log::{debug, warn, Level as LogLevel};
+use relations::{IdxSet, ManyToMany, OneToMany, Relation};
+use relations_procmacro::*;
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ops;
 use std::result::Result as StdResult;
-use transit_model_procmacro::*;
-use transit_model_relations::{IdxSet, ManyToMany, OneToMany, Relation};
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 const AIR_PHYSICAL_MODE: &str = "Air";

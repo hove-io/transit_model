@@ -13,12 +13,12 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use pretty_assertions::assert_eq;
+use relations::IdxSet;
 use std::collections::HashMap;
 use transit_model;
 use transit_model::model::{Collections, GetCorresponding, Model};
 use transit_model::objects::*;
 use transit_model::test_utils::*;
-use transit_model_relations::IdxSet;
 use typed_index_collection::{CollectionWithId, Id, Idx};
 
 fn get<T, U>(idx: Idx<T>, collection: &CollectionWithId<U>, objects: &Model) -> Vec<String>

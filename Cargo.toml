@@ -19,17 +19,10 @@ exclude = [
 	"relations/",
 	"src/documentation/",
 	"tests/",
-	"transit_model_procmacro/",
 ]
 
 [badges]
 travis-ci = { repository = "CanalTP/transit_model" }
-
-[workspace]
-members = [
-  "relations",
-  "transit_model_procmacro",
-]
 
 [features]
 xmllint = ["proj"]
@@ -60,8 +53,8 @@ walkdir = "2.1"
 wkt = "0.5"
 zip = "0.5"
 typed_index_collection = "1"
-transit_model_procmacro = { version = "0.1", path = "./transit_model_procmacro" }
-transit_model_relations = { version = "0.1", path = "./relations" }
+relations = { git = "https://github.com/woshilapin/relations", branch = "initial-upload" }
+relations_procmacro = { git = "https://github.com/woshilapin/relations", branch = "initial-upload" }
 
 [[test]]
 name = "kv12ntfs"
