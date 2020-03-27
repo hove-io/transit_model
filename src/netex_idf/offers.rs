@@ -13,17 +13,20 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{
+    attribute_with::AttributeWith,
     calendars::{self, DayTypes},
-    common,
+    common, lines,
     lines::LineNetexIDF,
     modes::MODES,
+    stops,
 };
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils::{self, FrameType},
     objects::{
-        Calendar, Dataset, Date, Route, StopPoint, StopTime, Time, ValidityPeriod, VehicleJourney,
+        Calendar, Dataset, Date, KeysValues, Route, StopPoint, StopTime, Time, ValidityPeriod,
+        VehicleJourney,
     },
     validity_period, Result,
 };
@@ -128,10 +131,11 @@ impl TryFrom<&Element> for Route {
                 route_element.name()
             );
         }
-        let id = route_element.try_attribute("id")?;
+        let raw_route_id = route_element.try_attribute("id")?;
+        let id = route_element.try_attribute_with("id", extract_route_id)?;
         let line_id = route_element
             .try_only_child("LineRef")?
-            .try_attribute("ref")?;
+            .try_attribute_with("ref", lines::extract_line_id)?;
         let name = route_element
             .try_only_child("Name")?
             .text()
@@ -140,15 +144,45 @@ impl TryFrom<&Element> for Route {
         let direction_type = route_element
             .only_child("DirectionType")
             .map(|direction_type| direction_type.text().trim().to_string());
+        let mut codes = KeysValues::default();
+        codes.insert((String::from("source"), raw_route_id));
         let route = Route {
             id,
             line_id,
             name,
             direction_type,
+            codes,
             ..Default::default()
         };
         Ok(route)
     }
+}
+
+fn extract_route_id(raw_id: &str) -> Result<String> {
+    let error = || format_err!("Cannot extract Route identifier from '{}'", raw_id);
+    let indices: Vec<_> = raw_id.match_indices(':').collect();
+    let operator_right_bound = indices.get(0).ok_or_else(error)?.0;
+    let id_left_bound = indices.get(1).ok_or_else(error)?.0 + 1;
+    let id_right_bound = indices.get(2).ok_or_else(error)?.0;
+    let operator = &raw_id[0..operator_right_bound];
+    let id = &raw_id[id_left_bound..id_right_bound];
+    Ok(format!("{}:{}", operator, id))
+}
+
+fn extract_vehicle_journey_id(raw_id: &str) -> Result<String> {
+    let error = || {
+        format_err!(
+            "Cannot extract Vehicle Journey identifier from '{}'",
+            raw_id
+        )
+    };
+    let indices: Vec<_> = raw_id.match_indices(':').collect();
+    let operator_right_bound = indices.get(0).ok_or_else(error)?.0;
+    let id_left_bound = indices.get(1).ok_or_else(error)?.0 + 1;
+    let id_right_bound = indices.get(2).ok_or_else(error)?.0;
+    let operator = &raw_id[0..operator_right_bound];
+    let id = &raw_id[id_left_bound..id_right_bound];
+    Ok(format!("{}:{}", operator, id))
 }
 
 pub fn read_offer_folder(
@@ -300,7 +334,7 @@ where
             let id: String = sjp_element.attribute("id")?;
             let route = sjp_element
                 .only_child("RouteRef")?
-                .attribute::<String>("ref")
+                .attribute_with::<_, _, String>("ref", extract_route_id)
                 .and_then(|route_ref| routes.get(&route_ref))?;
             let destination_display = sjp_element
                 .only_child("DestinationDisplayRef")
@@ -407,7 +441,9 @@ where
             let scheduled_stop_point_ref: String = psa_element
                 .only_child("ScheduledStopPointRef")?
                 .attribute("ref")?;
-            let quay_ref: String = psa_element.only_child("QuayRef")?.attribute("ref")?;
+            let quay_ref: String = psa_element
+                .only_child("QuayRef")?
+                .attribute_with("ref", stops::extract_quay_id)?;
             Some((scheduled_stop_point_ref, quay_ref))
         })
         .collect()
@@ -465,14 +501,13 @@ fn enhance_with_object_code(
             }),
             LogLevel::Warn
         );
-        let codes = vec![(
-            String::from("Netex_ServiceJourneyPattern"),
+        let mut codes = KeysValues::default();
+        codes.insert((
+            "Netex_ServiceJourneyPattern".into(),
             journey_pattern_ref.clone(),
-        )]
-        .into_iter()
-        .collect();
+        ));
         let mut route = route.clone();
-        route.codes = codes;
+        route.codes.extend(codes);
         // We are inserting only routes that were already in a 'CollectionWithId'
         enhanced_routes.push(route).unwrap();
     }
@@ -616,7 +651,8 @@ where
         routes: &CollectionWithId<Route>,
         journey_patterns: &JourneyPatterns,
     ) -> Result<VehicleJourney> {
-        let id = service_journey_element.try_attribute("id")?;
+        let raw_vehicle_journey_id = service_journey_element.try_attribute("id")?;
+        let id = service_journey_element.try_attribute_with("id", extract_vehicle_journey_id)?;
         let journey_pattern_ref: String = service_journey_element
             .try_only_child("JourneyPatternRef")?
             .try_attribute("ref")?;
@@ -677,6 +713,8 @@ where
             )
             .collect();
         let trip_property_id = line_netex_idf.trip_property_id.clone();
+        let mut codes = KeysValues::default();
+        codes.insert((String::from("source"), raw_vehicle_journey_id));
         let vehicle_journey = VehicleJourney {
             id,
             route_id,
@@ -687,6 +725,7 @@ where
             short_name,
             comment_links,
             trip_property_id,
+            codes,
             ..Default::default()
         };
         Ok(vehicle_journey)
@@ -913,9 +952,9 @@ mod tests {
 
         #[test]
         fn routes() {
-            let xml = r#"<Route id="route_id">
+            let xml = r#"<Route id="stif:Route:route_id:">
                     <Name>Route name</Name>
-                    <LineRef ref="line_id" />
+                    <LineRef ref="FR:Line:line_id:" />
                     <DirectionType>inbound</DirectionType>
                 </Route>"#;
             let root: Element = xml.parse().unwrap();
@@ -928,8 +967,8 @@ mod tests {
                 })
                 .unwrap();
             let routes = parse_routes(vec![root].iter(), &collections).unwrap();
-            let route = routes.get("route_id").unwrap();
-            assert_eq!("route_id", route.id.as_str());
+            let route = routes.get("stif:route_id").unwrap();
+            assert_eq!("stif:route_id", route.id.as_str());
             assert_eq!("Route name", route.name.as_str());
             assert_eq!("line_id", route.line_id.as_str());
             assert_eq!("inbound", route.direction_type.as_ref().unwrap().as_str());
@@ -1026,7 +1065,7 @@ mod tests {
             collections
                 .routes
                 .push(Route {
-                    id: String::from("route_id"),
+                    id: String::from("stif:route_id"),
                     line_id: String::from("line_id"),
                     ..Default::default()
                 })
@@ -1045,7 +1084,7 @@ mod tests {
         }
 
         fn service_journey() -> Element {
-            let service_journey_xml = r#"<ServiceJourney id="service_journey_id">
+            let service_journey_xml = r#"<ServiceJourney id="stif:ServiceJourney:service_journey_id:">
                     <JourneyPatternRef ref="journey_pattern_id" />
                     <dayTypes>
                         <DayTypeRef ref="day_type_id_1" />
@@ -1096,7 +1135,7 @@ mod tests {
                 drop_off_type: 1,
                 local_zone_id: None,
             });
-            if let Some(route) = routes.get("route_id") {
+            if let Some(route) = routes.get("stif:route_id") {
                 let journey_pattern = JourneyPattern {
                     route,
                     destination_display: destination_displays.get("destination_display_id"),
@@ -1112,6 +1151,7 @@ mod tests {
                 id: String::from("line_id"),
                 name: String::from("The Line"),
                 code: None,
+                source_code: String::from("FR:Line:line_id:"),
                 private_code: None,
                 network_id: String::from("network_id"),
                 company_id: String::from("company_id"),
@@ -1137,7 +1177,7 @@ mod tests {
         #[test]
         fn parse_vehicle_journey() {
             let service_journey_element = service_journey();
-            let service_journey_xml = r#"<ServiceJourney id="service_journey_id_1">
+            let service_journey_xml = r#"<ServiceJourney id="stif:ServiceJourney:service_journey_id_1:">
                     <JourneyPatternRef ref="journey_pattern_id" />
                     <dayTypes>
                         <DayTypeRef ref="day_type_id_1" />
@@ -1168,8 +1208,8 @@ mod tests {
             .unwrap();
 
             assert_eq!(2, vehicle_journeys.len());
-            let vehicle_journey = vehicle_journeys.get("service_journey_id").unwrap();
-            assert_eq!("route_id", vehicle_journey.route_id.as_str());
+            let vehicle_journey = vehicle_journeys.get("stif:service_journey_id").unwrap();
+            assert_eq!("stif:route_id", vehicle_journey.route_id.as_str());
             assert_eq!("dataset_id", vehicle_journey.dataset_id.as_str());
             assert_eq!("company_id", vehicle_journey.company_id.as_str());
             assert_eq!("Bus", vehicle_journey.physical_mode_id.as_str());
@@ -1189,8 +1229,8 @@ mod tests {
             assert_eq!(0, stop_time.alighting_duration);
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let vehicle_journey = vehicle_journeys.get("service_journey_id_1").unwrap();
-            assert_eq!("route_id", vehicle_journey.route_id.as_str());
+            let vehicle_journey = vehicle_journeys.get("stif:service_journey_id_1").unwrap();
+            assert_eq!("stif:route_id", vehicle_journey.route_id.as_str());
             assert_eq!("dataset_id", vehicle_journey.dataset_id.as_str());
             assert_eq!("company_id", vehicle_journey.company_id.as_str());
             assert_eq!("Bus", vehicle_journey.physical_mode_id.as_str());
@@ -1268,7 +1308,7 @@ mod tests {
             collections
                 .routes
                 .push(Route {
-                    id: String::from("route_id"),
+                    id: String::from("stif:route_id"),
                     line_id: String::from("unknown_line_id"),
                     ..Default::default()
                 })

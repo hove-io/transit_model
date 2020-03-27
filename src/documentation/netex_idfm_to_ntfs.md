@@ -54,10 +54,9 @@ A stop_area can therefore be:
 
 A `stop_area` is created for each `StopPlace` not containing a `StopPlace/ParentSiteRef` tag or referencing by `StopPlace/ParentSiteRef/@ref` a `StopPlace` that does not exist in the feed.
 
-
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-stop_id | StopPlace/@id | This field is prefixed. 
+stop_id | StopPlace/@id | This field is prefixed. The technical part of the NeTEx identifier is used. For example, in `FR::multimodalStopPlace:69406:FR1`, the `stop_area` identifier is `<prefix>:69406` (fourth field with colon `:` separator). In the case of a `stop_area` created from a monomodal `StopPlace`, identifier of the `stop_area` is `<prefix>:monomodalStopPlace:411396` (third and fourth fields with a colon `:` separator)
 stop_name | StopPlace/Name | 
 location_type | | Fixed value `1` (stop_area)
 stop_lat | StopPlace/Centroid/Location | see (1) below
@@ -77,7 +76,7 @@ No complementary properties on `stop_area`.
 
 **Complementary object_codes**
 
-No complementary code on `stop_area`.
+The `stop_area` has a complementary code `source` with the identifier of the original associated `StopPlace`.
 
 ### For stop_points
 `stop_point` objects in the output NTFS are the lowest level `Quays` (those provided by operators).
@@ -89,7 +88,7 @@ The `Quay` nodes with a `FR1-ARRET_AUTO` value in `Quay/@dataSourceRef` property
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-stop_id | Quay/@id | This field is prefixed. 
+stop_id | Quay/@id | This field is prefixed. The technical part of the NeTEx identifier is used. For example, in `FR::Quay:50117139:FR1`, the `stop_point` identifier is `<prefix>:50117139` (fourth field with colon `:` separator).
 stop_name | Quay/Name | 
 location_type | | Fixed value `0` (stop_point)
 stop_lat | Quay/Centroid/Location | see (1) below
@@ -124,6 +123,9 @@ wheelchair_boarding | Quay/AccessibilityAssessment/MobilityImpairedAccess | If t
 visual_announcement | Quay/AccessibilityAssessment/ limitations/AccessibilityLimitation/VisualSignsAvailable | same rule as `wheelchair_boarding`
 audible_announcement | Quay/AccessibilityAssessment/ limitations/AccessibilityLimitation/AudibleSignalsAvailable | same rule as `wheelchair_boarding`
 
+**Complementary object_codes**
+
+The `stop_point` has a complementary code `source` with the identifier of the original associated `Quay`.
 
 ## Reading of the "lignes.xml" file
 
@@ -132,16 +134,18 @@ audible_announcement | Quay/AccessibilityAssessment/ limitations/AccessibilityLi
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-network_id | Network/@id | This field is prefixed. 
+network_id | Network/@id | This field is prefixed. The technical part of the NeTEx identifier is used. For example, in `FR1:Network:1046:LOC`, the `network` identifier is `<prefix>:1046` (third field with colon `:` separator).
 network_name | Network/Name | 
 network_timezone | | Fixed value `Europe/Paris`.
+
+The `network` has a complementary code `source` with the identifier of the original associated `Network`.
 
 ### companies.txt
 `companies` (aka operators) are provided in the nodes **CompositeFrame/frames/ResourceFrame/organisations/Operator[]**. There is only one `ResourceFrame` in the file.
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-company_id | Operator/@id | This field is prefixed. 
+company_id | Operator/@id | This field is prefixed. The technical part of the NeTEx identifier is used. For example, in `FR1:Operator:800:LOC`, the `company` identifier is `<prefix>:800` (third field with colon `:` separator). 
 company_name | Operator/Name | 
 
 
@@ -176,13 +180,15 @@ the documentation in [common.md](common.md#co2-emissions-and-fallback-modes).
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-line_id | Line/@id | This field is prefixed. 
+line_id | Line/@id | This field is prefixed. The technical part of the NeTEx identifier is used. For example, in `FR1:Line:C01738:LOC`, the `line` identifier is `<prefix>:C01738` (third field with colon `:` separator).
 network_id | Line/RepresentedByGroupRef/@ref | This field is prefixed. If this attribute or if the referenced network does not exists, this line is not created.
 commercial_mode_id | Line/TransportMode | corresponding commercial_mode_id (see mapping above, this field is **not** prefixed). 
 line_code | Line/PublicCode or Line/ShortName | Use the `PublicCode` value if available and not empty, else the `ShortName` should be used.
 line_name | Line/Name | 
 line_color | Line/Presentation/Colour | If the value is not available or is not a valid hexa RGB, the value `000000` (black) is used.
 line_text_color | Line/Presentation/TextColour | If the value is not available or is not a valid hexa RGB, the value `FFFFFF` (white) is used.
+
+The `line` has a complementary code `source` with the identifier of the original associated `Line`.
 
 If the node `Line/PrivateCode` is available, the content of this node is added as an `object_code` for this line with `object_system` set at `Netex_PrivateCode`.
 
@@ -208,11 +214,13 @@ In a **offre_*.xml** file, 2 **GeneralFrame** are expected in a **CompositeFrame
 
 NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
-route_id | Route/@id | This field is prefixed. 
+route_id | Route/@id | This field is prefixed. The source and technical part of the NeTEx identifier are used. For example, in `SNCF:Route:937-C01738-9c749775-ca06-350a-9726-f27b7265ea34:LOC`, the `route` identifier is `<prefix>:SNCF:937-C01738-9c749775-ca06-350a-9726-f27b7265ea34` (first and third field with colon `:` separator).
 line_id | Route/LineRef/@ref | This field is prefixed. 
 route_name | Route/Name | See [`common.md`](common.md#general-rules) to generate the `name`
 direction_type | Route/DirectionType | The value of this field is used without transformation.
 destination_id |  | The `DirectionRef` of the Route doesn't link to a stop (neither stop_point nor stop_area), thus its value is not used. See [`common.md`](common.md#general-rules) to generate the `destination_id`
+
+The `route` has a complementary code `source` with the identifier of the original associated `Route`.
 
 **ServiceJourneyPattern references**
 
@@ -237,13 +245,14 @@ NTFS field | Netex-IDFM element | Mapping rule/Comment
 --- | --- | ---
 route_id | ServiceJourney/JourneyPatternRef/@ref | route_id of the Route containing the `JourneyPatternRef` as an object_code.
 service_id |  | Defined using `ServiceJourney/DayTypeRef`, see (calendar.txt and calendar_dates.txt)[]
-trip_id | ServiceJourney/@id | This field is prefixed. 
+trip_id | ServiceJourney/@id | This field is prefixed. The source and technical part of the NeTEx identifier are used. For example, in `STRAV:ServiceJourney:200-C00573-5897063:LOC`, the `trip` identifier is `<prefix>:STRAV:200-C00573-5897063` (first and third field with colon `:` separator).
 trip_headsign | ServiceJourneyPattern/DestinationDisplayRef | Content of the `DestinationDisplay/FrontText` node. If not available, the name of the `stop_point` of the last `stop_time` is used.
 trip_short_name | ServiceJourneyPattern/DestinationDisplayRef | Content of the `DestinationDisplay/PublicCode` node. If not available, this field is empty.
 company_id | ServiceJourney/OperatorRef | if `ServiceJourney/OperatorRef` is not defined, use `Line/OperatorRef` in [*lines.xml*](#linestxt) file. This field is prefixed.
 physical_mode_id | Line/TransportMode | see physical_modes definition (this field is **not** prefixed)
 trip_property_id |  | see [trip_properties.txt](#trip_propertiestxt)
 
+The `trip` has a complementary code `source` with the identifier of the original associated `ServiceJourney`.
 
 **comment_links for a trip**
 

@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{accessibility::*, modes::MODES, EUROPE_PARIS_TIMEZONE};
+use super::{accessibility::*, attribute_with::AttributeWith, modes::MODES, EUROPE_PARIS_TIMEZONE};
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
@@ -53,6 +53,7 @@ pub struct LineNetexIDF {
     pub id: String,
     pub name: String,
     pub code: Option<String>,
+    pub source_code: String,
     pub private_code: Option<String>,
     pub network_id: String,
     pub company_id: String,
@@ -63,6 +64,27 @@ pub struct LineNetexIDF {
     pub trip_property_id: Option<String>,
 }
 impl_id!(LineNetexIDF);
+
+fn extract_network_id(raw_id: &str) -> Result<&str> {
+    raw_id
+        .split(':')
+        .nth(2)
+        .ok_or_else(|| format_err!("Cannot extract Network identifier from '{}'", raw_id))
+}
+
+fn extract_company_id(raw_id: &str) -> Result<&str> {
+    raw_id
+        .split(':')
+        .nth(2)
+        .ok_or_else(|| format_err!("Cannot extract Company identifier from '{}'", raw_id))
+}
+
+pub fn extract_line_id(raw_id: &str) -> Result<&str> {
+    raw_id
+        .split(':')
+        .nth(2)
+        .ok_or_else(|| format_err!("Cannot extract Line identifier from '{}'", raw_id))
+}
 
 fn line_color(line: &Element, child_name: &str) -> Option<Rgb> {
     line.only_child("Presentation")
@@ -109,7 +131,8 @@ fn load_netex_lines(
     for frame in frames.get(&FrameType::Service).unwrap_or(&vec![]) {
         if let Ok(lines_node) = frame.try_only_child("lines") {
             for line in lines_node.children().filter(|e| e.name() == "Line") {
-                let id = line.try_attribute("id")?;
+                let raw_line_id = line.try_attribute("id")?;
+                let id = line.try_attribute_with("id", extract_line_id)?;
                 let name = line.try_only_child("Name")?.text().parse()?;
                 let code = line
                     .try_only_child_with_filter("PublicCode", |e| !e.text().is_empty())
@@ -117,17 +140,19 @@ fn load_netex_lines(
                     .map(Element::text)
                     .ok();
                 let private_code = line.only_child("PrivateCode").map(Element::text);
-                let network_id: String = skip_error_and_log!(
-                    line.try_only_child("RepresentedByGroupRef")
-                        .and_then(|netref| netref.try_attribute("ref")),
+                let network_id: String =
+                    skip_error_and_log!(line
+                    .try_only_child("RepresentedByGroupRef")
+                    .and_then(|netref| netref.try_attribute_with("ref", extract_network_id)),
                     LogLevel::Warn
-                );
+                    );
                 if !networks.contains_id(&network_id) {
                     warn!("Failed to find network {} for line {}", network_id, id);
                     continue;
                 }
-                let company_id: String =
-                    line.try_only_child("OperatorRef")?.try_attribute("ref")?;
+                let company_id: String = line
+                    .try_only_child("OperatorRef")?
+                    .try_attribute_with("ref", extract_company_id)?;
                 if !companies.contains_id(&company_id) {
                     warn!("Failed to find company {} for line {}", company_id, id);
                     continue;
@@ -156,6 +181,7 @@ fn load_netex_lines(
                     id,
                     name,
                     code,
+                    source_code: raw_line_id,
                     private_code,
                     network_id,
                     company_id,
@@ -185,11 +211,11 @@ fn make_lines(lines_netex_idf: &CollectionWithId<LineNetexIDF>) -> Result<Collec
             LogLevel::Warn
         );
 
-        let codes: KeysValues = ln
-            .private_code
-            .clone()
-            .map(|pc| vec![("Netex_PrivateCode".into(), pc)].into_iter().collect())
-            .unwrap_or_else(BTreeSet::new);
+        let mut codes = KeysValues::default();
+        codes.insert(("source".into(), ln.source_code.clone()));
+        if let Some(private_code) = ln.private_code.clone() {
+            codes.insert(("Netex_PrivateCode".into(), private_code));
+        }
         lines.push(Line {
             id: ln.id.clone(),
             name: ln.name.clone(),
@@ -212,13 +238,17 @@ fn make_networks_companies(
     let mut companies = CollectionWithId::default();
     for frame in frames.get(&FrameType::Service).unwrap_or(&vec![]) {
         for network in frame.children().filter(|e| e.name() == "Network") {
-            let id = network.try_attribute("id")?;
+            let raw_network_id = network.try_attribute("id")?;
+            let id = network.try_attribute_with("id", extract_network_id)?;
             let name = network.try_only_child("Name")?.text().parse()?;
             let timezone = Some(String::from(EUROPE_PARIS_TIMEZONE));
+            let mut codes = KeysValues::default();
+            codes.insert((String::from("source"), raw_network_id));
             networks.push(Network {
                 id,
                 name,
                 timezone,
+                codes,
                 ..Default::default()
             })?;
         }
@@ -226,7 +256,7 @@ fn make_networks_companies(
     for frame in frames.get(&FrameType::Resource).unwrap_or(&vec![]) {
         if let Ok(organisations) = frame.try_only_child("organisations") {
             for operator in organisations.children().filter(|e| e.name() == "Operator") {
-                let id = operator.try_attribute("id")?;
+                let id = operator.try_attribute_with("id", extract_company_id)?;
                 let name = operator.try_only_child("Name")?.text().parse()?;
                 companies.push(Company {
                     id,
@@ -315,12 +345,12 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    #[should_panic(expected = "Unknown mode UNKNOWN found for line FR1:Line:C00001")]
+    #[should_panic(expected = "Unknown mode UNKNOWN found for line C00001")]
     fn test_load_netex_lines_unknown_mode() {
         let xml = r#"
             <ServiceFrame>
                <lines>
-                  <Line id="FR1:Line:C00001">
+                  <Line id="FR1:Line:C00001:">
                      <Name>Line 01</Name>
                      <ShortName>01</ShortName>
                      <TransportMode>UNKNOWN</TransportMode>
@@ -334,13 +364,13 @@ mod tests {
         frames.insert(FrameType::Service, vec![&service_frame_lines]);
 
         let networks = CollectionWithId::new(vec![Network {
-            id: String::from("FR1:Network:1:LOC"),
+            id: String::from("1"),
             name: String::from("Network1"),
             ..Default::default()
         }])
         .unwrap();
         let companies = CollectionWithId::new(vec![Company {
-            id: String::from("FR1:Operator:1:LOC"),
+            id: String::from("1"),
             name: String::from("Operator1"),
             ..Default::default()
         }])
@@ -354,14 +384,14 @@ mod tests {
         let xml = r#"
             <ServiceFrame>
                <lines>
-                  <Line id="FR1:Line:C00001">
+                  <Line id="FR1:Line:C00001:">
                      <Name>Line 01</Name>
                      <ShortName>01</ShortName>
                      <TransportMode>bus</TransportMode>
                      <RepresentedByGroupRef ref="FR1:Network:1:LOC"/>
                      <OperatorRef ref="FR1:Operator:1:LOC"/>
                   </Line>
-                  <Line id="FR1:Line:C00002">
+                  <Line id="FR1:Line:C00002:">
                      <Name>Line 02</Name>
                      <ShortName>02</ShortName>
                      <TransportMode>bus</TransportMode>                     
@@ -374,13 +404,13 @@ mod tests {
         frames.insert(FrameType::Service, vec![&service_frame_lines]);
 
         let networks = CollectionWithId::new(vec![Network {
-            id: String::from("FR1:Network:1:LOC"),
+            id: String::from("1"),
             name: String::from("Network1"),
             ..Default::default()
         }])
         .unwrap();
         let companies = CollectionWithId::new(vec![Company {
-            id: String::from("FR1:Operator:1:LOC"),
+            id: String::from("1"),
             name: String::from("Operator1"),
             ..Default::default()
         }])

@@ -12,13 +12,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{accessibility::*, EUROPE_PARIS_TIMEZONE};
+use super::{accessibility::*, attribute_with::AttributeWith, EUROPE_PARIS_TIMEZONE};
 use crate::{
     minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
     netex_utils::{FrameType, Frames},
-    objects::{Coord, Equipment, StopArea, StopPoint, StopType},
+    objects::{Coord, Equipment, KeysValues, StopArea, StopPoint, StopType},
     Result,
 };
 use failure::{bail, format_err, ResultExt};
@@ -29,11 +29,45 @@ use skip_error::skip_error_and_log;
 use std::{collections::HashMap, fs::File, io::Read};
 use typed_index_collection::CollectionWithId;
 
+pub fn extract_quay_id(raw_id: &str) -> Result<&str> {
+    raw_id
+        .split(':')
+        .nth(3)
+        .ok_or_else(|| format_err!("Cannot extract Quay identifier from '{}'", raw_id))
+}
+
+// Need to extract third and fourth part of the original identifier
+pub fn extract_monomodal_stop_place_id(raw_id: &str) -> Result<&str> {
+    let error = || {
+        format_err!(
+            "Cannot extract Monomodal StopPlace identifier from '{}'",
+            raw_id
+        )
+    };
+    let indices: Vec<_> = raw_id.match_indices(':').collect();
+    let left_bound = indices.get(1).ok_or_else(error)?.0 + 1;
+    let right_bound = indices.get(3).ok_or_else(error)?.0;
+    Ok(&raw_id[left_bound..right_bound])
+}
+
+pub fn extract_multimodal_stop_place_id(raw_id: &str) -> Result<&str> {
+    raw_id
+        .split(':')
+        .nth(3)
+        .ok_or_else(|| format_err!("Cannot extract third part of identifier '{}'", raw_id))
+}
+
 // load a stop area
 // coordinates will be computed with centroid of stop points if the stop area
 // has no coordinates
 fn load_stop_area(stop_place_elem: &Element, proj: &Proj) -> Result<StopArea> {
-    let id: String = stop_place_elem.try_attribute("id")?;
+    let raw_stop_place_id: String = stop_place_elem.try_attribute("id")?;
+    let is_monomodal_stop_place = raw_stop_place_id.contains(":monomodalStopPlace:");
+    let id: String = if is_monomodal_stop_place {
+        stop_place_elem.try_attribute_with("id", extract_monomodal_stop_place_id)?
+    } else {
+        stop_place_elem.try_attribute_with("id", extract_multimodal_stop_place_id)?
+    };
     let coord: Coord = load_coords(stop_place_elem)
         .and_then(|coords| proj.convert(coords).map_err(|e| format_err!("{}", e)))
         .map(Coord::from)
@@ -41,7 +75,8 @@ fn load_stop_area(stop_place_elem: &Element, proj: &Proj) -> Result<StopArea> {
             warn!("unable to parse coordinates of stop place {}: {}", id, e);
             Coord::default()
         });
-
+    let mut codes = KeysValues::default();
+    codes.insert((String::from("source"), raw_stop_place_id));
     Ok(StopArea {
         id,
         name: stop_place_elem
@@ -51,6 +86,7 @@ fn load_stop_area(stop_place_elem: &Element, proj: &Proj) -> Result<StopArea> {
             .to_string(),
         visible: true,
         coord,
+        codes,
         ..Default::default()
     })
 }
@@ -73,9 +109,9 @@ fn load_stop_areas<'a>(
     for stop_place in stop_places.iter().filter(|sp| has_parent_site_ref(sp)) {
         let parent_site_ref: String = stop_place
             .try_only_child("ParentSiteRef")?
-            .try_attribute("ref")?;
+            .try_attribute_with("ref", extract_multimodal_stop_place_id)?;
 
-        let stop_place_id = stop_place.try_attribute("id")?;
+        let stop_place_id = stop_place.try_attribute_with("id", extract_monomodal_stop_place_id)?;
         if stop_areas.get(&parent_site_ref).is_some() {
             map_stopplace_stoparea.insert(stop_place_id, parent_site_ref.clone());
         } else {
@@ -122,7 +158,7 @@ fn stop_point_parent_id(
     stop_areas: &CollectionWithId<StopArea>,
 ) -> Result<Option<String>> {
     Ok(quay
-        .attribute::<String>("derivedFromObjectRef")
+        .attribute_with::<_, _, String>("derivedFromObjectRef", extract_quay_id)
         .and_then(|refquay_id| map_refquay_stoparea.get(&refquay_id))
         .and_then(|stop_area_id| stop_areas.get(&stop_area_id))
         .map(|stop_area| stop_area.id.clone()))
@@ -174,15 +210,18 @@ fn load_stop_points<'a>(
         .iter()
         .filter(|quay| is_referential_quay(*quay))
         .flat_map(|quay| {
-            let referential_quay_id: String = quay.attribute("id")?;
-            let stop_place_id: String = quay.only_child("ParentZoneRef")?.attribute("ref")?;
+            let referential_quay_id: String = quay.attribute_with("id", extract_quay_id)?;
+            let stop_place_id: String = quay
+                .only_child("ParentZoneRef")?
+                .attribute_with("ref", extract_monomodal_stop_place_id)?;
             let stop_area_id = map_stopplace_stoparea.get(&stop_place_id)?;
             Some((referential_quay_id, stop_area_id))
         })
         .collect();
 
     for quay in quays.iter().filter(|q| !is_referential_quay(*q)) {
-        let id: String = quay.try_attribute("id")?;
+        let raw_quay_id: String = quay.try_attribute("id")?;
+        let id: String = quay.try_attribute_with("id", extract_quay_id)?;
         let coords = skip_error_and_log!(
             load_coords(quay).map_err(|e| format_err!(
                 "unable to parse coordinates of quay {}: {}",
@@ -191,9 +230,11 @@ fn load_stop_points<'a>(
             )),
             LogLevel::Warn
         );
+        let mut codes = KeysValues::default();
+        codes.insert((String::from("source"), raw_quay_id));
 
         let mut stop_point = StopPoint {
-            id: quay.try_attribute("id")?,
+            id,
             name: quay.try_only_child("Name")?.text().trim().to_string(),
             visible: true,
             coord: proj.convert(coords).map(Coord::from)?,
@@ -201,6 +242,7 @@ fn load_stop_points<'a>(
             timezone: Some(EUROPE_PARIS_TIMEZONE.to_string()),
             stop_type: StopType::Point,
             fare_zone_id: stop_point_fare_zone_id(quay),
+            codes,
             ..Default::default()
         };
 
