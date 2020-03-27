@@ -4,7 +4,7 @@ GDLR,Gare de Lyon (RER),,48.844746,2.372987,0,GDL,ZoneParis,0
 GDLM,Gare de Lyon (Metro),,48.844746,2.372987,,GDL,ZoneParis,1
 GDLB,Gare de Lyon (Bus),,48.844746,2.372987,,GDL,ZoneParis,
 NAT,Nation,,48.84849,2.396497,1,,,
-NATR,Nation (RER),,48.84849,2.396497,0,NAT,ZoneParis,
+NATR,Nation (RER),,48.84849,2.396497,0,NAT,ZoneParis,0
 NATM,Nation (Metro),,48.84849,2.396497,,NAT,ZoneParis,
 CDG,Charles de Gaulle,,48.873965,2.295354,1,,,
 CDGR,Charles de Gaulle (RER),,48.873965,2.295354,0,CDG,ZoneOffParis,

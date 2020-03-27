@@ -2,7 +2,7 @@ stop_id,stop_code,stop_name,stop_desc,stop_lon,stop_lat,zone_id,stop_url,locatio
 GDLR,,Gare de Lyon (RER),,2.372987,48.844746,ZoneParis,,0,GDL,,,1,
 GDLM,,Gare de Lyon (Metro),,2.372987,48.844746,ZoneParis,,0,GDL,,,2,
 GDLB,,Gare de Lyon (Bus),,2.372987,48.844746,ZoneParis,,0,GDL,,,0,
-NATR,,Nation (RER),,2.396497,48.84849,ZoneParis,,0,NAT,,,0,
+NATR,,Nation (RER),,2.396497,48.84849,ZoneParis,,0,NAT,,,1,
 NATM,,Nation (Metro),,2.396497,48.84849,ZoneParis,,0,NAT,,,0,
 CDGR,,Charles de Gaulle (RER),,2.295354,48.873965,ZoneOffParis,,0,CDG,,,0,
 CDGM,,Charles de Gaulle (Metro),,2.295354,48.873965,ZoneOffParis,,0,CDG,,,0,

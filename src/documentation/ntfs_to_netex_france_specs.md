@@ -147,7 +147,7 @@ If the stop_point is associated to an equipment, a node `AccessibilityAssessment
 
 Netex field | NTFS file | NTFS field | Note
 --- | --- | --- | ---
-AccessibilityAssessment/@id | stops.txt | equipment_id | 
+AccessibilityAssessment/@id | stops.txt | | The id is built from the concatenation (joined with _) of the stop_id and the equipment_id. For the rest of the id, use [id formatting](#id-of-objects).
 AccessibilityAssessment/@version | | | fixed value `any`.
 AccessibilityAssessment/MobilityImpairedAccess | | | see (1) below
 AccessibilityAssessment/limitations/AccessibilityLimitation/WheelchairAccess | equipments.txt | wheelchair_boarding | see (2) below
