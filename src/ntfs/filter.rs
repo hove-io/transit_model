@@ -19,8 +19,8 @@
 use crate::{objects::VehicleJourney, Model, Result};
 use failure::{bail, format_err};
 use lazy_static::lazy_static;
+use relational_types::IdxSet;
 use std::collections::{HashMap, HashSet};
-use transit_model_relations::IdxSet;
 use typed_index_collection::{CollectionWithId, Id, Idx};
 
 #[derive(Debug, Clone, Copy)]

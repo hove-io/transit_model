@@ -23,13 +23,13 @@ use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
 use lazy_static::lazy_static;
 use log::{info, warn};
+use relational_types::IdxSet;
 use serde::Deserialize;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
     path::Path,
     str::FromStr,
 };
-use transit_model_relations::IdxSet;
 use typed_index_collection::{CollectionWithId, Idx};
 use wkt::{self, conversion::try_into_geometry};
 

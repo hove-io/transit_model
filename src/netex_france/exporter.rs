@@ -29,6 +29,7 @@ use failure::format_err;
 use log::info;
 use minidom::{Element, Node};
 use proj::Proj;
+use relational_types::IdxSet;
 use std::{
     convert::AsRef,
     fmt::{self, Display, Formatter},
@@ -36,7 +37,6 @@ use std::{
     iter,
     path::Path,
 };
-use transit_model_relations::IdxSet;
 use typed_index_collection::Idx;
 
 const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
