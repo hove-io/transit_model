@@ -165,21 +165,26 @@ Be careful, `physical_mode_id` and `commercial_mode_id` are **not** prefixed.
 
 Here is the mapping table between a TransportMode value and the corresponding `physical_mode` and `commercial_mode`:
 
-TransportMode in Netex-IDFM | physical_mode_id | physical_mode_name | commercial_mode_id | commercial_mode_name 
---- | --- | --- | --- | ---
-air | Air | Avion | Air | Avion
-bus | Bus | Bus | Bus | Bus
-coach | Coach | Autocar | Coach | Autocar
-ferry | Ferry | Ferry | Ferry | Ferry
-metro | Metro | Métro | Metro | Métro
-rail | LocalTrain | Train régional / TER | LocalTrain | Train régional / TER
-trolleyBus | Tramway | Tramway | TrolleyBus | TrolleyBus
-tram | Tramway | Tramway | Tramway | Tramway
-water | Boat | Navette maritime / fluviale | Boat | Navette maritime / fluviale
-cableway | Tramway | Tramway | CableWay | CableWay
-funicular | Funicular | Funiculaire | Funicular | Funiculaire
-lift | Bus | Bus | Bus | Bus
-other | Bus | Bus | Bus | Bus
+TransportMode in Netex-IDFM | TransportSubMode in Netex-IDFM | physical_mode_id | physical_mode_name | commercial_mode_id | commercial_mode_name | Note
+--- | --- | --- | --- | --- | --- | ---
+air | _any_ | Air | Avion | Air | Avion |
+bus | _any_ | Bus | Bus | Bus | Bus |
+coach | _any_ | Coach | Autocar | Coach | Autocar |
+ferry | _any_ | Ferry | Ferry | Ferry | Ferry |
+metro | _any_ | Metro | Métro | Metro | Métro |
+rail | railShuttle | RailShuttle | Orlyval, CDG VAL | RailShuttle | Orlyval, CDG VAL |
+rail | suburbanRailway | LocalTrain | Train Transilien | LocalTrain | Train Transilien |
+rail | regionalRail | Train | TER / Intercités | regionalTrain | TER |
+rail | interregionalRail | Train | TER / Intercités | interregionalTrain | Intercités |
+rail | local | RapidTransit | RER | RapidTransit | RER |
+rail | _others_ | **X** | **X** | **X** | **X** | This modes are ignored. Associated lines (and stop times) are discarded.
+trolleyBus | _any_ | Tramway | Tramway | TrolleyBus | TrolleyBus |
+tram | _any_ | Tramway | Tramway | Tramway | Tramway |
+water | _any_ | Boat | Navette maritime / fluviale | Boat | Navette maritime / fluviale |
+cableway | _any_ | Tramway | Tramway | CableWay | CableWay |
+funicular | _any_ | Funicular | Funiculaire | Funicular | Funiculaire |
+lift | _any_ | Bus | Bus | Bus | Bus |
+other | _any_ | Bus | Bus | Bus | Bus |
 
 All `physical_mode` are enhanced with CO2 emission and fallback modes, following
 the documentation in [common.md](common.md#co2-emissions-and-fallback-modes).

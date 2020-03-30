@@ -12,109 +12,282 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+use crate::{minidom_utils::TryOnlyChild, Result};
+use failure::bail;
 use lazy_static::lazy_static;
-use std::collections::HashMap;
+use minidom::Element;
+use std::{
+    collections::HashMap,
+    convert::TryFrom,
+    fmt::{self, Display, Formatter},
+};
 
-pub struct ModeNetexIDF {
+#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum IDFMMode {
+    Air,
+    Bus,
+    CableWay,
+    Coach,
+    Ferry,
+    Funicular,
+    Lift,
+    Metro,
+    Other,
+    RailInterregional,
+    RailRegional,
+    RailShuttle,
+    RailSuburban,
+    RailLocal,
+    TrolleyBus,
+    Tram,
+    Water,
+}
+
+impl TryFrom<&Element> for IDFMMode {
+    type Error = crate::Error;
+    fn try_from(line_element: &Element) -> Result<Self> {
+        let transport_mode: String = line_element
+            .try_only_child("TransportMode")?
+            .text()
+            .parse()?;
+
+        use IDFMMode::*;
+        match transport_mode.as_str() {
+            "air" => Ok(Air),
+            "bus" => Ok(Bus),
+            "cableway" => Ok(CableWay),
+            "coach" => Ok(Coach),
+            "ferry" => Ok(Ferry),
+            "funicular" => Ok(Funicular),
+            "lift" => Ok(Lift),
+            "metro" => Ok(Metro),
+            "other" => Ok(Other),
+            m @ "rail" => {
+                let transport_submode: Option<String> = line_element
+                    .only_child("TransportSubmode")
+                    .and_then(|submode| submode.only_child("RailSubmode"))
+                    .map(|s| s.text())
+                    .and_then(|s| s.parse().ok());
+                match transport_submode.as_deref() {
+                    Some("interregionalRail") => Ok(RailInterregional),
+                    Some("regionalRail") => Ok(RailRegional),
+                    Some("railShuttle") => Ok(RailShuttle),
+                    Some("suburbanRailway") => Ok(RailSuburban),
+                    Some("local") => Ok(RailLocal),
+                    Some(sm) => bail!(
+                        "Unknown Transport Submode '{}' for Transport Mode '{}'",
+                        sm,
+                        m
+                    ),
+                    None => bail!(
+                        "Transport Submode expected but not found for Transport Mode '{}'",
+                        m
+                    ),
+                }
+            }
+            "trolleyBus" => Ok(TrolleyBus),
+            "tram" => Ok(Tram),
+            "water" => Ok(Water),
+            m => bail!("Unknown Transport Mode '{}'", m),
+        }
+    }
+}
+
+impl Display for IDFMMode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::result::Result<(), fmt::Error> {
+        use IDFMMode::*;
+        match self {
+            Air => write!(f, "air"),
+            Bus => write!(f, "bus"),
+            CableWay => write!(f, "cableway"),
+            Coach => write!(f, "coach"),
+            Ferry => write!(f, "ferry"),
+            Funicular => write!(f, "funicular"),
+            Lift => write!(f, "lift"),
+            Metro => write!(f, "metro"),
+            Other => write!(f, "other"),
+            RailInterregional => write!(f, "rail:interregionalRail"),
+            RailRegional => write!(f, "rail:regionalRail"),
+            RailShuttle => write!(f, "rail:railShuttle"),
+            RailSuburban => write!(f, "rail:suburbanRailway"),
+            RailLocal => write!(f, "rail:local"),
+            TrolleyBus => write!(f, "trolleyBus"),
+            Tram => write!(f, "tram"),
+            Water => write!(f, "water"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct NTFSMode {
     // Tuple (mode_id, mode_name)
     pub physical_mode: (&'static str, &'static str),
     pub commercial_mode: (&'static str, &'static str),
 }
 
+impl NTFSMode {
+    pub fn new(
+        physical_mode: (&'static str, &'static str),
+        commercial_mode: (&'static str, &'static str),
+    ) -> Self {
+        NTFSMode {
+            physical_mode,
+            commercial_mode,
+        }
+    }
+}
+
 lazy_static! {
-    pub static ref MODES: HashMap<&'static str, ModeNetexIDF> = {
+    pub static ref MODES: HashMap<IDFMMode, NTFSMode> = {
         let mut m = HashMap::new();
         m.insert(
-            "air",
-            ModeNetexIDF {
-                physical_mode: ("Air", "Avion"),
-                commercial_mode: ("Air", "Avion"),
-            },
+            IDFMMode::Air,
+            NTFSMode::new(("Air", "Avion"), ("Air", "Avion")),
+        );
+        m.insert(IDFMMode::Bus, NTFSMode::new(("Bus", "Bus"), ("Bus", "Bus")));
+        m.insert(
+            IDFMMode::Coach,
+            NTFSMode::new(("Coach", "Autocar"), ("Coach", "Autocar")),
         );
         m.insert(
-            "bus",
-            ModeNetexIDF {
-                physical_mode: ("Bus", "Bus"),
-                commercial_mode: ("Bus", "Bus"),
-            },
+            IDFMMode::Ferry,
+            NTFSMode::new(("Ferry", "Ferry"), ("Ferry", "Ferry")),
         );
         m.insert(
-            "coach",
-            ModeNetexIDF {
-                physical_mode: ("Coach", "Autocar"),
-                commercial_mode: ("Coach", "Autocar"),
-            },
+            IDFMMode::Metro,
+            NTFSMode::new(("Metro", "Métro"), ("Metro", "Métro")),
         );
         m.insert(
-            "ferry",
-            ModeNetexIDF {
-                physical_mode: ("Ferry", "Ferry"),
-                commercial_mode: ("Ferry", "Ferry"),
-            },
+            IDFMMode::RailShuttle,
+            NTFSMode::new(
+                ("RailShuttle", "Orlyval, CDG VAL"),
+                ("RailShuttle", "Orlyval, CDG VAL"),
+            ),
         );
         m.insert(
-            "metro",
-            ModeNetexIDF {
-                physical_mode: ("Metro", "Métro"),
-                commercial_mode: ("Metro", "Métro"),
-            },
+            IDFMMode::RailSuburban,
+            NTFSMode::new(
+                ("LocalTrain", "Train Transilien"),
+                ("LocalTrain", "Train Transilien"),
+            ),
         );
         m.insert(
-            "rail",
-            ModeNetexIDF {
-                physical_mode: ("LocalTrain", "Train régional / TER"),
-                commercial_mode: ("LocalTrain", "Train régional / TER"),
-            },
+            IDFMMode::RailRegional,
+            NTFSMode::new(("Train", "TER / Intercités"), ("regionalRail", "TER")),
         );
         m.insert(
-            "trolleyBus",
-            ModeNetexIDF {
-                physical_mode: ("Tramway", "Tramway"),
-                commercial_mode: ("TrolleyBus", "TrolleyBus"),
-            },
+            IDFMMode::RailInterregional,
+            NTFSMode::new(
+                ("Train", "TER / Intercités"),
+                ("interregionalRail", "Intercités"),
+            ),
         );
         m.insert(
-            "tram",
-            ModeNetexIDF {
-                physical_mode: ("Tramway", "Tramway"),
-                commercial_mode: ("Tramway", "Tramway"),
-            },
+            IDFMMode::RailLocal,
+            NTFSMode::new(("RapidTransit", "RER"), ("RapidTransit", "RER")),
         );
         m.insert(
-            "water",
-            ModeNetexIDF {
-                physical_mode: ("Boat", "Navette maritime / fluviale"),
-                commercial_mode: ("Boat", "Navette maritime / fluviale"),
-            },
+            IDFMMode::TrolleyBus,
+            NTFSMode::new(("Tramway", "Tramway"), ("TrolleyBus", "TrolleyBus")),
         );
         m.insert(
-            "cableway",
-            ModeNetexIDF {
-                physical_mode: ("Tramway", "Tramway"),
-                commercial_mode: ("CableWay", "CableWay"),
-            },
+            IDFMMode::Tram,
+            NTFSMode::new(("Tramway", "Tramway"), ("Tramway", "Tramway")),
         );
         m.insert(
-            "funicular",
-            ModeNetexIDF {
-                physical_mode: ("Funicular", "Funiculaire"),
-                commercial_mode: ("Funicular", "Funiculaire"),
-            },
+            IDFMMode::Water,
+            NTFSMode::new(
+                ("Boat", "Navette maritime / fluviale"),
+                ("Boat", "Navette maritime / fluviale"),
+            ),
         );
         m.insert(
-            "lift",
-            ModeNetexIDF {
-                physical_mode: ("Bus", "Bus"),
-                commercial_mode: ("Bus", "Bus"),
-            },
+            IDFMMode::CableWay,
+            NTFSMode::new(("Tramway", "Tramway"), ("CableWay", "CableWay")),
         );
         m.insert(
-            "other",
-            ModeNetexIDF {
-                physical_mode: ("Bus", "Bus"),
-                commercial_mode: ("Bus", "Bus"),
-            },
+            IDFMMode::Funicular,
+            NTFSMode::new(("Funicular", "Funiculaire"), ("Funicular", "Funiculaire")),
+        );
+        m.insert(
+            IDFMMode::Lift,
+            NTFSMode::new(("Bus", "Bus"), ("Bus", "Bus")),
+        );
+        m.insert(
+            IDFMMode::Other,
+            NTFSMode::new(("Bus", "Bus"), ("Bus", "Bus")),
         );
         m
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn known_transport_mode() {
+        let xml = r#"
+            <Line>
+                <TransportMode>bus</TransportMode>
+            </Line>"#;
+        let line_element: Element = xml.parse().unwrap();
+        let mode = IDFMMode::try_from(&line_element).unwrap();
+        assert_eq!(IDFMMode::Bus, mode);
+    }
+
+    #[test]
+    fn known_transport_submode() {
+        let xml = r#"
+            <Line>
+                <TransportMode>rail</TransportMode>
+                <TransportSubmode>
+                    <RailSubmode>local</RailSubmode>
+                </TransportSubmode>
+            </Line>"#;
+        let line_element: Element = xml.parse().unwrap();
+        let mode = IDFMMode::try_from(&line_element).unwrap();
+        assert_eq!(IDFMMode::RailLocal, mode);
+    }
+
+    #[test]
+    #[should_panic(expected = "Unknown Transport Mode \\'UNKNOWN\\'")]
+    fn unknown_transport_mode() {
+        let xml = r#"
+            <Line>
+                <TransportMode>UNKNOWN</TransportMode>
+            </Line>"#;
+        let line_element: Element = xml.parse().unwrap();
+        IDFMMode::try_from(&line_element).unwrap();
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Unknown Transport Submode \\'UNKNOWN\\' for Transport Mode \\'rail\\'"
+    )]
+    fn unknown_transport_submode() {
+        let xml = r#"
+            <Line>
+                <TransportMode>rail</TransportMode>
+                <TransportSubmode>
+                    <RailSubmode>UNKNOWN</RailSubmode>
+                </TransportSubmode>
+            </Line>"#;
+        let line_element: Element = xml.parse().unwrap();
+        IDFMMode::try_from(&line_element).unwrap();
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Transport Submode expected but not found for Transport Mode \\'rail\\'"
+    )]
+    fn rail_transport_without_submode() {
+        let xml = r#"
+            <Line>
+                <TransportMode>rail</TransportMode>
+            </Line>"#;
+        let line_element: Element = xml.parse().unwrap();
+        IDFMMode::try_from(&line_element).unwrap();
+    }
 }

@@ -101,7 +101,10 @@ fn enhance_with_line_comments(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::objects::{Comment, CommentType, Line};
+    use crate::{
+        netex_idf::modes::IDFMMode,
+        objects::{Comment, CommentType, Line},
+    };
 
     #[test]
     fn enhance_line_comments() {
@@ -131,7 +134,7 @@ mod tests {
             private_code: None,
             network_id: String::from("network_id"),
             company_id: String::from("company_id"),
-            mode: String::from("physical_mode_id"),
+            mode: IDFMMode::Bus,
             color: None,
             text_color: None,
             comment_ids: vec![String::from("comment_id")].into_iter().collect(),

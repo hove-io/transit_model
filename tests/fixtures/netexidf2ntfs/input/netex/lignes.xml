@@ -27,9 +27,9 @@
                      </ValidBetween>
                      <Name>Express 19</Name>
                      <ShortName>19</ShortName>
-                     <TransportMode>bus</TransportMode>
+                     <TransportMode>rail</TransportMode>
                      <TransportSubmode>
-                        <BusSubmode>expressBus</BusSubmode>
+                        <RailSubmode>local</RailSubmode>
                      </TransportSubmode>
                      <PublicCode/>
                      <PrivateCode>011011019</PrivateCode>
