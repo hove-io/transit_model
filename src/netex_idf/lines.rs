@@ -120,7 +120,7 @@ pub fn get_or_create_trip_property<'a>(
 
 fn load_netex_lines(
     frames: &Frames,
-    networks: &CollectionWithId<Network>,
+    networks: &mut CollectionWithId<Network>,
     companies: &CollectionWithId<Company>,
 ) -> Result<(
     CollectionWithId<LineNetexIDF>,
@@ -140,23 +140,50 @@ fn load_netex_lines(
                     .map(Element::text)
                     .ok();
                 let private_code = line.only_child("PrivateCode").map(Element::text);
-                let network_id: String =
-                    skip_error_and_log!(line
-                    .try_only_child("RepresentedByGroupRef")
-                    .and_then(|netref| netref.try_attribute_with("ref", extract_network_id)),
-                    LogLevel::Warn
-                    );
-                if !networks.contains_id(&network_id) {
-                    warn!("Failed to find network {} for line {}", network_id, id);
-                    continue;
-                }
                 let company_id: String = line
                     .try_only_child("OperatorRef")?
                     .try_attribute_with("ref", extract_company_id)?;
-                if !companies.contains_id(&company_id) {
-                    warn!("Failed to find company {} for line {}", company_id, id);
-                    continue;
-                }
+                let company = skip_error_and_log!(
+                    companies.get(&company_id).ok_or_else(|| format_err!(
+                        "Failed to find company {} for line {}",
+                        company_id,
+                        id
+                    )),
+                    LogLevel::Warn
+                );
+                let network_id: String = line
+                    .try_only_child("RepresentedByGroupRef")
+                    .and_then(|netref| {
+                        netref.try_attribute_with::<_, _, String>("ref", extract_network_id)
+                    })
+                    .and_then(|network_id| {
+                        networks.get(&network_id).ok_or_else(|| {
+                            format_err!("Failed to find network {} for line {}", network_id, id)
+                        })
+                    })
+                    .map(|network| network.id.clone())
+                    .or_else::<failure::Error, _>(|error| {
+                        warn!(
+                            "{}. Creating a Network from Operator '{}'.",
+                            error, company_id
+                        );
+
+                        let network_id = format!("Operator_{}", company.id);
+                        if networks.get(&network_id).is_none() {
+                            let mut codes = KeysValues::default();
+                            let raw_company_id: String =
+                                line.try_only_child("OperatorRef")?.try_attribute("ref")?;
+                            codes.insert((String::from("source"), raw_company_id));
+                            let network = Network {
+                                id: network_id.clone(),
+                                name: company.name.clone(),
+                                codes,
+                                ..Default::default()
+                            };
+                            networks.push(network)?;
+                        }
+                        Ok(network_id)
+                    })?;
                 let mode: String = line.try_only_child("TransportMode")?.text().parse()?;
                 MODES
                     .get(mode.as_str())
@@ -321,8 +348,9 @@ pub fn from_path(
                 .try_only_child("CompositeFrame")?
                 .try_only_child("frames")?,
         )?;
-        let (networks, companies) = make_networks_companies(&frames)?;
-        let (lines_netex_idf, trip_properties) = load_netex_lines(&frames, &networks, &companies)?;
+        let (mut networks, companies) = make_networks_companies(&frames)?;
+        let (lines_netex_idf, trip_properties) =
+            load_netex_lines(&frames, &mut networks, &companies)?;
         let lines = make_lines(&lines_netex_idf)?;
         let (physical_modes, commercial_modes) =
             make_physical_and_commercial_modes(&lines_netex_idf)?;
@@ -363,7 +391,7 @@ mod tests {
         let service_frame_lines: Element = xml.parse().unwrap();
         frames.insert(FrameType::Service, vec![&service_frame_lines]);
 
-        let networks = CollectionWithId::new(vec![Network {
+        let mut networks = CollectionWithId::new(vec![Network {
             id: String::from("1"),
             name: String::from("Network1"),
             ..Default::default()
@@ -376,7 +404,7 @@ mod tests {
         }])
         .unwrap();
 
-        load_netex_lines(&frames, &networks, &companies).unwrap();
+        load_netex_lines(&frames, &mut networks, &companies).unwrap();
     }
 
     #[test]
@@ -403,7 +431,7 @@ mod tests {
         let service_frame_lines: Element = xml.parse().unwrap();
         frames.insert(FrameType::Service, vec![&service_frame_lines]);
 
-        let networks = CollectionWithId::new(vec![Network {
+        let mut networks = CollectionWithId::new(vec![Network {
             id: String::from("1"),
             name: String::from("Network1"),
             ..Default::default()
@@ -416,8 +444,61 @@ mod tests {
         }])
         .unwrap();
 
-        let (lines_netex_idf, _) = load_netex_lines(&frames, &networks, &companies).unwrap();
-        assert_eq!(1, lines_netex_idf.len());
+        let (lines_netex_idf, _) = load_netex_lines(&frames, &mut networks, &companies).unwrap();
+        assert_eq!(2, lines_netex_idf.len());
+        let line = lines_netex_idf.get("C00001").unwrap();
+        assert_eq!("1", line.network_id);
+        let line = lines_netex_idf.get("C00002").unwrap();
+        assert_eq!("Operator_1", line.network_id);
+
+        assert_eq!(2, networks.len());
+        let network = networks.get("1").unwrap();
+        assert_eq!("Network1", network.name);
+        let network = networks.get("Operator_1").unwrap();
+        assert_eq!("Operator1", network.name);
+    }
+
+    #[test]
+    fn test_load_netex_two_lines_without_networks_but_same_operator() {
+        let xml = r#"
+            <ServiceFrame>
+               <lines>
+                  <Line id="FR1:Line:C00001:">
+                     <Name>Line 01</Name>
+                     <ShortName>01</ShortName>
+                     <TransportMode>bus</TransportMode>
+                     <OperatorRef ref="FR1:Operator:1:LOC"/>
+                  </Line>
+                  <Line id="FR1:Line:C00002:">
+                     <Name>Line 02</Name>
+                     <ShortName>02</ShortName>
+                     <TransportMode>bus</TransportMode>                     
+                     <OperatorRef ref="FR1:Operator:1:LOC"/>
+                  </Line>
+               </lines>
+            </ServiceFrame>"#;
+        let mut frames = HashMap::new();
+        let service_frame_lines: Element = xml.parse().unwrap();
+        frames.insert(FrameType::Service, vec![&service_frame_lines]);
+
+        let mut networks = CollectionWithId::default();
+        let companies = CollectionWithId::new(vec![Company {
+            id: String::from("1"),
+            name: String::from("Operator1"),
+            ..Default::default()
+        }])
+        .unwrap();
+
+        let (lines_netex_idf, _) = load_netex_lines(&frames, &mut networks, &companies).unwrap();
+        assert_eq!(2, lines_netex_idf.len());
+        let line = lines_netex_idf.get("C00001").unwrap();
+        assert_eq!("Operator_1", line.network_id);
+        let line = lines_netex_idf.get("C00002").unwrap();
+        assert_eq!("Operator_1", line.network_id);
+
+        assert_eq!(1, networks.len());
+        let network = networks.get("Operator_1").unwrap();
+        assert_eq!("Operator1", network.name);
     }
 
     #[test]
