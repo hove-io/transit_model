@@ -98,6 +98,17 @@ lazy_static! {
                     .collect())
             }),
         );
+
+        line_filters.insert(
+            "line_id",
+            Box::new(|model, line_id| {
+                model
+                    .lines
+                    .get_idx(&line_id)
+                    .ok_or_else(|| format_err!("Line '{}' not found.", line_id))
+                    .map(|line_idx| model.get_corresponding_from_idx(line_idx))
+            }),
+        );
         m.insert(ObjectType::Line, line_filters);
         m
     };
