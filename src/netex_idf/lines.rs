@@ -180,10 +180,12 @@ fn load_netex_lines(
                             let raw_company_id: String =
                                 line.try_only_child("OperatorRef")?.try_attribute("ref")?;
                             codes.insert((String::from("source"), raw_company_id));
+                            let timezone = Some(String::from(EUROPE_PARIS_TIMEZONE));
                             let network = Network {
                                 id: network_id.clone(),
                                 name: company.name.clone(),
                                 codes,
+                                timezone,
                                 ..Default::default()
                             };
                             networks.push(network)?;
@@ -427,6 +429,10 @@ mod tests {
         assert_eq!("Network1", network.name);
         let network = networks.get("Operator_1").unwrap();
         assert_eq!("Operator1", network.name);
+        assert_eq!("Europe/Paris", network.timezone.as_ref().unwrap());
+        assert!(network
+            .codes
+            .contains(&(String::from("source"), String::from("FR1:Operator:1:LOC"))));
     }
 
     #[test]
@@ -470,6 +476,10 @@ mod tests {
         assert_eq!(1, networks.len());
         let network = networks.get("Operator_1").unwrap();
         assert_eq!("Operator1", network.name);
+        assert_eq!("Europe/Paris", network.timezone.as_ref().unwrap());
+        assert!(network
+            .codes
+            .contains(&(String::from("source"), String::from("FR1:Operator:1:LOC"))));
     }
 
     #[test]
