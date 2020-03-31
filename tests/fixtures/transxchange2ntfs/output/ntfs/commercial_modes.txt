@@ -1,3 +1,0 @@
-commercial_mode_id,commercial_mode_name
-Ferry,Ferry
-Bus,Bus

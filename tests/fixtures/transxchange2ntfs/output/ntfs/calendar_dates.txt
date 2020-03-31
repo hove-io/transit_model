@@ -1,2 +1,0 @@
-service_id,date,exception_type
-prefix:CD:SCAO812:SL1:VJ1:1,20190422,2
