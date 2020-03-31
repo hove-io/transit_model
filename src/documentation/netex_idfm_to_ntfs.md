@@ -174,8 +174,8 @@ ferry | _any_ | Ferry | Ferry | Ferry | Ferry |
 metro | _any_ | Metro | Métro | Metro | Métro |
 rail | railShuttle | RailShuttle | Orlyval, CDG VAL | RailShuttle | Orlyval, CDG VAL |
 rail | suburbanRailway | LocalTrain | Train Transilien | LocalTrain | Train Transilien |
-rail | regionalRail | Train | TER / Intercités | regionalTrain | TER |
-rail | interregionalRail | Train | TER / Intercités | interregionalTrain | Intercités |
+rail | regionalRail | Train | TER / Intercités | regionalRail | TER |
+rail | interregionalRail | Train | TER / Intercités | interregionalRail | Intercités |
 rail | local | RapidTransit | RER | RapidTransit | RER |
 rail | _others_ | **X** | **X** | **X** | **X** | This modes are ignored. Associated lines (and stop times) are discarded.
 trolleyBus | _any_ | Tramway | Tramway | TrolleyBus | TrolleyBus |
