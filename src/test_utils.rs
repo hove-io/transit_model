@@ -47,12 +47,12 @@ pub fn get_lines_content<P: AsRef<Path>>(path: P) -> BTreeSet<String> {
     set
 }
 
-fn get_files_to_compare<P>(output_dir: &P, files_to_check: Option<Vec<&str>>) -> Vec<String>
+fn get_files_to_compare<P>(dir: P, files_to_check: Option<&Vec<&str>>) -> Vec<String>
 where
     P: AsRef<Path>,
 {
     match files_to_check {
-        None => fs::read_dir(output_dir.as_ref())
+        None => fs::read_dir(dir.as_ref())
             .unwrap()
             .map(|file| file.unwrap())
             .filter(|file| file.path().is_file())
@@ -62,42 +62,62 @@ where
     }
 }
 
-pub fn compare_output_dir_with_expected<P: AsRef<Path>>(
-    output_dir: &P,
+pub fn compare_output_dir_with_expected<P: AsRef<Path>, Q: AsRef<Path>>(
+    output_dir: P,
     files_to_check: Option<Vec<&str>>,
-    work_dir_expected: &str,
+    work_dir_expected: Q,
 ) {
     compare_output_dir_with_expected_lines(output_dir, files_to_check, work_dir_expected);
 }
 
-pub fn compare_output_dir_with_expected_lines<P: AsRef<Path>>(
-    output_dir: &P,
+pub fn compare_output_dir_with_expected_lines<P: AsRef<Path>, Q: AsRef<Path>>(
+    output_dir: P,
     files_to_check: Option<Vec<&str>>,
-    work_dir_expected: &str,
+    work_dir_expected: Q,
 ) {
-    let files = get_files_to_compare(output_dir, files_to_check);
+    let files = get_files_to_compare(&output_dir, files_to_check.as_ref());
+    let expected_files = get_files_to_compare(&work_dir_expected, files_to_check.as_ref());
+    assert_eq!(
+        files.len(),
+        expected_files.len(),
+        "Different number of produced and expected files"
+    );
     for filename in files {
         let output_file_path = output_dir.as_ref().join(filename.clone());
         let output_contents = get_lines_content(output_file_path);
 
-        let expected_file_path = format!("{}/{}", work_dir_expected, filename);
+        let expected_file_path = format!(
+            "{}/{}",
+            work_dir_expected.as_ref().to_string_lossy(),
+            filename
+        );
         let expected_contents = get_lines_content(expected_file_path);
 
         assert_eq!(expected_contents, output_contents);
     }
 }
 
-pub fn compare_output_dir_with_expected_content<P: AsRef<Path>>(
-    output_dir: &P,
+pub fn compare_output_dir_with_expected_content<P: AsRef<Path>, Q: AsRef<Path>>(
+    output_dir: P,
     files_to_check: Option<Vec<&str>>,
-    work_dir_expected: &str,
+    work_dir_expected: Q,
 ) {
-    let files = get_files_to_compare(output_dir, files_to_check);
+    let files = get_files_to_compare(&output_dir, files_to_check.as_ref());
+    let expected_files = get_files_to_compare(&work_dir_expected, files_to_check.as_ref());
+    assert_eq!(
+        files.len(),
+        expected_files.len(),
+        "Different number of produced and expected files"
+    );
     for filename in files {
         let output_file_path = output_dir.as_ref().join(filename.clone());
         let output_contents = get_file_content(output_file_path);
 
-        let expected_file_path = format!("{}/{}", work_dir_expected, filename);
+        let expected_file_path = format!(
+            "{}/{}",
+            work_dir_expected.as_ref().to_string_lossy(),
+            filename
+        );
         let expected_contents = get_file_content(expected_file_path);
 
         assert_eq!(expected_contents, output_contents);
