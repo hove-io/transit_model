@@ -88,6 +88,24 @@ fn test_remove_line_by_line_code() {
 }
 
 #[test]
+fn test_remove_line_by_line_id() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "tests/fixtures/filter_ntfs/input";
+
+        let mut filter = filter::Filter::new(filter::Action::Remove);
+        filter.add(filter::ObjectType::Line, "line_id", "line3");
+
+        let model = filter::filter(transit_model::ntfs::read(input_dir).unwrap(), &filter).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            None,
+            "./tests/fixtures/filter_ntfs/output_remove_line",
+        );
+    });
+}
+
+#[test]
 fn test_extract_multiple_line_by_line_code() {
     test_in_tmp_dir(|path| {
         let input_dir = "tests/fixtures/filter_ntfs/input";
