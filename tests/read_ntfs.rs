@@ -36,6 +36,7 @@ where
 }
 
 #[test]
+#[allow(clippy::cognitive_complexity)]
 fn minimal() {
     let ntm = transit_model::ntfs::read("tests/fixtures/minimal_ntfs/").unwrap();
 

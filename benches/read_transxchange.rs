@@ -16,6 +16,7 @@
 
 extern crate test;
 
+use chrono::NaiveDate;
 use test::Bencher;
 use transit_model::transxchange;
 
@@ -27,6 +28,8 @@ fn read_transxchange(bencher: &mut Bencher) {
             "./tests/fixtures/transxchange2ntfs/input/naptan",
             None,
             None,
+            None,
+            NaiveDate::from_ymd(2020, 4, 10),
         )
         .unwrap()
     });

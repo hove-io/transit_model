@@ -924,7 +924,7 @@ impl Coord {
     /// # use transit_model::objects::Coord;
     /// # fn get_coords() -> Vec<Coord> { vec![] }
     /// let v: Vec<Coord> = get_coords();
-    /// let from = Coord { lon: 2.37715, lat: 48.846781 };
+    /// let from = Coord { lon: 2.37715, lat: 48.846_781 };
     /// let approx = from.approx();
     /// for coord in &v {
     ///     println!("distance({:?}, {:?}) = {}", from, coord, approx.sq_distance_to(coord).sqrt());
@@ -957,7 +957,7 @@ impl Approx {
     /// # use transit_model::objects::Coord;
     /// # fn get_coords() -> Vec<Coord> { vec![] }
     /// let v: Vec<Coord> = get_coords();
-    /// let from = Coord { lon: 2.37715, lat: 48.846781 };
+    /// let from = Coord { lon: 2.37715, lat: 48.846_781 };
     /// let one_km_squared = 1_000. * 1_000.;
     /// let approx = from.approx();
     /// for coord in &v {
@@ -1755,6 +1755,7 @@ impl AddPrefix for GridRelCalendarLine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use approx::relative_eq;
     use pretty_assertions::assert_eq;
     use serde_json;
 
@@ -1792,7 +1793,7 @@ mod tests {
 
     #[test]
     fn rgb_deserialization_with_bad_number_of_digits() {
-        for color in ["F", "FF", "FFF", "FFFF", "FFFFF"].iter() {
+        for &color in ["F", "FF", "FFF", "FFFF", "FFFFF"].iter() {
             let json_value = serde_json::Value::String(color.to_string());
             let rgb: Result<Rgb, _> = serde_json::from_value(json_value);
 
@@ -1848,51 +1849,28 @@ mod tests {
         assert!(de("00:00:AA").is_err());
     }
 
-    fn nearly_equal(x: f64, y: f64, epsilon: f64) -> bool {
-        if x == y {
-            true
-        } else {
-            let normalized_delta = (x - y).abs() / y;
-            normalized_delta < epsilon
-        }
-    }
-
-    const TOLERANCE: f64 = 0.001;
-
     // distance between COORD1 and COORD2 is 357.64 from
     // https://gps-coordinates.org/distance-between-coordinates.php
     const COORD1: Coord = Coord {
-        lon: 2.377054,
-        lat: 48.846995,
+        lon: 2.377_054,
+        lat: 48.846_995,
     };
     const COORD2: Coord = Coord {
-        lon: 2.374377,
-        lat: 48.844304,
+        lon: 2.374_377,
+        lat: 48.844_304,
     };
 
     #[test]
     fn orthodromic_distance() {
-        assert!(nearly_equal(COORD1.distance_to(&COORD1), 0.0, TOLERANCE));
-        assert!(nearly_equal(COORD1.distance_to(&COORD2), 357.64, TOLERANCE));
-        assert!(nearly_equal(COORD2.distance_to(&COORD1), 357.64, TOLERANCE));
+        relative_eq!(COORD1.distance_to(&COORD1), 0.0);
+        relative_eq!(COORD1.distance_to(&COORD2), 357.64);
+        relative_eq!(COORD2.distance_to(&COORD1), 357.64);
     }
 
     #[test]
     fn approx_distance() {
-        assert!(nearly_equal(
-            COORD1.approx().sq_distance_to(&COORD1).sqrt(),
-            0.0,
-            TOLERANCE
-        ));
-        assert!(nearly_equal(
-            COORD1.approx().sq_distance_to(&COORD2).sqrt(),
-            357.64,
-            TOLERANCE
-        ));
-        assert!(nearly_equal(
-            COORD2.approx().sq_distance_to(&COORD1).sqrt(),
-            357.64,
-            TOLERANCE
-        ));
+        relative_eq!(COORD1.approx().sq_distance_to(&COORD1).sqrt(), 0.0,);
+        relative_eq!(COORD1.approx().sq_distance_to(&COORD2).sqrt(), 357.64,);
+        relative_eq!(COORD2.approx().sq_distance_to(&COORD1).sqrt(), 357.64,);
     }
 }

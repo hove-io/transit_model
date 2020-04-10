@@ -19,16 +19,17 @@ extern crate test;
 use test::Bencher;
 use transit_model::{
     ntfs,
-    ntfs::{filter, filter::Action::*},
+    ntfs::filter::{self, Action::*, ObjectType},
 };
 
 #[bench]
 fn filter_ntfs_extract(bencher: &mut Bencher) {
     bencher.iter(|| {
+        let mut filter = filter::Filter::new(Extract);
+        filter.add(ObjectType::Network, "network_id", "network1");
         filter::filter(
             ntfs::read("./tests/fixtures/filter_ntfs/input").unwrap(),
-            Extract,
-            vec![String::from("network1")],
+            &filter,
         )
     });
 }
@@ -36,10 +37,11 @@ fn filter_ntfs_extract(bencher: &mut Bencher) {
 #[bench]
 fn filter_ntfs_remove(bencher: &mut Bencher) {
     bencher.iter(|| {
+        let mut filter = filter::Filter::new(Remove);
+        filter.add(ObjectType::Network, "network_id", "network1");
         filter::filter(
             ntfs::read("./tests/fixtures/filter_ntfs/input").unwrap(),
-            Remove,
-            vec![String::from("network1")],
+            &filter,
         )
     });
 }

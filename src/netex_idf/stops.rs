@@ -421,7 +421,7 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let coords = load_coords(&root).unwrap();
 
-            assert_eq!((666944.0, 6856019.0), coords);
+            assert_eq!((666_944.0, 6_856_019.0), coords);
         }
     }
 

@@ -1,5 +1,5 @@
 [package]
-authors = ["Kisio Digital <team.coretools@kisio.org>", "Guillaume Pinot <texitoi@texitoi.eu>"]
+authors = ["Kisio Digital <team.coretools@kisio.com>", "Guillaume Pinot <texitoi@texitoi.eu>"]
 name = "transit_model"
 version = "0.16.1"
 license = "AGPL-3.0-only"

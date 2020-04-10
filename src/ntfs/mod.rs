@@ -370,8 +370,8 @@ mod tests {
         let dataset = Dataset {
             id: "Foo:0".to_string(),
             contributor_id: "Foo".to_string(),
-            start_date: chrono::NaiveDate::from_ymd(2018, 01, 30),
-            end_date: chrono::NaiveDate::from_ymd(2018, 01, 31),
+            start_date: chrono::NaiveDate::from_ymd(2018, 1, 30),
+            end_date: chrono::NaiveDate::from_ymd(2018, 1, 31),
             dataset_type: Some(DatasetType::Theorical),
             extrapolation: false,
             desc: Some("description".to_string()),
@@ -583,8 +583,8 @@ mod tests {
                 name: "Gare de Saint-Cyr l'École".to_string(),
                 visible: true,
                 coord: Coord {
-                    lon: 2.073034,
-                    lat: 48.799115,
+                    lon: 2.073_034,
+                    lat: 48.799_115,
                 },
                 stop_area_id: "OIF:SA:8739322".to_string(),
                 timezone: Some("Europe/Paris".to_string()),
@@ -597,8 +597,8 @@ mod tests {
                 name: "Division Leclerc".to_string(),
                 visible: true,
                 coord: Coord {
-                    lon: 2.073407,
-                    lat: 48.800598,
+                    lon: 2.073_407,
+                    lat: 48.800_598,
                 },
                 stop_area_id: "OIF:SA:2:1468".to_string(),
                 timezone: Some("Europe/Paris".to_string()),
@@ -737,8 +737,8 @@ mod tests {
             Dataset {
                 id: "Foo:0".to_string(),
                 contributor_id: "Foo".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2018, 01, 30),
-                end_date: chrono::NaiveDate::from_ymd(2018, 01, 31),
+                start_date: chrono::NaiveDate::from_ymd(2018, 1, 30),
+                end_date: chrono::NaiveDate::from_ymd(2018, 1, 31),
                 dataset_type: Some(DatasetType::Theorical),
                 extrapolation: false,
                 desc: Some("description".to_string()),
@@ -747,8 +747,8 @@ mod tests {
             Dataset {
                 id: "Bar:0".to_string(),
                 contributor_id: "Bar".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2018, 01, 30),
-                end_date: chrono::NaiveDate::from_ymd(2018, 01, 31),
+                start_date: chrono::NaiveDate::from_ymd(2018, 1, 30),
+                end_date: chrono::NaiveDate::from_ymd(2018, 1, 31),
                 dataset_type: None,
                 extrapolation: false,
                 desc: None,
@@ -834,8 +834,8 @@ mod tests {
                 name: "sp_name_1".to_string(),
                 visible: true,
                 coord: Coord {
-                    lon: 2.073034,
-                    lat: 48.799115,
+                    lon: 2.073_034,
+                    lat: 48.799_115,
                 },
                 timezone: Some("Europe/Paris".to_string()),
                 geometry_id: Some("geometry_1".to_string()),
@@ -851,8 +851,8 @@ mod tests {
                 name: "sa_name_2".to_string(),
                 visible: true,
                 coord: Coord {
-                    lon: 2.173034,
-                    lat: 47.899115,
+                    lon: 2.173_034,
+                    lat: 47.899_115,
                 },
                 stop_area_id: "Navitia:sa_2".to_string(),
                 stop_type: StopType::Point,
@@ -870,8 +870,8 @@ mod tests {
                 comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
-                    lon: 2.173034,
-                    lat: 47.899115,
+                    lon: 2.173_034,
+                    lat: 47.899_115,
                 },
                 timezone: None,
                 geometry_id: None,
@@ -886,8 +886,8 @@ mod tests {
                 comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
-                    lon: 2.073034,
-                    lat: 48.799115,
+                    lon: 2.073_034,
+                    lat: 48.799_115,
                 },
                 timezone: Some("Europe/Paris".to_string()),
                 geometry_id: Some("geometry_3".to_string()),
@@ -952,8 +952,8 @@ mod tests {
             comment_links: btree_set_from_vec(vec![comments.get_idx("c:1").unwrap()]),
             visible: true,
             coord: Coord {
-                lon: 2.073034,
-                lat: 48.799115,
+                lon: 2.073_034,
+                lat: 48.799_115,
             },
             stop_area_id: "sa_1".to_string(),
             stop_type: StopType::Point,
@@ -974,8 +974,8 @@ mod tests {
             comment_links: btree_set_from_vec(vec![comments.get_idx("c:2").unwrap()]),
             visible: true,
             coord: Coord {
-                lon: 2.073034,
-                lat: 48.799115,
+                lon: 2.073_034,
+                lat: 48.799_115,
             },
             timezone: None,
             geometry_id: None,
@@ -1311,13 +1311,15 @@ mod tests {
         test_serialize_deserialize_collection_with_id(vec![
             Geometry {
                 id: "geo-id-1".to_string(),
-                geometry: line_string![(x: 2.541951, y: 49.013402), (x: 2.571294, y: 49.004725)]
-                    .into(),
+                geometry:
+                    line_string![(x: 2.541_951, y: 49.013_402), (x: 2.571_294, y: 49.004_725)]
+                        .into(),
             },
             Geometry {
                 id: "geo-id-2".to_string(),
-                geometry: line_string![(x: 2.548309, y: 49.009182), (x: 2.549309, y: 49.009253)]
-                    .into(),
+                geometry:
+                    line_string![(x: 2.548_309, y: 49.009_182), (x: 2.549_309, y: 49.009_253)]
+                        .into(),
             },
         ]);
     }
@@ -1348,7 +1350,7 @@ mod tests {
         test_serialize_deserialize_collection(vec![
             PriceV1 {
                 id: "PV1-01".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                start_date: chrono::NaiveDate::from_ymd(2019, 1, 1),
                 end_date: chrono::NaiveDate::from_ymd(2019, 12, 31),
                 price: 190,
                 name: "Ticket PV1-01".to_string(),
@@ -1358,7 +1360,7 @@ mod tests {
             },
             PriceV1 {
                 id: "PV1-02".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                start_date: chrono::NaiveDate::from_ymd(2019, 1, 1),
                 end_date: chrono::NaiveDate::from_ymd(2019, 12, 31),
                 price: 280,
                 name: "Ticket PV1-02".to_string(),
@@ -1459,14 +1461,14 @@ mod tests {
                 ticket_id: "PF1:Ticket1".to_string(),
                 price: dec!(150.0),
                 currency: "EUR".to_string(),
-                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 1, 1),
                 ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
             },
             TicketPrice {
                 ticket_id: "PF2:Ticket2".to_string(),
                 price: dec!(900.0),
                 currency: "GHS".to_string(),
-                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 01, 01),
+                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 1, 1),
                 ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
             },
         ]);

@@ -21,5 +21,7 @@ use transit_model::kv1;
 
 #[bench]
 fn read_kv1(bencher: &mut Bencher) {
-    bencher.iter(|| kv1::read_from_path("./tests/fixtures/kv12ntfs/input", None, None).unwrap());
+    bencher.iter(|| {
+        kv1::read_from_path("./tests/fixtures/kv12ntfs/input", None::<&str>, None).unwrap()
+    });
 }

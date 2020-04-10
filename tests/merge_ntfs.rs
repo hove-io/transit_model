@@ -41,6 +41,7 @@ fn merge_collections_with_collisions() {
 }
 
 #[test]
+#[allow(clippy::cognitive_complexity)]
 fn merge_collections_ok() {
     let mut collections = Collections::default();
     let input_dirs = ["tests/fixtures/ntfs", "tests/fixtures/merge-ntfs/input"];
@@ -63,7 +64,7 @@ fn merge_collections_ok() {
     assert_eq!(1, count_bus);
     // Check that the merge of CO2 emission keeps only the biggest value
     let bus_mode = collections.physical_modes.get("Bus").unwrap();
-    assert_eq!(132f32, bus_mode.co2_emission.unwrap());
+    assert!((bus_mode.co2_emission.unwrap() - 132f32).abs() < std::f32::EPSILON);
 
     assert_eq!(5, collections.commercial_modes.len());
     // 4 + 3 automatically inserted 'Bike', 'BikeSharingService', and 'Car'

@@ -1926,10 +1926,7 @@ mod tests {
                     ("my_prefix:sa:03", Some("my_prefix:0")),
                 ],
                 extract(
-                    |obj| (
-                        obj.id.as_str(),
-                        obj.equipment_id.as_ref().map(|e| e.as_str())
-                    ),
+                    |obj| (obj.id.as_str(), obj.equipment_id.as_deref()),
                     &collections.stop_areas,
                 )
             );
@@ -1946,7 +1943,7 @@ mod tests {
                     |obj| (
                         obj.id.as_str(),
                         obj.stop_area_id.as_str(),
-                        obj.equipment_id.as_ref().map(|e| e.as_str())
+                        obj.equipment_id.as_deref()
                     ),
                     &collections.stop_points,
                 )
@@ -1961,8 +1958,8 @@ mod tests {
                         obj.id.as_str(),
                         obj.network_id.as_str(),
                         obj.commercial_mode_id.as_str(),
-                        obj.forward_direction.as_ref().map(|e| e.as_str()),
-                        obj.backward_direction.as_ref().map(|e| e.as_str()),
+                        obj.forward_direction.as_deref(),
+                        obj.backward_direction.as_deref(),
                     ),
                     &collections.lines,
                 )
@@ -1976,7 +1973,7 @@ mod tests {
                     |obj| (
                         obj.id.as_str(),
                         obj.line_id.as_str(),
-                        obj.destination_id.as_ref().map(|e| e.as_str())
+                        obj.destination_id.as_deref()
                     ),
                     &collections.routes,
                 )
@@ -2036,7 +2033,7 @@ mod tests {
                         obj.route_id.as_str(),
                         obj.dataset_id.as_str(),
                         obj.service_id.as_str(),
-                        obj.geometry_id.as_ref().map(|e| e.as_str())
+                        obj.geometry_id.as_deref()
                     ),
                     &collections.vehicle_journeys,
                 )

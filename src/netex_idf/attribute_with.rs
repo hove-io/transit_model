@@ -111,7 +111,7 @@ mod tests {
         let xml: &'static str = r#"<root id="root:1" />"#;
         let root: Element = xml.parse().unwrap();
         root.try_attribute_with::<_, _, f64>("id", |id| {
-            id.split(':').nth(0).ok_or_else(|| format_err!("Boom!"))
+            id.split(':').next().ok_or_else(|| format_err!("Boom!"))
         })
         .unwrap();
     }
