@@ -29,6 +29,28 @@ use skip_error::skip_error_and_log;
 use std::{collections::HashMap, fs::File, io::Read};
 use typed_index_collection::CollectionWithId;
 
+type VirtualStopPoint = StopPoint;
+type Stops = (
+    CollectionWithId<StopArea>,
+    CollectionWithId<StopPoint>,
+    CollectionWithId<Equipment>,
+    CollectionWithId<VirtualStopPoint>,
+);
+
+impl From<StopArea> for StopPoint {
+    fn from(stop_area: StopArea) -> Self {
+        StopPoint {
+            id: stop_area.id.clone(),
+            name: stop_area.name,
+            visible: stop_area.visible,
+            coord: stop_area.coord,
+            stop_area_id: stop_area.id.clone(),
+            stop_type: StopType::Point,
+            ..Default::default()
+        }
+    }
+}
+
 pub fn extract_quay_id(raw_id: &str) -> Result<&str> {
     raw_id
         .split(':')
@@ -97,29 +119,40 @@ fn load_stop_areas<'a>(
     stop_places: Vec<&'a Element>,
     map_stopplace_stoparea: &mut HashMap<String, String>,
     proj: &Proj,
-) -> Result<CollectionWithId<StopArea>> {
+) -> Result<(
+    CollectionWithId<StopArea>,
+    CollectionWithId<VirtualStopPoint>,
+)> {
     let mut stop_areas = CollectionWithId::default();
+    let mut virtual_stop_points = CollectionWithId::default();
 
     let has_parent_site_ref = |sp: &Element| sp.try_only_child("ParentSiteRef").is_ok();
 
     for stop_place in stop_places.iter().filter(|sp| !has_parent_site_ref(sp)) {
-        stop_areas.push(load_stop_area(stop_place, proj)?)?;
+        let loaded_stop_area = load_stop_area(stop_place, proj)?;
+        if loaded_stop_area.id.contains("monomodalStopPlace:") {
+            virtual_stop_points.push(StopPoint::from(loaded_stop_area.clone()))?;
+        }
+        stop_areas.push(loaded_stop_area)?;
     }
 
     for stop_place in stop_places.iter().filter(|sp| has_parent_site_ref(sp)) {
         let parent_site_ref: String = stop_place
             .try_only_child("ParentSiteRef")?
             .try_attribute_with("ref", extract_multimodal_stop_place_id)?;
-
         let stop_place_id = stop_place.try_attribute_with("id", extract_monomodal_stop_place_id)?;
+        let loaded_stop_area = load_stop_area(stop_place, proj)?;
+        let mut virtual_stop_point = StopPoint::from(loaded_stop_area.clone());
         if stop_areas.get(&parent_site_ref).is_some() {
-            map_stopplace_stoparea.insert(stop_place_id, parent_site_ref.clone());
+            virtual_stop_point.stop_area_id = parent_site_ref.clone();
+            map_stopplace_stoparea.insert(stop_place_id, parent_site_ref);
         } else {
-            stop_areas.push(load_stop_area(stop_place, proj)?)?;
+            stop_areas.push(loaded_stop_area)?;
             map_stopplace_stoparea.insert(stop_place_id.clone(), stop_place_id);
         }
+        virtual_stop_points.push(virtual_stop_point)?;
     }
-    Ok(stop_areas)
+    Ok((stop_areas, virtual_stop_points))
 }
 
 fn load_coords(elem: &Element) -> Result<(f64, f64)> {
@@ -275,13 +308,7 @@ fn load_stop_points<'a>(
     Ok((stop_points, CollectionWithId::new(equipments)?))
 }
 
-fn load_stops(
-    frames: &Frames,
-) -> Result<(
-    CollectionWithId<StopArea>,
-    CollectionWithId<StopPoint>,
-    CollectionWithId<Equipment>,
-)> {
+fn load_stops(frames: &Frames) -> Result<Stops> {
     let member_children = || {
         frames
             .get(&FrameType::General)
@@ -298,8 +325,7 @@ fn load_stops(
         .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))?;
 
     let mut map_stopplace_stoparea = HashMap::default();
-
-    let mut stop_areas = load_stop_areas(
+    let (mut stop_areas, virtual_stop_points) = load_stop_areas(
         member_children()
             .filter(|e| e.name() == "StopPlace")
             .collect(),
@@ -314,10 +340,13 @@ fn load_stops(
         &proj,
     )?;
 
-    Ok((stop_areas, stop_points, equipments))
+    Ok((stop_areas, stop_points, equipments, virtual_stop_points))
 }
 
-pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Result<()> {
+pub fn from_path(
+    path: &std::path::Path,
+    collections: &mut Collections,
+) -> Result<CollectionWithId<VirtualStopPoint>> {
     info!("Reading {:?}", path);
 
     let mut file = File::open(&path).with_context(|_| format!("Error reading {:?}", path))?;
@@ -332,13 +361,13 @@ pub fn from_path(path: &std::path::Path, collections: &mut Collections) -> Resul
             .try_only_child("frames")?,
     )?;
 
-    let (stop_areas, stop_points, equipments) = load_stops(&frames)?;
+    let (stop_areas, stop_points, equipments, virtual_stop_points) = load_stops(&frames)?;
 
     collections.stop_areas.try_merge(stop_areas)?;
     collections.stop_points.try_merge(stop_points)?;
     collections.equipments.try_merge(equipments)?;
 
-    Ok(())
+    Ok(virtual_stop_points)
 }
 
 #[cfg(test)]

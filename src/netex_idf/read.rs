@@ -48,7 +48,7 @@ where
     collections.feed_infos = feed_infos;
 
     let path = netex_idf_path.as_ref();
-    stops::from_path(&path.join(STOPS_FILENAME), &mut collections)?;
+    let virtual_stop_points = stops::from_path(&path.join(STOPS_FILENAME), &mut collections)?;
     let lines_netex_idf = lines::from_path(&path.join(LINES_FILENAME), &mut collections)?;
     for offer_folder in WalkDir::new(path)
         .min_depth(1)
@@ -59,7 +59,12 @@ where
     {
         info!("Reading offer in folder {:?}", offer_folder.path());
         skip_error_and_log!(
-            offers::read_offer_folder(offer_folder.path(), &mut collections, &lines_netex_idf),
+            offers::read_offer_folder(
+                offer_folder.path(),
+                &mut collections,
+                &lines_netex_idf,
+                &virtual_stop_points
+            ),
             LogLevel::Warn
         );
     }

@@ -976,7 +976,7 @@ impl Approx {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
 pub struct StopArea {
     pub id: String,
     pub name: String,

@@ -59,6 +59,8 @@ pub enum GeneralFrameType {
     Common,
 }
 type GeneralFrames<'a> = HashMap<GeneralFrameType, &'a Element>;
+type VehicleJourneyStopAssignment = HashMap<(String, String), Idx<StopPoint>>;
+type VirtualStopPoint = StopPoint;
 
 impl std::fmt::Display for GeneralFrameType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -76,8 +78,10 @@ struct DestinationDisplay {
     public_code: Option<String>,
 }
 type DestinationDisplays = HashMap<String, DestinationDisplay>;
+#[derive(Debug, Clone)]
 struct StopPointInJourneyPattern {
     stop_point_idx: Idx<StopPoint>,
+    scheduled_stop_point_ref: String,
     pickup_type: u8,
     drop_off_type: u8,
     local_zone_id: Option<u16>,
@@ -189,6 +193,7 @@ pub fn read_offer_folder(
     offer_folder: &Path,
     collections: &mut Collections,
     lines_netex_idf: &CollectionWithId<LineNetexIDF>,
+    virtual_stop_points: &CollectionWithId<VirtualStopPoint>,
 ) -> Result<()> {
     let calendars_path = offer_folder.join(CALENDARS_FILENAME);
     let (map_daytypes, validity_period) = if calendars_path.exists() {
@@ -249,8 +254,14 @@ pub fn read_offer_folder(
             .map_err(|_| format_err!("Failed to open {}", offer_path.display()))?;
         info!("Reading {}", offer_path.display());
         let (routes, vehicle_journeys, calendars) = skip_error_and_log!(
-            parse_offer(&offer, collections, lines_netex_idf, &map_daytypes)
-                .map_err(|e| format_err!("Skip file {}: {}", offer_path.display(), e)),
+            parse_offer(
+                &offer,
+                collections,
+                lines_netex_idf,
+                &map_daytypes,
+                virtual_stop_points
+            )
+            .map_err(|e| format_err!("Skip file {}: {}", offer_path.display(), e)),
             LogLevel::Warn
         );
         collections.routes.try_merge(routes)?;
@@ -320,10 +331,14 @@ where
             map_schedule_stop_point_quay,
         )
         .map_err(|err| format_err!("impossible to get the stop point: {}", err))?;
+        let scheduled_stop_point_ref: String = stop_point_in_journey_pattern_element
+            .try_only_child("ScheduledStopPointRef")
+            .and_then(|ssp_ref_el| ssp_ref_el.try_attribute::<String>("ref"))?;
         let pickup_type = boarding_type(stop_point_in_journey_pattern_element, "ForBoarding");
         let drop_off_type = boarding_type(stop_point_in_journey_pattern_element, "ForAlighting");
         Ok(StopPointInJourneyPattern {
             stop_point_idx,
+            scheduled_stop_point_ref,
             pickup_type,
             drop_off_type,
             local_zone_id: None,
@@ -432,19 +447,103 @@ where
         .collect()
 }
 
-fn parse_passenger_stop_assignment<'a, I>(psa_elements: I) -> HashMap<String, String>
+pub fn get_stop_point(
+    stop_point_id: &str,
+    stop_points: &mut CollectionWithId<StopPoint>,
+    virtual_stop_points: &CollectionWithId<VirtualStopPoint>,
+) -> Result<Idx<StopPoint>> {
+    let stop_point_idx = if let Some(sp_idx) = stop_points.get_idx(&stop_point_id) {
+        sp_idx
+    } else {
+        let virtual_stop_point = virtual_stop_points
+            .get(&stop_point_id)
+            .ok_or_else(|| format_err!("Failed to find StopPoint {}", stop_point_id))?;
+        stop_points.push(virtual_stop_point.to_owned())?
+    };
+    Ok(stop_point_idx)
+}
+
+fn parse_passenger_stop_assignment<'a, I>(
+    psa_elements: I,
+    stop_points: &mut CollectionWithId<StopPoint>,
+    virtual_stop_points: &CollectionWithId<VirtualStopPoint>,
+) -> HashMap<String, String>
 where
     I: Iterator<Item = &'a Element>,
 {
     psa_elements
         .filter_map(|psa_element| {
+            let psa_id: String = psa_element.attribute("id")?;
             let scheduled_stop_point_ref: String = psa_element
                 .only_child("ScheduledStopPointRef")?
                 .attribute("ref")?;
-            let quay_ref: String = psa_element
+            let get_quay_ref = |element: &Element| -> Option<String> {
+                element.only_child("QuayRef").and_then(|quay_ref_el| {
+                    quay_ref_el.attribute_with("ref", stops::extract_quay_id)
+                })
+            };
+            let mut get_stop_place_ref = |element: &Element| -> Option<String> {
+                element
+                    .only_child("StopPlaceRef")
+                    .and_then(|stop_place_ref_el| {
+                        stop_place_ref_el.attribute_with::<_, _, String>(
+                            "ref",
+                            stops::extract_monomodal_stop_place_id,
+                        )
+                    })
+                    .map(|spr| get_stop_point(&spr, stop_points, virtual_stop_points))?
+                    .map(|sp_idx| stop_points[sp_idx].id.clone())
+                    // We only want to WARN about the error so
+                    // the `.map_err` doesn't have to return the error
+                    .map_err(|e| warn!("{}", e))
+                    // Error is ignored here
+                    .ok()
+            };
+            get_quay_ref(psa_element)
+                .or_else(|| get_stop_place_ref(psa_element))
+                .map(|stop_id| (scheduled_stop_point_ref, stop_id))
+                .or_else(|| {
+                    warn!(
+                        "Missing QuayRef or StopPlaceRef node in PassengerStopAssignment {}",
+                        psa_id
+                    );
+                    None
+                })
+        })
+        .collect()
+}
+
+fn parse_vehicle_journey_stop_assignment<'a, I>(
+    vjsa_elements: I,
+    stop_points: &CollectionWithId<StopPoint>,
+) -> VehicleJourneyStopAssignment
+where
+    I: Iterator<Item = &'a Element>,
+{
+    vjsa_elements
+        .filter_map(|vjsa_element| {
+            let vjsa_id: String = vjsa_element.attribute("id")?;
+            let vehicle_journey_ref: String = vjsa_element
+                .only_child("VehicleJourneyRef")?
+                .attribute("ref")?;
+            let scheduled_stop_point_ref: String = vjsa_element
+                .only_child("ScheduledStopPointRef")?
+                .attribute("ref")?;
+            let quay_ref: String = vjsa_element
                 .only_child("QuayRef")?
                 .attribute_with("ref", stops::extract_quay_id)?;
-            Some((scheduled_stop_point_ref, quay_ref))
+            if let Some(stop_point_idx) = stop_points.get_idx(&quay_ref) {
+                Some((
+                    (vehicle_journey_ref, scheduled_stop_point_ref),
+                    stop_point_idx,
+                ))
+            } else {
+                warn!(
+                    "Failed to find Quay {} in VehicleJourneyStopAssignment {}",
+                    quay_ref, vjsa_id
+                );
+                None
+            }
         })
         .collect()
 }
@@ -487,12 +586,18 @@ fn enhance_with_object_code(
     journey_patterns: &JourneyPatterns,
 ) -> CollectionWithId<Route> {
     let mut enhanced_routes = CollectionWithId::default();
-    let map_routes_journeypatterns: HashMap<&String, String> = journey_patterns
-        .iter()
-        .map(|(jp_id, journey_pattern)| (&journey_pattern.route.id, jp_id.clone()))
-        .collect();
+    let map_routes_journeypatterns: HashMap<&String, Vec<String>> =
+        journey_patterns
+            .iter()
+            .fold(HashMap::new(), |mut mrjp, (jp_id, journey_pattern)| {
+                mrjp.entry(&journey_pattern.route.id)
+                    .or_insert_with(Vec::new)
+                    .push(jp_id.clone());
+                mrjp
+            });
+
     for route in routes.values() {
-        let journey_pattern_ref = skip_error_and_log!(
+        let journey_patterns_ref = skip_error_and_log!(
             map_routes_journeypatterns.get(&route.id).ok_or_else(|| {
                 format_err!(
                     "Route {} doesn't have any ServiceJourneyPattern associated",
@@ -502,10 +607,12 @@ fn enhance_with_object_code(
             LogLevel::Warn
         );
         let mut codes = KeysValues::default();
-        codes.insert((
-            "Netex_ServiceJourneyPattern".into(),
-            journey_pattern_ref.clone(),
-        ));
+        for journey_pattern_ref in journey_patterns_ref {
+            codes.insert((
+                "Netex_ServiceJourneyPattern".into(),
+                journey_pattern_ref.clone(),
+            ));
+        }
         let mut route = route.clone();
         route.codes.extend(codes);
         // We are inserting only routes that were already in a 'CollectionWithId'
@@ -588,12 +695,13 @@ fn stop_point_idx(
 fn stop_times(
     service_journey_element: &Element,
     journey_patterns: &JourneyPatterns,
+    map_vj_schedule_stop_point_quay: &VehicleJourneyStopAssignment,
 ) -> Result<Vec<StopTime>> {
+    let service_journey_id: String = service_journey_element.try_attribute("id")?;
     let timetable_passing_times = service_journey_element
         .only_child("passingTimes")
         .into_iter()
         .flat_map(|el| el.children());
-
     let journey_pattern_ref: String = service_journey_element
         .try_only_child("JourneyPatternRef")?
         .try_attribute("ref")?;
@@ -608,10 +716,20 @@ fn stop_times(
         .map(|(sequence, (tpt, stop_point_in_journey_pattern))| {
             let StopPointInJourneyPattern {
                 stop_point_idx,
+                scheduled_stop_point_ref,
                 pickup_type,
                 drop_off_type,
                 local_zone_id,
-            } = *stop_point_in_journey_pattern;
+            } = stop_point_in_journey_pattern.to_owned();
+            let stop_point_idx = if let Some(new_stop_point_idx) = map_vj_schedule_stop_point_quay
+                .get(&(service_journey_id.to_string(), scheduled_stop_point_ref))
+            {
+                // Change StopPoint (idx) from virtual StopPoint
+                // to a true StopPoint/Quay specified for this vehicle in the section VehicleJourneyStopAssignment
+                *new_stop_point_idx
+            } else {
+                stop_point_idx
+            };
             let times = arrival_departure_times(tpt)?;
             let stop_time = StopTime {
                 stop_point_idx,
@@ -640,6 +758,7 @@ fn parse_vehicle_journeys<'a, I>(
     routes: &CollectionWithId<Route>,
     journey_patterns: &JourneyPatterns,
     map_daytypes: &DayTypes,
+    map_vj_schedule_stop_point_quay: &VehicleJourneyStopAssignment,
 ) -> Result<(CollectionWithId<VehicleJourney>, CollectionWithId<Calendar>)>
 where
     I: Iterator<Item = &'a Element>,
@@ -760,7 +879,11 @@ where
         }
 
         let stop_times = skip_error_and_log!(
-            stop_times(service_journey_element, &journey_patterns),
+            stop_times(
+                service_journey_element,
+                &journey_patterns,
+                &map_vj_schedule_stop_point_quay
+            ),
             LogLevel::Warn
         );
         if stop_times.is_empty() {
@@ -805,9 +928,10 @@ where
 
 fn parse_offer(
     offer: &Element,
-    collections: &Collections,
+    collections: &mut Collections,
     lines_netex_idf: &CollectionWithId<LineNetexIDF>,
     map_daytypes: &DayTypes,
+    virtual_stop_points: &CollectionWithId<VirtualStopPoint>,
 ) -> Result<(
     CollectionWithId<Route>,
     CollectionWithId<VehicleJourney>,
@@ -831,12 +955,29 @@ fn parse_offer(
     let schedule_frame = general_frames
         .get(&GeneralFrameType::Schedule)
         .ok_or_else(|| format_err!("Failed to find the GeneralFrame of type {}", NETEX_SCHEDULE))?;
+
     let map_schedule_stop_point_quay = structure_frame
         .only_child("members")
         .map(Element::children)
         .map(|childrens| childrens.filter(|e| e.name() == "PassengerStopAssignment"))
-        .map(parse_passenger_stop_assignment)
+        .map(|psa_elements| {
+            parse_passenger_stop_assignment(
+                psa_elements,
+                &mut collections.stop_points,
+                virtual_stop_points,
+            )
+        })
         .unwrap_or_else(HashMap::new);
+
+    let map_vj_schedule_stop_point_quay = schedule_frame
+        .only_child("members")
+        .map(Element::children)
+        .map(|childrens| childrens.filter(|e| e.name() == "VehicleJourneyStopAssignment"))
+        .map(|vjsa_elements| {
+            parse_vehicle_journey_stop_assignment(vjsa_elements, &collections.stop_points)
+        })
+        .unwrap_or_else(HashMap::new);
+
     let routes = structure_frame
         .only_child("members")
         .map(Element::children)
@@ -890,6 +1031,7 @@ fn parse_offer(
                 &routes,
                 &journey_patterns,
                 map_daytypes,
+                &map_vj_schedule_stop_point_quay,
             )
         })
         .transpose()?
@@ -1012,10 +1154,53 @@ mod tests {
         use pretty_assertions::assert_eq;
 
         #[test]
-        fn add_object_code() {
+        fn add_object_code_1_route_2_journey_patterns() {
             let route = Route {
                 id: String::from("route_id"),
                 name: String::from("Route Name"),
+                ..Default::default()
+            };
+            let routes = CollectionWithId::from(route);
+            let journey_pattern1 = JourneyPattern {
+                route: &routes.get("route_id").as_ref().unwrap(),
+                destination_display: None,
+                stop_points_in_journey_pattern: Vec::new(),
+            };
+            let journey_pattern2 = JourneyPattern {
+                route: &routes.get("route_id").as_ref().unwrap(),
+                destination_display: None,
+                stop_points_in_journey_pattern: Vec::new(),
+            };
+            let mut journey_patterns = JourneyPatterns::default();
+            journey_patterns.insert(
+                String::from("service_journey_pattern_id1"),
+                journey_pattern1,
+            );
+            journey_patterns.insert(
+                String::from("service_journey_pattern_id2"),
+                journey_pattern2,
+            );
+            let routes = enhance_with_object_code(&routes, &journey_patterns);
+            let route = routes.get("route_id").unwrap();
+            assert_eq!("Route Name", route.name.as_str());
+            assert_eq!(2, route.codes.len());
+            let mut codes = route.codes.iter();
+            let code1 = codes.next().unwrap();
+            assert_eq!("Netex_ServiceJourneyPattern", code1.0.as_str());
+            assert_eq!("service_journey_pattern_id1", code1.1.as_str());
+            let code2 = codes.next().unwrap();
+            assert_eq!("Netex_ServiceJourneyPattern", code2.0.as_str());
+            assert_eq!("service_journey_pattern_id2", code2.1.as_str());
+        }
+
+        #[test]
+        fn add_object_code_keep_existing_route_code() {
+            let mut source = KeysValues::default();
+            source.insert((String::from("source"), String::from("route_source_id")));
+            let route = Route {
+                id: String::from("route_id"),
+                name: String::from("Route Name"),
+                codes: source,
                 ..Default::default()
             };
             let routes = CollectionWithId::from(route);
@@ -1028,11 +1213,14 @@ mod tests {
             journey_patterns.insert(String::from("service_journey_pattern_id"), journey_pattern);
             let routes = enhance_with_object_code(&routes, &journey_patterns);
             let route = routes.get("route_id").unwrap();
-            assert_eq!("Route Name", route.name.as_str());
-            assert_eq!(1, route.codes.len());
-            let code = route.codes.iter().next().unwrap();
-            assert_eq!("Netex_ServiceJourneyPattern", code.0.as_str());
-            assert_eq!("service_journey_pattern_id", code.1.as_str());
+            assert_eq!(2, route.codes.len());
+            let mut codes = route.codes.iter();
+            let code1 = codes.next().unwrap();
+            assert_eq!("Netex_ServiceJourneyPattern", code1.0.as_str());
+            assert_eq!("service_journey_pattern_id", code1.1.as_str());
+            let code2 = codes.next().unwrap();
+            assert_eq!("source", code2.0.as_str());
+            assert_eq!("route_source_id", code2.1.as_str());
         }
 
         #[test]
@@ -1134,6 +1322,7 @@ mod tests {
             .unwrap();
             stop_points_in_journey_pattern.push(StopPointInJourneyPattern {
                 stop_point_idx,
+                scheduled_stop_point_ref: String::new(),
                 pickup_type: 0,
                 drop_off_type: 1,
                 local_zone_id: None,
@@ -1207,6 +1396,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &journey_patterns,
                 &day_types,
+                &HashMap::default(),
             )
             .unwrap();
 
@@ -1275,6 +1465,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &journey_patterns,
                 &day_types,
+                &HashMap::default(),
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
@@ -1296,6 +1487,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &journey_patterns,
                 &day_types,
+                &HashMap::default(),
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
@@ -1325,6 +1517,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &journey_patterns,
                 &day_types,
+                &HashMap::default(),
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
@@ -1360,6 +1553,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &journey_patterns,
                 &day_types,
+                &HashMap::default(),
             )
             .unwrap();
             assert_eq!(0, vehicle_journeys.len());
@@ -1390,6 +1584,7 @@ mod tests {
                 &CollectionWithId::default(),
                 &journey_patterns,
                 &day_types,
+                &HashMap::default(),
             )
             .unwrap();
 
@@ -1663,6 +1858,7 @@ mod tests {
                 .into_iter()
                 .map(|stop_point_idx| StopPointInJourneyPattern {
                     stop_point_idx,
+                    scheduled_stop_point_ref: String::new(),
                     pickup_type: 0,
                     drop_off_type: 0,
                     local_zone_id: None,
@@ -1690,6 +1886,7 @@ mod tests {
                 .into_iter()
                 .map(|stop_point_idx| StopPointInJourneyPattern {
                     stop_point_idx,
+                    scheduled_stop_point_ref: String::new(),
                     pickup_type: 0,
                     drop_off_type: 0,
                     local_zone_id: None,
@@ -1719,6 +1916,7 @@ mod tests {
                     .into_iter()
                     .map(|stop_point_idx| StopPointInJourneyPattern {
                         stop_point_idx,
+                        scheduled_stop_point_ref: String::new(),
                         pickup_type: 0,
                         drop_off_type: 0,
                         local_zone_id: None,
@@ -1748,6 +1946,7 @@ mod tests {
                 .into_iter()
                 .map(|stop_point_idx| StopPointInJourneyPattern {
                     stop_point_idx,
+                    scheduled_stop_point_ref: String::new(),
                     pickup_type: 0,
                     drop_off_type: 0,
                     local_zone_id: None,
@@ -1763,6 +1962,188 @@ mod tests {
             assert_eq!(1, stop_points_in_journey_pattern[1].local_zone_id.unwrap());
             assert_eq!(2, stop_points_in_journey_pattern[2].local_zone_id.unwrap());
             assert_eq!(2, stop_points_in_journey_pattern[3].local_zone_id.unwrap());
+        }
+    }
+
+    mod get_stop_point {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn stop_points() -> (
+            CollectionWithId<StopPoint>,
+            CollectionWithId<VirtualStopPoint>,
+        ) {
+            let stop_points = CollectionWithId::new(vec![
+                StopPoint {
+                    id: String::from("sp1"),
+                    ..Default::default()
+                },
+                StopPoint {
+                    id: String::from("sp2"),
+                    ..Default::default()
+                },
+            ])
+            .unwrap();
+            let virtual_stop_points = CollectionWithId::new(vec![StopPoint {
+                id: String::from("vsp0"),
+                ..Default::default()
+            }])
+            .unwrap();
+            (stop_points, virtual_stop_points)
+        }
+
+        #[test]
+        fn existing_stoppoint() {
+            let (mut stop_points, virtual_stop_points) = stop_points();
+            let idx = get_stop_point("sp2", &mut stop_points, &virtual_stop_points).unwrap();
+            assert_eq!(2, stop_points.len());
+            assert_eq!(String::from("sp2"), stop_points[idx].id);
+        }
+
+        #[test]
+        fn insert_virtual_stoppoint_() {
+            let (mut stop_points, virtual_stop_points) = stop_points();
+            let idx = get_stop_point("vsp0", &mut stop_points, &virtual_stop_points).unwrap();
+            assert_eq!(3, stop_points.len());
+            assert_eq!(String::from("vsp0"), stop_points[idx].id);
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to find StopPoint unknown")]
+        fn unknown_stoppoint() {
+            let (mut stop_points, virtual_stop_points) = stop_points();
+            get_stop_point("unknown", &mut stop_points, &virtual_stop_points).unwrap();
+        }
+    }
+
+    mod parse_passenger_stop_assignment {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn stop_points() -> (
+            CollectionWithId<StopPoint>,
+            CollectionWithId<VirtualStopPoint>,
+        ) {
+            let stop_points = CollectionWithId::new(vec![StopPoint {
+                id: String::from("sp1"),
+                ..Default::default()
+            }])
+            .unwrap();
+            let virtual_stop_points = CollectionWithId::new(vec![StopPoint {
+                id: String::from("monomodalStopPlace:vsp0"),
+                ..Default::default()
+            }])
+            .unwrap();
+            (stop_points, virtual_stop_points)
+        }
+
+        #[test]
+        fn valid_passenger_stop_assignment_with_quayref() {
+            let passenger_stop_assignment_xml = r#"<PassengerStopAssignment id="psa">
+                    <ScheduledStopPointRef ref="sspr" />
+                    <QuayRef ref=":::sp1:" />
+                </PassengerStopAssignment>"#;
+            let passenger_stop_assignment_el: Element =
+                passenger_stop_assignment_xml.parse().unwrap();
+            let (mut stop_points, virtual_stop_points) = stop_points();
+            let passenger_stop_assignment = parse_passenger_stop_assignment(
+                [passenger_stop_assignment_el].iter(),
+                &mut stop_points,
+                &virtual_stop_points,
+            );
+            assert_eq!(1, passenger_stop_assignment.len());
+            assert_eq!("sp1", passenger_stop_assignment.get("sspr").unwrap());
+        }
+
+        #[test]
+        fn valid_passenger_stop_assignment_with_stopplaceref() {
+            let passenger_stop_assignment_xml = r#"<PassengerStopAssignment id="psa">
+                    <ScheduledStopPointRef ref="sspr" />
+                    <StopPlaceRef ref="::monomodalStopPlace:vsp0:" />
+                </PassengerStopAssignment>"#;
+            let passenger_stop_assignment_el: Element =
+                passenger_stop_assignment_xml.parse().unwrap();
+            let (mut stop_points, virtual_stop_points) = stop_points();
+            let passenger_stop_assignment = parse_passenger_stop_assignment(
+                [passenger_stop_assignment_el].iter(),
+                &mut stop_points,
+                &virtual_stop_points,
+            );
+            assert_eq!(1, passenger_stop_assignment.len());
+            assert_eq!(
+                "monomodalStopPlace:vsp0",
+                passenger_stop_assignment.get("sspr").unwrap()
+            );
+        }
+
+        #[test]
+        fn valid_passenger_stop_assignment_without_quayref_or_stopplaceref() {
+            let passenger_stop_assignment_xml = r#"<PassengerStopAssignment id="psa">
+                    <ScheduledStopPointRef ref="sspr" />
+                </PassengerStopAssignment>"#;
+            let passenger_stop_assignment_el: Element =
+                passenger_stop_assignment_xml.parse().unwrap();
+            let (mut stop_points, virtual_stop_points) = stop_points();
+            let passenger_stop_assignment = parse_passenger_stop_assignment(
+                [passenger_stop_assignment_el].iter(),
+                &mut stop_points,
+                &virtual_stop_points,
+            );
+            assert_eq!(0, passenger_stop_assignment.len());
+        }
+    }
+
+    mod parse_vehicle_journey_stop_assignment {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn stop_points() -> CollectionWithId<StopPoint> {
+            CollectionWithId::new(vec![StopPoint {
+                id: String::from("sp1"),
+                ..Default::default()
+            }])
+            .unwrap()
+        }
+
+        #[test]
+        fn valid_vehicle_journey_stop_assignment() {
+            let vehicle_journey_stop_assignment_xml = r#"<VehicleJourneyStopAssignment id="vjsa">
+                    <QuayRef ref=":::sp1:" />
+                    <ScheduledStopPointRef ref="sspr" />
+                    <VehicleJourneyRef ref="vjr" />
+                </VehicleJourneyStopAssignment>"#;
+            let vehicle_journey_stop_assignment_el: Element =
+                vehicle_journey_stop_assignment_xml.parse().unwrap();
+            let stop_points = stop_points();
+            let sp_idx = stop_points.get_idx("sp1").unwrap();
+            let vehicle_journey_stop_assignment = parse_vehicle_journey_stop_assignment(
+                [vehicle_journey_stop_assignment_el].iter(),
+                &stop_points,
+            );
+            assert_eq!(1, vehicle_journey_stop_assignment.len());
+            assert_eq!(
+                &sp_idx,
+                vehicle_journey_stop_assignment
+                    .get(&("vjr".to_string(), "sspr".to_string()))
+                    .unwrap()
+            );
+        }
+
+        #[test]
+        fn unknown_stoppoint_in_vehicle_journey_stop_assignment() {
+            let vehicle_journey_stop_assignment_xml = r#"<VehicleJourneyStopAssignment id="vjsa">
+                    <QuayRef ref=":::sp2:" />
+                    <ScheduledStopPointRef ref="sspr" />
+                    <VehicleJourneyRef ref="vjr" />
+                </VehicleJourneyStopAssignment>"#;
+            let vehicle_journey_stop_assignment_el: Element =
+                vehicle_journey_stop_assignment_xml.parse().unwrap();
+            let stop_points = stop_points();
+            let vehicle_journey_stop_assignment = parse_vehicle_journey_stop_assignment(
+                [vehicle_journey_stop_assignment_el].iter(),
+                &stop_points,
+            );
+            assert_eq!(0, vehicle_journey_stop_assignment.len());
         }
     }
 }
