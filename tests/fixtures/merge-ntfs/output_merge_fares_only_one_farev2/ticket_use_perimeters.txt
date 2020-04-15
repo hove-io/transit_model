@@ -1,6 +1,0 @@
-ticket_use_id,object_type,object_id,perimeter_action
-ticket-use.1,network,TGN,1
-ticket-use.2,line,B42,1
-ticket-use.3,network,TGN,1
-ticket-use.3,line,B42,2
-ticket-use.4,line,M1,1

@@ -1,2 +1,0 @@
-object_id,object_type,comment_id
-StopTime:77100911-1_1420-1:2,stop_time,OIFCOM1

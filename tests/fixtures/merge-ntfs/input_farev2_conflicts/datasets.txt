@@ -1,2 +1,0 @@
-dataset_id,contributor_id,dataset_start_date,dataset_end_date,dataset_type,dataset_desc,dataset_system,dataset_extrapolation
-0,OIF,20170607,20170702,0,"NIO_auto_20170618","GTFS V2 Ligne",0

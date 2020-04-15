@@ -1,3 +1,0 @@
-comment_id,comment_name,comment_type
-OIFCOM1,"oif information",information
-OIFCOM2,"oif on demand transport comment",on_demand_transport

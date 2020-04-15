@@ -1,6 +1,0 @@
-ticket_use_id,object_type,object_id,perimeter_action
-OIF:ticket-use.1,network,OIF:101,1
-OIF:ticket-use.1,network,OIF:102,1
-OIF:ticket-use.1,line,OIF:002002002:LICOIF829,2
-OIF:ticket-use.2,line,OIF:002002002:LICOIF829,1
-OIF:ticket-use.3,line,OIF:002002002:CENOIF829,1
