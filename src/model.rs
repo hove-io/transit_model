@@ -31,22 +31,38 @@ use std::ops;
 use std::result::Result as StdResult;
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
-const AIR_PHYSICAL_MODE: &str = "Air";
-const BIKE_PHYSICAL_MODE: &str = "Bike";
-const BIKE_SHARING_SERVICE_PHYSICAL_MODE: &str = "BikeSharingService";
-const BUS_PHYSICAL_MODE: &str = "Bus";
-const BUS_RAPID_TRANSIT_PHYSICAL_MODE: &str = "BusRapidTransit";
-const CAR_PHYSICAL_MODE: &str = "Car";
-const COACH_PHYSICAL_MODE: &str = "Coach";
-const FERRY_PHYSICAL_MODE: &str = "Ferry";
-const FUNICULAR_PHYSICAL_MODE: &str = "Funicular";
-const LOCAL_TRAIN_PHYSICAL_MODE: &str = "LocalTrain";
-const LONG_DISTANCE_TRAIN_PHYSICAL_MODE: &str = "LongDistanceTrain";
-const METRO_PHYSICAL_MODE: &str = "Metro";
-const RAPID_TRANSIT_PHYSICAL_MODE: &str = "RapidTransit";
-const TAXI_PHYSICAL_MODE: &str = "Taxi";
-const TRAIN_PHYSICAL_MODE: &str = "Train";
-const TRAMWAY_PHYSICAL_MODE: &str = "Tramway";
+/// Physical mode for Air
+pub const AIR_PHYSICAL_MODE: &str = "Air";
+/// Physical mode for Bike
+pub const BIKE_PHYSICAL_MODE: &str = "Bike";
+/// Physical mode for Bike Sharing Service
+pub const BIKE_SHARING_SERVICE_PHYSICAL_MODE: &str = "BikeSharingService";
+/// Physical mode for Bus
+pub const BUS_PHYSICAL_MODE: &str = "Bus";
+/// Physical mode for Rapid Bus
+pub const BUS_RAPID_TRANSIT_PHYSICAL_MODE: &str = "BusRapidTransit";
+/// Physical mode for Car
+pub const CAR_PHYSICAL_MODE: &str = "Car";
+/// Physical mode for Coach
+pub const COACH_PHYSICAL_MODE: &str = "Coach";
+/// Physical mode for Ferry
+pub const FERRY_PHYSICAL_MODE: &str = "Ferry";
+/// Physical mode for Funicular
+pub const FUNICULAR_PHYSICAL_MODE: &str = "Funicular";
+/// Physical mode for Local Train
+pub const LOCAL_TRAIN_PHYSICAL_MODE: &str = "LocalTrain";
+/// Physical mode for Long Distance Train
+pub const LONG_DISTANCE_TRAIN_PHYSICAL_MODE: &str = "LongDistanceTrain";
+/// Physical mode for Metro
+pub const METRO_PHYSICAL_MODE: &str = "Metro";
+/// Physical mode for Rapid Transit
+pub const RAPID_TRANSIT_PHYSICAL_MODE: &str = "RapidTransit";
+/// Physical mode for Taxi
+pub const TAXI_PHYSICAL_MODE: &str = "Taxi";
+/// Physical mode for Train
+pub const TRAIN_PHYSICAL_MODE: &str = "Train";
+/// Physical mode for Tramway
+pub const TRAMWAY_PHYSICAL_MODE: &str = "Tramway";
 lazy_static! {
     static ref CO2_EMISSIONS: std::collections::HashMap<&'static str, f32> = {
         let mut modes_map = std::collections::HashMap::new();
