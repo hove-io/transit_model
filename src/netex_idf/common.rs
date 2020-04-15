@@ -15,13 +15,13 @@
 // <http://www.gnu.org/licenses/>.
 use super::offers::{self, GeneralFrameType, COMMON_FILENAME, NETEX_COMMON};
 use crate::{
-    minidom_utils::{TryAttribute, TryOnlyChild},
     netex_utils::{self, FrameType},
     objects::{Comment, CommentType},
     Result,
 };
 use failure::format_err;
 use minidom::Element;
+use minidom_ext::{AttributeElementExt, OnlyChildElementExt};
 use typed_index_collection::CollectionWithId;
 
 pub fn parse_common(common: &Element) -> Result<CollectionWithId<Comment>> {

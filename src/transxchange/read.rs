@@ -13,7 +13,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    minidom_utils::TryOnlyChild,
     model::{Collections, Model},
     objects::*,
     transxchange::{bank_holidays, bank_holidays::BankHoliday, naptan},
@@ -27,6 +26,7 @@ use failure::{bail, format_err};
 use lazy_static::lazy_static;
 use log::{info, warn, Level as LogLevel};
 use minidom::Element;
+use minidom_ext::OnlyChildElementExt;
 use skip_error::skip_error_and_log;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
@@ -66,9 +66,11 @@ fn get_by_reference<'a>(
     child_name: &str,
     reference: &str,
 ) -> Result<&'a Element> {
-    element.try_only_child_with_filter(child_name, |e| {
-        e.attr("id").filter(|id| *id == reference).is_some()
-    })
+    element
+        .try_find_only_child(|e| {
+            e.name() == child_name && e.attr("id").filter(|id| *id == reference).is_some()
+        })
+        .map_err(|e| format_err!("{}", e))
 }
 
 fn get_service_validity_period(
@@ -76,14 +78,21 @@ fn get_service_validity_period(
     max_end_date: NaiveDate,
 ) -> Result<ValidityPeriod> {
     let operating_period = transxchange
-        .try_only_child("Services")?
-        .try_only_child("Service")?
-        .try_only_child("OperatingPeriod")?;
+        .try_only_child("Services")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("Service")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("OperatingPeriod")
+        .map_err(|e| format_err!("{}", e))?;
     let start_date: Date = operating_period
-        .try_only_child("StartDate")?
+        .try_only_child("StartDate")
+        .map_err(|e| format_err!("{}", e))?
         .text()
         .parse()?;
-    let mut end_date: Date = if let Ok(end_date) = operating_period.try_only_child("EndDate") {
+    let mut end_date: Date = if let Ok(end_date) = operating_period
+        .try_only_child("EndDate")
+        .map_err(|e| format_err!("{}", e))
+    {
         end_date.text().parse()?
     } else {
         chrono::naive::MAX_DATE
@@ -134,19 +143,28 @@ fn update_validity_period_from_transxchange(
 
 fn load_network(transxchange: &Element) -> Result<Network> {
     let operator_ref = transxchange
-        .try_only_child("Services")?
-        .try_only_child("Service")?
-        .try_only_child("RegisteredOperatorRef")?
+        .try_only_child("Services")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("Service")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("RegisteredOperatorRef")
+        .map_err(|e| format_err!("{}", e))?
         .text();
     let operator = get_by_reference(
-        transxchange.try_only_child("Operators")?,
+        transxchange
+            .try_only_child("Operators")
+            .map_err(|e| format_err!("{}", e))?,
         "Operator",
         &operator_ref,
     )?;
-    let id = operator.try_only_child("OperatorCode")?.text();
+    let id = operator
+        .try_only_child("OperatorCode")
+        .map_err(|e| format_err!("{}", e))?
+        .text();
     let name = operator
         .try_only_child("TradingName")
         .or_else(|_| operator.try_only_child("OperatorShortName"))
+        .map_err(|e| format_err!("{}", e))
         .map(Element::text)
         .unwrap_or_else(|_| String::from(UNDEFINED))
         .trim()
@@ -169,10 +187,18 @@ fn load_network(transxchange: &Element) -> Result<Network> {
 
 fn load_companies(transxchange: &Element) -> Result<CollectionWithId<Company>> {
     let mut companies = CollectionWithId::default();
-    for operator in transxchange.try_only_child("Operators")?.children() {
-        let id = operator.try_only_child("OperatorCode")?.text();
+    for operator in transxchange
+        .try_only_child("Operators")
+        .map_err(|e| format_err!("{}", e))?
+        .children()
+    {
+        let id = operator
+            .try_only_child("OperatorCode")
+            .map_err(|e| format_err!("{}", e))?
+            .text();
         let name = operator
             .try_only_child("OperatorShortName")
+            .map_err(|e| format_err!("{}", e))
             .map(Element::text)
             .unwrap_or_else(|_| String::from(UNDEFINED))
             .trim()
@@ -191,9 +217,12 @@ fn load_commercial_physical_modes(
     transxchange: &Element,
 ) -> Result<(CommercialMode, PhysicalMode)> {
     let mode = match transxchange
-        .try_only_child("Services")?
-        .try_only_child("Service")?
+        .try_only_child("Services")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("Service")
+        .map_err(|e| format_err!("{}", e))?
         .try_only_child("Mode")
+        .map_err(|e| format_err!("{}", e))
         .map(Element::text)
     {
         Ok(mode) => MODES.get(mode.as_str()).unwrap_or(&DEFAULT_MODE),
@@ -220,30 +249,50 @@ fn load_lines(
     commercial_mode_id: &str,
 ) -> Result<CollectionWithId<Line>> {
     let service = transxchange
-        .try_only_child("Services")?
-        .try_only_child("Service")?;
-    let service_id = service.try_only_child("ServiceCode")?.text();
+        .try_only_child("Services")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("Service")
+        .map_err(|e| format_err!("{}", e))?;
+    let service_id = service
+        .try_only_child("ServiceCode")
+        .map_err(|e| format_err!("{}", e))?
+        .text();
     let mut lines = CollectionWithId::default();
-    let name = if let Ok(description) = service.try_only_child("Description") {
+    let name = if let Ok(description) = service
+        .try_only_child("Description")
+        .map_err(|e| format_err!("{}", e))
+    {
         description.text().trim().to_string()
     } else {
         String::from(UNDEFINED)
     };
     let standard_service = service.try_only_child("StandardService")?;
     let forward_name = standard_service
-        .try_only_child("Destination")?
+        .try_only_child("Destination")
+        .map_err(|e| format_err!("{}", e))?
         .text()
         .trim()
         .to_string();
     let backward_name = standard_service
-        .try_only_child("Origin")?
+        .try_only_child("Origin")
+        .map_err(|e| format_err!("{}", e))?
         .text()
         .trim()
         .to_string();
-    for line in service.try_only_child("Lines")?.children() {
+    for line in service
+        .try_only_child("Lines")
+        .map_err(|e| format_err!("{}", e))?
+        .children()
+    {
         if let Some(line_id) = line.attr("id") {
             let id = format!("{}:{}", service_id, line_id);
-            let code = Some(line.try_only_child("LineName")?.text().trim().to_string());
+            let code = Some(
+                line.try_only_child("LineName")
+                    .map_err(|e| format_err!("{}", e))?
+                    .text()
+                    .trim()
+                    .to_string(),
+            );
             let network_id = network_id.to_string();
             let commercial_mode_id = commercial_mode_id.to_string();
             let name = name.to_string();
@@ -271,13 +320,21 @@ fn create_route(
     lines: &CollectionWithId<Line>,
 ) -> Result<Route> {
     let service = transxchange
-        .try_only_child("Services")?
-        .try_only_child("Service")?;
-    let standard_service = service.try_only_child("StandardService")?;
-    let journey_pattern_ref = vehicle_journey.try_only_child("JourneyPatternRef")?.text();
+        .try_only_child("Services")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("Service")
+        .map_err(|e| format_err!("{}", e))?;
+    let standard_service = service
+        .try_only_child("StandardService")
+        .map_err(|e| format_err!("{}", e))?;
+    let journey_pattern_ref = vehicle_journey
+        .try_only_child("JourneyPatternRef")
+        .map_err(|e| format_err!("{}", e))?
+        .text();
     let direction_type =
         match get_by_reference(standard_service, "JourneyPattern", &journey_pattern_ref)?
-            .try_only_child("Direction")?
+            .try_only_child("Direction")
+            .map_err(|e| format_err!("{}", e))?
             .text()
             .as_str()
         {
@@ -286,8 +343,14 @@ fn create_route(
             direction => direction,
         }
         .to_string();
-    let service_code = service.try_only_child("ServiceCode")?.text();
-    let line_ref = vehicle_journey.try_only_child("LineRef")?.text();
+    let service_code = service
+        .try_only_child("ServiceCode")
+        .map_err(|e| format_err!("{}", e))?
+        .text();
+    let line_ref = vehicle_journey
+        .try_only_child("LineRef")
+        .map_err(|e| format_err!("{}", e))?
+        .text();
     let line_id = format!("{}:{}", service_code, line_ref);
     if !lines.contains_id(&line_id) {
         bail!(
@@ -378,6 +441,7 @@ fn parse_duration_in_seconds(duration_iso8601: &str) -> Result<Time> {
 fn get_duration_from(element: &Element, name: &str) -> Time {
     element
         .try_only_child(name)
+        .map_err(|e| format_err!("{}", e))
         .map(Element::text)
         .and_then(|s| parse_duration_in_seconds(&s))
         .unwrap_or_default()
@@ -1059,7 +1123,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a child \\'Operator\\' in element \\'root\\'")]
+        #[should_panic(expected = "No children matching predicate found in Element \\'root\\'")]
         fn no_operator() {
             let xml = r#"<root>
                 <Operator id="op1" />
@@ -1124,7 +1188,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'RegisteredOperatorRef\\' in element \\'Service\\'"
+            expected = "No children with name \\'RegisteredOperatorRef\\' in Element \\'Service\\'"
         )]
         fn no_operator_ref() {
             let xml = r#"<root>
@@ -1143,7 +1207,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'OperatorCode\\' in element \\'Operator\\'"
+            expected = "No children with name \\'OperatorCode\\' in Element \\'Operator\\'"
         )]
         fn no_id() {
             let xml = r#"<root>
@@ -1210,7 +1274,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'OperatorCode\\' in element \\'Operator\\'"
+            expected = "No children with name \\'OperatorCode\\' in Element \\'Operator\\'"
         )]
         fn no_id() {
             let xml = r#"<root>

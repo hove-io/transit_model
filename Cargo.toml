@@ -37,6 +37,7 @@ lazy_static = "1.2"
 log = "0.4"
 md5 = "0.7"
 minidom = "0.11"
+minidom_ext = "1"
 num-traits = "0.2"
 pretty_assertions = "0.6"
 proj = { version = "0.14", optional = true }

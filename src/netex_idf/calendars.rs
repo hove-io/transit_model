@@ -15,7 +15,6 @@
 // <http://www.gnu.org/licenses/>.
 use super::offers::{self, GeneralFrameType, CALENDARS_FILENAME, NETEX_CALENDAR};
 use crate::{
-    minidom_utils::{TryAttribute, TryOnlyChild},
     netex_utils::{self, FrameType},
     objects::{Date, ValidityPeriod},
     Result,
@@ -24,6 +23,7 @@ use chrono::{Datelike, NaiveDateTime, Weekday};
 use failure::format_err;
 use log::{warn, Level as LogLevel};
 use minidom::Element;
+use minidom_ext::{AttributeElementExt, OnlyChildElementExt};
 use skip_error::skip_error_and_log;
 use std::{
     cmp::{Ord, Ordering, PartialOrd},
@@ -122,7 +122,8 @@ impl<'a> Iterator for ValidityPatternIterator<'a> {
 fn parse_validity_period(valid_between: &Element) -> Result<ValidityPeriod> {
     fn parse_date(valid_between: &Element, node: &str) -> Result<Date> {
         let date = valid_between
-            .try_only_child(node)?
+            .try_only_child(node)
+            .map_err(|e| format_err!("{}", e))?
             .text()
             .parse::<NaiveDateTime>()?
             .date();
@@ -303,7 +304,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'ToDate\\' in element \\'ValidBetween\\'"
+            expected = "No children with name \\'ToDate\\' in Element \\'ValidBetween\\'"
         )]
         fn missing_date() {
             let xml = r#"<ValidBetween>

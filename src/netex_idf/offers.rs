@@ -21,7 +21,6 @@ use super::{
     stops,
 };
 use crate::{
-    minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils::{self, FrameType},
     objects::{
@@ -33,6 +32,7 @@ use crate::{
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn, Level as LogLevel};
 use minidom::Element;
+use minidom_ext::{AttributeElementExt, OnlyChildElementExt};
 use skip_error::skip_error_and_log;
 use std::{
     collections::{BTreeSet, HashMap},
@@ -677,6 +677,7 @@ fn stop_point_idx(
     sp_in_jp
         .try_only_child("ScheduledStopPointRef")
         .and_then(|ssp_ref_el| ssp_ref_el.try_attribute::<String>("ref"))
+        .map_err(|e| format_err!("{}", e))
         .and_then(|ssp_ref| {
             map_schedule_stop_point_quay.get(&ssp_ref).ok_or_else(|| {
                 format_err!(

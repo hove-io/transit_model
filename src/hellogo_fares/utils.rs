@@ -12,10 +12,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::{minidom_utils::TryOnlyChild, netex_utils, objects::Date, Result};
+use crate::{netex_utils, objects::Date, Result};
 use chrono::NaiveDate;
 use failure::{bail, format_err, Error};
 use minidom::Element;
+use minidom_ext::OnlyChildElementExt;
 use rust_decimal::Decimal;
 use std::{
     fmt::{Display, Formatter},
@@ -53,17 +54,25 @@ impl FromStr for FareFrameType {
 
 pub fn get_fare_frame_type(frame: &Element) -> Result<FareFrameType> {
     let fare_structure = frame
-        .try_only_child("fareStructures")?
-        .try_only_child("FareStructure")?;
+        .try_only_child("fareStructures")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("FareStructure")
+        .map_err(|e| format_err!("{}", e))?;
     netex_utils::get_value_in_keylist(fare_structure, "FareStructureType")
 }
 
 pub fn get_amount_units_factor(element: &Element) -> Result<Decimal> {
-    let amount = element.try_only_child("Amount")?.text();
+    let amount = element
+        .try_only_child("Amount")
+        .map_err(|e| format_err!("{}", e))?
+        .text();
     let amount: Decimal = amount
         .parse()
         .map_err(|_| format_err!("Failed to convert '{}' into a 'Decimal'", amount))?;
-    let units = element.try_only_child("Units")?.text();
+    let units = element
+        .try_only_child("Units")
+        .map_err(|e| format_err!("{}", e))?
+        .text();
     let units: Decimal = units
         .parse()
         .map_err(|_| format_err!("Failed to convert '{}' into a 'Decimal'", units))?;
@@ -72,19 +81,28 @@ pub fn get_amount_units_factor(element: &Element) -> Result<Decimal> {
 
 pub fn get_unit_price(unit_price_frame: &Element) -> Result<Decimal> {
     let geographic_interval_price = unit_price_frame
-        .try_only_child("fareStructures")?
-        .try_only_child("FareStructure")?
-        .try_only_child("geographicalIntervals")?
-        .try_only_child("GeographicalInterval")?
-        .try_only_child("prices")?
-        .try_only_child("GeographicalIntervalPrice")?;
+        .try_only_child("fareStructures")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("FareStructure")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("geographicalIntervals")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("GeographicalInterval")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("prices")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("GeographicalIntervalPrice")
+        .map_err(|e| format_err!("{}", e))?;
     Ok(get_amount_units_factor(geographic_interval_price)?)
 }
 
 const DATE_TIME_FORMAT: &str = "%+";
 pub fn get_validity(resource_frame: &Element) -> Result<(Date, Date)> {
     fn extract_date(element: &Element, date_element_name: &str) -> Result<Date> {
-        let date_str = element.try_only_child(date_element_name)?.text();
+        let date_str = element
+            .try_only_child(date_element_name)
+            .map_err(|e| format_err!("{}", e))?
+            .text();
         let date = NaiveDate::parse_from_str(date_str.as_str(), DATE_TIME_FORMAT)
             .map_err(|_| format_err!("Failed to convert '{}' into a 'Date'", date_str))?;
         Ok(date)
@@ -97,8 +115,10 @@ pub fn get_validity(resource_frame: &Element) -> Result<(Date, Date)> {
         );
     }
     let version = resource_frame
-        .try_only_child("versions")?
-        .try_only_child("Version")?;
+        .try_only_child("versions")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("Version")
+        .map_err(|e| format_err!("{}", e))?;
     let validity_start_date = extract_date(version, "StartDate")?;
     let validity_end_date = extract_date(version, "EndDate")?;
     Ok((validity_start_date, validity_end_date))
@@ -106,8 +126,10 @@ pub fn get_validity(resource_frame: &Element) -> Result<(Date, Date)> {
 
 pub fn get_currency(fare_frame: &Element) -> Result<String> {
     let currency = fare_frame
-        .try_only_child("FrameDefaults")?
-        .try_only_child("DefaultCurrency")?
+        .try_only_child("FrameDefaults")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("DefaultCurrency")
+        .map_err(|e| format_err!("{}", e))?
         .text();
     if iso4217::alpha3(currency.as_str()).is_none() {
         bail!("Failed to validate '{}' as a currency", currency)
@@ -117,9 +139,12 @@ pub fn get_currency(fare_frame: &Element) -> Result<String> {
 
 pub fn get_distance_matrix_elements<'a>(fare_frame: &'a Element) -> Result<Vec<&'a Element>> {
     let distance_matrix_elements = fare_frame
-        .try_only_child("fareStructures")?
-        .try_only_child("FareStructure")?
-        .try_only_child("distanceMatrixElements")?
+        .try_only_child("fareStructures")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("FareStructure")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("distanceMatrixElements")
+        .map_err(|e| format_err!("{}", e))?
         .children()
         .collect();
     Ok(distance_matrix_elements)
@@ -171,7 +196,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'fareStructures\\' in element \\'root\\'"
+            expected = "No children with name \\'fareStructures\\' in Element \\'root\\'"
         )]
         fn missing_fare_structures() {
             let xml = r#"<root />"#;
@@ -181,7 +206,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'FareStructure\\' in element \\'fareStructures\\'"
+            expected = "No children with name \\'FareStructure\\' in Element \\'fareStructures\\'"
         )]
         fn missing_fare_structure() {
             let xml = r#"<root>
@@ -209,7 +234,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a child \\'Amount\\' in element \\'root\\'")]
+        #[should_panic(expected = "No children with name \\'Amount\\' in Element \\'root\\'")]
         fn no_amount() {
             let xml = r#"<root>
                     <Units>0.5</Units>
@@ -219,7 +244,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a child \\'Units\\' in element \\'root\\'")]
+        #[should_panic(expected = "No children with name \\'Units\\' in Element \\'root\\'")]
         fn no_units() {
             let xml = r#"<root>
                     <Amount>42</Amount>
@@ -259,7 +284,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'fareStructures\\' in element \\'FareFrame\\'"
+            expected = "No children with name \\'fareStructures\\' in Element \\'FareFrame\\'"
         )]
         fn no_fare_structures() {
             let xml = r#"<FareFrame />"#;
@@ -269,7 +294,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'FareStructure\\' in element \\'fareStructures\\'"
+            expected = "No children with name \\'FareStructure\\' in Element \\'fareStructures\\'"
         )]
         fn no_fare_structure() {
             let xml = r#"<FareFrame>
@@ -281,7 +306,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a unique child \\'FareStructure\\' in element \\'fareStructures\\'"
+            expected = "Multiple children with name \\'FareStructure\\' in Element \\'fareStructures\\'"
         )]
         fn multiple_fare_structure() {
             let xml = r#"<FareFrame>
@@ -296,7 +321,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'geographicalIntervals\\' in element \\'FareStructure\\'"
+            expected = "No children with name \\'geographicalIntervals\\' in Element \\'FareStructure\\'"
         )]
         fn no_geographical_intervals() {
             let xml = r#"<FareFrame>
@@ -310,7 +335,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'GeographicalInterval\\' in element \\'geographicalIntervals\\'"
+            expected = "No children with name \\'GeographicalInterval\\' in Element \\'geographicalIntervals\\'"
         )]
         fn no_geographical_interval() {
             let xml = r#"<FareFrame>
@@ -326,7 +351,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a unique child \\'GeographicalInterval\\' in element \\'geographicalIntervals\\'"
+            expected = "Multiple children with name \\'GeographicalInterval\\' in Element \\'geographicalIntervals\\'"
         )]
         fn multiple_geographical_interval() {
             let xml = r#"<FareFrame>
@@ -345,7 +370,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'prices\\' in element \\'GeographicalInterval\\'"
+            expected = "No children with name \\'prices\\' in Element \\'GeographicalInterval\\'"
         )]
         fn no_prices() {
             let xml = r#"<FareFrame>
@@ -363,7 +388,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'GeographicalIntervalPrice\\' in element \\'prices\\'"
+            expected = "No children with name \\'GeographicalIntervalPrice\\' in Element \\'prices\\'"
         )]
         fn no_geographical_interval_price() {
             let xml = r#"<FareFrame>
@@ -383,7 +408,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a unique child \\'GeographicalIntervalPrice\\' in element \\'prices\\'"
+            expected = "Multiple children with name \\'GeographicalIntervalPrice\\' in Element \\'prices\\'"
         )]
         fn multiple_geographical_interval_price() {
             let xml = r#"<FareFrame>
@@ -437,7 +462,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'versions\\' in element \\'ResourceFrame\\'"
+            expected = "No children with name \\'versions\\' in Element \\'ResourceFrame\\'"
         )]
         fn no_versions() {
             let xml = r#"<ResourceFrame />"#;
@@ -446,7 +471,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a child \\'Version\\' in element \\'versions\\'")]
+        #[should_panic(expected = "No children with name \\'Version\\' in Element \\'versions\\'")]
         fn no_version() {
             let xml = r#"<ResourceFrame>
                     <versions />
@@ -457,7 +482,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a unique child \\'Version\\' in element \\'versions\\'"
+            expected = "Multiple children with name \\'Version\\' in Element \\'versions\\'"
         )]
         fn multiple_version() {
             let xml = r#"<ResourceFrame>
@@ -471,7 +496,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a child \\'EndDate\\' in element \\'Version\\'")]
+        #[should_panic(expected = "No children with name \\'EndDate\\' in Element \\'Version\\'")]
         fn no_end() {
             let xml = r#"<ResourceFrame>
                     <versions>
@@ -485,9 +510,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(
-            expected = "Failed to find a child \\'StartDate\\' in element \\'Version\\'"
-        )]
+        #[should_panic(expected = "No children with name \\'StartDate\\' in Element \\'Version\\'")]
         fn no_start() {
             let xml = r#"<ResourceFrame>
                     <versions>
@@ -534,7 +557,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'FrameDefaults\\' in element \\'FareFrame\\'"
+            expected = "No children with name \\'FrameDefaults\\' in Element \\'FareFrame\\'"
         )]
         fn no_frame_defaults() {
             let xml = r#"<FareFrame />"#;
@@ -544,7 +567,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'DefaultCurrency\\' in element \\'FrameDefaults\\'"
+            expected = "No children with name \\'DefaultCurrency\\' in Element \\'FrameDefaults\\'"
         )]
         fn no_default_currency() {
             let xml = r#"<FareFrame>
@@ -604,7 +627,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'fareStructures\\' in element \\'root\\'"
+            expected = "No children with name \\'fareStructures\\' in Element \\'root\\'"
         )]
         fn no_fare_structures() {
             let xml = r#"<root>"#;
@@ -614,7 +637,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'FareStructure\\' in element \\'fareStructures\\'"
+            expected = "No children with name \\'FareStructure\\' in Element \\'fareStructures\\'"
         )]
         fn no_fare_structure() {
             let xml = r#"<root>
@@ -627,7 +650,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a unique child \\'FareStructure\\' in element \\'fareStructures\\'"
+            expected = "Multiple children with name \\'FareStructure\\' in Element \\'fareStructures\\'"
         )]
         fn multiple_fare_structure() {
             let xml = r#"<root>
@@ -642,7 +665,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'distanceMatrixElements\\' in element \\'FareStructure\\'"
+            expected = "No children with name \\'distanceMatrixElements\\' in Element \\'FareStructure\\'"
         )]
         fn no_distance_matrix_elements() {
             let xml = r#"<root>

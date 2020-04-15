@@ -12,10 +12,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::{minidom_utils::TryOnlyChild, Result};
+use crate::Result;
 use failure::bail;
 use lazy_static::lazy_static;
 use minidom::Element;
+use minidom_ext::OnlyChildElementExt;
 use std::{
     collections::HashMap,
     convert::TryFrom,

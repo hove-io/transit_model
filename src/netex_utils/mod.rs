@@ -12,9 +12,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::{minidom_utils::TryOnlyChild, Result};
+use crate::Result;
 use failure::{bail, format_err, Error};
 use minidom::Element;
+use minidom_ext::OnlyChildElementExt;
 use std::{
     collections::HashMap,
     fmt::{Display, Formatter},
@@ -88,13 +89,18 @@ where
     F: FromStr,
 {
     let values = element
-        .try_only_child("KeyList")?
+        .try_only_child("KeyList")
+        .map_err(|e| format_err!("{}", e))?
         .children()
         .filter(|key_value| match key_value.try_only_child("Key") {
             Ok(k) => k.text() == key,
             _ => false,
         })
-        .map(|key_value| key_value.try_only_child("Value"))
+        .map(|key_value| {
+            key_value
+                .try_only_child("Value")
+                .map_err(|e| format_err!("{}", e))
+        })
         .collect::<Result<Vec<_>>>()?;
     if values.len() != 1 {
         bail!(
@@ -211,7 +217,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a child \\'KeyList\\' in element \\'root\\'")]
+        #[should_panic(expected = "No children with name \\'KeyList\\' in Element \\'root\\'")]
         fn no_keylist_found() {
             let xml = r#"<root />"#;
             let root: Element = xml.parse().unwrap();
@@ -229,7 +235,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a child \\'Value\\' in element \\'KeyValue\\'")]
+        #[should_panic(expected = "No children with name \\'Value\\' in Element \\'KeyValue\\'")]
         fn no_value_found() {
             let xml = r#"<root>
                     <KeyList>

@@ -19,7 +19,6 @@ use super::{
     EUROPE_PARIS_TIMEZONE,
 };
 use crate::{
-    minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
     netex_utils::{FrameType, Frames},
@@ -31,6 +30,7 @@ use crate::{
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn, Level as LogLevel};
 use minidom::Element;
+use minidom_ext::{AttributeElementExt, OnlyChildElementExt};
 use skip_error::skip_error_and_log;
 use std::{
     collections::{BTreeSet, HashMap},
@@ -141,7 +141,7 @@ fn load_netex_lines(
                 let id = line.try_attribute_with("id", extract_line_id)?;
                 let name = line.try_only_child("Name")?.text().parse()?;
                 let code = line
-                    .try_only_child_with_filter("PublicCode", |e| !e.text().is_empty())
+                    .try_find_only_child(|e| e.name() == "PublicCode" && !e.text().is_empty())
                     .or_else(|_| line.try_only_child("ShortName"))
                     .map(Element::text)
                     .ok();
@@ -159,6 +159,7 @@ fn load_netex_lines(
                 );
                 let network_id: String = line
                     .try_only_child("RepresentedByGroupRef")
+                    .map_err(|e| format_err!("{}", e))
                     .and_then(|netref| {
                         netref.try_attribute_with::<_, _, String>("ref", extract_network_id)
                     })
