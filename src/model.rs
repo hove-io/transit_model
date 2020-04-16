@@ -1768,6 +1768,7 @@ mod tests {
 
     mod update_stop_area_coords {
         use super::*;
+        use approx::assert_relative_eq;
 
         fn collections(sp_amount: usize) -> Collections {
             let mut collections = Collections::default();
@@ -1806,8 +1807,8 @@ mod tests {
             let mut collections = collections(3);
             collections.update_stop_area_coords();
             let stop_area = collections.stop_areas.get("stop_area:1").unwrap();
-            assert!((stop_area.coord.lon - 2.0).abs() < std::f64::EPSILON);
-            assert!((stop_area.coord.lat - 2.0).abs() < std::f64::EPSILON);
+            assert_relative_eq!(stop_area.coord.lon, 2.0);
+            assert_relative_eq!(stop_area.coord.lat, 2.0);
         }
 
         #[test]
@@ -1815,8 +1816,8 @@ mod tests {
             let mut collections = collections(0);
             collections.update_stop_area_coords();
             let stop_area = collections.stop_areas.get("stop_area:1").unwrap();
-            assert!((stop_area.coord.lon - 0.0).abs() < std::f64::EPSILON);
-            assert!((stop_area.coord.lat - 0.0).abs() < std::f64::EPSILON);
+            assert_relative_eq!(stop_area.coord.lon, 0.0);
+            assert_relative_eq!(stop_area.coord.lat, 0.0);
         }
     }
 }
