@@ -1755,7 +1755,7 @@ impl AddPrefix for GridRelCalendarLine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use approx::relative_eq;
+    use approx::assert_relative_eq;
     use pretty_assertions::assert_eq;
     use serde_json;
 
@@ -1860,17 +1860,27 @@ mod tests {
         lat: 48.844_304,
     };
 
+    const EPSILON: f64 = 0.001;
+
     #[test]
     fn orthodromic_distance() {
-        relative_eq!(COORD1.distance_to(&COORD1), 0.0);
-        relative_eq!(COORD1.distance_to(&COORD2), 357.64);
-        relative_eq!(COORD2.distance_to(&COORD1), 357.64);
+        assert_relative_eq!(COORD1.distance_to(&COORD1), 0.0);
+        assert_relative_eq!(COORD1.distance_to(&COORD2), 357.644, epsilon = EPSILON);
+        assert_relative_eq!(COORD2.distance_to(&COORD1), 357.644, epsilon = EPSILON);
     }
 
     #[test]
     fn approx_distance() {
-        relative_eq!(COORD1.approx().sq_distance_to(&COORD1).sqrt(), 0.0,);
-        relative_eq!(COORD1.approx().sq_distance_to(&COORD2).sqrt(), 357.64,);
-        relative_eq!(COORD2.approx().sq_distance_to(&COORD1).sqrt(), 357.64,);
+        assert_relative_eq!(COORD1.approx().sq_distance_to(&COORD1).sqrt(), 0.0);
+        assert_relative_eq!(
+            COORD1.approx().sq_distance_to(&COORD2).sqrt(),
+            357.642,
+            epsilon = EPSILON
+        );
+        assert_relative_eq!(
+            COORD2.approx().sq_distance_to(&COORD1).sqrt(),
+            357.647,
+            epsilon = EPSILON
+        );
     }
 }

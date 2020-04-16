@@ -1273,6 +1273,7 @@ impl ops::Deref for Model {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use approx::assert_relative_eq;
 
     mod merge {
         use super::*;
@@ -1298,7 +1299,7 @@ mod tests {
                 .unwrap();
             collections.try_merge(collections_to_merge).unwrap();
             let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
-            assert!((bus_mode.co2_emission.unwrap() - 42f32).abs() < std::f32::EPSILON);
+            assert_relative_eq!(bus_mode.co2_emission.unwrap(), 42f32);
         }
 
         #[test]
@@ -1322,7 +1323,7 @@ mod tests {
                 .unwrap();
             collections.try_merge(collections_to_merge).unwrap();
             let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
-            assert!((bus_mode.co2_emission.unwrap() - 42f32).abs() < std::f32::EPSILON);
+            assert_relative_eq!(bus_mode.co2_emission.unwrap(), 42f32);
         }
     }
 
@@ -1344,7 +1345,7 @@ mod tests {
             collections.enhance_with_co2();
 
             let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
-            assert!((bus_mode.co2_emission.unwrap() - 132f32).abs() < std::f32::EPSILON);
+            assert_relative_eq!(bus_mode.co2_emission.unwrap(), 132f32);
         }
 
         #[test]
@@ -1361,7 +1362,7 @@ mod tests {
             collections.enhance_with_co2();
 
             let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
-            assert!((bus_mode.co2_emission.unwrap() - 42.0f32).abs() < std::f32::EPSILON);
+            assert_relative_eq!(bus_mode.co2_emission.unwrap(), 42.0f32);
         }
 
         #[test]
@@ -1371,14 +1372,14 @@ mod tests {
 
             assert_eq!(3, collections.physical_modes.len());
             let bike_mode = collections.physical_modes.get(BIKE_PHYSICAL_MODE).unwrap();
-            assert!((bike_mode.co2_emission.unwrap() - 0.0f32).abs() < std::f32::EPSILON);
+            assert_relative_eq!(bike_mode.co2_emission.unwrap(), 0.0f32);
             let walk_mode = collections
                 .physical_modes
                 .get(BIKE_SHARING_SERVICE_PHYSICAL_MODE)
                 .unwrap();
-            assert!((walk_mode.co2_emission.unwrap() - 0.0f32).abs() < std::f32::EPSILON);
+            assert_relative_eq!(walk_mode.co2_emission.unwrap(), 0.0f32);
             let car_mode = collections.physical_modes.get(CAR_PHYSICAL_MODE).unwrap();
-            assert!((car_mode.co2_emission.unwrap() - 184.0f32).abs() < std::f32::EPSILON);
+            assert_relative_eq!(car_mode.co2_emission.unwrap(), 184.0f32);
         }
     }
 
