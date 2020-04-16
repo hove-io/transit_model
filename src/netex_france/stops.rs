@@ -539,8 +539,8 @@ mod tests {
             }
         }
 
-        fn get_mobility_impaired_access_value<'a>(
-            stop_exporter: &'a StopExporter,
+        fn get_mobility_impaired_access_value(
+            stop_exporter: &StopExporter,
             (w, v, a): (Availability, Availability, Availability),
         ) -> String {
             get_mobility_impaired_access(StopExporter::generate_mobility_impaired_access(

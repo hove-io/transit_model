@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+use approx::assert_relative_eq;
 use pretty_assertions::assert_eq;
 use std::collections::{BTreeMap, HashMap};
 use std::fs::File;
@@ -41,6 +42,7 @@ fn merge_collections_with_collisions() {
 }
 
 #[test]
+#[allow(clippy::cognitive_complexity)]
 fn merge_collections_ok() {
     let mut collections = Collections::default();
     let input_dirs = ["tests/fixtures/ntfs", "tests/fixtures/merge-ntfs/input"];
@@ -63,7 +65,7 @@ fn merge_collections_ok() {
     assert_eq!(1, count_bus);
     // Check that the merge of CO2 emission keeps only the biggest value
     let bus_mode = collections.physical_modes.get("Bus").unwrap();
-    assert_eq!(132f32, bus_mode.co2_emission.unwrap());
+    assert_relative_eq!(bus_mode.co2_emission.unwrap(), 132f32);
 
     assert_eq!(5, collections.commercial_modes.len());
     // 4 + 3 automatically inserted 'Bike', 'BikeSharingService', and 'Car'

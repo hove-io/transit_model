@@ -1057,7 +1057,7 @@ mod tests {
             let general_frame_1: Element = xml_general_frame_1.parse().unwrap();
             let general_frame_2: Element = xml_general_frame_2.parse().unwrap();
             let general_frames =
-                parse_general_frame_by_type(&vec![&general_frame_1, &general_frame_2]).unwrap();
+                parse_general_frame_by_type(&[&general_frame_1, &general_frame_2]).unwrap();
             assert!(general_frames.contains_key(&GeneralFrameType::Schedule));
             assert!(general_frames.contains_key(&GeneralFrameType::Structure));
         }
@@ -1073,7 +1073,7 @@ mod tests {
                </GeneralFrame>"#;
             let general_frame_1: Element = xml_general_frame_1.parse().unwrap();
             let general_frame_2: Element = xml_general_frame_2.parse().unwrap();
-            parse_general_frame_by_type(&vec![&general_frame_1, &general_frame_2]).unwrap();
+            parse_general_frame_by_type(&[&general_frame_1, &general_frame_2]).unwrap();
         }
 
         #[test]
@@ -1083,7 +1083,7 @@ mod tests {
                     <TypeOfFrameRef ref="FR100:TypeOfFrame:NETEX_UNKNOWN_TYPE:"/>
                </GeneralFrame>"#;
             let general_frame: Element = xml_general_frame.parse().unwrap();
-            parse_general_frame_by_type(&vec![&general_frame]).unwrap();
+            parse_general_frame_by_type(&[&general_frame]).unwrap();
         }
     }
 
@@ -1367,6 +1367,7 @@ mod tests {
         }
 
         #[test]
+        #[allow(clippy::cognitive_complexity)]
         fn parse_vehicle_journey() {
             let service_journey_element = service_journey();
             let service_journey_xml = r#"<ServiceJourney id="stif:ServiceJourney:service_journey_id_1:">

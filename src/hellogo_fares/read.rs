@@ -766,7 +766,7 @@ mod tests {
         use super::*;
         use pretty_assertions::assert_eq;
 
-        const SERVICE_XML: &'static str = r#"<ServiceFrame>
+        const SERVICE_XML: &str = r#"<ServiceFrame>
                     <lines>
                         <Line id="syn:Line-B42">
                             <KeyList>
@@ -778,7 +778,7 @@ mod tests {
                         </Line>
                     </lines>
                 </ServiceFrame>"#;
-        const FARE_FRAME_XML: &'static str = r#"<FareFrame>
+        const FARE_FRAME_XML: &str = r#"<FareFrame>
                     <contentValidityConditions>
                         <ValidityTrigger id="vt:1">
                             <TriggerObjectRef ref="syn:Line-B42" nameOfRefClass="Line" />
@@ -916,9 +916,9 @@ mod tests {
         use super::*;
         use pretty_assertions::assert_eq;
 
-        const PREFIX_WITH_COLON: &'static str = "NTM:";
+        const PREFIX_WITH_COLON: &str = "NTM:";
 
-        const SERVICE_XML: &'static str = r#"<ServiceFrame>
+        const SERVICE_XML: &str = r#"<ServiceFrame>
                 <scheduledStopPoints>
                     <ScheduledStopPoint id="syn:ssp:1">
                         <projections>
@@ -939,7 +939,7 @@ mod tests {
                     </ScheduledStopPoint>
                 </scheduledStopPoints>
             </ServiceFrame>"#;
-        const DISTANCE_MATRIX_ELEMENT_XML: &'static str = r#"<DistanceMatrixElement>
+        const DISTANCE_MATRIX_ELEMENT_XML: &str = r#"<DistanceMatrixElement>
                 <Distance>50</Distance>
                 <StartStopPointRef ref="syn:ssp:1" />
                 <EndStopPointRef ref="syn:ssp:2" />
@@ -948,30 +948,30 @@ mod tests {
         fn init_collections() -> Collections {
             let mut collections = Collections::default();
             let sa1 = StopArea {
-                id: String::from(format!("{}sa:1", PREFIX_WITH_COLON)),
+                id: format!("{}sa:1", PREFIX_WITH_COLON),
                 ..Default::default()
             };
             let sa2 = StopArea {
-                id: String::from(format!("{}sa:2", PREFIX_WITH_COLON)),
+                id: format!("{}sa:2", PREFIX_WITH_COLON),
                 ..Default::default()
             };
             let sa3 = StopArea {
-                id: String::from(format!("{}sa:3", PREFIX_WITH_COLON)),
+                id: format!("{}sa:3", PREFIX_WITH_COLON),
                 ..Default::default()
             };
             let sp1 = StopPoint {
-                id: String::from(format!("{}sp:1", PREFIX_WITH_COLON)),
-                stop_area_id: String::from(format!("{}sa:1", PREFIX_WITH_COLON)),
+                id: format!("{}sp:1", PREFIX_WITH_COLON),
+                stop_area_id: format!("{}sa:1", PREFIX_WITH_COLON),
                 ..Default::default()
             };
             let sp2 = StopPoint {
-                id: String::from(format!("{}sp:2", PREFIX_WITH_COLON)),
-                stop_area_id: String::from(format!("{}sa:2", PREFIX_WITH_COLON)),
+                id: format!("{}sp:2", PREFIX_WITH_COLON),
+                stop_area_id: format!("{}sa:2", PREFIX_WITH_COLON),
                 ..Default::default()
             };
             let sp3 = StopPoint {
-                id: String::from(format!("{}sp:3", PREFIX_WITH_COLON)),
-                stop_area_id: String::from(format!("{}sa:3", PREFIX_WITH_COLON)),
+                id: format!("{}sp:3", PREFIX_WITH_COLON),
+                stop_area_id: format!("{}sa:3", PREFIX_WITH_COLON),
                 ..Default::default()
             };
             collections.stop_areas.push(sa1).unwrap();

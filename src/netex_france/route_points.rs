@@ -177,11 +177,7 @@ mod tests {
             );
             let vehicle_journey_2 = vehicle_journey(
                 String::from("vehicle_journey_2"),
-                vec![
-                    stop_time_1.clone(),
-                    stop_time_2.clone(),
-                    stop_time_3.clone(),
-                ],
+                vec![stop_time_1, stop_time_2, stop_time_3],
             );
             let vehicle_journeys = vec![vehicle_journey_1, vehicle_journey_2];
             let route_points = build_route_points(&vehicle_journeys);
@@ -230,19 +226,11 @@ mod tests {
             );
             let vehicle_journey_1 = vehicle_journey(
                 String::from("vehicle_journey_1"),
-                vec![
-                    stop_time_1.clone(),
-                    stop_time_3.clone(),
-                    stop_time_4.clone(),
-                ],
+                vec![stop_time_1, stop_time_3.clone(), stop_time_4],
             );
             let vehicle_journey_2 = vehicle_journey(
                 String::from("vehicle_journey_2"),
-                vec![
-                    stop_time_2.clone(),
-                    stop_time_3.clone(),
-                    stop_time_5.clone(),
-                ],
+                vec![stop_time_2, stop_time_3, stop_time_5],
             );
             let vehicle_journeys = vec![vehicle_journey_1, vehicle_journey_2];
             let route_points = build_route_points(&vehicle_journeys);
@@ -291,19 +279,11 @@ mod tests {
             );
             let vehicle_journey_1 = vehicle_journey(
                 String::from("vehicle_journey_1"),
-                vec![
-                    stop_time_1.clone(),
-                    stop_time_2.clone(),
-                    stop_time_4.clone(),
-                ],
+                vec![stop_time_1.clone(), stop_time_2, stop_time_4.clone()],
             );
             let vehicle_journey_2 = vehicle_journey(
                 String::from("vehicle_journey_2"),
-                vec![
-                    stop_time_1.clone(),
-                    stop_time_3.clone(),
-                    stop_time_4.clone(),
-                ],
+                vec![stop_time_1, stop_time_3, stop_time_4],
             );
             let vehicle_journeys = vec![vehicle_journey_1, vehicle_journey_2];
             let route_points = build_route_points(&vehicle_journeys);
@@ -358,12 +338,7 @@ mod tests {
             );
             let vehicle_journey_2 = vehicle_journey(
                 String::from("vehicle_journey_2"),
-                vec![
-                    stop_time_1.clone(),
-                    stop_time_3.clone(),
-                    stop_time_2.clone(),
-                    stop_time_4.clone(),
-                ],
+                vec![stop_time_1, stop_time_3, stop_time_2, stop_time_4],
             );
             let vehicle_journeys = vec![vehicle_journey_1, vehicle_journey_2];
             let route_points = build_route_points(&vehicle_journeys);
@@ -425,18 +400,13 @@ mod tests {
                     stop_time_1.clone(),
                     stop_time_2.clone(),
                     stop_time_3.clone(),
-                    stop_time_1_bis.clone(),
-                    stop_time_4.clone(),
+                    stop_time_1_bis,
+                    stop_time_4,
                 ],
             );
             let vehicle_journey_2 = vehicle_journey(
                 String::from("vehicle_journey_2"),
-                vec![
-                    stop_time_1.clone(),
-                    stop_time_2.clone(),
-                    stop_time_3.clone(),
-                    stop_time_5.clone(),
-                ],
+                vec![stop_time_1, stop_time_2, stop_time_3, stop_time_5],
             );
             let vehicle_journeys = vec![vehicle_journey_1, vehicle_journey_2];
             let route_points = build_route_points(&vehicle_journeys);
@@ -491,12 +461,7 @@ mod tests {
             );
             let vehicle_journey_2 = vehicle_journey(
                 String::from("vehicle_journey_2"),
-                vec![
-                    stop_time_1.clone(),
-                    stop_time_2.clone(),
-                    stop_time_3.clone(),
-                    stop_time_4.clone(),
-                ],
+                vec![stop_time_1, stop_time_2, stop_time_3, stop_time_4],
             );
             let vehicle_journeys = vec![vehicle_journey_1, vehicle_journey_2];
             let route_points = build_route_points(&vehicle_journeys);

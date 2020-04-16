@@ -272,7 +272,7 @@ mod tests {
 
         dates.insert(Date::from_ymd(2012, 7, 2));
         let res = translate(&dates);
-        assert_eq!(0b1000000, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b100_0000, get_week_from_weekday(res.operating_days));
 
         assert!(res.exceptions.is_empty());
         assert_eq!(
@@ -291,7 +291,7 @@ mod tests {
             &format!("{}{}", "0011101", "000"),
         ));
 
-        assert_eq!(0b0011101, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b001_1101, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
@@ -309,7 +309,7 @@ mod tests {
             &format!("{}{}", "0000010", "00"),
         ));
 
-        assert_eq!(0b0000010, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b000_0010, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
@@ -324,10 +324,10 @@ mod tests {
     fn empty_vp() {
         let res = translate(&get_dates_from_bitset(
             Date::from_ymd(2012, 7, 16),
-            &format!("{}", "0000000"),
+            &"0000000".to_string(),
         ));
 
-        assert_eq!(0b0000000, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b000_0000, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert!(res.validity_period.is_none());
     }
@@ -339,7 +339,7 @@ mod tests {
             &format!("{}{}", "0000000", "0001000"),
         ));
 
-        assert_eq!(0b0001000, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b000_1000, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
@@ -357,7 +357,7 @@ mod tests {
             &format!("{}{}", "0000000", "1000000"),
         ));
 
-        assert_eq!(0b1000000, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b100_0000, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
@@ -375,7 +375,7 @@ mod tests {
             &format!("{}{}", "0000001", "0000000"),
         ));
 
-        assert_eq!(0b0000001, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b000_0001, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
@@ -394,7 +394,7 @@ mod tests {
             &format!("{}{}", "0000000", "0001111"),
         ));
 
-        assert_eq!(0b0001111, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b000_1111, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
@@ -412,7 +412,7 @@ mod tests {
             &format!("{}{}{}", "1111111", "1111111", "1111111"),
         ));
 
-        assert_eq!(0b1111111, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b111_1111, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
@@ -430,11 +430,11 @@ mod tests {
             &format!("{}{}{}", "1100111", "1100011", "1100111"),
         ));
 
-        assert_eq!(0b1100111, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b110_0111, get_week_from_weekday(res.operating_days));
         assert_eq!(1, res.exceptions.len());
         assert_eq!(
             &ExceptionDate {
-                date: Date::from_ymd(2012, 07, 13),
+                date: Date::from_ymd(2012, 7, 13),
                 exception_type: ExceptionType::Remove,
             },
             res.exceptions.iter().next().unwrap()
@@ -455,11 +455,11 @@ mod tests {
             &format!("{}{}{}", "1100111", "1101111", "1100111"),
         ));
 
-        assert_eq!(0b1100111, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b110_0111, get_week_from_weekday(res.operating_days));
         assert_eq!(1, res.exceptions.len());
         assert_eq!(
             &ExceptionDate {
-                date: Date::from_ymd(2012, 07, 12),
+                date: Date::from_ymd(2012, 7, 12),
                 exception_type: ExceptionType::Add,
             },
             res.exceptions.iter().next().unwrap()
@@ -480,7 +480,7 @@ mod tests {
             &format!("{}{}{}", "1011111", "1101111", "1110111"),
         ));
 
-        assert_eq!(0b1111111, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b111_1111, get_week_from_weekday(res.operating_days));
         assert_eq!(3, res.exceptions.len());
 
         assert_eq!(
@@ -520,7 +520,7 @@ mod tests {
             &format!("{}{}{}", "0100000", "0010000", "0001000"),
         ));
 
-        assert_eq!(0b0000000, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b000_0000, get_week_from_weekday(res.operating_days));
         assert_eq!(3, res.exceptions.len());
         assert_eq!(
             ExceptionDate {
@@ -559,7 +559,7 @@ mod tests {
             &format!("{}{}{}", "0000111", "0001111", "0001110"),
         ));
 
-        assert_eq!(0b0001111, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b000_1111, get_week_from_weekday(res.operating_days));
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
@@ -581,7 +581,7 @@ mod tests {
             ),
         ));
 
-        assert_eq!(0b1111100, get_week_from_weekday(res.operating_days));
+        assert_eq!(0b111_1100, get_week_from_weekday(res.operating_days));
         assert_eq!(5, res.exceptions.len());
         assert_eq!(
             ExceptionDate {

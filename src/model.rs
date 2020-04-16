@@ -1289,10 +1289,10 @@ impl ops::Deref for Model {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use approx::assert_relative_eq;
 
     mod merge {
         use super::*;
-        use pretty_assertions::assert_eq;
 
         #[test]
         fn physical_mode_co2_emission_max() {
@@ -1315,7 +1315,7 @@ mod tests {
                 .unwrap();
             collections.try_merge(collections_to_merge).unwrap();
             let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
-            assert_eq!(42f32, bus_mode.co2_emission.unwrap());
+            assert_relative_eq!(bus_mode.co2_emission.unwrap(), 42f32);
         }
 
         #[test]
@@ -1339,7 +1339,7 @@ mod tests {
                 .unwrap();
             collections.try_merge(collections_to_merge).unwrap();
             let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
-            assert_eq!(42f32, bus_mode.co2_emission.unwrap());
+            assert_relative_eq!(bus_mode.co2_emission.unwrap(), 42f32);
         }
     }
 
@@ -1361,7 +1361,7 @@ mod tests {
             collections.enhance_with_co2();
 
             let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
-            assert_eq!(132f32, bus_mode.co2_emission.unwrap());
+            assert_relative_eq!(bus_mode.co2_emission.unwrap(), 132f32);
         }
 
         #[test]
@@ -1378,7 +1378,7 @@ mod tests {
             collections.enhance_with_co2();
 
             let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
-            assert_eq!(42.0f32, bus_mode.co2_emission.unwrap());
+            assert_relative_eq!(bus_mode.co2_emission.unwrap(), 42.0f32);
         }
 
         #[test]
@@ -1388,14 +1388,14 @@ mod tests {
 
             assert_eq!(3, collections.physical_modes.len());
             let bike_mode = collections.physical_modes.get(BIKE_PHYSICAL_MODE).unwrap();
-            assert_eq!(0.0f32, bike_mode.co2_emission.unwrap());
+            assert_relative_eq!(bike_mode.co2_emission.unwrap(), 0.0f32);
             let walk_mode = collections
                 .physical_modes
                 .get(BIKE_SHARING_SERVICE_PHYSICAL_MODE)
                 .unwrap();
-            assert_eq!(0.0f32, walk_mode.co2_emission.unwrap());
+            assert_relative_eq!(walk_mode.co2_emission.unwrap(), 0.0f32);
             let car_mode = collections.physical_modes.get(CAR_PHYSICAL_MODE).unwrap();
-            assert_eq!(184.0f32, car_mode.co2_emission.unwrap());
+            assert_relative_eq!(car_mode.co2_emission.unwrap(), 184.0f32);
         }
     }
 
@@ -1466,22 +1466,22 @@ mod tests {
             let mut collections = Collections::default();
 
             let mut service_1 = Calendar::new(String::from("service_1"));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 01));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 02));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 03));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 1));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 2));
+            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 3));
             service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
             collections.calendars.push(service_1).unwrap();
 
             let mut service_2 = Calendar::new(String::from("service_2"));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 01));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 02));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 03));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 1));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 2));
+            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 3));
             service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
             collections.calendars.push(service_2).unwrap();
 
             let mut service_3 = Calendar::new(String::from("service_3"));
-            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 01));
-            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 03));
+            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 1));
+            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 3));
             service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
             collections.calendars.push(service_3).unwrap();
 
@@ -1784,7 +1784,7 @@ mod tests {
 
     mod update_stop_area_coords {
         use super::*;
-        use pretty_assertions::assert_eq;
+        use approx::assert_relative_eq;
 
         fn collections(sp_amount: usize) -> Collections {
             let mut collections = Collections::default();
@@ -1823,8 +1823,8 @@ mod tests {
             let mut collections = collections(3);
             collections.update_stop_area_coords();
             let stop_area = collections.stop_areas.get("stop_area:1").unwrap();
-            assert_eq!(2.0, stop_area.coord.lon);
-            assert_eq!(2.0, stop_area.coord.lat);
+            assert_relative_eq!(stop_area.coord.lon, 2.0);
+            assert_relative_eq!(stop_area.coord.lat, 2.0);
         }
 
         #[test]
@@ -1832,8 +1832,8 @@ mod tests {
             let mut collections = collections(0);
             collections.update_stop_area_coords();
             let stop_area = collections.stop_areas.get("stop_area:1").unwrap();
-            assert_eq!(0.0, stop_area.coord.lon);
-            assert_eq!(0.0, stop_area.coord.lat);
+            assert_relative_eq!(stop_area.coord.lon, 0.0);
+            assert_relative_eq!(stop_area.coord.lat, 0.0);
         }
     }
 }

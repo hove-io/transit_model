@@ -43,7 +43,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: clippy
-        args: --workspace --all-features -- -D warnings
+        args: --workspace --all-features --all-targets -- -D warnings
 
   tests:
     name: Tests

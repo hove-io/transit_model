@@ -421,7 +421,7 @@ mod tests {
                 </ResourceFrame>"#;
             let resource_frame: Element = xml.parse().unwrap();
             let (start, end) = get_validity(&resource_frame).unwrap();
-            assert_eq!(NaiveDate::from_ymd(2019, 01, 01), start);
+            assert_eq!(NaiveDate::from_ymd(2019, 1, 1), start);
             assert_eq!(NaiveDate::from_ymd(2019, 12, 31), end);
         }
 
