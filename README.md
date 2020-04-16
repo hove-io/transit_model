@@ -58,22 +58,6 @@ apt install libxml2-utils
 cargo test --features xmllint
 ```
 
-## Benchmarking
-A few benchmarks are available if you want to compare performance of a new
-feature or of an optimization. Benchmarking functionality is only available in
-Rust Nightly so to run them, you can do the following.
-
-```
-cargo +nightly bench --all-features
-```
-
-Of course, if you need to run one specific bench, you can refer to a specific
-bench name in `benches/`.
-
-```
-rustup run nightly cargo bench read_kv1 --features proj
-```
-
 ## Converting from GTFS to NTFS
 
 NTFS needs a `Dataset` and a `Contributor`.
