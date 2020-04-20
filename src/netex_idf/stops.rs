@@ -14,7 +14,6 @@
 
 use super::{accessibility::*, attribute_with::AttributeWith, EUROPE_PARIS_TIMEZONE};
 use crate::{
-    minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
     netex_utils::{FrameType, Frames},
@@ -24,6 +23,7 @@ use crate::{
 use failure::{bail, format_err, ResultExt};
 use log::{info, warn, Level as LogLevel};
 use minidom::Element;
+use minidom_ext::{AttributeElementExt, OnlyChildElementExt};
 use proj::Proj;
 use skip_error::skip_error_and_log;
 use std::{collections::HashMap, fs::File, io::Read};

@@ -13,13 +13,13 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    minidom_utils::TryOnlyChild,
     objects::{Date, ValidityPeriod},
     transxchange::bank_holidays::BankHoliday,
 };
 use chrono::{Datelike, Weekday};
 use log::warn;
 use minidom::Element;
+use minidom_ext::OnlyChildElementExt;
 use std::{
     collections::{HashMap, HashSet},
     convert::From,

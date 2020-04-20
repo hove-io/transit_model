@@ -15,10 +15,6 @@
 //! Some utilities to use Minidom and returns [Result](crate::Result) when
 //! parsing instead of [Option](Option)
 
-mod try_attribute;
-pub use try_attribute::TryAttribute;
-mod try_only_child;
-pub use try_only_child::TryOnlyChild;
 #[cfg(feature = "proj")]
 mod writer;
 #[cfg(feature = "proj")]

@@ -14,7 +14,6 @@
 
 use super::{utils, utils::FareFrameType};
 use crate::{
-    minidom_utils::{TryAttribute, TryOnlyChild},
     model::Collections,
     netex_utils,
     netex_utils::{FrameType, Frames},
@@ -24,6 +23,7 @@ use crate::{
 use failure::{bail, format_err};
 use log::{info, warn, Level as LogLevel};
 use minidom::Element;
+use minidom_ext::{AttributeElementExt, OnlyChildElementExt};
 use rust_decimal::Decimal;
 use skip_error::skip_error_and_log;
 use std::{
@@ -44,7 +44,9 @@ impl TryFrom<&Element> for Ticket {
                 distance_matrix_element.name()
             );
         }
-        let id = distance_matrix_element.try_attribute("id")?;
+        let id = distance_matrix_element
+            .try_attribute("id")
+            .map_err(|e| format_err!("{}", e))?;
         let ticket = Ticket {
             id,
             name: "Ticket Origin-Destination".to_string(),
@@ -145,15 +147,20 @@ fn get_unit_price_frame<'a>(frames: &'a Frames<'a>) -> Result<&'a Element> {
 
 fn calculate_direct_price(distance_matrix_element: &Element) -> Result<Decimal> {
     let distance_matrix_element_price = distance_matrix_element
-        .try_only_child("prices")?
-        .try_only_child("DistanceMatrixElementPrice")?;
+        .try_only_child("prices")
+        .map_err(|e| format_err!("{}", e))?
+        .try_only_child("DistanceMatrixElementPrice")
+        .map_err(|e| format_err!("{}", e))?;
     Ok(utils::get_amount_units_factor(
         distance_matrix_element_price,
     )?)
 }
 
 fn get_distance(distance_matrix_element: &Element) -> Result<u32> {
-    let distance_str = distance_matrix_element.try_only_child("Distance")?.text();
+    let distance_str = distance_matrix_element
+        .try_only_child("Distance")
+        .map_err(|e| format_err!("{}", e))?
+        .text();
     distance_str
         .parse()
         .map_err(|_| format_err!("Failed to parse '{}' into a 'u32'", distance_str))
@@ -162,7 +169,8 @@ fn get_distance(distance_matrix_element: &Element) -> Result<u32> {
 fn get_line_id(fare_frame: &Element, service_frame: &Element) -> Result<String> {
     fn get_line_ref<'a>(fare_frame: &'a Element) -> Result<&'a str> {
         let references: Vec<_> = fare_frame
-            .try_only_child("contentValidityConditions")?
+            .try_only_child("contentValidityConditions")
+            .map_err(|e| format_err!("{}", e))?
             .children()
             .filter(|element| element.name() == "ValidityTrigger")
             .flat_map(|validity_trigger| validity_trigger.children())
@@ -170,6 +178,7 @@ fn get_line_id(fare_frame: &Element, service_frame: &Element) -> Result<String> 
             .filter(|trigger_object_ref| {
                 trigger_object_ref
                     .try_attribute::<String>("nameOfRefClass")
+                    .map_err(|e| format_err!("{}", e))
                     .map(|ref_class| ref_class == "Line")
                     .unwrap_or(false)
             })
@@ -184,11 +193,13 @@ fn get_line_id(fare_frame: &Element, service_frame: &Element) -> Result<String> 
 
     fn get_line_id_from_line_ref(service_frame: &Element, line_ref: &str) -> Result<String> {
         let values: Vec<String> = service_frame
-            .try_only_child("lines")?
+            .try_only_child("lines")
+            .map_err(|e| format_err!("{}", e))?
             .children()
             .filter(|element| element.name() == "Line")
             .filter(|line| {
                 line.try_attribute::<String>("id")
+                    .map_err(|e| format_err!("{}", e))
                     .map(|id| id == line_ref)
                     .unwrap_or(false)
             })
@@ -214,12 +225,16 @@ fn get_origin_destinations(
 ) -> Result<Vec<(String, String)>> {
     fn get_ref(distance_matrix_element: &Element, element_name: &str) -> Result<String> {
         distance_matrix_element
-            .try_only_child(element_name)?
+            .try_only_child(element_name)
+            .map_err(|e| format_err!("{}", e))?
             .try_attribute("ref")
+            .map_err(|e| format_err!("{}", e))
     }
     let start_stop_point_ref = get_ref(distance_matrix_element, "StartStopPointRef")?;
     let end_stop_point_ref = get_ref(distance_matrix_element, "EndStopPointRef")?;
-    let scheduled_stop_points = service_frame.try_only_child("scheduledStopPoints")?;
+    let scheduled_stop_points = service_frame
+        .try_only_child("scheduledStopPoints")
+        .map_err(|e| format_err!("{}", e))?;
     fn get_stop_point_ids<'a>(
         scheduled_stop_points: &'a Element,
         stop_point_ref: &str,
@@ -230,6 +245,7 @@ fn get_origin_destinations(
             .filter(|scheduled_stop_point| {
                 scheduled_stop_point
                     .try_attribute::<String>("id")
+                    .map_err(|e| format_err!("{}", e))
                     .map(|id| id == stop_point_ref)
                     .unwrap_or(false)
             })
@@ -253,7 +269,8 @@ fn get_origin_destinations(
             }
         }
         let stop_point_ids = scheduled_stop_point
-            .try_only_child("projections")?
+            .try_only_child("projections")
+            .map_err(|e| format_err!("{}", e))?
             .children()
             .filter(|element| element.name() == "PointProjection")
             .flat_map(|point_projection| point_projection.children())
@@ -304,9 +321,12 @@ fn load_netex_fares(collections: &mut Collections, root: &Element) -> Result<()>
         .map(|prefix| prefix + ":")
         .unwrap_or_else(String::new);
     let frames = netex_utils::parse_frames_by_type(
-        root.try_only_child("dataObjects")?
-            .try_only_child("CompositeFrame")?
-            .try_only_child("frames")?,
+        root.try_only_child("dataObjects")
+            .map_err(|e| format_err!("{}", e))?
+            .try_only_child("CompositeFrame")
+            .map_err(|e| format_err!("{}", e))?
+            .try_only_child("frames")
+            .map_err(|e| format_err!("{}", e))?,
     )?;
     let unit_price_frame = get_unit_price_frame(&frames)?;
     let service_frame = netex_utils::get_only_frame(&frames, FrameType::Service)?;
@@ -701,7 +721,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'prices\\' in element \\'DistanceMatrixElement\\'"
+            expected = "No children with name \\'prices\\' in Element \\'DistanceMatrixElement\\'"
         )]
         fn no_prices() {
             let xml = r#"<DistanceMatrixElement />"#;
@@ -711,7 +731,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'DistanceMatrixElementPrice\\' in element \\'prices\\'"
+            expected = "No children with name \\'DistanceMatrixElementPrice\\' in Element \\'prices\\'"
         )]
         fn no_distance_matrix_element_price() {
             let xml = r#"<DistanceMatrixElement>
@@ -723,7 +743,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a unique child \\'DistanceMatrixElementPrice\\' in element \\'prices\\'"
+            expected = "Multiple children with name \\'DistanceMatrixElementPrice\\' in Element \\'prices\\'"
         )]
         fn multiple_distance_matrix_element_price() {
             let xml = r#"<DistanceMatrixElement>
@@ -753,7 +773,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'Distance\\' in element \\'DistanceMatrixElement\\'"
+            expected = "No children with name \\'Distance\\' in Element \\'DistanceMatrixElement\\'"
         )]
         fn no_prices() {
             let xml = r#"<DistanceMatrixElement />"#;
@@ -796,7 +816,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'contentValidityConditions\\' in element \\'FareFrame\\'"
+            expected = "No children with name \\'contentValidityConditions\\' in Element \\'FareFrame\\'"
         )]
         fn no_content_validations() {
             let fare_frame_xml = r#"<FareFrame />"#;
@@ -854,7 +874,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'lines\\' in element \\'ServiceFrame\\'"
+            expected = "No children with name \\'lines\\' in Element \\'ServiceFrame\\'"
         )]
         fn no_lines() {
             let service_xml = r#"<ServiceFrame />"#;
@@ -1018,7 +1038,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'StartStopPointRef\\' in element \\'DistanceMatrixElement\\'"
+            expected = "No children with name \\'StartStopPointRef\\' in Element \\'DistanceMatrixElement\\'"
         )]
         fn no_start_stop_point_ref() {
             let collections = init_collections();
@@ -1061,7 +1081,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'scheduledStopPoints\\' in element \\'ServiceFrame\\'"
+            expected = "No children with name \\'scheduledStopPoints\\' in Element \\'ServiceFrame\\'"
         )]
         fn no_scheduled_stop_points() {
             let collections = init_collections();
@@ -1131,7 +1151,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a child \\'projections\\' in element \\'ScheduledStopPoint\\'"
+            expected = "No children with name \\'projections\\' in Element \\'ScheduledStopPoint\\'"
         )]
         fn no_projections() {
             let collections = init_collections();

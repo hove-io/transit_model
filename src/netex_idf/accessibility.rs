@@ -12,8 +12,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::{minidom_utils::TryOnlyChild, objects::Availability};
+use crate::objects::Availability;
 use minidom::Element;
+use minidom_ext::OnlyChildElementExt;
 
 #[derive(Eq, PartialEq, Hash, Clone)]
 pub struct Accessibility {
