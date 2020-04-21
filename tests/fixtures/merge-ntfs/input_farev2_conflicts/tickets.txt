@@ -1,2 +1,0 @@
-ticket_id,ticket_name,ticket_comment
-ticket.1,,

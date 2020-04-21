@@ -1,5 +1,0 @@
-commercial_mode_id,commercial_mode_name
-rapidtransit,"RER"
-train,"Train"
-tram,"Tramway"
-Bus,"Bus"

@@ -1,4 +1,0 @@
-stop_time_id,trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,local_zone_id,date_time_estimated
-StopTime:77100911-1_1420-1:0,77100911-1_1420-1,15:45:00,15:45:00,SP:10:10,0,"",0,1,,0
-StopTime:77100911-1_1420-1:1,77100911-1_1420-1,15:46:00,15:46:00,SP:10:100,3,"somewhere",0,0,,0
-StopTime:77100911-1_1420-1:2,77100911-1_1420-1,15:47:00,15:46:00,SP:10:200,4,"",0,0,,0
