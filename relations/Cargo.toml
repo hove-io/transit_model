@@ -1,12 +1,13 @@
 [package]
 name = "transit_model_relations"
 description = " Modeling the relations between objects"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Kisio Digital <team.coretools@kisio.org>"]
 edition = "2018"
 license = "AGPL-3.0-only"
 repository = "https://github.com/CanalTP/transit_model"
 keywords = ["relations", "collection"]
+readme = "README.md"
 
 [dependencies]
 derivative = "1.0.3"
