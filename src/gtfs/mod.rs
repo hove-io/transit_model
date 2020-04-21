@@ -261,6 +261,7 @@ fn read<H>(
     config_path: Option<impl AsRef<Path>>,
     prefix: Option<String>,
     on_demand_transport: bool,
+    on_demand_transport_comment: Option<String>,
 ) -> Result<Model>
 where
     for<'a> &'a mut H: read_utils::FileHandler,
@@ -322,9 +323,16 @@ pub fn read_from_path<P: AsRef<Path>>(
     config_path: Option<P>,
     prefix: Option<String>,
     on_demand_transport: bool,
+    on_demand_transport_comment: Option<String>,
 ) -> Result<Model> {
     let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
-    read(&mut file_handle, config_path, prefix, on_demand_transport)
+    read(
+        &mut file_handle,
+        config_path,
+        prefix,
+        on_demand_transport,
+        on_demand_transport_comment,
+    )
 }
 
 /// Imports a `Model` from a zip file containing the [GTFS](http://gtfs.org/).
@@ -341,9 +349,16 @@ pub fn read_from_zip<P: AsRef<Path>>(
     config_path: Option<P>,
     prefix: Option<String>,
     on_demand_transport: bool,
+    on_demand_transport_comment: Option<String>,
 ) -> Result<Model> {
     let mut file_handler = read_utils::ZipHandler::new(path)?;
-    read(&mut file_handler, config_path, prefix, on_demand_transport)
+    read(
+        &mut file_handler,
+        config_path,
+        prefix,
+        on_demand_transport,
+        on_demand_transport_comment,
+    )
 }
 
 #[derive(PartialOrd, Ord, Debug, Clone, Eq, PartialEq, Hash)]
