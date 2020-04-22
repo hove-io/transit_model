@@ -62,6 +62,7 @@ fn test_write_netex_france_from_gtfs() {
         None,
         None,
         false,
+        None,
     )
     .unwrap();
     test_write_netex_france(model);
