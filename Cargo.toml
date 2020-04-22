@@ -28,6 +28,7 @@ members = [
 	"gtfs2ntfs",
 	"ntfs2gtfs",
 	"ntfs2netexfr",  
+	"ntfs2ntfs",
 ]
 
 [features]
