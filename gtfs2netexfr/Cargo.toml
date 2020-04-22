@@ -1,0 +1,24 @@
+[package]
+name = "gtfs2netexfr"
+version = "1.0.0"
+authors = ["Kisio Digital <team.coretools@kisio.com>"]
+license = "AGPL-3.0-only"
+description = "Binary to convert Transit data from GTFS format to NeTEx France"
+edition = "2018"
+homepage = "https://github.com/CanalTP/transit_model"
+readme = "README.md"
+categories = ["command-line-utilities", "data-structures", "encoding", "parser-implementations"]
+keywords = ["gtfs", "netex", "transit"]
+
+[dependencies]
+chrono = "0.4"
+failure = "0.1"
+log = "0.4"
+slog = "2.5"
+slog-async = "2.3"
+slog-envlogger = "2.1"
+slog-scope = "4.1"
+slog-stdlog = "4.0"
+slog-term = "2.4"
+structopt = "0.3"
+transit_model = { version = "0.17", path = "../", features = ["proj"] }
