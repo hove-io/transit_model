@@ -16,7 +16,7 @@ use serde_json::json;
 use transit_model::Result;
 
 fn run() -> Result<()> {
-    let objects = transit_model::gtfs::read_from_path(".", None, None, false)?;
+    let objects = transit_model::gtfs::read_from_path(".", None, None, false, None)?;
     let json_objs = json!(objects);
     println!("{:?}", json_objs.to_string());
     Ok(())
