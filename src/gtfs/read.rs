@@ -379,6 +379,7 @@ pub(in crate::gtfs) fn manage_stop_times<H>(
     collections: &mut Collections,
     file_handler: &mut H,
     on_demand_transport: bool,
+    on_demand_transport_comment: Option<String>,
 ) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -441,6 +442,18 @@ where
                 (false, true) => Some(StopTimePrecision::Approximate),
                 (true, true) => Some(StopTimePrecision::Estimated),
             };
+            let stop_time_id = manage_comment_from_stop_time(
+                &mut collections.comments,
+                &mut collections.companies,
+                on_demand_transport_comment.clone(),
+                stop_time,
+                &vj.company_id,
+            );
+            if let Some(stop_time_id) = stop_time_id {
+                collections
+                    .stop_time_ids
+                    .insert((vj_idx, stop_time.stop_sequence), stop_time_id);
+            }
 
             vj.stop_times.push(objects::StopTime {
                 stop_point_idx,
@@ -582,6 +595,37 @@ fn manage_comment_from_stop(
         comment_links.insert(idx);
     }
     comment_links
+}
+
+fn manage_comment_from_stop_time(
+    comments: &mut CollectionWithId<objects::Comment>,
+    companies: &mut CollectionWithId<objects::Company>,
+    on_demand_transport_comment: Option<String>,
+    stop_time: &StopTime,
+    company_id: &str,
+) -> Option<String> {
+    if let Some(message) = on_demand_transport_comment {
+        if let Some(company) = companies.get(company_id) {
+            let stop_time_id = format!(
+                "{}-{}",
+                &stop_time.trip_id,
+                &stop_time.stop_sequence.to_string()
+            );
+            let comment_id = "stoptime:".to_string() + &stop_time_id;
+            let comment = objects::Comment {
+                id: comment_id,
+                comment_type: objects::CommentType::OnDemandTransport,
+                label: None,
+                name: message
+                    .replace("{agency_name}", &company.name)
+                    .replace("agency_phone", &company.phone.clone().unwrap_or_default()),
+                url: None,
+            };
+            comments.push(comment).unwrap();
+            return Some(stop_time_id);
+        }
+    }
+    None
 }
 
 #[derive(Default)]
@@ -2368,7 +2412,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, false).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
 
             assert_eq!(
                 vec![
@@ -2454,7 +2498,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, false).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
 
             assert_eq!(
                 vec![
@@ -2947,7 +2991,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, false).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
 
             assert_eq!(
                 vec![
@@ -3018,7 +3062,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            let val = super::manage_stop_times(&mut collections, &mut handler, false);
+            let val = super::manage_stop_times(&mut collections, &mut handler, false, None);
 
             // the first stop time of the vj has no departure/arrival, it's an error
             let err = val.unwrap_err();
@@ -3151,7 +3195,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, true).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, true, None).unwrap();
 
             assert_eq!(
                 vec![

@@ -293,8 +293,13 @@ where
 
     read::read_routes(file_handler, &mut collections)?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
+    read::manage_stop_times(
+        &mut collections,
+        file_handler,
+        on_demand_transport,
+        on_demand_transport_comment,
+    )?;
     collections.comments = comments;
-    read::manage_stop_times(&mut collections, file_handler, on_demand_transport)?;
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
     collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
