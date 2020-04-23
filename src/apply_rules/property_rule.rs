@@ -18,7 +18,6 @@ use crate::{
     utils::{Report, ReportType},
     Result,
 };
-use csv;
 use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
 use lazy_static::lazy_static;

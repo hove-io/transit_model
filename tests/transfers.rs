@@ -13,7 +13,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use std::path::Path;
-use transit_model;
 use transit_model::test_utils::*;
 use transit_model::transfers;
 use transit_model::transfers::TransfersMode;

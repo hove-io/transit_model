@@ -15,7 +15,6 @@
 use pretty_assertions::assert_eq;
 use relational_types::IdxSet;
 use std::collections::HashMap;
-use transit_model;
 use transit_model::model::{Collections, GetCorresponding, Model};
 use transit_model::objects::*;
 use transit_model::test_utils::*;

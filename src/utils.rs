@@ -14,9 +14,7 @@
 
 use crate::objects::Date;
 use chrono::NaiveDate;
-use csv;
 use failure::{format_err, ResultExt};
-use geo_types;
 use log::{debug, error, info};
 use rust_decimal::Decimal;
 use serde::Serialize;
@@ -26,7 +24,6 @@ use std::path;
 use typed_index_collection::{Collection, CollectionWithId, Id};
 use walkdir::WalkDir;
 use wkt::{self, conversion::try_into_geometry, ToWkt};
-use zip;
 
 pub fn zip_to<P, R>(source_path: P, zip_file: R) -> crate::Result<()>
 where

@@ -12,9 +12,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use csv;
-use std::path;
-
 use super::{Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime};
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
@@ -27,6 +24,7 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::path;
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 impl TryFrom<Stop> for StopArea {

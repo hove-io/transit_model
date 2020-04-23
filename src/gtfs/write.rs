@@ -21,7 +21,6 @@ use crate::objects;
 use crate::objects::Transfer as NtfsTransfer;
 use crate::objects::*;
 use crate::Result;
-use csv;
 use failure::ResultExt;
 use geo_types::Geometry as GeoGeometry;
 use log::{info, warn};
@@ -532,7 +531,6 @@ mod tests {
             Transfer as NtfsTransfer,
         },
     };
-    use chrono;
     use geo_types::{line_string, point};
     use pretty_assertions::assert_eq;
     use std::{collections::BTreeSet, fs::File, io::Read};

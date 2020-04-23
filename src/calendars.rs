@@ -25,7 +25,6 @@ use crate::utils::{de_from_date_string, ser_from_naive_date};
 use crate::vptranslator::translate;
 use crate::Result;
 use chrono::{self, Datelike, Weekday};
-use csv;
 use failure::{bail, format_err, ResultExt};
 use log::{info, Level as LogLevel};
 use serde::{Deserialize, Serialize};
