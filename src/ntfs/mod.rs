@@ -324,7 +324,6 @@ mod tests {
     use crate::{read_utils::PathFileHandler, test_utils::*};
     use geo_types::line_string;
     use pretty_assertions::assert_eq;
-    use serde;
     use std::{
         collections::{BTreeMap, BTreeSet, HashMap},
         fmt::Debug,

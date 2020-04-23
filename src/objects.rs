@@ -17,7 +17,6 @@
 #![allow(missing_docs)]
 
 use crate::{utils::*, AddPrefix};
-use chrono;
 use chrono::NaiveDate;
 use derivative::Derivative;
 use geo_types::{Geometry as GeoGeometry, Point as GeoPoint};
@@ -382,7 +381,6 @@ pub enum RgbError {
     TooShortHexa,
 }
 
-use std;
 use std::error::Error;
 
 impl std::fmt::Display for RgbError {
@@ -1757,7 +1755,6 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
     use pretty_assertions::assert_eq;
-    use serde_json;
 
     #[test]
     fn rgb_serialization() {

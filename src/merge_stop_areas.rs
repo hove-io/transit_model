@@ -14,14 +14,11 @@
 
 //! See function merge_stop_areas
 
-use serde_json;
-
 use crate::model::{Collections, Model};
 use crate::objects::{CommentLinksT, KeysValues};
 use crate::objects::{RestrictionType, StopArea};
 use crate::utils::{Report, ReportType};
 use crate::Result;
-use csv;
 use failure::{bail, ResultExt};
 use log::Level as LogLevel;
 use serde::Deserialize;

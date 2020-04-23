@@ -18,7 +18,6 @@ use crate::model::Model;
 use crate::objects::{Contributor, StopPoint, Transfer};
 use crate::utils::{Report, ReportType};
 use crate::Result;
-use csv;
 use failure::ResultExt;
 use log::info;
 use serde::Deserialize;

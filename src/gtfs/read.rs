@@ -26,7 +26,6 @@ use crate::{
     utils::*,
     Result,
 };
-use csv;
 use derivative::Derivative;
 use failure::{bail, format_err, Error, ResultExt};
 use geo_types::{LineString, Point};

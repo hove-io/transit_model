@@ -20,7 +20,6 @@ use crate::{
 use failure::{format_err, ResultExt};
 use log::info;
 use serde::Deserialize;
-use serde_json;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::path;
