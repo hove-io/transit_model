@@ -43,8 +43,6 @@ pub mod read_utils;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
-#[cfg(feature = "proj")]
-pub mod transxchange;
 pub mod validity_period;
 pub mod vptranslator;
 

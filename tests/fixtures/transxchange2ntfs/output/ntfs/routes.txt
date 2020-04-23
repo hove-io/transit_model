@@ -1,4 +1,0 @@
-route_id,route_name,direction_type,line_id,geometry_id,destination_id
-prefix:SCAO812:SL1:inbound,Town Hall - Race Club,inbound,prefix:SCAO812:SL1,,prefix:Navitia:5340AWB30904
-prefix:SCAO812:SL2:inbound,Town Hall - Race Club,inbound,prefix:SCAO812:SL2,,prefix:Navitia:5340AWB30904
-prefix:SCAO813:SL1:clockwise,Town Hall - Town Hall,clockwise,prefix:SCAO813:SL1,,prefix:010G0006

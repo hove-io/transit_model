@@ -60,11 +60,6 @@ path = "tests/read_kv1.rs"
 required-features = ["proj"]
 
 [[test]]
-name = "transxchange2ntfs"
-path = "tests/read_transxchange.rs"
-required-features = ["proj"]
-
-[[test]]
 name = "netexidf2ntfs"
 path = "tests/netexidf2ntfs.rs"
 required-features = ["proj"]
