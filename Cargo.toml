@@ -22,6 +22,11 @@ exclude = [
 [badges]
 travis-ci = { repository = "CanalTP/transit_model" }
 
+[workspace]
+members = [
+  "gtfs2netexfr",
+]
+
 [features]
 xmllint = ["proj"]
 
