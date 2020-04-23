@@ -55,11 +55,6 @@ wkt = "0.5"
 zip = "0.5"
 
 [[test]]
-name = "kv12ntfs"
-path = "tests/read_kv1.rs"
-required-features = ["proj"]
-
-[[test]]
 name = "netexidf2ntfs"
 path = "tests/netexidf2ntfs.rs"
 required-features = ["proj"]

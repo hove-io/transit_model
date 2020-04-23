@@ -1,5 +1,0 @@
-route_id,route_name,direction_type,line_id,geometry_id,destination_id
-prefix:2029:1,"Hoogeveen, Willemskade - Hoogeveen, Willemskade",forward,prefix:2029,,prefix:20718
-prefix:2029:2,"Dedemsvaart, Busstation - Dedemsvaart, Adelaarweg",backward,prefix:2029,,prefix:20361
-prefix:2030:1,"Hoogeveen, Station - Hoogeveen, Willemskade",forward,prefix:2030,,prefix:20718
-prefix:3170:1,"Epe, Centrum - Epe, Sint Jorisweg",forward,prefix:3170,,prefix:32704

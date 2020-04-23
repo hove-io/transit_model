@@ -28,8 +28,6 @@ pub mod calendars;
 pub mod objects;
 pub mod gtfs;
 pub mod hellogo_fares;
-#[cfg(feature = "proj")]
-pub mod kv1;
 pub mod merge_stop_areas;
 mod minidom_utils;
 pub mod model;

@@ -1,3 +1,0 @@
-object_id,object_type,comment_id
-prefix:2029:90016:20135:1,trip,prefix:KOL
-prefix:2030:00011:21499:15,trip,prefix:FLEXW

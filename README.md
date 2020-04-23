@@ -19,8 +19,8 @@ This repository also provides :
 cargo build --release
 ```
 
-### Compile for KV1 and NeTEx IDF
-The KV1 format needs a additional dependency called [PROJ](https://proj.org/)
+### Compile for NeTEx IDF
+Some formats needs an additional dependency called [PROJ](https://proj.org/)
 which allows the transformation of localization coordinates.
 [crates.io](https://crates.io/) provides a
 [`proj`](https://crates.io/crates/proj) crate which is a binding to the C
@@ -36,8 +36,7 @@ apt install -y clang libssl-dev
 cargo build --features=proj
 ```
 
-Now, you should be able to use the readers `kv1::read` and `netex_idf::read`.
-Enjoy!
+Now, you should be able to use a full-fledge `transit_model`. Enjoy!
 
 ### Using PROJ
 If you want to use [PROJ](https://proj.org/) in your code, you can if you

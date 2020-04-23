@@ -1,3 +1,0 @@
-comment_id,comment_type,comment_label,comment_name,comment_url
-prefix:FLEXW,information,,"Reizigers in Woerden en Linschoten kunnen 's avonds en in het weekend gebruik maken van SyntusFlex. U moet vooraf een rit reserveren, behalve vanaf het station. Kijk voor meer informatie op www.syntusutrecht.nl/flex",
-prefix:KOL,information,,Deze rit wordt aangeboden als Kolibrie en rijdt alleen wanneer u deze reserveert. Uw rit boeken kan via reserveren.syntus.nl,

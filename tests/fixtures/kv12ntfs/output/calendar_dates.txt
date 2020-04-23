@@ -1,5 +1,0 @@
-service_id,date,exception_type
-prefix:2029:1:1,20190512,2
-prefix:2029:1:1,20190519,2
-prefix:2029:1:1,20190526,2
-prefix:2029:1:1,20190530,1
