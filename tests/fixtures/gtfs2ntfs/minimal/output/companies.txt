@@ -1,2 +1,3 @@
 company_id,company_name,company_address,company_url,company_mail,company_phone
 1,mon agence,,http://kisio.org,,
+2,my agency,,http://kisio.org,,0123456789

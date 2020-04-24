@@ -1,2 +1,3 @@
 network_id,network_name,network_url,network_timezone,network_lang,network_phone,network_address,network_sort_order
 1,mon agence,http://kisio.org,Europe/Paris,,,,
+2,my agency,http://kisio.org,Europe/Paris,,0123456789,,

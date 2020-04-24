@@ -1,5 +1,5 @@
-route_id,route_short_name,route_long_name,line_id,route_type
-route_not_in_trip:1,ma route 1,,line:1,1
-route:2,ma route 1,,line:1,1
-route:3,ma route 2,,line:2,1
-route_not_in_trip:4,ma route 3,,line:2,1
+route_id,route_short_name,route_long_name,line_id,route_type,agency_id
+route_not_in_trip:1,ma route 1,,line:1,1,1
+route:2,ma route 1,,line:1,1,1
+route:3,ma route 2,,line:2,1,2
+route_not_in_trip:4,ma route 3,,line:2,1,2

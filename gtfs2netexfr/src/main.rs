@@ -83,9 +83,9 @@ fn run(opt: Opt) -> Result<()> {
     info!("Launching gtfs2netexfr...");
 
     let model = if opt.input.is_file() {
-        transit_model::gtfs::read_from_zip(opt.input, opt.config, None, opt.odt)?
+        transit_model::gtfs::read_from_zip(opt.input, opt.config, None, opt.odt, None)?
     } else if opt.input.is_dir() {
-        transit_model::gtfs::read_from_path(opt.input, opt.config, None, opt.odt)?
+        transit_model::gtfs::read_from_path(opt.input, opt.config, None, opt.odt, None)?
     } else {
         bail!("Invalid input data: must be an existing directory or a ZIP archive");
     };

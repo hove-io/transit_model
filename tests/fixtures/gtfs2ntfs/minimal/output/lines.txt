@@ -1,3 +1,3 @@
 line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
 route:2,ma route 1,,,,,,,1,Metro,,,
-route:3,ma route 2,,,,,,,1,Metro,,,
+route:3,ma route 2,,,,,,,2,Metro,,,
