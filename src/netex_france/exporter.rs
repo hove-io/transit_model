@@ -14,7 +14,6 @@
 
 //! Exporter for Netex France profile
 use crate::{
-    minidom_utils::ElementWriter,
     model::Model,
     netex_france::{
         CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, OfferExporter,
@@ -28,6 +27,7 @@ use chrono::prelude::*;
 use failure::format_err;
 use log::info;
 use minidom::{Element, Node};
+use minidom_writer::ElementWriter;
 use proj::Proj;
 use relational_types::IdxSet;
 use std::{
@@ -243,7 +243,7 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_LINES_FILENAME);
-        let mut file = File::create(&filepath)?;
+        let file = File::create(&filepath)?;
         let network_frames = self.create_networks_frames()?;
         let lines_frame = self.create_lines_frame()?;
         let companies_frame = self.create_companies_frame();
@@ -257,9 +257,9 @@ impl Exporter<'_> {
         );
         let composite_frame = Self::create_composite_frame(composite_frame_id, frames);
         let netex = self.wrap_frame(composite_frame, VersionType::Lines)?;
-        let writer = ElementWriter::new(netex, true);
+        let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
-        writer.write(&mut file)?;
+        writer.write(&netex)?;
         Ok(())
     }
 
@@ -316,12 +316,12 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_STOPS_FILENAME);
-        let mut file = File::create(&filepath)?;
+        let file = File::create(&filepath)?;
         let stop_frame = self.create_stops_frame()?;
         let netex = self.wrap_frame(stop_frame, VersionType::Stops)?;
-        let writer = ElementWriter::new(netex, true);
+        let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
-        writer.write(&mut file)?;
+        writer.write(&netex)?;
         Ok(())
     }
 
@@ -345,12 +345,12 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_CALENDARS_FILENAME);
-        let mut file = File::create(&filepath)?;
+        let file = File::create(&filepath)?;
         let calendars_frame = self.create_calendars_frame()?;
         let netex = self.wrap_frame(calendars_frame, VersionType::Calendars)?;
-        let writer = ElementWriter::new(netex, true);
+        let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
-        writer.write(&mut file)?;
+        writer.write(&netex)?;
         Ok(())
     }
 
@@ -396,12 +396,12 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_TRANSFERS_FILENAME);
-        let mut file = File::create(&filepath)?;
+        let file = File::create(&filepath)?;
         let transfers_frame = self.create_transfers_frame()?;
         let netex = self.wrap_frame(transfers_frame, VersionType::Transfers)?;
-        let writer = ElementWriter::new(netex, true);
+        let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
-        writer.write(&mut file)?;
+        writer.write(&netex)?;
         Ok(())
     }
 
@@ -459,12 +459,12 @@ impl Exporter<'_> {
             };
             let file_name = format!("offre_{}{:x}.xml", line_code, line_id_md5);
             let filepath = network_path.as_ref().join(file_name);
-            let mut file = File::create(&filepath)?;
+            let file = File::create(&filepath)?;
             let offer_frame = self.create_offer_frame(&offer_exporter, line_idx)?;
             let netex = self.wrap_frame(offer_frame, VersionType::Schedule)?;
-            let writer = ElementWriter::new(netex, true);
+            let mut writer = ElementWriter::pretty(file);
             info!("Writing {:?}", &filepath);
-            writer.write(&mut file)?;
+            writer.write(&netex)?;
         }
         Ok(())
     }
