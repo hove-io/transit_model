@@ -425,7 +425,6 @@ where
 
         let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
         let st_values = interpolate_undefined_stop_times(&vj.id, &stop_times)?;
-
         for (stop_time, st_values) in stop_times.iter().zip(st_values) {
             let stop_point_idx = collections
                 .stop_points
@@ -442,19 +441,27 @@ where
                 (false, true) => Some(StopTimePrecision::Approximate),
                 (true, true) => Some(StopTimePrecision::Estimated),
             };
-            let stop_time_id = manage_comment_from_stop_time(
-                &mut collections.comments,
-                &mut collections.companies,
-                on_demand_transport_comment.clone(),
-                stop_time,
-                &vj.company_id,
-            );
-            if let Some(stop_time_id) = stop_time_id {
-                collections
-                    .stop_time_ids
-                    .insert((vj_idx, stop_time.stop_sequence), stop_time_id);
+            if stop_time.pickup_type == 2 || stop_time.drop_off_type == 2 {
+                if let Some(comment_id) = manage_odt_comment_from_stop_time(
+                    &mut collections.comments,
+                    &mut collections.companies,
+                    on_demand_transport_comment.clone(),
+                    &vj.company_id,
+                ) {
+                    let stop_time_id = format!(
+                        "{}-{}",
+                        &stop_time.trip_id,
+                        &stop_time.stop_sequence.to_string()
+                    );
+                    let comment_idx = collections.comments.get_idx(&comment_id).unwrap();
+                    collections
+                        .stop_time_ids
+                        .insert((vj_idx, stop_time.stop_sequence), stop_time_id);
+                    collections
+                        .stop_time_comments
+                        .insert((vj_idx, stop_time.stop_sequence), comment_idx);
+                }
             }
-
             vj.stop_times.push(objects::StopTime {
                 stop_point_idx,
                 sequence: stop_time.stop_sequence,
@@ -597,32 +604,29 @@ fn manage_comment_from_stop(
     comment_links
 }
 
-fn manage_comment_from_stop_time(
+fn manage_odt_comment_from_stop_time(
     comments: &mut CollectionWithId<objects::Comment>,
     companies: &mut CollectionWithId<objects::Company>,
     on_demand_transport_comment: Option<String>,
-    stop_time: &StopTime,
     company_id: &str,
 ) -> Option<String> {
     if let Some(message) = on_demand_transport_comment {
         if let Some(company) = companies.get(company_id) {
-            let stop_time_id = format!(
-                "{}-{}",
-                &stop_time.trip_id,
-                &stop_time.stop_sequence.to_string()
-            );
-            let comment_id = "stoptime:".to_string() + &stop_time_id;
-            let comment = objects::Comment {
-                id: comment_id,
-                comment_type: objects::CommentType::OnDemandTransport,
-                label: None,
-                name: message
-                    .replace("{agency_name}", &company.name)
-                    .replace("agency_phone", &company.phone.clone().unwrap_or_default()),
-                url: None,
-            };
-            comments.push(comment).unwrap();
-            return Some(stop_time_id);
+            let comment_id = "ODT:".to_string() + &company.id;
+            let comment = comments.get(&comment_id);
+            if comment.is_none() {
+                let comment = objects::Comment {
+                    id: comment_id.clone(),
+                    comment_type: objects::CommentType::OnDemandTransport,
+                    label: None,
+                    name: message
+                        .replace("{agency_name}", &company.name)
+                        .replace("{agency_phone}", &company.phone.clone().unwrap_or_default()),
+                    url: None,
+                };
+                comments.push(comment).unwrap();
+            }
+            return Some(comment_id);
         }
     }
     None

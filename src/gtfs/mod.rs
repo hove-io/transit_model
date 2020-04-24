@@ -268,7 +268,6 @@ where
 {
     let mut collections = Collections::default();
     let mut equipments = EquipmentList::default();
-    let mut comments: CollectionWithId<objects::Comment> = CollectionWithId::default();
 
     manage_calendars(file_handler, &mut collections)?;
 
@@ -283,7 +282,7 @@ where
     collections.networks = networks;
     collections.companies = companies;
     let (stop_areas, stop_points, stop_locations) =
-        read::read_stops(file_handler, &mut comments, &mut equipments)?;
+        read::read_stops(file_handler, &mut collections.comments, &mut equipments)?;
     collections.transfers = read::read_transfers(file_handler, &stop_points)?;
     collections.stop_areas = stop_areas;
     collections.stop_points = stop_points;
@@ -299,7 +298,6 @@ where
         on_demand_transport,
         on_demand_transport_comment,
     )?;
-    collections.comments = comments;
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
     collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
