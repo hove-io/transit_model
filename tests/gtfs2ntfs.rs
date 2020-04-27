@@ -168,3 +168,24 @@ fn test_gtfs_with_levels() {
         );
     });
 }
+
+#[test]
+fn test_minimal_gtfs_with_odt_comment() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./tests/fixtures/gtfs2ntfs/minimal/input";
+        let model = transit_model::gtfs::read_from_path(
+            input_dir,
+            None,
+            None,
+            false,
+            Some("Service à réservation {agency_name} {agency_phone}".to_string()),
+        )
+        .unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec!["comment_links.txt", "comments.txt", "stop_times.txt"]),
+            "./tests/fixtures/gtfs2ntfs/odt_comment",
+        );
+    });
+}
