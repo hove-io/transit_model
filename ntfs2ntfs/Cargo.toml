@@ -5,6 +5,7 @@ authors = ["Kisio Digital <team.coretools@kisio.com>"]
 license = "AGPL-3.0-only"
 description = "Binary to check and clean a NTFS"
 edition = "2018"
+repository = "https://github.com/CanalTP/transit_model"
 homepage = "https://github.com/CanalTP/transit_model"
 readme = "README.md"
 categories = ["command-line-utilities", "data-structures", "encoding", "parser-implementations"]

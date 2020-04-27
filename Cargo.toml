@@ -6,7 +6,9 @@ license = "AGPL-3.0-only"
 description = "Transit data management"
 repository = "https://github.com/CanalTP/transit_model"
 keywords = ["ntfs", "gtfs", "netex", "navitia", "transit"]
+categories = ["data-structures", "encoding", "parser-implementations"]
 edition = "2018"
+readme = "README.md"
 exclude = [
 	".gitignore",
 	".mergify.yml",
