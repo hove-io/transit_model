@@ -42,6 +42,10 @@ struct Opt {
     #[structopt(short = "t", long = "on-demand-transport")]
     odt: bool,
 
+    /// OnDemandTransport GTFS comment
+    #[structopt(short = "m", long = "odt-comment")]
+    odt_comment: Option<String>,
+
     /// name for the participant
     #[structopt(short, long)]
     participant: String,
@@ -83,9 +87,9 @@ fn run(opt: Opt) -> Result<()> {
     info!("Launching gtfs2netexfr...");
 
     let model = if opt.input.is_file() {
-        transit_model::gtfs::read_from_zip(opt.input, opt.config, None, opt.odt, None)?
+        transit_model::gtfs::read_from_zip(opt.input, opt.config, None, opt.odt, opt.odt_comment)?
     } else if opt.input.is_dir() {
-        transit_model::gtfs::read_from_path(opt.input, opt.config, None, opt.odt, None)?
+        transit_model::gtfs::read_from_path(opt.input, opt.config, None, opt.odt, opt.odt_comment)?
     } else {
         bail!("Invalid input data: must be an existing directory or a ZIP archive");
     };
