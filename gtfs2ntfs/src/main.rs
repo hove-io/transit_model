@@ -47,7 +47,7 @@ struct Opt {
     odt: bool,
 
     /// OnDemandTransport GTFS comment
-    #[structopt(short = "m", long = "odt-comment")]
+    #[structopt(long = "odt-comment")]
     odt_comment: Option<String>,
 
     /// current datetime
