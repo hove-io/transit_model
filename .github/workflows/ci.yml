@@ -1,5 +1,12 @@
 name: Continuous Integration
-on: [push, pull_request]
+on:
+  push
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
 
 env:
   PROJ_VERSION: 6.3.0
