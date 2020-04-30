@@ -256,13 +256,20 @@ struct Shape {
     sequence: u32,
 }
 
-fn read<H>(
-    file_handler: &mut H,
-    config_path: Option<impl AsRef<Path>>,
-    prefix: Option<String>,
-    on_demand_transport: bool,
-    on_demand_transport_comment: Option<String>,
-) -> Result<Model>
+///parameters consolidation
+#[derive(Clone)]
+pub struct Configuration<P: AsRef<Path>> {
+    /// path to configuration file
+    pub config_path: Option<P>,
+    /// used to prefix objects
+    pub prefix: Option<String>,
+    /// stop time precision management
+    pub on_demand_transport: bool,
+    /// on demand transport comment template
+    pub on_demand_transport_comment: Option<String>,
+}
+
+fn read<H>(file_handler: &mut H, configuration: Configuration<impl AsRef<Path>>) -> Result<Model>
 where
     for<'a> &'a mut H: read_utils::FileHandler,
 {
@@ -271,7 +278,8 @@ where
 
     manage_calendars(file_handler, &mut collections)?;
 
-    let (contributor, mut dataset, feed_infos) = read_utils::read_config(config_path)?;
+    let (contributor, mut dataset, feed_infos) =
+        read_utils::read_config(configuration.config_path)?;
     validity_period::compute_dataset_validity_period(&mut dataset, &collections.calendars)?;
 
     collections.contributors = CollectionWithId::new(vec![contributor])?;
@@ -295,15 +303,15 @@ where
     read::manage_stop_times(
         &mut collections,
         file_handler,
-        on_demand_transport,
-        on_demand_transport_comment,
+        configuration.on_demand_transport,
+        configuration.on_demand_transport_comment,
     )?;
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
     collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
 
     //add prefixes
-    if let Some(prefix) = prefix {
+    if let Some(prefix) = configuration.prefix {
         collections.add_prefix_with_sep(prefix.as_str(), ":");
     }
 
@@ -323,19 +331,10 @@ where
 /// prefix will be added to the identifiers.
 pub fn read_from_path<P: AsRef<Path>>(
     p: P,
-    config_path: Option<P>,
-    prefix: Option<String>,
-    on_demand_transport: bool,
-    on_demand_transport_comment: Option<String>,
+    configuration: Configuration<impl AsRef<Path>>,
 ) -> Result<Model> {
     let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
-    read(
-        &mut file_handle,
-        config_path,
-        prefix,
-        on_demand_transport,
-        on_demand_transport_comment,
-    )
+    read(&mut file_handle, configuration)
 }
 
 /// Imports a `Model` from a zip file containing the [GTFS](http://gtfs.org/).
@@ -349,19 +348,10 @@ pub fn read_from_path<P: AsRef<Path>>(
 /// prefix will be added to the identifiers.
 pub fn read_from_zip<P: AsRef<Path>>(
     path: P,
-    config_path: Option<P>,
-    prefix: Option<String>,
-    on_demand_transport: bool,
-    on_demand_transport_comment: Option<String>,
+    configuration: Configuration<impl AsRef<Path>>,
 ) -> Result<Model> {
     let mut file_handler = read_utils::ZipHandler::new(path)?;
-    read(
-        &mut file_handler,
-        config_path,
-        prefix,
-        on_demand_transport,
-        on_demand_transport_comment,
-    )
+    read(&mut file_handler, configuration)
 }
 
 #[derive(PartialOrd, Ord, Debug, Clone, Eq, PartialEq, Hash)]

@@ -86,10 +86,17 @@ fn init_logger() -> slog_scope::GlobalLoggerGuard {
 fn run(opt: Opt) -> Result<()> {
     info!("Launching gtfs2netexfr...");
 
+    let configuration = transit_model::gtfs::Configuration {
+        config_path: opt.config,
+        prefix: None,
+        on_demand_transport: opt.odt,
+        on_demand_transport_comment: opt.odt_comment,
+    };
+
     let model = if opt.input.is_file() {
-        transit_model::gtfs::read_from_zip(opt.input, opt.config, None, opt.odt, opt.odt_comment)?
+        transit_model::gtfs::read_from_zip(opt.input, configuration)?
     } else if opt.input.is_dir() {
-        transit_model::gtfs::read_from_path(opt.input, opt.config, None, opt.odt, opt.odt_comment)?
+        transit_model::gtfs::read_from_path(opt.input, configuration)?
     } else {
         bail!("Invalid input data: must be an existing directory or a ZIP archive");
     };
