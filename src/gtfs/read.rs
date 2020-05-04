@@ -35,7 +35,7 @@ use skip_error::skip_error_and_log;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
 use std::result::Result as StdResult;
-use typed_index_collection::{impl_id, Collection, CollectionWithId};
+use typed_index_collection::{impl_id, Collection, CollectionWithId, Idx};
 
 fn default_agency_id() -> String {
     1.to_string()
@@ -379,6 +379,7 @@ pub(in crate::gtfs) fn manage_stop_times<H>(
     collections: &mut Collections,
     file_handler: &mut H,
     on_demand_transport: bool,
+    on_demand_transport_comment: Option<String>,
 ) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -421,9 +422,14 @@ where
 
     for (vj_idx, mut stop_times) in tmp_vjs {
         stop_times.sort_unstable_by_key(|st| st.stop_sequence);
+        let st_values = interpolate_undefined_stop_times(
+            &collections.vehicle_journeys[vj_idx].id,
+            &stop_times,
+        )?;
 
-        let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
-        let st_values = interpolate_undefined_stop_times(&vj.id, &stop_times)?;
+        let company_idx = collections
+            .companies
+            .get_idx(&collections.vehicle_journeys[vj_idx].company_id);
 
         for (stop_time, st_values) in stop_times.iter().zip(st_values) {
             let stop_point_idx = collections
@@ -436,25 +442,43 @@ where
                         stop_time.stop_id
                     )
                 })?;
+
             let precision = match (on_demand_transport, st_values.datetime_estimated) {
                 (_, false) => Some(StopTimePrecision::Exact),
                 (false, true) => Some(StopTimePrecision::Approximate),
                 (true, true) => Some(StopTimePrecision::Estimated),
             };
 
-            vj.stop_times.push(objects::StopTime {
-                stop_point_idx,
-                sequence: stop_time.stop_sequence,
-                arrival_time: st_values.arrival_time,
-                departure_time: st_values.departure_time,
-                boarding_duration: 0,
-                alighting_duration: 0,
-                pickup_type: stop_time.pickup_type,
-                drop_off_type: stop_time.drop_off_type,
-                datetime_estimated: st_values.datetime_estimated,
-                local_zone_id: stop_time.local_zone_id,
-                precision,
-            });
+            if let Some(message) = on_demand_transport_comment.as_ref() {
+                if stop_time.pickup_type == 2 || stop_time.drop_off_type == 2 {
+                    if let Some(company_idx) = company_idx {
+                        manage_odt_comment_from_stop_time(
+                            collections,
+                            message,
+                            company_idx,
+                            vj_idx,
+                            stop_time,
+                        );
+                    }
+                }
+            }
+            collections
+                .vehicle_journeys
+                .index_mut(vj_idx)
+                .stop_times
+                .push(objects::StopTime {
+                    stop_point_idx,
+                    sequence: stop_time.stop_sequence,
+                    arrival_time: st_values.arrival_time,
+                    departure_time: st_values.departure_time,
+                    boarding_duration: 0,
+                    alighting_duration: 0,
+                    pickup_type: stop_time.pickup_type,
+                    drop_off_type: stop_time.drop_off_type,
+                    datetime_estimated: st_values.datetime_estimated,
+                    local_zone_id: stop_time.local_zone_id,
+                    precision,
+                });
         }
     }
     Ok(())
@@ -582,6 +606,44 @@ fn manage_comment_from_stop(
         comment_links.insert(idx);
     }
     comment_links
+}
+
+fn manage_odt_comment_from_stop_time(
+    collections: &mut Collections,
+    on_demand_transport_comment: &str,
+    company_idx: Idx<objects::Company>,
+    vj_idx: Idx<objects::VehicleJourney>,
+    stop_time: &StopTime,
+) {
+    let comment_id = format!("ODT:{}", collections.companies[company_idx].id);
+    let comment_idx = collections
+        .comments
+        .get_idx(&comment_id)
+        .unwrap_or_else(|| {
+            let comment = objects::Comment {
+                id: comment_id.clone(),
+                comment_type: objects::CommentType::OnDemandTransport,
+                label: None,
+                name: on_demand_transport_comment
+                    .replace("{agency_name}", &collections.companies[company_idx].name)
+                    .replace(
+                        "{agency_phone}",
+                        &collections.companies[company_idx]
+                            .phone
+                            .clone()
+                            .unwrap_or_default(),
+                    ),
+                url: None,
+            };
+            collections.comments.push(comment).unwrap()
+        });
+    collections
+        .stop_time_comments
+        .insert((vj_idx, stop_time.stop_sequence), comment_idx);
+    let stop_time_id = format!("{}-{}", stop_time.trip_id, stop_time.stop_sequence);
+    collections
+        .stop_time_ids
+        .insert((vj_idx, stop_time.stop_sequence), stop_time_id);
 }
 
 #[derive(Default)]
@@ -2368,7 +2430,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, false).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
 
             assert_eq!(
                 vec![
@@ -2454,7 +2516,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, false).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
 
             assert_eq!(
                 vec![
@@ -2947,7 +3009,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, false).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
 
             assert_eq!(
                 vec![
@@ -3018,7 +3080,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            let val = super::manage_stop_times(&mut collections, &mut handler, false);
+            let val = super::manage_stop_times(&mut collections, &mut handler, false, None);
 
             // the first stop time of the vj has no departure/arrival, it's an error
             let err = val.unwrap_err();
@@ -3151,7 +3213,7 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, true).unwrap();
+            super::manage_stop_times(&mut collections, &mut handler, true, None).unwrap();
 
             assert_eq!(
                 vec![

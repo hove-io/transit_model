@@ -12,13 +12,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+use std::path::Path;
+use transit_model::gtfs::Configuration;
 use transit_model::test_utils::*;
+
+static DEFAULT_CONFIGURATION: Configuration<&Path> = Configuration {
+    config_path: None,
+    prefix: None,
+    on_demand_transport: false,
+    on_demand_transport_comment: None,
+};
 
 #[test]
 fn test_frequencies_generate_trips() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/frequencies/input";
-        let model = transit_model::gtfs::read_from_path(input_dir, None, None, false).unwrap();
+        let model =
+            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
@@ -38,7 +48,8 @@ fn test_frequencies_generate_trips() {
 fn test_minimal_gtfs() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/minimal/input";
-        let model = transit_model::gtfs::read_from_path(input_dir, None, None, false).unwrap();
+        let model =
+            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
@@ -48,9 +59,14 @@ fn test_minimal_gtfs() {
 fn test_minimal_gtfs_with_feed_infos() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/minimal_with_config/input";
-        let config = "./tests/fixtures/gtfs2ntfs/minimal_with_config/config.json";
-        let model =
-            transit_model::gtfs::read_from_path(input_dir, Some(config), None, false).unwrap();
+        let configuration = transit_model::gtfs::Configuration {
+            config_path: Some("./tests/fixtures/gtfs2ntfs/minimal_with_config/config.json"),
+            prefix: None,
+            on_demand_transport: false,
+            on_demand_transport_comment: None,
+        };
+
+        let model = transit_model::gtfs::read_from_path(input_dir, configuration).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
@@ -69,7 +85,8 @@ fn test_minimal_gtfs_with_feed_infos() {
 fn test_gtfs_physical_modes() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/physical_modes/input";
-        let model = transit_model::gtfs::read_from_path(input_dir, None, None, false).unwrap();
+        let model =
+            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
@@ -88,7 +105,8 @@ fn test_gtfs_physical_modes() {
 fn test_gtfs_remove_vjs_with_no_traffic() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/no_traffic/input";
-        let model = transit_model::gtfs::read_from_path(input_dir, None, None, false).unwrap();
+        let model =
+            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
@@ -109,7 +127,8 @@ fn test_gtfs_remove_vjs_with_no_traffic() {
 fn test_minimal_ziped_gtfs() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/ziped_gtfs/gtfs.zip";
-        let model = transit_model::gtfs::read_from_zip(input, None, None, false).unwrap();
+        let model =
+            transit_model::gtfs::read_from_zip(input, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
@@ -119,7 +138,8 @@ fn test_minimal_ziped_gtfs() {
 fn test_minimal_ziped_sub_dir_gtfs() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/ziped_gtfs/sub_dir_gtfs.zip";
-        let model = transit_model::gtfs::read_from_zip(input, None, None, false).unwrap();
+        let model =
+            transit_model::gtfs::read_from_zip(input, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
@@ -129,7 +149,8 @@ fn test_minimal_ziped_sub_dir_gtfs() {
 fn test_minimal_ziped_sub_dir_gtfs_with_hidden_files() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/ziped_gtfs/sub_dir_gtfs_with_hidden_files.zip";
-        let model = transit_model::gtfs::read_from_zip(input, None, None, false).unwrap();
+        let model =
+            transit_model::gtfs::read_from_zip(input, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
@@ -139,7 +160,8 @@ fn test_minimal_ziped_sub_dir_gtfs_with_hidden_files() {
 fn test_gtfs_with_platforms() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/platforms/input";
-        let model = transit_model::gtfs::read_from_path(input_dir, None, None, false).unwrap();
+        let model =
+            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
@@ -153,12 +175,36 @@ fn test_gtfs_with_platforms() {
 fn test_gtfs_with_levels() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/levels_and_pathways/input";
-        let model = transit_model::gtfs::read_from_path(input_dir, None, None, false).unwrap();
+        let model =
+            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["stops.txt", "pathways.txt", "levels.txt"]),
             "./tests/fixtures/gtfs2ntfs/levels_and_pathways/output",
+        );
+    });
+}
+
+#[test]
+fn test_minimal_gtfs_with_odt_comment() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./tests/fixtures/gtfs2ntfs/minimal/input";
+        let configuration: transit_model::gtfs::Configuration<&Path> =
+            transit_model::gtfs::Configuration {
+                config_path: None,
+                prefix: None,
+                on_demand_transport: false,
+                on_demand_transport_comment: Some(
+                    "Service à réservation {agency_name} {agency_phone}".to_string(),
+                ),
+            };
+        let model = transit_model::gtfs::read_from_path(input_dir, configuration).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec!["comment_links.txt", "comments.txt", "stop_times.txt"]),
+            "./tests/fixtures/gtfs2ntfs/odt_comment",
         );
     });
 }

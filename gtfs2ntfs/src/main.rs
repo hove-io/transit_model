@@ -36,7 +36,7 @@ struct Opt {
 
     /// config file
     #[structopt(short = "c", long = "config", parse(from_os_str))]
-    config_path: Option<PathBuf>,
+    config: Option<PathBuf>,
 
     /// prefix
     #[structopt(short = "p", long = "prefix")]
@@ -45,6 +45,10 @@ struct Opt {
     /// OnDemandTransport GTFS source
     #[structopt(long)]
     odt: bool,
+
+    /// OnDemandTransport GTFS comment
+    #[structopt(long = "odt-comment")]
+    odt_comment: Option<String>,
 
     /// current datetime
     #[structopt(
@@ -78,10 +82,17 @@ fn init_logger() -> slog_scope::GlobalLoggerGuard {
 fn run(opt: Opt) -> Result<()> {
     info!("Launching gtfs2ntfs...");
 
+    let configuration = transit_model::gtfs::Configuration {
+        config_path: opt.config,
+        prefix: opt.prefix,
+        on_demand_transport: opt.odt,
+        on_demand_transport_comment: opt.odt_comment,
+    };
+
     let objects = if opt.input.is_file() {
-        transit_model::gtfs::read_from_zip(opt.input, opt.config_path, opt.prefix, opt.odt)?
+        transit_model::gtfs::read_from_zip(opt.input, configuration)?
     } else if opt.input.is_dir() {
-        transit_model::gtfs::read_from_path(opt.input, opt.config_path, opt.prefix, opt.odt)?
+        transit_model::gtfs::read_from_path(opt.input, configuration)?
     } else {
         bail!("Invalid input data: must be an existing directory or a ZIP archive");
     };

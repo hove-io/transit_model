@@ -1,0 +1,9 @@
+object_id,object_type,comment_id
+trip:5-1,stop_time,ODT:2
+trip:6-0,stop_time,ODT:2
+trip:4-2,stop_time,ODT:1
+trip:4-0,stop_time,ODT:1
+trip:5-0,stop_time,ODT:2
+trip:4-1,stop_time,ODT:1
+trip:5-2,stop_time,ODT:2
+trip:6-1,stop_time,ODT:2

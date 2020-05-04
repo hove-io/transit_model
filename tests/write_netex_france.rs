@@ -13,8 +13,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use std::fs;
+use std::path::Path;
 #[cfg(feature = "xmllint")]
-use std::{ffi::OsStr, path::Path, process::Command};
+use std::{ffi::OsStr, process::Command};
 use transit_model::{self, model::Model, netex_france, test_utils::*};
 
 fn test_write_netex_france(model: Model) {
@@ -57,11 +58,17 @@ fn test_write_netex_france_from_ntfs() {
 
 #[test]
 fn test_write_netex_france_from_gtfs() {
+    let configuration: transit_model::gtfs::Configuration<&Path> =
+        transit_model::gtfs::Configuration {
+            config_path: None,
+            prefix: None,
+            on_demand_transport: false,
+            on_demand_transport_comment: None,
+        };
+
     let model = transit_model::gtfs::read_from_path(
         "tests/fixtures/netex_france/input_gtfs",
-        None,
-        None,
-        false,
+        configuration,
     )
     .unwrap();
     test_write_netex_france(model);

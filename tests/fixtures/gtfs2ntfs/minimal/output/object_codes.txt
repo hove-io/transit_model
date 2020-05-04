@@ -1,5 +1,6 @@
 object_type,object_id,object_system,object_code
 network,1,source,1
+network,2,source,2
 stop_point,stop:11,source,stop:11
 stop_point,stop:22,source,stop:22
 stop_point,stop:31,source,stop:31
