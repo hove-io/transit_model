@@ -27,19 +27,19 @@ use transit_model::Result;
 #[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.")]
 struct Opt {
     /// input directory.
-    #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
+    #[structopt(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
     /// output directory
-    #[structopt(short = "o", long = "output", parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
 
     /// config file
-    #[structopt(short = "c", long = "config", parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     config: Option<PathBuf>,
 
     /// prefix
-    #[structopt(short = "p", long = "prefix")]
+    #[structopt(short, long)]
     prefix: Option<String>,
 
     /// OnDemandTransport GTFS source
