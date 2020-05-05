@@ -9,7 +9,7 @@ specification](https://developers.google.com/transit/gtfs/reference), the
 conversion should stop immediately with an error, unless otherwise specified.
 
 At the end of the conversion, a sanitizing operation is started on the final
-model. See [sanitizer.md](sanitizer.md) for more information.
+model. See [common.md](common.md) for more information.
 
 ### Prepending data
 As explained in [common.md](common.md), a prefix is added to all identifiers during the conversion in order to guarantee uniqueness among objects IDs.
