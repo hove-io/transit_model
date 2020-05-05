@@ -269,7 +269,7 @@ pub struct Configuration<P: AsRef<Path>> {
     pub on_demand_transport_comment: Option<String>,
 }
 
-fn read<H>(file_handler: &mut H, configuration: Configuration<impl AsRef<Path>>) -> Result<Model>
+fn read<H, P: AsRef<Path>>(file_handler: &mut H, configuration: Configuration<P>) -> Result<Model>
 where
     for<'a> &'a mut H: read_utils::FileHandler,
 {
