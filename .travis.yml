@@ -1,0 +1,25 @@
+language: rust
+rust:
+  - stable
+  - beta
+addons:
+  apt:
+    sources:
+    - sourceline: "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main"
+      key_url: "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public"
+    packages:
+    - proj=6.3.0
+    - libxml2-utils
+matrix:
+  include:
+  - rust: stable
+    name: Linting
+    before_script: rustup component add rustfmt
+    script: cargo fmt --all -- --check
+  - rust: stable
+    name: Clippy
+    before_script: rustup component add clippy
+    script:
+    - cargo clippy --workspace --all-features -- -D warnings
+script:
+  - cargo test --workspace --all-features --verbose
