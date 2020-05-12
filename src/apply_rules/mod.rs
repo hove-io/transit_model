@@ -15,7 +15,7 @@
 //! See function apply_rules
 
 mod complementary_code;
-mod network_consolidation;
+mod object_rules;
 mod property_rule;
 
 use crate::{
@@ -36,11 +36,24 @@ pub fn apply_rules(
     model: Model,
     complementary_code_rules_files: Vec<PathBuf>,
     property_rules_files: Vec<PathBuf>,
-    networks_consolidation_file: Option<PathBuf>,
+    object_rules_file: Option<PathBuf>,
     report_path: PathBuf,
 ) -> Result<Model> {
     let lines_by_network: HashMap<String, IdxSet<Line>> = model
         .networks
+        .iter()
+        .filter_map(|(idx, obj)| {
+            let lines = model.get_corresponding_from_idx(idx);
+            if lines.is_empty() {
+                None
+            } else {
+                Some((obj.id.clone(), lines))
+            }
+        })
+        .collect();
+
+    let lines_by_commercial_mode: HashMap<String, IdxSet<Line>> = model
+        .commercial_modes
         .iter()
         .filter_map(|(idx, obj)| {
             let lines = model.get_corresponding_from_idx(idx);
@@ -65,15 +78,30 @@ pub fn apply_rules(
         })
         .collect();
 
+    let vjs_by_physical_mode: HashMap<String, IdxSet<VehicleJourney>> = model
+        .physical_modes
+        .iter()
+        .filter_map(|(idx, obj)| {
+            let vjs = model.get_corresponding_from_idx(idx);
+            if vjs.is_empty() {
+                None
+            } else {
+                Some((obj.id.clone(), vjs))
+            }
+        })
+        .collect();
+
     let mut collections = model.into_collections();
 
     let mut report = Report::default();
 
-    if let Some(networks_consolidation_file) = networks_consolidation_file {
-        info!("Applying network consolidation rules");
-        collections = network_consolidation::apply_rules(
-            networks_consolidation_file,
+    if let Some(object_rules_file) = object_rules_file {
+        info!("Applying object rules");
+        collections = object_rules::apply_rules(
+            object_rules_file,
             &lines_by_network,
+            &lines_by_commercial_mode,
+            &vjs_by_physical_mode,
             collections,
             &mut report,
         )?;
