@@ -121,11 +121,14 @@ pub struct Collections {
     pub geometries: CollectionWithId<Geometry>,
     pub admin_stations: Collection<AdminStation>,
     #[serde(skip)]
-    pub stop_time_headsigns: HashMap<(Idx<VehicleJourney>, u32), String>,
+    //HashMap<vehicle_journey_id, stop_sequence, String>,
+    pub stop_time_headsigns: HashMap<(String, u32), String>,
     #[serde(skip)]
-    pub stop_time_ids: HashMap<(Idx<VehicleJourney>, u32), String>,
+    //HashMap<(vehicle_journey_id, stop_sequence), stop_time_id>,
+    pub stop_time_ids: HashMap<(String, u32), String>,
     #[serde(skip)]
-    pub stop_time_comments: HashMap<(Idx<VehicleJourney>, u32), Idx<Comment>>,
+    //HashMap<(vehicle_journey_id, stop_sequence), comment_id>
+    pub stop_time_comments: HashMap<(String, u32), String>,
     pub prices_v1: Collection<PriceV1>,
     pub od_fares_v1: Collection<ODFareV1>,
     pub fares_v1: Collection<FareV1>,
@@ -227,7 +230,6 @@ impl Collections {
         physical_modes_used.insert(String::from(BIKE_SHARING_SERVICE_PHYSICAL_MODE));
         physical_modes_used.insert(String::from(CAR_PHYSICAL_MODE));
 
-        let vj_id_to_old_idx = self.vehicle_journeys.get_id_to_idx().clone();
         let comment_id_to_old_idx = self.comments.get_id_to_idx().clone();
         let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
 
@@ -425,17 +427,13 @@ impl Collections {
             })
             .collect::<Vec<_>>();
 
-        let vj_idx_to_old_id: HashMap<&Idx<VehicleJourney>, &String> =
-            vj_id_to_old_idx.iter().map(|(id, idx)| (idx, id)).collect();
         comments_used.extend(self.stop_time_comments.iter().filter_map(
-            |((old_vj_idx, _), old_comment_idx)| {
-                vj_idx_to_old_id.get(&old_vj_idx).and_then(|&old_vj_id| {
-                    if vjs.contains_key(old_vj_id) {
-                        Some(self.comments[*old_comment_idx].id.clone())
-                    } else {
-                        None
-                    }
-                })
+            |((vj_id, _), comment_id)| {
+                if vjs.contains_key(vj_id) {
+                    Some(comment_id.clone())
+                } else {
+                    None
+                }
             },
         ));
 
@@ -474,22 +472,15 @@ impl Collections {
         self.vehicle_journeys = CollectionWithId::new(vjs)?;
         self.stop_locations = CollectionWithId::new(stop_locations)?;
 
-        let vj_old_idx_to_new_idx: HashMap<Idx<VehicleJourney>, Idx<VehicleJourney>> = self
-            .vehicle_journeys
-            .iter()
-            .map(|(new_idx, vj)| (vj_id_to_old_idx[&vj.id], new_idx))
-            .collect();
         self.stop_time_comments = self
             .stop_time_comments
             .iter()
-            .filter_map(|((old_vj_idx, seq), comment_old_idx)| {
+            .filter_map(|((vj_id, seq), comment_id)| {
                 match (
-                    vj_old_idx_to_new_idx.get(old_vj_idx),
-                    comment_old_idx_to_new_idx.get(&comment_old_idx),
+                    vehicle_journeys_used.contains(vj_id),
+                    comments_used.contains(comment_id),
                 ) {
-                    (Some(new_vj_idx), Some(new_comment_idx)) => {
-                        Some(((*new_vj_idx, *seq), *new_comment_idx))
-                    }
+                    (true, true) => Some(((vj_id.clone(), *seq), comment_id.clone())),
                     _ => None,
                 }
             })
@@ -497,19 +488,23 @@ impl Collections {
         self.stop_time_ids = self
             .stop_time_ids
             .iter()
-            .filter_map(|((old_vj_id, seq), stop_time_id)| {
-                vj_old_idx_to_new_idx
-                    .get(&old_vj_id)
-                    .map(|new_vj_id| ((*new_vj_id, *seq), stop_time_id.clone()))
+            .filter_map(|((vj_id, seq), stop_time_id)| {
+                if vehicle_journeys_used.contains(vj_id) {
+                    Some(((vj_id.clone(), *seq), stop_time_id.clone()))
+                } else {
+                    None
+                }
             })
             .collect();
         self.stop_time_headsigns = self
             .stop_time_headsigns
             .iter()
-            .filter_map(|((old_vj_id, seq), headsign)| {
-                vj_old_idx_to_new_idx
-                    .get(&old_vj_id)
-                    .map(|new_vj_id| ((*new_vj_id, *seq), headsign.clone()))
+            .filter_map(|((vj_id, seq), headsign)| {
+                if vehicle_journeys_used.contains(vj_id) {
+                    Some(((vj_id.clone(), *seq), headsign.clone()))
+                } else {
+                    None
+                }
             })
             .collect();
         self.grid_rel_calendar_line
