@@ -1,2 +1,2 @@
 line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
-line1,route1,line1,,,,,,network1,Bus,,,
+line1,route1,line1,,,,,,network1,Bus,,10:41:00,22:42:00

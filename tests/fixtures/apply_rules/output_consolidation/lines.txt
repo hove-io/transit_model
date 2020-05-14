@@ -1,4 +1,4 @@
 line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
-M1,,Metro 1,,,F1CCB4,,,bus_vert,Metro,,,
-B42,,Bus 42,,,,,,TGB,Bus,,,
-RERA,,RER A,,,FF0000,,,TGR,RER,,,
+M1,,Metro 1,,,F1CCB4,,,bus_vert,Metro,,09:10:00,11:00:00
+B42,,Bus 42,,,,,,TGB,Bus,,07:00:00,10:20:00
+RERA,,RER A,,,FF0000,,,TGR,RER,,08:10:00,09:49:00

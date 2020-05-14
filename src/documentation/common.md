@@ -121,6 +121,11 @@ The following rules apply to every converter, unless otherwise explicitly specif
        `[name of origin's stop area] - [name of destination's stop area]`
   - the `route.destination_id` is set (overridden if needed) with the
     destination's stop area selected with the above rule
+- If a line has an empty opening or closing times, then they are both generated.
+  - the `line.opening_time` is generated with the smallest departure time (at the first stop) of all journeys on the lines.
+  - the `line.closing_time` is generated with the biggest arrival time (at the last stop) of all journeys on the lines (+ 24h if the end is earlier than the start time).
+  - if a line has several periods without circulation in the day, only the main one (larger and earlier) is used to define the opening and closing times.
+  - lines with continuous circulation are indicated by default with an opening at 00:00 and a closing at 23:59.
 
 ### Conflicting identifiers
 The model will raise a critical error if identifiers of 2 objects of the same type are identicals. 

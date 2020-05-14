@@ -259,6 +259,19 @@ fn preserve_grid() {
 }
 
 #[test]
+fn enhance_lines_opening_time() {
+    let ntm = transit_model::ntfs::read("tests/fixtures/ntfs2ntfs/lines-opening/input/").unwrap();
+    test_in_tmp_dir(|output_dir| {
+        transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &output_dir,
+            Some(vec!["lines.txt"]),
+            "tests/fixtures/ntfs2ntfs/lines-opening/output",
+        );
+    });
+}
+
+#[test]
 fn sanitize_frequencies() {
     let mut collections = Collections::default();
     let frequency = Frequency {

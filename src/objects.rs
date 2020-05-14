@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
-use std::ops::{Add, Div, Sub};
+use std::ops::{Add, Div, Rem, Sub};
 use std::str::FromStr;
 use typed_index_collection::{impl_id, impl_with_id, Idx, WithId};
 
@@ -732,6 +732,12 @@ impl Div<u32> for Time {
     type Output = Time;
     fn div(self, rhs: u32) -> Time {
         Time(self.total_seconds() / rhs)
+    }
+}
+impl Rem<u32> for Time {
+    type Output = Time;
+    fn rem(self, rhs: u32) -> Time {
+        Time(self.total_seconds() % rhs)
     }
 }
 impl FromStr for Time {

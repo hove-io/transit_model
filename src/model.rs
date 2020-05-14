@@ -27,6 +27,7 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::cmp::{self, Ordering};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::convert::TryFrom;
 use std::ops;
 use std::result::Result as StdResult;
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
@@ -606,6 +607,192 @@ impl Collections {
         }
     }
 
+    /// Sets the opening and closing times of lines (if they are missing).
+    pub fn enhance_line_opening_time(&mut self) {
+        type TimeTable = BTreeMap<u8, Time>;
+        const HOURS_PER_DAY: u8 = 24;
+        const SECONDS_PER_DAY: u32 = 86400;
+
+        fn get_vjs_by_line(c: &Collections) -> HashMap<String, IdxSet<VehicleJourney>> {
+            c.vehicle_journeys
+                .iter()
+                .filter_map(|(vj_idx, vj)| {
+                    if let Some(route) = c.routes.get(&vj.route_id) {
+                        Some((route.line_id.clone(), vj_idx))
+                    } else {
+                        None
+                    }
+                })
+                .filter_map(|(line_id, vj_idx)| {
+                    if let Some(line) = c.lines.get(&line_id) {
+                        if line.opening_time.is_none() || line.closing_time.is_none() {
+                            return Some((line.id.clone(), vj_idx));
+                        }
+                    }
+                    None
+                })
+                .fold(HashMap::new(), |mut lines, (line_id, vj_idx)| {
+                    lines
+                        .entry(line_id)
+                        .or_insert_with(IdxSet::new)
+                        .insert(vj_idx);
+                    lines
+                })
+        }
+
+        // Creates a map of (maximum) 24 elements, with possible indexes ranging from 0 to 23.
+        // 2 timetables are created, one to store departures and the other for arrivals.
+        // Indeed, for a line/vehicle journey, the distance between two consecutive stops can take more than an hour.
+        //
+        // For opening_timetable we keep the smallest schedule of the first departure for each time slot.
+        // For closing_timetable we keep the biggest schedule of the last arrival for each time slot.
+        //
+        // Example for a line with a vehicle journey leaving every half hour between 8:10am and 10:40am
+        // (same vehicle journey, with a frequency of 30mn, so 6 vehicles journeys in total).
+        // opening_timetable will be so {8: Time(29400), 9: Time(33000), 10: Time(36600)}.
+        // Departures 8:40am, 9:40am and 10:40am are omitted (because superior in their respective slots).
+        fn fill_timetables(
+            vj: &VehicleJourney,
+            opening_timetable: &mut TimeTable,
+            closing_timetable: &mut TimeTable,
+        ) -> Result<()> {
+            let vj_departure_time = vj
+                .stop_times
+                .first()
+                .map(|st| st.departure_time)
+                .map(|departure_time| departure_time % SECONDS_PER_DAY)
+                .ok_or_else(|| format_err!("undefined departure time for vj {}", vj.id))?;
+            let vj_arrival_time = vj
+                .stop_times
+                .last()
+                .map(|st| st.arrival_time)
+                .map(|arrival_time| arrival_time % SECONDS_PER_DAY)
+                .ok_or_else(|| format_err!("undefined arrival time for vj {}", vj.id))?;
+            let departure_hour = u8::try_from(vj_departure_time.hours())?;
+            let arrival_hour = u8::try_from(vj_arrival_time.hours())?;
+            opening_timetable
+                .entry(departure_hour)
+                .and_modify(|h| {
+                    if vj_departure_time < *h {
+                        *h = vj_departure_time
+                    }
+                })
+                .or_insert(vj_departure_time);
+            closing_timetable
+                .entry(arrival_hour)
+                .and_modify(|h| {
+                    if vj_arrival_time > *h {
+                        *h = vj_arrival_time
+                    }
+                })
+                .or_insert(vj_arrival_time);
+            Ok(())
+        }
+
+        // Find the main hole for a line (i.e. without traffic), based on the timetable parameter.
+        // For example a line with vjs running from 04:10 to 22:45 will give this segment: [[23,24,0,1,2,3]]
+        // Several holes are possible in a day, such as: [[23,24,0,1,2,3],[12,13]]
+        // This function finds the largest and returns the two bounds/index (23 and 3 in the first example)
+        fn find_main_hole_boundaries(timetable: &TimeTable) -> Option<(u8, u8)> {
+            let mut holes: Vec<Vec<u8>> = Vec::new();
+            let mut is_last_elem_hole = false;
+            for i in 0..HOURS_PER_DAY {
+                if !timetable.contains_key(&i) {
+                    if !is_last_elem_hole {
+                        holes.push(vec![i]);
+                        is_last_elem_hole = true;
+                    } else if let Some(last) = holes.last_mut() {
+                        last.push(i)
+                    }
+                    // for the midnight passing, concatenate the vectors
+                    // [0,1] and [22,23] will become [22,23,0,1]
+                    if i == HOURS_PER_DAY - 1
+                        && holes.len() > 1
+                        && holes.get(0).filter(|h0| h0.contains(&0)).is_some()
+                    {
+                        let hole0 = holes[0].clone();
+                        if let Some(last) = holes.last_mut() {
+                            last.extend_from_slice(&hole0)
+                        }
+                        holes.remove(0);
+                    }
+                } else {
+                    is_last_elem_hole = false;
+                }
+            }
+            // *** first, sorts in descending order of width
+            // [[9,10],[12,13,14],[23,0,1]] --> [[12,13,14],[23,0,1],[9,10]]
+            // *** then, in case of equal width, sorts by taking the segment early in the morning (smallest index)
+            // --> [[23,0,1],[12,13,14],[9,10]]
+            holes.sort_unstable_by(|l, r| l.iter().min().cmp(&r.iter().min()));
+            holes.sort_unstable_by(|l, r| r.len().cmp(&l.len()));
+            holes.first().and_then(|mh| {
+                let first_idx = mh.first();
+                let last_idx = mh.last();
+                match (first_idx, last_idx) {
+                    (Some(first_idx), Some(last_idx)) => {
+                        Some((first_idx.to_owned(), last_idx.to_owned()))
+                    }
+                    _ => None,
+                }
+            })
+        }
+
+        // Check if there is a need to calculate the opening/closing times.
+        // Generally it should be all or nothing (absent from a Gtfs, normally present if it's a recent Ntfs)
+        // In all cases a 2nd check is made below
+        let check_time_empty =
+            |line: &Line| line.opening_time.is_none() || line.closing_time.is_none();
+        let required_operation = self.lines.values().any(|line| check_time_empty(line));
+
+        if required_operation {
+            let vjs_by_line = get_vjs_by_line(&self);
+            let mut lines = self.lines.take();
+            for line in &mut lines {
+                // 2nd check (see above) to avoid overwriting line opening/closing
+                if check_time_empty(line) {
+                    let mut opening_timetable = TimeTable::new();
+                    let mut closing_timetable = TimeTable::new();
+                    if let Some(vjs_idx) = vjs_by_line.get(&line.id) {
+                        for vj_idx in vjs_idx {
+                            skip_error_and_log!(
+                                fill_timetables(
+                                    &self.vehicle_journeys[*vj_idx],
+                                    &mut opening_timetable,
+                                    &mut closing_timetable,
+                                ),
+                                LogLevel::Warn
+                            );
+                        }
+                    }
+                    line.opening_time = find_main_hole_boundaries(&opening_timetable)
+                        .map(|mhb| mhb.1) // gets the last index of the main hole
+                        .map(|lmhb| (lmhb + 1) % HOURS_PER_DAY) // gets the index just after that of the main hole
+                        .and_then(|ot_idx| opening_timetable.get(&ot_idx))
+                        .copied()
+                        .or_else(|| Some(Time::new(0, 0, 0))); // continuous circulation or absent (and later cleaned)
+                    line.closing_time = find_main_hole_boundaries(&closing_timetable)
+                        .map(|mhb| mhb.0) // gets the first index of the main hole
+                        .map(|fmhb| (fmhb + HOURS_PER_DAY - 1) % HOURS_PER_DAY) // gets the index just before that of the main hole
+                        .and_then(|ct_idx| closing_timetable.get(&ct_idx))
+                        .copied()
+                        .or_else(|| Some(Time::new(23, 59, 59))) // continuous circulation or absent (and later cleaned)
+                        .map(|mut closing_time| {
+                            // Add one day if opening_time > closing_time (midnight-passing)
+                            if let Some(opening_time) = line.opening_time {
+                                if opening_time > closing_time {
+                                    closing_time =
+                                        closing_time + Time::new(HOURS_PER_DAY.into(), 0, 0);
+                                }
+                            }
+                            closing_time
+                        });
+                }
+            }
+            self.lines = CollectionWithId::new(lines).unwrap();
+        }
+    }
+
     /// Trip headsign can be derived from the name of the stop point of the
     /// last stop time of the associated trip.
     pub fn enhance_trip_headsign(&mut self) {
@@ -948,6 +1135,7 @@ impl Model {
             collections.enhance_trip_headsign();
             collections.enhance_route_names();
             collections.check_geometries_coherence();
+            collections.enhance_line_opening_time();
             collections.sanitize()
         }
         apply_generic_business_rules(&mut c)?;
