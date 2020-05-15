@@ -204,7 +204,31 @@ fn test_minimal_gtfs_with_odt_comment() {
         compare_output_dir_with_expected(
             &path,
             Some(vec!["comment_links.txt", "comments.txt", "stop_times.txt"]),
-            "./tests/fixtures/gtfs2ntfs/odt_comment",
+            "./tests/fixtures/gtfs2ntfs/odt_comment/without_frequencies",
+        );
+    });
+}
+
+#[test]
+fn test_minimal_gtfs_frequencies_with_odt_comment() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./tests/fixtures/gtfs2ntfs/frequencies/input";
+        let configuration: transit_model::gtfs::Configuration<&Path> =
+            transit_model::gtfs::Configuration {
+                config_path: None,
+                prefix: None,
+                on_demand_transport: false,
+                on_demand_transport_comment: Some(
+                    "Service à réservation {agency_name} {agency_phone}".to_string(),
+                ),
+            };
+
+        let model = transit_model::gtfs::read_from_path(input_dir, configuration).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            Some(vec!["comment_links.txt", "comments.txt", "stop_times.txt"]),
+            "./tests/fixtures/gtfs2ntfs/odt_comment/with_frequencies",
         );
     });
 }
