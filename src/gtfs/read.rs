@@ -1277,17 +1277,62 @@ where
                         .collect();
                     start_time = start_time + Time::new(0, 0, frequency.headway_secs);
                     let generated_vj = VehicleJourney {
-                        id: generated_trip_id,
+                        id: generated_trip_id.clone(),
                         service_id,
                         stop_times,
                         ..corresponding_vj.clone()
                     };
                     new_vehicle_journeys.push(generated_vj);
+                    let stop_time_ids: HashMap<(String, u32), String> = corresponding_vj
+                        .stop_times
+                        .iter()
+                        .filter(|stop_time| {
+                            (stop_time.pickup_type == 2 || stop_time.drop_off_type == 2)
+                                && collections
+                                    .stop_time_comments
+                                    .get(&(frequency.trip_id.clone(), stop_time.sequence))
+                                    .is_some()
+                        })
+                        .map(|stop_time| {
+                            (
+                                (generated_trip_id.clone(), stop_time.sequence),
+                                format!("{}-{}", generated_trip_id, stop_time.sequence),
+                            )
+                        })
+                        .collect();
+                    collections.stop_time_ids.extend(stop_time_ids);
+                    let stop_time_comments: HashMap<(String, u32), String> = corresponding_vj
+                        .stop_times
+                        .iter()
+                        .filter(|stop_time| {
+                            stop_time.pickup_type == 2 || stop_time.drop_off_type == 2
+                        })
+                        .filter_map(|stop_time| {
+                            match collections
+                                .stop_time_comments
+                                .get(&(frequency.trip_id.clone(), stop_time.sequence))
+                            {
+                                Some(comment_id) => Some((
+                                    (generated_trip_id.clone(), stop_time.sequence),
+                                    comment_id.to_string(),
+                                )),
+                                _ => None,
+                            }
+                        })
+                        .collect();
+                    collections.stop_time_comments.extend(stop_time_comments);
                 }
             }
             let mut vehicle_journeys = collections.vehicle_journeys.take();
             let trip_ids_to_remove: Vec<_> = gtfs_frequencies.iter().map(|f| &f.trip_id).collect();
             vehicle_journeys.retain(|vj| !trip_ids_to_remove.contains(&&vj.id));
+            collections
+                .stop_time_ids
+                .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&&vj_id));
+            collections
+                .stop_time_comments
+                .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&&vj_id));
+
             vehicle_journeys.append(&mut new_vehicle_journeys);
             collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
             Ok(())
