@@ -410,7 +410,10 @@ where
         // consume the stop headsign
         let headsign = std::mem::replace(&mut stop_time.stop_headsign, None);
         if let Some(headsign) = headsign {
-            headsigns.insert((vj_idx, stop_time.stop_sequence), headsign);
+            headsigns.insert(
+                (stop_time.trip_id.clone(), stop_time.stop_sequence),
+                headsign,
+            );
         }
 
         tmp_vjs
@@ -456,7 +459,7 @@ where
                             collections,
                             message,
                             company_idx,
-                            vj_idx,
+                            collections.vehicle_journeys[vj_idx].id.clone(),
                             stop_time,
                         );
                     }
@@ -612,11 +615,11 @@ fn manage_odt_comment_from_stop_time(
     collections: &mut Collections,
     on_demand_transport_comment: &str,
     company_idx: Idx<objects::Company>,
-    vj_idx: Idx<objects::VehicleJourney>,
+    vj_id: String,
     stop_time: &StopTime,
 ) {
     let comment_id = format!("ODT:{}", collections.companies[company_idx].id);
-    let comment_idx = collections
+    collections
         .comments
         .get_idx(&comment_id)
         .unwrap_or_else(|| {
@@ -639,11 +642,11 @@ fn manage_odt_comment_from_stop_time(
         });
     collections
         .stop_time_comments
-        .insert((vj_idx, stop_time.stop_sequence), comment_idx);
+        .insert((vj_id.to_string(), stop_time.stop_sequence), comment_id);
     let stop_time_id = format!("{}-{}", stop_time.trip_id, stop_time.stop_sequence);
     collections
         .stop_time_ids
-        .insert((vj_idx, stop_time.stop_sequence), stop_time_id);
+        .insert((vj_id, stop_time.stop_sequence), stop_time_id);
 }
 
 #[derive(Default)]
