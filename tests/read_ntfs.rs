@@ -195,8 +195,11 @@ fn ntfs() {
     );
     assert_eq!(None, iter.next());
 
-    let mut stop_time_comments = HashMap::<(String, u32), String>::new();
-    stop_time_comments.insert(("RERAB1".to_string(), 5), "RERACOM1".to_string());
+    let mut stop_time_comments = HashMap::<(Idx<VehicleJourney>, u32), Idx<Comment>>::new();
+    stop_time_comments.insert(
+        (pt_objects.vehicle_journeys.get_idx("RERAB1").unwrap(), 5),
+        pt_objects.comments.get_idx("RERACOM1").unwrap(),
+    );
 
     assert_eq!(stop_time_comments, pt_objects.stop_time_comments);
 }
