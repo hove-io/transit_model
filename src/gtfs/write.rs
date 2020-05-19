@@ -446,7 +446,7 @@ pub fn write_stop_times(
     path: &path::Path,
     vehicle_journeys: &CollectionWithId<VehicleJourney>,
     stop_points: &CollectionWithId<StopPoint>,
-    stop_times_headsigns: &HashMap<(String, u32), String>,
+    stop_times_headsigns: &HashMap<(Idx<VehicleJourney>, u32), String>,
 ) -> Result<()> {
     info!("Writing stop_times.txt");
     let stop_times_path = path.join("stop_times.txt");
@@ -464,9 +464,7 @@ pub fn write_stop_times(
                     pickup_type: st.pickup_type,
                     drop_off_type: st.drop_off_type,
                     local_zone_id: st.local_zone_id,
-                    stop_headsign: stop_times_headsigns
-                        .get(&(vehicle_journeys[vj_idx].id.clone(), st.sequence))
-                        .cloned(),
+                    stop_headsign: stop_times_headsigns.get(&(vj_idx, st.sequence)).cloned(),
                     timepoint: !st.datetime_estimated,
                 })
                 .with_context(|_| format!("Error reading {:?}", st_wtr))?;
@@ -1148,7 +1146,10 @@ mod tests {
             journey_pattern_id: Some(String::from("jp:01")),
         });
         let mut stop_times_headsigns = HashMap::new();
-        stop_times_headsigns.insert(("vj:01".to_string(), 1), "somewhere".to_string());
+        stop_times_headsigns.insert(
+            (vehicle_journeys.get_idx("vj:01").unwrap(), 1),
+            "somewhere".to_string(),
+        );
         let tmp_dir = tempdir().expect("create temp dir");
         write_stop_times(
             tmp_dir.path(),
