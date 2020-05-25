@@ -79,6 +79,3 @@ required-features = ["proj"]
 [dev-dependencies]
 approx = "0.3"
 rust_decimal_macros = "1.0"
-
-[package.metadata.docs.rs]
-all-features = true
