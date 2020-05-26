@@ -1,0 +1,7 @@
+line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+M1-01,,Metro 1 (v1),,,,,,TGN,Metro,,23:38:00,25:26:00
+M1-02,,Metro 1 (v2),,,,,,TGN,Metro,,05:15:00,08:20:00
+M1-03,,Metro 1 (v3),,,,,,TGN,Metro,,05:05:00,06:30:00
+RERA-02,,RER A (v2),,,,,,TGN,RER,,00:00:00,23:59:59
+B42-01,,Bus 42 (v1),,,,,,TGN,Bus,,02:10:00,15:50:00
+B42-02,,Bus 42 (v2),,,,,,TGN,Bus,,07:05:00,16:10:00

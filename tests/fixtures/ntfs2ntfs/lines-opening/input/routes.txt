@@ -1,0 +1,8 @@
+route_id,route_name,line_id
+M1F,Nation - Charles de Gaulle,M1-01
+M1B,Charles de Gaulle - Nation,M1-02
+M1C,Charles de Gaulle - Nation,M1-03
+B42F,Gare de Lyon - Montparnasse,B42-01
+B42B,Montparnasse - Gare de Lyon,B42-02
+RERAF,Nation - La Défense,RERA-01
+RERAB,La Défense - Nation,RERA-02
