@@ -459,7 +459,7 @@ where
                             collections,
                             message,
                             company_idx,
-                            vj_idx,
+                            collections.vehicle_journeys[vj_idx].id.clone(),
                             stop_time,
                         );
                     }
@@ -615,7 +615,7 @@ fn manage_odt_comment_from_stop_time(
     collections: &mut Collections,
     on_demand_transport_comment: &str,
     company_idx: Idx<objects::Company>,
-    vj_idx: Idx<objects::VehicleJourney>,
+    vj_id: String,
     stop_time: &StopTime,
 ) {
     let comment_id = format!("ODT:{}", collections.companies[company_idx].id);
@@ -640,21 +640,13 @@ fn manage_odt_comment_from_stop_time(
             };
             collections.comments.push(comment).unwrap()
         });
-    collections.stop_time_comments.insert(
-        (
-            collections.vehicle_journeys[vj_idx].id.to_string(),
-            stop_time.stop_sequence,
-        ),
-        comment_id,
-    );
+    collections
+        .stop_time_comments
+        .insert((vj_id.to_string(), stop_time.stop_sequence), comment_id);
     let stop_time_id = format!("{}-{}", stop_time.trip_id, stop_time.stop_sequence);
-    collections.stop_time_ids.insert(
-        (
-            collections.vehicle_journeys[vj_idx].id.to_string(),
-            stop_time.stop_sequence,
-        ),
-        stop_time_id,
-    );
+    collections
+        .stop_time_ids
+        .insert((vj_id, stop_time.stop_sequence), stop_time_id);
 }
 
 #[derive(Default)]
@@ -1285,53 +1277,17 @@ where
                         .collect();
                     start_time = start_time + Time::new(0, 0, frequency.headway_secs);
                     let generated_vj = VehicleJourney {
-                        id: generated_trip_id.clone(),
+                        id: generated_trip_id,
                         service_id,
                         stop_times,
                         ..corresponding_vj.clone()
                     };
                     new_vehicle_journeys.push(generated_vj);
-                    let stop_time_comments: HashMap<(String, u32), String> = corresponding_vj
-                        .stop_times
-                        .iter()
-                        .filter(|stop_time| {
-                            stop_time.pickup_type == 2 || stop_time.drop_off_type == 2
-                        })
-                        .filter_map(|stop_time| {
-                            collections
-                                .stop_time_comments
-                                .get(&(frequency.trip_id.clone(), stop_time.sequence))
-                                .map(|comment_id| {
-                                    (
-                                        (generated_trip_id.clone(), stop_time.sequence),
-                                        comment_id.to_string(),
-                                    )
-                                })
-                        })
-                        .collect();
-                    let stop_time_ids: HashMap<(String, u32), String> = stop_time_comments
-                        .keys()
-                        .map(|(trip_id, sequence)| {
-                            (
-                                (trip_id.to_string(), *sequence),
-                                format!("{}-{}", trip_id, sequence),
-                            )
-                        })
-                        .collect();
-                    collections.stop_time_comments.extend(stop_time_comments);
-                    collections.stop_time_ids.extend(stop_time_ids);
                 }
             }
             let mut vehicle_journeys = collections.vehicle_journeys.take();
             let trip_ids_to_remove: Vec<_> = gtfs_frequencies.iter().map(|f| &f.trip_id).collect();
             vehicle_journeys.retain(|vj| !trip_ids_to_remove.contains(&&vj.id));
-            collections
-                .stop_time_ids
-                .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&&vj_id));
-            collections
-                .stop_time_comments
-                .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&&vj_id));
-
             vehicle_journeys.append(&mut new_vehicle_journeys);
             collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
             Ok(())
