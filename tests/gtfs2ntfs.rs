@@ -204,7 +204,7 @@ fn test_minimal_gtfs_with_odt_comment() {
         compare_output_dir_with_expected(
             &path,
             Some(vec!["comment_links.txt", "comments.txt", "stop_times.txt"]),
-            "./tests/fixtures/gtfs2ntfs/odt_comment/without_frequencies",
+            "./tests/fixtures/gtfs2ntfs/odt_comment/output_without_frequencies",
         );
     });
 }
@@ -228,7 +228,7 @@ fn test_minimal_gtfs_frequencies_with_odt_comment() {
         compare_output_dir_with_expected(
             &path,
             Some(vec!["comment_links.txt", "comments.txt", "stop_times.txt"]),
-            "./tests/fixtures/gtfs2ntfs/odt_comment/with_frequencies",
+            "./tests/fixtures/gtfs2ntfs/odt_comment/output_with_frequencies",
         );
     });
 }
