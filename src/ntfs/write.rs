@@ -25,7 +25,7 @@ use rust_decimal::{prelude::ToPrimitive, Decimal};
 use std::collections::{BTreeSet, HashMap};
 use std::fs::File;
 use std::path;
-use typed_index_collection::{Collection, CollectionWithId, Id};
+use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 pub fn write_feed_infos(
     path: &path::Path,
@@ -75,8 +75,8 @@ pub fn write_vehicle_journeys_and_stop_times(
     path: &path::Path,
     vehicle_journeys: &CollectionWithId<VehicleJourney>,
     stop_points: &CollectionWithId<StopPoint>,
-    stop_time_headsigns: &HashMap<(String, u32), String>,
-    stop_time_ids: &HashMap<(String, u32), String>,
+    stop_time_headsigns: &HashMap<(Idx<VehicleJourney>, u32), String>,
+    stop_time_ids: &HashMap<(Idx<VehicleJourney>, u32), String>,
 ) -> Result<()> {
     info!("Writing trips.txt and stop_times.txt");
     let trip_path = path.join("trips.txt");
@@ -111,12 +111,8 @@ pub fn write_vehicle_journeys_and_stop_times(
                     drop_off_type: st.drop_off_type,
                     datetime_estimated: Some(st.datetime_estimated as u8),
                     local_zone_id: st.local_zone_id,
-                    stop_headsign: stop_time_headsigns
-                        .get(&(vehicle_journeys[vj_idx].id.clone(), st.sequence))
-                        .cloned(),
-                    stop_time_id: stop_time_ids
-                        .get(&(vehicle_journeys[vj_idx].id.clone(), st.sequence))
-                        .cloned(),
+                    stop_headsign: stop_time_headsigns.get(&(vj_idx, st.sequence)).cloned(),
+                    stop_time_id: stop_time_ids.get(&(vj_idx, st.sequence)).cloned(),
                     precision,
                 })
                 .with_context(|_| format!("Error reading {:?}", st_wtr))?;
@@ -635,20 +631,22 @@ where
 
 fn write_stop_time_comment_links<W>(
     wtr: &mut csv::Writer<W>,
-    stop_time_ids: &HashMap<(String, u32), String>,
-    stop_time_comments: &HashMap<(String, u32), String>,
+    stop_time_ids: &HashMap<(Idx<VehicleJourney>, u32), String>,
+    stop_time_comments: &HashMap<(Idx<VehicleJourney>, u32), Idx<Comment>>,
+    comments: &CollectionWithId<Comment>,
     path: &path::Path,
 ) -> Result<()>
 where
     W: ::std::io::Write,
 {
-    for (idx_sequence, id_comment) in stop_time_comments {
+    for (idx_sequence, idx_comment) in stop_time_comments {
+        let comment = &comments[*idx_comment];
         let st_id = &stop_time_ids[idx_sequence];
 
         wtr.serialize(CommentLink {
             object_id: st_id.to_string(),
             object_type: ObjectType::StopTime,
-            comment_id: id_comment.to_string(),
+            comment_id: comment.id.to_string(),
         })
         .with_context(|_| format!("Error reading {:?}", path))?;
     }
@@ -710,6 +708,7 @@ pub fn write_comments(path: &path::Path, collections: &Collections) -> Result<()
         &mut cl_wtr,
         &collections.stop_time_ids,
         &collections.stop_time_comments,
+        &collections.comments,
         &comment_links_path,
     )?;
 
