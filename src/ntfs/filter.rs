@@ -146,15 +146,9 @@ fn filter_from_idxset<T: Id<T>>(
 
 fn updated_stop_time_attributes(
     vehicle_journeys: &CollectionWithId<VehicleJourney>,
-    attributes_map: HashMap<(String, u32), String>,
-) -> HashMap<(String, u32), String> {
-    let mut updated_attributes_map = HashMap::new();
-    for ((vj_id, sequence), attribute) in attributes_map {
-        if vehicle_journeys.get(&vj_id).is_some() {
-            updated_attributes_map.insert((vj_id, sequence), attribute.clone());
-        }
-    }
-    updated_attributes_map
+    attributes_map: &mut HashMap<(String, u32), String>,
+) {
+    attributes_map.retain(|(vj_id, _), _| vehicle_journeys.contains_id(&vj_id));
 }
 
 /// Extract or remove part of the dataset from property filters on an object (Network, Line, etc.)
@@ -191,15 +185,17 @@ pub fn filter(model: Model, filter: &Filter) -> Result<Model> {
         filter.action,
     );
 
-    collections.stop_time_ids =
-        updated_stop_time_attributes(&collections.vehicle_journeys, collections.stop_time_ids);
-    collections.stop_time_headsigns = updated_stop_time_attributes(
+    updated_stop_time_attributes(
         &collections.vehicle_journeys,
-        collections.stop_time_headsigns,
+        &mut collections.stop_time_ids,
     );
-    collections.stop_time_comments = updated_stop_time_attributes(
+    updated_stop_time_attributes(
         &collections.vehicle_journeys,
-        collections.stop_time_comments,
+        &mut collections.stop_time_headsigns,
+    );
+    updated_stop_time_attributes(
+        &collections.vehicle_journeys,
+        &mut collections.stop_time_comments,
     );
 
     if collections.vehicle_journeys.is_empty() {

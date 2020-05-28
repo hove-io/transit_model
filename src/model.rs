@@ -122,7 +122,7 @@ pub struct Collections {
     pub geometries: CollectionWithId<Geometry>,
     pub admin_stations: Collection<AdminStation>,
     #[serde(skip)]
-    //HashMap<vehicle_journey_id, stop_sequence, String>,
+    //HashMap<(vehicle_journey_id, stop_sequence), headsign>,
     pub stop_time_headsigns: HashMap<(String, u32), String>,
     #[serde(skip)]
     //HashMap<(vehicle_journey_id, stop_sequence), stop_time_id>,
@@ -472,42 +472,13 @@ impl Collections {
         let vehicle_journeys_used: HashSet<String> = vjs.iter().map(|vj| vj.id.clone()).collect();
         self.vehicle_journeys = CollectionWithId::new(vjs)?;
         self.stop_locations = CollectionWithId::new(stop_locations)?;
-
-        self.stop_time_comments = self
-            .stop_time_comments
-            .iter()
-            .filter_map(|((vj_id, seq), comment_id)| {
-                match (
-                    vehicle_journeys_used.contains(vj_id),
-                    comments_used.contains(comment_id),
-                ) {
-                    (true, true) => Some(((vj_id.clone(), *seq), comment_id.clone())),
-                    _ => None,
-                }
-            })
-            .collect();
-        self.stop_time_ids = self
-            .stop_time_ids
-            .iter()
-            .filter_map(|((vj_id, seq), stop_time_id)| {
-                if vehicle_journeys_used.contains(vj_id) {
-                    Some(((vj_id.clone(), *seq), stop_time_id.clone()))
-                } else {
-                    None
-                }
-            })
-            .collect();
-        self.stop_time_headsigns = self
-            .stop_time_headsigns
-            .iter()
-            .filter_map(|((vj_id, seq), headsign)| {
-                if vehicle_journeys_used.contains(vj_id) {
-                    Some(((vj_id.clone(), *seq), headsign.clone()))
-                } else {
-                    None
-                }
-            })
-            .collect();
+        self.stop_time_comments.retain(|(vj_id, _), comment_id| {
+            vehicle_journeys_used.contains(vj_id) && comments_used.contains(comment_id)
+        });
+        self.stop_time_ids
+            .retain(|(vj_id, _), _| vehicle_journeys_used.contains(vj_id));
+        self.stop_time_headsigns
+            .retain(|(vj_id, _), _| vehicle_journeys_used.contains(vj_id));
         self.grid_rel_calendar_line
             .retain(|grid_rel_calendar_line| {
                 line_ids_used.contains(&grid_rel_calendar_line.line_id)

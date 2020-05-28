@@ -468,25 +468,22 @@ fn insert_stop_time_comment_link(
     comments: &CollectionWithId<Comment>,
     comment_link: &CommentLink,
 ) -> Result<()> {
-    let idx_sequence = match stop_time_ids.get(&comment_link.object_id) {
-        Some(idx_sequence) => idx_sequence,
-        None => {
-            error!(
-                "comment_links.txt: object_type={} object_id={} not found",
-                comment_link.object_type.as_str(),
-                comment_link.object_id
-            );
-            return Ok(());
+    if let Some(vehicle_journey_id) = stop_time_ids.get(&comment_link.object_id) {
+        if comments.contains_id(&comment_link.comment_id) {
+            stop_time_comments.insert(vehicle_journey_id.clone(), comment_link.comment_id.clone());
+        } else {
+            bail!(
+                "comment.txt: comment_id={} not found",
+                comment_link.comment_id
+            )
         }
-    };
-    match comments.get(&comment_link.comment_id) {
-        Some(comment_idx) => comment_idx,
-        None => bail!(
-            "comment.txt: comment_id={} not found",
-            comment_link.comment_id
-        ),
-    };
-    stop_time_comments.insert(idx_sequence.clone(), comment_link.comment_id.clone());
+    } else {
+        error!(
+            "comment_links.txt: object_type={} object_id={} not found",
+            comment_link.object_type.as_str(),
+            comment_link.object_id
+        );
+    }
     Ok(())
 }
 
