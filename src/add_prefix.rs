@@ -15,6 +15,7 @@
 //! A trait for every structure that needs to be updated with a prefix
 
 use crate::model::Collections;
+use std::collections::HashMap;
 use typed_index_collection::{Collection, CollectionWithId, Id};
 
 /// Trait for object that can be prefixed
@@ -52,6 +53,21 @@ where
     }
 }
 
+fn add_prefix_on_vehicle_journey_ids(
+    vehicle_journey_ids: &HashMap<(String, u32), String>,
+    prefix: &str,
+) -> HashMap<(String, u32), String> {
+    vehicle_journey_ids
+        .iter()
+        .map(|((trip_id, sequence), value)| {
+            (
+                (format!("{}{}", prefix, trip_id), *sequence),
+                value.to_string(),
+            )
+        })
+        .collect()
+}
+
 impl AddPrefix for Collections {
     fn add_prefix(&mut self, prefix: &str) {
         self.contributors.add_prefix(&prefix);
@@ -86,6 +102,11 @@ impl AddPrefix for Collections {
         self.grid_exception_dates.add_prefix(&prefix);
         self.grid_periods.add_prefix(&prefix);
         self.grid_rel_calendar_line.add_prefix(&prefix);
+        self.stop_time_headsigns =
+            add_prefix_on_vehicle_journey_ids(&self.stop_time_headsigns, &prefix);
+        self.stop_time_ids = add_prefix_on_vehicle_journey_ids(&self.stop_time_ids, &prefix);
+        self.stop_time_comments =
+            add_prefix_on_vehicle_journey_ids(&self.stop_time_comments, &prefix);
     }
 }
 

@@ -675,18 +675,12 @@ mod tests {
 
         let mut headsigns = HashMap::new();
         headsigns.insert(
-            (
-                vehicle_journeys.get_idx("OIF:87604986-1_11595-1").unwrap(),
-                1,
-            ),
+            ("OIF:87604986-1_11595-1".to_string(), 1),
             "somewhere".to_string(),
         );
         let mut stop_time_ids = HashMap::new();
         stop_time_ids.insert(
-            (
-                vehicle_journeys.get_idx("OIF:87604986-1_11595-1").unwrap(),
-                0,
-            ),
+            ("OIF:87604986-1_11595-1".to_string(), 0),
             "StopTime:OIF:87604986-1_11595-1:0".to_string(),
         );
 
@@ -1082,15 +1076,9 @@ mod tests {
         });
 
         let mut stop_time_ids = HashMap::new();
-        stop_time_ids.insert(
-            (vehicle_journeys.get_idx("VJ:1").unwrap(), 0),
-            "StopTime:VJ:1:0".to_string(),
-        );
+        stop_time_ids.insert((("VJ:1").to_string(), 0), "StopTime:VJ:1:0".to_string());
         let mut stop_time_comments = HashMap::new();
-        stop_time_comments.insert(
-            (vehicle_journeys.get_idx("VJ:1").unwrap(), 0),
-            comments.get_idx("c:2").unwrap(),
-        );
+        stop_time_comments.insert(("VJ:1".to_string(), 0), "c:2".to_string());
 
         ser_collections.comments = comments;
         ser_collections.stop_areas = stop_areas;
