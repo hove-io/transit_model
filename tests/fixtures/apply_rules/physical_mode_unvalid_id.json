@@ -1,0 +1,10 @@
+{
+   "physical_modes":[
+      {
+         "properties":{
+            "physical_mode_id":"unvalid_id",
+            "physical_mode_name":"name"
+         }
+      }
+   ]
+}

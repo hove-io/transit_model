@@ -110,7 +110,7 @@ fn check_and_apply_physical_modes_rules(
                 "physical_mode_name",
                 &physical_mode.name,
             );
-        } else if CO2_EMISSIONS.get(physical_mode_id).is_none() {
+        } else if !CO2_EMISSIONS.contains_key(physical_mode_id) {
             report.add_error(
                 format!(
                     "The physical mode id \"{}\" not authorised",

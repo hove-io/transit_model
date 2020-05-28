@@ -1,0 +1,10 @@
+{
+   "physical_modes":[
+      {
+         "properties":{
+            "physical_mode_id":"RapidTransit",
+            "physical_mode_name":"train express"
+         }
+      }
+   ]
+}

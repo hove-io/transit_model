@@ -1,0 +1,10 @@
+{
+   "commercial_modes":[
+      {
+         "properties":{
+            "commercial_mode_id":"RER",
+            "commercial_mode_name":"Reseau Express Régional"
+         }
+      }
+   ]
+}

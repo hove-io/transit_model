@@ -1,0 +1,7 @@
+physical_mode_id,physical_mode_name,co2_emission
+Bus,Bus,132.0
+Metro,Metro,80.0
+RapidTransit,train express,6.2
+Bike,Bike,0.0
+BikeSharingService,BikeSharingService,0.0
+Car,Car,184.0

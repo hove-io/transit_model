@@ -6,7 +6,7 @@
     },
     {
       "category": "ObjectNotFound",
-      "message": "No network has been consolidated for network \"bus_vert\""
+      "message": "The rule on the \"bus_vert\" network was not applied"
     }
   ],
   "warnings": []
