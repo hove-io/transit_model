@@ -320,8 +320,10 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             .index_mut(vj_idx)
             .stop_times
             .push(crate::objects::StopTime {
+                id: None,
                 stop_point_idx,
                 sequence: stop_time.stop_sequence,
+                headsign: None,
                 arrival_time: stop_time.arrival_time,
                 departure_time: stop_time.departure_time,
                 boarding_duration: stop_time.boarding_duration,
@@ -331,6 +333,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
                 datetime_estimated,
                 local_zone_id: stop_time.local_zone_id,
                 precision,
+                comment_links: None,
             });
     }
     collections.stop_time_headsigns = headsigns;
@@ -815,8 +818,10 @@ mod tests {
             assert_eq!(
                 vec![
                     objects::StopTime {
+                        id: None,
                         stop_point_idx: collections.stop_points.get_idx("sp:01").unwrap(),
                         sequence: 1,
+                        headsign: None,
                         arrival_time: Time::new(6, 0, 0),
                         departure_time: Time::new(6, 0, 0),
                         boarding_duration: 0,
@@ -826,10 +831,13 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        comment_links: None,
                     },
                     objects::StopTime {
+                        id: None,
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
                         sequence: 2,
+                        headsign: None,
                         arrival_time: Time::new(6, 6, 27),
                         departure_time: Time::new(6, 6, 27),
                         boarding_duration: 0,
@@ -839,10 +847,13 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Approximate),
+                        comment_links: None,
                     },
                     objects::StopTime {
+                        id: None,
                         stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
                         sequence: 3,
+                        headsign: None,
                         arrival_time: Time::new(6, 6, 27),
                         departure_time: Time::new(6, 6, 27),
                         boarding_duration: 0,
@@ -852,10 +863,13 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Estimated),
+                        comment_links: None,
                     },
                     objects::StopTime {
+                        id: None,
                         stop_point_idx: collections.stop_points.get_idx("sp:04").unwrap(),
                         sequence: 3,
+                        headsign: None,
                         arrival_time: Time::new(6, 6, 27),
                         departure_time: Time::new(6, 6, 27),
                         boarding_duration: 0,
@@ -865,10 +879,13 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        comment_links: None,
                     },
                     objects::StopTime {
+                        id: None,
                         stop_point_idx: collections.stop_points.get_idx("sp:05").unwrap(),
                         sequence: 3,
+                        headsign: None,
                         arrival_time: Time::new(6, 6, 27),
                         departure_time: Time::new(6, 6, 27),
                         boarding_duration: 0,
@@ -878,6 +895,7 @@ mod tests {
                         datetime_estimated: true,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Estimated),
+                        comment_links: None,
                     },
                 ],
                 collections.vehicle_journeys.into_vec()[0].stop_times

@@ -803,10 +803,16 @@ impl std::fmt::Display for Time {
     }
 }
 
+// This struct is using Option<Box<String>> instead of Option<String> because
+// Option::<Box<String>>::None is 8 bytes but Option::<String>::None is 24
+// bytes.  For similar reasons, `comment_links` is in an
+// `Option<Box<CommentLinksT>>` instead of a `CommentLinksT`
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct StopTime {
+    pub id: Option<Box<String>>,
     pub stop_point_idx: Idx<StopPoint>,
     pub sequence: u32,
+    pub headsign: Option<Box<String>>,
     pub arrival_time: Time,
     pub departure_time: Time,
     pub boarding_duration: u16,
@@ -816,6 +822,7 @@ pub struct StopTime {
     pub datetime_estimated: bool,
     pub local_zone_id: Option<u16>,
     pub precision: Option<StopTimePrecision>,
+    pub comment_links: Option<Box<CommentLinksT>>,
 }
 
 impl Ord for StopTime {

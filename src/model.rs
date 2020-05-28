@@ -1331,8 +1331,10 @@ mod tests {
                 })
                 .unwrap();
             let stop_time = StopTime {
+                id: None,
                 stop_point_idx: collections.stop_points.get_idx("stop_point_id").unwrap(),
                 sequence: 0,
+                headsign: None,
                 arrival_time: Time::new(0, 0, 0),
                 departure_time: Time::new(0, 0, 0),
                 boarding_duration: 0,
@@ -1342,6 +1344,7 @@ mod tests {
                 datetime_estimated: false,
                 local_zone_id: Some(0),
                 precision: None,
+                comment_links: None,
             };
             collections
                 .vehicle_journeys
@@ -1498,8 +1501,10 @@ mod tests {
             collections: &Collections,
         ) -> VehicleJourney {
             let stop_time_at = |stop_point_id: &str| StopTime {
+                id: None,
                 stop_point_idx: collections.stop_points.get_idx(stop_point_id).unwrap(),
                 sequence: 0,
+                headsign: None,
                 arrival_time: Time::new(0, 0, 0),
                 departure_time: Time::new(0, 0, 0),
                 boarding_duration: 0,
@@ -1509,6 +1514,7 @@ mod tests {
                 datetime_estimated: false,
                 local_zone_id: None,
                 precision: None,
+                comment_links: None,
             };
             let stop_times: Vec<_> = stop_point_ids.into_iter().map(stop_time_at).collect();
             VehicleJourney {

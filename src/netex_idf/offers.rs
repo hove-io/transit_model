@@ -733,8 +733,10 @@ fn stop_times(
             };
             let times = arrival_departure_times(tpt)?;
             let stop_time = StopTime {
+                id: None,
                 stop_point_idx,
                 sequence: sequence as u32,
+                headsign: None,
                 arrival_time: times.0,
                 departure_time: times.1,
                 boarding_duration: 0,
@@ -744,6 +746,7 @@ fn stop_times(
                 datetime_estimated: false,
                 local_zone_id,
                 precision: None,
+                comment_links: None,
             };
 
             Ok(stop_time)

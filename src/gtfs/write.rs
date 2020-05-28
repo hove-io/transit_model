@@ -875,8 +875,10 @@ mod tests {
             geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
             stop_times: vec![
                 objects::StopTime {
+                    id: None,
                     stop_point_idx: sps.get_idx("OIF:SP:36:2085").unwrap(),
                     sequence: 0,
+                    headsign: None,
                     arrival_time: objects::Time::new(14, 40, 0),
                     departure_time: objects::Time::new(14, 40, 0),
                     boarding_duration: 0,
@@ -886,10 +888,13 @@ mod tests {
                     datetime_estimated: false,
                     local_zone_id: None,
                     precision: None,
+                    comment_links: None,
                 },
                 objects::StopTime {
+                    id: None,
                     stop_point_idx: sps.get_idx("OIF:SP:36:2127").unwrap(),
                     sequence: 1,
+                    headsign: None,
                     arrival_time: objects::Time::new(14, 42, 0),
                     departure_time: objects::Time::new(14, 42, 0),
                     boarding_duration: 0,
@@ -899,6 +904,7 @@ mod tests {
                     datetime_estimated: false,
                     local_zone_id: None,
                     precision: None,
+                    comment_links: None,
                 },
             ],
             journey_pattern_id: Some(String::from("OIF:JP:1")),
@@ -1103,8 +1109,10 @@ mod tests {
         });
         let stop_times_vec = vec![
             StopTime {
+                id: None,
                 stop_point_idx: stop_points.get_idx("sp:01").unwrap(),
                 sequence: 1,
+                headsign: None,
                 arrival_time: Time::new(6, 0, 0),
                 departure_time: Time::new(6, 0, 0),
                 boarding_duration: 0,
@@ -1114,10 +1122,13 @@ mod tests {
                 datetime_estimated: false,
                 local_zone_id: None,
                 precision: None,
+                comment_links: None,
             },
             StopTime {
+                id: None,
                 stop_point_idx: stop_points.get_idx("sp:01").unwrap(),
                 sequence: 2,
+                headsign: None,
                 arrival_time: Time::new(6, 6, 27),
                 departure_time: Time::new(6, 6, 27),
                 boarding_duration: 0,
@@ -1127,6 +1138,7 @@ mod tests {
                 datetime_estimated: true,
                 local_zone_id: Some(3),
                 precision: None,
+                comment_links: None,
             },
         ];
         let vehicle_journeys = CollectionWithId::from(VehicleJourney {

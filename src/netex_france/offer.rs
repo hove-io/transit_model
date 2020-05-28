@@ -799,8 +799,10 @@ mod tests {
             physical_mode_id: String::from("Bus"),
             stop_times: vec![
                 StopTime {
+                    id: None,
                     stop_point_idx: collections.stop_points.get_idx("sp_id_1").unwrap(),
                     sequence: 0,
+                    headsign: None,
                     arrival_time: Time::new(0, 0, 0),
                     departure_time: Time::new(0, 0, 0),
                     boarding_duration: 0,
@@ -810,10 +812,13 @@ mod tests {
                     datetime_estimated: false,
                     local_zone_id: Some(1),
                     precision: Some(StopTimePrecision::Exact),
+                    comment_links: None,
                 },
                 StopTime {
+                    id: None,
                     stop_point_idx: collections.stop_points.get_idx("sp_id_2").unwrap(),
                     sequence: 1,
+                    headsign: None,
                     arrival_time: Time::new(0, 0, 0),
                     departure_time: Time::new(0, 0, 0),
                     boarding_duration: 0,
@@ -823,6 +828,7 @@ mod tests {
                     datetime_estimated: false,
                     local_zone_id: Some(1),
                     precision: Some(StopTimePrecision::Exact),
+                    comment_links: None,
                 },
             ],
             ..Default::default()
@@ -844,8 +850,10 @@ mod tests {
                 physical_mode_id: String::from("Bus"),
                 stop_times: vec![
                     StopTime {
+                        id: None,
                         stop_point_idx: collections.stop_points.get_idx("sp_id_1").unwrap(),
                         sequence: 0,
+                        headsign: None,
                         arrival_time: Time::new(0, 0, 0),
                         departure_time: Time::new(0, 0, 0),
                         boarding_duration: 0,
@@ -855,10 +863,13 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: Some(1),
                         precision: Some(StopTimePrecision::Exact),
+                        comment_links: None,
                     },
                     StopTime {
+                        id: None,
                         stop_point_idx: collections.stop_points.get_idx("sp_id_2").unwrap(),
                         sequence: 1,
+                        headsign: None,
                         arrival_time: Time::new(0, 0, 0),
                         departure_time: Time::new(0, 0, 0),
                         boarding_duration: 0,
@@ -868,6 +879,7 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: Some(1),
                         precision: Some(StopTimePrecision::Exact),
+                        comment_links: None,
                     },
                 ],
                 ..Default::default()
@@ -900,8 +912,10 @@ mod tests {
                 dataset_id: String::from("dataset_id"),
                 physical_mode_id: String::from("Bus"),
                 stop_times: vec![StopTime {
+                    id: None,
                     stop_point_idx: collections.stop_points.get_idx("sp_id_1").unwrap(),
                     sequence: 0,
+                    headsign: None,
                     arrival_time: Time::new(0, 0, 0),
                     departure_time: Time::new(0, 0, 0),
                     boarding_duration: 0,
@@ -911,6 +925,7 @@ mod tests {
                     datetime_estimated: false,
                     local_zone_id: Some(1),
                     precision: Some(StopTimePrecision::Exact),
+                    comment_links: None,
                 }],
                 ..Default::default()
             })
@@ -948,8 +963,10 @@ mod tests {
                 physical_mode_id: String::from("Bus"),
                 stop_times: vec![
                     StopTime {
+                        id: None,
                         stop_point_idx: collections.stop_points.get_idx("sp_id_1").unwrap(),
                         sequence: 0,
+                        headsign: None,
                         arrival_time: Time::new(0, 0, 0),
                         departure_time: Time::new(0, 0, 0),
                         boarding_duration: 0,
@@ -959,10 +976,13 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: Some(1),
                         precision: Some(StopTimePrecision::Exact),
+                        comment_links: None,
                     },
                     StopTime {
+                        id: None,
                         stop_point_idx: collections.stop_points.get_idx("sp_id_2").unwrap(),
                         sequence: 1,
+                        headsign: None,
                         arrival_time: Time::new(0, 0, 0),
                         departure_time: Time::new(0, 0, 0),
                         boarding_duration: 0,
@@ -973,6 +993,7 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: Some(1),
                         precision: Some(StopTimePrecision::Exact),
+                        comment_links: None,
                     },
                 ],
                 ..Default::default()

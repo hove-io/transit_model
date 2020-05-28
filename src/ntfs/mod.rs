@@ -624,8 +624,10 @@ mod tests {
                 geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
                 stop_times: vec![
                     StopTime {
+                        id: None,
                         stop_point_idx: stop_points.get_idx("OIF:SP:36:2085").unwrap(),
                         sequence: 0,
+                        headsign: None,
                         arrival_time: Time::new(14, 40, 0),
                         departure_time: Time::new(14, 40, 0),
                         boarding_duration: 0,
@@ -635,10 +637,13 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        comment_links: None,
                     },
                     StopTime {
+                        id: None,
                         stop_point_idx: stop_points.get_idx("OIF:SP:36:2127").unwrap(),
                         sequence: 1,
+                        headsign: None,
                         arrival_time: Time::new(14, 42, 0),
                         departure_time: Time::new(14, 42, 0),
                         boarding_duration: 0,
@@ -648,6 +653,7 @@ mod tests {
                         datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        comment_links: None,
                     },
                 ],
                 journey_pattern_id: Some(String::from("OIF:JP:1")),
@@ -1048,8 +1054,10 @@ mod tests {
             trip_property_id: None,
             geometry_id: None,
             stop_times: vec![StopTime {
+                id: None,
                 stop_point_idx: stop_points.get_idx("sp_1").unwrap(),
                 sequence: 0,
+                headsign: None,
                 arrival_time: Time::new(9, 0, 0),
                 departure_time: Time::new(9, 2, 0),
                 boarding_duration: 2,
@@ -1059,6 +1067,7 @@ mod tests {
                 datetime_estimated: false,
                 local_zone_id: None,
                 precision: None,
+                comment_links: None,
             }],
             journey_pattern_id: None,
         });

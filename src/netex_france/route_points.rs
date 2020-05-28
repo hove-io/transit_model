@@ -108,8 +108,10 @@ mod tests {
             departure_time: Time,
         ) -> StopTime {
             StopTime {
+                id: None,
                 stop_point_idx,
                 sequence,
+                headsign: None,
                 arrival_time: Time::new(0, 0, 0),
                 departure_time,
                 boarding_duration: 0,
@@ -119,6 +121,7 @@ mod tests {
                 datetime_estimated: false,
                 local_zone_id: None,
                 precision: None,
+                comment_links: None,
             }
         }
 
