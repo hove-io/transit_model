@@ -287,7 +287,10 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             })?;
 
         if let Some(headsign) = stop_time.stop_headsign {
-            headsigns.insert((vj_idx, stop_time.stop_sequence), headsign);
+            headsigns.insert(
+                (stop_time.trip_id.clone(), stop_time.stop_sequence),
+                headsign,
+            );
         }
         let datetime_estimated = stop_time.datetime_estimated.map_or_else(
             || match collections.stop_points[stop_point_idx].stop_type {
@@ -306,7 +309,10 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
         });
 
         if let Some(stop_time_id) = stop_time.stop_time_id {
-            stop_time_ids.insert((vj_idx, stop_time.stop_sequence), stop_time_id);
+            stop_time_ids.insert(
+                (stop_time.trip_id.clone(), stop_time.stop_sequence),
+                stop_time_id,
+            );
         }
 
         collections
@@ -457,30 +463,27 @@ where
 }
 
 fn insert_stop_time_comment_link(
-    stop_time_comments: &mut HashMap<(Idx<VehicleJourney>, u32), Idx<Comment>>,
-    stop_time_ids: &HashMap<&String, (Idx<VehicleJourney>, u32)>,
+    stop_time_comments: &mut HashMap<(String, u32), String>,
+    stop_time_ids: &HashMap<&String, (String, u32)>,
     comments: &CollectionWithId<Comment>,
     comment_link: &CommentLink,
 ) -> Result<()> {
-    let idx_sequence = match stop_time_ids.get(&comment_link.object_id) {
-        Some(idx_sequence) => idx_sequence,
-        None => {
-            error!(
-                "comment_links.txt: object_type={} object_id={} not found",
-                comment_link.object_type.as_str(),
-                comment_link.object_id
-            );
-            return Ok(());
+    if let Some(vehicle_journey_id) = stop_time_ids.get(&comment_link.object_id) {
+        if comments.contains_id(&comment_link.comment_id) {
+            stop_time_comments.insert(vehicle_journey_id.clone(), comment_link.comment_id.clone());
+        } else {
+            bail!(
+                "comment.txt: comment_id={} not found",
+                comment_link.comment_id
+            )
         }
-    };
-    let comment_idx = match comments.get_idx(&comment_link.comment_id) {
-        Some(comment_idx) => comment_idx,
-        None => bail!(
-            "comment.txt: comment_id={} not found",
-            comment_link.comment_id
-        ),
-    };
-    stop_time_comments.insert(*idx_sequence, comment_idx);
+    } else {
+        error!(
+            "comment_links.txt: object_type={} object_id={} not found",
+            comment_link.object_type.as_str(),
+            comment_link.object_id
+        );
+    }
     Ok(())
 }
 
@@ -494,7 +497,7 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Resu
             let stop_time_ids = collections
                 .stop_time_ids
                 .iter()
-                .map(|(k, v)| (v, *k))
+                .map(|(k, v)| (v, k.clone()))
                 .collect();
             info!("Reading comment_links.txt");
             for comment_link in rdr.deserialize() {

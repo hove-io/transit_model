@@ -21,7 +21,7 @@ use failure::{bail, format_err};
 use lazy_static::lazy_static;
 use relational_types::IdxSet;
 use std::collections::{HashMap, HashSet};
-use typed_index_collection::{CollectionWithId, Id, Idx};
+use typed_index_collection::{CollectionWithId, Id};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Action {
@@ -144,24 +144,11 @@ fn filter_from_idxset<T: Id<T>>(
     });
 }
 
-fn updated_stop_time_attributes<T>(
+fn updated_stop_time_attributes(
     vehicle_journeys: &CollectionWithId<VehicleJourney>,
-    attributes_map: &HashMap<(Idx<VehicleJourney>, u32), T>,
-    old_vj_idx_to_vj_id: &HashMap<Idx<VehicleJourney>, String>,
-) -> HashMap<(Idx<VehicleJourney>, u32), T>
-where
-    T: Clone,
-{
-    let mut updated_attributes_map = HashMap::new();
-    for (&(old_vj_idx, sequence), attribute) in attributes_map {
-        if let Some(new_vj_idx) = old_vj_idx_to_vj_id
-            .get(&old_vj_idx)
-            .and_then(|vj_id| vehicle_journeys.get_idx(vj_id))
-        {
-            updated_attributes_map.insert((new_vj_idx, sequence), attribute.clone());
-        }
-    }
-    updated_attributes_map
+    attributes_map: &mut HashMap<(String, u32), String>,
+) {
+    attributes_map.retain(|(vj_id, _), _| vehicle_journeys.contains_id(&vj_id));
 }
 
 /// Extract or remove part of the dataset from property filters on an object (Network, Line, etc.)
@@ -191,12 +178,6 @@ pub fn filter(model: Model, filter: &Filter) -> Result<Model> {
         )?;
 
     let mut collections = model.into_collections();
-    let old_vj_idx_to_vj_id: HashMap<Idx<VehicleJourney>, String> = collections
-        .vehicle_journeys
-        .get_id_to_idx()
-        .iter()
-        .map(|(id, &idx)| (idx, id.clone()))
-        .collect();
 
     filter_from_idxset(
         &mut collections.vehicle_journeys,
@@ -204,20 +185,17 @@ pub fn filter(model: Model, filter: &Filter) -> Result<Model> {
         filter.action,
     );
 
-    collections.stop_time_ids = updated_stop_time_attributes(
+    updated_stop_time_attributes(
         &collections.vehicle_journeys,
-        &collections.stop_time_ids,
-        &old_vj_idx_to_vj_id,
+        &mut collections.stop_time_ids,
     );
-    collections.stop_time_headsigns = updated_stop_time_attributes(
+    updated_stop_time_attributes(
         &collections.vehicle_journeys,
-        &collections.stop_time_headsigns,
-        &old_vj_idx_to_vj_id,
+        &mut collections.stop_time_headsigns,
     );
-    collections.stop_time_comments = updated_stop_time_attributes(
+    updated_stop_time_attributes(
         &collections.vehicle_journeys,
-        &collections.stop_time_comments,
-        &old_vj_idx_to_vj_id,
+        &mut collections.stop_time_comments,
     );
 
     if collections.vehicle_journeys.is_empty() {
