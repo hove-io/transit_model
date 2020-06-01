@@ -68,6 +68,21 @@ fn add_prefix_on_vehicle_journey_ids(
         .collect()
 }
 
+fn add_prefix_on_vehicle_journey_ids_and_values(
+    vehicle_journey_ids: &HashMap<(String, u32), String>,
+    prefix: &str,
+) -> HashMap<(String, u32), String> {
+    vehicle_journey_ids
+        .iter()
+        .map(|((trip_id, sequence), value)| {
+            (
+                (format!("{}{}", prefix, trip_id), *sequence),
+                format!("{}{}", prefix, value.to_string()),
+            )
+        })
+        .collect()
+}
+
 impl AddPrefix for Collections {
     fn add_prefix(&mut self, prefix: &str) {
         self.contributors.add_prefix(&prefix);
@@ -104,9 +119,10 @@ impl AddPrefix for Collections {
         self.grid_rel_calendar_line.add_prefix(&prefix);
         self.stop_time_headsigns =
             add_prefix_on_vehicle_journey_ids(&self.stop_time_headsigns, &prefix);
-        self.stop_time_ids = add_prefix_on_vehicle_journey_ids(&self.stop_time_ids, &prefix);
+        self.stop_time_ids =
+            add_prefix_on_vehicle_journey_ids_and_values(&self.stop_time_ids, &prefix);
         self.stop_time_comments =
-            add_prefix_on_vehicle_journey_ids(&self.stop_time_comments, &prefix);
+            add_prefix_on_vehicle_journey_ids_and_values(&self.stop_time_comments, &prefix);
     }
 }
 
