@@ -20,7 +20,7 @@ mod property_rule;
 
 use crate::{
     objects::{Line, VehicleJourney},
-    utils::Report,
+    report::Report,
     Model, Result,
 };
 use log::info;

@@ -17,7 +17,6 @@ use chrono::NaiveDate;
 use failure::{format_err, ResultExt};
 use log::{debug, error, info};
 use rust_decimal::Decimal;
-use serde::Serialize;
 use std::fs;
 use std::io::{Read, Write};
 use std::path;
@@ -408,65 +407,6 @@ where
         .with_context(|_| format!("Error reading {:?}", path))?;
 
     Ok(())
-}
-
-#[derive(Debug, Serialize, PartialEq)]
-pub enum ReportType {
-    // merge stop areas types
-    OnlyOneStopArea,
-    AmbiguousPriorities,
-    NothingToMerge,
-    MissingToMerge,
-    NoMasterPossible,
-    MasterReplaced,
-    // transfers types
-    TransferIntraIgnored,
-    TransferInterIgnored,
-    TransferOnNonExistentStop,
-    TransferOnUnreferencedStop,
-    TransferAlreadyDeclared,
-    // apply-rules types
-    ObjectNotFound,
-    InvalidFile,
-    UnknownPropertyName,
-    UnknownPropertyValue,
-    MultipleValue,
-    OldPropertyValueDoesNotMatch,
-    GeometryNotValid,
-    NonConvertibleString,
-}
-
-#[derive(Debug, Serialize, PartialEq)]
-struct ReportRow {
-    category: ReportType,
-    message: String,
-}
-
-#[derive(Debug, Default, Serialize)]
-pub struct Report {
-    errors: Vec<ReportRow>,
-    warnings: Vec<ReportRow>,
-}
-
-impl Report {
-    pub fn add_warning(&mut self, warning: String, warning_type: ReportType) {
-        let report_row = ReportRow {
-            category: warning_type,
-            message: warning,
-        };
-        if !self.warnings.contains(&report_row) {
-            self.warnings.push(report_row);
-        }
-    }
-    pub fn add_error(&mut self, error: String, error_type: ReportType) {
-        let report_row = ReportRow {
-            category: error_type,
-            message: error,
-        };
-        if !self.errors.contains(&report_row) {
-            self.errors.push(report_row);
-        }
-    }
 }
 
 #[cfg(test)]

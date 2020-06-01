@@ -15,7 +15,7 @@
 use crate::{
     model::Collections,
     objects::{Availability, Coord, Equipment, Geometry, Line, TripProperty, VehicleJourney},
-    utils::{Report, ReportType},
+    report::{Report, TransitModelReportCategory},
     Result,
 };
 use failure::ResultExt;
@@ -103,7 +103,7 @@ const LINE_TRIP_PROPERTIES: &[&str] = &[
 
 fn read_property_rules_files<P: AsRef<Path>>(
     rule_files: Vec<P>,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
 ) -> Result<Vec<PropertyRule>> {
     info!("Reading property rules.");
     let mut properties: BTreeMap<(ObjectType, String, String), BTreeSet<PropertyRule>> =
@@ -120,7 +120,7 @@ fn read_property_rules_files<P: AsRef<Path>>(
                 Err(e) => {
                     report.add_warning(
                         format!("Error reading {:?}: {}", path.file_name().unwrap(), e),
-                        ReportType::InvalidFile,
+                        TransitModelReportCategory::InvalidFile,
                     );
                     continue;
                 }
@@ -146,7 +146,7 @@ fn read_property_rules_files<P: AsRef<Path>>(
                         "object_type={}, object_id={}: unknown property_name {} defined",
                         object_type.as_str(), object_id, property_name,
                     ),
-                    ReportType::UnknownPropertyName,
+                    TransitModelReportCategory::UnknownPropertyName,
                 );
                 return false;
             }
@@ -157,7 +157,7 @@ fn read_property_rules_files<P: AsRef<Path>>(
                         "object_type={}, object_id={}: multiple values specified for the property {}",
                         object_type.as_str(), object_id, property_name
                     ),
-                    ReportType::MultipleValue,
+                    TransitModelReportCategory::MultipleValue,
                 );
                 return false;
             }
@@ -169,7 +169,10 @@ fn read_property_rules_files<P: AsRef<Path>>(
     Ok(properties)
 }
 
-fn property_old_value_do_not_match(report: &mut Report, p: &PropertyRule) {
+fn property_old_value_do_not_match(
+    report: &mut Report<TransitModelReportCategory>,
+    p: &PropertyRule,
+) {
     report.add_warning(
         format!(
             "object_type={}, object_id={}, property_name={}: property_old_value does not match the value found in the data",
@@ -177,11 +180,15 @@ fn property_old_value_do_not_match(report: &mut Report, p: &PropertyRule) {
             p.object_id,
             p.property_name
         ),
-        ReportType::OldPropertyValueDoesNotMatch,
+        TransitModelReportCategory::OldPropertyValueDoesNotMatch,
     )
 }
 
-fn property_unknown_value(report: &mut Report, p: &PropertyRule, val: &str) {
+fn property_unknown_value(
+    report: &mut Report<TransitModelReportCategory>,
+    p: &PropertyRule,
+    val: &str,
+) {
     report.add_warning(
         format!(
             "object_type={}, object_id={}, property_name={} : invalid value {}",
@@ -190,14 +197,14 @@ fn property_unknown_value(report: &mut Report, p: &PropertyRule, val: &str) {
             p.property_name,
             val
         ),
-        ReportType::UnknownPropertyValue,
+        TransitModelReportCategory::UnknownPropertyValue,
     )
 }
 
 fn update_prop<T: Clone + From<String> + Into<Option<String>>>(
     p: &PropertyRule,
     field: &mut T,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
 ) {
     let any_prop = Some("*".to_string());
     if p.property_old_value == any_prop || p.property_old_value == field.clone().into() {
@@ -210,7 +217,7 @@ fn update_prop<T: Clone + From<String> + Into<Option<String>>>(
 fn update_stringable_option<T: FromStr + ToString + Clone>(
     p: &PropertyRule,
     field: &mut Option<T>,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     err_msg: &str,
 ) {
     let any_prop = Some("*".to_string());
@@ -228,7 +235,7 @@ fn update_stringable_option<T: FromStr + ToString + Clone>(
                     p.property_name,
                     err_msg
                 ),
-                ReportType::NonConvertibleString,
+                TransitModelReportCategory::NonConvertibleString,
             );
         }
     } else {
@@ -239,7 +246,7 @@ fn update_stringable_option<T: FromStr + ToString + Clone>(
 fn update_object_id<T>(
     p: &PropertyRule,
     field: &mut String,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     collection: &CollectionWithId<T>,
 ) {
     let any_prop = Some("*".to_string());
@@ -255,7 +262,7 @@ fn update_object_id<T>(
                     p.property_name,
                     p.property_value,
                 ),
-                ReportType::ObjectNotFound,
+                TransitModelReportCategory::ObjectNotFound,
             );
         }
     } else {
@@ -266,7 +273,7 @@ fn update_object_id<T>(
 fn update_physical_mode(
     p: &PropertyRule,
     line: &Line,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     collections: &mut Collections,
     vjs_by_line: &HashMap<String, IdxSet<VehicleJourney>>,
 ) {
@@ -281,7 +288,7 @@ fn update_physical_mode(
                     p.property_name,
                     pov
                 ),
-                ReportType::ObjectNotFound,
+                TransitModelReportCategory::ObjectNotFound,
             );
             return;
         }
@@ -308,7 +315,7 @@ fn update_physical_mode(
                         p.object_id,
                         pov
                     ),
-                    ReportType::ObjectNotFound,
+                    TransitModelReportCategory::ObjectNotFound,
                 );
                 return;
             }
@@ -321,7 +328,7 @@ fn update_physical_mode(
                         p.property_name,
                         p.property_value
                     ),
-                    ReportType::ObjectNotFound,
+                    TransitModelReportCategory::ObjectNotFound,
                 );
                 return;
             }
@@ -336,7 +343,11 @@ fn update_physical_mode(
     }
 }
 
-fn wkt_to_geo(wkt: &str, report: &mut Report, p: &PropertyRule) -> Option<GeoGeometry<f64>> {
+fn wkt_to_geo(
+    wkt: &str,
+    report: &mut Report<TransitModelReportCategory>,
+    p: &PropertyRule,
+) -> Option<GeoGeometry<f64>> {
     if let Ok(wkt) = wkt::Wkt::from_str(wkt) {
         if let Ok(geo) = try_into_geometry(&wkt.items[0]) {
             Some(geo)
@@ -351,7 +362,7 @@ fn wkt_to_geo(wkt: &str, report: &mut Report, p: &PropertyRule) -> Option<GeoGeo
                 p.object_type.as_str(),
                 p.object_id,
             ),
-            ReportType::GeometryNotValid,
+            TransitModelReportCategory::GeometryNotValid,
         );
         None
     }
@@ -361,7 +372,7 @@ fn get_geometry_id(
     wkt: &str,
     collection: &mut CollectionWithId<Geometry>,
     p: &PropertyRule,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
 ) -> Option<String> {
     if let Some(geo) = wkt_to_geo(wkt, report, p) {
         let id = p.object_type.as_str().to_owned() + ":" + &p.object_id;
@@ -382,7 +393,7 @@ fn update_geometry(
     p: &mut PropertyRule,
     field: &mut Option<String>,
     geometries: &mut CollectionWithId<Geometry>,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
 ) {
     match (p.property_old_value.as_ref(), field.as_ref()) {
         (Some(pov), Some(geo_id)) if *pov != "*" => {
@@ -401,7 +412,7 @@ fn update_geometry(
                             p.object_id,
                             geo_id
                         ),
-                        ReportType::ObjectNotFound,
+                        TransitModelReportCategory::ObjectNotFound,
                     );
                     return;
                 }
@@ -432,7 +443,7 @@ fn update_geometry(
 
 fn wkt_to_coord(
     wkt: &str,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     p: &PropertyRule,
     property_label: &str,
 ) -> Option<Coord> {
@@ -453,14 +464,18 @@ fn wkt_to_coord(
                     property_label,
                     wkt,
                 ),
-                ReportType::ObjectNotFound,
+                TransitModelReportCategory::ObjectNotFound,
             );
             None
         }
     }
 }
 
-fn update_position(p: &mut PropertyRule, field: &mut Coord, report: &mut Report) {
+fn update_position(
+    p: &mut PropertyRule,
+    field: &mut Coord,
+    report: &mut Report<TransitModelReportCategory>,
+) {
     if let Some(pov) = p.property_old_value.as_ref() {
         if *pov != "*" {
             let p_old_value_coord = match wkt_to_coord(&pov, report, &p, "property_old_value") {
@@ -483,8 +498,11 @@ fn update_position(p: &mut PropertyRule, field: &mut Coord, report: &mut Report)
     }
 }
 
-type FnUpdater =
-    Box<dyn Fn(&mut Collections, &mut PropertyRule, &mut Report) -> bool + Send + Sync>;
+type FnUpdater = Box<
+    dyn Fn(&mut Collections, &mut PropertyRule, &mut Report<TransitModelReportCategory>) -> bool
+        + Send
+        + Sync,
+>;
 
 lazy_static! {
     static ref PROPERTY_UPDATER: HashMap<(ObjectType, &'static str), FnUpdater> = {
@@ -798,7 +816,7 @@ fn get_id_or_create_equipment(
 
 fn update_stop_points_equipments(
     sp_equipments_properties: BTreeMap<String, Vec<PropertyRule>>,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     collections: &mut Collections,
     prefix: &str,
 ) {
@@ -930,7 +948,7 @@ fn get_id_or_create_trip_property(
 fn update_lines_trips_properties(
     lines_trips_properties: BTreeMap<String, Vec<PropertyRule>>,
     vjs_by_line: &HashMap<String, IdxSet<VehicleJourney>>,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     collections: &mut Collections,
     prefix: &str,
 ) {
@@ -993,11 +1011,11 @@ fn update_lines_trips_properties(
     }
 }
 
-pub fn apply_rules<P: AsRef<Path>>(
+pub(crate) fn apply_rules<P: AsRef<Path>>(
     rule_files: Vec<P>,
     mut collections: &mut Collections,
     vjs_by_line: &HashMap<String, IdxSet<VehicleJourney>>,
-    mut report: &mut Report,
+    mut report: &mut Report<TransitModelReportCategory>,
 ) -> Result<()> {
     let properties = read_property_rules_files(rule_files, &mut report)?;
 
@@ -1054,7 +1072,7 @@ pub fn apply_rules<P: AsRef<Path>>(
                     p.object_type.as_str(),
                     p.object_id
                 ),
-                ReportType::ObjectNotFound,
+                TransitModelReportCategory::ObjectNotFound,
             );
         }
     }

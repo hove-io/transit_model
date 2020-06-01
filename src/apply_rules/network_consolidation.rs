@@ -15,7 +15,7 @@
 use crate::{
     model::Collections,
     objects::{Line, Network, ObjectType as ModelObjectType},
-    utils::{Report, ReportType},
+    report::{Report, TransitModelReportCategory},
     Result,
 };
 use failure::{bail, format_err};
@@ -55,7 +55,7 @@ fn read_networks_consolidation_file<P: AsRef<Path>>(
 }
 
 fn check_networks_consolidation(
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     networks: &CollectionWithId<Network>,
     networks_consolidation: Vec<NetworkConsolidation>,
 ) -> Result<Vec<NetworkConsolidation>> {
@@ -74,7 +74,7 @@ fn check_networks_consolidation(
                     "The grouped network list is empty for network consolidation \"{}\"",
                     &ntw.network.id
                 ),
-                ReportType::ObjectNotFound,
+                TransitModelReportCategory::ObjectNotFound,
             );
             continue;
         }
@@ -82,7 +82,7 @@ fn check_networks_consolidation(
             if !networks.contains_id(&ntw_grouped) {
                 report.add_error(
                     format!("The grouped network \"{}\" don't exist", ntw_grouped),
-                    ReportType::ObjectNotFound,
+                    TransitModelReportCategory::ObjectNotFound,
                 );
             } else {
                 network_consolidation = true;
@@ -96,7 +96,7 @@ fn check_networks_consolidation(
                     "No network has been consolidated for network \"{}\"",
                     ntw.network.id
                 ),
-                ReportType::ObjectNotFound,
+                TransitModelReportCategory::ObjectNotFound,
             );
         }
     }
@@ -147,11 +147,11 @@ fn update_ticket_use_perimeters(
     }
 }
 
-pub fn apply_rules<P: AsRef<Path>>(
+pub(crate) fn apply_rules<P: AsRef<Path>>(
     networks_consolidation_file: P,
     lines_by_network: &HashMap<String, IdxSet<Line>>,
     mut collections: Collections,
-    mut report: &mut Report,
+    mut report: &mut Report<TransitModelReportCategory>,
 ) -> Result<Collections> {
     let networks_consolidation = read_networks_consolidation_file(networks_consolidation_file)?;
     let networks_consolidation =
