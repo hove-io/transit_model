@@ -17,7 +17,7 @@ use crate::{
     objects::{
         CommercialMode, Line, Network, ObjectType as ModelObjectType, PhysicalMode, VehicleJourney,
     },
-    utils::{Report, ReportType},
+    report::{Report, TransitModelReportCategory},
     Result,
 };
 use failure::format_err;
@@ -83,7 +83,7 @@ fn get_opt_value_number_from_properties(
 }
 
 fn check_and_apply_physical_modes_rules(
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     mut collections: Collections,
     physical_modes_rules: Vec<ObjectProperties>,
     vjs_by_physical_mode: &HashMap<String, IdxSet<VehicleJourney>>,
@@ -116,7 +116,7 @@ fn check_and_apply_physical_modes_rules(
                     "The physical mode id \"{}\" not authorised",
                     physical_mode_id
                 ),
-                ReportType::UnAuthorisedValue,
+                TransitModelReportCategory::UnAuthorisedValue,
             );
             continue;
         }
@@ -125,7 +125,7 @@ fn check_and_apply_physical_modes_rules(
             if !collections.physical_modes.contains_id(&pm_grouped) {
                 report.add_error(
                     format!("The grouped physical mode \"{}\" don't exist", pm_grouped),
-                    ReportType::ObjectNotFound,
+                    TransitModelReportCategory::ObjectNotFound,
                 );
             } else {
                 if let Some(trips) = vjs_by_physical_mode.get(pm_grouped) {
@@ -146,7 +146,7 @@ fn check_and_apply_physical_modes_rules(
                     "The rule on the \"{}\" physical mode was not applied",
                     physical_mode_id
                 ),
-                ReportType::ObjectNotFound,
+                TransitModelReportCategory::ObjectNotFound,
             );
         } else if !collections.physical_modes.contains_id(physical_mode_id) {
             new_physical_modes.push(serde_json::from_value(properties.clone())?);
@@ -162,7 +162,7 @@ fn check_and_apply_physical_modes_rules(
 }
 
 fn read_physical_modes_rules_file<P: AsRef<Path>>(
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     physical_mode_rules_file: P,
 ) -> Option<Vec<ObjectProperties>> {
     info!("Reading physical modes rules");
@@ -180,7 +180,7 @@ fn read_physical_modes_rules_file<P: AsRef<Path>>(
                 Ok(val) => Some(val.physical_modes_rules),
                 Err(e) => {
                     if !(e.classify() == Category::Data) {
-                        report.add_error(format!("{}", e), ReportType::InvalidFile);
+                        report.add_error(format!("{}", e), TransitModelReportCategory::InvalidFile);
                     }
                     None
                 }
@@ -194,7 +194,7 @@ fn apply_rules_on_physical_mode<P: AsRef<Path>>(
     physical_modes_rules_file: P,
     vjs_by_physical_mode: &HashMap<String, IdxSet<VehicleJourney>>,
     collections: Collections,
-    mut report: &mut Report,
+    mut report: &mut Report<TransitModelReportCategory>,
 ) -> Result<Collections> {
     let physical_modes_rules =
         read_physical_modes_rules_file(&mut report, physical_modes_rules_file);
@@ -213,7 +213,7 @@ fn apply_rules_on_physical_mode<P: AsRef<Path>>(
 }
 
 fn check_and_apply_commercial_modes_rules(
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     mut collections: Collections,
     commercial_modes_rules: Vec<ObjectProperties>,
     lines_by_commercial_mode: &HashMap<String, IdxSet<Line>>,
@@ -247,7 +247,7 @@ fn check_and_apply_commercial_modes_rules(
             if !collections.commercial_modes.contains_id(&cm_grouped) {
                 report.add_error(
                     format!("The grouped commercial mode \"{}\" don't exist", cm_grouped),
-                    ReportType::ObjectNotFound,
+                    TransitModelReportCategory::ObjectNotFound,
                 );
             } else {
                 if let Some(lines) = lines_by_commercial_mode.get(cm_grouped) {
@@ -266,7 +266,7 @@ fn check_and_apply_commercial_modes_rules(
                     "The rule on the \"{}\" commercial mode was not applied",
                     commercial_mode_id
                 ),
-                ReportType::ObjectNotFound,
+                TransitModelReportCategory::ObjectNotFound,
             );
         } else if !collections.commercial_modes.contains_id(commercial_mode_id) {
             new_commercial_modes.push(serde_json::from_value(properties.clone())?);
@@ -282,7 +282,7 @@ fn check_and_apply_commercial_modes_rules(
 }
 
 fn read_commercial_modes_rules_file<P: AsRef<Path>>(
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     commercial_mode_rules_file: P,
 ) -> Option<Vec<ObjectProperties>> {
     info!("Reading commercial modes rules");
@@ -300,7 +300,7 @@ fn read_commercial_modes_rules_file<P: AsRef<Path>>(
                 Ok(val) => Some(val.commercial_modes_rules),
                 Err(e) => {
                     if !(e.classify() == Category::Data) {
-                        report.add_error(format!("{}", e), ReportType::InvalidFile);
+                        report.add_error(format!("{}", e), TransitModelReportCategory::InvalidFile);
                     }
                     None
                 }
@@ -314,7 +314,7 @@ fn apply_rules_on_commercial_mode<P: AsRef<Path>>(
     commercial_modes_rules_file: P,
     lines_by_commercial_mode: &HashMap<String, IdxSet<Line>>,
     collections: Collections,
-    mut report: &mut Report,
+    mut report: &mut Report<TransitModelReportCategory>,
 ) -> Result<Collections> {
     let commercial_modes_rules =
         read_commercial_modes_rules_file(&mut report, commercial_modes_rules_file);
@@ -333,7 +333,7 @@ fn apply_rules_on_commercial_mode<P: AsRef<Path>>(
 }
 
 fn check_and_apply_networks_rules(
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     mut collections: Collections,
     networks_rules: Vec<ObjectProperties>,
     lines_by_network: &HashMap<String, IdxSet<Line>>,
@@ -393,7 +393,7 @@ fn check_and_apply_networks_rules(
             if !collections.networks.contains_id(&grouped) {
                 report.add_error(
                     format!("The grouped network \"{}\" don't exist", grouped),
-                    ReportType::ObjectNotFound,
+                    TransitModelReportCategory::ObjectNotFound,
                 );
             } else {
                 if let Some(lines) = lines_by_network.get(grouped) {
@@ -415,7 +415,7 @@ fn check_and_apply_networks_rules(
         if !network_rule {
             report.add_error(
                 format!("The rule on the \"{}\" network was not applied", network_id),
-                ReportType::ObjectNotFound,
+                TransitModelReportCategory::ObjectNotFound,
             );
         } else if !collections.networks.contains_id(network_id) {
             new_networks.push(serde_json::from_value(properties.clone())?);
@@ -431,7 +431,7 @@ fn check_and_apply_networks_rules(
 }
 
 fn read_networks_rules_file<P: AsRef<Path>>(
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
     network_rules_file: P,
 ) -> Option<Vec<ObjectProperties>> {
     info!("Reading networks rules");
@@ -449,7 +449,7 @@ fn read_networks_rules_file<P: AsRef<Path>>(
                 Ok(val) => Some(val.networks_rules),
                 Err(e) => {
                     if !(e.classify() == Category::Data) {
-                        report.add_error(format!("{}", e), ReportType::InvalidFile);
+                        report.add_error(format!("{}", e), TransitModelReportCategory::InvalidFile);
                     }
                     None
                 }
@@ -463,7 +463,7 @@ fn apply_rules_on_networks<P: AsRef<Path>>(
     networks_rules_file: P,
     lines_by_network: &HashMap<String, IdxSet<Line>>,
     collections: Collections,
-    mut report: &mut Report,
+    mut report: &mut Report<TransitModelReportCategory>,
 ) -> Result<Collections> {
     let networks_rules = read_networks_rules_file(&mut report, networks_rules_file);
     match networks_rules {
@@ -477,13 +477,13 @@ fn apply_rules_on_networks<P: AsRef<Path>>(
     }
 }
 
-pub fn apply_rules<P: AsRef<Path>>(
+pub(crate) fn apply_rules<P: AsRef<Path>>(
     object_rules_file: P,
     lines_by_network: &HashMap<String, IdxSet<Line>>,
     lines_by_commercial_mode: &HashMap<String, IdxSet<Line>>,
     vjs_by_physical_mode: &HashMap<String, IdxSet<VehicleJourney>>,
     mut collections: Collections,
-    mut report: &mut Report,
+    mut report: &mut Report<TransitModelReportCategory>,
 ) -> Result<Collections> {
     collections = apply_rules_on_networks(
         &object_rules_file,
