@@ -18,6 +18,10 @@ The use of this specific pattern is shown explicitly using the value **ID** in t
 
 In addition, the NTFS format introduces 2 objects to enable the manipulation of several datasets: contributors and datasets. Those two objects are described in [common.md](common.md). 
 
+Two parameters can be specified in the configuration of the converter in order to determine if on demand transport (ODT) data should be considered when reading the input GTFS (in particular, when [reading the stop_times.txt file](#reading-stop_timestxt)):
+- a boolean parameter `odt`, by default set to `false`, indicating if the GTFS should be considered as containing ODT information
+- a string `odt_comment` setting the message associated to an ODT comment.
+
 ## Mapping of objects between GTFS and NTFS
 | GTFS object | NTFS object(s) |
 | --- | --- |
@@ -236,9 +240,9 @@ A complementary `object_code` is added to each vehicle journey with the followin
 | stop_times.txt | stop_id | Required | stop_times.txt | stop_id | If the corresponding stop doesn't exist, the conversion should stop immediately with an error |
 | stop_times.txt | stop_sequence | Required | stop_times.txt | stop_sequence |  |
 | stop_times.txt | stop_headsign | Optional | stop_times.txt | stop_headsign |  |
-| stop_times.txt | pickup_type | Optional | stop_times.txt | pickup_type | If invalid unsigned integer, default to `0` |
-| stop_times.txt | drop_off_type | Optional | stop_times.txt | drop_off_type | If invalid unsigned integer, default to `0` |
-| stop_times.txt | date_time_estimated | Optional | stop_times.txt | timepoint | GTFS and NTFS values are inverted. See (2). If invalid unsigned integer, default to `1` |
+| stop_times.txt | pickup_type | Optional | stop_times.txt | pickup_type | If invalid unsigned integer, default to `0`. If `2`, see (3) for the generation of comments.|
+| stop_times.txt | drop_off_type | Optional | stop_times.txt | drop_off_type | If invalid unsigned integer, default to `0`. If `2`, see (3) for the generation of comments. |
+| stop_times.txt | stop_time_precision | Optional | stop_times.txt | timepoint | GTFS and NTFS values are inverted when no ODT information is considered. See (2). If invalid unsigned integer, default to `1` |
 
 (1) GTFS `arrival_time` and `departure_time` should contain values.
 * if both of them are empty :
@@ -259,10 +263,26 @@ For exemple :
 | - | 10:00 |
 | 10:30 | 10:30 |
 
-(2) The GTFS `timepoint` conversion rules for NTFS `date_time_estimated` are :
-* if `timepoint` is unspecified => `date_time_estimated` equals 0
-* if `timepoint` equals 1 => `date_time_estimated` equals 0
-* if `timepoint` equals 0 => `date_time_estimated` equals 1
+(2) Depending of the value of the parameter `odt`, the GTFS `timepoint` conversion rules for NTFS `stop_time_precision` are :
+* if `odt` is set to `false` or empty:
+  * if `timepoint` is unspecified => `stop_time_precision` equals 0
+  * if `timepoint` equals 1 => `stop_time_precision` equals 0
+  * if `timepoint` equals 0 => `stop_time_precision` equals 1
+* if `odt` is set to `true`:
+  * if `timepoint` is unspecified => `stop_time_precision` equals 0
+  * if `timepoint` equals 1 => `stop_time_precision` equals 0
+  * if `timepoint` equals 0 => `stop_time_precision` equals 2
+
+(3) A comment associated to the stop_time is created in the files comments.txt and comment_links.txt as follows:
+
+| NTFS file | NTFS field | Constraint | Value/Note |
+| --- | --- | --- | --- |
+| comments.txt | comment_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that this field is prefixed as explained in [common.md](common.md). | 
+| comments.txt | comment_type | Optional | `on_demand_transport` |
+| comments.txt | comment_name | Required | The message set for the parameter `odt_comment`.|
+| comment_links.txt | object_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that this field is prefixed as explained in [common.md](common.md).|
+| comment_links.txt | object_type | Required | `stop_time` |
+| comment_links.txt | comment_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that, as this field references the comment in file comments.txt, it should be prefixed as explained in [common.md](common.md). |
 
 ### Reading transfers.txt
 - If 2 transfers with the same ID are specified, the conversion should stop
