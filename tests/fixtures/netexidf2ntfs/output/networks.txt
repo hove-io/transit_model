@@ -1,2 +1,0 @@
-network_id,network_name,network_url,network_timezone,network_lang,network_phone,network_address,network_sort_order
-prefix:212,Val de Seine,,Europe/Paris,,,,

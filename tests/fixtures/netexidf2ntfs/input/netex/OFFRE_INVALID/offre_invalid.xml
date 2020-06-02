@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<PublicationDelivery xmlns="http://www.netex.org.uk/netex">
-   <dataObjects>
-      <CompositeFrame id="FR100:CompositeFrame:NETEX_OFFRE_LIGNE-20190709T093213Z:LOC" version="1.8" dataSourceRef="FR100-OFFRE_AUTO">
-      </CompositeFrame>
-   </dataObjects>
-</PublicationDelivery>
