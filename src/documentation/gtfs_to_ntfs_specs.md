@@ -282,7 +282,7 @@ For exemple :
 | comments.txt | comment_name | Required | The message set for the parameter `odt_comment`.|
 | comment_links.txt | object_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that this field is prefixed as explained in [common.md](common.md).|
 | comment_links.txt | object_type | Required | `stop_time` |
-| comment_links.txt | comment_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Link to the file comments.txt. |
+| comment_links.txt | comment_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that, as this field references the comment in file comments.txt, it should be prefixed as explained in [common.md](common.md). |
 
 ### Reading transfers.txt
 - If 2 transfers with the same ID are specified, the conversion should stop
