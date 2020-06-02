@@ -15,7 +15,7 @@
 use crate::{
     model::Collections,
     objects::Codes,
-    utils::{Report, ReportType},
+    report::{Report, TransitModelReportCategory},
     Result,
 };
 use failure::ResultExt;
@@ -54,7 +54,7 @@ struct ComplementaryCode {
 
 fn read_complementary_code_rules_files<P: AsRef<Path>>(
     rule_files: Vec<P>,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
 ) -> Result<Vec<ComplementaryCode>> {
     info!("Reading complementary code rules.");
     let mut codes = BTreeSet::new();
@@ -70,7 +70,7 @@ fn read_complementary_code_rules_files<P: AsRef<Path>>(
                 Err(e) => {
                     report.add_warning(
                         format!("Error reading {:?}: {}", path.file_name().unwrap(), e),
-                        ReportType::InvalidFile,
+                        TransitModelReportCategory::InvalidFile,
                     );
                     continue;
                 }
@@ -84,7 +84,7 @@ fn read_complementary_code_rules_files<P: AsRef<Path>>(
 fn insert_code<T>(
     collection: &mut CollectionWithId<T>,
     code: ComplementaryCode,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
 ) where
     T: Codes + Id<T>,
 {
@@ -97,7 +97,7 @@ fn insert_code<T>(
                     code.object_type.as_str(),
                     code.object_id
                 ),
-                ReportType::ObjectNotFound,
+                TransitModelReportCategory::ObjectNotFound,
             );
             return;
         }
@@ -109,10 +109,10 @@ fn insert_code<T>(
         .insert((code.object_system, code.object_code));
 }
 
-pub fn apply_rules<P: AsRef<Path>>(
+pub(crate) fn apply_rules<P: AsRef<Path>>(
     rule_files: Vec<P>,
     collections: &mut Collections,
-    mut report: &mut Report,
+    mut report: &mut Report<TransitModelReportCategory>,
 ) -> Result<()> {
     let codes = read_complementary_code_rules_files(rule_files, &mut report)?;
     for code in codes {

@@ -15,9 +15,8 @@
 //! See function merge_stop_areas
 
 use crate::model::{Collections, Model};
-use crate::objects::{CommentLinksT, KeysValues};
-use crate::objects::{RestrictionType, StopArea};
-use crate::utils::{Report, ReportType};
+use crate::objects::{CommentLinksT, KeysValues, RestrictionType, StopArea};
+use crate::report::{Report, TransitModelReportCategory};
 use crate::Result;
 use failure::{bail, ResultExt};
 use log::Level as LogLevel;
@@ -47,7 +46,11 @@ struct StopAreaGroupRule {
 }
 
 impl StopAreaGroupRule {
-    fn ensure_rule_valid(self, stop_area_ids: &[String], report: &mut Report) -> Result<Self> {
+    fn ensure_rule_valid(
+        self,
+        stop_area_ids: &[String],
+        report: &mut Report<TransitModelReportCategory>,
+    ) -> Result<Self> {
         let mut valid_rule = self.clone();
         let message = format!(
             "rule for master {} contains unexisting stop areas and is no longer valid",
@@ -60,7 +63,7 @@ impl StopAreaGroupRule {
         let number_existing_sa_to_merge = valid_rule.to_merge_stop_area_ids.len();
         if number_sa_to_merge != number_existing_sa_to_merge {
             report.add_warning(format!("rule for master {} does contains at least one stop area that does not exist anymore", self.master_stop_area_id),
-                               ReportType::MissingToMerge);
+                               TransitModelReportCategory::MissingToMerge);
         }
         if number_existing_sa_to_merge == 0 {
             report.add_error(
@@ -68,14 +71,14 @@ impl StopAreaGroupRule {
                     "rule for master {} does not contain any existing stop areas to merge",
                     self.master_stop_area_id
                 ),
-                ReportType::NothingToMerge,
+                TransitModelReportCategory::NothingToMerge,
             );
             bail!(message);
         } else if !stop_area_ids.contains(&valid_rule.master_stop_area_id) {
             if valid_rule.to_merge_stop_area_ids.len() == 1 {
                 report.add_error(
                     format!("master {} of rule does not exist anymore and cannot be replaced by an other one", self.master_stop_area_id),
-                    ReportType::NoMasterPossible);
+                    TransitModelReportCategory::NoMasterPossible);
                 bail!(message);
             }
             report.add_warning(
@@ -83,7 +86,7 @@ impl StopAreaGroupRule {
                     "master {} of rule does not exist and has been replaced by an other one",
                     self.master_stop_area_id
                 ),
-                ReportType::MasterReplaced,
+                TransitModelReportCategory::MasterReplaced,
             );
             valid_rule.master_stop_area_id = valid_rule.to_merge_stop_area_ids.remove(0);
         }
@@ -93,7 +96,7 @@ impl StopAreaGroupRule {
 
 fn group_rules_from_file_rules(
     file_rules: Vec<StopAreaMergeRule>,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
 ) -> Vec<StopAreaGroupRule> {
     let mut rules_with_priority: HashMap<String, Vec<(String, u32)>> = HashMap::new();
     for file_rule in file_rules {
@@ -109,13 +112,13 @@ fn group_rules_from_file_rules(
             if stops_with_prio.len() == 1 {
                 report.add_warning(
                     format!("the rule of group {} contains only the stop area {}", k, stops_with_prio[0].0),
-                    ReportType::OnlyOneStopArea);
+                    TransitModelReportCategory::OnlyOneStopArea);
                 return None
             }
             else if stops_with_prio[0].1 == stops_with_prio[1].1 {
                 report.add_warning(
                     format!("the rule of group {} contains ambiguous priorities for master: stop {} with {} and stop {} with {}", k, stops_with_prio[0].0, stops_with_prio[0].1, stops_with_prio[1].0, stops_with_prio[1].1),
-                    ReportType::AmbiguousPriorities);
+                    TransitModelReportCategory::AmbiguousPriorities);
             }
             let master = stops_with_prio.remove(0);
             let others = stops_with_prio.into_iter().map(|stop_with_prio| stop_with_prio.0).collect();
@@ -132,7 +135,7 @@ fn group_rules_from_file_rules(
 
 fn read_rules<P: AsRef<path::Path>>(
     paths: Vec<P>,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
 ) -> Result<Vec<StopAreaGroupRule>> {
     let mut rules: Vec<StopAreaGroupRule> = vec![];
     for rule_path in paths {
@@ -175,7 +178,7 @@ fn generate_automatic_rules(
 fn apply_rules(
     mut collections: Collections,
     rules: Vec<StopAreaGroupRule>,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
 ) -> Result<Collections> {
     let mut stop_points_updated = collections.stop_points.take();
     let mut geometries_updated = collections.geometries.take();

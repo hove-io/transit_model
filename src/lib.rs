@@ -37,6 +37,7 @@ pub mod netex_idf;
 mod netex_utils;
 pub mod ntfs;
 pub mod read_utils;
+pub mod report;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;

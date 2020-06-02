@@ -16,7 +16,7 @@
 
 use crate::model::Model;
 use crate::objects::{Contributor, StopPoint, Transfer};
-use crate::utils::{Report, ReportType};
+use crate::report::{Report, TransitModelReportCategory};
 use crate::Result;
 use failure::ResultExt;
 use log::info;
@@ -55,7 +55,7 @@ fn stop_points_need_transfer(
     from_idx: Idx<StopPoint>,
     to_idx: Idx<StopPoint>,
     transfers_mode: &TransfersMode,
-    report_opt: Option<&mut Report>,
+    report_opt: Option<&mut Report<TransitModelReportCategory>>,
 ) -> bool {
     if *transfers_mode == TransfersMode::All {
         return true;
@@ -69,7 +69,7 @@ fn stop_points_need_transfer(
                     "stop point {} belongs to none of the trips and will not generate any transfer",
                     model.stop_points[from_idx].id
                 ),
-                ReportType::TransferOnUnreferencedStop,
+                TransitModelReportCategory::TransferOnUnreferencedStop,
             );
         }
         return false;
@@ -81,7 +81,7 @@ fn stop_points_need_transfer(
                     "stop point {} belongs to none of the trips and will not generate any transfer",
                     model.stop_points[to_idx].id
                 ),
-                ReportType::TransferOnUnreferencedStop,
+                TransitModelReportCategory::TransferOnUnreferencedStop,
             );
         }
         return false;
@@ -97,7 +97,7 @@ fn read_rules<P: AsRef<Path>>(
     rule_files: Vec<P>,
     model: &Model,
     transfers_mode: &TransfersMode,
-    report: &mut Report,
+    report: &mut Report<TransitModelReportCategory>,
 ) -> Result<Vec<Rule>> {
     info!("Reading modificaton rules.");
     let mut rules = HashMap::new();
@@ -120,7 +120,7 @@ fn read_rules<P: AsRef<Path>>(
                                     "transfer between stops {} and {} is already declared",
                                     rule.from_stop_id, rule.to_stop_id
                                 ),
-                                ReportType::TransferAlreadyDeclared,
+                                TransitModelReportCategory::TransferAlreadyDeclared,
                             ),
                             Vacant(v) => {
                                 v.insert(rule);
@@ -128,9 +128,13 @@ fn read_rules<P: AsRef<Path>>(
                         }
                     } else {
                         let category = match *transfers_mode {
-                            TransfersMode::IntraContributor => ReportType::TransferInterIgnored,
-                            TransfersMode::InterContributor => ReportType::TransferIntraIgnored,
-                            TransfersMode::All => ReportType::TransferInterIgnored, // not reachable
+                            TransfersMode::IntraContributor => {
+                                TransitModelReportCategory::TransferInterIgnored
+                            }
+                            TransfersMode::InterContributor => {
+                                TransitModelReportCategory::TransferIntraIgnored
+                            }
+                            TransfersMode::All => TransitModelReportCategory::TransferInterIgnored, // not reachable
                         };
                         report.add_warning(
                             format!(
@@ -147,7 +151,7 @@ fn read_rules<P: AsRef<Path>>(
                             "manual transfer references an non-existent stop point ({})",
                             rule.to_stop_id
                         ),
-                        ReportType::TransferOnNonExistentStop,
+                        TransitModelReportCategory::TransferOnNonExistentStop,
                     );
                 }
                 (None, Some(_)) => {
@@ -156,7 +160,7 @@ fn read_rules<P: AsRef<Path>>(
                             "manual transfer references an non-existent stop point ({})",
                             rule.from_stop_id
                         ),
-                        ReportType::TransferOnNonExistentStop,
+                        TransitModelReportCategory::TransferOnNonExistentStop,
                     );
                 }
                 _ => {
@@ -165,7 +169,7 @@ fn read_rules<P: AsRef<Path>>(
                             "manual transfer references non-existent stop points ({} and {})",
                             rule.from_stop_id, rule.to_stop_id
                         ),
-                        ReportType::TransferOnNonExistentStop,
+                        TransitModelReportCategory::TransferOnNonExistentStop,
                     );
                 }
             }
