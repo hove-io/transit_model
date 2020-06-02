@@ -273,16 +273,16 @@ For exemple :
   * if `timepoint` equals 1 => `stop_time_precision` equals 0
   * if `timepoint` equals 0 => `stop_time_precision` equals 2
 
-(3) A comment associated to the stop_time is created in the files comments.txt and comment_links as follows:
+(3) A comment associated to the stop_time is created in the files comments.txt and comment_links.txt as follows:
 
 | NTFS file | NTFS field | Constraint | Value/Note |
 | --- | --- | --- | --- |
-| comments.txt | comment_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`.| 
+| comments.txt | comment_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that this field is prefixed as explained in [common.md](common.md). | 
 | comments.txt | comment_type | Optional | `on_demand_transport` |
 | comments.txt | comment_name | Required | The message set for the parameter `odt_comment`.|
-| comment_links.txt | object | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`.|
+| comment_links.txt | object_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that this field is prefixed as explained in [common.md](common.md).|
 | comment_links.txt | object_type | Required | `stop_time` |
-| comment_links.txt | comment_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`.|
+| comment_links.txt | comment_id | Required | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Link to the file comments.txt. |
 
 ### Reading transfers.txt
 - If 2 transfers with the same ID are specified, the conversion should stop
