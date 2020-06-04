@@ -13,7 +13,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    model::{Collections, Model, CO2_EMISSIONS},
+    model::{Collections, Model},
     objects::{
         CommercialMode, Line, Network, ObjectType as ModelObjectType, PhysicalMode, VehicleJourney,
     },
@@ -24,110 +24,153 @@ use failure::format_err;
 use log::info;
 use relational_types::IdxSet;
 use serde::Deserialize;
-use serde_json::{error::Error as SerdeJsonError, Value};
+use serde_json::Value;
 use std::{
     collections::{HashMap, HashSet},
+    convert::TryFrom,
     fs::File,
     path::Path,
-    result::Result as StdResult,
 };
 
 #[derive(Debug, Deserialize)]
-pub struct ObjectRule {
-    #[serde(rename = "networks")]
-    pub networks_rules: Option<Vec<ObjectProperties>>,
-    #[serde(skip)]
-    pub lines_by_network: Option<HashMap<String, IdxSet<Line>>>,
-    #[serde(rename = "commercial_modes")]
-    pub commercial_modes_rules: Option<Vec<ObjectProperties>>,
-    #[serde(skip)]
-    pub lines_by_commercial_mode: Option<HashMap<String, IdxSet<Line>>>,
-    #[serde(rename = "physical_modes")]
-    pub physical_modes_rules: Option<Vec<ObjectProperties>>,
-    #[serde(skip)]
-    pub vjs_by_physical_mode: Option<HashMap<String, IdxSet<VehicleJourney>>>,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct ObjectProperties {
-    #[serde(flatten)]
-    properties: HashMap<String, Value>,
+    properties: Value,
     #[serde(default)]
     grouped_from: Vec<String>,
 }
 
-fn get_value_string_from_properties(
-    property: &serde_json::value::Value,
-    key: &str,
-    default_value: &str,
-) -> String {
-    property
-        .get(key)
-        .and_then(|value| String::deserialize(value).ok())
-        .unwrap_or_else(|| default_value.to_string())
+#[derive(Debug, Deserialize)]
+struct ObjectRuleConfiguration {
+    #[serde(rename = "networks")]
+    pub networks_rules: Option<Vec<ObjectProperties>>,
+    #[serde(rename = "commercial_modes")]
+    pub commercial_modes_rules: Option<Vec<ObjectProperties>>,
+    #[serde(rename = "physical_modes")]
+    pub physical_modes_rules: Option<Vec<ObjectProperties>>,
 }
 
-fn get_opt_value_string_from_properties(
-    property: &serde_json::value::Value,
-    key: &str,
-    default_value: Option<String>,
-) -> Option<String> {
-    property
-        .get(key)
-        .and_then(|value| String::deserialize(value).ok())
-        .or_else(|| default_value)
+impl TryFrom<&Path> for ObjectRuleConfiguration {
+    type Error = failure::Error;
+    fn try_from(path: &Path) -> Result<Self> {
+        info!("Reading object rules");
+        File::open(path)
+            .map_err(|e| format_err!("{}", e))
+            .and_then(|file| {
+                serde_json::from_reader::<_, ObjectRuleConfiguration>(file)
+                    .map_err(|e| format_err!("{}", e))
+            })
+    }
 }
 
-fn get_opt_value_number_from_properties(
-    property: &serde_json::value::Value,
-    key: &str,
-    default_value: Option<u32>,
-) -> Option<u32> {
-    property
-        .get(key)
-        .and_then(|value| u32::deserialize(value).ok())
-        .or_else(|| default_value)
+#[derive(Debug)]
+pub struct ObjectRule {
+    configuration: ObjectRuleConfiguration,
+    lines_by_network: Option<HashMap<String, IdxSet<Line>>>,
+    lines_by_commercial_mode: Option<HashMap<String, IdxSet<Line>>>,
+    vjs_by_physical_mode: Option<HashMap<String, IdxSet<VehicleJourney>>>,
+}
+
+impl ObjectRule {
+    pub(crate) fn new(path: &Path, model: &Model) -> Result<Self> {
+        let configuration = ObjectRuleConfiguration::try_from(path)?;
+        let lines_by_network = if configuration.networks_rules.is_some() {
+            Some(
+                model
+                    .networks
+                    .iter()
+                    .filter_map(|(idx, obj)| {
+                        let lines = model.get_corresponding_from_idx(idx);
+                        if lines.is_empty() {
+                            None
+                        } else {
+                            Some((obj.id.clone(), lines))
+                        }
+                    })
+                    .collect(),
+            )
+        } else {
+            None
+        };
+        let lines_by_commercial_mode = if configuration.commercial_modes_rules.is_some() {
+            Some(
+                model
+                    .commercial_modes
+                    .iter()
+                    .filter_map(|(idx, obj)| {
+                        let lines = model.get_corresponding_from_idx(idx);
+                        if lines.is_empty() {
+                            None
+                        } else {
+                            Some((obj.id.clone(), lines))
+                        }
+                    })
+                    .collect(),
+            )
+        } else {
+            None
+        };
+        let vjs_by_physical_mode = if configuration.physical_modes_rules.is_some() {
+            Some(
+                model
+                    .physical_modes
+                    .iter()
+                    .filter_map(|(idx, obj)| {
+                        let vjs = model.get_corresponding_from_idx(idx);
+                        if vjs.is_empty() {
+                            None
+                        } else {
+                            Some((obj.id.clone(), vjs))
+                        }
+                    })
+                    .collect(),
+            )
+        } else {
+            None
+        };
+        let object_rule = ObjectRule {
+            configuration,
+            lines_by_network,
+            lines_by_commercial_mode,
+            vjs_by_physical_mode,
+        };
+        Ok(object_rule)
+    }
 }
 
 fn check_and_apply_physical_modes_rules(
     report: &mut Report<TransitModelReportCategory>,
-    mut collections: Collections,
+    collections: &mut Collections,
     physical_modes_rules: &[ObjectProperties],
     vjs_by_physical_mode: &HashMap<String, IdxSet<VehicleJourney>>,
-) -> Result<Collections> {
+) -> Result<()> {
     info!("Checking physical modes rules.");
     let mut physical_modes_to_remove: HashSet<String> = HashSet::new();
     let mut new_physical_modes: Vec<PhysicalMode> = vec![];
 
     for pyr in physical_modes_rules.iter() {
-        let properties = pyr
+        let physical_mode_id = pyr
             .properties
-            .get("properties")
-            .ok_or_else(|| format_err!("Object \"properties\" is required"))?;
-
-        let physical_mode_id = properties
             .get("physical_mode_id")
             .ok_or_else(|| format_err!("Key \"physical_mode_id\" is required"))?
             .as_str()
             .unwrap();
 
-        if let Some(mut physical_mode) = collections.physical_modes.get_mut(physical_mode_id) {
-            physical_mode.name = get_value_string_from_properties(
-                properties,
-                "physical_mode_name",
-                &physical_mode.name,
-            );
-        } else if !CO2_EMISSIONS.contains_key(physical_mode_id) {
+        if pyr.grouped_from.is_empty() {
             report.add_error(
-                format!(
-                    "The physical mode id \"{}\" not authorized",
-                    physical_mode_id
-                ),
-                TransitModelReportCategory::UnauthorizedValue,
-            );
+                    format!(
+                        "The grouped physical mode list is empty for physical mode consolidation \"{}\"",
+                        physical_mode_id
+                    ),
+                    TransitModelReportCategory::ObjectNotFound,
+                );
             continue;
         }
-        let mut physical_mode_rule = pyr.grouped_from.is_empty();
+
+        if !collections.physical_modes.contains_id(physical_mode_id) {
+            new_physical_modes.push(serde_json::from_value(pyr.properties.clone())?)
+        }
+
+        let mut physical_mode_rule = false;
         for pm_grouped in &pyr.grouped_from {
             if !collections.physical_modes.contains_id(&pm_grouped) {
                 report.add_error(
@@ -155,8 +198,6 @@ fn check_and_apply_physical_modes_rules(
                 ),
                 TransitModelReportCategory::ObjectNotFound,
             );
-        } else if !collections.physical_modes.contains_id(physical_mode_id) {
-            new_physical_modes.push(serde_json::from_value(properties.clone())?);
         }
     }
     collections
@@ -165,40 +206,43 @@ fn check_and_apply_physical_modes_rules(
 
     collections.physical_modes.extend(new_physical_modes);
 
-    Ok(collections)
+    Ok(())
 }
 
 fn check_and_apply_commercial_modes_rules(
     report: &mut Report<TransitModelReportCategory>,
-    mut collections: Collections,
+    collections: &mut Collections,
     commercial_modes_rules: &[ObjectProperties],
     lines_by_commercial_mode: &HashMap<String, IdxSet<Line>>,
-) -> Result<Collections> {
+) -> Result<()> {
     info!("Checking commercial modes rules.");
     let mut commercial_modes_to_remove: HashSet<String> = HashSet::new();
     let mut new_commercial_modes: Vec<CommercialMode> = vec![];
 
     for pyr in commercial_modes_rules.iter() {
-        let properties = pyr
+        let commercial_mode_id = pyr
             .properties
-            .get("properties")
-            .ok_or_else(|| format_err!("Object \"properties\" is required"))?;
-
-        let commercial_mode_id = properties
             .get("commercial_mode_id")
-            .ok_or_else(|| format_err!("Key \"commercial_mode_id is required"))?
+            .ok_or_else(|| format_err!("Key \"commercial_mode_id\" is required"))?
             .as_str()
             .unwrap();
 
-        if let Some(mut commercial_mode) = collections.commercial_modes.get_mut(commercial_mode_id)
-        {
-            commercial_mode.name = get_value_string_from_properties(
-                properties,
-                "commercial_mode_name",
-                &commercial_mode.name,
+        if pyr.grouped_from.is_empty() {
+            report.add_error(
+                format!(
+                    "The grouped commercial mode list is empty for commercial mode consolidation \"{}\"",
+                    commercial_mode_id
+                ),
+                TransitModelReportCategory::ObjectNotFound,
             );
+            continue;
         }
-        let mut commercial_mode_rule = pyr.grouped_from.is_empty();
+
+        if !collections.commercial_modes.contains_id(commercial_mode_id) {
+            new_commercial_modes.push(serde_json::from_value(pyr.properties.clone())?)
+        }
+
+        let mut commercial_mode_rule = false;
         for cm_grouped in &pyr.grouped_from {
             if !collections.commercial_modes.contains_id(&cm_grouped) {
                 report.add_error(
@@ -224,8 +268,6 @@ fn check_and_apply_commercial_modes_rules(
                 ),
                 TransitModelReportCategory::ObjectNotFound,
             );
-        } else if !collections.commercial_modes.contains_id(commercial_mode_id) {
-            new_commercial_modes.push(serde_json::from_value(properties.clone())?);
         }
     }
     collections
@@ -234,66 +276,42 @@ fn check_and_apply_commercial_modes_rules(
 
     collections.commercial_modes.extend(new_commercial_modes);
 
-    Ok(collections)
+    Ok(())
 }
 
 fn check_and_apply_networks_rules(
     report: &mut Report<TransitModelReportCategory>,
-    mut collections: Collections,
+    collections: &mut Collections,
     networks_rules: &[ObjectProperties],
     lines_by_network: &HashMap<String, IdxSet<Line>>,
-) -> Result<Collections> {
+) -> Result<()> {
     info!("Checking networks rules.");
     let mut networks_to_remove: HashSet<String> = HashSet::new();
     let mut new_networks: Vec<Network> = vec![];
 
     for pyr in networks_rules.iter() {
-        let properties = pyr
+        let network_id = pyr
             .properties
-            .get("properties")
-            .ok_or_else(|| format_err!("Object \"properties\" is required"))?;
-
-        let network_id = properties
             .get("network_id")
-            .ok_or_else(|| format_err!("Key \"network_id is required"))?
+            .ok_or_else(|| format_err!("Key \"network_id\" is required"))?
             .as_str()
             .unwrap();
 
-        if let Some(mut network) = collections.networks.get_mut(network_id) {
-            network.name =
-                get_value_string_from_properties(properties, "network_name", &network.name);
-            network.url = get_opt_value_string_from_properties(
-                properties,
-                "network_url",
-                network.url.clone(),
+        if pyr.grouped_from.is_empty() {
+            report.add_error(
+                format!(
+                    "The grouped network list is empty for network consolidation \"{}\"",
+                    network_id
+                ),
+                TransitModelReportCategory::ObjectNotFound,
             );
-            network.timezone = get_opt_value_string_from_properties(
-                properties,
-                "network_timezone",
-                network.timezone.clone(),
-            );
-            network.lang = get_opt_value_string_from_properties(
-                properties,
-                "network_lang",
-                network.lang.clone(),
-            );
-            network.phone = get_opt_value_string_from_properties(
-                properties,
-                "network_phone",
-                network.phone.clone(),
-            );
-            network.address = get_opt_value_string_from_properties(
-                properties,
-                "network_address",
-                network.address.clone(),
-            );
-            network.sort_order = get_opt_value_number_from_properties(
-                properties,
-                "network_sort_order",
-                network.sort_order,
-            );
+            continue;
         }
-        let mut network_rule = pyr.grouped_from.is_empty();
+
+        if !collections.networks.contains_id(network_id) {
+            new_networks.push(serde_json::from_value(pyr.properties.clone())?)
+        }
+        let mut network_rule = false;
         for grouped in &pyr.grouped_from {
             if !collections.networks.contains_id(&grouped) {
                 report.add_error(
@@ -322,8 +340,6 @@ fn check_and_apply_networks_rules(
                 format!("The rule on the \"{}\" network was not applied", network_id),
                 TransitModelReportCategory::ObjectNotFound,
             );
-        } else if !collections.networks.contains_id(network_id) {
-            new_networks.push(serde_json::from_value(properties.clone())?);
         }
     }
     collections
@@ -332,107 +348,42 @@ fn check_and_apply_networks_rules(
 
     collections.networks.extend(new_networks);
 
-    Ok(collections)
+    Ok(())
 }
 
-pub(crate) fn apply_rules(
-    object_rule: ObjectRule,
-    mut collections: Collections,
-    mut report: &mut Report<TransitModelReportCategory>,
-) -> Result<Collections> {
-    if object_rule.networks_rules.is_some() {
-        collections = check_and_apply_networks_rules(
-            &mut report,
-            collections,
-            &object_rule.networks_rules.unwrap(),
-            &object_rule.lines_by_network.unwrap(),
-        )?
-    };
-    if object_rule.commercial_modes_rules.is_some() {
-        collections = check_and_apply_commercial_modes_rules(
-            &mut report,
-            collections,
-            &object_rule.commercial_modes_rules.unwrap(),
-            &object_rule.lines_by_commercial_mode.unwrap(),
-        )?
-    };
-    if object_rule.physical_modes_rules.is_some() {
-        collections = check_and_apply_physical_modes_rules(
-            &mut report,
-            collections,
-            &object_rule.physical_modes_rules.unwrap(),
-            &object_rule.vjs_by_physical_mode.unwrap(),
-        )?
-    };
-    Ok(collections)
-}
-
-pub(crate) fn init_configuration<P: AsRef<Path>>(
-    object_rules_file: P,
-    model: &Model,
-    report: &mut Report<TransitModelReportCategory>,
-) -> Option<ObjectRule> {
-    match File::open(object_rules_file) {
-        Ok(file) => {
-            let rdr: StdResult<ObjectRule, SerdeJsonError> = serde_json::from_reader(file);
-            match rdr {
-                Ok(mut conf) => {
-                    if conf.networks_rules.is_some() {
-                        conf.lines_by_network = Some(
-                            model
-                                .networks
-                                .iter()
-                                .filter_map(|(idx, obj)| {
-                                    let lines = model.get_corresponding_from_idx(idx);
-                                    if lines.is_empty() {
-                                        None
-                                    } else {
-                                        Some((obj.id.clone(), lines))
-                                    }
-                                })
-                                .collect(),
-                        );
-                    };
-                    if conf.commercial_modes_rules.is_some() {
-                        conf.lines_by_commercial_mode = Some(
-                            model
-                                .commercial_modes
-                                .iter()
-                                .filter_map(|(idx, obj)| {
-                                    let lines = model.get_corresponding_from_idx(idx);
-                                    if lines.is_empty() {
-                                        None
-                                    } else {
-                                        Some((obj.id.clone(), lines))
-                                    }
-                                })
-                                .collect(),
-                        );
-                    };
-                    if conf.physical_modes_rules.is_some() {
-                        conf.vjs_by_physical_mode = Some(
-                            model
-                                .physical_modes
-                                .iter()
-                                .filter_map(|(idx, obj)| {
-                                    let vjs = model.get_corresponding_from_idx(idx);
-                                    if vjs.is_empty() {
-                                        None
-                                    } else {
-                                        Some((obj.id.clone(), vjs))
-                                    }
-                                })
-                                .collect(),
-                        );
-                    };
-                    Some(conf)
-                }
-                Err(e) => {
-                    report.add_error(format!("{}", e), TransitModelReportCategory::InvalidFile);
-                    None
-                }
-            }
-        }
-        Err(_) => None,
+impl ObjectRule {
+    pub(crate) fn apply_rules(
+        &self,
+        collections: &mut Collections,
+        report: &mut Report<TransitModelReportCategory>,
+    ) -> Result<()> {
+        if let (Some(networks_rules), Some(lines_by_network)) =
+            (&self.configuration.networks_rules, &self.lines_by_network)
+        {
+            check_and_apply_networks_rules(report, collections, networks_rules, lines_by_network)?;
+        };
+        if let (Some(commercial_modes_rules), Some(lines_by_commercial_mode)) = (
+            &self.configuration.commercial_modes_rules,
+            &self.lines_by_commercial_mode,
+        ) {
+            check_and_apply_commercial_modes_rules(
+                report,
+                collections,
+                commercial_modes_rules,
+                lines_by_commercial_mode,
+            )?;
+        };
+        if let (Some(physical_modes_rules), Some(vjs_by_physical_mode)) = (
+            &self.configuration.physical_modes_rules,
+            &self.vjs_by_physical_mode,
+        ) {
+            check_and_apply_physical_modes_rules(
+                report,
+                collections,
+                physical_modes_rules,
+                vjs_by_physical_mode,
+            )?;
+        };
+        Ok(())
     }
 }
