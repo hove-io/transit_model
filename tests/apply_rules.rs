@@ -92,7 +92,7 @@ fn test_no_property_rules() {
         "",
         "./tests/fixtures/apply_rules/output",
         "./tests/fixtures/apply_rules/output_report/report.json",
-        FILE_TO_COMPARE.to_vec(),
+        FILE_TO_COMPARE.clone(),
     );
 }
 
@@ -104,7 +104,7 @@ fn test_apply_complementary_codes() {
         "",
         "./tests/fixtures/apply_rules/output_apply_complementary_codes",
         "./tests/fixtures/apply_rules/output_report/report_apply_complementary_codes.json",
-        FILE_TO_COMPARE.to_vec(),
+        FILE_TO_COMPARE.clone(),
     );
 }
 
@@ -116,7 +116,7 @@ fn test_apply_property() {
         "",
         "./tests/fixtures/apply_rules/output_apply_property",
         "./tests/fixtures/apply_rules/output_report/report_apply_property.json",
-        FILE_TO_COMPARE.to_vec(),
+        FILE_TO_COMPARE.clone(),
     );
 }
 
@@ -141,7 +141,7 @@ fn test_ntw_consolidation_unvalid() {
         "./tests/fixtures/apply_rules/ntw_consolidation_unvalid.json",
         "",
         "",
-        FILE_TO_COMPARE.to_vec(),
+        FILE_TO_COMPARE.clone(),
     );
 }
 
@@ -153,7 +153,7 @@ fn test_ntw_consolidation_with_object_code() {
         "./tests/fixtures/apply_rules/ntw_consolidation.json",
         "./tests/fixtures/apply_rules/output_consolidation_with_object_code",
         "./tests/fixtures/apply_rules/output_report/report_consolidation_with_object_code.json",
-        FILE_TO_COMPARE.to_vec(),
+        FILE_TO_COMPARE.clone(),
     );
 }
 

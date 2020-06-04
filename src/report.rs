@@ -44,7 +44,7 @@ pub(crate) enum TransitModelReportCategory {
     OldPropertyValueDoesNotMatch,
     GeometryNotValid,
     NonConvertibleString,
-    UnAuthorisedValue,
+    UnauthorizedValue,
 }
 
 impl ReportCategory for TransitModelReportCategory {}
