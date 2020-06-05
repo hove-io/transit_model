@@ -44,7 +44,7 @@ impl From<StopArea> for StopPoint {
             name: stop_area.name,
             visible: stop_area.visible,
             coord: stop_area.coord,
-            stop_area_id: stop_area.id.clone(),
+            stop_area_id: stop_area.id,
             stop_type: StopType::Point,
             ..Default::default()
         }

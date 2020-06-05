@@ -102,7 +102,7 @@ fn group_rules_from_file_rules(
     for file_rule in file_rules {
         rules_with_priority
             .entry(file_rule.group)
-            .or_insert_with(|| vec![])
+            .or_insert_with(Vec::new)
             .push((file_rule.id.clone(), file_rule.priority));
     }
     let group_rules: HashMap<String, StopAreaGroupRule> = rules_with_priority
