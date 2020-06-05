@@ -226,7 +226,7 @@ fn test_ntw_consolidation_no_grouped_from() {
         "",
         "./tests/fixtures/apply_rules/ntw_consolidation_no_grouped_from.json",
         "./tests/fixtures/apply_rules/output_update_network",
-        "./tests/fixtures/apply_rules/output_report/report_consolidation_no_grouped_from.json",
+        "./tests/fixtures/apply_rules/output_report/report_consolidation_empty_no_grouped_from.json",
         vec!["lines.txt", "networks.txt"],
     );
 }
@@ -238,7 +238,7 @@ fn test_ntw_consolidation_empty_grouped_from() {
         "",
         "./tests/fixtures/apply_rules/ntw_consolidation_empty_grouped_from.json",
         "./tests/fixtures/apply_rules/output_update_network",
-        "./tests/fixtures/apply_rules/output_report/report_consolidation_empty_grouped_from.json",
+        "./tests/fixtures/apply_rules/output_report/report_consolidation_empty_no_grouped_from.json",
         vec!["lines.txt", "networks.txt"],
     );
 }
@@ -256,18 +256,6 @@ fn test_commercial_mode_consolidation() {
 }
 
 #[test]
-fn test_commercial_mode_renaming() {
-    test_apply_rules(
-        "",
-        "",
-        "./tests/fixtures/apply_rules/commercial_mode_renaming.json",
-        "./tests/fixtures/apply_rules/output_commercial_mode_renaming",
-        "./tests/fixtures/apply_rules/output_report/report.json",
-        vec!["lines.txt", "commercial_modes.txt"],
-    );
-}
-
-#[test]
 fn test_physical_mode_consolidation() {
     test_apply_rules(
         "",
@@ -275,30 +263,6 @@ fn test_physical_mode_consolidation() {
         "./tests/fixtures/apply_rules/physical_mode_consolidation.json",
         "./tests/fixtures/apply_rules/output_physical_mode_consolidation",
         "./tests/fixtures/apply_rules/output_report/report.json",
-        vec!["trips.txt", "physical_modes.txt"],
-    );
-}
-
-#[test]
-fn test_physical_mode_renaming() {
-    test_apply_rules(
-        "",
-        "",
-        "./tests/fixtures/apply_rules/physical_mode_renaming.json",
-        "./tests/fixtures/apply_rules/output_physical_mode_renaming",
-        "./tests/fixtures/apply_rules/output_report/report.json",
-        vec!["trips.txt", "physical_modes.txt"],
-    );
-}
-
-#[test]
-fn test_physical_mode_unvalid_id() {
-    test_apply_rules(
-        "",
-        "",
-        "./tests/fixtures/apply_rules/physical_mode_unvalid_id.json",
-        "./tests/fixtures/apply_rules/output",
-        "./tests/fixtures/apply_rules/output_report/report_physical_mode_unvalid_id.json",
         vec!["trips.txt", "physical_modes.txt"],
     );
 }

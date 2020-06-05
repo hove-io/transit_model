@@ -153,7 +153,7 @@ fn check_and_apply_physical_modes_rules(
             .get("physical_mode_id")
             .ok_or_else(|| format_err!("Key \"physical_mode_id\" is required"))?
             .as_str()
-            .unwrap();
+            .ok_or_else(|| format_err!("Value for \"physical_mode_id\" must be filled in"))?;
 
         if pyr.grouped_from.is_empty() {
             report.add_error(
@@ -225,7 +225,7 @@ fn check_and_apply_commercial_modes_rules(
             .get("commercial_mode_id")
             .ok_or_else(|| format_err!("Key \"commercial_mode_id\" is required"))?
             .as_str()
-            .unwrap();
+            .ok_or_else(|| format_err!("Value for \"commercial_mode_id\" must be filled in"))?;
 
         if pyr.grouped_from.is_empty() {
             report.add_error(
@@ -295,7 +295,7 @@ fn check_and_apply_networks_rules(
             .get("network_id")
             .ok_or_else(|| format_err!("Key \"network_id\" is required"))?
             .as_str()
-            .unwrap();
+            .ok_or_else(|| format_err!("Value for \"network_id\" must be filled in"))?;
 
         if pyr.grouped_from.is_empty() {
             report.add_error(

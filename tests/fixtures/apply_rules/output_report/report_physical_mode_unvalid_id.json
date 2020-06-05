@@ -1,9 +1,0 @@
-{
-  "errors": [
-    {
-      "category": "UnauthorizedValue",
-      "message": "The physical mode id \"unvalid_id\" not authorized"
-    }
-  ],
-  "warnings": []
-}

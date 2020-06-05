@@ -65,8 +65,7 @@ pub const TRAIN_PHYSICAL_MODE: &str = "Train";
 /// Physical mode for Tramway
 pub const TRAMWAY_PHYSICAL_MODE: &str = "Tramway";
 lazy_static! {
-    /// List of authorised physical mode
-    pub static ref CO2_EMISSIONS: std::collections::HashMap<&'static str, f32> = {
+    static ref CO2_EMISSIONS: std::collections::HashMap<&'static str, f32> = {
         let mut modes_map = std::collections::HashMap::new();
         modes_map.insert(AIR_PHYSICAL_MODE, 144.6f32);
         modes_map.insert(BIKE_PHYSICAL_MODE, 0f32);
