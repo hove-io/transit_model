@@ -353,7 +353,7 @@ where
             let mut map: HashMap<String, Vec<Point<f64>>> = HashMap::new();
             for s in &shapes {
                 map.entry(s.id.clone())
-                    .or_insert_with(|| vec![])
+                    .or_insert_with(Vec::new)
                     .push((s.lon, s.lat).into())
             }
 
@@ -418,7 +418,7 @@ where
 
         tmp_vjs
             .entry(vj_idx)
-            .or_insert_with(|| vec![])
+            .or_insert_with(Vec::new)
             .push(stop_time);
     }
     collections.stop_time_headsigns = headsigns;
@@ -982,9 +982,7 @@ fn map_line_routes<'a>(
         }
         true
     }) {
-        map.entry(r.get_line_key())
-            .or_insert_with(|| vec![])
-            .push(r);
+        map.entry(r.get_line_key()).or_insert_with(Vec::new).push(r);
     }
     map
 }
@@ -1082,7 +1080,7 @@ fn make_ntfs_vehicle_journeys(
     for t in gtfs_trips {
         map_tps_trips
             .entry((t.wheelchair_accessible, t.bikes_allowed))
-            .or_insert_with(|| vec![])
+            .or_insert_with(Vec::new)
             .push(t);
     }
 
