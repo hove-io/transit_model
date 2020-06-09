@@ -1,2 +1,0 @@
-line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
-prefix:C00114,19,Express 19,,,1AC7FF,000012,,prefix:212,RapidTransit,,06:00:00,07:15:00

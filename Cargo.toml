@@ -67,11 +67,6 @@ wkt = "0.5"
 zip = "0.5"
 
 [[test]]
-name = "netexidf2ntfs"
-path = "tests/netexidf2ntfs.rs"
-required-features = ["proj"]
-
-[[test]]
 name = "write_netex_france"
 path = "tests/write_netex_france.rs"
 required-features = ["proj"]
