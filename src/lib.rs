@@ -32,8 +32,6 @@ pub mod merge_stop_areas;
 pub mod model;
 #[cfg(feature = "proj")]
 pub mod netex_france;
-#[cfg(feature = "proj")]
-#[doc(hidden)]
 pub mod netex_utils;
 pub mod ntfs;
 pub mod read_utils;

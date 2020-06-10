@@ -12,6 +12,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+//! Some utils to work with the NeTEx format, especially the frames.
+
 use crate::Result;
 use failure::{bail, format_err, Error};
 use minidom::Element;
@@ -22,14 +24,22 @@ use std::{
     str::FromStr,
 };
 
+/// Type of NeTEx frame.
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub enum FrameType {
+    /// Type of a `<CompositeFrame>`
     Composite,
+    /// Type of a `<FareFrame>`
     Fare,
+    /// Type of a `<GeneralFrame>`
     General,
+    /// Type of a `<ResourceFrame>`
     Resource,
+    /// Type of a `<ServiceFrame>`
     Service,
 }
+/// Map of frames, categorized by `FrameType`. Multiple frames of the same type
+/// can exist, they're stored in a `Vec`.
 pub type Frames<'a> = HashMap<FrameType, Vec<&'a Element>>;
 
 impl Display for FrameType {
@@ -60,6 +70,9 @@ impl FromStr for FrameType {
     }
 }
 
+/// Returns a map of all frames (pointer to an `Element`) per `FrameType`.
+/// The input parameter must be an `Element` (XML element) that contains frames.
+/// Usually, it will be an element call `<frames>` in NeTEx standard.
 pub fn parse_frames_by_type<'a>(frames: &'a Element) -> Result<Frames<'a>> {
     frames
         .children()
@@ -70,6 +83,8 @@ pub fn parse_frames_by_type<'a>(frames: &'a Element) -> Result<Frames<'a>> {
         })
 }
 
+/// Extract a frame of type `frame_type` from the map of `frames`.  This
+/// function fails if none or more than one frame is found.
 pub fn get_only_frame<'a>(frames: &'a Frames<'a>, frame_type: FrameType) -> Result<&'a Element> {
     let frame = frames
         .get(&frame_type)
@@ -84,6 +99,23 @@ pub fn get_only_frame<'a>(frames: &'a Frames<'a>, frame_type: FrameType) -> Resu
     }
 }
 
+/// Returns the value from its key in a `<KeyList>` XML element (standard
+/// element of NeTEx format). You can convert the result into the type you want.
+/// ```
+/// # use minidom::Element;
+/// # use transit_model::netex_utils::get_value_in_keylist;
+/// let xml = r#"<root>
+///         <KeyList>
+///             <KeyValue>
+///                 <Key>key</Key>
+///                 <Value>42</Value>
+///             </KeyValue>
+///         </KeyList>
+///     </root>"#;
+/// let root: Element = xml.parse().unwrap();
+/// let value: u32 = get_value_in_keylist(&root, "key").unwrap();
+/// assert_eq!(42, value);
+/// ```
 pub fn get_value_in_keylist<F>(element: &Element, key: &str) -> Result<F>
 where
     F: FromStr,
