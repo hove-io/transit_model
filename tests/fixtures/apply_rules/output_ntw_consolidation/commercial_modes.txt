@@ -1,4 +1,0 @@
-commercial_mode_id,commercial_mode_name
-Bus,Bus
-Metro,Metro
-RER,Réseau Express Régional (RER)

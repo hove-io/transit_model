@@ -141,7 +141,7 @@ fn test_ntw_consolidation_unvalid() {
         "./tests/fixtures/apply_rules/ntw_consolidation_unvalid.json",
         "",
         "",
-        FILE_TO_COMPARE.clone(),
+        vec![],
     );
 }
 
@@ -202,7 +202,7 @@ fn test_ntw_consolidation_duplicate_id() {
         "./tests/fixtures/apply_rules/ntw_consolidation_duplicate_id.json",
         "",
         "",
-        vec!["lines.txt", "networks.txt"],
+        vec![],
     );
 }
 
@@ -215,7 +215,7 @@ fn test_ntw_consolidation_unvalid_network() {
         "./tests/fixtures/apply_rules/ntw_consolidation_unvalid_network.json",
         "",
         "",
-        vec!["lines.txt", "networks.txt"],
+        vec![],
     );
 }
 
@@ -275,6 +275,24 @@ fn test_global_consolidation() {
         "./tests/fixtures/apply_rules/global_consolidation.json",
         "./tests/fixtures/apply_rules/output_global_consolidation",
         "./tests/fixtures/apply_rules/output_report/report.json",
+        vec![
+            "lines.txt",
+            "networks.txt",
+            "commercial_modes.txt",
+            "trips.txt",
+            "physical_modes.txt",
+        ],
+    );
+}
+
+#[test]
+fn test_global_consolidation_with_new_objects() {
+    test_apply_rules(
+        "",
+        "./tests/fixtures/apply_rules/property_rules_with_new_objects.txt",
+        "./tests/fixtures/apply_rules/global_consolidation_with_new_objects.json",
+        "./tests/fixtures/apply_rules/output_global_consolidation",
+        "./tests/fixtures/apply_rules/output_report/report_global_consolidation_with_new_objects.json",
         vec![
             "lines.txt",
             "networks.txt",

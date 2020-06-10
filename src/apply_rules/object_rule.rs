@@ -155,17 +155,6 @@ fn check_and_apply_physical_modes_rules(
             .as_str()
             .ok_or_else(|| format_err!("Value for \"physical_mode_id\" must be filled in"))?;
 
-        if pyr.grouped_from.is_empty() {
-            report.add_error(
-                    format!(
-                        "The grouped physical mode list is empty for physical mode consolidation \"{}\"",
-                        physical_mode_id
-                    ),
-                    TransitModelReportCategory::ObjectNotFound,
-                );
-            continue;
-        }
-
         if !collections.physical_modes.contains_id(physical_mode_id) {
             new_physical_modes.push(serde_json::from_value(pyr.properties.clone())?)
         }
@@ -177,17 +166,15 @@ fn check_and_apply_physical_modes_rules(
                     format!("The grouped physical mode \"{}\" don't exist", pm_grouped),
                     TransitModelReportCategory::ObjectNotFound,
                 );
-            } else {
-                if let Some(trips) = vjs_by_physical_mode.get(pm_grouped) {
-                    for trip_idx in trips {
-                        collections
-                            .vehicle_journeys
-                            .index_mut(*trip_idx)
-                            .physical_mode_id = physical_mode_id.to_string();
-                    }
-                    physical_modes_to_remove.insert(pm_grouped.to_string());
+            } else if let Some(trips) = vjs_by_physical_mode.get(pm_grouped) {
+                for trip_idx in trips {
+                    collections
+                        .vehicle_journeys
+                        .index_mut(*trip_idx)
+                        .physical_mode_id = physical_mode_id.to_string();
                 }
                 physical_mode_rule = true;
+                physical_modes_to_remove.insert(pm_grouped.to_string());
             }
         }
         if !physical_mode_rule {
@@ -227,17 +214,6 @@ fn check_and_apply_commercial_modes_rules(
             .as_str()
             .ok_or_else(|| format_err!("Value for \"commercial_mode_id\" must be filled in"))?;
 
-        if pyr.grouped_from.is_empty() {
-            report.add_error(
-                format!(
-                    "The grouped commercial mode list is empty for commercial mode consolidation \"{}\"",
-                    commercial_mode_id
-                ),
-                TransitModelReportCategory::ObjectNotFound,
-            );
-            continue;
-        }
-
         if !collections.commercial_modes.contains_id(commercial_mode_id) {
             new_commercial_modes.push(serde_json::from_value(pyr.properties.clone())?)
         }
@@ -249,15 +225,13 @@ fn check_and_apply_commercial_modes_rules(
                     format!("The grouped commercial mode \"{}\" don't exist", cm_grouped),
                     TransitModelReportCategory::ObjectNotFound,
                 );
-            } else {
-                if let Some(lines) = lines_by_commercial_mode.get(cm_grouped) {
-                    for line_idx in lines {
-                        collections.lines.index_mut(*line_idx).commercial_mode_id =
-                            commercial_mode_id.to_string();
-                    }
-                    commercial_modes_to_remove.insert(cm_grouped.to_string());
+            } else if let Some(lines) = lines_by_commercial_mode.get(cm_grouped) {
+                for line_idx in lines {
+                    collections.lines.index_mut(*line_idx).commercial_mode_id =
+                        commercial_mode_id.to_string();
                 }
                 commercial_mode_rule = true;
+                commercial_modes_to_remove.insert(cm_grouped.to_string());
             }
         }
         if !commercial_mode_rule {
@@ -297,17 +271,6 @@ fn check_and_apply_networks_rules(
             .as_str()
             .ok_or_else(|| format_err!("Value for \"network_id\" must be filled in"))?;
 
-        if pyr.grouped_from.is_empty() {
-            report.add_error(
-                format!(
-                    "The grouped network list is empty for network consolidation \"{}\"",
-                    network_id
-                ),
-                TransitModelReportCategory::ObjectNotFound,
-            );
-            continue;
-        }
-
         if !collections.networks.contains_id(network_id) {
             new_networks.push(serde_json::from_value(pyr.properties.clone())?)
         }
@@ -318,21 +281,18 @@ fn check_and_apply_networks_rules(
                     format!("The grouped network \"{}\" don't exist", grouped),
                     TransitModelReportCategory::ObjectNotFound,
                 );
-            } else {
-                if let Some(lines) = lines_by_network.get(grouped) {
-                    for line_idx in lines {
-                        collections.lines.index_mut(*line_idx).network_id = network_id.to_string();
-                    }
-
-                    collections
-                        .ticket_use_perimeters
-                        .values_mut()
-                        .filter(|ticket| ticket.object_type == ModelObjectType::Network)
-                        .filter(|ticket| &ticket.object_id == grouped)
-                        .for_each(|mut ticket| ticket.object_id = network_id.to_string());
-                    networks_to_remove.insert(grouped.to_string());
+            } else if let Some(lines) = lines_by_network.get(grouped) {
+                for line_idx in lines {
+                    collections.lines.index_mut(*line_idx).network_id = network_id.to_string();
                 }
+                collections
+                    .ticket_use_perimeters
+                    .values_mut()
+                    .filter(|ticket| ticket.object_type == ModelObjectType::Network)
+                    .filter(|ticket| &ticket.object_id == grouped)
+                    .for_each(|mut ticket| ticket.object_id = network_id.to_string());
                 network_rule = true;
+                networks_to_remove.insert(grouped.to_string());
             }
         }
         if !network_rule {

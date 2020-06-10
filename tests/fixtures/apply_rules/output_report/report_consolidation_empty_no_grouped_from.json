@@ -2,7 +2,7 @@
   "errors": [
     {
       "category": "ObjectNotFound",
-      "message": "The grouped network list is empty for network consolidation \"TGM\""
+      "message": "The rule on the \"TGM\" network was not applied"
     }
   ],
   "warnings": []
