@@ -619,27 +619,25 @@ fn manage_odt_comment_from_stop_time(
     stop_time: &StopTime,
 ) {
     let comment_id = format!("ODT:{}", collections.companies[company_idx].id);
-    collections
-        .comments
-        .get_idx(&comment_id)
-        .unwrap_or_else(|| {
-            let comment = objects::Comment {
-                id: comment_id.clone(),
-                comment_type: objects::CommentType::OnDemandTransport,
-                label: None,
-                name: on_demand_transport_comment
-                    .replace("{agency_name}", &collections.companies[company_idx].name)
-                    .replace(
-                        "{agency_phone}",
-                        &collections.companies[company_idx]
-                            .phone
-                            .clone()
-                            .unwrap_or_default(),
-                    ),
-                url: None,
-            };
-            collections.comments.push(comment).unwrap()
-        });
+    if !collections.comments.contains_id(&comment_id) {
+        let comment = objects::Comment {
+            id: comment_id.clone(),
+            comment_type: objects::CommentType::OnDemandTransport,
+            label: None,
+            name: on_demand_transport_comment
+                .replace("{agency_name}", &collections.companies[company_idx].name)
+                .replace(
+                    "{agency_phone}",
+                    &collections.companies[company_idx]
+                        .phone
+                        .clone()
+                        .unwrap_or_default(),
+                ),
+            url: None,
+        };
+        // Ok to unwrap since we already tested for existence of the identifier
+        collections.comments.push(comment).unwrap();
+    }
     collections.stop_time_comments.insert(
         (
             collections.vehicle_journeys[vj_idx].id.to_string(),
