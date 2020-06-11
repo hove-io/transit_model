@@ -1,18 +1,20 @@
-`ntfs2ntfs`
-=====
+# `ntfs2ntfs`
 
 Command-Line Interface to check and clean a [NTFS] data format into data format.
 
 [NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
 
-# Installation
-To install, use
+## Installation
+
+As `ntfs2ntfs` is not pushed to crates.io yet, you can install it by cloning `transit_model`.
 
 ```bash
-cargo install ntfs2ntfs
+git clone https://github.com/CanalTP/transit_model
+cd transit_model
+cargo install --path ntfs2ntfs
 ```
 
-# Usage
+## Usage
 
 ```bash
 ntfs2ntfs --input /path/to/ntfs/folder/ --output /path/to/ntfs/

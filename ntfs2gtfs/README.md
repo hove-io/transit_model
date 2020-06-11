@@ -1,5 +1,4 @@
-`ntfs2gtfs`
-=====
+# `ntfs2gtfs`
 
 Command-Line Interface to convert [NTFS] data format into [GTFS] data
 format.
@@ -7,14 +6,17 @@ format.
 [GTFS]: https://developers.google.com/transit/gtfs/reference/
 [NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
 
-# Installation
-To install, use
+## Installation
+
+As `ntfs2gtfs` is not pushed to crates.io yet, you can install it by cloning `transit_model`.
 
 ```bash
-cargo install ntfs2gtfs
+git clone https://github.com/CanalTP/transit_model
+cd transit_model
+cargo install --path ntfs2gtfs
 ```
 
-# Usage
+## Usage
 
 ```bash
 ntfs2gtfs --input /path/to/ntfs/folder/ --output /path/to/gtfs/

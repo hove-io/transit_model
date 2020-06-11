@@ -1,5 +1,4 @@
-`gtfs2netexfr`
-=====
+# `gtfs2netexfr`
 
 Command-Line Interface to convert [GTFS] data format into [NeTEx] France data
 format.
@@ -7,7 +6,8 @@ format.
 [GTFS]: https://developers.google.com/transit/gtfs/reference/
 [NeTEx]: http://netex-cen.eu/
 
-# Installation
+## Installation
+
 To install, you first need to install [PROJ] version 6.3.0.  See [PROJ
 installation instructions].
 
@@ -15,16 +15,20 @@ installation instructions].
 [PROJ installation instructions]: https://github.com/OSGeo/PROJ#installation
 
 You also need the following dependencies to be installed.
+
 ```bash
 apt install -y clang libssl-dev
 ```
 
-Finally, you can install `gtfs2netexfr` with
+As `gtfs2netexfr` is not pushed to crates.io yet, you can install it by cloning `transit_model`.
+
 ```bash
-cargo install gtfs2netexfr
+git clone https://github.com/CanalTP/transit_model
+cd transit_model
+cargo install --path gtfs2netexfr
 ```
 
-# Usage
+## Usage
 
 ```bash
 gtfs2netexfr --input /path/to/gtfs/folder/ --output /path/to/netexfr/ --participant CanalTP
