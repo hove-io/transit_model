@@ -1,5 +1,0 @@
-equipment_id,wheelchair_boarding,sheltered,elevator,escalator,bike_accepted,bike_depot,visual_announcement,audible_announcement,appropriate_escort,appropriate_signage
-prefix:1,0,0,0,0,0,0,0,2,0,0
-prefix:2,0,0,0,0,0,0,2,2,0,0
-prefix:3,0,0,0,0,0,0,0,0,0,0
-prefix:4,1,0,0,0,0,0,1,2,0,0

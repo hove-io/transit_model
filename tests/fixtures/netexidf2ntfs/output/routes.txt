@@ -1,3 +1,0 @@
-route_id,route_name,direction_type,line_id,geometry_id,destination_id
-prefix:stif:local-26-C00114-1,BIBLIOTHEQUE - BIBLIOTHEQUE NATIONALE,outbound,prefix:C00114,,
-prefix:stif:local-26-C00114-2,BIBLIOTHEQUE NATIONALE - BIBLIOTHEQUE,inbound,prefix:C00114,,

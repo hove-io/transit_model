@@ -1,3 +1,0 @@
-object_id,object_type,comment_id
-prefix:stif:local-26-C00114-1,trip,prefix:STIF:Notice:C00164_7:LOC
-prefix:C00114,line,prefix:FR1:Notice:C00114:
