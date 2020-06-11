@@ -27,7 +27,6 @@ pub mod calendars;
 #[macro_use]
 pub mod objects;
 pub mod gtfs;
-pub mod hellogo_fares;
 pub mod model;
 #[cfg(feature = "proj")]
 pub mod netex_france;
