@@ -1,4 +1,0 @@
-line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
-line:01,BDE,BDE,Hôtels,Hôtels,7D36F5,FFFFFF,,network:01,tram,,05:10:00,22:19:00
-line:02,ABC,ABC,Maisons,Maisons,7D36F5,FFFFFF,,network:01,tram,,05:10:00,22:19:00
-line:03,ACC,ACC,Voitures,Voitures,7D36F5,FFFFFF,,network:01,tram,,05:10:00,22:19:00

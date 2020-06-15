@@ -1,3 +1,0 @@
-comment_id,comment_type,comment_label,comment_name,comment_url
-COM:1,information,,oif information,
-COM:2,on_demand_transport,,oif on demand transport comment,

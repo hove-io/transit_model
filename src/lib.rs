@@ -28,7 +28,6 @@ pub mod calendars;
 pub mod objects;
 pub mod gtfs;
 pub mod hellogo_fares;
-pub mod merge_stop_areas;
 pub mod model;
 #[cfg(feature = "proj")]
 pub mod netex_france;
