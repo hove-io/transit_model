@@ -1,2 +1,0 @@
-comment_id,comment_name,comment_type
-my_comment_id,"My comment",on_demand_transport

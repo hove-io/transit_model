@@ -1,5 +1,0 @@
-stop_id,trip_id,stop_sequence,arrival_time,departure_time,boarding_duration,alighting_duration,pickup_type,drop_off_type,datetime_estimated,local_zone_id,stop_headsign,stop_time_id,stop_time_precision
-stop1,trip3,1,15:41:00,15:41:00,0,0,0,0,0,,,my_stop_time_id,0
-stop2,trip3,2,15:42:00,15:42:00,0,0,0,0,0,,,,0
-stop1,trip4,1,17:41:00,17:41:00,0,0,0,0,0,,,,0
-stop2,trip4,2,17:42:00,17:42:00,0,0,0,0,0,,,,0

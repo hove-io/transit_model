@@ -15,8 +15,6 @@
 //! [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 //! format management.
 
-#![allow(missing_docs)]
-pub mod filter;
 mod read;
 mod write;
 

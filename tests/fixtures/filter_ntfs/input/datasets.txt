@@ -1,2 +1,0 @@
-dataset_id,contributor_id,dataset_start_date,dataset_end_date
-dataset1,contributor1,20190101,20190106

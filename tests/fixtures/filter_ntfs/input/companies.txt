@@ -1,4 +1,0 @@
-company_id,company_name
-network1,network1
-network2,network2
-network3,network3

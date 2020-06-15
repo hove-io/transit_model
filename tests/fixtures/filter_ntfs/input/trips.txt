@@ -1,5 +1,0 @@
-trip_id,route_id,physical_mode_id,dataset_id,service_id,company_id
-trip1,route1,Bus,dataset1,service1,network1
-trip2,route1,Bus,dataset1,service2,network1
-trip3,route2,Bus,dataset1,service2,network2
-trip4,route3,Bus,dataset1,service3,network3
