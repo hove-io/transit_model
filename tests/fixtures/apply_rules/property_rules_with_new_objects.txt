@@ -1,0 +1,4 @@
+object_type,object_id,property_name,property_old_value,property_value
+line,M1,network_id,TGM,bus_vert
+line,RERA,commercial_mode_id,RER,TER
+line,RERA,physical_mode_id,RapidTransit,LongDistanceTrain

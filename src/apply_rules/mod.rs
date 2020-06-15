@@ -15,14 +15,10 @@
 //! See function apply_rules
 
 mod complementary_code;
-mod network_consolidation;
+mod object_rule;
 mod property_rule;
 
-use crate::{
-    objects::{Line, VehicleJourney},
-    report::Report,
-    Model, Result,
-};
+use crate::{objects::VehicleJourney, report::Report, Model, Result};
 use log::info;
 use relational_types::IdxSet;
 use std::{collections::HashMap, fs, path::PathBuf};
@@ -31,26 +27,17 @@ use std::{collections::HashMap, fs, path::PathBuf};
 ///
 /// - `complementary_code_rules_files` Csv files containing codes to add for certain objects
 /// - `property_rules_files` Csv files containing rules applied on properties
-/// - `networks_consolidation_file` Json file containing rules for grouping networks
+/// - `object_rules_file` Json file containing rules for grouping objects
 pub fn apply_rules(
     model: Model,
     complementary_code_rules_files: Vec<PathBuf>,
     property_rules_files: Vec<PathBuf>,
-    networks_consolidation_file: Option<PathBuf>,
+    object_rules_file: Option<PathBuf>,
     report_path: PathBuf,
 ) -> Result<Model> {
-    let lines_by_network: HashMap<String, IdxSet<Line>> = model
-        .networks
-        .iter()
-        .filter_map(|(idx, obj)| {
-            let lines = model.get_corresponding_from_idx(idx);
-            if lines.is_empty() {
-                None
-            } else {
-                Some((obj.id.clone(), lines))
-            }
-        })
-        .collect();
+    let object_rule = object_rules_file
+        .map(|path| object_rule::ObjectRule::new(path.as_path(), &model))
+        .transpose()?;
 
     let vjs_by_line: HashMap<String, IdxSet<VehicleJourney>> = model
         .lines
@@ -66,17 +53,10 @@ pub fn apply_rules(
         .collect();
 
     let mut collections = model.into_collections();
-
     let mut report = Report::default();
-
-    if let Some(networks_consolidation_file) = networks_consolidation_file {
-        info!("Applying network consolidation rules");
-        collections = network_consolidation::apply_rules(
-            networks_consolidation_file,
-            &lines_by_network,
-            collections,
-            &mut report,
-        )?;
+    if let Some(object_rule) = object_rule {
+        info!("Applying object rules");
+        object_rule.apply_rules(&mut collections, &mut report)?;
     }
 
     info!("Applying complementary code rules");
