@@ -1,7 +1,3 @@
 from_stop_id,to_stop_id,min_transfer_time,real_min_transfer_time,equipment_id
-sp_1,sp_1,0,120,
 sp_1,sp_2,50,60,
 sp_1,sp_3,200,210,
-sp_2,sp_1,83,203,
-sp_2,sp_2,0,120,
-sp_2,sp_3,100,220,
