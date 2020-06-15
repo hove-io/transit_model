@@ -22,13 +22,6 @@ pub trait ReportCategory: Serialize + PartialEq {}
 /// Type of the report
 #[derive(Debug, Serialize, PartialEq)]
 pub(crate) enum TransitModelReportCategory {
-    // merge stop areas types
-    OnlyOneStopArea,
-    AmbiguousPriorities,
-    NothingToMerge,
-    MissingToMerge,
-    NoMasterPossible,
-    MasterReplaced,
     // transfers types
     TransferIntraIgnored,
     TransferInterIgnored,

@@ -1,5 +1,0 @@
-object_id,object_type,comment_id
-SA:01,stop_area,COM:1
-SA:01,stop_area,COM:2
-SA:11,stop_area,COM:1
-SA:11,stop_area,COM:2
