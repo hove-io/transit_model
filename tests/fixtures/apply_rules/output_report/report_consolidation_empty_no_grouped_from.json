@@ -1,9 +1,0 @@
-{
-  "errors": [
-    {
-      "category": "ObjectNotFound",
-      "message": "The rule on the \"TGM\" network was not applied"
-    }
-  ],
-  "warnings": []
-}

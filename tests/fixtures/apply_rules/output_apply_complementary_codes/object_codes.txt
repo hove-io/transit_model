@@ -1,7 +1,0 @@
-object_type,object_id,object_system,object_code
-stop_area,CDG,OSM,Node:1730401509
-stop_point,GDLR,OSM,Node:1681252530
-line,RERA,OSM,Relation:3195542
-line,RERA,OSM,Relation:3224933
-route,B42F,OSM,Relation:3187722
-route,B42B,OSM,Relation:3187723

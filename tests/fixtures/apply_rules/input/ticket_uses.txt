@@ -1,4 +1,0 @@
-ticket_id,ticket_use_id,max_transfers,boarding_time_limit,alighting_time_limit
-1,1,,,
-2,2,,,
-

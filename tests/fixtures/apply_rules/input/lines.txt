@@ -1,4 +1,0 @@
-line_id,line_name,network_id,commercial_mode_id,line_color
-M1,Metro 1,TGM,Metro,F1CCB4
-B42,Bus 42,TGB,Bus,
-RERA,RER A,TGR,RER,FF0000

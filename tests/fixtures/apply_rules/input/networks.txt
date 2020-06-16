@@ -1,5 +1,0 @@
-network_id,network_name
-TGM,Metro Network
-TGB,Bus Network
-TGR,RER Network
-

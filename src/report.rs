@@ -21,25 +21,15 @@ pub trait ReportCategory: Serialize + PartialEq {}
 
 /// Type of the report
 #[derive(Debug, Serialize, PartialEq)]
-pub(crate) enum TransitModelReportCategory {
-    // transfers types
-    TransferIntraIgnored,
-    TransferInterIgnored,
-    TransferOnNonExistentStop,
-    TransferOnUnreferencedStop,
-    TransferAlreadyDeclared,
-    // apply rules
-    ObjectNotFound,
-    InvalidFile,
-    UnknownPropertyName,
-    UnknownPropertyValue,
-    MultipleValue,
-    OldPropertyValueDoesNotMatch,
-    GeometryNotValid,
-    NonConvertibleString,
+pub(crate) enum TransferReportCategory {
+    IntraIgnored,
+    InterIgnored,
+    OnNonExistentStop,
+    OnUnreferencedStop,
+    AlreadyDeclared,
 }
 
-impl ReportCategory for TransitModelReportCategory {}
+impl ReportCategory for TransferReportCategory {}
 
 /// A report record.
 #[derive(Debug, Serialize, PartialEq)]
