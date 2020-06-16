@@ -1343,12 +1343,10 @@ mod tests {
         gtfs::read::EquipmentList,
         model::Collections,
         objects::*,
-        objects::{
-            Calendar, Comment, CommentType, Dataset, Equipment, Geometry, Rgb, StopTime, Transfer,
-        },
+        objects::{Calendar, Comment, CommentType, Equipment, Geometry, Rgb, StopTime, Transfer},
         read_utils::{self, read_opt_collection, PathFileHandler},
         test_utils::*,
-        validity_period, AddPrefix,
+        AddPrefix,
     };
     use geo_types::line_string;
     use pretty_assertions::assert_eq;
@@ -2796,75 +2794,6 @@ mod tests {
             let mut handler = PathFileHandler::new(path.to_path_buf());
             let mut collections = Collections::default();
             calendars::manage_calendars(&mut handler, &mut collections).unwrap();
-        });
-    }
-
-    #[test]
-    fn set_dataset_validity_period() {
-        let calendars_content = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
-                                 1,1,1,1,1,1,0,0,20180501,20180508\n\
-                                 2,0,0,0,0,0,1,1,20180514,20180520";
-
-        let calendar_dates_content = "service_id,date,exception_type\n\
-                                      2,20180520,2";
-
-        test_in_tmp_dir(|path| {
-            let mut handler = PathFileHandler::new(path.to_path_buf());
-            create_file_with_content(path, "calendar.txt", calendars_content);
-            create_file_with_content(path, "calendar_dates.txt", calendar_dates_content);
-
-            let mut collections = Collections::default();
-            let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
-
-            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
-            validity_period::compute_dataset_validity_period(&mut dataset, &collections.calendars)
-                .unwrap();
-
-            assert_eq!(
-                Dataset {
-                    id: "default_dataset".to_string(),
-                    contributor_id: "default_contributor".to_string(),
-                    start_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
-                    end_date: chrono::NaiveDate::from_ymd(2018, 5, 19),
-                    dataset_type: None,
-                    extrapolation: false,
-                    desc: None,
-                    system: None,
-                },
-                dataset
-            );
-        });
-    }
-
-    #[test]
-    fn set_dataset_validity_period_with_only_one_date() {
-        let calendars_content = "service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date\n\
-                                 1,1,1,1,1,1,0,0,20180501,20180501";
-
-        test_in_tmp_dir(|path| {
-            let mut handler = PathFileHandler::new(path.to_path_buf());
-            create_file_with_content(path, "calendar.txt", calendars_content);
-
-            let mut collections = Collections::default();
-            let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
-
-            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
-            validity_period::compute_dataset_validity_period(&mut dataset, &collections.calendars)
-                .unwrap();
-
-            assert_eq!(
-                Dataset {
-                    id: "default_dataset".to_string(),
-                    contributor_id: "default_contributor".to_string(),
-                    start_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
-                    end_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
-                    dataset_type: None,
-                    extrapolation: false,
-                    desc: None,
-                    system: None,
-                },
-                dataset
-            );
         });
     }
 

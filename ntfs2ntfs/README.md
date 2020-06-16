@@ -1,6 +1,6 @@
 # `ntfs2ntfs`
 
-Command-Line Interface to check and clean a [NTFS] data format into data format.
+Command-Line Interface to check and clean a [NTFS] dataset.
 
 [NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
 
