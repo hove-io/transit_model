@@ -1,2 +1,0 @@
-contributor_id,contributor_name
-NTM:TGC,The Great Contributor
