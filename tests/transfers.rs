@@ -12,8 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use std::path::Path;
-use transit_model::{test_utils::*, transfers, transfers::rules::TransfersMode};
+use transit_model::{test_utils::*, transfers};
 
 #[test]
 //                    206m
@@ -27,14 +26,14 @@ use transit_model::{test_utils::*, transfers, transfers::rules::TransfersMode};
 //
 fn test_generates_transfers() {
     test_in_tmp_dir(|path| {
-        let input_dir = "tests/fixtures/transfers/input";
+        let input_dir = "tests/fixtures/transfers/mono_contributor/input";
         let model = transit_model::ntfs::read(input_dir).unwrap();
         let model = transfers::generates_transfers(model, 100.0, 0.785, 120).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt"]),
-            "./tests/fixtures/transfers/output",
+            "./tests/fixtures/transfers/mono_contributor/output",
         );
     });
 }
@@ -49,75 +48,7 @@ fn test_generates_all_multi_contributors_transfers() {
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt"]),
-            "./tests/fixtures/transfers/multi_contributors/output_all",
-        );
-    });
-}
-
-#[test]
-fn test_generates_transfers_intra_contributors() {
-    test_in_tmp_dir(|path| {
-        let input_dir = "tests/fixtures/transfers/multi_contributors/input";
-        let model = transit_model::ntfs::read(input_dir).unwrap();
-        let model = transfers::generates_transfers(model, 100.0, 0.785, 120).unwrap();
-        let rules: Vec<Box<Path>> = vec![];
-        let model = transfers::rules::apply_rules(
-            model,
-            120,
-            rules,
-            &TransfersMode::IntraContributor,
-            None,
-        )
-        .unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(
-            &path,
-            Some(vec!["transfers.txt"]),
-            "./tests/fixtures/transfers/multi_contributors/output_intra_contributors",
-        );
-    });
-}
-
-#[test]
-fn test_generates_transfers_inter_contributors() {
-    test_in_tmp_dir(|path| {
-        let input_dir = "tests/fixtures/transfers/multi_contributors/input";
-        let model = transit_model::ntfs::read(input_dir).unwrap();
-        let model = transfers::generates_transfers(model, 100.0, 0.785, 120).unwrap();
-        let rules: Vec<Box<Path>> = vec![];
-        let model = transfers::rules::apply_rules(
-            model,
-            120,
-            rules,
-            &TransfersMode::InterContributor,
-            None,
-        )
-        .unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(
-            &path,
-            Some(vec!["transfers.txt"]),
-            "./tests/fixtures/transfers/multi_contributors/output_inter_contributors",
-        );
-    });
-}
-
-#[test]
-fn test_generates_transfers_with_modification_rules() {
-    test_in_tmp_dir(|path| {
-        let input_dir = "tests/fixtures/transfers/multi_contributors/input";
-        let model = transit_model::ntfs::read(input_dir).unwrap();
-        let model = transfers::generates_transfers(model, 100.0, 0.785, 120).unwrap();
-        let rules = vec![
-            Path::new("./tests/fixtures/transfers/multi_contributors/rules.txt").to_path_buf(),
-        ];
-        let model =
-            transfers::rules::apply_rules(model, 120, rules, &TransfersMode::All, None).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(
-            &path,
-            Some(vec!["transfers.txt"]),
-            "./tests/fixtures/transfers/multi_contributors/output_rules",
+            "./tests/fixtures/transfers/multi_contributors/output",
         );
     });
 }

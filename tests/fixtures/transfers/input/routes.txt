@@ -1,2 +1,0 @@
-route_id,route_name,is_forward,line_id,contributor_id,destination_id,geometry_id
-route:1,"Hôtels - Hôtels",0,line:1,OIF,sa_1,

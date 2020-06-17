@@ -1,2 +1,0 @@
-line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort,network_id,commercial_mode_id,contributor_id,geometry_id,line_opening_time,line_closing_time
-line:1,"BDE","BDE","Hôtels - Hôtels","Hôtels - Hôtels",7D36F5,FFFFFF,1372,OIF:101,tram,OIF,,05:10:00,22:19:00
