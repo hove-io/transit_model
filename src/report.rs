@@ -24,8 +24,9 @@ pub trait ReportCategory: Serialize + PartialEq {}
 pub(crate) enum TransferReportCategory {
     IntraIgnored,
     InterIgnored,
-    OnNonExistentStop,
+    AllIgnored,
     OnUnreferencedStop,
+    OnNonExistentStop,
     AlreadyDeclared,
 }
 

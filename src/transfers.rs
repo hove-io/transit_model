@@ -4,7 +4,6 @@
 // under the terms of the GNU Affero General Public License as published by the
 // Free Software Foundation, version 3.
 
-// This program is distributed in the hope that it will be useful, but WITHOUT
 // ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
 // details.
@@ -126,7 +125,7 @@ pub fn generates_transfers(
 pub mod rules {
     use crate::{
         objects::{Contributor, StopPoint, Transfer},
-        report::{Report, TransitModelReportCategory},
+        report::{Report, TransferReportCategory},
         Model, Result,
     };
     use failure::ResultExt;
@@ -139,15 +138,7 @@ pub mod rules {
     };
     use typed_index_collection::{Collection, CollectionWithId, Idx};
 
-    // TODO: see if this can be removed
     type TransferMap = HashMap<(Idx<StopPoint>, Idx<StopPoint>), Transfer>;
-
-    #[derive(Deserialize, Debug)]
-    struct Rule {
-        from_stop_id: String,
-        to_stop_id: String,
-        transfer_time: Option<u32>,
-    }
 
     /// Represents the type of transfers to generate
     #[derive(PartialEq, Debug)]
@@ -162,15 +153,23 @@ pub mod rules {
         InterContributor,
     }
 
-    /// Apply rules
-    pub fn apply_transfer_rules<P: AsRef<Path>>(
+    #[derive(Deserialize, Debug)]
+    struct Rule {
+        from_stop_id: String,
+        to_stop_id: String,
+        transfer_time: Option<u32>,
+    }
+
+    /// Filter and add/remove transfers.
+    pub fn apply_rules<P: AsRef<Path>>(
         model: Model,
         waiting_time: u32,
         rule_files: Vec<P>,
         transfers_mode: &TransfersMode,
         report_path: Option<PathBuf>,
     ) -> Result<Model> {
-        let mut transfers_map = make_transfers_map(model.transfers.clone(), &model.stop_points);
+        let mut transfers_map =
+            filtered_transfers_map(&model, model.transfers.clone(), transfers_mode);
         let mut report = Report::default();
         let rules = read_rules(rule_files, &model, transfers_mode, &mut report)?;
         if !rules.is_empty() {
@@ -192,14 +191,40 @@ pub mod rules {
         Ok(Model::new(collections)?)
     }
 
-    fn filter_transfers() {}
+    fn filtered_transfers_map(
+        model: &Model,
+        transfers: Collection<Transfer>,
+        transfers_mode: &TransfersMode,
+    ) -> TransferMap {
+        transfers
+            .into_iter()
+            .filter(|t| {
+                stop_points_need_transfer(
+                    model,
+                    model.stop_points.get_idx(&t.from_stop_id).unwrap(),
+                    model.stop_points.get_idx(&t.to_stop_id).unwrap(),
+                    transfers_mode,
+                    None,
+                )
+            })
+            .map(|t| {
+                (
+                    (
+                        model.stop_points.get_idx(&t.from_stop_id).unwrap(),
+                        model.stop_points.get_idx(&t.to_stop_id).unwrap(),
+                    ),
+                    t,
+                )
+            })
+            .collect()
+    }
 
     fn stop_points_need_transfer(
         model: &Model,
         from_idx: Idx<StopPoint>,
         to_idx: Idx<StopPoint>,
         transfers_mode: &TransfersMode,
-        report_opt: Option<&mut Report<TransitModelReportCategory>>,
+        report_opt: Option<&mut Report<TransferReportCategory>>,
     ) -> bool {
         if *transfers_mode == TransfersMode::All {
             return true;
@@ -207,6 +232,7 @@ pub mod rules {
         let from_contributor: BTreeSet<Idx<Contributor>> =
             model.get_corresponding_from_idx(from_idx);
         let to_contributor: BTreeSet<Idx<Contributor>> = model.get_corresponding_from_idx(to_idx);
+
         if from_contributor.is_empty() {
             if let Some(report) = report_opt {
                 report.add_warning(
@@ -214,7 +240,7 @@ pub mod rules {
                         "stop point {} belongs to none of the trips and will not generate any transfer",
                         model.stop_points[from_idx].id
                     ),
-                    TransitModelReportCategory::TransferOnUnreferencedStop,
+                    TransferReportCategory::OnUnreferencedStop,
                 );
             }
             return false;
@@ -226,42 +252,24 @@ pub mod rules {
                         "stop point {} belongs to none of the trips and will not generate any transfer",
                         model.stop_points[to_idx].id
                     ),
-                    TransitModelReportCategory::TransferOnUnreferencedStop,
+                    TransferReportCategory::OnUnreferencedStop,
                 );
             }
             return false;
         }
+
         match *transfers_mode {
-            TransfersMode::All => true,
+            TransfersMode::All => unreachable!(),
             TransfersMode::IntraContributor => from_contributor == to_contributor,
             TransfersMode::InterContributor => from_contributor != to_contributor,
         }
-    }
-
-    // TODO: see if this can be removed
-    fn make_transfers_map(
-        transfers: Collection<Transfer>,
-        sp: &CollectionWithId<StopPoint>,
-    ) -> TransferMap {
-        transfers
-            .into_iter()
-            .map(|t| {
-                (
-                    (
-                        sp.get_idx(&t.from_stop_id).unwrap(),
-                        sp.get_idx(&t.to_stop_id).unwrap(),
-                    ),
-                    t,
-                )
-            })
-            .collect()
     }
 
     fn read_rules<P: AsRef<Path>>(
         rule_files: Vec<P>,
         model: &Model,
         transfers_mode: &TransfersMode,
-        report: &mut Report<TransitModelReportCategory>,
+        report: &mut Report<TransferReportCategory>,
     ) -> Result<Vec<Rule>> {
         info!("Reading modificaton rules.");
         let mut rules = HashMap::new();
@@ -285,7 +293,7 @@ pub mod rules {
                                         "transfer between stops {} and {} is already declared",
                                         rule.from_stop_id, rule.to_stop_id
                                     ),
-                                    TransitModelReportCategory::TransferAlreadyDeclared,
+                                    TransferReportCategory::AlreadyDeclared,
                                 ),
                                 Vacant(v) => {
                                     v.insert(rule);
@@ -294,14 +302,12 @@ pub mod rules {
                         } else {
                             let category = match *transfers_mode {
                                 TransfersMode::IntraContributor => {
-                                    TransitModelReportCategory::TransferInterIgnored
+                                    TransferReportCategory::InterIgnored
                                 }
                                 TransfersMode::InterContributor => {
-                                    TransitModelReportCategory::TransferIntraIgnored
+                                    TransferReportCategory::IntraIgnored
                                 }
-                                TransfersMode::All => {
-                                    TransitModelReportCategory::TransferInterIgnored
-                                } // not reachable
+                                TransfersMode::All => TransferReportCategory::AllIgnored,
                             };
                             report.add_warning(
                                 format!(
@@ -318,7 +324,7 @@ pub mod rules {
                                 "manual transfer references an non-existent stop point ({})",
                                 rule.to_stop_id
                             ),
-                            TransitModelReportCategory::TransferOnNonExistentStop,
+                            TransferReportCategory::OnNonExistentStop,
                         );
                     }
                     (None, Some(_)) => {
@@ -327,7 +333,7 @@ pub mod rules {
                                 "manual transfer references an non-existent stop point ({})",
                                 rule.from_stop_id
                             ),
-                            TransitModelReportCategory::TransferOnNonExistentStop,
+                            TransferReportCategory::OnNonExistentStop,
                         );
                     }
                     _ => {
@@ -336,7 +342,7 @@ pub mod rules {
                                 "manual transfer references non-existent stop points ({} and {})",
                                 rule.from_stop_id, rule.to_stop_id
                             ),
-                            TransitModelReportCategory::TransferOnNonExistentStop,
+                            TransferReportCategory::OnNonExistentStop,
                         );
                     }
                 }
