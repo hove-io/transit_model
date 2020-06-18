@@ -1,7 +1,7 @@
 [package]
 authors = ["Kisio Digital <team.coretools@kisio.com>", "Guillaume Pinot <texitoi@texitoi.eu>"]
 name = "transit_model"
-version = "0.19.0"
+version = "0.19.1"
 license = "AGPL-3.0-only"
 description = "Transit data management"
 repository = "https://github.com/CanalTP/transit_model"
@@ -31,6 +31,7 @@ members = [
 	"ntfs2gtfs",
 	"ntfs2netexfr",
 	"ntfs2ntfs",
+	"restrict-validity-period",
 ]
 
 [features]
