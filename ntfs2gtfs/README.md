@@ -3,7 +3,7 @@
 Command-Line Interface to convert [NTFS] data format into [GTFS] data
 format.
 
-[GTFS]: https://developers.google.com/transit/gtfs/reference/
+[GTFS]: https://gtfs.org/reference/static
 [NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
 
 ## Installation

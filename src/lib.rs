@@ -13,7 +13,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 //! The `transit_model` crate proposes a model to manage transit data.
-//! It can import and export data from [GTFS](http://gtfs.org/) and
+//! It can import and export data from
+//! [GTFS](https://gtfs.org/reference/static) and
 //! [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
 
 #![deny(missing_docs)]

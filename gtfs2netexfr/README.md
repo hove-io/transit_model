@@ -1,10 +1,10 @@
 # `gtfs2netexfr`
 
-Command-Line Interface to convert [GTFS] data format into [NeTEx] France data
+Command-Line Interface to convert [GTFS] data format into [NeTEx]-France data
 format.
 
-[GTFS]: https://developers.google.com/transit/gtfs/reference/
-[NeTEx]: http://netex-cen.eu/
+[GTFS]: https://gtfs.org/reference/static
+[NeTEx]: http://netex-cen.eu
 
 ## Installation
 

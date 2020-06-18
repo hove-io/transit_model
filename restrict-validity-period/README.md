@@ -1,6 +1,6 @@
 # `restrict-validity-period`
 
-Command-Line Interface to restrict the validity period of a [NTFS] and purge out-of-date data.
+Command-Line Interface to restrict the validity period of a [NTFS] dataset and purge out-of-date data.
 
 [NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
 
