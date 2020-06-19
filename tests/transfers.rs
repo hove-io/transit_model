@@ -12,10 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use std::path::Path;
-use transit_model::test_utils::*;
-use transit_model::transfers;
-use transit_model::transfers::TransfersMode;
+use transit_model::{test_utils::*, transfers};
 
 #[test]
 //                    206m
@@ -29,49 +26,29 @@ use transit_model::transfers::TransfersMode;
 //
 fn test_generates_transfers() {
     test_in_tmp_dir(|path| {
-        let input_dir = "tests/fixtures/transfers/input";
+        let input_dir = "tests/fixtures/transfers/mono_contributor/input";
         let model = transit_model::ntfs::read(input_dir).unwrap();
-        let rules: Vec<Box<Path>> = vec![];
-        let model = transfers::generates_transfers(
-            model,
-            100.0,
-            0.785,
-            120,
-            rules,
-            &TransfersMode::IntraContributor,
-            None,
-        )
-        .unwrap();
+        let model = transfers::generates_transfers(model, 100.0, 0.785, 120).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt"]),
-            "./tests/fixtures/transfers/output",
+            "./tests/fixtures/transfers/mono_contributor/output",
         );
     });
 }
 
 #[test]
-fn test_generates_transfers_with_modification_rules() {
+fn test_generates_all_multi_contributors_transfers() {
     test_in_tmp_dir(|path| {
-        let input_dir = "tests/fixtures/transfers/input";
+        let input_dir = "tests/fixtures/transfers/multi_contributors/input";
         let model = transit_model::ntfs::read(input_dir).unwrap();
-        let rules = vec![Path::new("./tests/fixtures/transfers/rules.txt").to_path_buf()];
-        let model = transfers::generates_transfers(
-            model,
-            100.0,
-            0.785,
-            120,
-            rules,
-            &TransfersMode::IntraContributor,
-            None,
-        )
-        .unwrap();
+        let model = transfers::generates_transfers(model, 100.0, 0.785, 120).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["transfers.txt"]),
-            "./tests/fixtures/transfers/output_rules",
+            "./tests/fixtures/transfers/multi_contributors/output",
         );
     });
 }

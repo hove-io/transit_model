@@ -1,2 +1,0 @@
-contributor_id,contributor_name,contributor_website,contributor_license
-OIF,"OIF - STIF Ile de France","http://www.vianavigo.com","ODbL"
