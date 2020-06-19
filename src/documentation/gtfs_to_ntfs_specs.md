@@ -1,12 +1,12 @@
 # GTFS reading specification
 
 ## Purpose
-This document aims to describe how the [GTFS format](https://developers.google.com/transit/gtfs/reference) is read in the Navitia Transit Model. To improve readability of this document, the specification will describe the transformation of a GTFS feed into a [NTFS feed](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md) (which is a bunch of csv files accordingly to the memory Navitia Transit Model).
+This document aims to describe how the [GTFS] format is read in the Navitia Transit Model. To improve readability of this document, the specification will describe the transformation of a GTFS feed into a [NTFS feed](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md) (which is a bunch of csv files accordingly to the memory Navitia Transit Model).
 
 ## Introduction
-If at any time of the conversion, the GTFS is not conform to the [GTFS
-specification](https://developers.google.com/transit/gtfs/reference), the
-conversion should stop immediately with an error, unless otherwise specified.
+If at any time of the conversion, the GTFS is not conform to the [GTFS]
+specification, the conversion should stop immediately with an error, unless
+otherwise specified.
 
 At the end of the conversion, a sanitizing operation is started on the final
 model. See [common.md](common.md) for more information.
@@ -330,3 +330,5 @@ A complementary `object_code` is added to each new trip with the following prope
 * `object_id` : the value of the `trip_id` field
 * `object_system` : the fixed value `source`
 * `object_code` : the unmodified initial GTFS value of `trip_id`
+
+[GTFS]: https://gtfs.org/reference/static

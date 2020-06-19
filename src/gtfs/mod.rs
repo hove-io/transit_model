@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-//! [GTFS](http://gtfs.org/) format management.
+//! [GTFS](https://gtfs.org/reference/static) format management.
 
 mod read;
 mod write;
@@ -319,8 +319,8 @@ where
     Model::new(collections)
 }
 
-/// Imports a `Model` from the [GTFS](http://gtfs.org/) files in the
-/// `path` directory.
+/// Imports a `Model` from the [GTFS](https://gtfs.org/reference/static)
+/// files in the `path` directory.
 ///
 /// The `config_path` argument allows you to give a path to a file
 /// containing a json representing the contributor and dataset used
@@ -337,7 +337,8 @@ pub fn read_from_path<P: AsRef<Path>>(
     read(&mut file_handle, configuration)
 }
 
-/// Imports a `Model` from a zip file containing the [GTFS](http://gtfs.org/).
+/// Imports a `Model` from a zip file containing the
+/// [GTFS](https://gtfs.org/reference/static).
 ///
 /// The `config_path` argument allows you to give a path to a file
 /// containing a json representing the contributor and dataset used
@@ -422,7 +423,7 @@ fn remove_stop_zones(model: Model) -> Result<Collections> {
     Ok(collections)
 }
 
-/// Exports a `Model` to [GTFS](http://gtfs.org/) files
+/// Exports a `Model` to [GTFS](https://gtfs.org/reference/static) files
 /// in the given directory.
 /// see [NTFS to GTFS conversion](https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
 pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {

@@ -3,7 +3,7 @@
 Command-Line Interface to convert [GTFS] data format into [NTFS] data
 format.
 
-[GTFS]: https://developers.google.com/transit/gtfs/reference/
+[GTFS]: https://gtfs.org/reference/static
 [NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
 
 ## Installation
@@ -26,3 +26,26 @@ gtfs2ntfs --input /path/to/gtfs/folder/ --output /path/to/ntfs/
 - `--output` is the path to a folder where the NTFS will be exported
 
 Get more information about the available options with `--help`.
+
+## Converting from GTFS to NTFS
+
+NTFS needs a `Dataset` and a `Contributor`.
+Default ones are provided by the command but you can pass a json file that
+contains some information for creating a `Dataset` and a `Contributor` as
+explained in the [documentation](../src/documentation/common.md).
+
+```json
+{
+    "contributor": {
+        "contributor_id" : "your_contributor_id",
+        "contributor_name" : "your_contributor_name",
+        "contributor_license" : "your_contributor_license",
+        "contributor_website" : "your_contributor_website"
+    },
+    "dataset": {
+        "dataset_id" : "your_dataset_id",
+        "dataset_desc" : "optional_dataset_desc",
+        "dataset_system" : "optional_dataset_system"
+    }
+}
+```

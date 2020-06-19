@@ -1,10 +1,10 @@
 # `ntfs2netexfr`
 
-Command-Line Interface to convert [NTFS] data format into [NeTEx] France data
+Command-Line Interface to convert [NTFS] data format into [NeTEx]-France data
 format.
 
 [NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
-[NeTEx]: http://netex-cen.eu/
+[NeTEx]: http://netex-cen.eu
 
 ## Installation
 

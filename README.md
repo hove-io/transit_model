@@ -6,96 +6,96 @@
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/CanalTP/transit_model/Continuous%20Integration?logo=github&style=flat-square)](https://github.com/CanalTP/transit_model/actions?query=workflow%3A%22Continuous+Integration%22)
 [![License: AGPL v3.0](https://img.shields.io/github/license/CanalTP/transit_model?color=9873b9&style=flat-square)](./LICENSE)
 
-`transit_model` is a Rust crate managing transit data by implementing the NTFS
-model (used  in [navitia](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)). See the
-section [NTFS: Level of Support](#ntfs-level-of-support) for more details about the
-level of support of the NTFS standard.
+**`transit_model`** is a Rust crate to manage, convert and enrich transit
+data.<br>
+This is done by implementing the [NTFS] model (used in [navitia]).
 
-This repository also provides :
-- (incomplete) [GTFS](http://gtfs.org/) to [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md) and (soon) NTFS to GTFS conversion.
-- (incomplete) Generation of transfers.
-.
-- Merge [NTFS] (https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
+This repository regroups crates that offer enabler-libraries and binaries to
+convert and enrich transit data.
 
-## Compile
+Please check documentation attached to each crate:
+* [**gtfs2netexfr**](gtfs2netexfr/README.md) converts [GTFS] data format into
+  [NeTEx]-France data format.
+* [**gtfs2ntfs**](gtfs2ntfs/README.md) converts [GTFS] data format into [NTFS]
+  data format.
+* [**ntfs2gtfs**](ntfs2gtfs/README.md) converts [NTFS] data format into [GTFS]
+  data format.
+* [**ntfs2netexfr**](ntfs2netexfr/README.md) converts [NTFS] data format into
+  [NeTEx]-France data format.
+* [**ntfs2ntfs**](ntfs2ntfs/README.md) checks and cleans a [NTFS] dataset.
+* [**restrict-validity-period**](restrict-validity-period/README.md) restricts
+  the validity period of a [NTFS] dataset and purges out-of-date data.
 
-```bash
-cargo build --release
-```
+## [PROJ] dependency
 
-### Compile for NeTEx IDF
-Some formats needs an additional dependency called [PROJ](https://proj.org/)
-which allows the transformation of localization coordinates.
-[crates.io](https://crates.io/) provides a
-[`proj`](https://crates.io/crates/proj) crate which is a binding to the C
-library (version 6.3.0). This means you need [PROJ](https://proj.org/) version
-6.3.0 installed on your system.  See [PROJ installation
-instructions](https://github.com/OSGeo/PROJ#installation).
+Based on [PROJ], the [`proj` crate] allows the transformation of
+localization coordinates.
 
-[PROJ](https://proj.org/) is configured as a `feature` of the `transit_model`
-crate.  Once [PROJ](https://proj.org/) is installed on your machine, you need a
-few more dependencies for building `transit_model`.
-```
-apt install -y clang libssl-dev
-cargo build --features=proj
-```
+Some `transit_model`'s crates (see each documentation) use [PROJ].<br>
+So it must be installed on the system to compile and use those crates.
 
-Now, you should be able to use a full-fledge `transit_model`. Enjoy!
+### [PROJ] for binaries
 
-### Using PROJ
-If you want to use [PROJ](https://proj.org/) in your code, you can if you
-activate the `proj` feature (`cargo build --features=proj`). Then don't forget
-to protect your code with `#[cfg(feature="proj")]`.
+Using the [`proj` crate] requires some system-dependencies installation.
 
-### Feature `xmllint`
-`transit_model` is capable of exporting NeTEx France format. In the tests, we're
-automatically verifying that the produced files are matching the NeTEx
-specification.  For that, we're using the tool `xmllint` which can be install
-on Debian with the package `libxml2-utils`. Therefore, these tests are run only
-if you activate them. We also depend on NeTEx specification that are imported as
-a git submodule.
+* The version `6.3.0` of [PROJ] is needed (used and tested by maintainers).<br>
+  On Debian systems:
+  ```sh
+  # Needed only for proj install
+  sudo apt install -yq wget build-essential pkg-config sqlite3 libsqlite3-dev
 
-```bash
-git submodule update --init --recursive
-apt install libxml2-utils
-cargo test --features xmllint
-```
+  sudo apt remove libproj-dev  # remove system version from packages
+  wget https://github.com/OSGeo/proj.4/releases/download/6.3.0/proj-6.3.0.tar.gz
+  tar -xzf proj-6.3.0.tar.gz
+  cd proj-6.3.0
+  ./configure --prefix=/usr
+  make
+  sudo make install
 
-## Converting from GTFS to NTFS
+  # These dependencies can be removed after PROJ build
+  # sudo apt purge wget build-essential pkg-config sqlite3 libsqlite3-dev
+  ```
+  [PROJ installation instructions](https://github.com/OSGeo/PROJ#installation)
+  may help, too.
 
-NTFS needs a `Dataset` and a `Contributor`.
-Default ones are provided by the command but you can pass a json file that contains some information for creating a `Dataset` and a `Contributor` as explained in the [documentation](src/documentation/gtfs2ntfs.md).
+* Some packages are also needed.<br>
+  On Debian systems:
+  ```sh
+  apt install -y clang libssl-dev
+  ```
 
-```json
-{
-    "contributor": {
-        "contributor_id" : "your_contributor_id",
-        "contributor_name" : "your_contributor_name",
-        "contributor_license" : "your_contributor_license",
-        "contributor_website" : "your_contributor_website"
-    },
-    "dataset": {
-        "dataset_id" : "your_dataset_id",
-        "dataset_desc" : "optional_dataset_desc",
-        "dataset_system" : "optional_dataset_system"
-    }
-}
-```
+### Using [PROJ] and transit_model as a developer
 
-## Tests
+[`proj` crate] is a binding to the C library (version `6.3.0`).
 
-```bash
-cargo test
-```
+[PROJ] is configured as a `feature` of the `transit_model` crate.<br>
+So to use it for coding, the `proj` feature must be activated
+(`cargo build --features=proj`).<br>
+Then specific code should be conditionally enabled with
+`#[cfg(feature="proj")]`.
 
-## NTFS: Level of Support
-`transit_model` is partially supporting `v0.11.2` of NTFS (see [CHANGELOG in
-French](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_changelog_fr.md)).
+## NTFS Level of Support
+
+`transit_model` is supporting most of [NTFS] format.<br>
 From the standard, some of the functionalities are not fully supported:
-- No support for Line Groups (files `line_groups.txt` and `line_group_links.txt`)
-- The field `trip_short_name_at_stop` in `stop_times.txt` introduced in version
-  `v0.10.0` is not supported
+* No support for Line Groups (files `line_groups.txt` and `line_group_links.txt`).
+* The field `trip_short_name_at_stop` in `stop_times.txt` introduced in version
+  `v0.10.0` (see [NTFS changelog in French]) is not supported.
+
+## Contributing
+
+Please see [CONTRIBUTING](CONTRIBUTING.md) to know more about the code or how
+to test, contribute, report issues.
 
 ## License
 
 Licensed under [GNU Affero General Public License v3.0](LICENSE)
+
+
+[GTFS]: https://gtfs.org/reference/static
+[navitia]: https://github.com/CanalTP/navitia
+[NeTEx]: http://netex-cen.eu
+[NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
+[NTFS changelog in French]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_changelog_fr.md
+[PROJ]: https://proj.org
+[`proj` crate]: https://crates.io/crates/proj

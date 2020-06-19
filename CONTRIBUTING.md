@@ -25,6 +25,7 @@ does not pass, typically it will be easier to iterate and fix it locally than
 waiting for the CI servers to run tests for you.
 
 ### Formatting
+
 We use the standard Rust formatting tool, [`rustfmt`].
 
 ```sh
@@ -35,6 +36,7 @@ cargo fmt --all
 [`rustfmt`]: https://github.com/rust-lang/rustfmt
 
 ### Static analysis
+
 For the static analysis, we use [`clippy`].
 
 ```sh
@@ -45,11 +47,39 @@ cargo clippy --workspace
 [`clippy`]: https://github.com/rust-lang/rust-clippy
 
 ### Tests
+
 The test suite include unit test and integration tests.
 
+#### Test feature `xmllint`
+
+`transit_model` is capable of exporting NeTEx France format.
+Integration tests verify that the conversion produces files in accordance with
+the NeTEx specification.
+
+For that, tests are using the tool `xmllint` which can be installed on Debian
+with the package `libxml2-utils`.<br>
+Tests also depend on NeTEx specification that are imported as a git submodule.
+Therefore, these tests are run only if feature `xmllint` is activated.<br>
+
+To install xmllint and submodules:
 ```sh
-# Run all the tests of `transit_model` in the entire repository
+git submodule update --init --recursive
+apt install libxml2-utils
+```
+
+#### Launch all tests
+
+```sh
+# Run all the tests of `transit_model` in the entire repository,
+# activating all features, including `xmllint`
 cargo test --workspace --all-features
+```
+
+#### Hand-check outputs
+
+To validate the output NeTEx obtained it is possible to use xmllint:
+```sh
+xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd your_file.xml
 ```
 
 ## Conduct
