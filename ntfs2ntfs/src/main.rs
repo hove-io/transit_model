@@ -43,16 +43,16 @@ struct Opt {
     current_datetime: DateTime<FixedOffset>,
 
     // The max distance in meters to compute the tranfer
-    #[structopt(long, short = "d", default_value = "500")]
+    #[structopt(long, short = "d", default_value = transit_model::TRANSFER_MAX_DISTANCE)]
     max_distance: f64,
 
     // The walking speed in meters per second.
     // You may want to divide your initial speed by sqrt(2) to simulate Manhattan distances
-    #[structopt(long, short = "s", default_value = "0.785")]
+    #[structopt(long, short = "s", default_value = transit_model::TRANSFER_WAKING_SPEED)]
     walking_speed: f64,
 
     // Waiting time at stop in second
-    #[structopt(long, short = "t", default_value = "60")]
+    #[structopt(long, short = "t", default_value = transit_model::TRANSFER_WAITING_TIME)]
     waiting_time: u32,
 }
 
