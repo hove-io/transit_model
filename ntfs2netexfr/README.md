@@ -40,3 +40,11 @@ ntfs2netexfr --input /path/to/ntfs/folder/ --output /path/to/netexfr/ --particip
   export; it is exported in each NeTEx file
 
 Get more information about the available options with `--help`.
+
+## Specifications
+
+As NTFS is the pivot format for conversion, [common NTFS rules] is useful.<br>
+For input and output, see [NTFS to NeTEx-France specifications].
+
+[common NTFS rules]: ../documentation/common_ntfs_rules.md
+[NTFS to NeTEx-France specifications]: ../documentation/ntfs_to_netex_france_specs.md
