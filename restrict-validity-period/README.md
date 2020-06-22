@@ -21,9 +21,9 @@ cargo install --path restrict-validity-period
 restrict-validity-period --input /path/to/ntfs/folder/ --output /path/to/ntfs/ --start-validity-date 2019-01-01 --end-validity-date 2019-01-01
 ```
 
-- `--input` is the path to a folder containing NTFS data format
-- `--output` is the path to a folder where the NTFS will be exported
-- `--start-validity-date` is the start of the desired validity period (included)
-- `--end-validity-date` is the end of the desired validity period (included)
+* `--input` is the path to a folder containing NTFS data format
+* `--output` is the path to a folder where the NTFS will be exported
+* `--start-validity-date` is the start of the desired validity period (included)
+* `--end-validity-date` is the end of the desired validity period (included)
 
 Get more information about the available options with `--help`.

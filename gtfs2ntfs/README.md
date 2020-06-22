@@ -22,8 +22,8 @@ cargo install --path gtfs2ntfs
 gtfs2ntfs --input /path/to/gtfs/folder/ --output /path/to/ntfs/
 ```
 
-- `--input` is the path to a folder containing GTFS data format
-- `--output` is the path to a folder where the NTFS will be exported
+* `--input` is the path to a folder containing GTFS data format
+* `--output` is the path to a folder where the NTFS will be exported
 
 Get more information about the available options with `--help`.
 
