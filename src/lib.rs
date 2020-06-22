@@ -42,6 +42,15 @@ pub mod vptranslator;
 /// Current version of the NTFS format
 pub const NTFS_VERSION: &str = "0.11.2";
 
+/// The max distance in meters to compute the tranfer
+pub const TRANSFER_MAX_DISTANCE: &str = "500";
+
+/// The walking speed in meters per second
+pub const TRANSFER_WAKING_SPEED: &str = "0.785";
+
+/// Waiting time at stop in second
+pub const TRANSFER_WAITING_TIME: &str = "60";
+
 lazy_static::lazy_static! {
     /// Current datetime
     pub static ref CURRENT_DATETIME: String = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);

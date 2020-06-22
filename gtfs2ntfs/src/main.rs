@@ -21,7 +21,7 @@ use slog::{slog_o, Drain};
 use slog_async::OverflowStrategy;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use transit_model::Result;
+use transit_model::{transfers::generates_transfers, Result};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.")]
@@ -58,6 +58,19 @@ struct Opt {
         default_value = &transit_model::CURRENT_DATETIME
     )]
     current_datetime: DateTime<FixedOffset>,
+
+    // The max distance in meters to compute the tranfer
+    #[structopt(long, short = "d", default_value = transit_model::TRANSFER_MAX_DISTANCE)]
+    max_distance: f64,
+
+    // The walking speed in meters per second.
+    // You may want to divide your initial speed by sqrt(2) to simulate Manhattan distances
+    #[structopt(long, short = "s", default_value = transit_model::TRANSFER_WAKING_SPEED)]
+    walking_speed: f64,
+
+    // Waiting time at stop in second
+    #[structopt(long, short = "t", default_value = transit_model::TRANSFER_WAITING_TIME)]
+    waiting_time: u32,
 }
 
 fn init_logger() -> slog_scope::GlobalLoggerGuard {
@@ -89,7 +102,7 @@ fn run(opt: Opt) -> Result<()> {
         on_demand_transport_comment: opt.odt_comment,
     };
 
-    let objects = if opt.input.is_file() {
+    let model = if opt.input.is_file() {
         transit_model::gtfs::read_from_zip(opt.input, configuration)?
     } else if opt.input.is_dir() {
         transit_model::gtfs::read_from_path(opt.input, configuration)?
@@ -97,7 +110,9 @@ fn run(opt: Opt) -> Result<()> {
         bail!("Invalid input data: must be an existing directory or a ZIP archive");
     };
 
-    transit_model::ntfs::write(&objects, opt.output, opt.current_datetime)?;
+    let model = generates_transfers(model, opt.max_distance, opt.walking_speed, opt.waiting_time)?;
+
+    transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
     Ok(())
 }
 

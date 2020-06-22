@@ -20,7 +20,7 @@ use slog::{slog_o, Drain};
 use slog_async::OverflowStrategy;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use transit_model::Result;
+use transit_model::{transfers::generates_transfers, Result};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "ntfs2ntfs", about = "Convert an NTFS to an NTFS.")]
@@ -41,6 +41,19 @@ struct Opt {
         default_value = &transit_model::CURRENT_DATETIME
     )]
     current_datetime: DateTime<FixedOffset>,
+
+    // The max distance in meters to compute the tranfer
+    #[structopt(long, short = "d", default_value = transit_model::TRANSFER_MAX_DISTANCE)]
+    max_distance: f64,
+
+    // The walking speed in meters per second.
+    // You may want to divide your initial speed by sqrt(2) to simulate Manhattan distances
+    #[structopt(long, short = "s", default_value = transit_model::TRANSFER_WAKING_SPEED)]
+    walking_speed: f64,
+
+    // Waiting time at stop in second
+    #[structopt(long, short = "t", default_value = transit_model::TRANSFER_WAITING_TIME)]
+    waiting_time: u32,
 }
 
 fn init_logger() -> slog_scope::GlobalLoggerGuard {
@@ -65,10 +78,11 @@ fn init_logger() -> slog_scope::GlobalLoggerGuard {
 fn run(opt: Opt) -> Result<()> {
     info!("Launching ntfs2ntfs...");
 
-    let objects = transit_model::ntfs::read(opt.input)?;
+    let model = transit_model::ntfs::read(opt.input)?;
+    let model = generates_transfers(model, opt.max_distance, opt.walking_speed, opt.waiting_time)?;
 
     if let Some(output) = opt.output {
-        transit_model::ntfs::write(&objects, output, opt.current_datetime)?;
+        transit_model::ntfs::write(&model, output, opt.current_datetime)?;
     }
     Ok(())
 }
