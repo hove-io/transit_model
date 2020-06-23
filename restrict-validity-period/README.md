@@ -27,3 +27,9 @@ restrict-validity-period --input /path/to/ntfs/folder/ --output /path/to/ntfs/ -
 * `--end-validity-date` is the end of the desired validity period (included)
 
 Get more information about the available options with `--help`.
+
+## Specifications
+
+As NTFS is the pivot format for data processing, [common NTFS rules] is useful.
+
+[common NTFS rules]: ../documentation/common_ntfs_rules.md

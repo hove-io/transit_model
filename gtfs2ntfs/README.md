@@ -32,7 +32,7 @@ Get more information about the available options with `--help`.
 NTFS needs a `Dataset` and a `Contributor`.
 Default ones are provided by the command but you can pass a json file that
 contains some information for creating a `Dataset` and a `Contributor` as
-explained in the [documentation](../src/documentation/common.md).
+explained in the [common NTFS rules].
 
 ```json
 {
@@ -49,3 +49,11 @@ explained in the [documentation](../src/documentation/common.md).
     }
 }
 ```
+
+## Specifications
+
+As NTFS is the pivot format for conversion, [common NTFS rules] is useful.<br>
+For input and output, see [GTFS to NTFS specifications].
+
+[common NTFS rules]: ../documentation/common_ntfs_rules.md
+[GTFS to NTFS specifications]: ../documentation/gtfs_to_ntfs_specs.md

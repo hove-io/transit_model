@@ -130,7 +130,7 @@ The following rules apply to every converter, unless otherwise explicitly specif
   * lines with continuous circulation are indicated by default with an opening at 00:00 and a closing at 23:59.
 
 ### Conflicting identifiers
-The model will raise a critical error if identifiers of 2 objects of the same type are identicals.
+The model will raise a critical error if identifiers of 2 objects of the same type are identical.
 For example:
 * if 2 datasets have the same identifier
 * if 2 lines have the same identifier

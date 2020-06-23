@@ -26,3 +26,11 @@ ntfs2gtfs --input /path/to/ntfs/folder/ --output /path/to/gtfs/
 * `--output` is the path to a folder where the GTFS will be exported
 
 Get more information about the available options with `--help`.
+
+## Specifications
+
+As NTFS is the pivot format for conversion, [common NTFS rules] is useful.<br>
+For input and output, see [NTFS to GTFS specifications].
+
+[common NTFS rules]: ../documentation/common_ntfs_rules.md
+[NTFS to GTFS specifications]: ../documentation/ntfs_to_gtfs_specs.md

@@ -9,14 +9,14 @@ specification, the conversion should stop immediately with an error, unless
 otherwise specified.
 
 At the end of the conversion, a sanitizing operation is started on the final
-model. See [common.md](common.md) for more information.
+model. See [common NTFS rules] for more information.
 
 ### Prepending data
-As explained in [common.md](common.md), a prefix is added to all identifiers during the conversion in order to guarantee uniqueness among objects IDs.
+As explained in [common NTFS rules], a prefix is added to all identifiers during the conversion in order to guarantee uniqueness among objects IDs.
 In the following chapters, identifiers may be prepend with this _prefix_ using this pattern : **\<prefix>:<object\_id>**.
 The use of this specific pattern is shown explicitly using the value **ID** in the column _Constraint_ in the tables below.
 
-In addition, the NTFS format introduces 2 objects to enable the manipulation of several datasets: contributors and datasets. Those two objects are described in [common.md](common.md).
+In addition, the NTFS format introduces 2 objects to enable the manipulation of several datasets: contributors and datasets. Those two objects are described in [common NTFS rules].
 
 Two parameters can be specified in the configuration of the converter in order to determine if on demand transport (ODT) data should be considered when reading the input GTFS (in particular, when [reading the stop_times.txt file](#reading-stop_timestxt)):
 * a boolean parameter `odt`, by default set to `false`, indicating if the GTFS should be considered as containing ODT information
@@ -148,7 +148,7 @@ The standard values of the `route_type` field are directly mapped to the NTFS mo
 (2) The commercial_mode ID are standardized when converting from GTFS. This value must not be prefixed.
 
 All `physical_mode` are enhanced with CO2 emission and fallback modes, following
-the documentation in [common.md](common.md#co2-emissions-and-fallback-modes).
+the documentation in [common NTFS rules](common_ntfs_rules.md#co2-emissions-and-fallback-modes).
 
 #### Loading Routes
 A Route is created for each direction of existing trips.  If 2 routes with the
@@ -275,14 +275,14 @@ For exemple :
 
 (3) A comment associated to the stop_time is created in the files comments.txt and comment_links.txt as follows:
 
-| NTFS file         | NTFS field   | Constraint | Value/Note                                                                                                                                                                                                                                |
-| ----------------- | ------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| comments.txt      | comment_id   | Required   | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that this field is prefixed as explained in [common.md](common.md).                                                            |
-| comments.txt      | comment_type | Optional   | `on_demand_transport`                                                                                                                                                                                                                     |
-| comments.txt      | comment_name | Required   | The message set for the parameter `odt_comment`.                                                                                                                                                                                          |
-| comment_links.txt | object_id    | Required   | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that this field is prefixed as explained in [common.md](common.md).                                                            |
-| comment_links.txt | object_type  | Required   | `stop_time`                                                                                                                                                                                                                               |
-| comment_links.txt | comment_id   | Required   | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that, as this field references the comment in file comments.txt, it should be prefixed as explained in [common.md](common.md). |
+| NTFS file         | NTFS field   | Constraint | Value/Note                                                                                                                                                                                                                             |
+| ----------------- | ------------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| comments.txt      | comment_id   | Required   | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that this field is prefixed as explained in [common NTFS rules].                                                            |
+| comments.txt      | comment_type | Optional   | `on_demand_transport`                                                                                                                                                                                                                  |
+| comments.txt      | comment_name | Required   | The message set for the parameter `odt_comment`.                                                                                                                                                                                       |
+| comment_links.txt | object_id    | Required   | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that this field is prefixed as explained in [common NTFS rules].                                                            |
+| comment_links.txt | object_type  | Required   | `stop_time`                                                                                                                                                                                                                            |
+| comment_links.txt | comment_id   | Required   | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that, as this field references the comment in file comments.txt, it should be prefixed as explained in [common NTFS rules]. |
 
 ### Reading transfers.txt
 * If 2 transfers with the same ID are specified, the conversion should stop
@@ -333,3 +333,4 @@ A complementary `object_code` is added to each new trip with the following prope
 
 [GTFS]: https://gtfs.org/reference/static
 [NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
+[common NTFS rules]: common_ntfs_rules.md
