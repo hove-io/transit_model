@@ -19,7 +19,7 @@
 use crate::{utils::*, AddPrefix, PrefixConfiguration};
 use chrono::NaiveDate;
 use derivative::Derivative;
-use geo_types::{Geometry as GeoGeometry, Point as GeoPoint};
+use geo::{Geometry as GeoGeometry, Point as GeoPoint};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;

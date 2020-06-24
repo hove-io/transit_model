@@ -22,7 +22,7 @@ use crate::objects::Transfer as NtfsTransfer;
 use crate::objects::*;
 use crate::Result;
 use failure::ResultExt;
-use geo_types::Geometry as GeoGeometry;
+use geo::Geometry as GeoGeometry;
 use log::{info, warn};
 use relational_types::IdxSet;
 use serde::{Deserialize, Serialize};
@@ -532,7 +532,7 @@ mod tests {
             Transfer as NtfsTransfer,
         },
     };
-    use geo_types::{line_string, point};
+    use geo::{line_string, point};
     use pretty_assertions::assert_eq;
     use std::{collections::BTreeSet, fs::File, io::Read};
     use tempfile::tempdir;

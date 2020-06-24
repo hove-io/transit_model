@@ -19,7 +19,7 @@ use chrono::NaiveDate;
 use derivative::Derivative;
 use failure::{bail, format_err};
 use geo::algorithm::centroid::Centroid;
-use geo_types::MultiPoint;
+use geo::MultiPoint;
 use lazy_static::lazy_static;
 use log::{debug, warn, Level as LogLevel};
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
@@ -1746,7 +1746,7 @@ mod tests {
 
     mod check_geometries_coherence {
         use super::*;
-        use geo_types::{Geometry as GeoGeometry, Point as GeoPoint};
+        use geo::{Geometry as GeoGeometry, Point as GeoPoint};
         use pretty_assertions::assert_eq;
 
         #[test]
