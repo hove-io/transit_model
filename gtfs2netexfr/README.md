@@ -43,8 +43,8 @@ Get more information about the available options with `--help`.
 
 ## Specifications
 
-As NTFS is the pivot format for conversion, [common NTFS rules] is useful.<br>
-For input, see [GTFS to NTFS specifications].<br>
+As NTFS is the pivot format for conversion, [common NTFS rules] is useful.\
+For input, see [GTFS to NTFS specifications].\
 For output, see [NTFS to NeTEx-France specifications].
 
 [common NTFS rules]: ../documentation/common_ntfs_rules.md

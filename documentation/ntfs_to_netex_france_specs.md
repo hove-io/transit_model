@@ -114,7 +114,7 @@ A `stop_area` is considered monomodal if all the trips having stop_times referen
 ### Coordinates conversion
 
 The GTFS `stop_lon` and `stop_lat` are specified in WGS84. The coordinates are
-converted to EPSG:2154 (Lambert 93).<br>
+converted to EPSG:2154 (Lambert 93).\
 Example of Netex declaration:
 ><gml:pos srsName="EPSG:2154">662233.0 6861519.0</gml:pos>
 

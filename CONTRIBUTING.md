@@ -57,9 +57,9 @@ Integration tests verify that the conversion produces files in accordance with
 the NeTEx specification.
 
 For that, tests are using the tool `xmllint` which can be installed on Debian
-with the package `libxml2-utils`.<br>
+with the package `libxml2-utils`.\
 Tests also depend on NeTEx specification that are imported as a git submodule.
-Therefore, these tests are run only if feature `xmllint` is activated.<br>
+Therefore, these tests are run only if feature `xmllint` is activated.\
 
 To install xmllint and submodules:
 ```sh

@@ -29,7 +29,7 @@ Get more information about the available options with `--help`.
 
 ## Specifications
 
-As NTFS is the pivot format for conversion, [common NTFS rules] is useful.<br>
+As NTFS is the pivot format for conversion, [common NTFS rules] is useful.\
 For input and output, see [NTFS to GTFS specifications].
 
 [common NTFS rules]: ../documentation/common_ntfs_rules.md
