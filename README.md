@@ -14,6 +14,7 @@ This repository regroups crates that offer enabler-libraries and binaries to
 convert and enrich transit data.
 
 Please check documentation attached to each crate:
+
 * [**gtfs2netexfr**](gtfs2netexfr/README.md) converts [GTFS] data format into
   [NeTEx]-France data format.
 * [**gtfs2ntfs**](gtfs2ntfs/README.md) converts [GTFS] data format into [NTFS]
@@ -26,6 +27,14 @@ Please check documentation attached to each crate:
 * [**restrict-validity-period**](restrict-validity-period/README.md) restricts
   the validity period of a [NTFS] dataset and purges out-of-date data.
 
+## Setup Rust environment
+
+`transit_model` is developed in [Rust].
+
+If you want to contribute or install binaries, you need to install a [Rust] environment: see https://rustup.rs
+
+[Rust]: https://www.rust-lang.org/
+
 ## [PROJ] dependency
 
 Based on [PROJ], the [`proj` crate] allows the transformation of
@@ -36,33 +45,17 @@ So it must be installed on the system to compile and use those crates.
 
 ### [PROJ] for binaries
 
-Using the [`proj` crate] requires some system-dependencies installation.
+Using the [`proj` crate] requires some system-dependencies installation.\
+The version `6.3.0` of [PROJ] is needed (used and tested by maintainers).
 
-* The version `6.3.0` of [PROJ] is needed (used and tested by maintainers).\
-  On Debian systems:
-  ```sh
-  # Needed only for proj install
-  sudo apt install -yq wget build-essential pkg-config sqlite3 libsqlite3-dev
+To facilitate the installation you can execute the following command (On Debian systems):
 
-  sudo apt remove libproj-dev  # remove system version from packages
-  wget https://github.com/OSGeo/proj.4/releases/download/6.3.0/proj-6.3.0.tar.gz
-  tar -xzf proj-6.3.0.tar.gz
-  cd proj-6.3.0
-  ./configure --prefix=/usr
-  make
-  sudo make install
+```sh
+make install_proj
+```
 
-  # These dependencies can be removed after PROJ build
-  # sudo apt purge wget build-essential pkg-config sqlite3 libsqlite3-dev
-  ```
-  [PROJ installation instructions](https://github.com/OSGeo/PROJ#installation)
-  may help, too.
-
-* Some packages are also needed.\
-  On Debian systems:
-  ```sh
-  apt install -y clang libssl-dev
-  ```
+[PROJ installation instructions](https://github.com/OSGeo/PROJ#installation)
+may help, too.
 
 ### Using [PROJ] and transit_model as a developer
 
@@ -90,7 +83,6 @@ to test, contribute, report issues.
 ## License
 
 Licensed under [GNU Affero General Public License v3.0](LICENSE)
-
 
 [GTFS]: https://gtfs.org/reference/static
 [navitia]: https://github.com/CanalTP/navitia
