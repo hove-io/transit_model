@@ -110,6 +110,8 @@ The following rules apply to every converter, unless otherwise explicitly specif
 * Any `/` character in an identifier of an object is removed.
 * If a trip doesn't have a `trip_headsign`, it is automatically generated based
   on the name of the last stop point of the trip
+* If a route doesn't have a `direction_type` (or empty),
+  the `direction_type` "forward" is assigned by default
 * If a route doesn't have a name (or empty), `name` and `destination_id` are
   automatically generated:
   * the `route.name` is generated with the following rules:
