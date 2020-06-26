@@ -226,11 +226,6 @@ impl Collections {
         let mut level_id_used = HashSet::<String>::new();
         let mut calendars_used = HashSet::<String>::new();
 
-        // Keep fallback modes even if not referenced by the model
-        physical_modes_used.insert(String::from(BIKE_PHYSICAL_MODE));
-        physical_modes_used.insert(String::from(BIKE_SHARING_SERVICE_PHYSICAL_MODE));
-        physical_modes_used.insert(String::from(CAR_PHYSICAL_MODE));
-
         let comment_id_to_old_idx = self.comments.get_id_to_idx().clone();
         let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
 
@@ -1095,16 +1090,17 @@ impl Model {
     /// assert!(Model::new(collections).is_ok());
     /// ```
     pub fn new(mut c: Collections) -> Result<Self> {
-        fn apply_generic_business_rules(collections: &mut Collections) -> Result<()> {
+        fn apply_generic_business_rules(collections: &mut Collections) {
             collections.update_stop_area_coords();
             collections.enhance_with_co2();
             collections.enhance_trip_headsign();
             collections.enhance_route_names();
             collections.check_geometries_coherence();
             collections.enhance_line_opening_time();
-            collections.sanitize()
         }
-        apply_generic_business_rules(&mut c)?;
+
+        c.sanitize()?;
+        apply_generic_business_rules(&mut c);
 
         let forward_vj_to_sp = c
             .vehicle_journeys
