@@ -7,7 +7,7 @@
 [![License: AGPL v3.0](https://img.shields.io/github/license/CanalTP/transit_model?color=9873b9&style=flat-square)](./LICENSE)
 
 **`transit_model`** is a Rust crate to manage, convert and enrich transit
-data.<br>
+data.\
 This is done by implementing the [NTFS] model (used in [navitia]).
 
 This repository regroups crates that offer enabler-libraries and binaries to
@@ -31,14 +31,14 @@ Please check documentation attached to each crate:
 Based on [PROJ], the [`proj` crate] allows the transformation of
 localization coordinates.
 
-Some `transit_model`'s crates (see each documentation) use [PROJ].<br>
+Some `transit_model`'s crates (see each documentation) use [PROJ].\
 So it must be installed on the system to compile and use those crates.
 
 ### [PROJ] for binaries
 
 Using the [`proj` crate] requires some system-dependencies installation.
 
-* The version `6.3.0` of [PROJ] is needed (used and tested by maintainers).<br>
+* The version `6.3.0` of [PROJ] is needed (used and tested by maintainers).\
   On Debian systems:
   ```sh
   # Needed only for proj install
@@ -58,7 +58,7 @@ Using the [`proj` crate] requires some system-dependencies installation.
   [PROJ installation instructions](https://github.com/OSGeo/PROJ#installation)
   may help, too.
 
-* Some packages are also needed.<br>
+* Some packages are also needed.\
   On Debian systems:
   ```sh
   apt install -y clang libssl-dev
@@ -68,15 +68,15 @@ Using the [`proj` crate] requires some system-dependencies installation.
 
 [`proj` crate] is a binding to the C library (version `6.3.0`).
 
-[PROJ] is configured as a `feature` of the `transit_model` crate.<br>
+[PROJ] is configured as a `feature` of the `transit_model` crate.\
 So to use it for coding, the `proj` feature must be activated
-(`cargo build --features=proj`).<br>
+(`cargo build --features=proj`).\
 Then specific code should be conditionally enabled with
 `#[cfg(feature="proj")]`.
 
 ## NTFS Level of Support
 
-`transit_model` is supporting most of [NTFS] format.<br>
+`transit_model` is supporting most of [NTFS] format.\
 From the standard, some of the functionalities are not fully supported:
 * No support for Line Groups (files `line_groups.txt` and `line_group_links.txt`).
 * The field `trip_short_name_at_stop` in `stop_times.txt` introduced in version

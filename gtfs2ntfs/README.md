@@ -52,7 +52,7 @@ explained in the [common NTFS rules].
 
 ## Specifications
 
-As NTFS is the pivot format for conversion, [common NTFS rules] is useful.<br>
+As NTFS is the pivot format for conversion, [common NTFS rules] is useful.\
 For input and output, see [GTFS to NTFS specifications].
 
 [common NTFS rules]: ../documentation/common_ntfs_rules.md
