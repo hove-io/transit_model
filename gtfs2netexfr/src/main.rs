@@ -39,7 +39,7 @@ struct Opt {
         short,
         long,
         parse(from_os_str),
-        long_help = r"JSON file containing additionnal configuration.
+        long_help = r"JSON file containing additional configuration.
 
 See https://github.com/CanalTP/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
 for more information.
@@ -47,7 +47,7 @@ for more information.
     )]
     config: Option<PathBuf>,
 
-    /// Indicates if the input GTFS contains On-demand Transport (ODT) information
+    /// Indicates if the input GTFS contains On-Demand Transport (ODT) information
     #[structopt(short = "t", long = "on-demand-transport")]
     odt: bool,
 

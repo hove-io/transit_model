@@ -48,7 +48,7 @@ So it must be installed on the system to compile and use those crates.
 Using the [`proj` crate] requires some system-dependencies installation.\
 The version `6.3.0` of [PROJ] is needed (used and tested by maintainers).
 
-To facilitate the installation you can execute the following command (On Debian systems):
+To help the installation you can execute the following command (On Debian systems):
 
 ```sh
 make install_proj
