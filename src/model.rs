@@ -25,11 +25,14 @@ use log::{debug, warn, Level as LogLevel};
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
-use std::cmp::{self, Ordering};
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::convert::TryFrom;
-use std::ops;
-use std::result::Result as StdResult;
+use std::{
+    cmp::{self, Ordering},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    convert::TryFrom,
+    iter::FromIterator,
+    ops,
+    result::Result as StdResult,
+};
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 /// Physical mode for Air
@@ -803,23 +806,26 @@ impl Collections {
     ///
     /// `route.destination_id` is also replaced with the destination stop area
     /// found with the above rules.
-    pub fn enhance_route_names(&mut self) {
+    pub fn enhance_route_names(
+        &mut self,
+        routes_to_vehicle_journeys: &impl Relation<From = Route, To = VehicleJourney>,
+    ) {
         fn find_best_origin_destination<'a>(
-            route_id: &'a str,
+            route_idx: Idx<Route>,
             collections: &'a Collections,
+            routes_to_vehicle_journeys: &impl Relation<From = Route, To = VehicleJourney>,
         ) -> Result<(&'a StopArea, &'a StopArea)> {
             fn select_stop_areas<F>(
                 collections: &Collections,
-                route_id: &str,
+                vehicle_journey_idxs: &IdxSet<VehicleJourney>,
                 select_stop_point_in_vj: F,
             ) -> Vec<Idx<StopArea>>
             where
                 F: Fn(&VehicleJourney) -> Idx<StopPoint>,
             {
-                collections
-                    .vehicle_journeys
-                    .values()
-                    .filter(|vj| vj.route_id == route_id)
+                vehicle_journey_idxs
+                    .iter()
+                    .map(|vj_idx| &collections.vehicle_journeys[*vj_idx])
                     .filter(|vj| !vj.stop_times.is_empty())
                     .map(select_stop_point_in_vj)
                     .map(|sp_idx| &collections.stop_points[sp_idx])
@@ -857,7 +863,7 @@ impl Collections {
                 }
                 max_indexes
             }
-            fn find_biggest_stop_area<'a>(
+            fn find_biggest_stop_areas<'a>(
                 stop_area_indexes: Vec<Idx<StopArea>>,
                 collections: &'a Collections,
             ) -> Vec<&'a StopArea> {
@@ -894,50 +900,66 @@ impl Collections {
                 stop_areas.sort_by_key(|stop_area| &stop_area.name);
                 stop_areas.get(0).cloned()
             }
-            fn find_stop_area_for<'a, F>(
+            fn find_best_stop_area_for<'a, F>(
                 collections: &'a Collections,
-                route_id: &'a str,
+                vehicle_journey_idxs: &IdxSet<VehicleJourney>,
                 select_stop_point_in_vj: F,
             ) -> Option<&'a StopArea>
             where
                 F: Fn(&VehicleJourney) -> Idx<StopPoint>,
             {
                 let stop_areas: Vec<Idx<StopArea>> =
-                    select_stop_areas(collections, route_id, select_stop_point_in_vj);
+                    select_stop_areas(collections, vehicle_journey_idxs, select_stop_point_in_vj);
                 let by_frequency: HashMap<Idx<StopArea>, usize> = group_by_frequencies(stop_areas);
                 let most_frequent_stop_areas = find_indexes_with_max_frequency(by_frequency);
                 let biggest_stop_areas =
-                    find_biggest_stop_area(most_frequent_stop_areas, collections);
+                    find_biggest_stop_areas(most_frequent_stop_areas, collections);
                 find_first_by_alphabetical_order(biggest_stop_areas)
             }
 
+            let vehicle_journey_idxs = routes_to_vehicle_journeys
+                .get_corresponding_forward(&IdxSet::from_iter(std::iter::once(route_idx)));
+
             let origin_stop_area =
-                find_stop_area_for(collections, route_id, |vj| vj.stop_times[0].stop_point_idx);
-            let destination_stop_area = find_stop_area_for(collections, route_id, |vj| {
-                vj.stop_times[vj.stop_times.len() - 1].stop_point_idx
-            });
+                find_best_stop_area_for(collections, &vehicle_journey_idxs, |vj| {
+                    vj.stop_times[0].stop_point_idx
+                });
+            let destination_stop_area =
+                find_best_stop_area_for(collections, &vehicle_journey_idxs, |vj| {
+                    vj.stop_times[vj.stop_times.len() - 1].stop_point_idx
+                });
 
             if let (Some(origin_stop_area), Some(destination_stop_area)) =
                 (origin_stop_area, destination_stop_area)
             {
                 Ok((origin_stop_area, destination_stop_area))
             } else {
-                bail!("Failed to generate a `name` for route {}", route_id)
+                bail!(
+                    "Failed to generate a `name` for route {}",
+                    &collections.routes[route_idx].id
+                )
             }
         }
 
-        let mut routes = self.routes.take();
-        for mut route in &mut routes {
+        let mut route_names: BTreeMap<Idx<Route>, String> = BTreeMap::new();
+        let mut route_destination_ids: BTreeMap<Idx<Route>, Option<String>> = BTreeMap::new();
+        for (route_idx, route) in &self.routes {
             if route.name.is_empty() {
                 let (origin, destination) = skip_error_and_log!(
-                    find_best_origin_destination(&route.id, &self),
+                    find_best_origin_destination(route_idx, &self, routes_to_vehicle_journeys,),
                     LogLevel::Warn
                 );
-                route.destination_id = Some(destination.id.clone());
-                route.name = format!("{} - {}", origin.name, destination.name);
+                let route_name = format!("{} - {}", origin.name, destination.name);
+                route_names.insert(route_idx, route_name);
+                route_destination_ids.insert(route_idx, Some(destination.id.clone()));
             }
         }
-        self.routes = CollectionWithId::new(routes).unwrap();
+        for (route_idx, route_name) in route_names {
+            self.routes.index_mut(route_idx).name = route_name;
+        }
+        for (route_idx, destination_id) in route_destination_ids {
+            self.routes.index_mut(route_idx).destination_id = destination_id;
+        }
     }
 
     /// If a route direction is empty, it's set by default with the "forward" value
@@ -1105,18 +1127,7 @@ impl Model {
     /// assert!(Model::new(collections).is_ok());
     /// ```
     pub fn new(mut c: Collections) -> Result<Self> {
-        fn apply_generic_business_rules(collections: &mut Collections) {
-            collections.update_stop_area_coords();
-            collections.enhance_with_co2();
-            collections.enhance_trip_headsign();
-            collections.enhance_route_names();
-            collections.enhance_route_directions();
-            collections.check_geometries_coherence();
-            collections.enhance_line_opening_time();
-        }
-
         c.sanitize()?;
-        apply_generic_business_rules(&mut c);
 
         let forward_vj_to_sp = c
             .vehicle_journeys
@@ -1154,63 +1165,77 @@ impl Model {
             &c.vehicle_journeys,
             "datasets_to_vehicle_journeys",
         )?;
+        let routes_to_stop_points = ManyToMany::from_relations_chain(
+            &routes_to_vehicle_journeys,
+            &vehicle_journeys_to_stop_points,
+        );
+        let physical_modes_to_stop_points = ManyToMany::from_relations_chain(
+            &physical_modes_to_vehicle_journeys,
+            &vehicle_journeys_to_stop_points,
+        );
+        let physical_modes_to_routes = ManyToMany::from_relations_sink(
+            &physical_modes_to_vehicle_journeys,
+            &routes_to_vehicle_journeys,
+        );
+        let datasets_to_stop_points = ManyToMany::from_relations_chain(
+            &datasets_to_vehicle_journeys,
+            &vehicle_journeys_to_stop_points,
+        );
+        let datasets_to_routes = ManyToMany::from_relations_sink(
+            &datasets_to_vehicle_journeys,
+            &routes_to_vehicle_journeys,
+        );
+        let datasets_to_physical_modes = ManyToMany::from_relations_sink(
+            &datasets_to_vehicle_journeys,
+            &physical_modes_to_vehicle_journeys,
+        );
+        let transfers_to_stop_points = ManyToMany::from_forward(forward_tr_to_sp);
+        let networks_to_lines = OneToMany::new(&c.networks, &c.lines, "networks_to_lines")?;
+        let commercial_modes_to_lines =
+            OneToMany::new(&c.commercial_modes, &c.lines, "commercial_modes_to_lines")?;
+        let lines_to_routes = OneToMany::new(&c.lines, &c.routes, "lines_to_routes")?;
+        let stop_areas_to_stop_points =
+            OneToMany::new(&c.stop_areas, &c.stop_points, "stop_areas_to_stop_points")?;
+        let contributors_to_datasets =
+            OneToMany::new(&c.contributors, &c.datasets, "contributors_to_datasets")?;
+        let companies_to_vehicle_journeys = OneToMany::new(
+            &c.companies,
+            &c.vehicle_journeys,
+            "companies_to_vehicle_journeys",
+        )?;
+        let calendars_to_vehicle_journeys = OneToMany::new(
+            &c.calendars,
+            &c.vehicle_journeys,
+            "calendars_to_vehicle_journeys",
+        )?;
+
+        c.update_stop_area_coords();
+        c.enhance_with_co2();
+        c.enhance_trip_headsign();
+        c.enhance_route_names(&routes_to_vehicle_journeys);
+        c.enhance_route_directions();
+        c.check_geometries_coherence();
+        c.enhance_line_opening_time();
+
         Ok(Model {
-            routes_to_stop_points: ManyToMany::from_relations_chain(
-                &routes_to_vehicle_journeys,
-                &vehicle_journeys_to_stop_points,
-            ),
-            physical_modes_to_stop_points: ManyToMany::from_relations_chain(
-                &physical_modes_to_vehicle_journeys,
-                &vehicle_journeys_to_stop_points,
-            ),
-            physical_modes_to_routes: ManyToMany::from_relations_sink(
-                &physical_modes_to_vehicle_journeys,
-                &routes_to_vehicle_journeys,
-            ),
-            datasets_to_stop_points: ManyToMany::from_relations_chain(
-                &datasets_to_vehicle_journeys,
-                &vehicle_journeys_to_stop_points,
-            ),
-            datasets_to_routes: ManyToMany::from_relations_sink(
-                &datasets_to_vehicle_journeys,
-                &routes_to_vehicle_journeys,
-            ),
-            datasets_to_physical_modes: ManyToMany::from_relations_sink(
-                &datasets_to_vehicle_journeys,
-                &physical_modes_to_vehicle_journeys,
-            ),
-            transfers_to_stop_points: ManyToMany::from_forward(forward_tr_to_sp),
+            routes_to_stop_points,
+            physical_modes_to_stop_points,
+            physical_modes_to_routes,
+            datasets_to_stop_points,
+            datasets_to_routes,
+            datasets_to_physical_modes,
+            transfers_to_stop_points,
             datasets_to_vehicle_journeys,
             routes_to_vehicle_journeys,
             vehicle_journeys_to_stop_points,
             physical_modes_to_vehicle_journeys,
-            networks_to_lines: OneToMany::new(&c.networks, &c.lines, "networks_to_lines")?,
-            commercial_modes_to_lines: OneToMany::new(
-                &c.commercial_modes,
-                &c.lines,
-                "commercial_modes_to_lines",
-            )?,
-            lines_to_routes: OneToMany::new(&c.lines, &c.routes, "lines_to_routes")?,
-            stop_areas_to_stop_points: OneToMany::new(
-                &c.stop_areas,
-                &c.stop_points,
-                "stop_areas_to_stop_points",
-            )?,
-            contributors_to_datasets: OneToMany::new(
-                &c.contributors,
-                &c.datasets,
-                "contributors_to_datasets",
-            )?,
-            companies_to_vehicle_journeys: OneToMany::new(
-                &c.companies,
-                &c.vehicle_journeys,
-                "companies_to_vehicle_journeys",
-            )?,
-            calendars_to_vehicle_journeys: OneToMany::new(
-                &c.calendars,
-                &c.vehicle_journeys,
-                "calendars_to_vehicle_journeys",
-            )?,
+            networks_to_lines,
+            commercial_modes_to_lines,
+            lines_to_routes,
+            stop_areas_to_stop_points,
+            contributors_to_datasets,
+            companies_to_vehicle_journeys,
+            calendars_to_vehicle_journeys,
             collections: c,
         })
     }
@@ -1586,7 +1611,13 @@ mod tests {
                     &collections,
                 ))
                 .unwrap();
-            collections.enhance_route_names();
+            let routes_to_vehicle_journeys = OneToMany::new(
+                &collections.routes,
+                &collections.vehicle_journeys,
+                "routes_to_vehicle_journeys",
+            )
+            .unwrap();
+            collections.enhance_route_names(&routes_to_vehicle_journeys);
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("Stop Area 1 - Stop Area 2", route.name);
         }
@@ -1618,7 +1649,13 @@ mod tests {
                     &collections,
                 ))
                 .unwrap();
-            collections.enhance_route_names();
+            let routes_to_vehicle_journeys = OneToMany::new(
+                &collections.routes,
+                &collections.vehicle_journeys,
+                "routes_to_vehicle_journeys",
+            )
+            .unwrap();
+            collections.enhance_route_names(&routes_to_vehicle_journeys);
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("Stop Area 1 - Stop Area 3", route.name);
         }
@@ -1648,7 +1685,13 @@ mod tests {
                     &collections,
                 ))
                 .unwrap();
-            collections.enhance_route_names();
+            let routes_to_vehicle_journeys = OneToMany::new(
+                &collections.routes,
+                &collections.vehicle_journeys,
+                "routes_to_vehicle_journeys",
+            )
+            .unwrap();
+            collections.enhance_route_names(&routes_to_vehicle_journeys);
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("Stop Area 1 - Stop Area 1", route.name);
         }
@@ -1684,7 +1727,13 @@ mod tests {
                     &collections,
                 ))
                 .unwrap();
-            collections.enhance_route_names();
+            let routes_to_vehicle_journeys = OneToMany::new(
+                &collections.routes,
+                &collections.vehicle_journeys,
+                "routes_to_vehicle_journeys",
+            )
+            .unwrap();
+            collections.enhance_route_names(&routes_to_vehicle_journeys);
             let route = collections.routes.get("route_id").unwrap();
             // 'Stop Area 1' is before 'Stop Area 3' in alphabetical order
             assert_eq!("Stop Area 1 - Stop Area 1", route.name);
