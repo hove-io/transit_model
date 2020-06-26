@@ -51,7 +51,7 @@ for more information.
     #[structopt(short = "t", long = "on-demand-transport")]
     odt: bool,
 
-    /// On-demand Transport GTFS comment
+    /// On-Demand Transport GTFS comment
     #[structopt(long = "odt-comment")]
     odt_comment: Option<String>,
 
