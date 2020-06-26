@@ -942,11 +942,17 @@ impl Collections {
 
     /// If a route direction is empty, it's set by default with the "forward" value
     pub fn enhance_route_directions(&mut self) {
-        let mut routes = self.routes.take();
-        for mut route in &mut routes.iter_mut().filter(|r| r.direction_type.is_none()) {
-            route.direction_type = Some(String::from("forward"));
+        let mut direction_types: BTreeMap<Idx<Route>, Option<String>> = BTreeMap::new();
+        for (route_idx, _) in self
+            .routes
+            .iter()
+            .filter(|(_, r)| r.direction_type.is_none())
+        {
+            direction_types.insert(route_idx, Some(String::from("forward")));
         }
-        self.routes = CollectionWithId::new(routes).unwrap();
+        for (route_idx, direction_type) in direction_types {
+            self.routes.index_mut(route_idx).direction_type = direction_type;
+        }
     }
 
     /// Compute the coordinates of stop areas according to the centroid of stop points
