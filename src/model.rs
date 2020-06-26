@@ -940,6 +940,15 @@ impl Collections {
         self.routes = CollectionWithId::new(routes).unwrap();
     }
 
+    /// If a route direction is empty, it's set by default with the "forward" value
+    pub fn enhance_route_directions(&mut self) {
+        let mut routes = self.routes.take();
+        for mut route in &mut routes.iter_mut().filter(|r| r.direction_type.is_none()) {
+            route.direction_type = Some(String::from("forward"));
+        }
+        self.routes = CollectionWithId::new(routes).unwrap();
+    }
+
     /// Compute the coordinates of stop areas according to the centroid of stop points
     /// if the stop area has no coordinates (lon = 0, lat = 0)
     fn update_stop_area_coords(&mut self) {
@@ -1095,6 +1104,7 @@ impl Model {
             collections.enhance_with_co2();
             collections.enhance_trip_headsign();
             collections.enhance_route_names();
+            collections.enhance_route_directions();
             collections.check_geometries_coherence();
             collections.enhance_line_opening_time();
         }
@@ -1440,6 +1450,38 @@ mod tests {
 
             let calendar = collections.calendars.get("service_2");
             assert_eq!(None, calendar);
+        }
+    }
+
+    mod enhance_route_directions {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn generate_route_direction() {
+            let mut collections = Collections::default();
+            collections
+                .routes
+                .push(Route {
+                    id: String::from("route_id1"),
+                    name: String::new(),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+                .routes
+                .push(Route {
+                    id: String::from("route_id2"),
+                    name: String::new(),
+                    direction_type: Some("clockwise".to_string()),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections.enhance_route_directions();
+            let route1 = collections.routes.get("route_id1").unwrap();
+            assert_eq!("forward", route1.direction_type.as_ref().unwrap());
+            let route2 = collections.routes.get("route_id2").unwrap();
+            assert_eq!("clockwise", route2.direction_type.as_ref().unwrap());
         }
     }
 
