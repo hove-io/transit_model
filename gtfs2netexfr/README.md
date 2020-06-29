@@ -35,7 +35,7 @@ gtfs2netexfr --input /path/to/gtfs/folder/ --output /path/to/netexfr/ --particip
 
 Get more information about the available options with `gtfs2netexfr --help`.
 
-Finally, it's possible to [hand-check the output](../CONTRIBUTING.md#hand-check-outputs).
+Finally, it's possible to [check the output manually](../CONTRIBUTING.md#check-outputs-manually).
 
 ## Specifications
 

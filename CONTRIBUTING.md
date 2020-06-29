@@ -67,19 +67,19 @@ git submodule update --init --recursive
 apt install libxml2-utils
 ```
 
+#### Check outputs manually
+
+To validate the output NeTEx obtained it is possible to use xmllint:
+```sh
+xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd your_file.xml
+```
+
 #### Launch all tests
 
 ```sh
 # Run all the tests of `transit_model` in the entire repository,
 # activating all features, including `xmllint`
 cargo test --workspace --all-features
-```
-
-#### Hand-check outputs
-
-To validate the output NeTEx obtained it is possible to use xmllint:
-```sh
-xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd your_file.xml
 ```
 
 ## Conduct
