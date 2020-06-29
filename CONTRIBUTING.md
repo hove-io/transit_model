@@ -48,8 +48,8 @@ cargo fmt --all
 For the static analysis, we use [`clippy`].
 
 ```sh
-# To format the source code in the entire repository
-cargo clippy --workspace --all-features --all-targets -- --warn clippy::cargo --allow clippy::multiple_crate_versions
+# Check lints on the source code in the entire repository
+cargo clippy --workspace --all-features --all-targets -- --warn clippy::cargo --allow clippy::multiple_crate_versions --deny warnings
 ```
 
 [`clippy`]: https://github.com/rust-lang/rust-clippy
@@ -77,10 +77,11 @@ apt install libxml2-utils
 
 #### Check outputs manually
 
-To validate the output NeTEx obtained it is possible to use xmllint:
+To validate the NeTEx output it is possible to use xmllint:
 ```sh
 xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd your_file.xml
 ```
+Note: this may be very (very) slow on huge files.
 
 #### Launch all tests
 
@@ -88,17 +89,16 @@ xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd
 # Run all the tests of `transit_model` in the entire repository,
 # without fixtures, then activating all features, including `xmllint`
 # to make sure that both works
-cargo test --workspace ; cargo test --workspace --all-features
+cargo test --workspace --all-features && cargo test --workspace
 ```
 
 ## Environments and tools
 
 At Kisio Digital, we mostly maintain, test and operate on the following
-environments and tools.
+environments and tools:
 
-Our main target for OS is [Debian].
-
-Our main target for [PROJ] is the version `6.3.0`.
+* Our main target for OS is [Debian].
+* Our main target for [PROJ] is the version `6.3.0`.
 
 However, we are open to contributions to help support more of them.
 
