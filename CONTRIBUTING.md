@@ -49,7 +49,7 @@ For the static analysis, we use [`clippy`].
 
 ```sh
 # To format the source code in the entire repository
-cargo clippy --workspace
+cargo clippy --workspace --all-features --all-targets -- --warn clippy::cargo --allow clippy::multiple_crate_versions
 ```
 
 [`clippy`]: https://github.com/rust-lang/rust-clippy
