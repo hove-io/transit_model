@@ -8,8 +8,8 @@ format.
 
 ## Installation
 
-To install, you first need to install [PROJ] version 6.3.0.  See [PROJ
-installation instructions].
+To install, you first need to install [PROJ].\
+See [PROJ installation instructions].
 
 [PROJ]: https://proj.org/
 [PROJ installation instructions]: https://github.com/OSGeo/PROJ#installation
@@ -39,7 +39,9 @@ ntfs2netexfr --input /path/to/ntfs/folder/ --output /path/to/netexfr/ --particip
 * `--participant` is an identifier for the instigator of this NeTEx France
   export; it is exported in each NeTEx file
 
-Get more information about the available options with `--help`.
+Get more information about the available options with `ntfs2netexfr --help`.
+
+Finally, it's possible to [check the output manually](../CONTRIBUTING.md#check-outputs-manually).
 
 ## Specifications
 
