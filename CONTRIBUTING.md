@@ -91,6 +91,20 @@ xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd
 cargo test --workspace ; cargo test --workspace --all-features
 ```
 
+## Environments and tools
+
+At Kisio Digital, we mostly maintain, test and operate on the following
+environments and tools.
+
+Our main target for OS is [Debian].
+
+Our main target for [PROJ] is the version `6.3.0`.
+
+However, we are open to contributions to help support more of them.
+
+[Debian]: https://www.debian.org
+[PROJ]: https://proj.org
+
 ## Conduct
 
 We follow the [Rust Code of Conduct].
