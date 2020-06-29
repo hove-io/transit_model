@@ -39,13 +39,13 @@ xmllint = ["proj"]
 
 [dependencies]
 chrono = "0.4"
-csv = "1.0"
-derivative = "1"
+csv = "1"
+derivative = "2"
 failure = "0.1"
 geo = "0.12"
 geo-types = "0.4"
 iso4217 = "0.3"
-lazy_static = "1.2"
+lazy_static = "1"
 log = "0.4"
 md5 = "0.7"
 minidom = "0.12"
@@ -54,16 +54,15 @@ minidom_writer = "1"
 num-traits = "0.2"
 pretty_assertions = "0.6"
 proj = { version = "0.14", optional = true }
-quick-xml = "0.17"
+quick-xml = "0.18"
 relational_types = "1"
-rust_decimal = "1.0"
+rust_decimal = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 skip_error = { version = "1", features = ["log"] }
 tempfile = "3"
-time-parse = "0.1"
 typed_index_collection = "1"
-walkdir = "2.1"
+walkdir = "2"
 wkt = "0.5"
 zip = "0.5"
 
@@ -74,4 +73,4 @@ required-features = ["proj"]
 
 [dev-dependencies]
 approx = "0.3"
-rust_decimal_macros = "1.0"
+rust_decimal_macros = "1"
