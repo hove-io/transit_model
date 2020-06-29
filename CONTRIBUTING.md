@@ -86,8 +86,9 @@ xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd
 
 ```sh
 # Run all the tests of `transit_model` in the entire repository,
-# activating all features, including `xmllint`
-cargo test --workspace --all-features
+# without fixtures, then activating all features, including `xmllint`
+# to make sure that both works
+cargo test --workspace ; cargo test --workspace --all-features
 ```
 
 ## Conduct

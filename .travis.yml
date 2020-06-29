@@ -22,4 +22,5 @@ matrix:
     script:
     - cargo clippy --workspace --all-features --all-targets -- --warn clippy::cargo --allow clippy::multiple_crate_versions --deny warnings
 script:
+  - cargo test --workspace --verbose
   - cargo test --workspace --all-features --verbose
