@@ -25,7 +25,7 @@ ntfs2gtfs --input /path/to/ntfs/folder/ --output /path/to/gtfs/
 * `--input` is the path to a folder containing NTFS data format
 * `--output` is the path to a folder where the GTFS will be exported
 
-Get more information about the available options with `--help`.
+Get more information about the available options with `ntfs2gtfs --help`.
 
 ## Specifications
 
