@@ -8,17 +8,11 @@ format.
 
 ## Installation
 
-To install, you first need to install [PROJ] version 6.3.0.  See [PROJ
-installation instructions].
+To install, you first need to install [PROJ].\
+See [PROJ installation instructions].
 
 [PROJ]: https://proj.org/
-[PROJ installation instructions]: https://github.com/OSGeo/PROJ#installation
-
-You also need the following dependencies to be installed.
-
-```bash
-apt install -y clang libssl-dev
-```
+[PROJ installation instructions]: ../README.md#proj-dependency
 
 As `gtfs2netexfr` is not pushed to crates.io yet, you can install it by cloning `transit_model`.
 
@@ -39,7 +33,9 @@ gtfs2netexfr --input /path/to/gtfs/folder/ --output /path/to/netexfr/ --particip
 * `--participant` is an identifier for the instigator of this NeTEx France
   export; it is exported in each NeTEx file
 
-Get more information about the available options with `--help`.
+Get more information about the available options with `gtfs2netexfr --help`.
+
+Finally, it's possible to [hand-check the output](../CONTRIBUTING.md#hand-check-outputs).
 
 ## Specifications
 

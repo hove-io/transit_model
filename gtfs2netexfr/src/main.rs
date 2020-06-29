@@ -26,35 +26,44 @@ use transit_model::Result;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "gtfs2netexfr", about = "Convert a GTFS to NeTEx France.")]
 struct Opt {
-    /// input directory.
+    /// Input directory.
     #[structopt(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// output directory
+    /// Output directory
     #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
 
-    /// config file
-    #[structopt(short, long, parse(from_os_str))]
+    /// Config file
+    #[structopt(
+        short,
+        long,
+        parse(from_os_str),
+        long_help = r"JSON file containing additional configuration.
+
+See https://github.com/CanalTP/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
+for more information.
+"
+    )]
     config: Option<PathBuf>,
 
-    /// OnDemandTransport GTFS source
+    /// Indicates if the input GTFS contains On-Demand Transport (ODT) information
     #[structopt(short = "t", long = "on-demand-transport")]
     odt: bool,
 
-    /// OnDemandTransport GTFS comment
+    /// On-Demand Transport GTFS comment
     #[structopt(long = "odt-comment")]
     odt_comment: Option<String>,
 
-    /// name for the participant
+    /// Name for the participant
     #[structopt(short, long)]
     participant: String,
 
-    /// code for the provider of stops
+    /// Code for the provider of stops
     #[structopt(short, long)]
     stop_provider: Option<String>,
 
-    /// current datetime
+    /// Current datetime
     #[structopt(
         short = "x",
         long,
