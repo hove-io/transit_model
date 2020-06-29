@@ -17,6 +17,14 @@ When making a feature request, please make it clear what problem you intend to
 solve with the feature, any ideas for how `transit_model` could support solving
 that problem, any possible alternatives, and any disadvantages.
 
+### Internal work management tool
+
+At Kisio Digital (ex. CanalTP) we track tasks and bugs using a private tool.
+This tool is private but we sometimes refer to it when submitting
+PRs (those `Ref. ND-123`), to help later work.
+Feel free to ask for more details if the description is too narrow,
+we should be able to provide information from tracking tool if there is more.
+
 ## Checking quality
 
 We encourage you to check that the formatting, static analysis and test suite
