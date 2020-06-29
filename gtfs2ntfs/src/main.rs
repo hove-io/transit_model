@@ -26,31 +26,35 @@ use transit_model::{transfers::generates_transfers, Result};
 #[derive(Debug, StructOpt)]
 #[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.")]
 struct Opt {
-    /// input directory.
+    /// Input directory.
     #[structopt(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// output directory
+    /// Output directory.
     #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
 
-    /// config file
+    /// JSON file containing additional configuration.
+    ///
+    /// For more information, see
+    /// https://github.com/CanalTP/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
     #[structopt(short, long, parse(from_os_str))]
     config: Option<PathBuf>,
 
-    /// prefix
+    /// Prefix added to all the identifiers (`123` turned into `prefix:123`).
     #[structopt(short, long)]
     prefix: Option<String>,
 
-    /// OnDemandTransport GTFS source
+    /// Indicates if the input GTFS contains On-Demand Transport (ODT)
+    /// information.
     #[structopt(long)]
     odt: bool,
 
-    /// OnDemandTransport GTFS comment
+    /// On-Demand Transport GTFS comment.
     #[structopt(long = "odt-comment")]
     odt_comment: Option<String>,
 
-    /// current datetime
+    /// Current datetime.
     #[structopt(
         short = "x",
         long,
@@ -59,16 +63,16 @@ struct Opt {
     )]
     current_datetime: DateTime<FixedOffset>,
 
-    // The max distance in meters to compute the tranfer
+    /// The maximum distance in meters to compute the tranfer.
     #[structopt(long, short = "d", default_value = transit_model::TRANSFER_MAX_DISTANCE)]
     max_distance: f64,
 
-    // The walking speed in meters per second.
-    // You may want to divide your initial speed by sqrt(2) to simulate Manhattan distances
+    /// The walking speed in meters per second. You may want to divide your
+    /// initial speed by sqrt(2) to simulate Manhattan distances.
     #[structopt(long, short = "s", default_value = transit_model::TRANSFER_WAKING_SPEED)]
     walking_speed: f64,
 
-    // Waiting time at stop in second
+    /// Waiting time at stop in seconds.
     #[structopt(long, short = "t", default_value = transit_model::TRANSFER_WAITING_TIME)]
     waiting_time: u32,
 }
