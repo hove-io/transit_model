@@ -70,6 +70,7 @@ Tests also depend on NeTEx specification that are imported as a git submodule.
 Therefore, these tests are run only if feature `xmllint` is activated.\
 
 To install xmllint and submodules:
+
 ```sh
 git submodule update --init --recursive
 apt install libxml2-utils
@@ -78,9 +79,11 @@ apt install libxml2-utils
 #### Check outputs manually
 
 To validate the NeTEx output it is possible to use xmllint:
+
 ```sh
 xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd your_file.xml
 ```
+
 Note: this may be very (very) slow on huge files.
 
 #### Launch all tests
@@ -98,7 +101,8 @@ At Kisio Digital, we mostly maintain, test and operate on the following
 environments and tools:
 
 * Our main target for OS is [Debian].
-* Our main target for [PROJ] is the version `6.3.0`.
+* Our main target for [PROJ] is the version described in the
+  [main README](README.md#PROJ-for-binaries).
 
 However, we are open to contributions to help support more of them.
 

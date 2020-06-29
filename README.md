@@ -59,7 +59,7 @@ may help, too.
 
 ### Using [PROJ] and transit_model as a developer
 
-[`proj` crate] is a binding to the C library (version `6.3.0`).
+[`proj` crate] is a binding to the C library.
 
 [PROJ] is configured as a `feature` of the `transit_model` crate.\
 So to use it for coding, the `proj` feature must be activated
