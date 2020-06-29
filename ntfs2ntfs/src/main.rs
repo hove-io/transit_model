@@ -25,15 +25,15 @@ use transit_model::{transfers::generates_transfers, Result};
 #[derive(Debug, StructOpt)]
 #[structopt(name = "ntfs2ntfs", about = "Convert an NTFS to an NTFS.")]
 struct Opt {
-    /// input directory.
+    /// Input directory.
     #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// output directory
+    /// Output directory.
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: Option<PathBuf>,
 
-    /// current datetime
+    /// Current datetime.
     #[structopt(
         short = "x",
         long,
@@ -42,16 +42,16 @@ struct Opt {
     )]
     current_datetime: DateTime<FixedOffset>,
 
-    // The max distance in meters to compute the tranfer
+    /// The maximum distance in meters to compute the tranfer.
     #[structopt(long, short = "d", default_value = transit_model::TRANSFER_MAX_DISTANCE)]
     max_distance: f64,
 
-    // The walking speed in meters per second.
-    // You may want to divide your initial speed by sqrt(2) to simulate Manhattan distances
+    /// The walking speed in meters per second. You may want to divide your
+    /// initial speed by sqrt(2) to simulate Manhattan distances.
     #[structopt(long, short = "s", default_value = transit_model::TRANSFER_WAKING_SPEED)]
     walking_speed: f64,
 
-    // Waiting time at stop in second
+    /// Waiting time at stop in seconds.
     #[structopt(long, short = "t", default_value = transit_model::TRANSFER_WAITING_TIME)]
     waiting_time: u32,
 }
