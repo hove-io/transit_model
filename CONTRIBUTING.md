@@ -90,7 +90,7 @@ Note: this may be very (very) slow on huge files.
 
 ```sh
 # Run all the tests of `transit_model` in the entire repository,
-# without fixtures, then activating all features, including `xmllint`
+# activating all features (including `xmllint`), then without features
 # to make sure that both works
 cargo test --workspace --all-features && cargo test --workspace
 ```
