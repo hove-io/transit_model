@@ -17,6 +17,14 @@ When making a feature request, please make it clear what problem you intend to
 solve with the feature, any ideas for how `transit_model` could support solving
 that problem, any possible alternatives, and any disadvantages.
 
+### Internal work management tool
+
+At Kisio Digital (ex. CanalTP) we track tasks and bugs using a private tool.
+This tool is private but we sometimes refer to it when submitting
+PRs (those `Ref. ND-123`), to help later work.
+Feel free to ask for more details if the description is too narrow,
+we should be able to provide information from tracking tool if there is more.
+
 ## Checking quality
 
 We encourage you to check that the formatting, static analysis and test suite
@@ -40,8 +48,8 @@ cargo fmt --all
 For the static analysis, we use [`clippy`].
 
 ```sh
-# To format the source code in the entire repository
-cargo clippy --workspace
+# Check lints on the source code in the entire repository
+cargo clippy --workspace --all-features --all-targets -- --warn clippy::cargo --allow clippy::multiple_crate_versions --deny warnings
 ```
 
 [`clippy`]: https://github.com/rust-lang/rust-clippy
@@ -62,25 +70,44 @@ Tests also depend on NeTEx specification that are imported as a git submodule.
 Therefore, these tests are run only if feature `xmllint` is activated.\
 
 To install xmllint and submodules:
+
 ```sh
 git submodule update --init --recursive
 apt install libxml2-utils
 ```
 
+#### Check outputs manually
+
+To validate the NeTEx output it is possible to use xmllint:
+
+```sh
+xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd your_file.xml
+```
+
+Note: this may be very (very) slow on huge files.
+
 #### Launch all tests
 
 ```sh
 # Run all the tests of `transit_model` in the entire repository,
-# activating all features, including `xmllint`
-cargo test --workspace --all-features
+# activating all features (including `xmllint`), then without features
+# to make sure that both works
+cargo test --workspace --all-features && cargo test --workspace
 ```
 
-#### Hand-check outputs
+## Environments and tools
 
-To validate the output NeTEx obtained it is possible to use xmllint:
-```sh
-xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd your_file.xml
-```
+At Kisio Digital, we mostly maintain, test and operate on the following
+environments and tools:
+
+* Our main target for OS is [Debian].
+* Our main target for [PROJ] is the version described in the
+  [main README](README.md#PROJ-for-binaries).
+
+However, we are open to contributions to help support more of them.
+
+[Debian]: https://www.debian.org
+[PROJ]: https://proj.org
 
 ## Conduct
 

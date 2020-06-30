@@ -31,9 +31,10 @@ Please check documentation attached to each crate:
 
 `transit_model` is developed in [Rust].
 
-If you want to contribute or install binaries, you need to install a [Rust] environment: see https://rustup.rs
+If you want to contribute or install binaries, you need to install a [Rust] environment: see [rustup.rs]
 
-[Rust]: https://www.rust-lang.org/
+[Rust]: https://www.rust-lang.org
+[rustup.rs]: https://rustup.rs
 
 ## [PROJ] dependency
 
@@ -59,7 +60,7 @@ may help, too.
 
 ### Using [PROJ] and transit_model as a developer
 
-[`proj` crate] is a binding to the C library (version `6.3.0`).
+[`proj` crate] is a binding to the C library.
 
 [PROJ] is configured as a `feature` of the `transit_model` crate.\
 So to use it for coding, the `proj` feature must be activated
@@ -71,6 +72,7 @@ Then specific code should be conditionally enabled with
 
 `transit_model` is supporting most of [NTFS] format.\
 From the standard, some of the functionalities are not fully supported:
+
 * No support for Line Groups (files `line_groups.txt` and `line_group_links.txt`).
 * The field `trip_short_name_at_stop` in `stop_times.txt` introduced in version
   `v0.10.0` (see [NTFS changelog in French]) is not supported.
