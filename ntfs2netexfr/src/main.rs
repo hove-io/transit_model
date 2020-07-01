@@ -25,23 +25,29 @@ use transit_model::Result;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "ntfs2netexfr", about = "Convert a NTFS to NeTEx France.")]
 struct Opt {
-    /// input directory.
+    /// Input directory.
     #[structopt(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// output directory
+    /// Output directory
     #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
 
-    /// name for the participant
+    /// Name for the participant.
+    ///
+    /// For more information, see
+    /// https://github.com/CanalTP/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
     #[structopt(short, long)]
     participant: String,
 
-    /// code for the provider of stops
+    /// Code for the provider of stops.
+    ///
+    /// For more information, see
+    /// https://github.com/CanalTP/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
     #[structopt(short, long)]
     stop_provider: Option<String>,
 
-    /// current datetime
+    /// Current datetime.
     #[structopt(
         short = "x",
         long,

@@ -24,11 +24,11 @@ use transit_model::Result;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "ntfs2gtfs", about = "Convert an NTFS to a GTFS.")]
 struct Opt {
-    /// input directory.
+    /// Input directory.
     #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// output directory
+    /// Output directory.
     #[structopt(short = "o", long = "output", parse(from_os_str))]
     output: PathBuf,
 }

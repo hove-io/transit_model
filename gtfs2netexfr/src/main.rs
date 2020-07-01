@@ -30,24 +30,19 @@ struct Opt {
     #[structopt(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
-    /// Output directory
+    /// Output directory.
     #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
 
-    /// Config file
-    #[structopt(
-        short,
-        long,
-        parse(from_os_str),
-        long_help = r"JSON file containing additional configuration.
-
-See https://github.com/CanalTP/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
-for more information.
-"
-    )]
+    /// JSON file containing additional configuration.
+    ///
+    /// For more information, see
+    /// https://github.com/CanalTP/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
+    #[structopt(short, long, parse(from_os_str))]
     config: Option<PathBuf>,
 
-    /// Indicates if the input GTFS contains On-Demand Transport (ODT) information
+    /// Indicates if the input GTFS contains On-Demand Transport (ODT)
+    /// information.
     #[structopt(short = "t", long = "on-demand-transport")]
     odt: bool,
 
@@ -55,15 +50,21 @@ for more information.
     #[structopt(long = "odt-comment")]
     odt_comment: Option<String>,
 
-    /// Name for the participant
+    /// Name for the participant.
+    ///
+    /// For more information, see
+    /// https://github.com/CanalTP/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
     #[structopt(short, long)]
     participant: String,
 
-    /// Code for the provider of stops
+    /// Code for the provider of stops.
+    ///
+    /// For more information, see
+    /// https://github.com/CanalTP/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
     #[structopt(short, long)]
     stop_provider: Option<String>,
 
-    /// Current datetime
+    /// Current datetime.
     #[structopt(
         short = "x",
         long,

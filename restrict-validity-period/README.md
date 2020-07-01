@@ -26,7 +26,7 @@ restrict-validity-period --input /path/to/ntfs/folder/ --output /path/to/ntfs/ -
 * `--start-validity-date` is the start of the desired validity period (included)
 * `--end-validity-date` is the end of the desired validity period (included)
 
-Get more information about the available options with `--help`.
+Get more information about the available options with `restrict-validity-period --help`.
 
 ## Specifications
 
