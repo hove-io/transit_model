@@ -16,6 +16,24 @@
 //! It can import and export data from
 //! [GTFS](https://gtfs.org/reference/static) and
 //! [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
+//!
+//! # Features
+//! `transit_model` has 2 possible features: `proj` and `xmllint`.
+//!
+//! ## `proj`
+//! `proj` feature is used for geolocation conversion (see
+//! [Proj]). `proj` feature is used, for example, to export NeTEx France format.
+//!
+//! [Proj]: https://proj.org
+//!
+//! ## `xmllint`
+//! Most likely, you don't need this feature as it's only used for additional
+//! tests. It doesn't add any functionality to `transit_model`. If you're a
+//! contributor to the project, you might be interested to run these tests. In
+//! this case, take a look at the [`CONTRIBUTING.md`] for more information on
+//! this feature.
+//!
+//! [`CONTRIBUTING.md`]: https://github.com/CanalTP/transit_model/blob/master/CONTRIBUTING.md
 
 #![deny(missing_docs)]
 
