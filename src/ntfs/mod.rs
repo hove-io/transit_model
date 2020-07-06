@@ -940,7 +940,7 @@ mod tests {
                 "prop_name:1".to_string(),
                 "prop_value:1".to_string(),
             )]),
-            comment_links: btree_set_from_vec(vec![comments.get_idx("c:1").unwrap()]),
+            comment_links: btree_set_from_vec(vec!["c:1".to_string()]),
             visible: true,
             coord: Coord {
                 lon: 2.073_034,
@@ -962,7 +962,7 @@ mod tests {
                 "prop_name:2".to_string(),
                 "prop_value:2".to_string(),
             )]),
-            comment_links: btree_set_from_vec(vec![comments.get_idx("c:2").unwrap()]),
+            comment_links: btree_set_from_vec(vec!["c:2".to_string()]),
             visible: true,
             coord: Coord {
                 lon: 2.073_034,
@@ -988,10 +988,7 @@ mod tests {
                 "prop_name:3".to_string(),
                 "prop_value:3".to_string(),
             )]),
-            comment_links: btree_set_from_vec(vec![
-                comments.get_idx("c:1").unwrap(),
-                comments.get_idx("c:2").unwrap(),
-            ]),
+            comment_links: btree_set_from_vec(vec!["c:1".to_string(), "c:2".to_string()]),
             forward_name: None,
             forward_direction: None,
             backward_name: None,
@@ -1018,7 +1015,7 @@ mod tests {
                 "prop_name:4".to_string(),
                 "prop_value:4".to_string(),
             )]),
-            comment_links: btree_set_from_vec(vec![comments.get_idx("c:3").unwrap()]),
+            comment_links: btree_set_from_vec(vec!["c:3".to_string()]),
             line_id: "OIF:002002002:BDEOIF829".to_string(),
             geometry_id: None,
             destination_id: None,

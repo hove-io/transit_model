@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::{
     cmp::{self, Ordering},
-    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     convert::TryFrom,
     iter::FromIterator,
     ops,
@@ -177,23 +177,8 @@ impl Collections {
         fn update_comments_used(
             comments_used: &mut HashSet<String>,
             comment_links: &CommentLinksT,
-            comments: &CollectionWithId<Comment>,
         ) {
-            comments_used.extend(comment_links.iter().map(|cl| comments[*cl].id.clone()));
-        }
-        fn update_comments_idx<T>(
-            container: &mut Vec<T>,
-            comment_old_idx_to_new_idx: &HashMap<Idx<Comment>, Idx<Comment>>,
-        ) where
-            T: CommentLinks,
-        {
-            for elt in container.iter_mut() {
-                let links = elt.comment_links_mut();
-                *links = links
-                    .iter()
-                    .map(|l| comment_old_idx_to_new_idx[l])
-                    .collect::<BTreeSet<_>>();
-            }
+            comments_used.extend(comment_links.iter().map(|cl| cl.to_string()));
         }
         fn log_object_removed(object_type: &str, id: &str) {
             debug!("{} with ID {} has been removed", object_type, id);
@@ -229,7 +214,6 @@ impl Collections {
         let mut level_id_used = HashSet::<String>::new();
         let mut calendars_used = HashSet::<String>::new();
 
-        let comment_id_to_old_idx = self.comments.get_id_to_idx().clone();
         let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
 
         let vjs: HashMap<String, VehicleJourney> = self
@@ -259,7 +243,7 @@ impl Collections {
                     }
                     data_sets_used.insert(vj.dataset_id.clone());
                     physical_modes_used.insert(vj.physical_mode_id.clone());
-                    update_comments_used(&mut comments_used, &vj.comment_links, &self.comments);
+                    update_comments_used(&mut comments_used, &vj.comment_links);
                     Some((vj.id.clone(), vj))
                 } else {
                     log_object_removed("Vehicle Journey", &vj.id);
@@ -268,7 +252,7 @@ impl Collections {
             })
             .collect();
         let mut line_ids_used: HashSet<String> = HashSet::new();
-        let mut routes = self
+        let routes = self
             .routes
             .take()
             .into_iter()
@@ -278,7 +262,7 @@ impl Collections {
                         geometries_used.insert(geo_id.clone());
                     }
                     line_ids_used.insert(r.line_id.clone());
-                    update_comments_used(&mut comments_used, &r.comment_links, &self.comments);
+                    update_comments_used(&mut comments_used, &r.comment_links);
                     true
                 } else {
                     log_object_removed("Route", &r.id);
@@ -314,7 +298,7 @@ impl Collections {
                 if let Some(level_id) = &sl.level_id {
                     level_id_used.insert(level_id.clone());
                 }
-                update_comments_used(&mut comments_used, &sl.comment_links, &self.comments);
+                update_comments_used(&mut comments_used, &sl.comment_links);
                 true
             })
             .collect::<Vec<_>>();
@@ -343,7 +327,7 @@ impl Collections {
             .collect::<Vec<_>>();
         self.pathways = CollectionWithId::new(pathways)?;
 
-        let mut stop_points = self
+        let stop_points = self
             .stop_points
             .take()
             .into_iter()
@@ -359,7 +343,7 @@ impl Collections {
                     if let Some(level_id) = &sp.level_id {
                         level_id_used.insert(level_id.clone());
                     }
-                    update_comments_used(&mut comments_used, &sp.comment_links, &self.comments);
+                    update_comments_used(&mut comments_used, &sp.comment_links);
                     true
                 } else {
                     log_object_removed("Stop Point", &sp.id);
@@ -370,7 +354,7 @@ impl Collections {
 
         let mut networks_used: HashSet<String> = HashSet::new();
         let mut commercial_modes_used: HashSet<String> = HashSet::new();
-        let mut lines = self
+        let lines = self
             .lines
             .take()
             .into_iter()
@@ -381,7 +365,7 @@ impl Collections {
                     }
                     networks_used.insert(l.network_id.clone());
                     commercial_modes_used.insert(l.commercial_mode_id.clone());
-                    update_comments_used(&mut comments_used, &l.comment_links, &self.comments);
+                    update_comments_used(&mut comments_used, &l.comment_links);
                     true
                 } else {
                     log_object_removed("Line", &l.id);
@@ -405,7 +389,7 @@ impl Collections {
                 })
                 .collect(),
         )?;
-        let mut stop_areas = self
+        let stop_areas = self
             .stop_areas
             .take()
             .into_iter()
@@ -417,7 +401,7 @@ impl Collections {
                     if let Some(level_id) = &sa.level_id {
                         level_id_used.insert(level_id.clone());
                     }
-                    update_comments_used(&mut comments_used, &sa.comment_links, &self.comments);
+                    update_comments_used(&mut comments_used, &sa.comment_links);
                     true
                 } else {
                     log_object_removed("Stop Area", &sa.id);
@@ -441,15 +425,7 @@ impl Collections {
                 comments_used.contains(&comment.id)
             }));
 
-        let comment_old_idx_to_new_idx: HashMap<Idx<Comment>, Idx<Comment>> = self
-            .comments
-            .iter()
-            .map(|(new_idx, comment)| (comment_id_to_old_idx[&comment.id], new_idx))
-            .collect();
-
-        update_comments_idx(&mut lines, &comment_old_idx_to_new_idx);
         self.lines = CollectionWithId::new(lines)?;
-        update_comments_idx(&mut stop_points, &comment_old_idx_to_new_idx);
         self.stop_points = CollectionWithId::new(stop_points)?;
         let stop_point_old_idx_to_new_idx: HashMap<Idx<StopPoint>, Idx<StopPoint>> = self
             .stop_points
@@ -462,11 +438,8 @@ impl Collections {
                 st.stop_point_idx = stop_point_old_idx_to_new_idx[&st.stop_point_idx];
             }
         }
-        update_comments_idx(&mut stop_areas, &comment_old_idx_to_new_idx);
         self.stop_areas = CollectionWithId::new(stop_areas)?;
-        update_comments_idx(&mut routes, &comment_old_idx_to_new_idx);
         self.routes = CollectionWithId::new(routes)?;
-        update_comments_idx(&mut vjs, &comment_old_idx_to_new_idx);
         let vehicle_journeys_used: HashSet<String> = vjs.iter().map(|vj| vj.id.clone()).collect();
         self.vehicle_journeys = CollectionWithId::new(vjs)?;
         self.stop_locations = CollectionWithId::new(stop_locations)?;

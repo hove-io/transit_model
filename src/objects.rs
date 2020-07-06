@@ -101,7 +101,7 @@ macro_rules! impl_properties {
     };
 }
 
-pub type CommentLinksT = BTreeSet<Idx<Comment>>;
+pub type CommentLinksT = BTreeSet<String>;
 
 pub trait CommentLinks {
     fn comment_links(&self) -> &CommentLinksT;

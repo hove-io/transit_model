@@ -599,14 +599,14 @@ fn manage_comment_from_stop(
     if let Some(desc) = &stop.desc {
         let comment_id = "stop:".to_string() + &stop.id;
         let comment = objects::Comment {
-            id: comment_id,
+            id: comment_id.clone(),
             comment_type: objects::CommentType::Information,
             label: None,
             name: desc.to_string(),
             url: None,
         };
-        let idx = comments.push(comment).unwrap();
-        comment_links.insert(idx);
+        comments.push(comment).unwrap();
+        comment_links.insert(comment_id);
     }
     comment_links
 }
