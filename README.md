@@ -13,19 +13,23 @@ This is done by implementing the [NTFS] model (used in [navitia]).
 This repository regroups crates that offer enabler-libraries and binaries to
 convert and enrich transit data.
 
+Additionally, `transit_model` is itself a library providing various
+functionalities. Please refer to the code and documentation to discover them.
+
 Please check documentation attached to each crate:
 
-* [**gtfs2netexfr**](gtfs2netexfr/README.md) converts [GTFS] data format into
-  [NeTEx]-France data format.
-* [**gtfs2ntfs**](gtfs2ntfs/README.md) converts [GTFS] data format into [NTFS]
-  data format.
-* [**ntfs2gtfs**](ntfs2gtfs/README.md) converts [NTFS] data format into [GTFS]
-  data format.
-* [**ntfs2netexfr**](ntfs2netexfr/README.md) converts [NTFS] data format into
-  [NeTEx]-France data format.
-* [**ntfs2ntfs**](ntfs2ntfs/README.md) checks and cleans a [NTFS] dataset.
-* [**restrict-validity-period**](restrict-validity-period/README.md) restricts
-  the validity period of a [NTFS] dataset and purges out-of-date data.
+* binary [**gtfs2netexfr**](gtfs2netexfr/README.md) converts [GTFS] data format
+  into [NeTEx]-France data format.
+* binary [**gtfs2ntfs**](gtfs2ntfs/README.md) converts [GTFS] data format into
+  [NTFS] data format.
+* binary [**ntfs2gtfs**](ntfs2gtfs/README.md) converts [NTFS] data format into
+  [GTFS] data format.
+* binary [**ntfs2netexfr**](ntfs2netexfr/README.md) converts [NTFS] data format
+  into [NeTEx]-France data format.
+* binary [**ntfs2ntfs**](ntfs2ntfs/README.md) checks and cleans a [NTFS]
+  dataset.
+* binary [**restrict-validity-period**](restrict-validity-period/README.md)
+  restricts the validity period of a [NTFS] dataset and purges out-of-date data.
 
 ## Setup Rust environment
 
