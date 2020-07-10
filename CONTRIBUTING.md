@@ -38,7 +38,7 @@ We use the standard Rust formatting tool, [`rustfmt`].
 
 ```sh
 # To format the source code in the entire repository
-cargo fmt --all
+make format
 ```
 
 [`rustfmt`]: https://github.com/rust-lang/rustfmt
@@ -49,7 +49,7 @@ For the static analysis, we use [`clippy`].
 
 ```sh
 # Check lints on the source code in the entire repository
-cargo clippy --workspace --all-features --all-targets -- --warn clippy::cargo --allow clippy::multiple_crate_versions --deny warnings
+make lint
 ```
 
 [`clippy`]: https://github.com/rust-lang/rust-clippy
@@ -91,8 +91,8 @@ Note: this may be very (very) slow on huge files.
 ```sh
 # Run all the tests of `transit_model` in the entire repository,
 # activating all features (including `xmllint`), then without features
-# to make sure that both works
-cargo test --workspace --all-features && cargo test --workspace
+# to make sure that both work
+make test
 ```
 
 ## Environments and tools

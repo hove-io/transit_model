@@ -16,11 +16,8 @@ jobs:
           toolchain: stable
           profile: minimal
           components: rustfmt
-    - name: Run cargo fmt
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: --all -- --check
+    - name: Check formatting
+      run: make format
 
   clippy:
     name: Analyzing code with Clippy
@@ -39,11 +36,8 @@ jobs:
           toolchain: stable
           profile: minimal
           components: clippy
-    - name: Run cargo clippy
-      uses: actions-rs/cargo@v1
-      with:
-        command: clippy
-        args: --workspace --all-features --all-targets -- --warn clippy::cargo --allow clippy::multiple_crate_versions --deny warnings
+    - name: Linting
+      run: make lint
 
   tests:
     name: Tests
@@ -74,13 +68,5 @@ jobs:
           toolchain: ${{ matrix.rust }}
           profile: minimal
           override: true
-    - name: Run tests without features
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --workspace --verbose
-    - name: Run tests with all features
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --workspace --verbose --all-features
+    - name: Run tests with and without features
+      run: make test
