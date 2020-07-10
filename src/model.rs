@@ -944,14 +944,20 @@ impl Collections {
         let mut route_names: BTreeMap<Idx<Route>, String> = BTreeMap::new();
         let mut route_destination_ids: BTreeMap<Idx<Route>, Option<String>> = BTreeMap::new();
         for (route_idx, route) in &self.routes {
-            if route.name.is_empty() {
+            let no_route_name = route.name.is_empty();
+            let no_destination_id = route.destination_id.is_none();
+            if no_route_name || no_destination_id {
                 let (origin, destination) = skip_error_and_log!(
                     find_best_origin_destination(route_idx, &self, routes_to_vehicle_journeys,),
                     LogLevel::Warn
                 );
-                let route_name = format!("{} - {}", origin.name, destination.name);
-                route_names.insert(route_idx, route_name);
-                route_destination_ids.insert(route_idx, Some(destination.id.clone()));
+                if no_route_name {
+                    let route_name = format!("{} - {}", origin.name, destination.name);
+                    route_names.insert(route_idx, route_name);
+                }
+                if no_destination_id {
+                    route_destination_ids.insert(route_idx, Some(destination.id.clone()));
+                }
             }
         }
         for (route_idx, route_name) in route_names {
@@ -1620,6 +1626,34 @@ mod tests {
             collections.enhance_route_names(&routes_to_vehicle_journeys);
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("Stop Area 1 - Stop Area 2", route.name);
+            assert_eq!("stop_area:2", route.destination_id.as_ref().unwrap());
+        }
+
+        #[test]
+        fn generate_destination_id() {
+            let mut collections = collections();
+            collections
+                .vehicle_journeys
+                .push(create_vehicle_journey_with(
+                    "trip:1",
+                    vec!["stop_point:1", "stop_point:2"],
+                    &collections,
+                ))
+                .unwrap();
+            let route_idx = collections.routes.get_idx("route_id").unwrap();
+            collections.routes.index_mut(route_idx).name = String::from("Route to Mordor");
+            collections.routes.index_mut(route_idx).destination_id = None;
+            let routes_to_vehicle_journeys = OneToMany::new(
+                &collections.routes,
+                &collections.vehicle_journeys,
+                "routes_to_vehicle_journeys",
+            )
+            .unwrap();
+            collections.enhance_route_names(&routes_to_vehicle_journeys);
+            let route = collections.routes.get("route_id").unwrap();
+            // Check route name hasn't been changed
+            assert_eq!("Route to Mordor", route.name);
+            assert_eq!("stop_area:2", route.destination_id.as_ref().unwrap());
         }
 
         #[test]
@@ -1658,6 +1692,7 @@ mod tests {
             collections.enhance_route_names(&routes_to_vehicle_journeys);
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("Stop Area 1 - Stop Area 3", route.name);
+            assert_eq!("stop_area:3", route.destination_id.as_ref().unwrap());
         }
 
         #[test]
@@ -1694,6 +1729,7 @@ mod tests {
             collections.enhance_route_names(&routes_to_vehicle_journeys);
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("Stop Area 1 - Stop Area 1", route.name);
+            assert_eq!("stop_area:1", route.destination_id.as_ref().unwrap());
         }
 
         #[test]
@@ -1737,6 +1773,7 @@ mod tests {
             let route = collections.routes.get("route_id").unwrap();
             // 'Stop Area 1' is before 'Stop Area 3' in alphabetical order
             assert_eq!("Stop Area 1 - Stop Area 1", route.name);
+            assert_eq!("stop_area:1", route.destination_id.as_ref().unwrap());
         }
     }
 
