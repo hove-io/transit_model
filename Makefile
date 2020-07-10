@@ -26,11 +26,14 @@ lint: ## Check quality of the code
 	cargo clippy --workspace --all-features --all-targets -- --warn clippy::cargo --allow clippy::multiple_crate_versions --deny warnings
 
 test: ## Launch all tests
-	# Run all the tests of `transit_model` in the entire repository,
-	# activating all features (including `xmllint`), then without features
-	# to make sure that both work
-	cargo test --workspace --all-features
-	cargo test --workspace
+	# Run all the tests of `transit_model` in the entire repository.
+
+	# First activating all features (including `xmllint`)
+	cargo test --workspace --all-features --all-targets  # `--all-targets` but no doctests
+	cargo test --workspace --all-features --doc          # doctests only
+	# Then without features
+	cargo test --workspace --all-targets                 # `--all-targets` but no doctests
+	cargo test --workspace --doc                         # doctests only
 
 help: ## Print this help message
 	@grep -E '^[a-zA-Z_-]+:.*## .*$$' $(CURDIR)/$(firstword $(MAKEFILE_LIST)) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
