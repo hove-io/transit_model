@@ -158,15 +158,20 @@ _Warning :_ If the GTFS route has no trips, the Navitia Route should NOT be crea
 | NTFS file    | NTFS field     | Constraint | GTFS file  | GTFS field      | Note                                                                                                                                                        |
 | ------------ | -------------- | ---------- | ---------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | routes.txt   | route_id       | ID         | routes.txt | route_id        | append a `_R` suffix for the Route grouping trips with `direction_id` = 1 (no suffix for `0` or undefined `direction_id`)                                   |
-| routes.txt   | route_name     | Required   | routes.txt | route_long_name | if `route_long_name` is empty, use `route_short_name`                                                                                                       |
-| routes.txt   | direction_type | Optional   |            |                 | (1)                                                                                                                                                         |
+| routes.txt   | route_name     | Required   | routes.txt | route_long_name | (1)                                                                                                                                                         |
+| routes.txt   | direction_type | Optional   |            |                 | (2)                                                                                                                                                         |
 | routes.txt   | line_id        | Required   |            |                 | corresponding `line.id` (see Line construction above)                                                                                                       |
 | routes.txt   | destination_id | Optional   |            |                 | This field contains a stop_area.id of the most frequent destination of the contained trips (ie. the parent_station of the most frequent last stop of trips) |
-| comments.txt | comment_value  | Optional   | routes.txt | route_desc      | See (2) for additional properties                                                                                                                           |
+| comments.txt | comment_value  | Optional   | routes.txt | route_desc      | See (3) for additional properties                                                                                                                           |
 
-(1) the field `direction_type` contains `backward` when grouping GTFS Trips with `direction_id` = 1, `forward` otherwise
+(1) if only one route is created (only one direction in included trips), use
+`route_long_name` or, if empty, use `route_short_name`. In case of multiple
+routes created (multiple directions in included trips), see [common NTFS rules]
+for generating the `route_name`.
 
-(2) The `comment` object is a complex type with additional properties :
+(2) the field `direction_type` contains `backward` when grouping GTFS Trips with `direction_id` = 1, `forward` otherwise
+
+(3) The `comment` object is a complex type with additional properties :
 * `comment_id` : specify an identifier with the pattern **\<prefix>:route:<route_id of GTFS>**
 * `comment_type` : specify the fixed value "Information"
 

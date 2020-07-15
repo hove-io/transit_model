@@ -1043,10 +1043,23 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<
                 route_directions.insert(t.direction);
             }
 
+            let has_one_direction = route_directions.len() <= 1;
             for d in route_directions {
                 routes.push(objects::Route {
                     id: r.get_id_by_direction(d),
-                    name: r.long_name.clone(),
+                    // When only one direction, keep the route name. When
+                    // multiple directions are possible, leave the `route_name`
+                    // empty, it'll be auto-generated later in
+                    // `Collections::enhance_route_names()`.
+                    name: if has_one_direction {
+                        if !r.long_name.is_empty() {
+                            r.long_name.clone()
+                        } else {
+                            r.short_name.clone()
+                        }
+                    } else {
+                        String::new()
+                    },
                     direction_type: Some(get_direction_name(d)),
                     codes: KeysValues::default(),
                     object_properties: KeysValues::default(),

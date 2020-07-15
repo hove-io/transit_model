@@ -6,7 +6,7 @@
 		<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE:" version="any">
 			<members>
 				<Route id="FR:Route:B42:" version="any">
-					<Name>Bus 42</Name>
+					<Name>Gare de Lyon - Montparnasse</Name>
 					<Distance>0</Distance>
 					<LineRef ref="FR:Line:B42:">
 					</LineRef>
@@ -23,7 +23,7 @@
 					</pointsInSequence>
 				</Route>
 				<Route id="FR:Route:B42_R:" version="any">
-					<Name>Bus 42</Name>
+					<Name>Montparnasse - Gare de Lyon</Name>
 					<Distance>0</Distance>
 					<LineRef ref="FR:Line:B42:">
 					</LineRef>
