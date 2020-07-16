@@ -174,12 +174,6 @@ impl Collections {
     /// Keep the collections consistent for the new model by purging unreferenced data by
     /// calendars
     pub fn sanitize(&mut self) -> Result<()> {
-        fn update_comments_used(
-            comments_used: &mut HashSet<String>,
-            comment_links: &CommentLinksT,
-        ) {
-            comments_used.extend(comment_links.iter().map(|cl| cl.to_string()));
-        }
         fn log_object_removed(object_type: &str, id: &str) {
             debug!("{} with ID {} has been removed", object_type, id);
         }
@@ -243,7 +237,7 @@ impl Collections {
                     }
                     data_sets_used.insert(vj.dataset_id.clone());
                     physical_modes_used.insert(vj.physical_mode_id.clone());
-                    update_comments_used(&mut comments_used, &vj.comment_links);
+                    comments_used.extend(&mut vj.comment_links.iter().map(|cl| cl.to_string()));
                     Some((vj.id.clone(), vj))
                 } else {
                     log_object_removed("Vehicle Journey", &vj.id);
@@ -262,7 +256,7 @@ impl Collections {
                         geometries_used.insert(geo_id.clone());
                     }
                     line_ids_used.insert(r.line_id.clone());
-                    update_comments_used(&mut comments_used, &r.comment_links);
+                    comments_used.extend(&mut r.comment_links.iter().map(|cl| cl.to_string()));
                     true
                 } else {
                     log_object_removed("Route", &r.id);
@@ -298,7 +292,7 @@ impl Collections {
                 if let Some(level_id) = &sl.level_id {
                     level_id_used.insert(level_id.clone());
                 }
-                update_comments_used(&mut comments_used, &sl.comment_links);
+                comments_used.extend(&mut sl.comment_links.iter().map(|cl| cl.to_string()));
                 true
             })
             .collect::<Vec<_>>();
@@ -343,7 +337,7 @@ impl Collections {
                     if let Some(level_id) = &sp.level_id {
                         level_id_used.insert(level_id.clone());
                     }
-                    update_comments_used(&mut comments_used, &sp.comment_links);
+                    comments_used.extend(&mut sp.comment_links.iter().map(|cl| cl.to_string()));
                     true
                 } else {
                     log_object_removed("Stop Point", &sp.id);
@@ -365,7 +359,7 @@ impl Collections {
                     }
                     networks_used.insert(l.network_id.clone());
                     commercial_modes_used.insert(l.commercial_mode_id.clone());
-                    update_comments_used(&mut comments_used, &l.comment_links);
+                    comments_used.extend(&mut l.comment_links.iter().map(|cl| cl.to_string()));
                     true
                 } else {
                     log_object_removed("Line", &l.id);
@@ -401,7 +395,7 @@ impl Collections {
                     if let Some(level_id) = &sa.level_id {
                         level_id_used.insert(level_id.clone());
                     }
-                    update_comments_used(&mut comments_used, &sa.comment_links);
+                    comments_used.extend(&mut sa.comment_links.iter().map(|cl| cl.to_string()));
                     true
                 } else {
                     log_object_removed("Stop Area", &sa.id);

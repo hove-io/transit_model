@@ -103,11 +103,21 @@ macro_rules! impl_properties {
 
 pub type CommentLinksT = BTreeSet<String>;
 
+impl AddPrefix for CommentLinksT {
+    fn add_prefix(&mut self, prefix: &str) {
+        let updated_ids = std::mem::replace(self, BTreeSet::new());
+        *self = updated_ids
+            .into_iter()
+            .map(|comment_id| format!("{}{}", prefix.to_string(), comment_id))
+            .collect();
+    }
+}
+
 pub trait CommentLinks {
     fn comment_links(&self) -> &CommentLinksT;
     fn comment_links_mut(&mut self) -> &mut CommentLinksT;
-    fn add_prefix_on_comment_id(&self, prefix: &str) -> CommentLinksT;
 }
+
 macro_rules! impl_comment_links {
     ($ty:ty) => {
         impl CommentLinks for $ty {
@@ -116,12 +126,6 @@ macro_rules! impl_comment_links {
             }
             fn comment_links_mut(&mut self) -> &mut CommentLinksT {
                 &mut self.comment_links
-            }
-            fn add_prefix_on_comment_id(&self, prefix: &str) -> CommentLinksT {
-                self.comment_links
-                    .iter()
-                    .map(|comment_id| format!("{}{}", &prefix.to_string(), comment_id))
-                    .collect()
             }
         }
     };
@@ -516,7 +520,7 @@ impl AddPrefix for Line {
             .backward_direction
             .as_ref()
             .map(|id| prefix.to_string() + &id);
-        self.comment_links = self.add_prefix_on_comment_id(prefix);
+        self.comment_links.add_prefix(prefix);
     }
 }
 
@@ -563,7 +567,7 @@ impl AddPrefix for Route {
             .destination_id
             .as_ref()
             .map(|id| prefix.to_string() + &id);
-        self.comment_links = self.add_prefix_on_comment_id(prefix);
+        self.comment_links.add_prefix(prefix);
     }
 }
 impl_codes!(Route);
@@ -644,7 +648,7 @@ impl AddPrefix for VehicleJourney {
             .as_ref()
             .map(|id| prefix.to_string() + id);
         self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.comment_links = self.add_prefix_on_comment_id(prefix);
+        self.comment_links.add_prefix(prefix);
     }
 }
 impl_codes!(VehicleJourney);
@@ -1036,7 +1040,7 @@ impl AddPrefix for StopArea {
             .map(|id| prefix.to_string() + &id);
         self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
         self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.comment_links = self.add_prefix_on_comment_id(prefix);
+        self.comment_links.add_prefix(prefix);
     }
 }
 impl_codes!(StopArea);
@@ -1097,7 +1101,7 @@ impl AddPrefix for StopPoint {
             .map(|id| prefix.to_string() + &id);
         self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
         self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.comment_links = self.add_prefix_on_comment_id(prefix);
+        self.comment_links.add_prefix(prefix);
     }
 }
 impl_codes!(StopPoint);
@@ -1141,7 +1145,7 @@ impl AddPrefix for StopLocation {
             .as_ref()
             .map(|id| prefix.to_string() + &id);
         self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.comment_links = self.add_prefix_on_comment_id(prefix);
+        self.comment_links.add_prefix(prefix);
     }
 }
 
