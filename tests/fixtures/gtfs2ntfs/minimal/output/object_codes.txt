@@ -1,6 +1,5 @@
 object_type,object_id,object_system,object_code
-network,1,source,1
-network,2,source,2
+stop_area,stoparea:1,source,stoparea:1
 stop_point,stop:11,source,stop:11
 stop_point,stop:22,source,stop:22
 stop_point,stop:31,source,stop:31
@@ -10,8 +9,9 @@ stop_point,stop:51,source,stop:51
 stop_point,stop:52,source,stop:52
 stop_point,stop:53,source,stop:53
 stop_point,stop:61,source,stop:61
-stop_area,stoparea:1,source,stoparea:1
-trip,trip:3,source,trip:3
+network,1,source,1
+network,2,source,2
 trip,trip:4,source,trip:4
 trip,trip:5,source,trip:5
+trip,trip:3,source,trip:3
 trip,trip:6,source,trip:6

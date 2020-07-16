@@ -1,3 +1,5 @@
 comment_id,comment_type,comment_label,comment_name,comment_url
+test:stop:stoparea:1,information,,stoparea:1_comment,
+test:stop:stop:11,information,,stop:11_comment,
 test:ODT:2,on_demand_transport,,Service à réservation my agency 0123456789,
 test:ODT:1,on_demand_transport,,Service à réservation mon agence ,

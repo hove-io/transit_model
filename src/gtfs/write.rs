@@ -76,8 +76,9 @@ fn get_first_comment_name<T: objects::CommentLinks>(
     obj.comment_links()
         .iter()
         .filter_map(|comment_id| comments.get(comment_id))
-        .map(|cmt| cmt.name.clone())
+        .map(|cmt| &cmt.name)
         .min()
+        .cloned()
 }
 
 fn ntfs_stop_point_to_gtfs_stop(
