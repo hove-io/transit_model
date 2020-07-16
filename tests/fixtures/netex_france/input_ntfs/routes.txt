@@ -1,7 +1,7 @@
 route_id,route_name,line_id,direction_type
-M1,Metro 1,M1,inbound
-M1_R,Metro 1,M1,outbound
-B42,Bus 42,B42,forward
-B42_R,Bus 42,B42,backward
+M1,Nation - Charles de Gaulle,M1,inbound
+M1_R,Charles de Gaulle - Nation,M1,outbound
+B42,Gare de Lyon - Montparnasse,B42,forward
+B42_R,Montparnasse - Gare de Lyon,B42,backward
 RERA,RER A,RERA,inbound
 RERA_Bus_R,RER A,RERA,outbound
