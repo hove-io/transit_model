@@ -16,7 +16,7 @@
 
 #![allow(missing_docs)]
 
-use crate::{utils::*, AddPrefix};
+use crate::{utils::*, AddPrefix, PrefixConfiguration};
 use chrono::NaiveDate;
 use derivative::Derivative;
 use geo_types::{Geometry as GeoGeometry, Point as GeoPoint};
@@ -104,11 +104,11 @@ macro_rules! impl_properties {
 pub type CommentLinksT = BTreeSet<String>;
 
 impl AddPrefix for CommentLinksT {
-    fn add_prefix(&mut self, prefix: &str) {
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
         let updated_ids = std::mem::replace(self, BTreeSet::new());
         *self = updated_ids
             .into_iter()
-            .map(|comment_id| format!("{}{}", prefix.to_string(), comment_id))
+            .map(|comment_id| prefix_conf.referential_prefix(comment_id.as_str()))
             .collect();
     }
 }
@@ -144,8 +144,8 @@ pub struct Contributor {
 }
 
 impl AddPrefix for Contributor {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -261,9 +261,9 @@ impl Default for Dataset {
 impl_id!(Dataset);
 impl_id!(Dataset, Contributor, contributor_id);
 impl AddPrefix for Dataset {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
-        self.contributor_id = prefix.to_string() + &self.contributor_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.contributor_id = prefix_conf.referential_prefix(self.contributor_id.as_str());
     }
 }
 
@@ -366,8 +366,8 @@ impl GetObjectType for Network {
 }
 
 impl AddPrefix for Network {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -509,18 +509,18 @@ impl_id!(Line);
 impl_id!(Line, Network, network_id);
 impl_id!(Line, CommercialMode, commercial_mode_id);
 impl AddPrefix for Line {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
-        self.network_id = prefix.to_string() + &self.network_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.network_id = prefix_conf.referential_prefix(self.network_id.as_str());
         self.forward_direction = self
             .forward_direction
-            .as_ref()
-            .map(|id| prefix.to_string() + &id);
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
         self.backward_direction = self
             .backward_direction
-            .as_ref()
-            .map(|id| prefix.to_string() + &id);
-        self.comment_links.add_prefix(prefix);
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.comment_links.prefix(prefix_conf);
     }
 }
 
@@ -559,15 +559,19 @@ pub struct Route {
 impl_id!(Route);
 impl_id!(Route, Line, line_id);
 impl AddPrefix for Route {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
-        self.line_id = prefix.to_string() + &self.line_id;
-        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.line_id = prefix_conf.referential_prefix(self.line_id.as_str());
+
+        self.geometry_id = self
+            .geometry_id
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
         self.destination_id = self
             .destination_id
-            .as_ref()
-            .map(|id| prefix.to_string() + &id);
-        self.comment_links.add_prefix(prefix);
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.comment_links.prefix(prefix_conf);
     }
 }
 impl_codes!(Route);
@@ -637,18 +641,21 @@ impl_id!(VehicleJourney, Company, company_id);
 impl_id!(VehicleJourney, Calendar, service_id);
 
 impl AddPrefix for VehicleJourney {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
-        self.route_id = prefix.to_string() + &self.route_id;
-        self.dataset_id = prefix.to_string() + &self.dataset_id;
-        self.company_id = prefix.to_string() + &self.company_id;
-        self.service_id = prefix.to_string() + &self.service_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.route_id = prefix_conf.referential_prefix(self.route_id.as_str());
+        self.dataset_id = prefix_conf.referential_prefix(self.dataset_id.as_str());
+        self.company_id = prefix_conf.referential_prefix(self.company_id.as_str());
+        self.service_id = prefix_conf.referential_prefix(self.service_id.as_str());
         self.trip_property_id = self
             .trip_property_id
-            .as_ref()
-            .map(|id| prefix.to_string() + id);
-        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.comment_links.add_prefix(prefix);
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.geometry_id = self
+            .geometry_id
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.comment_links.prefix(prefix_conf);
     }
 }
 impl_codes!(VehicleJourney);
@@ -679,8 +686,8 @@ pub struct Frequency {
 }
 
 impl AddPrefix for Frequency {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.vehicle_journey_id = prefix.to_string() + &self.vehicle_journey_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.vehicle_journey_id = prefix_conf.referential_prefix(self.vehicle_journey_id.as_str());
     }
 }
 
@@ -1032,15 +1039,21 @@ impl From<StopPoint> for StopArea {
 }
 
 impl AddPrefix for StopArea {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
         self.equipment_id = self
             .equipment_id
-            .as_ref()
-            .map(|id| prefix.to_string() + &id);
-        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.comment_links.add_prefix(prefix);
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.geometry_id = self
+            .geometry_id
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.level_id = self
+            .level_id
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.comment_links.prefix(prefix_conf);
     }
 }
 impl_codes!(StopArea);
@@ -1092,16 +1105,22 @@ impl_id!(StopPoint);
 impl_id!(StopPoint, StopArea, stop_area_id);
 
 impl AddPrefix for StopPoint {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
-        self.stop_area_id = prefix.to_string() + &self.stop_area_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.stop_area_id = prefix_conf.referential_prefix(self.stop_area_id.as_str());
         self.equipment_id = self
             .equipment_id
-            .as_ref()
-            .map(|id| prefix.to_string() + &id);
-        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.comment_links.add_prefix(prefix);
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.geometry_id = self
+            .geometry_id
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.level_id = self
+            .level_id
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.comment_links.prefix(prefix_conf);
     }
 }
 impl_codes!(StopPoint);
@@ -1136,16 +1155,25 @@ impl_id!(StopLocation);
 impl_comment_links!(StopLocation);
 
 impl AddPrefix for StopLocation {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
-        self.parent_id = self.parent_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.geometry_id = self.geometry_id.as_ref().map(|id| prefix.to_string() + &id);
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.parent_id = self
+            .parent_id
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.geometry_id = self
+            .geometry_id
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
         self.equipment_id = self
             .equipment_id
-            .as_ref()
-            .map(|id| prefix.to_string() + &id);
-        self.level_id = self.level_id.as_ref().map(|id| prefix.to_string() + &id);
-        self.comment_links.add_prefix(prefix);
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.level_id = self
+            .level_id
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.comment_links.prefix(prefix_conf);
     }
 }
 
@@ -1195,10 +1223,10 @@ pub struct Pathway {
 }
 
 impl AddPrefix for Pathway {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
-        self.from_stop_id = prefix.to_string() + &self.from_stop_id;
-        self.to_stop_id = prefix.to_string() + &self.to_stop_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.from_stop_id = prefix_conf.referential_prefix(self.from_stop_id.as_str());
+        self.to_stop_id = prefix_conf.referential_prefix(self.to_stop_id.as_str());
     }
 }
 impl_id!(Pathway);
@@ -1212,8 +1240,8 @@ pub struct Level {
 }
 
 impl AddPrefix for Level {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 impl_id!(Level);
@@ -1246,8 +1274,8 @@ impl Calendar {
 }
 
 impl AddPrefix for Calendar {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -1289,8 +1317,8 @@ impl Default for Company {
     }
 }
 impl AddPrefix for Company {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -1323,8 +1351,8 @@ pub struct Comment {
 impl_id!(Comment);
 
 impl AddPrefix for Comment {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -1369,8 +1397,8 @@ pub struct Equipment {
 impl_id!(Equipment);
 
 impl AddPrefix for Equipment {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -1399,13 +1427,13 @@ pub struct Transfer {
 }
 
 impl AddPrefix for Transfer {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.from_stop_id = prefix.to_string() + &self.from_stop_id;
-        self.to_stop_id = prefix.to_string() + &self.to_stop_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.from_stop_id = prefix_conf.referential_prefix(self.from_stop_id.as_str());
+        self.to_stop_id = prefix_conf.referential_prefix(self.to_stop_id.as_str());
         self.equipment_id = self
             .equipment_id
-            .as_ref()
-            .map(|id| prefix.to_string() + &id);
+            .take()
+            .map(|id| prefix_conf.referential_prefix(id.as_str()));
     }
 }
 
@@ -1446,8 +1474,8 @@ pub struct TripProperty {
 impl_id!(TripProperty);
 
 impl AddPrefix for TripProperty {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -1479,8 +1507,8 @@ pub struct Geometry {
 impl_id!(Geometry);
 
 impl AddPrefix for Geometry {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -1492,9 +1520,9 @@ pub struct AdminStation {
 }
 
 impl AddPrefix for AdminStation {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.admin_id = prefix.to_string() + &self.admin_id;
-        self.stop_id = prefix.to_string() + &self.stop_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.admin_id = prefix_conf.referential_prefix(self.admin_id.as_str());
+        self.stop_id = prefix_conf.referential_prefix(self.stop_id.as_str());
     }
 }
 
@@ -1519,8 +1547,8 @@ pub struct PriceV1 {
 }
 
 impl AddPrefix for PriceV1 {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -1542,10 +1570,12 @@ pub struct ODFareV1 {
 }
 
 impl AddPrefix for ODFareV1 {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.ticket_id = prefix.to_string() + &self.ticket_id;
-        self.origin_stop_area_id = prefix.to_string() + &self.origin_stop_area_id;
-        self.destination_stop_area_id = prefix.to_string() + &self.destination_stop_area_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.ticket_id = prefix_conf.referential_prefix(self.ticket_id.as_str());
+        self.origin_stop_area_id =
+            prefix_conf.referential_prefix(self.origin_stop_area_id.as_str());
+        self.destination_stop_area_id =
+            prefix_conf.referential_prefix(self.destination_stop_area_id.as_str());
     }
 }
 
@@ -1566,8 +1596,8 @@ pub struct FareV1 {
 }
 
 impl AddPrefix for FareV1 {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.ticket_id = prefix.to_string() + &self.ticket_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.ticket_id = prefix_conf.referential_prefix(self.ticket_id.as_str());
     }
 }
 
@@ -1589,8 +1619,8 @@ impl GetObjectType for Ticket {
 }
 
 impl AddPrefix for Ticket {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -1618,8 +1648,8 @@ pub struct TicketPrice {
 }
 
 impl AddPrefix for TicketPrice {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.ticket_id = prefix.to_string() + &self.ticket_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.ticket_id = prefix_conf.referential_prefix(self.ticket_id.as_str());
     }
 }
 
@@ -1635,9 +1665,9 @@ pub struct TicketUse {
 impl_id!(TicketUse);
 
 impl AddPrefix for TicketUse {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
-        self.ticket_id = prefix.to_string() + &self.ticket_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.ticket_id = prefix_conf.referential_prefix(self.ticket_id.as_str());
     }
 }
 
@@ -1658,9 +1688,9 @@ pub struct TicketUsePerimeter {
 }
 
 impl AddPrefix for TicketUsePerimeter {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.ticket_use_id = prefix.to_string() + &self.ticket_use_id;
-        self.object_id = prefix.to_string() + &self.object_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.ticket_use_id = prefix_conf.referential_prefix(self.ticket_use_id.as_str());
+        self.object_id = prefix_conf.referential_prefix(self.object_id.as_str());
     }
 }
 
@@ -1681,10 +1711,10 @@ pub struct TicketUseRestriction {
 }
 
 impl AddPrefix for TicketUseRestriction {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.ticket_use_id = prefix.to_string() + &self.ticket_use_id;
-        self.use_origin = prefix.to_string() + &self.use_origin;
-        self.use_destination = prefix.to_string() + &self.use_destination;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.ticket_use_id = prefix_conf.referential_prefix(self.ticket_use_id.as_str());
+        self.use_origin = prefix_conf.referential_prefix(self.use_origin.as_str());
+        self.use_destination = prefix_conf.referential_prefix(self.use_destination.as_str());
     }
 }
 
@@ -1711,8 +1741,8 @@ pub struct GridCalendar {
 impl_id!(GridCalendar);
 
 impl AddPrefix for GridCalendar {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.id = prefix.to_string() + &self.id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
     }
 }
 
@@ -1730,8 +1760,8 @@ pub struct GridExceptionDate {
 impl_id!(GridExceptionDate, GridCalendar, grid_calendar_id);
 
 impl AddPrefix for GridExceptionDate {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.grid_calendar_id = prefix.to_string() + &self.grid_calendar_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.grid_calendar_id = prefix_conf.referential_prefix(self.grid_calendar_id.as_str());
     }
 }
 
@@ -1752,8 +1782,8 @@ pub struct GridPeriod {
 impl_id!(GridPeriod, GridCalendar, grid_calendar_id);
 
 impl AddPrefix for GridPeriod {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.grid_calendar_id = prefix.to_string() + &self.grid_calendar_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.grid_calendar_id = prefix_conf.referential_prefix(self.grid_calendar_id.as_str());
     }
 }
 
@@ -1767,9 +1797,9 @@ impl_id!(GridRelCalendarLine, GridCalendar, grid_calendar_id);
 impl_id!(GridRelCalendarLine, Line, line_id);
 
 impl AddPrefix for GridRelCalendarLine {
-    fn add_prefix(&mut self, prefix: &str) {
-        self.grid_calendar_id = prefix.to_string() + &self.grid_calendar_id;
-        self.line_id = prefix.to_string() + &self.line_id;
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.grid_calendar_id = prefix_conf.referential_prefix(self.grid_calendar_id.as_str());
+        self.line_id = prefix_conf.referential_prefix(self.line_id.as_str());
     }
 }
 
