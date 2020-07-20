@@ -1,0 +1,3 @@
+object_id,object_type,comment_id
+stoparea:1,stop_area,stop:stoparea:1
+stop:11,stop_point,stop:stop:11

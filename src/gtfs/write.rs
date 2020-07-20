@@ -73,9 +73,10 @@ fn get_first_comment_name<T: objects::CommentLinks>(
     obj: &T,
     comments: &CollectionWithId<objects::Comment>,
 ) -> Option<String> {
-    comments
-        .iter_from(obj.comment_links())
-        .map(|c| &c.name)
+    obj.comment_links()
+        .iter()
+        .filter_map(|comment_id| comments.get(comment_id))
+        .map(|cmt| &cmt.name)
         .min()
         .cloned()
 }
@@ -627,8 +628,8 @@ mod tests {
         });
 
         let mut comment_links = BTreeSet::new();
-        comment_links.insert(comments.get_idx("1").unwrap());
-        comment_links.insert(comments.get_idx("2").unwrap());
+        comment_links.insert("1".to_string());
+        comment_links.insert("2".to_string());
 
         let stop = objects::StopPoint {
             id: "sp_1".to_string(),
@@ -754,8 +755,8 @@ mod tests {
         });
 
         let mut comment_links = BTreeSet::new();
-        comment_links.insert(comments.get_idx("1").unwrap());
-        comment_links.insert(comments.get_idx("2").unwrap());
+        comment_links.insert("1".to_string());
+        comment_links.insert("2".to_string());
 
         let stop = objects::StopArea {
             id: "sa_1".to_string(),

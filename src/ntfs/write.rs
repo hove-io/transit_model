@@ -613,7 +613,6 @@ pub fn write_stops(
 fn write_comment_links_from_collection_with_id<W, T>(
     wtr: &mut csv::Writer<W>,
     collection: &CollectionWithId<T>,
-    comments: &CollectionWithId<Comment>,
     path: &path::Path,
 ) -> Result<()>
 where
@@ -621,15 +620,16 @@ where
     W: ::std::io::Write,
 {
     for obj in collection.values() {
-        for comment in comments.iter_from(obj.comment_links()) {
+        for comment_id in obj.comment_links().iter() {
             wtr.serialize(CommentLink {
                 object_id: obj.id().to_string(),
                 object_type: T::get_object_type(),
-                comment_id: comment.id.to_string(),
+                comment_id: comment_id.to_string(),
             })
             .with_context(|_| format!("Error reading {:?}", path))?;
         }
     }
+
     Ok(())
 }
 
@@ -678,31 +678,26 @@ pub fn write_comments(path: &path::Path, collections: &Collections) -> Result<()
     write_comment_links_from_collection_with_id(
         &mut cl_wtr,
         &collections.stop_areas,
-        &collections.comments,
         &comment_links_path,
     )?;
     write_comment_links_from_collection_with_id(
         &mut cl_wtr,
         &collections.stop_points,
-        &collections.comments,
         &comment_links_path,
     )?;
     write_comment_links_from_collection_with_id(
         &mut cl_wtr,
         &collections.lines,
-        &collections.comments,
         &comment_links_path,
     )?;
     write_comment_links_from_collection_with_id(
         &mut cl_wtr,
         &collections.routes,
-        &collections.comments,
         &comment_links_path,
     )?;
     write_comment_links_from_collection_with_id(
         &mut cl_wtr,
         &collections.vehicle_journeys,
-        &collections.comments,
         &comment_links_path,
     )?;
 

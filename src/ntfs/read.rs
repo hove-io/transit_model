@@ -448,17 +448,17 @@ where
             return Ok(());
         }
     };
-    let comment_idx = match comments.get_idx(&comment_link.comment_id) {
-        Some(comment_idx) => comment_idx,
-        None => bail!(
+    if !comments.contains_id(&comment_link.comment_id) {
+        bail!(
             "comment.txt: comment_id={} not found",
             comment_link.comment_id
-        ),
-    };
+        );
+    } else {
+    }
     collection
         .index_mut(idx)
         .comment_links_mut()
-        .insert(comment_idx);
+        .insert(comment_link.comment_id.clone());
     Ok(())
 }
 

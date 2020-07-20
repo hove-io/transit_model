@@ -1,9 +1,11 @@
 object_id,object_type,comment_id
+test:stoparea:1,stop_area,test:stop:stoparea:1
+test:stop:11,stop_point,test:stop:stop:11
+test:trip:4-0,stop_time,test:ODT:1
+test:trip:5-0,stop_time,test:ODT:2
+test:trip:6-1,stop_time,test:ODT:2
 test:trip:4-2,stop_time,test:ODT:1
 test:trip:5-2,stop_time,test:ODT:2
 test:trip:4-1,stop_time,test:ODT:1
-test:trip:5-0,stop_time,test:ODT:2
-test:trip:5-1,stop_time,test:ODT:2
-test:trip:6-1,stop_time,test:ODT:2
 test:trip:6-0,stop_time,test:ODT:2
-test:trip:4-0,stop_time,test:ODT:1
+test:trip:5-1,stop_time,test:ODT:2

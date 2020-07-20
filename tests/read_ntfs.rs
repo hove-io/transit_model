@@ -167,8 +167,10 @@ fn ntfs() {
         assert_eq!(&expect, comment);
     }
     assert_eq!(4, pt_objects.comments.len());
-    let rera_comment_indexes = &pt_objects.lines.get("RERA").unwrap().comment_links;
-    let mut iter = pt_objects.comments.iter_from(rera_comment_indexes);
+    let rera_comment_ids = &pt_objects.lines.get("RERA").unwrap().comment_links;
+    let mut iter = rera_comment_ids
+        .iter()
+        .filter_map(|comment_id| pt_objects.comments.get(comment_id));
     assert_eq_comment(
         iter.next().unwrap(),
         "RERACOM1",
