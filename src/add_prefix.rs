@@ -158,7 +158,7 @@ fn add_prefix_on_vehicle_journey_ids(
         .iter()
         .map(|((trip_id, sequence), value)| {
             (
-                (prefix_conf.referential_prefix(trip_id.as_str()), *sequence),
+                (prefix_conf.schedule_prefix(trip_id.as_str()), *sequence),
                 value.to_string(),
             )
         })
@@ -173,8 +173,8 @@ fn add_prefix_on_vehicle_journey_ids_and_values(
         .iter()
         .map(|((trip_id, sequence), value)| {
             (
-                (prefix_conf.referential_prefix(trip_id.as_str()), *sequence),
-                prefix_conf.referential_prefix(value.as_str()),
+                (prefix_conf.schedule_prefix(trip_id.as_str()), *sequence),
+                prefix_conf.schedule_prefix(value.as_str()),
             )
         })
         .collect()

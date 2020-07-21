@@ -108,7 +108,7 @@ impl AddPrefix for CommentLinksT {
         let updated_ids = std::mem::replace(self, BTreeSet::new());
         *self = updated_ids
             .into_iter()
-            .map(|comment_id| prefix_conf.referential_prefix(comment_id.as_str()))
+            .map(|comment_id| prefix_conf.schedule_prefix(comment_id.as_str()))
             .collect();
     }
 }
@@ -520,6 +520,10 @@ impl AddPrefix for Line {
             .backward_direction
             .take()
             .map(|id| prefix_conf.referential_prefix(id.as_str()));
+        self.geometry_id = self
+            .geometry_id
+            .take()
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.comment_links.prefix(prefix_conf);
     }
 }
@@ -566,7 +570,7 @@ impl AddPrefix for Route {
         self.geometry_id = self
             .geometry_id
             .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.destination_id = self
             .destination_id
             .take()
@@ -642,19 +646,19 @@ impl_id!(VehicleJourney, Calendar, service_id);
 
 impl AddPrefix for VehicleJourney {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
-        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.id = prefix_conf.schedule_prefix(self.id.as_str());
         self.route_id = prefix_conf.referential_prefix(self.route_id.as_str());
         self.dataset_id = prefix_conf.referential_prefix(self.dataset_id.as_str());
         self.company_id = prefix_conf.referential_prefix(self.company_id.as_str());
-        self.service_id = prefix_conf.referential_prefix(self.service_id.as_str());
+        self.service_id = prefix_conf.schedule_prefix(self.service_id.as_str());
         self.trip_property_id = self
             .trip_property_id
             .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.geometry_id = self
             .geometry_id
             .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.comment_links.prefix(prefix_conf);
     }
 }
@@ -687,7 +691,7 @@ pub struct Frequency {
 
 impl AddPrefix for Frequency {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
-        self.vehicle_journey_id = prefix_conf.referential_prefix(self.vehicle_journey_id.as_str());
+        self.vehicle_journey_id = prefix_conf.schedule_prefix(self.vehicle_journey_id.as_str());
     }
 }
 
@@ -1048,7 +1052,7 @@ impl AddPrefix for StopArea {
         self.geometry_id = self
             .geometry_id
             .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.level_id = self
             .level_id
             .take()
@@ -1115,7 +1119,7 @@ impl AddPrefix for StopPoint {
         self.geometry_id = self
             .geometry_id
             .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.level_id = self
             .level_id
             .take()
@@ -1164,7 +1168,7 @@ impl AddPrefix for StopLocation {
         self.geometry_id = self
             .geometry_id
             .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.equipment_id = self
             .equipment_id
             .take()
@@ -1275,7 +1279,7 @@ impl Calendar {
 
 impl AddPrefix for Calendar {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
-        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.id = prefix_conf.schedule_prefix(self.id.as_str());
     }
 }
 
@@ -1352,7 +1356,7 @@ impl_id!(Comment);
 
 impl AddPrefix for Comment {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
-        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.id = prefix_conf.schedule_prefix(self.id.as_str());
     }
 }
 
@@ -1475,7 +1479,7 @@ impl_id!(TripProperty);
 
 impl AddPrefix for TripProperty {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
-        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.id = prefix_conf.schedule_prefix(self.id.as_str());
     }
 }
 
@@ -1508,7 +1512,7 @@ impl_id!(Geometry);
 
 impl AddPrefix for Geometry {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
-        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.id = prefix_conf.schedule_prefix(self.id.as_str());
     }
 }
 
