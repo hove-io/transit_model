@@ -1,4 +1,4 @@
 service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
-ME:service:1,1,1,1,0,0,0,0,20180101,20180103
-ME:service:2,0,0,0,0,1,1,0,20180105,20180106
-ME:service:2:+1days,0,0,0,0,0,1,1,20180106,20180107
+ME:Defaul:service:1,1,1,1,0,0,0,0,20180101,20180103
+ME:Defaul:service:2,0,0,0,0,1,1,0,20180105,20180106
+ME:Defaul:service:2:+1days,0,0,0,0,0,1,1,20180106,20180107

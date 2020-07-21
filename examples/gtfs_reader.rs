@@ -13,18 +13,23 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use serde_json::json;
-use std::path::Path;
-use transit_model::Result;
+use std::collections::BTreeMap;
+use transit_model::{
+    gtfs,
+    objects::{Contributor, Dataset},
+    Result,
+};
 
 fn run() -> Result<()> {
-    let configuration: transit_model::gtfs::Configuration<&Path> =
-        transit_model::gtfs::Configuration {
-            config_path: None,
-            prefix: None,
-            on_demand_transport: false,
-            on_demand_transport_comment: None,
-        };
-    let objects = transit_model::gtfs::read_from_path(".", configuration)?;
+    let configuration: gtfs::Configuration = gtfs::Configuration {
+        contributor: Contributor::default(),
+        dataset: Dataset::default(),
+        feed_infos: BTreeMap::new(),
+        prefix_conf: None,
+        on_demand_transport: false,
+        on_demand_transport_comment: None,
+    };
+    let objects = gtfs::read_from_path(".", configuration)?;
     let json_objs = json!(objects);
     println!("{:?}", json_objs.to_string());
     Ok(())

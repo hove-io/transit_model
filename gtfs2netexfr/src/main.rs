@@ -21,7 +21,7 @@ use slog::{slog_o, Drain};
 use slog_async::OverflowStrategy;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use transit_model::Result;
+use transit_model::{read_utils, Result};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "gtfs2netexfr", about = "Convert a GTFS to NeTEx France.")]
@@ -96,9 +96,12 @@ fn init_logger() -> slog_scope::GlobalLoggerGuard {
 fn run(opt: Opt) -> Result<()> {
     info!("Launching gtfs2netexfr...");
 
+    let (contributor, dataset, feed_infos) = read_utils::read_config(opt.config)?;
     let configuration = transit_model::gtfs::Configuration {
-        config_path: opt.config,
-        prefix: None,
+        contributor,
+        dataset,
+        feed_infos,
+        prefix_conf: None,
         on_demand_transport: opt.odt,
         on_demand_transport_comment: opt.odt_comment,
     };
