@@ -237,22 +237,26 @@ fn get_gtfs_direction_id_from_ntfs_route(route: &objects::Route) -> DirectionTyp
     }
 }
 
-fn make_gtfs_trip_from_ntfs_vj(
-    vj: &objects::VehicleJourney,
-    sps: &CollectionWithId<objects::StopPoint>,
-    routes: &CollectionWithId<objects::Route>,
-    tps: &CollectionWithId<objects::TripProperty>,
-) -> Trip {
-    let (short_name, headsign) = get_gtfs_trip_shortname_and_headsign_from_ntfs_vj(vj, sps);
+fn make_gtfs_trip_from_ntfs_vj(vj: &objects::VehicleJourney, model: &Model) -> Trip {
+    let (short_name, headsign) =
+        get_gtfs_trip_shortname_and_headsign_from_ntfs_vj(vj, &model.stop_points);
     let mut wheelchair_and_bike = (Availability::default(), Availability::default());
     if let Some(tp_id) = &vj.trip_property_id {
-        if let Some(tp) = tps.get(&tp_id) {
+        if let Some(tp) = &model.trip_properties.get(&tp_id) {
             wheelchair_and_bike = (tp.wheelchair_accessible, tp.bike_accepted);
         };
     }
-    let route = routes.get(&vj.route_id).unwrap();
+    let route = &model.routes.get(&vj.route_id).unwrap();
+
+    let line_idx = &model.lines.get_idx(&route.line_id).unwrap();
+    let route_id = &get_line_physical_modes(*line_idx, &model.physical_modes, model)
+        .into_iter()
+        .find(|pmo| pmo.inner.id == vj.physical_mode_id)
+        .map(|pm| get_gtfs_route_id_from_ntfs_line_id(&route.line_id, &pm))
+        .unwrap();
+
     Trip {
-        route_id: route.line_id.clone(),
+        route_id: route_id.to_string(),
         service_id: vj.service_id.clone(),
         id: vj.id.clone(),
         headsign,
@@ -265,19 +269,13 @@ fn make_gtfs_trip_from_ntfs_vj(
     }
 }
 
-pub fn write_trips(
-    path: &path::Path,
-    vjs: &CollectionWithId<objects::VehicleJourney>,
-    sps: &CollectionWithId<objects::StopPoint>,
-    routes: &CollectionWithId<objects::Route>,
-    tps: &CollectionWithId<objects::TripProperty>,
-) -> Result<()> {
+pub fn write_trips(path: &path::Path, model: &Model) -> Result<()> {
     info!("Writing trips.txt");
     let path = path.join("trips.txt");
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
-    for vj in vjs.values() {
-        wtr.serialize(make_gtfs_trip_from_ntfs_vj(vj, sps, routes, tps))
+    for vj in model.vehicle_journeys.values() {
+        wtr.serialize(make_gtfs_trip_from_ntfs_vj(vj, model))
             .with_context(|_| format!("Error reading {:?}", path))?;
     }
 
