@@ -247,7 +247,6 @@ fn make_gtfs_trip_from_ntfs_vj(vj: &objects::VehicleJourney, model: &Model) -> T
         };
     }
     let route = &model.routes.get(&vj.route_id).unwrap();
-
     let line_idx = &model.lines.get_idx(&route.line_id).unwrap();
     let route_id = &get_line_physical_modes(*line_idx, &model.physical_modes, model)
         .into_iter()
@@ -527,6 +526,7 @@ mod tests {
     use crate::{
         calendars::write_calendar_dates,
         gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType},
+        model::Collections,
         objects::{
             Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime,
             Transfer as NtfsTransfer,
@@ -804,59 +804,111 @@ mod tests {
 
     #[test]
     fn write_trip() {
-        let sps = CollectionWithId::new(vec![
-            objects::StopPoint {
+        let mut collections = Collections::default();
+        collections
+            .stop_points
+            .push(objects::StopPoint {
                 id: "OIF:SP:36:2085".to_string(),
-                name: "Gare de Saint-Cyr l'École".to_string(),
-                visible: true,
-                coord: objects::Coord {
-                    lon: 2.073_034,
-                    lat: 48.799_115,
-                },
-                stop_area_id: "OIF:SA:8739322".to_string(),
-                timezone: Some("Europe/Paris".to_string()),
-                fare_zone_id: Some("1".to_string()),
-                stop_type: StopType::Point,
                 ..Default::default()
-            },
-            objects::StopPoint {
+            })
+            .unwrap();
+        collections
+            .stop_areas
+            .push(objects::StopArea {
+                ..Default::default()
+            })
+            .unwrap();
+        collections
+            .stop_points
+            .push(objects::StopPoint {
                 id: "OIF:SP:36:2127".to_string(),
-                name: "Division Leclerc".to_string(),
-                visible: true,
-                coord: objects::Coord {
-                    lon: 2.073_407,
-                    lat: 48.800_598,
-                },
-                stop_area_id: "OIF:SA:2:1468".to_string(),
-                timezone: Some("Europe/Paris".to_string()),
-                stop_type: StopType::Point,
                 ..Default::default()
-            },
-        ])
-        .unwrap();
-        let routes = CollectionWithId::from(objects::Route {
-            id: "OIF:078078001:1".to_string(),
-            name: "Hôtels - Hôtels".to_string(),
-            direction_type: Some("forward".to_string()),
-            codes: BTreeSet::default(),
-            object_properties: BTreeSet::default(),
-            comment_links: BTreeSet::default(),
-            line_id: "OIF:002002002:BDEOIF829".to_string(),
-            geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
-            destination_id: Some("OIF,OIF:SA:4:126".to_string()),
-        });
-
-        let tps = CollectionWithId::from(objects::TripProperty {
-            id: "1".to_string(),
-            wheelchair_accessible: Availability::Available,
-            bike_accepted: Availability::NotAvailable,
-            air_conditioned: Availability::InformationNotAvailable,
-            visual_announcement: Availability::Available,
-            audible_announcement: Availability::Available,
-            appropriate_escort: Availability::Available,
-            appropriate_signage: Availability::Available,
-            school_vehicle_type: objects::TransportType::Regular,
-        });
+            })
+            .unwrap();
+        collections
+            .networks
+            .push(objects::Network {
+                ..Default::default()
+            })
+            .unwrap();
+        collections
+            .commercial_modes
+            .push(objects::CommercialMode {
+                ..Default::default()
+            })
+            .unwrap();
+        collections
+            .lines
+            .push(objects::Line {
+                id: "OIF:002002002:BDEOIF829".to_string(),
+                ..Default::default()
+            })
+            .unwrap();
+        collections
+            .routes
+            .push(objects::Route {
+                id: "OIF:078078001:1".to_string(),
+                line_id: "OIF:002002002:BDEOIF829".to_string(),
+                ..Default::default()
+            })
+            .unwrap();
+        collections
+            .trip_properties
+            .push(objects::TripProperty {
+                id: "1".to_string(),
+                wheelchair_accessible: Availability::Available,
+                bike_accepted: Availability::NotAvailable,
+                air_conditioned: Availability::InformationNotAvailable,
+                visual_announcement: Availability::Available,
+                audible_announcement: Availability::Available,
+                appropriate_escort: Availability::Available,
+                appropriate_signage: Availability::Available,
+                school_vehicle_type: objects::TransportType::Regular,
+            })
+            .unwrap();
+        let mut dates = BTreeSet::new();
+        dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+        collections
+            .calendars
+            .push(objects::Calendar {
+                id: "2".to_string(),
+                dates,
+            })
+            .unwrap();
+        collections
+            .physical_modes
+            .push(objects::PhysicalMode {
+                id: "Bus".to_string(),
+                name: "Bus".to_string(),
+                co2_emission: None,
+            })
+            .unwrap();
+        collections
+            .physical_modes
+            .push(objects::PhysicalMode {
+                id: "Coach".to_string(),
+                name: "Coach".to_string(),
+                co2_emission: None,
+            })
+            .unwrap();
+        collections
+            .contributors
+            .push(objects::Contributor {
+                ..Default::default()
+            })
+            .unwrap();
+        collections
+            .datasets
+            .push(objects::Dataset {
+                ..Default::default()
+            })
+            .unwrap();
+        collections
+            .companies
+            .push(objects::Company {
+                ..Default::default()
+            })
+            .unwrap();
         let vj = objects::VehicleJourney {
             id: "OIF:87604986-1_11595-1".to_string(),
             codes: BTreeSet::default(),
@@ -864,17 +916,15 @@ mod tests {
             comment_links: BTreeSet::default(),
             route_id: "OIF:078078001:1".to_string(),
             physical_mode_id: "Bus".to_string(),
-            dataset_id: "OIF:0".to_string(),
             service_id: "2".to_string(),
             headsign: Some("2005".to_string()),
             short_name: Some("42".to_string()),
             block_id: Some("PLOI".to_string()),
-            company_id: "OIF:743".to_string(),
             trip_property_id: Some("1".to_string()),
             geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
             stop_times: vec![
                 objects::StopTime {
-                    stop_point_idx: sps.get_idx("OIF:SP:36:2085").unwrap(),
+                    stop_point_idx: collections.stop_points.get_idx("OIF:SP:36:2085").unwrap(),
                     sequence: 0,
                     arrival_time: objects::Time::new(14, 40, 0),
                     departure_time: objects::Time::new(14, 40, 0),
@@ -887,7 +937,7 @@ mod tests {
                     precision: None,
                 },
                 objects::StopTime {
-                    stop_point_idx: sps.get_idx("OIF:SP:36:2127").unwrap(),
+                    stop_point_idx: collections.stop_points.get_idx("OIF:SP:36:2127").unwrap(),
                     sequence: 1,
                     arrival_time: objects::Time::new(14, 42, 0),
                     departure_time: objects::Time::new(14, 42, 0),
@@ -901,9 +951,56 @@ mod tests {
                 },
             ],
             journey_pattern_id: Some(String::from("OIF:JP:1")),
+            ..Default::default()
         };
+        collections.vehicle_journeys.push(vj.clone()).unwrap();
+        let vj_coach = objects::VehicleJourney {
+            id: "OIF:87604986-1_11595-1:Coach".to_string(),
+            codes: BTreeSet::default(),
+            object_properties: BTreeSet::default(),
+            comment_links: BTreeSet::default(),
+            route_id: "OIF:078078001:1".to_string(),
+            physical_mode_id: "Coach".to_string(),
+            service_id: "2".to_string(),
+            headsign: Some("2005".to_string()),
+            short_name: Some("42".to_string()),
+            block_id: Some("PLOI".to_string()),
+            trip_property_id: Some("1".to_string()),
+            geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
+            stop_times: vec![
+                objects::StopTime {
+                    stop_point_idx: collections.stop_points.get_idx("OIF:SP:36:2085").unwrap(),
+                    sequence: 0,
+                    arrival_time: objects::Time::new(14, 40, 0),
+                    departure_time: objects::Time::new(14, 40, 0),
+                    boarding_duration: 0,
+                    alighting_duration: 0,
+                    pickup_type: 0,
+                    drop_off_type: 1,
+                    datetime_estimated: false,
+                    local_zone_id: None,
+                    precision: None,
+                },
+                objects::StopTime {
+                    stop_point_idx: collections.stop_points.get_idx("OIF:SP:36:2127").unwrap(),
+                    sequence: 1,
+                    arrival_time: objects::Time::new(14, 42, 0),
+                    departure_time: objects::Time::new(14, 42, 0),
+                    boarding_duration: 0,
+                    alighting_duration: 0,
+                    pickup_type: 0,
+                    drop_off_type: 0,
+                    datetime_estimated: false,
+                    local_zone_id: None,
+                    precision: None,
+                },
+            ],
+            journey_pattern_id: Some(String::from("OIF:JP:1")),
+            ..Default::default()
+        };
+        collections.vehicle_journeys.push(vj_coach.clone()).unwrap();
 
-        let expected = Trip {
+        let mut expected = Trip {
             route_id: "OIF:002002002:BDEOIF829".to_string(),
             service_id: vj.service_id.clone(),
             id: "OIF:87604986-1_11595-1".to_string(),
@@ -915,11 +1012,12 @@ mod tests {
             wheelchair_accessible: Availability::Available,
             bikes_allowed: Availability::NotAvailable,
         };
+        let model = Model::new(collections).unwrap();
+        assert_eq!(expected, make_gtfs_trip_from_ntfs_vj(&vj, &model));
 
-        assert_eq!(
-            expected,
-            make_gtfs_trip_from_ntfs_vj(&vj, &sps, &routes, &tps)
-        );
+        expected.route_id = "OIF:002002002:BDEOIF829:Coach".to_string();
+        expected.id = "OIF:87604986-1_11595-1:Coach".to_string();
+        assert_eq!(expected, make_gtfs_trip_from_ntfs_vj(&vj_coach, &model));
     }
 
     #[test]
