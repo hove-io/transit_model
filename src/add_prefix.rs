@@ -90,7 +90,8 @@ impl PrefixConfiguration {
             prefix = prefix + data_prefix + &self.sep;
         }
         if let Some(dataset_id) = self.dataset_id.as_ref() {
-            prefix = prefix + &dataset_id[0..PREFIX_DATASET_LENGTH] + &self.sep;
+            let truncate_index = usize::min(dataset_id.len(), PREFIX_DATASET_LENGTH);
+            prefix = prefix + &dataset_id[0..truncate_index] + &self.sep;
         }
         prefix + id
     }
