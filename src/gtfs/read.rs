@@ -1359,7 +1359,7 @@ mod tests {
         objects::{Calendar, Comment, CommentType, Equipment, Geometry, Rgb, StopTime, Transfer},
         read_utils::{self, read_opt_collection, PathFileHandler},
         test_utils::*,
-        AddPrefix,
+        AddPrefix, PrefixConfiguration,
     };
     use geo_types::line_string;
     use pretty_assertions::assert_eq;
@@ -2025,7 +2025,9 @@ mod tests {
             super::manage_shapes(&mut collections, &mut handler).unwrap();
             calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
-            collections.add_prefix_with_sep("my_prefix", ":");
+            let mut prefix_conf = PrefixConfiguration::default();
+            prefix_conf.set_data_prefix("my_prefix");
+            collections.prefix(&prefix_conf);
 
             assert_eq!(
                 vec!["my_prefix:285", "my_prefix:584"],

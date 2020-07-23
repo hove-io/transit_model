@@ -25,7 +25,7 @@ use crate::{
     objects::{Availability, StopPoint, StopType, Time},
     read_utils,
     utils::*,
-    validity_period, AddPrefix, Result,
+    validity_period, AddPrefix, PrefixConfiguration, Result,
 };
 use derivative::Derivative;
 use log::info;
@@ -312,7 +312,9 @@ where
 
     //add prefixes
     if let Some(prefix) = configuration.prefix {
-        collections.add_prefix_with_sep(prefix.as_str(), ":");
+        let mut prefix_conf = PrefixConfiguration::default();
+        prefix_conf.set_data_prefix(prefix);
+        collections.prefix(&prefix_conf);
     }
 
     collections.calendar_deduplication();

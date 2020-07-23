@@ -40,7 +40,7 @@
 #[macro_use]
 mod utils;
 mod add_prefix;
-pub use add_prefix::AddPrefix;
+pub use add_prefix::{AddPrefix, PrefixConfiguration};
 pub mod calendars;
 #[macro_use]
 pub mod objects;
