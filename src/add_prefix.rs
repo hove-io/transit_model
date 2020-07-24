@@ -88,10 +88,10 @@ impl PrefixConfiguration {
         let mut prefix = String::new();
         if let Some(data_prefix) = self.data_prefix.as_ref() {
             prefix = prefix + data_prefix + &self.sep;
-        }
-        if let Some(dataset_id) = self.dataset_id.as_ref() {
-            let truncate_index = usize::min(dataset_id.len(), PREFIX_DATASET_LENGTH);
-            prefix = prefix + &dataset_id[0..truncate_index] + &self.sep;
+            if let Some(dataset_id) = self.dataset_id.as_ref() {
+                let truncate_index = usize::min(dataset_id.len(), PREFIX_DATASET_LENGTH);
+                prefix = prefix + &dataset_id[0..truncate_index] + &self.sep;
+            }
         }
         prefix + id
     }
