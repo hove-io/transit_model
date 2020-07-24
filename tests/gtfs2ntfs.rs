@@ -45,6 +45,22 @@ fn test_frequencies_generate_trips() {
 }
 
 #[test]
+fn test_gtfs() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./tests/fixtures/gtfs";
+        let configuration = transit_model::gtfs::Configuration {
+            config_path: Some("./tests/fixtures/gtfs2ntfs/config.json"),
+            prefix: Some("ME".to_string()),
+            on_demand_transport: false,
+            on_demand_transport_comment: None,
+        };
+        let model = transit_model::gtfs::read_from_path(input_dir, configuration).unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/full_output");
+    });
+}
+
+#[test]
 fn test_minimal_gtfs() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/minimal/input";
@@ -60,7 +76,7 @@ fn test_minimal_gtfs_with_feed_infos() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/minimal_with_config/input";
         let configuration = transit_model::gtfs::Configuration {
-            config_path: Some("./tests/fixtures/gtfs2ntfs/minimal_with_config/config.json"),
+            config_path: Some("./tests/fixtures/gtfs2ntfs/config.json"),
             prefix: None,
             on_demand_transport: false,
             on_demand_transport_comment: None,
