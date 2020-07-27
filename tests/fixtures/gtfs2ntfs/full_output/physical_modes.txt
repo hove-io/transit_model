@@ -1,0 +1,5 @@
+physical_mode_id,physical_mode_name,co2_emission
+Metro,Metro,3.0
+Bike,Bike,0.0
+BikeSharingService,BikeSharingService,0.0
+Car,Car,184.0

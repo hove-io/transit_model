@@ -24,23 +24,18 @@ static DEFAULT_CONFIGURATION: Configuration<&Path> = Configuration {
 };
 
 #[test]
-fn test_frequencies_generate_trips() {
+fn test_gtfs() {
     test_in_tmp_dir(|path| {
-        let input_dir = "./tests/fixtures/gtfs2ntfs/frequencies/input";
-        let model =
-            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
+        let input_dir = "./tests/fixtures/gtfs";
+        let configuration = transit_model::gtfs::Configuration {
+            config_path: Some("./tests/fixtures/gtfs2ntfs/config.json"),
+            prefix: Some("ME".to_string()),
+            on_demand_transport: false,
+            on_demand_transport_comment: None,
+        };
+        let model = transit_model::gtfs::read_from_path(input_dir, configuration).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(
-            &path,
-            Some(vec![
-                "calendar_dates.txt",
-                "calendar.txt",
-                "trips.txt",
-                "stop_times.txt",
-                "object_codes.txt",
-            ]),
-            "./tests/fixtures/gtfs2ntfs/frequencies/output",
-        );
+        compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/full_output");
     });
 }
 
@@ -52,32 +47,6 @@ fn test_minimal_gtfs() {
             transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
-    });
-}
-
-#[test]
-fn test_minimal_gtfs_with_feed_infos() {
-    test_in_tmp_dir(|path| {
-        let input_dir = "./tests/fixtures/gtfs2ntfs/minimal_with_config/input";
-        let configuration = transit_model::gtfs::Configuration {
-            config_path: Some("./tests/fixtures/gtfs2ntfs/minimal_with_config/config.json"),
-            prefix: None,
-            on_demand_transport: false,
-            on_demand_transport_comment: None,
-        };
-
-        let model = transit_model::gtfs::read_from_path(input_dir, configuration).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(
-            &path,
-            Some(vec![
-                "contributors.txt",
-                "trips.txt",
-                "datasets.txt",
-                "feed_infos.txt",
-            ]),
-            "./tests/fixtures/gtfs2ntfs/minimal_with_config/output",
-        );
     });
 }
 
@@ -153,36 +122,6 @@ fn test_minimal_ziped_sub_dir_gtfs_with_hidden_files() {
             transit_model::gtfs::read_from_zip(input, DEFAULT_CONFIGURATION.clone()).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
-    });
-}
-
-#[test]
-fn test_gtfs_with_platforms() {
-    test_in_tmp_dir(|path| {
-        let input_dir = "./tests/fixtures/gtfs2ntfs/platforms/input";
-        let model =
-            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(
-            &path,
-            Some(vec!["stops.txt"]),
-            "./tests/fixtures/gtfs2ntfs/platforms/output",
-        );
-    });
-}
-
-#[test]
-fn test_gtfs_with_levels() {
-    test_in_tmp_dir(|path| {
-        let input_dir = "./tests/fixtures/gtfs2ntfs/levels_and_pathways/input";
-        let model =
-            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(
-            &path,
-            Some(vec!["stops.txt", "pathways.txt", "levels.txt"]),
-            "./tests/fixtures/gtfs2ntfs/levels_and_pathways/output",
-        );
     });
 }
 

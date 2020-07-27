@@ -1,6 +1,0 @@
-trip_id,route_id,physical_mode_id,dataset_id,service_id,trip_headsign,block_id,company_id,trip_property_id,geometry_id
-trip:3,route:2,Metro,default_dataset,service:1,pouet,,default_agency_id,,
-trip:4,route:2,Metro,default_dataset,service:1,pouet,,default_agency_id,,
-trip:5,route:3,Metro,default_dataset,service:2,pouet,,default_agency_id,,
-trip:6,route:3,Metro,default_dataset,service:2,pouet,,default_agency_id,,
-with_no_stop_times,route:3,Metro,default_dataset,service:2,pouet,,default_agency_id,,

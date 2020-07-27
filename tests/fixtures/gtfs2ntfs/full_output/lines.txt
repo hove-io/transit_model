@@ -1,0 +1,3 @@
+line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+ME:route:2,ma route 1,,,,,,,ME:1,Metro,,10:00:00,21:47:00
+ME:route:3,ma route 2,,,,,,,ME:2,Metro,,14:40:00,25:57:00

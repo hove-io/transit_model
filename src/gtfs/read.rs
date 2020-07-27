@@ -392,7 +392,7 @@ where
         .trim(csv::Trim::All)
         .from_reader(reader);
     let mut headsigns = HashMap::new();
-    let mut tmp_vjs = HashMap::new();
+    let mut tmp_vjs = BTreeMap::new();
     for stop_time in rdr.deserialize() {
         let mut stop_time: StopTime =
             stop_time.with_context(|_| format!("Error reading {:?}", path))?;
@@ -1084,7 +1084,7 @@ fn make_ntfs_vehicle_journeys(
     let (_, dataset) = datasets.iter().next().unwrap();
     let mut vehicle_journeys: Vec<objects::VehicleJourney> = vec![];
     let mut trip_properties: Vec<objects::TripProperty> = vec![];
-    let mut map_tps_trips: HashMap<(Availability, Availability), Vec<&Trip>> = HashMap::new();
+    let mut map_tps_trips: BTreeMap<(Availability, Availability), Vec<&Trip>> = BTreeMap::new();
     let mut id_incr: u8 = 1;
     let mut property_id: Option<String>;
 
