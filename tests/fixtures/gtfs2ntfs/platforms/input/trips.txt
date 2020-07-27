@@ -1,2 +1,0 @@
-route_id,service_id,trip_id
-route:1,service:1,trip:1

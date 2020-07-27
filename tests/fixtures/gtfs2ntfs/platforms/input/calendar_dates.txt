@@ -1,2 +1,0 @@
-service_id,date,exception_type
-service:1,20180101,1

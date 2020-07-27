@@ -1,2 +1,0 @@
-contributor_id,contributor_name,contributor_license,contributor_website
-DefaultContributorId,DefaultContributorName,DefaultDatasourceLicense,http://www.default-datasource-website.com

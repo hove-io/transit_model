@@ -1,3 +1,0 @@
-route_id,route_name,direction_type,line_id,geometry_id,destination_id
-route:2,,forward,route:2,,
-route:3,,forward,route:3,,
