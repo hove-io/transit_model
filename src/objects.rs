@@ -345,7 +345,7 @@ pub struct Network {
     pub url: Option<String>,
     #[serde(skip)]
     pub codes: KeysValues,
-    // #[derivative(Default(value = "\"Europe/Paris\".parse().ok()"))]
+    #[derivative(Default(value = "\"Europe/Paris\".parse().ok()"))]
     #[serde(rename = "network_timezone")]
     pub timezone: Option<TzExt>,
     #[serde(rename = "network_lang")]
@@ -1812,6 +1812,14 @@ impl AddPrefix for GridRelCalendarLine {
     }
 }
 
+/// Wrapper around [`Tz`] that implements [`Display`].
+///
+/// [`Display`] is implemented for [`Tz`]
+/// but not released yet. Wait for [chrono-tz] version > 0.5.2
+///
+/// [`Display`]: https://doc.rust-lang.org/std/fmt/trait.Display.html
+/// [`Tz`]: https://docs.rs/chrono-tz/0.5.2/chrono_tz/enum.Tz.html
+/// [chrono-tz]: https://crates.io/crates/chrono-tz
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
 pub struct TzExt(pub Tz);
 
@@ -1825,10 +1833,7 @@ impl std::fmt::Display for TzExt {
 impl FromStr for TzExt {
     type Err = String;
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match Tz::from_str(s) {
-            Ok(timezone) => Ok(TzExt(timezone)),
-            Err(err) => Err(err),
-        }
+        Tz::from_str(s).map(TzExt)
     }
 }
 
