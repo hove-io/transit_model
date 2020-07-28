@@ -28,7 +28,7 @@ use crate::{
 };
 use derivative::Derivative;
 use failure::{bail, format_err, Error, ResultExt};
-use geo_types::{LineString, Point};
+use geo::{LineString, Point};
 use log::{info, warn, Level as LogLevel};
 use serde::Deserialize;
 use skip_error::skip_error_and_log;
@@ -1361,7 +1361,7 @@ mod tests {
         test_utils::*,
         AddPrefix, PrefixConfiguration,
     };
-    use geo_types::line_string;
+    use geo::line_string;
     use pretty_assertions::assert_eq;
     use typed_index_collection::Id;
 

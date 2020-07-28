@@ -159,7 +159,7 @@ where
     de_with_invalid_option(de).map(|opt| opt.unwrap_or_else(Default::default))
 }
 
-pub fn de_wkt<'de, D>(deserializer: D) -> Result<geo_types::Geometry<f64>, D::Error>
+pub fn de_wkt<'de, D>(deserializer: D) -> Result<geo::Geometry<f64>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -270,10 +270,7 @@ where
     serializer.serialize_str(&currency_code.alpha3.to_string())
 }
 
-pub fn ser_geometry<S>(
-    geometry: &geo_types::Geometry<f64>,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
+pub fn ser_geometry<S>(geometry: &geo::Geometry<f64>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {

@@ -320,7 +320,7 @@ mod tests {
     use crate::calendars::{manage_calendars, write_calendar_dates};
     use crate::objects::Availability;
     use crate::{read_utils::PathFileHandler, test_utils::*};
-    use geo_types::line_string;
+    use geo::line_string;
     use pretty_assertions::assert_eq;
     use std::{
         collections::{BTreeMap, BTreeSet, HashMap},
