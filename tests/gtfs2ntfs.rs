@@ -12,24 +12,40 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use std::path::Path;
-use transit_model::gtfs::Configuration;
-use transit_model::test_utils::*;
-
-static DEFAULT_CONFIGURATION: Configuration<&Path> = Configuration {
-    config_path: None,
-    prefix: None,
-    on_demand_transport: false,
-    on_demand_transport_comment: None,
+use std::collections::BTreeMap;
+use transit_model::{
+    gtfs, ntfs,
+    objects::{Contributor, Dataset},
+    read_utils::read_config,
+    test_utils::*,
+    PrefixConfiguration,
 };
+
+fn default_configuration() -> gtfs::Configuration {
+    gtfs::Configuration {
+        contributor: Contributor::default(),
+        dataset: Dataset::default(),
+        feed_infos: BTreeMap::new(),
+        prefix_conf: None,
+        on_demand_transport: false,
+        on_demand_transport_comment: None,
+    }
+}
 
 #[test]
 fn test_gtfs() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs";
+        let (contributor, dataset, feed_infos) =
+            read_config(Some("./tests/fixtures/gtfs2ntfs/config.json")).unwrap();
+        let mut prefix_conf = PrefixConfiguration::default();
+        prefix_conf.set_data_prefix("ME");
+        prefix_conf.set_dataset_id(&dataset.id);
         let configuration = transit_model::gtfs::Configuration {
-            config_path: Some("./tests/fixtures/gtfs2ntfs/config.json"),
-            prefix: Some("ME".to_string()),
+            dataset,
+            contributor,
+            feed_infos,
+            prefix_conf: Some(prefix_conf),
             on_demand_transport: false,
             on_demand_transport_comment: None,
         };
@@ -43,9 +59,8 @@ fn test_gtfs() {
 fn test_minimal_gtfs() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/minimal/input";
-        let model =
-            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        let model = gtfs::read_from_path(input_dir, default_configuration()).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
 }
@@ -54,9 +69,8 @@ fn test_minimal_gtfs() {
 fn test_gtfs_physical_modes() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/physical_modes/input";
-        let model =
-            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        let model = gtfs::read_from_path(input_dir, default_configuration()).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec![
@@ -74,9 +88,8 @@ fn test_gtfs_physical_modes() {
 fn test_gtfs_remove_vjs_with_no_traffic() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/no_traffic/input";
-        let model =
-            transit_model::gtfs::read_from_path(input_dir, DEFAULT_CONFIGURATION.clone()).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        let model = gtfs::read_from_path(input_dir, default_configuration()).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec![
@@ -96,9 +109,8 @@ fn test_gtfs_remove_vjs_with_no_traffic() {
 fn test_minimal_ziped_gtfs() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/ziped_gtfs/gtfs.zip";
-        let model =
-            transit_model::gtfs::read_from_zip(input, DEFAULT_CONFIGURATION.clone()).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        let model = gtfs::read_from_zip(input, default_configuration()).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
 }
@@ -107,9 +119,8 @@ fn test_minimal_ziped_gtfs() {
 fn test_minimal_ziped_sub_dir_gtfs() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/ziped_gtfs/sub_dir_gtfs.zip";
-        let model =
-            transit_model::gtfs::read_from_zip(input, DEFAULT_CONFIGURATION.clone()).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        let model = gtfs::read_from_zip(input, default_configuration()).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
 }
@@ -118,9 +129,8 @@ fn test_minimal_ziped_sub_dir_gtfs() {
 fn test_minimal_ziped_sub_dir_gtfs_with_hidden_files() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/ziped_gtfs/sub_dir_gtfs_with_hidden_files.zip";
-        let model =
-            transit_model::gtfs::read_from_zip(input, DEFAULT_CONFIGURATION.clone()).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        let model = gtfs::read_from_zip(input, default_configuration()).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
 }
@@ -129,17 +139,20 @@ fn test_minimal_ziped_sub_dir_gtfs_with_hidden_files() {
 fn test_minimal_gtfs_with_odt_comment() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/minimal/input";
-        let configuration: transit_model::gtfs::Configuration<&Path> =
-            transit_model::gtfs::Configuration {
-                config_path: None,
-                prefix: Some("test".to_string()),
-                on_demand_transport: false,
-                on_demand_transport_comment: Some(
-                    "Service à réservation {agency_name} {agency_phone}".to_string(),
-                ),
-            };
-        let model = transit_model::gtfs::read_from_path(input_dir, configuration).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        let mut prefix_conf = PrefixConfiguration::default();
+        prefix_conf.set_data_prefix("test");
+        let configuration = gtfs::Configuration {
+            contributor: Contributor::default(),
+            dataset: Dataset::default(),
+            feed_infos: BTreeMap::new(),
+            prefix_conf: Some(prefix_conf),
+            on_demand_transport: false,
+            on_demand_transport_comment: Some(
+                "Service à réservation {agency_name} {agency_phone}".to_string(),
+            ),
+        };
+        let model = gtfs::read_from_path(input_dir, configuration).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["comment_links.txt", "comments.txt", "stop_times.txt"]),
@@ -152,18 +165,21 @@ fn test_minimal_gtfs_with_odt_comment() {
 fn test_minimal_gtfs_frequencies_with_odt_comment() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/frequencies/input";
-        let configuration: transit_model::gtfs::Configuration<&Path> =
-            transit_model::gtfs::Configuration {
-                config_path: None,
-                prefix: Some("test".to_string()),
-                on_demand_transport: false,
-                on_demand_transport_comment: Some(
-                    "Service à réservation {agency_name} {agency_phone}".to_string(),
-                ),
-            };
+        let mut prefix_conf = PrefixConfiguration::default();
+        prefix_conf.set_data_prefix("test");
+        let configuration = gtfs::Configuration {
+            contributor: Contributor::default(),
+            dataset: Dataset::default(),
+            feed_infos: BTreeMap::new(),
+            prefix_conf: Some(prefix_conf),
+            on_demand_transport: false,
+            on_demand_transport_comment: Some(
+                "Service à réservation {agency_name} {agency_phone}".to_string(),
+            ),
+        };
 
-        let model = transit_model::gtfs::read_from_path(input_dir, configuration).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        let model = gtfs::read_from_path(input_dir, configuration).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["comment_links.txt", "comments.txt", "stop_times.txt"]),

@@ -21,7 +21,7 @@ use slog::{slog_o, Drain};
 use slog_async::OverflowStrategy;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use transit_model::{transfers::generates_transfers, Result};
+use transit_model::{read_utils, transfers::generates_transfers, PrefixConfiguration, Result};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.")]
@@ -99,9 +99,17 @@ fn init_logger() -> slog_scope::GlobalLoggerGuard {
 fn run(opt: Opt) -> Result<()> {
     info!("Launching gtfs2ntfs...");
 
+    let (contributor, dataset, feed_infos) = read_utils::read_config(opt.config)?;
+    let mut prefix_conf = PrefixConfiguration::default();
+    if let Some(data_prefix) = opt.prefix {
+        prefix_conf.set_data_prefix(data_prefix);
+    }
+    prefix_conf.set_dataset_id(&dataset.id);
     let configuration = transit_model::gtfs::Configuration {
-        config_path: opt.config,
-        prefix: opt.prefix,
+        contributor,
+        dataset,
+        feed_infos,
+        prefix_conf: Some(prefix_conf),
         on_demand_transport: opt.odt,
         on_demand_transport_comment: opt.odt_comment,
     };

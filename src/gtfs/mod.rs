@@ -21,8 +21,7 @@ use crate::{
     calendars::{manage_calendars, write_calendar_dates},
     gtfs::read::EquipmentList,
     model::{Collections, Model},
-    objects,
-    objects::{Availability, StopPoint, StopType, Time},
+    objects::{self, Availability, Contributor, Dataset, StopPoint, StopType, Time},
     read_utils,
     utils::*,
     validity_period, AddPrefix, PrefixConfiguration, Result,
@@ -30,8 +29,7 @@ use crate::{
 use derivative::Derivative;
 use log::info;
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::path::Path;
+use std::{collections::BTreeMap, fmt, path::Path};
 use typed_index_collection::{CollectionWithId, Idx};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -257,33 +255,42 @@ struct Shape {
 }
 
 ///parameters consolidation
-#[derive(Clone)]
-pub struct Configuration<P: AsRef<Path>> {
-    /// path to configuration file
-    pub config_path: Option<P>,
+pub struct Configuration {
+    /// The Contributor providing the Dataset
+    pub contributor: Contributor,
+    /// Describe the Dataset being parsed
+    pub dataset: Dataset,
+    /// Additional key-values for the 'feed_infos.txt'
+    pub feed_infos: BTreeMap<String, String>,
     /// used to prefix objects
-    pub prefix: Option<String>,
+    pub prefix_conf: Option<PrefixConfiguration>,
     /// stop time precision management
     pub on_demand_transport: bool,
     /// on demand transport comment template
     pub on_demand_transport_comment: Option<String>,
 }
 
-fn read<H, P: AsRef<Path>>(file_handler: &mut H, configuration: Configuration<P>) -> Result<Model>
+fn read<H>(file_handler: &mut H, configuration: Configuration) -> Result<Model>
 where
     for<'a> &'a mut H: read_utils::FileHandler,
 {
     let mut collections = Collections::default();
     let mut equipments = EquipmentList::default();
 
-    manage_calendars(file_handler, &mut collections)?;
+    let Configuration {
+        contributor,
+        mut dataset,
+        feed_infos,
+        prefix_conf,
+        on_demand_transport,
+        on_demand_transport_comment,
+    } = configuration;
 
-    let (contributor, mut dataset, feed_infos) =
-        read_utils::read_config(configuration.config_path)?;
+    manage_calendars(file_handler, &mut collections)?;
     validity_period::compute_dataset_validity_period(&mut dataset, &collections.calendars)?;
 
-    collections.contributors = CollectionWithId::new(vec![contributor])?;
-    collections.datasets = CollectionWithId::new(vec![dataset])?;
+    collections.contributors = CollectionWithId::from(contributor);
+    collections.datasets = CollectionWithId::from(dataset);
     collections.feed_infos = feed_infos;
 
     let (networks, companies) = read::read_agency(file_handler)?;
@@ -303,17 +310,15 @@ where
     read::manage_stop_times(
         &mut collections,
         file_handler,
-        configuration.on_demand_transport,
-        configuration.on_demand_transport_comment,
+        on_demand_transport,
+        on_demand_transport_comment,
     )?;
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
     collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
 
     //add prefixes
-    if let Some(prefix) = configuration.prefix {
-        let mut prefix_conf = PrefixConfiguration::default();
-        prefix_conf.set_data_prefix(prefix);
+    if let Some(prefix_conf) = prefix_conf {
         collections.prefix(&prefix_conf);
     }
 
@@ -331,10 +336,7 @@ where
 /// The `prefix` argument is a string that will be prepended to every
 /// identifiers, allowing to namespace the dataset. By default, no
 /// prefix will be added to the identifiers.
-pub fn read_from_path<P: AsRef<Path>>(
-    p: P,
-    configuration: Configuration<impl AsRef<Path>>,
-) -> Result<Model> {
+pub fn read_from_path<P: AsRef<Path>>(p: P, configuration: Configuration) -> Result<Model> {
     let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
     read(&mut file_handle, configuration)
 }
@@ -349,10 +351,7 @@ pub fn read_from_path<P: AsRef<Path>>(
 /// The `prefix` argument is a string that will be prepended to every
 /// identifiers, allowing to namespace the dataset. By default, no
 /// prefix will be added to the identifiers.
-pub fn read_from_zip<P: AsRef<Path>>(
-    path: P,
-    configuration: Configuration<impl AsRef<Path>>,
-) -> Result<Model> {
+pub fn read_from_zip<P: AsRef<Path>>(path: P, configuration: Configuration) -> Result<Model> {
     let mut file_handler = read_utils::ZipHandler::new(path)?;
     read(&mut file_handler, configuration)
 }
