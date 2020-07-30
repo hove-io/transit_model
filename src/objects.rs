@@ -1048,7 +1048,7 @@ impl AddPrefix for StopArea {
         self.equipment_id = self
             .equipment_id
             .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.geometry_id = self
             .geometry_id
             .take()
@@ -1115,7 +1115,7 @@ impl AddPrefix for StopPoint {
         self.equipment_id = self
             .equipment_id
             .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.geometry_id = self
             .geometry_id
             .take()
@@ -1172,7 +1172,7 @@ impl AddPrefix for StopLocation {
         self.equipment_id = self
             .equipment_id
             .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.level_id = self
             .level_id
             .take()
@@ -1404,7 +1404,7 @@ impl_id!(Equipment);
 
 impl AddPrefix for Equipment {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
-        self.id = prefix_conf.referential_prefix(self.id.as_str());
+        self.id = prefix_conf.schedule_prefix(self.id.as_str());
     }
 }
 
@@ -1439,7 +1439,7 @@ impl AddPrefix for Transfer {
         self.equipment_id = self
             .equipment_id
             .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
     }
 }
 
