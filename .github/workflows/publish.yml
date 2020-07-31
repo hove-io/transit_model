@@ -1,10 +1,10 @@
 name: Publish on crates.io
-on: 
+on:
   release:
     types: [created]
 
 env:
-  PROJ_VERSION: 6.3.0
+  PROJ_VERSION: 7.1.0
 
 jobs:
   publish:
@@ -16,7 +16,7 @@ jobs:
         wget --quiet --output-document - "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public" | sudo apt-key add -
         echo "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main" | sudo tee /etc/apt/sources.list.d/kisio-digital.list
         sudo apt update
-        sudo apt install --yes pkg-config libssl-dev clang proj=${PROJ_VERSION}
+        sudo apt install --yes pkg-config libssl-dev clang libtiff-dev libcurl4-nss-dev proj=${PROJ_VERSION}
     - uses: actions/checkout@master
     - name: Install Rust
       uses: actions-rs/toolchain@v1

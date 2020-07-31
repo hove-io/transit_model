@@ -1,10 +1,10 @@
-PROJ_VERSION = 6.3.0
+PROJ_VERSION = 7.1.0
 install_proj: ## Install PROJ and clang (requirements to use proj crate)
 	sudo apt update
 	sudo apt install -y clang
 
 	# Needed only for proj install
-	sudo apt install -y wget build-essential pkg-config sqlite3 libsqlite3-dev
+	sudo apt install -y wget build-essential pkg-config sqlite3 libsqlite3-dev libtiff-dev libcurl4-nss-dev
 
 	# remove PROJ system version from packages
 	sudo apt remove libproj-dev

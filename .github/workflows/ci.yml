@@ -2,7 +2,7 @@ name: Continuous Integration
 on: [push, pull_request]
 
 env:
-  PROJ_VERSION: 6.3.0
+  PROJ_VERSION: 7.1.0
 
 jobs:
   rustfmt:
@@ -28,7 +28,7 @@ jobs:
         wget --quiet --output-document - "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public" | sudo apt-key add -
         echo "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main" | sudo tee /etc/apt/sources.list.d/kisio-digital.list
         sudo apt update
-        sudo apt install --yes pkg-config libssl-dev clang proj=${PROJ_VERSION}
+        sudo apt install --yes pkg-config libssl-dev clang libtiff-dev libcurl4-nss-dev proj=${PROJ_VERSION}
     - uses: actions/checkout@master
     - name: Install Rust stable
       uses: actions-rs/toolchain@v1
@@ -58,7 +58,7 @@ jobs:
         wget --quiet --output-document - "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public" | sudo apt-key add -
         echo "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main" | sudo tee /etc/apt/sources.list.d/kisio-digital.list
         sudo apt update
-        sudo apt install --yes libxml2-utils pkg-config libssl-dev clang proj=${PROJ_VERSION}
+        sudo apt install --yes libxml2-utils pkg-config libssl-dev clang libtiff-dev libcurl4-nss-dev proj=${PROJ_VERSION}
     - uses: actions/checkout@master
     - name: Checkout Submodules
       uses: textbook/git-checkout-submodule-action@2.1.1
