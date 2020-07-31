@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::{
     cmp::{self, Ordering},
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     convert::TryFrom,
     iter::FromIterator,
     ops,
@@ -760,6 +760,71 @@ impl Collections {
         self.vehicle_journeys = CollectionWithId::new(vehicle_journeys).unwrap();
     }
 
+    /// Some comments are identical and can be deduplicated
+    pub fn comment_deduplication(&mut self) {
+        let doubloon2ref = &self.get_comment_map_doubloon_to_referent();
+        if doubloon2ref.is_empty() {
+            return;
+        }
+        let doubloons: BTreeSet<String> = doubloon2ref.keys().cloned().collect();
+
+        replace_comment_doubloons_by_ref(&mut self.lines, &doubloons, &doubloon2ref);
+        replace_comment_doubloons_by_ref(&mut self.routes, &doubloons, &doubloon2ref);
+        replace_comment_doubloons_by_ref(&mut self.stop_areas, &doubloons, &doubloon2ref);
+        replace_comment_doubloons_by_ref(&mut self.stop_points, &doubloons, &doubloon2ref);
+        replace_comment_doubloons_by_ref(&mut self.stop_locations, &doubloons, &doubloon2ref);
+
+        fn replace_comment_doubloons_by_ref<T>(
+            collection: &mut CollectionWithId<T>,
+            doubloons: &BTreeSet<String>,
+            doubloons2ref: &BTreeMap<String, String>,
+        ) where
+            T: Id<T> + CommentLinks,
+        {
+            let mut map_pt_object_doubloons: BTreeMap<Idx<T>, Vec<String>> = BTreeMap::new();
+            for (idx, pt_object) in collection.iter() {
+                let intersection: Vec<String> = pt_object
+                    .comment_links()
+                    .intersection(&doubloons)
+                    .cloned()
+                    .collect();
+                if !intersection.is_empty() {
+                    map_pt_object_doubloons.insert(idx, intersection);
+                }
+            }
+
+            for (idx, intersection) in map_pt_object_doubloons {
+                for i in intersection {
+                    let mut pt_object = collection.index_mut(idx);
+                    pt_object.comment_links_mut().remove(&i);
+                    pt_object
+                        .comment_links_mut()
+                        .insert(doubloons2ref[&i].clone());
+                }
+            }
+        }
+    }
+
+    /// From comment collection only, return a map of the similar comments.
+    ///
+    /// Result: doubloons (comments to be removed) are mapped to their similar
+    /// referent (unique to be kept)
+    fn get_comment_map_doubloon_to_referent(&self) -> BTreeMap<String, String> {
+        let mut doubloon2ref: BTreeMap<String, String> = BTreeMap::new();
+        // Map of the referent comments id (uniqueness given the similarity_key)
+        let mut map_ref: BTreeMap<&str, &str> = BTreeMap::new();
+
+        for (_, comment) in &self.comments {
+            let similarity_key = comment.name.as_str(); // name only is considered
+            if let Some(ref_id) = map_ref.get(similarity_key) {
+                doubloon2ref.insert(comment.id.to_string(), ref_id.to_string());
+            } else {
+                map_ref.insert(similarity_key, &comment.id);
+            }
+        }
+        doubloon2ref
+    }
+
     /// If the route name is empty, it is derived from the most frequent
     /// `stop_area` origin and `stop_area` destination of all the associated
     /// trips.  The `stop_area` name is used to create the following `String`:
@@ -1100,6 +1165,7 @@ impl Model {
     /// assert!(Model::new(collections).is_ok());
     /// ```
     pub fn new(mut c: Collections) -> Result<Self> {
+        c.comment_deduplication();
         c.sanitize()?;
 
         let forward_vj_to_sp = c
