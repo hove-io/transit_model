@@ -1,5 +1,5 @@
 stop_id,stop_name,stop_code,visible,fare_zone_id,stop_lon,stop_lat,location_type,parent_station,stop_timezone,geometry_id,equipment_id,level_id,platform_code
-ME:stop:11,pouet,,1,,2.372987,48.844746,0,ME:stoparea:1,,,ME:0,ME:1,A
+ME:stop:11,pouet,,1,,2.372987,48.844746,0,ME:stoparea:1,,,ME:Defaul:0,ME:1,A
 ME:stop:22,pouet,,1,,2.372987,48.844746,0,ME:stoparea:1,,,,,
 ME:stop:31,pouet,,1,,2.372987,48.844746,0,ME:stoparea:1,,,,,
 ME:stop:32,pouet,,1,,2.372987,48.844746,0,ME:stoparea:1,,,,,
