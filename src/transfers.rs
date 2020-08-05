@@ -25,6 +25,10 @@ use typed_index_collection::{Collection, CollectionWithId, Idx};
 
 type TransferMap = HashMap<(Idx<StopPoint>, Idx<StopPoint>), Transfer>;
 
+/// The closure that will determine whether a connection should be created between 2 stops.
+/// See See [generates_transfers](./fn.generates_transfers.html).
+pub type NeedTransfer<'a> = Box<dyn 'a + FnMut(&Model, Idx<StopPoint>, Idx<StopPoint>) -> bool>;
+
 fn make_transfers_map(
     transfers: Collection<Transfer>,
     sp: &CollectionWithId<StopPoint>,
@@ -49,6 +53,7 @@ fn generate_transfers_from_sp(
     max_distance: f64,
     walking_speed: f64,
     waiting_time: u32,
+    mut need_transfer: Option<NeedTransfer>,
 ) {
     info!("Adding missing transfers from stop points.");
     let sq_max_distance = max_distance * max_distance;
@@ -57,6 +62,11 @@ fn generate_transfers_from_sp(
         for (idx2, sp2) in model.stop_points.iter() {
             if transfers_map.contains_key(&(idx1, idx2)) {
                 continue;
+            }
+            if let Some(ref mut f) = need_transfer {
+                if !f(model, idx1, idx2) {
+                    continue;
+                }
             }
             let sq_distance = approx.sq_distance_to(&sp2.coord);
             if sq_distance > sq_max_distance {
@@ -86,7 +96,11 @@ fn generate_transfers_from_sp(
 ///
 /// The `waiting_time` argument is the waiting transfer_time in seconds at stop.
 ///
-/// `rule_files` are paths to csv files that contains rules for modifying
+/// `need_transfer` Additional condition that determines whether a transfer
+/// must be created between 2 stop points. By default transfers that do not
+/// already exist and where the distance is less than `max_distance` will be created.
+/// If you need an additional condition, you can use this parameter. For instance
+/// you could create transfers between 2 stop points of different contributors only.
 ///
 /// # Example
 ///
@@ -101,6 +115,7 @@ pub fn generates_transfers(
     max_distance: f64,
     walking_speed: f64,
     waiting_time: u32,
+    need_transfer: Option<NeedTransfer>,
 ) -> Result<Model> {
     info!("Generating transfers...");
     let mut transfers_map = make_transfers_map(model.transfers.clone(), &model.stop_points);
@@ -110,6 +125,7 @@ pub fn generates_transfers(
         max_distance,
         walking_speed,
         waiting_time,
+        need_transfer,
     );
 
     let mut new_transfers: Vec<_> = transfers_map.into_iter().map(|(_, v)| v).collect();
