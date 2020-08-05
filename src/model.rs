@@ -762,44 +762,44 @@ impl Collections {
 
     /// Some comments are identical and can be deduplicated
     pub fn comment_deduplication(&mut self) {
-        let doubloon2ref = &self.get_comment_map_doubloon_to_referent();
-        if doubloon2ref.is_empty() {
+        let duplicate2ref = &self.get_comment_map_duplicate_to_referent();
+        if duplicate2ref.is_empty() {
             return;
         }
-        let doubloons: BTreeSet<String> = doubloon2ref.keys().cloned().collect();
+        let duplicates: BTreeSet<String> = duplicate2ref.keys().cloned().collect();
 
-        replace_comment_doubloons_by_ref(&mut self.lines, &doubloons, &doubloon2ref);
-        replace_comment_doubloons_by_ref(&mut self.routes, &doubloons, &doubloon2ref);
-        replace_comment_doubloons_by_ref(&mut self.stop_areas, &doubloons, &doubloon2ref);
-        replace_comment_doubloons_by_ref(&mut self.stop_points, &doubloons, &doubloon2ref);
-        replace_comment_doubloons_by_ref(&mut self.stop_locations, &doubloons, &doubloon2ref);
+        replace_comment_duplicates_by_ref(&mut self.lines, &duplicates, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.routes, &duplicates, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.stop_areas, &duplicates, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.stop_points, &duplicates, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.stop_locations, &duplicates, &duplicate2ref);
 
-        fn replace_comment_doubloons_by_ref<T>(
+        fn replace_comment_duplicates_by_ref<T>(
             collection: &mut CollectionWithId<T>,
-            doubloons: &BTreeSet<String>,
-            doubloons2ref: &BTreeMap<String, String>,
+            duplicates: &BTreeSet<String>,
+            duplicate2ref: &BTreeMap<String, String>,
         ) where
             T: Id<T> + CommentLinks,
         {
-            let mut map_pt_object_doubloons: BTreeMap<Idx<T>, Vec<String>> = BTreeMap::new();
+            let mut map_pt_object_duplicates: BTreeMap<Idx<T>, Vec<String>> = BTreeMap::new();
             for (idx, pt_object) in collection.iter() {
                 let intersection: Vec<String> = pt_object
                     .comment_links()
-                    .intersection(&doubloons)
+                    .intersection(&duplicates)
                     .cloned()
                     .collect();
                 if !intersection.is_empty() {
-                    map_pt_object_doubloons.insert(idx, intersection);
+                    map_pt_object_duplicates.insert(idx, intersection);
                 }
             }
 
-            for (idx, intersection) in map_pt_object_doubloons {
+            for (idx, intersection) in map_pt_object_duplicates {
                 for i in intersection {
                     let mut pt_object = collection.index_mut(idx);
                     pt_object.comment_links_mut().remove(&i);
                     pt_object
                         .comment_links_mut()
-                        .insert(doubloons2ref[&i].clone());
+                        .insert(duplicate2ref[&i].clone());
                 }
             }
         }
@@ -807,22 +807,22 @@ impl Collections {
 
     /// From comment collection only, return a map of the similar comments.
     ///
-    /// Result: doubloons (comments to be removed) are mapped to their similar
+    /// Result: duplicates (comments to be removed) are mapped to their similar
     /// referent (unique to be kept)
-    fn get_comment_map_doubloon_to_referent(&self) -> BTreeMap<String, String> {
-        let mut doubloon2ref: BTreeMap<String, String> = BTreeMap::new();
+    fn get_comment_map_duplicate_to_referent(&self) -> BTreeMap<String, String> {
+        let mut duplicate2ref: BTreeMap<String, String> = BTreeMap::new();
         // Map of the referent comments id (uniqueness given the similarity_key)
         let mut map_ref: BTreeMap<&str, &str> = BTreeMap::new();
 
         for (_, comment) in &self.comments {
             let similarity_key = comment.name.as_str(); // name only is considered
             if let Some(ref_id) = map_ref.get(similarity_key) {
-                doubloon2ref.insert(comment.id.to_string(), ref_id.to_string());
+                duplicate2ref.insert(comment.id.to_string(), ref_id.to_string());
             } else {
                 map_ref.insert(similarity_key, &comment.id);
             }
         }
-        doubloon2ref
+        duplicate2ref
     }
 
     /// If the route name is empty, it is derived from the most frequent
