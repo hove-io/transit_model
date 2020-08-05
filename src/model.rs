@@ -810,11 +810,11 @@ impl Collections {
     /// Result: duplicates (comments to be removed) are mapped to their similar
     /// referent (unique to be kept)
     fn get_comment_map_duplicate_to_referent(&self) -> BTreeMap<String, String> {
-        let mut duplicate2ref: BTreeMap<String, String> = BTreeMap::new();
+        let mut duplicate2ref = BTreeMap::<String, String>::new();
         // Map of the referent comments id (uniqueness given the similarity_key)
-        let mut map_ref: BTreeMap<&str, &str> = BTreeMap::new();
+        let mut map_ref = HashMap::<&str, &str>::new();
 
-        for (_, comment) in &self.comments {
+        for comment in self.comments.values() {
             let similarity_key = comment.name.as_str(); // name only is considered
             if let Some(ref_id) = map_ref.get(similarity_key) {
                 duplicate2ref.insert(comment.id.to_string(), ref_id.to_string());
