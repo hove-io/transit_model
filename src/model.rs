@@ -760,6 +760,77 @@ impl Collections {
         self.vehicle_journeys = CollectionWithId::new(vehicle_journeys).unwrap();
     }
 
+    /// Some comments are identical and can be deduplicated
+    pub fn comment_deduplication(&mut self) {
+        let duplicate2ref = self.get_comment_map_duplicate_to_referent();
+        if duplicate2ref.is_empty() {
+            return;
+        }
+
+        replace_comment_duplicates_by_ref(&mut self.lines, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.routes, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.stop_areas, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.stop_points, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.stop_locations, &duplicate2ref);
+
+        fn replace_comment_duplicates_by_ref<T>(
+            collection: &mut CollectionWithId<T>,
+            duplicate2ref: &BTreeMap<String, String>,
+        ) where
+            T: Id<T> + CommentLinks,
+        {
+            let map_pt_object_duplicates: BTreeMap<Idx<T>, Vec<&str>> = collection
+                .iter()
+                .filter_map(|(idx, pt_object)| {
+                    let intersection: Vec<&str> = pt_object
+                        .comment_links()
+                        .iter()
+                        .filter_map(|comment_id| {
+                            duplicate2ref
+                                .get_key_value(comment_id)
+                                .map(|(duplicate_id_ref, _)| duplicate_id_ref.as_str())
+                        })
+                        .collect();
+                    if !intersection.is_empty() {
+                        Some((idx, intersection))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            for (idx, intersection) in map_pt_object_duplicates {
+                for i in intersection {
+                    let mut pt_object = collection.index_mut(idx);
+                    pt_object.comment_links_mut().remove(i);
+                    pt_object
+                        .comment_links_mut()
+                        .insert(duplicate2ref[i].clone());
+                }
+            }
+        }
+    }
+
+    /// From comment collection only, return a map of the similar comments.
+    ///
+    /// Result: duplicates (comments to be removed) are mapped to their similar
+    /// referent (unique to be kept)
+    fn get_comment_map_duplicate_to_referent(&self) -> BTreeMap<String, String> {
+        let mut duplicate2ref = BTreeMap::<String, String>::new();
+        // Map of the referent comments id (uniqueness given the similarity_key)
+        let mut map_ref = HashMap::<&str, &str>::new();
+
+        for comment in self.comments.values() {
+            let similarity_key = comment.name.as_str(); // name only is considered
+            if let Some(ref_id) = map_ref.get(similarity_key) {
+                duplicate2ref.insert(comment.id.to_string(), ref_id.to_string());
+            } else {
+                map_ref.insert(similarity_key, &comment.id);
+            }
+        }
+        duplicate2ref
+    }
+
     /// If the route name is empty, it is derived from the most frequent
     /// `stop_area` origin and `stop_area` destination of all the associated
     /// trips.  The `stop_area` name is used to create the following `String`:
@@ -1100,6 +1171,7 @@ impl Model {
     /// assert!(Model::new(collections).is_ok());
     /// ```
     pub fn new(mut c: Collections) -> Result<Self> {
+        c.comment_deduplication();
         c.sanitize()?;
 
         let forward_vj_to_sp = c
