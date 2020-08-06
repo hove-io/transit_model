@@ -16,6 +16,10 @@ As explained in [common NTFS rules], a prefix is added to all identifiers during
 In the following chapters, identifiers may be prepend with this _prefix_ using this pattern : **\<prefix>:<object\_id>**.
 The use of this specific pattern is shown explicitly using the value **ID** in the column _Constraint_ in the tables below.
 
+To reinforce the uniqueness some objects have a sub-prefix (generated automatically) in addition to their prefix.\
+The pattern is the following **\<prefix>:<sub_prefix>:<object\_id>**.\
+See [common NTFS rules] for relevant objects, for the automatic generation of the sub-prefix or for more information.
+
 In addition, the NTFS format introduces 2 objects to enable the manipulation of several datasets: contributors and datasets. Those two objects are described in [common NTFS rules].
 
 Two parameters can be specified in the configuration of the converter in order to determine if on demand transport (ODT) data should be considered when reading the input GTFS (in particular, when [reading the stop_times.txt file](#reading-stop_timestxt)):
@@ -93,7 +97,7 @@ an error. Likewise for the stop_areas.
 
 
 (1) If the `parent_station` field of a stop_point (`location_type` = 0 or empty) is missing or empty, then a stop_area should be created, using the following properties :
-+ `stop_id` : the stop_id of the stop_point, with the followong pattern : **\Navitia:<stop_id of the stop_point>**
++ `stop_id` : the stop_id of the stop_point, with the following pattern : **Navitia:<stop_id of the stop_point>**
 + `stop_name` : the stop_name of the stop_point
 + `stop_lat` : the stop_lat of the stop_point
 + `stop_lon` : the stop_lon of the stop_point
