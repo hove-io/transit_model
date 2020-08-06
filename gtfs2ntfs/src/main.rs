@@ -122,7 +122,13 @@ fn run(opt: Opt) -> Result<()> {
         bail!("Invalid input data: must be an existing directory or a ZIP archive");
     };
 
-    let model = generates_transfers(model, opt.max_distance, opt.walking_speed, opt.waiting_time)?;
+    let model = generates_transfers(
+        model,
+        opt.max_distance,
+        opt.walking_speed,
+        opt.waiting_time,
+        None,
+    )?;
 
     transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
     Ok(())

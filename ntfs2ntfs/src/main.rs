@@ -79,7 +79,13 @@ fn run(opt: Opt) -> Result<()> {
     info!("Launching ntfs2ntfs...");
 
     let model = transit_model::ntfs::read(opt.input)?;
-    let model = generates_transfers(model, opt.max_distance, opt.walking_speed, opt.waiting_time)?;
+    let model = generates_transfers(
+        model,
+        opt.max_distance,
+        opt.walking_speed,
+        opt.waiting_time,
+        None,
+    )?;
 
     if let Some(output) = opt.output {
         transit_model::ntfs::write(&model, output, opt.current_datetime)?;
