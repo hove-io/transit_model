@@ -762,7 +762,7 @@ impl Collections {
 
     /// Some comments are identical and can be deduplicated
     pub fn comment_deduplication(&mut self) {
-        let duplicate2ref = &self.get_comment_map_duplicate_to_referent();
+        let duplicate2ref = self.get_comment_map_duplicate_to_referent();
         if duplicate2ref.is_empty() {
             return;
         }
@@ -779,18 +779,25 @@ impl Collections {
         ) where
             T: Id<T> + CommentLinks,
         {
-            let mut map_pt_object_duplicates: BTreeMap<Idx<T>, Vec<&str>> = BTreeMap::new();
-            for (idx, pt_object) in collection.iter() {
-                let mut intersection = vec![];
-                for comment_id in pt_object.comment_links() {
-                    if let Some((duplicate_id_ref, _)) = duplicate2ref.get_key_value(comment_id) {
-                        intersection.push(duplicate_id_ref.as_str());
+            let map_pt_object_duplicates: BTreeMap<Idx<T>, Vec<&str>> = collection
+                .iter()
+                .filter_map(|(idx, pt_object)| {
+                    let intersection: Vec<&str> = pt_object
+                        .comment_links()
+                        .iter()
+                        .filter_map(|comment_id| {
+                            duplicate2ref
+                                .get_key_value(comment_id)
+                                .map(|(duplicate_id_ref, _)| duplicate_id_ref.as_str())
+                        })
+                        .collect();
+                    if !intersection.is_empty() {
+                        Some((idx, intersection))
+                    } else {
+                        None
                     }
-                }
-                if !intersection.is_empty() {
-                    map_pt_object_duplicates.insert(idx, intersection);
-                }
-            }
+                })
+                .collect();
 
             for (idx, intersection) in map_pt_object_duplicates {
                 for i in intersection {
