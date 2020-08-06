@@ -26,8 +26,8 @@ use typed_index_collection::{Collection, CollectionWithId, Idx};
 type TransferMap = HashMap<(Idx<StopPoint>, Idx<StopPoint>), Transfer>;
 
 /// The closure that will determine whether a connection should be created between 2 stops.
-/// See See [generates_transfers](./fn.generates_transfers.html).
-pub type NeedTransfer<'a> = Box<dyn 'a + FnMut(&Model, Idx<StopPoint>, Idx<StopPoint>) -> bool>;
+/// See [generates_transfers](./fn.generates_transfers.html).
+pub type NeedTransfer<'a> = Box<dyn 'a + Fn(&Model, Idx<StopPoint>, Idx<StopPoint>) -> bool>;
 
 fn make_transfers_map(
     transfers: Collection<Transfer>,
@@ -53,7 +53,7 @@ fn generate_transfers_from_sp(
     max_distance: f64,
     walking_speed: f64,
     waiting_time: u32,
-    mut need_transfer: Option<NeedTransfer>,
+    need_transfer: Option<NeedTransfer>,
 ) {
     info!("Adding missing transfers from stop points.");
     let sq_max_distance = max_distance * max_distance;
@@ -63,7 +63,7 @@ fn generate_transfers_from_sp(
             if transfers_map.contains_key(&(idx1, idx2)) {
                 continue;
             }
-            if let Some(ref mut f) = need_transfer {
+            if let Some(ref f) = need_transfer {
                 if !f(model, idx1, idx2) {
                     continue;
                 }
