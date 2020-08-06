@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::{
     cmp::{self, Ordering},
-    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     convert::TryFrom,
     iter::FromIterator,
     ops,
@@ -766,28 +766,27 @@ impl Collections {
         if duplicate2ref.is_empty() {
             return;
         }
-        let duplicates: BTreeSet<String> = duplicate2ref.keys().cloned().collect();
 
-        replace_comment_duplicates_by_ref(&mut self.lines, &duplicates, &duplicate2ref);
-        replace_comment_duplicates_by_ref(&mut self.routes, &duplicates, &duplicate2ref);
-        replace_comment_duplicates_by_ref(&mut self.stop_areas, &duplicates, &duplicate2ref);
-        replace_comment_duplicates_by_ref(&mut self.stop_points, &duplicates, &duplicate2ref);
-        replace_comment_duplicates_by_ref(&mut self.stop_locations, &duplicates, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.lines, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.routes, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.stop_areas, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.stop_points, &duplicate2ref);
+        replace_comment_duplicates_by_ref(&mut self.stop_locations, &duplicate2ref);
 
         fn replace_comment_duplicates_by_ref<T>(
             collection: &mut CollectionWithId<T>,
-            duplicates: &BTreeSet<String>,
             duplicate2ref: &BTreeMap<String, String>,
         ) where
             T: Id<T> + CommentLinks,
         {
-            let mut map_pt_object_duplicates: BTreeMap<Idx<T>, Vec<String>> = BTreeMap::new();
+            let mut map_pt_object_duplicates: BTreeMap<Idx<T>, Vec<&str>> = BTreeMap::new();
             for (idx, pt_object) in collection.iter() {
-                let intersection: Vec<String> = pt_object
-                    .comment_links()
-                    .intersection(&duplicates)
-                    .cloned()
-                    .collect();
+                let mut intersection = vec![];
+                for comment_id in pt_object.comment_links() {
+                    if let Some((duplicate_id_ref, _)) = duplicate2ref.get_key_value(comment_id) {
+                        intersection.push(duplicate_id_ref.as_str());
+                    }
+                }
                 if !intersection.is_empty() {
                     map_pt_object_duplicates.insert(idx, intersection);
                 }
@@ -796,10 +795,10 @@ impl Collections {
             for (idx, intersection) in map_pt_object_duplicates {
                 for i in intersection {
                     let mut pt_object = collection.index_mut(idx);
-                    pt_object.comment_links_mut().remove(&i);
+                    pt_object.comment_links_mut().remove(i);
                     pt_object
                         .comment_links_mut()
-                        .insert(duplicate2ref[&i].clone());
+                        .insert(duplicate2ref[i].clone());
                 }
             }
         }
