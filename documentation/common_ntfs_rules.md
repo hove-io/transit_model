@@ -19,7 +19,7 @@ The sub-prefix is automatically generated from the first 6 characters of the `da
 
 Adding a sub-prefix allows the merge of seasonal datasets; similar referencial (e.g. `networks`, `lines`, `stop areas`, `stop points`) but different schedules (e.g. `trips`, `dates`).
 
-Objects concerned by this sub-prefix are: `calendars`, `trips`, `trip_properties`, `frequencies`, `comments`, `comment_links`, `geometries`, `equipments`.
+The objects that may be concerned by this sub-prefix are: `calendars`, `trips`, `trip_properties`, `frequencies`, `comments`, `comment_links`, `geometries`, `equipments` (see each connector's documentation for details).
 
 ## Configuration of each converter
 A configuration file `config.json`, as it is shown below, is provided for each
