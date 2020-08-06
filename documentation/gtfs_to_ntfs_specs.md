@@ -18,7 +18,9 @@ The use of this specific pattern is shown explicitly using the value **ID** in t
 
 To reinforce the uniqueness some objects have a sub-prefix (generated automatically) in addition to their prefix.\
 The pattern is the following **\<prefix>:<sub_prefix>:<object\_id>**.\
-See [common NTFS rules] for relevant objects, for the automatic generation of the sub-prefix or for more information.
+See [common NTFS rules] for more information.\
+Objects concerned by this sub-prefix in this connector are: `calendars`, `trips`, `trip_properties`, `frequencies`, `comments`, `comment_links`, `geometries`, `equipments`.
+
 
 In addition, the NTFS format introduces 2 objects to enable the manipulation of several datasets: contributors and datasets. Those two objects are described in [common NTFS rules].
 
