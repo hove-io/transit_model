@@ -45,6 +45,10 @@ struct Opt {
     #[structopt(short, long)]
     prefix: Option<String>,
 
+    /// Schedule sub prefix after the prefix on all scheduled objects (`123` turned into `prefix::schedule_subprefix::123`).
+    #[structopt(short, long)]
+    schedule_subprefix: Option<String>,
+
     /// Indicates if the input GTFS contains On-Demand Transport (ODT)
     /// information.
     #[structopt(long)]
@@ -104,7 +108,9 @@ fn run(opt: Opt) -> Result<()> {
     if let Some(data_prefix) = opt.prefix {
         prefix_conf.set_data_prefix(data_prefix);
     }
-    prefix_conf.set_dataset_id(&dataset.id);
+    if let Some(schedule_subprefix) = opt.schedule_subprefix {
+        prefix_conf.set_schedule_subprefix(schedule_subprefix);
+    }
     let configuration = transit_model::gtfs::Configuration {
         contributor,
         dataset,

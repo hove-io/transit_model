@@ -15,34 +15,25 @@
 //! A trait for every structure that needs to be updated with a prefix
 
 use crate::model::Collections;
+use derivative::Derivative;
 use std::collections::HashMap;
 use typed_index_collection::{Collection, CollectionWithId, Id};
 
-const PREFIX_DATASET_LENGTH: usize = 6;
-
 /// Metadata for building the prefix.
-#[derive(Debug)]
+#[derivative(Default)]
+#[derive(Derivative, Debug)]
 pub struct PrefixConfiguration {
     /// Separator used in the prefix, usually ':'.
+    #[derivative(Default(value = "\":\".to_string()"))]
     sep: String,
     /// General data prefix (historically a trigram) used for discriminating
     /// referential objects (like Network).  Usually useful to avoid collisions
     /// when merging dataset from different contributors.
     data_prefix: Option<String>,
-    /// Unique identifier of the dataset, used for discriminating scheduled
+    /// Sub prefix used for discriminating scheduled
     /// objects (like Calendar).  Usually useful to avoid collisions when
-    /// merging dataset from the same contributor.
-    dataset_id: Option<String>,
-}
-
-impl Default for PrefixConfiguration {
-    fn default() -> Self {
-        PrefixConfiguration {
-            sep: String::from(":"),
-            data_prefix: None,
-            dataset_id: None,
-        }
-    }
+    /// merging datasets from the same contributor.
+    schedule_subprefix: Option<String>,
 }
 
 impl PrefixConfiguration {
@@ -62,12 +53,12 @@ impl PrefixConfiguration {
         self.data_prefix = Some(data_prefix.to_string());
     }
 
-    /// Set the dataset_id in the PrefixConfiguration.
-    pub fn set_dataset_id<S>(&mut self, dataset_id: S)
+    /// Set the schedule_subprefix in the PrefixConfiguration.
+    pub fn set_schedule_subprefix<S>(&mut self, schedule_subprefix: S)
     where
         S: ToString,
     {
-        self.dataset_id = Some(dataset_id.to_string());
+        self.schedule_subprefix = Some(schedule_subprefix.to_string());
     }
 
     /// Add prefix for referential-type object.
@@ -88,10 +79,9 @@ impl PrefixConfiguration {
         let mut prefix = String::new();
         if let Some(data_prefix) = self.data_prefix.as_ref() {
             prefix = prefix + data_prefix + &self.sep;
-            if let Some(dataset_id) = self.dataset_id.as_ref() {
-                let truncate_index = usize::min(dataset_id.len(), PREFIX_DATASET_LENGTH);
-                prefix = prefix + &dataset_id[0..truncate_index] + &self.sep;
-            }
+        }
+        if let Some(schedule_subprefix) = self.schedule_subprefix.as_ref() {
+            prefix = prefix + &schedule_subprefix + &self.sep;
         }
         prefix + id
     }
@@ -105,7 +95,7 @@ pub trait AddPrefix {
         let prefix_conf = PrefixConfiguration {
             sep: String::new(),
             data_prefix: Some(prefix.to_string()),
-            dataset_id: None,
+            schedule_subprefix: None,
         };
         self.prefix(&prefix_conf);
     }
@@ -117,7 +107,7 @@ pub trait AddPrefix {
         let prefix_conf = PrefixConfiguration {
             sep: String::from(sep),
             data_prefix: Some(prefix.to_string()),
-            dataset_id: None,
+            schedule_subprefix: None,
         };
         self.prefix(&prefix_conf);
     }
@@ -266,13 +256,13 @@ mod tests {
         let mut collection = Collection::new(vec![obj1, obj2]);
         let mut prefix_conf = PrefixConfiguration::default();
         prefix_conf.set_data_prefix("pre");
-        prefix_conf.set_dataset_id("abcdefghijklmnopqrstuvwxyz");
+        prefix_conf.set_schedule_subprefix("winter");
         collection.prefix(&prefix_conf);
         let mut values = collection.values();
         let element = values.next().unwrap();
-        assert_eq!(String::from("pre:abcdef:some_id"), element.0);
+        assert_eq!(String::from("pre:winter:some_id"), element.0);
         let element = values.next().unwrap();
-        assert_eq!(String::from("pre:abcdef:other_id"), element.0);
+        assert_eq!(String::from("pre:winter:other_id"), element.0);
     }
 
     #[test]
@@ -311,13 +301,13 @@ mod tests {
         let mut collection = CollectionWithId::new(vec![obj1, obj2]).unwrap();
         let mut prefix_conf = PrefixConfiguration::default();
         prefix_conf.set_data_prefix("pre");
-        prefix_conf.set_dataset_id("abcdefghijklmnopqrstuvwxyz");
+        prefix_conf.set_schedule_subprefix("summer");
         collection.prefix(&prefix_conf);
         let mut values = collection.values();
         let element = values.next().unwrap();
-        assert_eq!(String::from("pre:abcdef:some_id"), element.0);
+        assert_eq!(String::from("pre:summer:some_id"), element.0);
         let element = values.next().unwrap();
-        assert_eq!(String::from("pre:abcdef:other_id"), element.0);
+        assert_eq!(String::from("pre:summer:other_id"), element.0);
     }
 
     #[test]

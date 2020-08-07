@@ -1,9 +1,11 @@
 # GTFS reading specification
 
 ## Purpose
+
 This document aims to describe how the [GTFS] format is read in the Navitia Transit Model. To improve readability of this document, the specification will describe the transformation of a GTFS feed into a [NTFS] feed (which is a bunch of csv files accordingly to the memory Navitia Transit Model).
 
 ## Introduction
+
 If at any time of the conversion, the GTFS is not conform to the [GTFS]
 specification, the conversion should stop immediately with an error, unless
 otherwise specified.
@@ -12,23 +14,24 @@ At the end of the conversion, a sanitizing operation is started on the final
 model. See [common NTFS rules] for more information.
 
 ### Prepending data
+
 As explained in [common NTFS rules], a prefix is added to all identifiers during the conversion in order to guarantee uniqueness among objects IDs.
 In the following chapters, identifiers may be prepend with this _prefix_ using this pattern : **\<prefix>:<object\_id>**.
 The use of this specific pattern is shown explicitly using the value **ID** in the column _Constraint_ in the tables below.
 
-To reinforce the uniqueness some objects have a sub-prefix (generated automatically) in addition to their prefix.\
+To reinforce the uniqueness some objects might have a sub-prefix (generated automatically) in addition to their prefix.\
 The pattern is the following **\<prefix>:<sub_prefix>:<object\_id>**.\
-See [common NTFS rules] for more information.\
 Objects concerned by this sub-prefix in this connector are: `calendars`, `trips`, `trip_properties`, `frequencies`, `comments`, `comment_links`, `geometries`, `equipments`.
-
 
 In addition, the NTFS format introduces 2 objects to enable the manipulation of several datasets: contributors and datasets. Those two objects are described in [common NTFS rules].
 
 Two parameters can be specified in the configuration of the converter in order to determine if on demand transport (ODT) data should be considered when reading the input GTFS (in particular, when [reading the stop_times.txt file](#reading-stop_timestxt)):
+
 * a boolean parameter `odt`, by default set to `false`, indicating if the GTFS should be considered as containing ODT information
 * a string `odt_comment` setting the message associated to an ODT comment.
 
 ## Mapping of objects between GTFS and NTFS
+
 | GTFS object | NTFS object(s)                              |
 | ----------- | ------------------------------------------- |
 | agency      | network and company                         |
@@ -40,12 +43,16 @@ Two parameters can be specified in the configuration of the converter in order t
 | frequency   | trip and stop_time                          |
 
 ## Detailed mapping of objects
+
 ### Reading agency.txt
+
 The field "agency_id" may not be provided in the GTFS as it's an optional field.
+
 * If there is only one agency, the "agency_id" is considered to be "1".
 * If there are several agencies, the program will raise an exception as it won't be able to choose the right agency for the routes.
 
 #### Loading Networks
+
 If 2 networks with the same ID are specified, the conversion should stop
 immediately with an error.
 
@@ -61,6 +68,7 @@ immediately with an error.
 **_"Source" complementary code :_**
 
 A complementary `object_code` is added to each network with the following properties:
+
 * `object_type` : the fixed value `network`
 * `object_id` : the value of the `network_id` field
 * `object_system` : the fixed value `source`
@@ -68,6 +76,7 @@ A complementary `object_code` is added to each network with the following proper
 
 
 #### Loading Companies
+
 If 2 companies with the same ID are specified, the conversion should stop
 immediately with an error.
 
@@ -79,6 +88,7 @@ immediately with an error.
 | companies.txt | company_phone | Optional   | agency.txt | agency_phone |                                                          |
 
 ### Reading stops.txt
+
 Like the GTFS, the NTFS group stop_points and stop_areas in on file : stops.txt.
 If the stop_points have the same ID, the conversion should stop immediately with
 an error. Likewise for the stop_areas.
@@ -97,28 +107,31 @@ an error. Likewise for the stop_areas.
 | comments.txt   | comment_value       | Optional   | stops.txt | stop_desc           | See (3) for additional properties                                                                                                                                                                          |
 | equipments.txt | wheelchair_boarding | Optional   | stops.txt | wheelchair_boarding | If value is not one of `0`, `1` or `2`, then set to `0`. See (4) for detailed info.                                                                                                                        |
 
-
 (1) If the `parent_station` field of a stop_point (`location_type` = 0 or empty) is missing or empty, then a stop_area should be created, using the following properties :
-+ `stop_id` : the stop_id of the stop_point, with the following pattern : **Navitia:<stop_id of the stop_point>**
-+ `stop_name` : the stop_name of the stop_point
-+ `stop_lat` : the stop_lat of the stop_point
-+ `stop_lon` : the stop_lon of the stop_point
-+ `location_type` : fixed value "1" (to specify it's a stop_area)
+
+* `stop_id` : the stop_id of the stop_point, with the following pattern : **Navitia:<stop_id of the stop_point>**
+* `stop_name` : the stop_name of the stop_point
+* `stop_lat` : the stop_lat of the stop_point
+* `stop_lon` : the stop_lon of the stop_point
+* `location_type` : fixed value "1" (to specify it's a stop_area)
 The `parent_station` of the stop_point should then contain the generated `stop_area.id`.
 
 (2) The `stop_code` field is added as a complementary `object_code` with the following properties:
-+ `object_type` : `stop_point` or `stop_area`  accordingly to the `location_type` value
-+ `object_id` : NTFS `stop_id`
-+ `object_system` : Fixed value `gtfs_stop_code`
-+ `object_code` : value of the `stop_code` property
+
+* `object_type` : `stop_point` or `stop_area`  accordingly to the `location_type` value
+* `object_id` : NTFS `stop_id`
+* `object_system` : Fixed value `gtfs_stop_code`
+* `object_code` : value of the `stop_code` property
 The `gtfs_stop_code` complementary `object_code` is kept here for backward
 compatibility reasons. It will be removed in the future.
 
 (3) The `comment` object is a complex type with additional properties :
+
 * `comment_id` : specify an identifier with the pattern **stop:<stop_id of GTFS>**
 * `comment_type` : specify the fixed value "information"
 
 (4) The `equipment` object is a complex type with additional properties :
+
 + `equipment_id` : should be generated by the reader.
 + `wheelchair_boarding` : possible values are the same in both GTFS and NTFS.
 Be careful to only create necessary equipments and avoid duplicates.
@@ -126,13 +139,16 @@ Be careful to only create necessary equipments and avoid duplicates.
 **_"Source" complementary code :_**
 
 A complementary `object_code` is added to each stop with the following properties:
+
 * `object_type` : the fixed value `stop_point` or `stop_area` (depending on the object)
 * `object_id` : the value of the `stop_id` field
 * `object_system` : the fixed value `source`
 * `object_code` : the unmodified value of `agency_id` (or `1` if the value is not provided as stated above)
 
 ### Reading routes.txt
+
 ##### Mapping of route_type with modes
+
 The standard values of the `route_type` field are directly mapped to the NTFS modes. [Extended GTFS modes](https://developers.google.com/transit/gtfs/reference/extended-route-types) are read by categories mapping the most prominent mode. The priority is used to prioritize the use of a commercial mode when creating a Line grouping routes with different `route_type`s. This priorization follow the [Netex Specification](http://www.normes-donnees-tc.org/wp-content/uploads/2014/05/NF_Profil_NeTEx_pour_les_arrets-_F-_-_v2.pdf) in chapter 6.2.3 (and also indicated in the NTFS Specification).
 
 | GTFS route_type  | NTFS physical_mode ID (1) | NTFS commercial_mode ID (2) | NTFS commercial_mode name | Priority |
@@ -157,6 +173,7 @@ All `physical_mode` are enhanced with CO2 emission and fallback modes, following
 the documentation in [common NTFS rules](common_ntfs_rules.md#co2-emissions-and-fallback-modes).
 
 #### Loading Routes
+
 A Route is created for each direction of existing trips.  If 2 routes with the
 same ID are specified, the conversion should stop immediately with an error.
 _Warning :_ If the GTFS route has no trips, the Navitia Route should NOT be created and a warning should be logged.
@@ -178,10 +195,12 @@ for generating the `route_name`.
 (2) the field `direction_type` contains `backward` when grouping GTFS Trips with `direction_id` = 1, `forward` otherwise
 
 (3) The `comment` object is a complex type with additional properties :
+
 * `comment_id` : specify an identifier with the pattern **\<prefix>:route:<route_id of GTFS>**
 * `comment_type` : specify the fixed value "Information"
 
 #### Loading Lines
+
 A Navitia Line is created to group one or several Navitia Routes when they are
 created with the same gtfs `agency_id` and the same `route_short_name` (or
 `route_long_name` if the latter is empty).  If 2 lines with the same ID are
@@ -201,14 +220,17 @@ specified, the conversion should stop immediately with an error.
 (1) When several GTFS Routes with different `route_type`s are grouped together, the commercial_mode_id with the smallest priority should be used (as specified in chapter "Mapping of route_type with modes").
 
 ### Reading calendars.txt and calendar_dates.txt
+
 GTFS services are transformed into lists of active dates as if using a single NTFS
 file `calendar_dates.txt`. The resulting NTFS files might be different following an
 optimization operation applied at the end of the conversion, but the result should be
 functionally identical.
+
 * In case both files `calendar.txt` and `calendar_dates.txt` are present in the input dataset, the days of the week of the specified services within the date range [`start_date` - `end_date`] are transformed into explicit active service dates, taking into account the dates when service exceptions occur. Note that the generated (`service_id`, `date`) pairs must be unique.
 * In case the file `calendar.txt` is empty or not present in the input dataset, the active service dates are loaded as is.
 
 ### Reading trips.txt
+
 If 2 trips with the same ID are specified, the conversion should stop
 immediately with an error.
 
@@ -227,19 +249,20 @@ immediately with an error.
 | trips.txt | geometry_id      | Optional   | trips.txt  | shape_id   | All slashes `/` are removed                                                                              |
 
 (1) The `trip_property` object is a complex type with additional properties :
-+ `trip_property_id`: should be generated by the reader.
-+ `wheelchair_accessible`: possible values are the same in both GTFS and NTFS; if value is not one of `0`, `1` or `2`, then set to `0`.
-+ `bike_accepted`: corresponding to the GTFS `bikes_allowed` property. Possible values are the same in both GTFS and NTFS; if value is not one of `0`, `1` or `2`, then set to `0`.
+
+* `trip_property_id`: should be generated by the reader.
+* `wheelchair_accessible`: possible values are the same in both GTFS and NTFS; if value is not one of `0`, `1` or `2`, then set to `0`.
+* `bike_accepted`: corresponding to the GTFS `bikes_allowed` property. Possible values are the same in both GTFS and NTFS; if value is not one of `0`, `1` or `2`, then set to `0`.
 Be careful to only create necessary `trip_properties` and avoid duplicates.
 
 **_"Source" complementary code :_**
 
 A complementary `object_code` is added to each vehicle journey with the following properties:
+
 * `object_type` : the fixed value `trip`
 * `object_id` : the value of the `trip_id` field
 * `object_system` : the fixed value `source`
 * `object_code` : the unmodified GTFS value of `trip_id`
-
 
 ### Reading stop_times.txt
 
@@ -256,13 +279,15 @@ A complementary `object_code` is added to each vehicle journey with the followin
 | stop_times.txt | stop_time_precision | Optional   | stop_times.txt | timepoint      | GTFS and NTFS values are inverted when no ODT information is considered. See (2). If invalid unsigned integer, default to `1` |
 
 (1) GTFS `arrival_time` and `departure_time` should contain values.
+
 * if both of them are empty :
-    * if the stop_time is the first or the last of the trip, an error is returned
-    * if not, the time should be interpolated (see below).
+  * if the stop_time is the first or the last of the trip, an error is returned
+  * if not, the time should be interpolated (see below).
 * if one of them is empty, a warning should be logged and the value of the other field should be copied to the empty one.
 
 **Interpolation**
 If a stop_time needs to be interpolated :
+
 * collect the nearest preceding stop_time and the nearest following stop_time containing a valid time value
 * apply a simple distribution for all the intermediate stop_times
 For exemple :
@@ -275,6 +300,7 @@ For exemple :
 | 10:30             | 10:30                  |
 
 (2) Depending of the value of the parameter `odt`, the GTFS `timepoint` conversion rules for NTFS `stop_time_precision` are :
+
 * if `odt` is set to `false` or empty:
   * if `timepoint` is unspecified => `stop_time_precision` equals 0
   * if `timepoint` equals 1 => `stop_time_precision` equals 0
@@ -296,6 +322,7 @@ For exemple :
 | comment_links.txt | comment_id   | Required   | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that, as this field references the comment in file comments.txt, it should be prefixed as explained in [common NTFS rules]. |
 
 ### Reading transfers.txt
+
 * If 2 transfers with the same ID are specified, the conversion should stop
   immediately with an error
 * If a line of the file is not conform to the specification, then the line is
@@ -327,6 +354,7 @@ follows. Note that if value is not one of `0`, `1`, `2` or `3`, then set to `0`.
 | geometries.txt | geometry_wkt | Required   | shapes.txt | shape_pt_lat, shape_pt_lon, shape_pt_sequence | A WKT LINESTRING geometry is created from the 3 input fields. |
 
 ### Reading frequencies.txt
+
 Frequencies are transformed into explicit passing times by creating new trips that operate on regular times within the specified period. For each line of the GTFS frequencies.txt file, the referenced trip and its stop_times are used as a sample to create the new trips whose stop_times are calculated based on the given headway.
 
 A new trip is created, departing from the first stop every `headway_secs` seconds within the time period between `start_time` and `end_time`. Stop times of the referenced trip are used to calculate the time interval between two stop departures.
@@ -337,6 +365,7 @@ Note that the referenced trip (and its stop_times) is only used as a sample and 
 The identifier for each new trip is generated using the following pattern: \<trip_id>:<auto-incrimented integer\> and maintains the rest of the attributes of the sample trip. That is, all new trips are assigned to the same route as the route of the sample trip, have the same service_id, etc.
 
 A complementary `object_code` is added to each new trip with the following properties:
+
 * `object_type` : the fixed value `trip`
 * `object_id` : the value of the `trip_id` field
 * `object_system` : the fixed value `source`
