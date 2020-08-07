@@ -21,7 +21,7 @@ use crate::{
     calendars::{manage_calendars, write_calendar_dates},
     gtfs::read::EquipmentList,
     model::{Collections, Model},
-    objects::{self, Availability, Contributor, Dataset, StopPoint, StopType, Time},
+    objects::{self, Availability, Contributor, Dataset, StopPoint, StopType, Time, TzExt},
     read_utils,
     utils::*,
     validity_period, AddPrefix, PrefixConfiguration, Result,
@@ -41,7 +41,7 @@ struct Agency {
     #[serde(rename = "agency_url")]
     url: String,
     #[serde(rename = "agency_timezone")]
-    timezone: String,
+    pub timezone: TzExt,
     #[serde(rename = "agency_lang")]
     lang: Option<String>,
     #[serde(rename = "agency_phone")]
@@ -62,7 +62,7 @@ impl<'a> From<&'a objects::Network> for Agency {
             timezone: obj
                 .timezone
                 .clone()
-                .unwrap_or_else(|| "Europe/Paris".to_string()),
+                .unwrap_or_else(|| TzExt(chrono_tz::Europe::Paris)),
             lang: obj.lang.clone(),
             phone: obj.phone.clone(),
             email: None,
@@ -137,7 +137,7 @@ struct Stop {
     #[serde(default, deserialize_with = "de_option_without_slashes")]
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
-    timezone: Option<String>,
+    timezone: Option<TzExt>,
     level_id: Option<String>,
     #[serde(deserialize_with = "de_with_empty_default", default)]
     wheelchair_boarding: Availability,

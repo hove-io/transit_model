@@ -18,6 +18,7 @@
 
 use crate::{utils::*, AddPrefix, PrefixConfiguration};
 use chrono::NaiveDate;
+use chrono_tz::Tz;
 use derivative::Derivative;
 use geo::{Geometry as GeoGeometry, Point as GeoPoint};
 use rust_decimal::Decimal;
@@ -344,8 +345,9 @@ pub struct Network {
     pub url: Option<String>,
     #[serde(skip)]
     pub codes: KeysValues,
+    #[derivative(Default(value = "\"Europe/Paris\".parse().ok()"))]
     #[serde(rename = "network_timezone")]
-    pub timezone: Option<String>,
+    pub timezone: Option<TzExt>,
     #[serde(rename = "network_lang")]
     pub lang: Option<String>,
     #[serde(rename = "network_phone")]
@@ -355,6 +357,7 @@ pub struct Network {
     #[serde(rename = "network_sort_order")]
     pub sort_order: Option<u32>,
 }
+
 impl_id!(Network);
 impl_codes!(Network);
 impl_with_id!(Network);
@@ -1017,7 +1020,7 @@ pub struct StopArea {
     pub comment_links: CommentLinksT,
     pub visible: bool,
     pub coord: Coord,
-    pub timezone: Option<String>,
+    pub timezone: Option<TzExt>,
     pub geometry_id: Option<String>,
     pub equipment_id: Option<String>,
     pub level_id: Option<String>,
@@ -1095,7 +1098,7 @@ pub struct StopPoint {
     pub visible: bool,
     pub coord: Coord,
     pub stop_area_id: String,
-    pub timezone: Option<String>,
+    pub timezone: Option<TzExt>,
     pub geometry_id: Option<String>,
     pub equipment_id: Option<String>,
     pub fare_zone_id: Option<String>,
@@ -1148,7 +1151,7 @@ pub struct StopLocation {
     pub visible: bool,
     pub coord: Coord,
     pub parent_id: Option<String>,
-    pub timezone: Option<String>,
+    pub timezone: Option<TzExt>,
     pub geometry_id: Option<String>,
     pub equipment_id: Option<String>,
     pub level_id: Option<String>,
@@ -1806,6 +1809,31 @@ impl AddPrefix for GridRelCalendarLine {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
         self.grid_calendar_id = prefix_conf.referential_prefix(self.grid_calendar_id.as_str());
         self.line_id = prefix_conf.referential_prefix(self.line_id.as_str());
+    }
+}
+
+/// Wrapper around [`Tz`] that implements [`Display`].
+///
+/// [`Display`] is implemented for [`Tz`]
+/// but not released yet. Wait for [chrono-tz] version > 0.5.2
+///
+/// [`Display`]: https://doc.rust-lang.org/std/fmt/trait.Display.html
+/// [`Tz`]: https://docs.rs/chrono-tz/0.5.2/chrono_tz/enum.Tz.html
+/// [chrono-tz]: https://crates.io/crates/chrono-tz
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
+pub struct TzExt(pub Tz);
+
+impl std::fmt::Display for TzExt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = self.0.name();
+        f.write_str(name.as_ref())
+    }
+}
+
+impl FromStr for TzExt {
+    type Err = String;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Tz::from_str(s).map(TzExt)
     }
 }
 
