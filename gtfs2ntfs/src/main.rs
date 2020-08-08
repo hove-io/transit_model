@@ -45,7 +45,7 @@ struct Opt {
     #[structopt(short, long)]
     prefix: Option<String>,
 
-    /// Schedule sub prefix after the prefix on all scheduled objects (`123` turned into `prefix::schedule_subprefix::123`).
+    /// Schedule subprefix added after the prefix on all scheduled objects (`123` turned into `prefix::schedule_subprefix::123`).
     #[structopt(short, long)]
     schedule_subprefix: Option<String>,
 

@@ -250,7 +250,7 @@ mod tests {
     }
 
     #[test]
-    fn collection_schedule() {
+    fn collection_referential_and_schedule() {
         let obj1 = Obj(String::from("some_id"));
         let obj2 = Obj(String::from("other_id"));
         let mut collection = Collection::new(vec![obj1, obj2]);
@@ -263,6 +263,35 @@ mod tests {
         assert_eq!(String::from("pre:winter:some_id"), element.0);
         let element = values.next().unwrap();
         assert_eq!(String::from("pre:winter:other_id"), element.0);
+    }
+
+    #[test]
+    fn collection_schedule() {
+        let obj1 = Obj(String::from("some_id"));
+        let obj2 = Obj(String::from("other_id"));
+        let mut collection = Collection::new(vec![obj1, obj2]);
+        let mut prefix_conf = PrefixConfiguration::default();
+        prefix_conf.set_schedule_subprefix("winter");
+        collection.prefix(&prefix_conf);
+        let mut values = collection.values();
+        let element = values.next().unwrap();
+        assert_eq!(String::from("winter:some_id"), element.0);
+        let element = values.next().unwrap();
+        assert_eq!(String::from("winter:other_id"), element.0);
+    }
+
+    #[test]
+    fn collection_no_prefix() {
+        let obj1 = Obj(String::from("some_id"));
+        let obj2 = Obj(String::from("other_id"));
+        let mut collection = Collection::new(vec![obj1, obj2]);
+        let prefix_conf = PrefixConfiguration::default();
+        collection.prefix(&prefix_conf);
+        let mut values = collection.values();
+        let element = values.next().unwrap();
+        assert_eq!(String::from("some_id"), element.0);
+        let element = values.next().unwrap();
+        assert_eq!(String::from("other_id"), element.0);
     }
 
     #[test]
@@ -295,7 +324,7 @@ mod tests {
     }
 
     #[test]
-    fn collection_with_id_schedule() {
+    fn collection_with_id_referential_and_schedule() {
         let obj1 = Obj(String::from("some_id"));
         let obj2 = Obj(String::from("other_id"));
         let mut collection = CollectionWithId::new(vec![obj1, obj2]).unwrap();
@@ -308,6 +337,35 @@ mod tests {
         assert_eq!(String::from("pre:summer:some_id"), element.0);
         let element = values.next().unwrap();
         assert_eq!(String::from("pre:summer:other_id"), element.0);
+    }
+
+    #[test]
+    fn collection_with_id_schedule() {
+        let obj1 = Obj(String::from("some_id"));
+        let obj2 = Obj(String::from("other_id"));
+        let mut collection = CollectionWithId::new(vec![obj1, obj2]).unwrap();
+        let mut prefix_conf = PrefixConfiguration::default();
+        prefix_conf.set_schedule_subprefix("summer");
+        collection.prefix(&prefix_conf);
+        let mut values = collection.values();
+        let element = values.next().unwrap();
+        assert_eq!(String::from("summer:some_id"), element.0);
+        let element = values.next().unwrap();
+        assert_eq!(String::from("summer:other_id"), element.0);
+    }
+
+    #[test]
+    fn collection_with_id_no_prefix() {
+        let obj1 = Obj(String::from("some_id"));
+        let obj2 = Obj(String::from("other_id"));
+        let mut collection = CollectionWithId::new(vec![obj1, obj2]).unwrap();
+        let prefix_conf = PrefixConfiguration::default();
+        collection.prefix(&prefix_conf);
+        let mut values = collection.values();
+        let element = values.next().unwrap();
+        assert_eq!(String::from("some_id"), element.0);
+        let element = values.next().unwrap();
+        assert_eq!(String::from("other_id"), element.0);
     }
 
     #[test]
