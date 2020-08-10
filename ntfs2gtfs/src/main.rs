@@ -15,6 +15,7 @@
 // <http://www.gnu.org/licenses/>.
 
 use log::info;
+use ntfs2gtfs::add_mode_to_line_code;
 use slog::{slog_o, Drain};
 use slog_async::OverflowStrategy;
 use std::path::PathBuf;
@@ -25,12 +26,16 @@ use transit_model::Result;
 #[structopt(name = "ntfs2gtfs", about = "Convert an NTFS to a GTFS.")]
 struct Opt {
     /// Input directory.
-    #[structopt(short = "i", long = "input", parse(from_os_str), default_value = ".")]
+    #[structopt(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
     /// Output directory.
-    #[structopt(short = "o", long = "output", parse(from_os_str))]
+    #[structopt(short, long, parse(from_os_str))]
     output: PathBuf,
+
+    /// Add the commercial mode at the beginning of the route short name.
+    #[structopt(short, long)]
+    mode_in_route_short_name: bool,
 }
 
 fn init_logger() -> slog_scope::GlobalLoggerGuard {
@@ -54,7 +59,12 @@ fn init_logger() -> slog_scope::GlobalLoggerGuard {
 
 fn run(opt: Opt) -> Result<()> {
     info!("Launching ntfs2gtfs...");
-    let model = transit_model::ntfs::read(opt.input)?;
+    let mut model;
+    model = transit_model::ntfs::read(opt.input)?;
+
+    if opt.mode_in_route_short_name {
+        model = add_mode_to_line_code(model)?;
+    }
 
     transit_model::gtfs::write(model, opt.output)?;
     Ok(())
