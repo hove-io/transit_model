@@ -11,10 +11,9 @@ install_proj: ## Install PROJ and clang (requirements to use proj crate)
 
 	wget https://github.com/OSGeo/proj.4/releases/download/$(PROJ_VERSION)/proj-$(PROJ_VERSION).tar.gz
 	tar -xzvf proj-$(PROJ_VERSION).tar.gz
-	pushd proj-$(PROJ_VERSION)
-	./configure --prefix=/usr && make
-	sudo make install
-	popd
+	cd proj-$(PROJ_VERSION) && ./configure --prefix=/usr
+	make -C proj-$(PROJ_VERSION)
+	sudo make install -C proj-$(PROJ_VERSION)
 	rm -rf proj-$(PROJ_VERSION) proj-$(PROJ_VERSION).tar.gz
 
 fmt: format ## Check formatting of the code (alias for 'format')
