@@ -8,8 +8,10 @@ addons:
     - sourceline: "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main"
       key_url: "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public"
     packages:
-    - proj=6.3.0
+    - proj=7.1.0
     - libxml2-utils
+    - libtiff-dev
+    - libcurl4-nss-dev
 matrix:
   include:
   - rust: stable
