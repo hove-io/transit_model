@@ -1,8 +1,11 @@
 # NTFS to GTFS conversion
+
 ## Introduction
+
 This document describes how a [NTFS] is transformed into a [GTFS] feed in Navitia Transit Model.
 
 The resulting GTFS feed is composed of the following objects:
+
 * [agency](#agencytxt)
 * [routes](#routestxt)
 * [stops](#stopstxt)
@@ -11,6 +14,7 @@ The resulting GTFS feed is composed of the following objects:
 * [calendar_dates](#calendar_datestxt): only this file is provided instead of the calendar.txt file.
 
 The following additional files are generated only if the corresponding objects are present in the NTFS.
+
 * [transfers](#transferstxt)
 * [shapes](#shapestxt)
 * [stop_extensions](#stop_extensionstxt): additional information providing the complementary stop codes used in external systems.
@@ -19,7 +23,8 @@ The following additional files are generated only if the corresponding objects a
 [NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
 
 ## Mapping between NTFS and GTFS objects
-#### agency.txt
+
+### agency.txt
 
 | GTFS field      | Required | NTFS file    | NTFS field       | Note                                                   |
 | --------------- | -------- | ------------ | ---------------- | ------------------------------------------------------ |
@@ -30,19 +35,20 @@ The following additional files are generated only if the corresponding objects a
 | agency_lang     | no       | networks.txt | network_lang     |                                                        |
 | agency_phone    | no       | networks.txt | network_phone    |                                                        |
 
-#### routes.txt
+### routes.txt
+
 Each line of this file corresponds to a transit line modeled in the NTFS feed. In case a transit line uses more than one modes of transportation, it should be modeled separately for each different mode, according to the mapping of modes presented below. The priorities follow the [NeTex Specification](http://www.normes-donnees-tc.org/wp-content/uploads/2014/05/NF_Profil_NeTEx_pour_les_arrets-_F-_-_v2.pdf) (cf. chapter 6.2.3).
 
-| GTFS field       | Required | NTFS file | NTFS field      | Note                                                                                                    |
-| ---------------- | -------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------- |
-| route_id         | yes      | lines.txt | line_id         | See below for lines containing trips with different modes                                               |
-| agency_id        | no       | lines.txt | network_id      | (link to the [agency.txt](#agencytxt) file)                                                             |
-| route_short_name | yes      | lines.txt | line_code       | empty string "" if the value is not provided                                                            |
-| route_long_name  | yes      | lines.txt | line_name       |                                                                                                         |
-| route_type       | yes      |           |                 | The corresponding physical mode of the trips of the line. See the table below for the mapping of modes. |
-| route_color      | no       | lines.txt | line_color      |                                                                                                         |
-| route_text_color | no       | lines.txt | line_text_color |                                                                                                         |
-| route_sort_order | no       | lines.txt | line_sort_order |                                                                                                         |
+| GTFS field       | Required | NTFS file | NTFS field      | Note                                                                                                                                                               |
+| ---------------- | -------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| route_id         | yes      | lines.txt | line_id         | See below for lines containing trips with different modes                                                                                                          |
+| agency_id        | no       | lines.txt | network_id      | (link to the [agency.txt](#agencytxt) file)                                                                                                                        |
+| route_short_name | yes      | lines.txt | line_code       | empty string "" if the value is not provided. If `--mode-in-route-short-name` is provided to the binary, the commercial mode will be added to the route short name |
+| route_long_name  | yes      | lines.txt | line_name       |                                                                                                                                                                    |
+| route_type       | yes      |           |                 | The corresponding physical mode of the trips of the line. See the table below for the mapping of modes.                                                            |
+| route_color      | no       | lines.txt | line_color      |                                                                                                                                                                    |
+| route_text_color | no       | lines.txt | line_text_color |                                                                                                                                                                    |
+| route_sort_order | no       | lines.txt | line_sort_order |                                                                                                                                                                    |
 
 **Mapping of `route_type` with physical modes**
 
@@ -69,13 +75,13 @@ If the physical_mode is unknown, trips should be considered as Bus (route_type =
 
 **Export of NTFS lines containing trips with different modes**
 A GTFS `route` can only contains trips with one mode (ie. `route_type`).
-If a NTFS `line` contains `trip`s that should be associated with different gtfs `route_type`s, 2 different GTFS `route`s must be generated :
+If a NTFS `line` contains `trip`s that should be associated with different gtfs `route_type`s, 2 different GTFS `route`s must be generated:
+
 * The trips using the physical mode with the lowest priority are modeled by a GTFS `route` with the field `route_id` matching the value of the NTFS `line_id`.
 * The trips using other physical modes are modeled by a separate GTFS `route` for each corresponding `route_type`, adding the suffix ":<physical_mode_id>" to the value of `route_id` and assigning the corresponding physical mode to the field `route_type`.
 
-
-
 ### stops.txt
+
 Stop zones (NTFS stops having `location_type` = 2) are ignored in the current version.
 
 | GTFS field     | Required | NTFS file                       | NTFS field     | Note                                                                                                                                                                                                                                                                                                                |
@@ -106,10 +112,12 @@ Stop zones (NTFS stops having `location_type` = 2) are ignored in the current ve
 | bikes_allowed         | no       | trip_properties.txt | bike_accepted         | The value of `bike_accepted` referenced by the `trip_property_id` of this trip.         |
 
 (1) If the value of the `physical_mode_id` for this trip is `LocalTrain`, `LongDistanceTrain`, `Metro`, `RapidTransit` or `Train`,
+
 * the field `trip_short_name` takes after the value of the `trip_headsign` field in the NTFS
 * the field `trip_headsign` contains the value of the `stop_name` linked to the stop_point of this trip with the higher order in the trip (i.e. the name of the last stop of the trip).
 
 Otherwise,
+
 * the field `trip_short_name` is empty
 * the field `trip_headsign` contains
   * the value of the `trip_headsign` field in the NTFS, if present
@@ -131,6 +139,7 @@ Otherwise,
 | local_zone_id  | no       | stop_times.txt                  | local_zone_id  |                                                                                                                                                                                                                                                                                     |
 
 ### calendar_dates.txt
+
 This file is the same as the NTFS calendar_dates.txt file. All dates of service are included in this file (no calendar.txt file provided).
 
 ### transfers.txt
@@ -152,6 +161,7 @@ This file is the same as the NTFS calendar_dates.txt file. All dates of service 
 | shape_pt_sequence | yes      |                |              | Integer starting at 0 and increase by an increment of one for every point in the shape |
 
 ### stop_extensions.txt
+
 This file contains the complementary stop codes from the NTFS object_codes.txt file. If no additional stop code is specified, this file is not generated.
 If N complementary codes are specified for a stop, there will be N separate lines in the file for the different stop_id/system_name pairs.
 
