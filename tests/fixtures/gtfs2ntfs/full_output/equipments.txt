@@ -1,2 +1,2 @@
 equipment_id,wheelchair_boarding,sheltered,elevator,escalator,bike_accepted,bike_depot,visual_announcement,audible_announcement,appropriate_escort,appropriate_signage
-ME:Defaul:0,1,0,0,0,0,0,0,0,0,0
+ME:WINTER:0,1,0,0,0,0,0,0,0,0,0

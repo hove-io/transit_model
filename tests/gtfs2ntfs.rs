@@ -40,7 +40,7 @@ fn test_gtfs() {
             read_config(Some("./tests/fixtures/gtfs2ntfs/config.json")).unwrap();
         let mut prefix_conf = PrefixConfiguration::default();
         prefix_conf.set_data_prefix("ME");
-        prefix_conf.set_dataset_id(&dataset.id);
+        prefix_conf.set_schedule_subprefix("WINTER");
         let configuration = transit_model::gtfs::Configuration {
             dataset,
             contributor,
