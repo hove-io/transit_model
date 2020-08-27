@@ -26,7 +26,7 @@ use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::{
-    cmp::{self, Ordering},
+    cmp::{self, Ordering, Reverse},
     collections::{BTreeMap, HashMap, HashSet},
     convert::TryFrom,
     iter::FromIterator,
@@ -655,8 +655,9 @@ impl Collections {
             // [[9,10],[12,13,14],[23,0,1]] --> [[12,13,14],[23,0,1],[9,10]]
             // *** then, in case of equal width, sorts by taking the segment early in the morning (smallest index)
             // --> [[23,0,1],[12,13,14],[9,10]]
+            #[allow(clippy::unnecessary_sort_by)] // key borrows, so lint is "wrong"
             holes.sort_unstable_by(|l, r| l.iter().min().cmp(&r.iter().min()));
-            holes.sort_unstable_by(|l, r| r.len().cmp(&l.len()));
+            holes.sort_by_key(|v| Reverse(v.len()));
             holes.first().and_then(|mh| {
                 let first_idx = mh.first();
                 let last_idx = mh.last();

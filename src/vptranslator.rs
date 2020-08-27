@@ -437,7 +437,7 @@ mod tests {
                 date: Date::from_ymd(2012, 7, 13),
                 exception_type: ExceptionType::Remove,
             },
-            res.exceptions.iter().next().unwrap()
+            res.exceptions.get(0).unwrap()
         );
         assert_eq!(
             ValidityPeriod {
@@ -462,7 +462,7 @@ mod tests {
                 date: Date::from_ymd(2012, 7, 12),
                 exception_type: ExceptionType::Add,
             },
-            res.exceptions.iter().next().unwrap()
+            res.exceptions.get(0).unwrap()
         );
         assert_eq!(
             ValidityPeriod {
