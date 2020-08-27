@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Kisio Digital and/or its affiliates.
+// Copyright (C) 2020 Kisio Digital and/or its affiliates.
 //
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Affero General Public License as published by the
@@ -30,16 +30,30 @@ where
 }
 
 fn run() -> Result<()> {
-    let objects = transit_model::ntfs::read(".")?;
+    // load ntfs from current directory
+    let transit_objects = transit_model::ntfs::read(".")?;
 
-    for (from, stop_area) in &objects.stop_areas {
-        let cms = get(from, &objects.commercial_modes, &objects);
-        let pms = get(from, &objects.physical_modes, &objects);
-        let ns = get(from, &objects.networks, &objects);
-        let cs = get(from, &objects.contributors, &objects);
+    // stop_area by stop_area, print PT objects related to it
+    for (idx, stop_area) in &transit_objects.stop_areas {
+        // retrieve idx from id
+        assert_eq!(
+            transit_objects.stop_areas.get_idx(&stop_area.id).unwrap(),
+            idx
+        );
+
+        // lines passing by stop
+        let lines = get(idx, &transit_objects.lines, &transit_objects);
+        // physical_modes stopping at stop
+        let pms = get(idx, &transit_objects.physical_modes, &transit_objects);
+        // networks using stop
+        let ns = get(idx, &transit_objects.networks, &transit_objects);
+        // contributors providing the data for stop
+        let cs = get(idx, &transit_objects.contributors, &transit_objects);
+        // access stop_area through its idx to get name
+        let stop_name = &transit_objects.stop_areas[idx].name;
         println!(
-            "{}: cms: {:?}, pms: {:?}, ns: {:?}, cs: {:?}, codes: {:?}",
-            stop_area.id, cms, pms, ns, cs, stop_area.codes
+            "stop_area {} ({}): lines: {:?}, physical_modes: {:?}, networks: {:?}, contributors: {:?}, codes: {:?}",
+            stop_area.id, stop_name, lines, pms, ns, cs, stop_area.codes
         );
     }
     Ok(())
