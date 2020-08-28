@@ -39,6 +39,17 @@ jobs:
     - name: Linting
       run: make lint
 
+  audit:
+    name: Audits
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@v1
+    - name: Security audit
+      uses: actions-rs/audit-check@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
   tests:
     name: Tests
     runs-on: ${{ matrix.os }}
