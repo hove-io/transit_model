@@ -85,7 +85,6 @@ where
 }
 
 // The signature of the function must pass by reference for 'serde' to be able to use the function
-#[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn ser_from_bool<S>(v: &bool, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
@@ -104,7 +103,6 @@ where
 }
 
 // The signature of the function must pass by reference for 'serde' to be able to use the function
-#[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn ser_from_naive_date<S>(date: &Date, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
