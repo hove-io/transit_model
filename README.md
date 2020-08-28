@@ -14,7 +14,8 @@ This repository regroups crates that offer enabler-libraries and binaries to
 convert and enrich transit data.
 
 Additionally, `transit_model` is itself a library providing various
-functionalities. Please refer to the code and documentation to discover them.
+functionalities. Please refer to the code, [examples](examples) and
+[documentation](https://docs.rs/transit_model) to discover them.
 
 Please check documentation attached to each crate:
 

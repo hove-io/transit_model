@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Kisio Digital and/or its affiliates.
+// Copyright (C) 2020 Kisio Digital and/or its affiliates.
 //
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU Affero General Public License as published by the
@@ -29,9 +29,11 @@ fn run() -> Result<()> {
         on_demand_transport: false,
         on_demand_transport_comment: None,
     };
+    // read GTFS from current directory
     let objects = gtfs::read_from_path(".", configuration)?;
+    // output internal model as JSON
     let json_objs = json!(objects);
-    println!("{:?}", json_objs.to_string());
+    println!("{}", json_objs.to_string());
     Ok(())
 }
 
