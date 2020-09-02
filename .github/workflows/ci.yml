@@ -90,10 +90,16 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
-    - name: Run tests for coverage
-      uses: actions-rs/tarpaulin@v0.1
+    - name: Install `cargo-tarpaulin`
+      uses: actions-rs/cargo@v1
       with:
-        args: --all-features --workspace --count
+        command: install
+        args: cargo-tarpaulin
+    - name: Run tests for coverage
+      uses: actions-rs/cargo@v1
+      with:
+        command: tarpaulin
+        args: --all-features --all-targets --workspace --count --out Xml --run-types AllTargets
     - name: Codecov upload
       uses: codecov/codecov-action@v1
       with:
