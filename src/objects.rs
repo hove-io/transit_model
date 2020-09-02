@@ -345,7 +345,7 @@ pub struct Network {
     pub url: Option<String>,
     #[serde(skip)]
     pub codes: KeysValues,
-    #[derivative(Default(value = "\"Europe/Paris\".parse().ok()"))]
+    #[derivative(Default(value = "Some(TzExt(chrono_tz::Europe::Paris))"))]
     #[serde(rename = "network_timezone")]
     pub timezone: Option<TzExt>,
     #[serde(rename = "network_lang")]
