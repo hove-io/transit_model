@@ -14,9 +14,9 @@ Prepending all the identifiers with a unique prefix ensures that the NTFS identi
 This prefix should be applied to all NTFS identifiers except for the physical mode identifiers that are standardized and fixed values. Fixed values are described in the [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md#physical_modestxt-requis)
 
 To reinforce the uniqueness some objects might have a sub-prefix in addition to their prefix.\
-The pattern is the following **\<prefix>:<sub_prefix>:<object\_id>**.\
+The pattern is the following **\<prefix>:<sub_prefix>:<object\_id>**.
 
-Adding a sub-prefix allows the merge of seasonal datasets; similar referencial (e.g. `networks`, `lines`, `stop areas`, `stop points`) but different schedules (e.g. `trips`, `dates`).
+Adding a sub-prefix allows the merge of seasonal datasets; similar referential (e.g. `networks`, `lines`, `stop areas`, `stop points`) but different schedules (e.g. `trips`, `dates`).
 
 The objects that may be concerned by this sub-prefix are: `calendars`, `trips`, `trip_properties`, `frequencies`, `comments`, `comment_links`, `geometries`, `equipments` (see each connector's documentation for details).
 
