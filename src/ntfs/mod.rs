@@ -27,6 +27,7 @@ use crate::{
     Result,
 };
 use chrono::{DateTime, FixedOffset};
+use chrono_tz::Tz;
 use derivative::Derivative;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -122,7 +123,7 @@ struct Stop {
     location_type: StopLocationType,
     parent_station: Option<String>,
     #[serde(rename = "stop_timezone")]
-    timezone: Option<TzExt>,
+    timezone: Option<Tz>,
     geometry_id: Option<String>,
     equipment_id: Option<String>,
     level_id: Option<String>,
@@ -412,7 +413,7 @@ mod tests {
                 id: "OIF:101".to_string(),
                 name: "SAVAC".to_string(),
                 url: Some("http://www.vianavigo.com,Europe/Paris".to_string()),
-                timezone: Some(TzExt(chrono_tz::Europe::Paris)),
+                timezone: Some(chrono_tz::Europe::Paris),
                 lang: Some("fr".to_string()),
                 phone: Some("0123456789".to_string()),
                 address: Some("somewhere".to_string()),
@@ -584,7 +585,7 @@ mod tests {
                     lat: 48.799_115,
                 },
                 stop_area_id: "OIF:SA:8739322".to_string(),
-                timezone: Some(TzExt(chrono_tz::Europe::Paris)),
+                timezone: Some(chrono_tz::Europe::Paris),
                 fare_zone_id: Some("1".to_string()),
                 stop_type: StopType::Point,
                 ..Default::default()
@@ -598,7 +599,7 @@ mod tests {
                     lat: 48.800_598,
                 },
                 stop_area_id: "OIF:SA:2:1468".to_string(),
-                timezone: Some(TzExt(chrono_tz::Europe::Paris)),
+                timezone: Some(chrono_tz::Europe::Paris),
                 stop_type: StopType::Point,
                 ..Default::default()
             },
@@ -828,7 +829,7 @@ mod tests {
                     lon: 2.073_034,
                     lat: 48.799_115,
                 },
-                timezone: Some(TzExt(chrono_tz::Europe::Paris)),
+                timezone: Some(chrono_tz::Europe::Paris),
                 geometry_id: Some("geometry_1".to_string()),
                 equipment_id: Some("equipment_1".to_string()),
                 stop_area_id: "sa_1".to_string(),
@@ -880,7 +881,7 @@ mod tests {
                     lon: 2.073_034,
                     lat: 48.799_115,
                 },
-                timezone: Some(TzExt(chrono_tz::Europe::Paris)),
+                timezone: Some(chrono_tz::Europe::Paris),
                 geometry_id: Some("geometry_3".to_string()),
                 equipment_id: Some("equipment_1".to_string()),
                 level_id: Some("level2".to_string()),
