@@ -34,7 +34,6 @@ use serde::Deserialize;
 use skip_error::skip_error_and_log;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
-use std::result::Result as StdResult;
 use typed_index_collection::{impl_id, Collection, CollectionWithId, Idx};
 
 fn default_agency_id() -> String {
@@ -232,7 +231,7 @@ impl RouteType {
 }
 
 impl ::serde::Serialize for RouteType {
-    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ::serde::Serializer,
     {
@@ -241,7 +240,7 @@ impl ::serde::Serialize for RouteType {
 }
 
 impl<'de> ::serde::Deserialize<'de> for RouteType {
-    fn deserialize<D>(deserializer: D) -> StdResult<RouteType, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<RouteType, D::Error>
     where
         D: ::serde::Deserializer<'de>,
     {
@@ -727,7 +726,7 @@ where
         .from_reader(reader);
     let gtfs_stops: Vec<Stop> = rdr
         .deserialize()
-        .collect::<StdResult<_, _>>()
+        .collect::<Result<_, _>>()
         .with_context(|_| format!("Error reading {:?}", path))?;
 
     let mut stop_areas = vec![];
@@ -1197,10 +1196,10 @@ where
         }
         Some(reader) => {
             let mut rdr = csv::Reader::from_reader(reader);
-            let gtfs_frequencies: Vec<Frequency> =
-                rdr.deserialize()
-                    .collect::<StdResult<_, _>>()
-                    .with_context(|_| format!("Error reading {:?}", path))?;
+            let gtfs_frequencies: Vec<Frequency> = rdr
+                .deserialize()
+                .collect::<Result<_, _>>()
+                .with_context(|_| format!("Error reading {:?}", path))?;
             let mut trip_id_sequence: HashMap<String, u32> = HashMap::new();
             let mut new_vehicle_journeys: Vec<VehicleJourney> = vec![];
             for frequency in &gtfs_frequencies {

@@ -24,7 +24,6 @@ use std::collections::BTreeMap;
 use std::fs::File;
 use std::path;
 use std::path::{Path, PathBuf};
-use std::result::Result as StdResult;
 use typed_index_collection::{CollectionWithId, Id};
 
 #[derive(Deserialize, Debug)]
@@ -197,7 +196,7 @@ where
     let mut rdr = csv::Reader::from_reader(reader);
     Ok(rdr
         .deserialize()
-        .collect::<StdResult<_, _>>()
+        .collect::<Result<_, _>>()
         .with_context(|_| format!("Error reading {:?}", path))?)
 }
 
@@ -220,7 +219,7 @@ where
             let mut rdr = csv::Reader::from_reader(reader);
             Ok(rdr
                 .deserialize()
-                .collect::<StdResult<_, _>>()
+                .collect::<Result<_, _>>()
                 .with_context(|_| format!("Error reading {:?}", path))?)
         }
     }
