@@ -31,7 +31,6 @@ use std::{
     convert::TryFrom,
     iter::FromIterator,
     ops,
-    result::Result as StdResult,
 };
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
@@ -1197,7 +1196,7 @@ impl Model {
                 })?);
                 Ok((idx, stop_points))
             })
-            .collect::<StdResult<BTreeMap<_, _>, Error>>()?;
+            .collect::<Result<BTreeMap<_, _>, Error>>()?;
         let vehicle_journeys_to_stop_points = ManyToMany::from_forward(forward_vj_to_sp);
         let routes_to_vehicle_journeys =
             OneToMany::new(&c.routes, &c.vehicle_journeys, "routes_to_vehicle_journeys")?;
@@ -1313,7 +1312,7 @@ impl Model {
     }
 }
 impl ::serde::Serialize for Model {
-    fn serialize<S>(&self, serializer: S) -> StdResult<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ::serde::Serializer,
     {
@@ -1321,7 +1320,7 @@ impl ::serde::Serialize for Model {
     }
 }
 impl<'de> ::serde::Deserialize<'de> for Model {
-    fn deserialize<D>(deserializer: D) -> StdResult<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
     {

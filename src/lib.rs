@@ -78,6 +78,6 @@ lazy_static::lazy_static! {
 pub type Error = failure::Error;
 
 /// The corresponding result type used by the crate.
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 pub use crate::model::Model;
