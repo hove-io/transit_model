@@ -81,3 +81,37 @@ jobs:
           override: true
     - name: Run tests with and without features
       run: make test
+
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install proj
+      run: |
+        wget --quiet --output-document - "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public" | sudo apt-key add -
+        echo "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main" | sudo tee /etc/apt/sources.list.d/kisio-digital.list
+        sudo apt update
+        sudo apt install --yes libxml2-utils pkg-config libssl-dev clang proj=${PROJ_VERSION}
+    - uses: actions/checkout@master
+    - name: Checkout Submodules
+      uses: textbook/git-checkout-submodule-action@2.1.1
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+          profile: minimal
+          override: true
+    - name: Install `cargo-tarpaulin`
+      uses: actions-rs/cargo@v1
+      with:
+        command: install
+        args: cargo-tarpaulin
+    - name: Run tests for coverage
+      uses: actions-rs/cargo@v1
+      with:
+        command: tarpaulin
+        args: --all-features --all-targets --workspace --count --out Xml --run-types AllTargets
+    - name: Codecov upload
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
