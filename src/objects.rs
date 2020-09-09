@@ -1141,7 +1141,7 @@ impl GetObjectType for StopPoint {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct StopLocation {
     pub id: String,
     pub name: String,
@@ -1341,7 +1341,7 @@ pub enum CommentType {
     OnDemandTransport,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Default, Serialize, Deserialize, Debug, PartialEq)]
 pub struct Comment {
     #[serde(rename = "comment_id")]
     pub id: String,

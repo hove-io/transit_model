@@ -811,6 +811,46 @@ impl Collections {
         }
     }
 
+    /// Remove comments with empty message from the model
+    pub fn clean_comments(&mut self) {
+        fn remove_comment<T: Id<T> + CommentLinks>(
+            collection: &mut CollectionWithId<T>,
+            comment_id: &str,
+        ) {
+            let object_idxs: Vec<Idx<T>> = collection
+                .iter()
+                .filter_map(|(idx, object)| {
+                    if object.comment_links().contains(comment_id) {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            for object_idx in object_idxs {
+                collection
+                    .index_mut(object_idx)
+                    .comment_links_mut()
+                    .remove(comment_id);
+            }
+        }
+        let comments_to_del: Vec<Idx<Comment>> = self
+            .comments
+            .iter()
+            .filter(|(_, comment)| comment.name.is_empty())
+            .map(|(idx, _)| idx)
+            .collect();
+        for comment_idx in comments_to_del {
+            let comment_id = &self.comments[comment_idx].id;
+            remove_comment(&mut self.lines, comment_id);
+            remove_comment(&mut self.routes, comment_id);
+            remove_comment(&mut self.vehicle_journeys, comment_id);
+            remove_comment(&mut self.stop_areas, comment_id);
+            remove_comment(&mut self.stop_points, comment_id);
+            remove_comment(&mut self.stop_locations, comment_id);
+        }
+    }
+
     /// From comment collection only, return a map of the similar comments.
     ///
     /// Result: duplicates (comments to be removed) are mapped to their similar
@@ -1172,6 +1212,7 @@ impl Model {
     /// ```
     pub fn new(mut c: Collections) -> Result<Self> {
         c.comment_deduplication();
+        c.clean_comments();
         c.sanitize()?;
 
         let forward_vj_to_sp = c
@@ -1526,6 +1567,101 @@ mod tests {
 
             let calendar = collections.calendars.get("service_2");
             assert_eq!(None, calendar);
+        }
+    }
+
+    mod clean_comments {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn remove_empty_comment() {
+            let mut collections = Collections::default();
+            let comment = Comment {
+                id: "comment_id".to_string(),
+                name: "Some useless comment.".to_string(),
+                ..Default::default()
+            };
+            let empty_comment = Comment {
+                id: "empty_comment_id".to_string(),
+                name: String::new(),
+                ..Default::default()
+            };
+            let mut comment_links = CommentLinksT::default();
+            comment_links.insert(comment.id.clone());
+            comment_links.insert(empty_comment.id.clone());
+            collections.comments.push(comment).unwrap();
+            collections.comments.push(empty_comment).unwrap();
+            collections
+                .lines
+                .push(Line {
+                    id: "line_id".to_string(),
+                    comment_links: comment_links.clone(),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+                .routes
+                .push(Route {
+                    id: "route_id".to_string(),
+                    comment_links: comment_links.clone(),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+                .vehicle_journeys
+                .push(VehicleJourney {
+                    id: "vehicle_journey_id".to_string(),
+                    comment_links: comment_links.clone(),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+                .stop_points
+                .push(StopPoint {
+                    id: "stop_point_id".to_string(),
+                    comment_links: comment_links.clone(),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+                .stop_areas
+                .push(StopArea {
+                    id: "stop_area_id".to_string(),
+                    comment_links: comment_links.clone(),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+                .stop_locations
+                .push(StopLocation {
+                    id: "stop_location_id".to_string(),
+                    comment_links,
+                    ..Default::default()
+                })
+                .unwrap();
+            collections.clean_comments();
+            let line = collections.lines.get("line_id").unwrap();
+            assert_eq!(1, line.comment_links.len());
+            assert!(line.comment_links.get("comment_id").is_some());
+            let route = collections.routes.get("route_id").unwrap();
+            assert_eq!(1, route.comment_links.len());
+            assert!(route.comment_links.get("comment_id").is_some());
+            let vehicle_journey = collections
+                .vehicle_journeys
+                .get("vehicle_journey_id")
+                .unwrap();
+            assert_eq!(1, vehicle_journey.comment_links.len());
+            assert!(vehicle_journey.comment_links.get("comment_id").is_some());
+            let stop_point = collections.stop_points.get("stop_point_id").unwrap();
+            assert_eq!(1, stop_point.comment_links.len());
+            assert!(stop_point.comment_links.get("comment_id").is_some());
+            let stop_area = collections.stop_areas.get("stop_area_id").unwrap();
+            assert_eq!(1, stop_area.comment_links.len());
+            assert!(stop_area.comment_links.get("comment_id").is_some());
+            let stop_location = collections.stop_locations.get("stop_location_id").unwrap();
+            assert_eq!(1, stop_location.comment_links.len());
+            assert!(stop_location.comment_links.get("comment_id").is_some());
         }
     }
 
