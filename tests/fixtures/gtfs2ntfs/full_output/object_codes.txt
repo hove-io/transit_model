@@ -1,5 +1,6 @@
 object_type,object_id,object_system,object_code
 stop_area,ME:stoparea:1,source,stoparea:1
+stop_area,ME:stoparea:3,source,stoparea:3
 stop_point,ME:stop:11,source,stop:11
 stop_point,ME:stop:22,source,stop:22
 stop_point,ME:stop:31,source,stop:31

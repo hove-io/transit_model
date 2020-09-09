@@ -207,7 +207,7 @@ struct StopTime {
     timepoint: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Clone)]
 #[derivative(Default)]
 enum TransferType {
     #[derivative(Default)]
@@ -221,7 +221,7 @@ enum TransferType {
     NotPossible,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 struct Transfer {
     #[serde(deserialize_with = "de_without_slashes")]
     from_stop_id: String,
@@ -299,7 +299,7 @@ where
     collections.companies = companies;
     let (stop_areas, stop_points, stop_locations) =
         read::read_stops(file_handler, &mut collections.comments, &mut equipments)?;
-    collections.transfers = read::read_transfers(file_handler, &stop_points)?;
+    collections.transfers = read::read_transfers(file_handler, &stop_points, &stop_areas)?;
     collections.stop_areas = stop_areas;
     collections.stop_points = stop_points;
     collections.stop_locations = stop_locations;
