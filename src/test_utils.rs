@@ -47,7 +47,7 @@ pub fn get_lines_content<P: AsRef<Path>>(path: P) -> BTreeSet<String> {
     set
 }
 
-fn get_files_to_compare<P>(dir: P, files_to_check: Option<&Vec<&str>>) -> Vec<String>
+fn get_files_to_compare<P>(dir: P, files_to_check: Option<&Vec<&str>>) -> BTreeSet<String>
 where
     P: AsRef<Path>,
 {
@@ -57,6 +57,7 @@ where
             .map(|file| file.unwrap())
             .filter(|file| file.path().is_file())
             .map(|file| file.file_name().into_string().unwrap())
+            .filter(|file_name| !file_name.starts_with('.')) // Remove hidden files
             .collect(),
         Some(v) => v.iter().map(|&f| f.to_string()).collect(),
     }
@@ -78,8 +79,7 @@ pub fn compare_output_dir_with_expected_lines<P: AsRef<Path>, Q: AsRef<Path>>(
     let files = get_files_to_compare(&output_dir, files_to_check.as_ref());
     let expected_files = get_files_to_compare(&work_dir_expected, files_to_check.as_ref());
     assert_eq!(
-        files.len(),
-        expected_files.len(),
+        files, expected_files,
         "Different number of produced and expected files"
     );
     for filename in files {
