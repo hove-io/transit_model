@@ -21,7 +21,7 @@ use failure::{bail, format_err};
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
 use lazy_static::lazy_static;
-use log::{debug, warn, Level as LogLevel};
+use log::{debug, info, warn, Level as LogLevel};
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
@@ -724,6 +724,155 @@ impl Collections {
         }
     }
 
+    /// Forbid pickup on last stop point of vehicle journeys and forbid dropoff
+    /// on first stop point of vehicle journeys.
+    ///
+    /// However, there is an exception to this rule for authorized stay-in
+    /// between vehicle journeys. It is possible to get in the last stop point
+    /// of a vehicle journey or get out on the first stop point of a vehicle
+    /// journey, if and only if the 2 stop points are different and times do not
+    /// overlap.
+    ///
+    /// WARNING: The current implementation does not handle stay-in for vehicle
+    /// journeys with different validity patterns.
+    ///
+    /// Here is examples explaining the different stay-in situations (for
+    /// pick-up and drop-off, XX means forbidden, ―▶ means authorized).
+    ///
+    /// Example 1:
+    /// ##########
+    ///       out          in   out         in
+    ///        X    SP1    |    ▲    SP2    X
+    ///        X           ▼    |           X
+    ///  VJ:1   08:00-09:00      10:00-11:00
+    ///  VJ:2                    10:00-11:00      14:00-15:00
+    ///                         X           ▲    |           X
+    ///                         X           |    ▼   SP3     X
+    ///                         out         in   out         in
+    ///                         |- Stay-In -|
+    ///
+    /// Example 2:
+    /// ##########
+    ///       out          in  out               in
+    ///        X    SP1    |    ▲       SP2      X
+    ///        X           ▼    |                X
+    ///  VJ:1   08:00-09:00      10:00---------12:00
+    ///  VJ:2                           11:00----------13:00      13:00-14:00
+    ///                                   X                 ▲    |           X
+    ///                                   X       SP3       |    ▼    SP4    X
+    ///                                 out                 in  out          in
+    ///                         |--------- Stay In ---------|
+    ///
+    /// Note the overlap between the departure time of the last stop point SP2
+    /// of VJ:1 and the arrival time of the first stop point SP3 of VJ:2. In
+    /// this case, we still apply the default rule.
+    ///
+    ///
+    /// Example 3:
+    /// ##########
+    ///       out          in   out         in   out         in   out         in
+    ///        X    SP1    |    ▲    SP2    |    ▲    SP3    |    ▲   SP4     X
+    ///        X           ▼    |           ▼    |           |    |           X
+    ///  VJ:1   08:00-09:00      10:00-11:00     |           ▼    |           X
+    ///  VJ:2                                     12:00-13:00      14:00-15:00
+    ///                         |---------- Stay In ---------|
+    ///
+    /// Example 3 is the only case were we allow specific pick-up and
+    /// drop-off.
+    ///
+    /// Example 4:
+    /// ##########
+    ///                       SP0               SP1               SP2               SP3    
+    ///                                                                                    
+    ///  VJ:1 (Mon-Sun)   09:00-10:00       10:00-11:00                                    
+    ///  VJ:2 (Mon-Fri)                                       12:00-13:00       14:00-15:00
+    ///  VJ:3 (Sat-Sun)                                       12:30-13:30       14:30-15:30
+    ///
+    /// Example 4 might be a valid use case of stay-in but is not handled in the
+    /// current implementation since the validity patterns are different; this
+    /// is undefined behavior (most likely, some stay-in will be forbidden by
+    /// the default rule).
+    pub fn enhance_pickup_dropoff(&mut self) {
+        let mut vj_idxs: Vec<Idx<VehicleJourney>> = self
+            .vehicle_journeys
+            .iter()
+            // Filtering out vehicle journeys without any stop time allowing us
+            // below to access first and last stop_times safely.
+            .filter(|(_, vj)| !vj.stop_times.is_empty())
+            .map(|(idx, _)| idx)
+            .collect();
+        // Init all vehicle journeys with:
+        // - no drop-off on first stop
+        // - no pick-up on last stop
+        for vj_idx in &vj_idxs {
+            let mut vehicle_journey = self.vehicle_journeys.index_mut(*vj_idx);
+            vehicle_journey
+                .stop_times
+                .first_mut()
+                .unwrap()
+                .drop_off_type = 1;
+            vehicle_journey.stop_times.last_mut().unwrap().pickup_type = 1;
+        }
+        // Keep only vehicle journeys with a `block_id` (concerned with
+        // stay-in).
+        vj_idxs.retain(|vj_idx| self.vehicle_journeys[*vj_idx].block_id.is_some());
+        // Sort the vehicule journeys by block_id, and if equal, order them by
+        // departure time.
+        vj_idxs.sort_by(|vj1_idx, vj2_idx| {
+            let vj1 = &self.vehicle_journeys[*vj1_idx];
+            let vj2 = &self.vehicle_journeys[*vj2_idx];
+            match vj1.block_id.cmp(&vj2.block_id) {
+                Ordering::Equal => vj1
+                    .stop_times
+                    .first()
+                    .unwrap()
+                    .departure_time
+                    .cmp(&vj2.stop_times.first().unwrap().departure_time),
+                ordering => ordering,
+            }
+        });
+        for (prev_vj_idx, next_vj_idx) in vj_idxs.iter().zip(vj_idxs.iter().skip(1)) {
+            let prev_vj = &self.vehicle_journeys[*prev_vj_idx];
+            let next_vj = &self.vehicle_journeys[*next_vj_idx];
+            if prev_vj.block_id != next_vj.block_id {
+                // we can discard when two vehicle journeys are not in a stay-in
+                // situation.
+                continue;
+            }
+            let last_stop = &prev_vj.stop_times.last().unwrap();
+            let first_stop = &next_vj.stop_times.first().unwrap();
+            if last_stop.stop_point_idx == first_stop.stop_point_idx {
+                // We can discard when the stop points are identicals (see
+                // Example 1 above).
+                continue;
+            }
+            if last_stop.departure_time > first_stop.arrival_time {
+                // We can discard when timing overlaps between arrival of first
+                // vehicle journey and departure of next vehicle journey (see
+                // Example 2 above).
+                continue;
+            }
+            // We're now in Example 3 (see above), let's allow pick-up and
+            // drop-off on stay-in situations.
+            // Note: Original value might have been either 0 (authorized) or 2
+            // (on-demand-transport), but we're putting back 0 so there is
+            // a possible degradation of information.
+            info!("Enabling pick-up on last stop time of vehicle journey '{}' and drop-off on first stop time of vehicle journey '{}' (stay-in).", prev_vj.id, next_vj.id);
+            self.vehicle_journeys
+                .index_mut(*prev_vj_idx)
+                .stop_times
+                .last_mut()
+                .unwrap()
+                .pickup_type = 0;
+            self.vehicle_journeys
+                .index_mut(*next_vj_idx)
+                .stop_times
+                .first_mut()
+                .unwrap()
+                .drop_off_type = 0;
+        }
+    }
+
     /// Trip headsign can be derived from the name of the stop point of the
     /// last stop time of the associated trip.
     pub fn enhance_trip_headsign(&mut self) {
@@ -1302,6 +1451,7 @@ impl Model {
         c.enhance_route_directions();
         c.check_geometries_coherence();
         c.enhance_line_opening_time();
+        c.enhance_pickup_dropoff();
 
         Ok(Model {
             routes_to_stop_points,
@@ -1435,6 +1585,249 @@ mod tests {
             assert_relative_eq!(walk_mode.co2_emission.unwrap(), 0.0f32);
             let car_mode = collections.physical_modes.get(CAR_PHYSICAL_MODE).unwrap();
             assert_relative_eq!(car_mode.co2_emission.unwrap(), 184.0f32);
+        }
+    }
+
+    mod enhance_pickup_dropoff {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        // For testing, we need to configure:
+        // - block_id (String)
+        // - stop_point_idx (usize -> index of one of the four test stop points)
+        // - arrival_time (Time)
+        // - departure_time (Time)
+        type VJConfig = (String, usize, Time, Time);
+
+        // This creates 2 vehicle journeys, each with 2 stop times. There is 4
+        // available test stop points 'sp0' ―▶ 'sp3'. First vehicle journey has
+        // a first stop time with 'sp0' and second stop time configurable with
+        // 'prev_vj_config'. Second vehicle journey has a first stop time
+        // configurable with 'next_vj_config' and second stop time with 'sp3'.
+        fn build_vehicle_journeys(
+            prev_vj_config: VJConfig,
+            next_vj_config: VJConfig,
+        ) -> CollectionWithId<VehicleJourney> {
+            let mut stop_points = CollectionWithId::default();
+            let mut sp_idxs = Vec::new();
+            for i in 0..4 {
+                let idx = stop_points
+                    .push(StopPoint {
+                        id: format!("sp{}", i),
+                        ..Default::default()
+                    })
+                    .unwrap();
+                sp_idxs.push(idx);
+            }
+            // First vehicle journey, first stop time
+            let stop_time_1 = StopTime {
+                stop_point_idx: sp_idxs[0],
+                sequence: 0,
+                arrival_time: prev_vj_config.2 - Time::new(1, 0, 0),
+                departure_time: prev_vj_config.3 - Time::new(1, 0, 0),
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 0,
+                datetime_estimated: false,
+                local_zone_id: None,
+                precision: None,
+            };
+            // First vehicle journey, second stop time
+            let stop_time_2 = StopTime {
+                stop_point_idx: sp_idxs[prev_vj_config.1],
+                sequence: 0,
+                arrival_time: prev_vj_config.2,
+                departure_time: prev_vj_config.3,
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 0,
+                datetime_estimated: false,
+                local_zone_id: None,
+                precision: None,
+            };
+            // Second vehicle journey, first stop time
+            let next_vj_config_time_1 = StopTime {
+                stop_point_idx: sp_idxs[next_vj_config.1],
+                sequence: 1,
+                arrival_time: next_vj_config.2,
+                departure_time: next_vj_config.3,
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 0,
+                datetime_estimated: false,
+                local_zone_id: None,
+                precision: None,
+            };
+            // Second vehicle journey, second stop time
+            let next_vj_config_time_2 = StopTime {
+                stop_point_idx: sp_idxs[3],
+                sequence: 1,
+                arrival_time: next_vj_config.2 + Time::new(1, 0, 0),
+                departure_time: next_vj_config.3 + Time::new(1, 0, 0),
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 0,
+                datetime_estimated: false,
+                local_zone_id: None,
+                precision: None,
+            };
+
+            let vj1 = VehicleJourney {
+                id: "vj1".to_string(),
+                block_id: Some(prev_vj_config.0),
+                stop_times: vec![stop_time_1, stop_time_2],
+                ..Default::default()
+            };
+            let vj2 = VehicleJourney {
+                id: "vj2".to_string(),
+                block_id: Some(next_vj_config.0),
+                stop_times: vec![next_vj_config_time_1, next_vj_config_time_2],
+                ..Default::default()
+            };
+            CollectionWithId::new(vec![vj1, vj2]).unwrap()
+        }
+
+        #[test]
+        fn no_stay_in() {
+            let mut collections = Collections::default();
+            let stop_config = (
+                "block_id_1".to_string(),
+                1,
+                Time::new(10, 0, 0),
+                Time::new(11, 0, 0),
+            );
+            let next_vj_config_config = (
+                "block_id_2".to_string(),
+                2,
+                Time::new(10, 0, 0),
+                Time::new(11, 0, 0),
+            );
+            collections.vehicle_journeys =
+                build_vehicle_journeys(stop_config, next_vj_config_config);
+            collections.enhance_pickup_dropoff();
+            let vj1 = collections.vehicle_journeys.get("vj1").unwrap();
+            let stop_time = &vj1.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+            let vj2 = collections.vehicle_journeys.get("vj2").unwrap();
+            let stop_time = &vj2.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+        }
+
+        // Example 1
+        #[test]
+        fn stay_in_same_stop() {
+            let mut collections = Collections::default();
+            let stop_config = (
+                "block_id_1".to_string(),
+                1,
+                Time::new(10, 0, 0),
+                Time::new(11, 0, 0),
+            );
+            let next_vj_config_config = (
+                "block_id_1".to_string(),
+                1,
+                Time::new(10, 0, 0),
+                Time::new(11, 0, 0),
+            );
+            collections.vehicle_journeys =
+                build_vehicle_journeys(stop_config, next_vj_config_config);
+            collections.enhance_pickup_dropoff();
+            let vj1 = collections.vehicle_journeys.get("vj1").unwrap();
+            let stop_time = &vj1.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+            let vj2 = collections.vehicle_journeys.get("vj2").unwrap();
+            let stop_time = &vj2.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+        }
+
+        // Example 2
+        #[test]
+        fn stay_in_different_stop_overlapping_time() {
+            let mut collections = Collections::default();
+            let stop_config = (
+                "block_id_1".to_string(),
+                1,
+                Time::new(10, 0, 0),
+                Time::new(12, 0, 0),
+            );
+            let next_vj_config_config = (
+                "block_id_1".to_string(),
+                2,
+                Time::new(11, 0, 0),
+                Time::new(13, 0, 0),
+            );
+            collections.vehicle_journeys =
+                build_vehicle_journeys(stop_config, next_vj_config_config);
+            collections.enhance_pickup_dropoff();
+            let vj1 = collections.vehicle_journeys.get("vj1").unwrap();
+            let stop_time = &vj1.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+            let vj2 = collections.vehicle_journeys.get("vj2").unwrap();
+            let stop_time = &vj2.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+        }
+
+        // Example 3
+        #[test]
+        fn stay_in_different_stop() {
+            let mut collections = Collections::default();
+            let stop_config = (
+                "block_id_1".to_string(),
+                1,
+                Time::new(10, 0, 0),
+                Time::new(11, 0, 0),
+            );
+            let next_vj_config_config = (
+                "block_id_1".to_string(),
+                2,
+                Time::new(12, 0, 0),
+                Time::new(13, 0, 0),
+            );
+            collections.vehicle_journeys =
+                build_vehicle_journeys(stop_config, next_vj_config_config);
+            collections.enhance_pickup_dropoff();
+            let vj1 = collections.vehicle_journeys.get("vj1").unwrap();
+            let stop_time = &vj1.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+            let vj2 = collections.vehicle_journeys.get("vj2").unwrap();
+            let stop_time = &vj2.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
         }
     }
 
