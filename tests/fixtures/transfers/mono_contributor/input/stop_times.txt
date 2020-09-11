@@ -2,3 +2,4 @@ trip_id,arrival_time,departure_time,stop_id,stop_sequence
 trip:1,15:45:00,15:45:00,sp_1,0
 trip:1,15:46:00,15:46:00,sp_2,1
 trip:1,15:47:00,15:47:00,sp_3,2
+trip:1,15:48:00,15:48:00,sp_4,2

@@ -16,10 +16,10 @@
 
 use crate::{
     model::Model,
-    objects::{StopPoint, Transfer},
+    objects::{Coord, StopPoint, Transfer},
     Result,
 };
-use log::info;
+use log::{info, warn};
 use std::collections::HashMap;
 use typed_index_collection::{Collection, CollectionWithId, Idx};
 
@@ -58,8 +58,16 @@ fn generate_transfers_from_sp(
     info!("Adding missing transfers from stop points.");
     let sq_max_distance = max_distance * max_distance;
     for (idx1, sp1) in model.stop_points.iter() {
+        if sp1.coord == Coord::default() {
+            warn!("Stop Point {} geolocation is (0, 0), no transfer from this StopPoint will be generated.", sp1.id);
+            continue;
+        }
         let approx = sp1.coord.approx();
         for (idx2, sp2) in model.stop_points.iter() {
+            if sp2.coord == Coord::default() {
+                warn!("Stop Point {} geolocation is (0, 0), no transfer to this StopPoint will be generated.", sp2.id);
+                continue;
+            }
             if transfers_map.contains_key(&(idx1, idx2)) {
                 continue;
             }
@@ -101,6 +109,9 @@ fn generate_transfers_from_sp(
 /// already exist and where the distance is less than `max_distance` will be created.
 /// If you need an additional condition, you can use this parameter. For instance
 /// you could create transfers between 2 stop points of different contributors only.
+///
+/// WARNING: if geolocation of either `StopPoint` is (0, 0), it's considered
+/// incorrect and transfer is not generated to or from this `StopPoint`.
 ///
 /// # Example
 ///
