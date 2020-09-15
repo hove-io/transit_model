@@ -19,7 +19,7 @@ use super::{
 use crate::{
     model::Collections,
     objects::{
-        self, Availability, CommentLinksT, Coord, KeysValues, Pathway, StopLocation,
+        self, Availability, CommentLinksT, Coord, KeysValues, Pathway, StopLocation, StopPoint,
         StopTime as NtfsStopTime, StopTimePrecision, StopType, Time, TransportType, VehicleJourney,
     },
     read_utils::{read_collection, read_objects, FileHandler},
@@ -839,6 +839,7 @@ where
 pub(in crate::gtfs) fn read_transfers<H>(
     file_handler: &mut H,
     stop_points: &CollectionWithId<objects::StopPoint>,
+    stop_areas: &CollectionWithId<objects::StopArea>,
 ) -> Result<Collection<objects::Transfer>>
 where
     for<'a> &'a mut H: FileHandler,
@@ -859,56 +860,68 @@ where
                     transfer.map_err(|e| format_err!("Problem reading {:?}: {}", file, e)),
                     LogLevel::Warn
                 );
-
-                let from_stop_point = skip_error_and_log!(
-                    stop_points
-                        .get(&transfer.from_stop_id)
-                        .ok_or_else(|| format_err!(
-                            "Problem reading {:?}: from_stop_id={:?} not found",
-                            file,
-                            transfer.from_stop_id
-                        )),
-                    LogLevel::Warn
-                );
-
-                let to_stop_point = skip_error_and_log!(
-                    stop_points
-                        .get(&transfer.to_stop_id)
-                        .ok_or_else(|| format_err!(
-                            "Problem reading {:?}: to_stop_id={:?} not found",
-                            file,
-                            transfer.to_stop_id
-                        )),
-                    LogLevel::Warn
-                );
-
-                let (min_transfer_time, real_min_transfer_time) = match transfer.transfer_type {
-                    TransferType::Recommended => {
-                        let distance = from_stop_point.coord.distance_to(&to_stop_point.coord);
-                        let transfer_time = (distance / 0.785) as u32;
-
-                        (Some(transfer_time), Some(transfer_time + 2 * 60))
+                let expand_stop_area = |stop_id: &str| -> Result<Vec<&StopPoint>> {
+                    if stop_areas.get(stop_id).is_some() {
+                        let list_stop_points = stop_points
+                            .values()
+                            .filter(|stop_point| stop_point.stop_area_id == stop_id)
+                            .collect();
+                        Ok(list_stop_points)
+                    } else {
+                        stop_points
+                            .get(stop_id)
+                            .ok_or_else(|| {
+                                format_err!(
+                                    "Problem reading {:?}: stop_id={:?} not found",
+                                    file,
+                                    stop_id
+                                )
+                            })
+                            .map(|stop_point| vec![stop_point])
                     }
-                    TransferType::Timed => (Some(0), Some(0)),
-                    TransferType::WithTransferTime => {
-                        if transfer.min_transfer_time.is_none() {
-                            warn!(
-                        "The min_transfer_time between from_stop_id {} and to_stop_id {} is empty",
-                        from_stop_point.id, to_stop_point.id
-                    );
-                        }
-                        (transfer.min_transfer_time, transfer.min_transfer_time)
-                    }
-                    TransferType::NotPossible => (Some(86400), Some(86400)),
                 };
+                let from_stop_points = skip_error_and_log!(
+                    expand_stop_area(transfer.from_stop_id.as_str()),
+                    LogLevel::Warn
+                );
+                let to_stop_points = skip_error_and_log!(
+                    expand_stop_area(transfer.to_stop_id.as_str()),
+                    LogLevel::Warn
+                );
+                for from_stop_point in &from_stop_points {
+                    let approx = from_stop_point.coord.approx();
+                    for to_stop_point in &to_stop_points {
+                        let (min_transfer_time, real_min_transfer_time) = match transfer
+                            .transfer_type
+                        {
+                            TransferType::Recommended => {
+                                let sq_distance = approx.sq_distance_to(&to_stop_point.coord);
+                                let transfer_time = (sq_distance.sqrt() / 0.785) as u32;
 
-                transfers.push(objects::Transfer {
-                    from_stop_id: from_stop_point.id.clone(),
-                    to_stop_id: to_stop_point.id.clone(),
-                    min_transfer_time,
-                    real_min_transfer_time,
-                    equipment_id: None,
-                });
+                                (Some(transfer_time), Some(transfer_time + 2 * 60))
+                            }
+                            TransferType::Timed => (Some(0), Some(0)),
+                            TransferType::WithTransferTime => {
+                                if transfer.min_transfer_time.is_none() {
+                                    warn!(
+                                        "The min_transfer_time between from_stop_id {} and to_stop_id {} is empty",
+                                        from_stop_point.id, to_stop_point.id
+                                    );
+                                }
+                                (transfer.min_transfer_time, transfer.min_transfer_time)
+                            }
+                            TransferType::NotPossible => (Some(86400), Some(86400)),
+                        };
+
+                        transfers.push(objects::Transfer {
+                            from_stop_id: from_stop_point.id.clone(),
+                            to_stop_id: to_stop_point.id.clone(),
+                            min_transfer_time,
+                            real_min_transfer_time,
+                            equipment_id: None,
+                        });
+                    }
+                }
             }
 
             Ok(Collection::new(transfers))
@@ -2011,7 +2024,8 @@ mod tests {
             let (stop_areas, stop_points, stop_locations) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.equipments = CollectionWithId::new(equipments.into_equipments()).unwrap();
-            collections.transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
+            collections.transfers =
+                super::read_transfers(&mut handler, &stop_points, &stop_areas).unwrap();
             collections.stop_areas = stop_areas;
             collections.stop_points = stop_points;
             collections.stop_locations = stop_locations;
@@ -2635,10 +2649,10 @@ mod tests {
 
             let mut comments: CollectionWithId<Comment> = CollectionWithId::default();
             let mut equipments = EquipmentList::default();
-            let (_, stop_points, _) =
+            let (stop_areas, stop_points, _) =
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
 
-            let transfers = super::read_transfers(&mut handler, &stop_points).unwrap();
+            let transfers = super::read_transfers(&mut handler, &stop_points, &stop_areas).unwrap();
             assert_eq!(
                 vec![
                     &Transfer {
