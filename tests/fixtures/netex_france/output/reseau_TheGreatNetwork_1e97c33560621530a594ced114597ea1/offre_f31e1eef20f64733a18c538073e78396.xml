@@ -97,7 +97,7 @@
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1F1_0:" order="1" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_0:">
 							</ScheduledStopPointRef>
-							<ForAlighting>true</ForAlighting>
+							<ForAlighting>false</ForAlighting>
 							<ForBoarding>true</ForBoarding>
 						</StopPointInJourneyPattern>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1F1_1:" order="2" version="any">
@@ -116,7 +116,7 @@
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_3:">
 							</ScheduledStopPointRef>
 							<ForAlighting>true</ForAlighting>
-							<ForBoarding>true</ForBoarding>
+							<ForBoarding>false</ForBoarding>
 						</StopPointInJourneyPattern>
 					</pointsInSequence>
 				</ServiceJourneyPattern>
@@ -128,7 +128,7 @@
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1B1_6:" order="7" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_6:">
 							</ScheduledStopPointRef>
-							<ForAlighting>true</ForAlighting>
+							<ForAlighting>false</ForAlighting>
 							<ForBoarding>true</ForBoarding>
 						</StopPointInJourneyPattern>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1B1_7:" order="8" version="any">
@@ -147,7 +147,7 @@
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_9:">
 							</ScheduledStopPointRef>
 							<ForAlighting>true</ForAlighting>
-							<ForBoarding>true</ForBoarding>
+							<ForBoarding>false</ForBoarding>
 						</StopPointInJourneyPattern>
 					</pointsInSequence>
 				</ServiceJourneyPattern>

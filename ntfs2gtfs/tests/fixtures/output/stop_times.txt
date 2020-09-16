@@ -1,5 +1,5 @@
 trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id,stop_headsign,timepoint
-trip:1,09:00:00,09:00:00,stop:point:1,0,0,0,,,1
-trip:1,09:10:00,09:10:00,stop:point:2,1,0,0,,,1
-trip:3,09:00:00,09:00:00,stop:point:1,0,0,0,,,1
-trip:3,09:00:00,09:00:00,stop:point:2,0,0,0,,,1
+trip:1,09:00:00,09:00:00,stop:point:1,0,0,1,,,1
+trip:1,09:10:00,09:10:00,stop:point:2,1,1,0,,,1
+trip:3,09:00:00,09:00:00,stop:point:1,0,0,1,,,1
+trip:3,09:00:00,09:00:00,stop:point:2,0,1,0,,,1

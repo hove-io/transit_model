@@ -954,7 +954,8 @@ mod tests {
                         departure_time: Time::new(0, 0, 0),
                         boarding_duration: 0,
                         alighting_duration: 0,
-                        pickup_type: 0,
+                        // This pickup type is different from 'vj_id_1'
+                        pickup_type: 1,
                         drop_off_type: 0,
                         datetime_estimated: false,
                         local_zone_id: Some(1),
@@ -967,8 +968,7 @@ mod tests {
                         departure_time: Time::new(0, 0, 0),
                         boarding_duration: 0,
                         alighting_duration: 0,
-                        // This pickup type is different from 'vj_id_1'
-                        pickup_type: 0,
+                        pickup_type: 1,
                         drop_off_type: 1,
                         datetime_estimated: false,
                         local_zone_id: Some(1),

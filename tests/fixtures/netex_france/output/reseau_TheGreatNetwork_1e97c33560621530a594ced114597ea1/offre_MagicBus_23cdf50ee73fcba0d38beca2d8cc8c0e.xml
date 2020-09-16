@@ -67,14 +67,14 @@
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:B42F1_10:" order="11" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42F1_10:">
 							</ScheduledStopPointRef>
-							<ForAlighting>true</ForAlighting>
+							<ForAlighting>false</ForAlighting>
 							<ForBoarding>true</ForBoarding>
 						</StopPointInJourneyPattern>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:B42F1_20:" order="21" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42F1_20:">
 							</ScheduledStopPointRef>
 							<ForAlighting>true</ForAlighting>
-							<ForBoarding>true</ForBoarding>
+							<ForBoarding>false</ForBoarding>
 						</StopPointInJourneyPattern>
 					</pointsInSequence>
 				</ServiceJourneyPattern>
