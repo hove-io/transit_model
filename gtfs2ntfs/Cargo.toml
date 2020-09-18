@@ -1,6 +1,6 @@
 [package]
 name = "gtfs2ntfs"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Kisio Digital <team.coretools@kisio.com>"]
 license = "AGPL-3.0-only"
 description = "Binary to convert Transit data from GTFS format to NTFS"
