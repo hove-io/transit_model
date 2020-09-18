@@ -74,3 +74,4 @@ required-features = ["proj"]
 [dev-dependencies]
 approx = "0.3"
 rust_decimal_macros = "1"
+testing_logger = "0.1"
