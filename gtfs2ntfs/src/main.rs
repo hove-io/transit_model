@@ -46,7 +46,7 @@ struct Opt {
     prefix: Option<String>,
 
     /// Schedule subprefix added after the prefix on all scheduled objects (`123` turned into `prefix::schedule_subprefix::123`).
-    #[structopt(short, long)]
+    #[structopt(long)]
     schedule_subprefix: Option<String>,
 
     /// Indicates if the input GTFS contains On-Demand Transport (ODT)
