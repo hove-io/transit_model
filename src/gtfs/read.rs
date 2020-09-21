@@ -576,6 +576,22 @@ where
 {
     let filename = "agency.txt";
     let gtfs_agencies = read_objects::<_, Agency>(file_handler, filename)?;
+
+    if let Some(referent_agency) = gtfs_agencies.first() {
+        for agency in gtfs_agencies.iter().skip(1) {
+            if referent_agency.timezone != agency.timezone {
+                warn!(
+                    "different agency timezone: {} ({}) - {} ({})",
+                    referent_agency.timezone,
+                    referent_agency.id.clone().unwrap_or_default(),
+                    agency.timezone,
+                    agency.id.clone().unwrap_or_default(),
+                );
+                break;
+            }
+        }
+    }
+
     let networks = gtfs_agencies
         .iter()
         .cloned()
@@ -1437,16 +1453,38 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "IdentifierAlreadyExists(\"1\")")]
     fn load_2_agencies_with_no_id() {
         let agency_content = "agency_name,agency_url,agency_timezone\n\
-                              My agency 1,http://my-agency_url.com,Europe/London\
+                              My agency 1,http://my-agency_url.com,Europe/London\n\
                               My agency 2,http://my-agency_url.com,Europe/London";
 
         test_in_tmp_dir(|path| {
             let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "agency.txt", agency_content);
             super::read_agency(&mut handler).unwrap();
+        });
+    }
+
+    #[test]
+    fn load_2_agencies_with_different_timezone() {
+        let agency_content = "agency_id,agency_name,agency_url,agency_timezone\n\
+                              id_1,My agency 1,http://my-agency_url.com,Europe/London\n\
+                              id_2,My agency 2,http://my-agency_url.com,Europe/Paris";
+
+        test_in_tmp_dir(|path| {
+            testing_logger::setup();
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            create_file_with_content(path, "agency.txt", agency_content);
+            super::read_agency(&mut handler).unwrap();
+            testing_logger::validate(|captured_logs| {
+                assert_eq!(captured_logs.len(), 2);
+                assert_eq!(
+                    captured_logs[1].body,
+                    "different agency timezone: Europe/London (id_1) - Europe/Paris (id_2)"
+                );
+                assert_eq!(captured_logs[1].level, LogLevel::Warn);
+            });
         });
     }
 
