@@ -78,10 +78,11 @@ apt install libxml2-utils
 
 #### Check outputs manually
 
-To validate the NeTEx output it is possible to use xmllint:
+To validate the NeTEx output, it is possible to use `xmllint` using the official
+XSD schema:
 
 ```sh
-xmllint --noout --nonet --huge --schema /path/to/NeTEx/xsd/NeTEx_publication.xsd your_file.xml
+xmllint --noout --nonet --huge --schema /path/to/transit_model/tests/NeTEx/xsd/NeTEx_publication.xsd your_file.xml
 ```
 
 Note: this may be very (very) slow on huge files.
