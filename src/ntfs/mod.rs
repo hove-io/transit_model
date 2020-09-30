@@ -768,7 +768,7 @@ mod tests {
 
     #[test]
     fn transfers_serialization_deserialization() {
-        test_serialize_deserialize_collection(vec![
+        let transfers = vec![
             Transfer {
                 from_stop_id: "st_1".to_string(),
                 to_stop_id: "st_1".to_string(),
@@ -783,7 +783,30 @@ mod tests {
                 real_min_transfer_time: None,
                 equipment_id: Some("eq_1".to_string()),
             },
-        ]);
+        ];
+        let expected_transfers = vec![
+            Transfer {
+                from_stop_id: "st_1".to_string(),
+                to_stop_id: "st_1".to_string(),
+                min_transfer_time: Some(20),
+                real_min_transfer_time: Some(30),
+                equipment_id: Some("eq_1".to_string()),
+            },
+            Transfer {
+                from_stop_id: "st_1".to_string(),
+                to_stop_id: "st_2".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(0),
+                equipment_id: Some("eq_1".to_string()),
+            },
+        ];
+        let collection = Collection::new(transfers);
+        let expected_collection = Collection::new(expected_transfers);
+        test_in_tmp_dir(|path| {
+            write_collection(path, "file.txt", &collection).unwrap();
+            let des_collection = make_opt_collection(path, "file.txt").unwrap();
+            assert_eq!(expected_collection, des_collection);
+        });
     }
 
     #[test]

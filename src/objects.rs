@@ -1430,7 +1430,9 @@ impl Equipment {
 pub struct Transfer {
     pub from_stop_id: String,
     pub to_stop_id: String,
+    #[serde(serialize_with = "ser_option_u32_with_default")]
     pub min_transfer_time: Option<u32>,
+    #[serde(serialize_with = "ser_option_u32_with_default")]
     pub real_min_transfer_time: Option<u32>,
     pub equipment_id: Option<String>,
 }
