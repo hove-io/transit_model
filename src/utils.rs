@@ -120,6 +120,13 @@ where
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
 }
 
+pub fn ser_option_u32_with_default<S>(value: &Option<u32>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_u32(value.unwrap_or_default())
+}
+
 pub fn de_with_invalid_option<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
