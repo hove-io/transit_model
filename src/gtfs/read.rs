@@ -3143,19 +3143,16 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             let stop_entrance = stop_locations
                 .values()
-                .filter(|sl| sl.stop_type == StopType::StopEntrance)
-                .collect::<Vec<_>>();
-            assert_eq!(1, stop_entrance.len());
+                .filter(|sl| sl.stop_type == StopType::StopEntrance);
+            assert_eq!(1, stop_entrance.count());
             let stop_node = stop_locations
                 .values()
-                .filter(|sl| sl.stop_type == StopType::GenericNode)
-                .collect::<Vec<_>>();
-            assert_eq!(1, stop_node.len());
+                .filter(|sl| sl.stop_type == StopType::GenericNode);
+            assert_eq!(1, stop_node.count());
             let stop_boarding = stop_locations
                 .values()
-                .filter(|sl| sl.stop_type == StopType::GenericNode)
-                .collect::<Vec<_>>();
-            assert_eq!(1, stop_boarding.len());
+                .filter(|sl| sl.stop_type == StopType::GenericNode);
+            assert_eq!(1, stop_boarding.count());
         });
     }
     #[test]
