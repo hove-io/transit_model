@@ -293,12 +293,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             );
         }
         let datetime_estimated = stop_time.datetime_estimated.map_or_else(
-            || {
-                matches!(
-                    collections.stop_points[stop_point_idx].stop_type,
-                    StopType::Zone
-                )
-            },
+            || collections.stop_points[stop_point_idx].stop_type == StopType::Zone,
             |v| v != 0,
         );
 
