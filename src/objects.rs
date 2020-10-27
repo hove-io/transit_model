@@ -43,6 +43,7 @@ pub enum ObjectType {
     StopTime,
     LineGroup,
     Ticket,
+    Company,
 }
 
 pub trait GetObjectType {
@@ -61,6 +62,7 @@ impl ObjectType {
             ObjectType::StopTime => "stop_time",
             ObjectType::LineGroup => "line_group",
             ObjectType::Ticket => "ticket",
+            ObjectType::Company => "company",
         }
     }
 }
@@ -1308,9 +1310,13 @@ pub struct Company {
     pub mail: Option<String>,
     #[serde(rename = "company_phone")]
     pub phone: Option<String>,
+    #[serde(skip)]
+    pub codes: KeysValues,
 }
 
 impl_id!(Company);
+impl_codes!(Company);
+
 impl Default for Company {
     fn default() -> Company {
         Company {
@@ -1320,12 +1326,18 @@ impl Default for Company {
             url: None,
             mail: None,
             phone: None,
+            codes: BTreeSet::new(),
         }
     }
 }
 impl AddPrefix for Company {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
         self.id = prefix_conf.referential_prefix(self.id.as_str());
+    }
+}
+impl GetObjectType for Company {
+    fn get_object_type() -> ObjectType {
+        ObjectType::Company
     }
 }
 
