@@ -79,6 +79,7 @@ impl From<Agency> for objects::Company {
             url: Some(agency.url),
             mail: agency.email,
             phone: agency.phone,
+            codes: BTreeSet::new(),
         }
     }
 }

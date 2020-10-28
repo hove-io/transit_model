@@ -770,6 +770,7 @@ pub fn write_codes(path: &path::Path, collections: &Collections) -> Result<()> {
     write_codes_from_collection_with_id(&mut wtr, &collections.lines, &path)?;
     write_codes_from_collection_with_id(&mut wtr, &collections.routes, &path)?;
     write_codes_from_collection_with_id(&mut wtr, &collections.vehicle_journeys, &path)?;
+    write_codes_from_collection_with_id(&mut wtr, &collections.companies, &path)?;
 
     wtr.flush()
         .with_context(|_| format!("Error reading {:?}", path))?;
