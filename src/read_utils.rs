@@ -136,53 +136,6 @@ impl<'a, P: AsRef<Path>> FileHandler for &'a mut PathFileHandler<P> {
     }
 }
 
-/// ZipHandler is a wrapper around a ZipArchive
-/// It provides a way to access the archive's file by their names
-///
-/// Unlike ZipArchive, it gives access to a file by its name not regarding its path in the ZipArchive
-/// It thus cannot be correct if there are 2 files with the same name in the archive,
-/// but for transport data if will make it possible to handle a zip with a sub directory
-pub(crate) struct ZipHandler {
-    archive: zip::ZipArchive<File>,
-    archive_path: PathBuf,
-    index_by_name: BTreeMap<String, usize>,
-}
-
-impl ZipHandler {
-    pub(crate) fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let file = File::open(path.as_ref())?;
-        let mut archive = zip::ZipArchive::new(file)?;
-        Ok(ZipHandler {
-            index_by_name: Self::files_by_name(&mut archive),
-            archive,
-            archive_path: path.as_ref().to_path_buf(),
-        })
-    }
-
-    fn files_by_name(archive: &mut zip::ZipArchive<File>) -> BTreeMap<String, usize> {
-        (0..archive.len())
-            .filter_map(|i| {
-                let file = archive.by_index(i).ok()?;
-                // we get the name of the file, not regarding its path in the ZipArchive
-                let real_name = Path::new(file.name()).file_name()?;
-                let real_name: String = real_name.to_str()?.into();
-                Some((real_name, i))
-            })
-            .collect()
-    }
-}
-
-impl<'a> FileHandler for &'a mut ZipHandler {
-    type Reader = zip::read::ZipFile<'a>;
-    fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
-        let p = self.archive_path.join(name);
-        match self.index_by_name.get(name) {
-            None => Ok((None, p)),
-            Some(i) => Ok((Some(self.archive.by_index(*i)?), p)),
-        }
-    }
-}
-
 /// Read a vector of objects from a zip in a file_handler
 pub(crate) fn read_objects<H, O>(file_handler: &mut H, file_name: &str) -> Result<Vec<O>>
 where
@@ -269,25 +222,5 @@ mod tests {
         let mut world_str = String::new();
         world.read_to_string(&mut world_str).unwrap();
         assert_eq!("world\n", world_str);
-    }
-
-    #[test]
-    fn zip_file_handler() {
-        let mut file_handler =
-            ZipHandler::new(PathBuf::from("tests/fixtures/file-handler.zip")).unwrap();
-
-        {
-            let (mut hello, _) = file_handler.get_file("hello.txt").unwrap();
-            let mut hello_str = String::new();
-            hello.read_to_string(&mut hello_str).unwrap();
-            assert_eq!("hello\n", hello_str);
-        }
-
-        {
-            let (mut world, _) = file_handler.get_file("world.txt").unwrap();
-            let mut world_str = String::new();
-            world.read_to_string(&mut world_str).unwrap();
-            assert_eq!("world\n", world_str);
-        }
     }
 }

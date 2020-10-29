@@ -30,7 +30,13 @@ use chrono_tz::Tz;
 use derivative::Derivative;
 use log::info;
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, fmt, path::Path};
+use std::{
+    collections::BTreeMap,
+    fmt,
+    fs::File,
+    io::{BufRead, BufReader, Write},
+    path::Path,
+};
 use typed_index_collection::{CollectionWithId, Idx};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -353,8 +359,20 @@ pub fn read_from_path<P: AsRef<Path>>(p: P, configuration: Configuration) -> Res
 /// identifiers, allowing to namespace the dataset. By default, no
 /// prefix will be added to the identifiers.
 pub fn read_from_zip<P: AsRef<Path>>(path: P, configuration: Configuration) -> Result<Model> {
-    let mut file_handler = read_utils::ZipHandler::new(path)?;
-    read(&mut file_handler, configuration)
+    let output_dir = tempfile::TempDir::new()?;
+    let archive_file = File::open(path.as_ref())?;
+    let mut zip_archive = zip::ZipArchive::new(archive_file)?;
+    for i in 0..zip_archive.len() {
+        let zip_file = zip_archive.by_index(i)?;
+        let out_file_path = output_dir.path().join(zip_file.name());
+        let mut out_file = File::create(out_file_path)?;
+        let reader = BufReader::new(zip_file);
+        for line in BufRead::lines(reader) {
+            let line = line?;
+            writeln!(&mut out_file, "{}", line)?;
+        }
+    }
+    read_from_path(output_dir, configuration)
 }
 
 #[derive(PartialOrd, Ord, Debug, Clone, Eq, PartialEq, Hash)]
