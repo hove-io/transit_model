@@ -108,6 +108,10 @@ where
             path,
         ))
     }
+
+    fn as_path_buf(self) -> PathBuf {
+        self.get_file_if_exists("").unwrap().1
+    }
 }
 
 /// PathFileHandler is used to read files for a directory

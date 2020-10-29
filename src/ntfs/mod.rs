@@ -22,7 +22,6 @@ use crate::{
     calendars::{manage_calendars, write_calendar_dates},
     model::{Collections, Model},
     objects::*,
-    read_utils,
     utils::*,
     Result,
 };
@@ -176,7 +175,6 @@ fn has_fares_v1(collections: &Collections) -> bool {
 /// files in the given directory.
 pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let path = path.as_ref();
-    let mut file_handle = read_utils::PathFileHandler::new(path.to_path_buf());
 
     info!("Loading NTFS from {:?}", path);
     let mut collections = Collections::default();
@@ -204,7 +202,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     collections.grid_exception_dates = make_opt_collection(path, "grid_exception_dates.txt")?;
     collections.grid_periods = make_opt_collection(path, "grid_periods.txt")?;
     collections.grid_rel_calendar_line = make_opt_collection(path, "grid_rel_calendar_line.txt")?;
-    manage_calendars(&mut file_handle, &mut collections)?;
+    manage_calendars(path, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
     read::manage_stops(&mut collections, path)?;
@@ -320,7 +318,7 @@ mod tests {
     use super::{read, write};
     use crate::calendars::{manage_calendars, write_calendar_dates};
     use crate::objects::Availability;
-    use crate::{read_utils::PathFileHandler, test_utils::*};
+    use crate::test_utils::*;
     use geo::line_string;
     use pretty_assertions::assert_eq;
     use std::{
@@ -833,11 +831,10 @@ mod tests {
         .unwrap();
 
         test_in_tmp_dir(|path| {
-            let mut handler = PathFileHandler::new(path.to_path_buf());
             write_calendar_dates(path, &calendars).unwrap();
 
             let mut collections = Collections::default();
-            manage_calendars(&mut handler, &mut collections).unwrap();
+            manage_calendars(path, &mut collections).unwrap();
 
             assert_eq!(calendars, collections.calendars);
         });

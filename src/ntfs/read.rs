@@ -708,7 +708,6 @@ mod tests {
     use super::*;
     use crate::calendars;
     use crate::objects;
-    use crate::read_utils;
     use crate::test_utils::*;
     use pretty_assertions::assert_eq;
 
@@ -793,7 +792,6 @@ mod tests {
             create_file_with_content(path, "stop_times.txt", stop_times_content);
 
             let mut collections = Collections::default();
-            let mut file_handle = read_utils::PathFileHandler::new(path.to_path_buf());
             collections.contributors = make_collection_with_id(path, "contributors.txt").unwrap();
             collections.datasets = make_collection_with_id(path, "datasets.txt").unwrap();
             collections.commercial_modes =
@@ -805,7 +803,7 @@ mod tests {
             collections.physical_modes =
                 make_collection_with_id(path, "physical_modes.txt").unwrap();
             collections.companies = make_collection_with_id(path, "companies.txt").unwrap();
-            calendars::manage_calendars(&mut file_handle, &mut collections).unwrap();
+            calendars::manage_calendars(path, &mut collections).unwrap();
             manage_stops(&mut collections, path).unwrap();
             manage_stop_times(&mut collections, path).unwrap();
 

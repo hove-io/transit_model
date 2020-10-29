@@ -293,7 +293,8 @@ where
         on_demand_transport_comment,
     } = configuration;
 
-    manage_calendars(file_handler, &mut collections)?;
+    let ntfs_path = read_utils::FileHandler::as_path_buf(&mut *file_handler);
+    manage_calendars(ntfs_path, &mut collections)?;
     validity_period::compute_dataset_validity_period(&mut dataset, &collections.calendars)?;
 
     collections.contributors = CollectionWithId::from(contributor);

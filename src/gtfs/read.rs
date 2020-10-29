@@ -2075,7 +2075,7 @@ mod tests {
             collections.comments = comments;
             super::read_routes(&mut handler, &mut collections).unwrap();
             super::manage_shapes(&mut collections, &mut handler).unwrap();
-            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(path, &mut collections).unwrap();
 
             let mut prefix_conf = PrefixConfiguration::default();
             prefix_conf.set_data_prefix("my_prefix");
@@ -2770,11 +2770,10 @@ mod tests {
                        2,1,0,0,0,0,0,0,20180502,20180506";
 
         test_in_tmp_dir(|path| {
-            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "calendar.txt", content);
 
             let mut collections = Collections::default();
-            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(path, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
@@ -2797,11 +2796,10 @@ mod tests {
                        2,20180211,2";
 
         test_in_tmp_dir(|path| {
-            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "calendar_dates.txt", content);
 
             let mut collections = Collections::default();
-            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(path, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 2, 12));
@@ -2827,13 +2825,12 @@ mod tests {
                                       2,20180506,2";
 
         test_in_tmp_dir(|path| {
-            let mut handler = PathFileHandler::new(path.to_path_buf());
             create_file_with_content(path, "calendar.txt", calendars_content);
 
             create_file_with_content(path, "calendar_dates.txt", calendar_dates_content);
 
             let mut collections = Collections::default();
-            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(path, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
             dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
@@ -2858,9 +2855,8 @@ mod tests {
     #[should_panic(expected = "calendar_dates.txt or calendar.txt not found")]
     fn gtfs_without_calendar_dates_or_calendar() {
         test_in_tmp_dir(|path| {
-            let mut handler = PathFileHandler::new(path.to_path_buf());
             let mut collections = Collections::default();
-            calendars::manage_calendars(&mut handler, &mut collections).unwrap();
+            calendars::manage_calendars(path, &mut collections).unwrap();
         });
     }
 
