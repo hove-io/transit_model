@@ -754,6 +754,7 @@ pub fn write_codes(path: &path::Path, collections: &Collections) -> Result<()> {
         && collection_has_no_codes(&collections.lines)
         && collection_has_no_codes(&collections.routes)
         && collection_has_no_codes(&collections.vehicle_journeys)
+        && collection_has_no_codes(&collections.companies)
     {
         return Ok(());
     }

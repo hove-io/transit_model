@@ -386,6 +386,7 @@ pub fn manage_codes(collections: &mut Collections, path: &path::Path) -> Result<
             ObjectType::Line => insert_code(&mut collections.lines, code),
             ObjectType::Route => insert_code(&mut collections.routes, code),
             ObjectType::VehicleJourney => insert_code(&mut collections.vehicle_journeys, code),
+            ObjectType::Company => insert_code(&mut collections.companies, code),
             _ => bail!(
                 "Problem reading {:?}: code does not support {}",
                 path,
@@ -712,28 +713,7 @@ mod tests {
     use crate::test_utils::*;
     use pretty_assertions::assert_eq;
 
-    #[test]
-    fn read_stop_points_with_no_parent() {
-        let stops_content =
-            "stop_id,stop_name,stop_code,stop_lat,stop_lon,location_type,parent_station\n\
-             sp:01,my stop name 1,stopcode,0.1,1.2,0,";
-
-        test_in_tmp_dir(|path| {
-            create_file_with_content(path, "stops.txt", stops_content);
-            let mut collections = Collections::default();
-            manage_stops(&mut collections, path).unwrap();
-            assert_eq!(1, collections.stop_points.len());
-            let stop_point = collections.stop_points.values().next().unwrap();
-            assert_eq!("sp:01", stop_point.id);
-            assert_eq!("Navitia:sp:01", stop_point.stop_area_id);
-            assert_eq!("stopcode", stop_point.code.as_ref().unwrap());
-            assert_eq!(1, collections.stop_areas.len());
-            let stop_area = collections.stop_areas.values().next().unwrap();
-            assert_eq!("Navitia:sp:01", stop_area.id);
-        });
-    }
-    #[test]
-    fn ntfs_stop_times_precision() {
+    fn generate_minimal_ntfs<P: AsRef<path::Path>>(path: P) -> Result<()> {
         let commercial_modes_content = "commercial_mode_id,commercial_mode_name\n\
                                         commercial_mode_1,My Commercial Mode 1";
 
@@ -778,36 +758,68 @@ mod tests {
                                   4,1,06:06:27,06:06:27,sp:04,3,2,1,,\n\
                                   5,1,06:06:27,06:06:27,sp:05,3,2,1,,";
 
-        test_in_tmp_dir(|path| {
-            create_file_with_content(path, "commercial_modes.txt", commercial_modes_content);
-            create_file_with_content(path, "networks.txt", networks_content);
-            create_file_with_content(path, "lines.txt", lines_content);
-            create_file_with_content(path, "routes.txt", routes_content);
-            create_file_with_content(path, "stops.txt", stops_content);
-            create_file_with_content(path, "companies.txt", companies_content);
-            create_file_with_content(path, "physical_modes.txt", physical_modes_content);
-            create_file_with_content(path, "contributors.txt", contributors_content);
-            create_file_with_content(path, "datasets.txt", datasets_content);
-            create_file_with_content(path, "trips.txt", trips_content);
-            create_file_with_content(path, "calendar.txt", calendar_content);
-            create_file_with_content(path, "stop_times.txt", stop_times_content);
+        let path = path.as_ref();
+        create_file_with_content(path, "commercial_modes.txt", commercial_modes_content);
+        create_file_with_content(path, "networks.txt", networks_content);
+        create_file_with_content(path, "lines.txt", lines_content);
+        create_file_with_content(path, "routes.txt", routes_content);
+        create_file_with_content(path, "stops.txt", stops_content);
+        create_file_with_content(path, "companies.txt", companies_content);
+        create_file_with_content(path, "physical_modes.txt", physical_modes_content);
+        create_file_with_content(path, "contributors.txt", contributors_content);
+        create_file_with_content(path, "datasets.txt", datasets_content);
+        create_file_with_content(path, "trips.txt", trips_content);
+        create_file_with_content(path, "calendar.txt", calendar_content);
+        create_file_with_content(path, "stop_times.txt", stop_times_content);
 
+        Ok(())
+    }
+
+    fn make_collection(path: &path::Path) -> Collections {
+        let mut collections = Collections::default();
+        let mut file_handle = read_utils::PathFileHandler::new(path.to_path_buf());
+        collections.contributors = make_collection_with_id(path, "contributors.txt").unwrap();
+        collections.datasets = make_collection_with_id(path, "datasets.txt").unwrap();
+        collections.commercial_modes =
+            make_collection_with_id(path, "commercial_modes.txt").unwrap();
+        collections.networks = make_collection_with_id(path, "networks.txt").unwrap();
+        collections.lines = make_collection_with_id(path, "lines.txt").unwrap();
+        collections.routes = make_collection_with_id(path, "routes.txt").unwrap();
+        collections.vehicle_journeys = make_collection_with_id(path, "trips.txt").unwrap();
+        collections.physical_modes = make_collection_with_id(path, "physical_modes.txt").unwrap();
+        collections.companies = make_collection_with_id(path, "companies.txt").unwrap();
+        calendars::manage_calendars(&mut file_handle, &mut collections).unwrap();
+        manage_stops(&mut collections, path).unwrap();
+        manage_stop_times(&mut collections, path).unwrap();
+        manage_codes(&mut collections, path).unwrap();
+        collections
+    }
+
+    #[test]
+    fn read_stop_points_with_no_parent() {
+        let stops_content =
+            "stop_id,stop_name,stop_code,stop_lat,stop_lon,location_type,parent_station\n\
+             sp:01,my stop name 1,stopcode,0.1,1.2,0,";
+
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "stops.txt", stops_content);
             let mut collections = Collections::default();
-            let mut file_handle = read_utils::PathFileHandler::new(path.to_path_buf());
-            collections.contributors = make_collection_with_id(path, "contributors.txt").unwrap();
-            collections.datasets = make_collection_with_id(path, "datasets.txt").unwrap();
-            collections.commercial_modes =
-                make_collection_with_id(path, "commercial_modes.txt").unwrap();
-            collections.networks = make_collection_with_id(path, "networks.txt").unwrap();
-            collections.lines = make_collection_with_id(path, "lines.txt").unwrap();
-            collections.routes = make_collection_with_id(path, "routes.txt").unwrap();
-            collections.vehicle_journeys = make_collection_with_id(path, "trips.txt").unwrap();
-            collections.physical_modes =
-                make_collection_with_id(path, "physical_modes.txt").unwrap();
-            collections.companies = make_collection_with_id(path, "companies.txt").unwrap();
-            calendars::manage_calendars(&mut file_handle, &mut collections).unwrap();
             manage_stops(&mut collections, path).unwrap();
-            manage_stop_times(&mut collections, path).unwrap();
+            assert_eq!(1, collections.stop_points.len());
+            let stop_point = collections.stop_points.values().next().unwrap();
+            assert_eq!("sp:01", stop_point.id);
+            assert_eq!("Navitia:sp:01", stop_point.stop_area_id);
+            assert_eq!("stopcode", stop_point.code.as_ref().unwrap());
+            assert_eq!(1, collections.stop_areas.len());
+            let stop_area = collections.stop_areas.values().next().unwrap();
+            assert_eq!("Navitia:sp:01", stop_area.id);
+        });
+    }
+    #[test]
+    fn ntfs_stop_times_precision() {
+        test_in_tmp_dir(|path| {
+            let _ = generate_minimal_ntfs(path);
+            let collections = make_collection(path);
 
             assert_eq!(
                 vec![
@@ -879,6 +891,24 @@ mod tests {
                 ],
                 collections.vehicle_journeys.into_vec()[0].stop_times
             );
+        });
+    }
+    #[test]
+    fn company_object_codes() {
+        test_in_tmp_dir(|path| {
+            let _ = generate_minimal_ntfs(path);
+            let object_codes_content = "object_type,object_id,object_system,object_code\n\
+            company,company_1,source,source_code";
+            create_file_with_content(path, "object_codes.txt", object_codes_content);
+
+            let mut collections = make_collection(path);
+            manage_codes(&mut collections, path).unwrap();
+
+            let company = collections.companies.values().next().unwrap();
+            assert_eq!(company.codes.len(), 1);
+            let code = company.codes.iter().next().unwrap();
+            assert_eq!(code.0, "source");
+            assert_eq!(code.1, "source_code");
         });
     }
 }
