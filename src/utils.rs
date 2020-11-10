@@ -288,17 +288,8 @@ where
     D: serde::Deserializer<'de>,
 {
     use serde::de::Deserialize;
-    let option = <Option<String> as Deserialize<'de>>::deserialize(deserializer)?;
-    match option {
-        Some(string) => {
-            if string.is_empty() {
-                Ok(None)
-            } else {
-                Ok(Some(string))
-            }
-        }
-        None => Ok(None),
-    }
+    <Option<String> as Deserialize<'de>>::deserialize(deserializer)
+        .map(|option| option.filter(|s| !s.trim().is_empty()))
 }
 
 pub fn make_opt_collection_with_id<T>(
@@ -414,6 +405,38 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod serde_option_string {
+        use super::*;
+        use pretty_assertions::assert_eq;
+        use serde::{Deserialize, Serialize};
+
+        #[derive(Debug, Serialize, Deserialize)]
+        struct WithOption {
+            #[serde(default, deserialize_with = "de_option_empty_string")]
+            name: Option<String>,
+        }
+
+        #[test]
+        fn with_string() {
+            let json = r#"{"name": "baz"}"#;
+            let object: WithOption = serde_json::from_str(&json).unwrap();
+            assert_eq!(object.name.unwrap(), "baz");
+        }
+
+        #[test]
+        fn with_empty_string() {
+            let json = r#"{"name": ""}"#;
+            let object: WithOption = serde_json::from_str(&json).unwrap();
+            assert_eq!(object.name, None);
+        }
+
+        #[test]
+        fn without_field() {
+            let json = r#"{}"#;
+            let object: WithOption = serde_json::from_str(&json).unwrap();
+            assert_eq!(object.name, None);
+        }
+    }
 
     mod serde_currency {
         use super::*;

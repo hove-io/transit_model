@@ -878,7 +878,12 @@ impl Collections {
     pub fn enhance_trip_headsign(&mut self) {
         let mut vehicle_journeys = self.vehicle_journeys.take();
         for vehicle_journey in &mut vehicle_journeys {
-            if vehicle_journey.headsign.is_none() {
+            if vehicle_journey
+                .headsign
+                .as_ref()
+                .filter(|s| !s.is_empty())
+                .is_none()
+            {
                 vehicle_journey.headsign = vehicle_journey
                     .stop_times
                     .last()
@@ -1838,8 +1843,7 @@ mod tests {
         use super::*;
         use pretty_assertions::assert_eq;
 
-        #[test]
-        fn enhance() {
+        fn collections(trip_headsign: Option<String>) -> Collections {
             let mut collections = Collections::default();
             collections
                 .stop_points
@@ -1867,6 +1871,7 @@ mod tests {
                 .push(VehicleJourney {
                     id: String::from("vehicle_journey_id_1"),
                     stop_times: vec![stop_time],
+                    headsign: trip_headsign,
                     ..Default::default()
                 })
                 .unwrap();
@@ -1878,6 +1883,28 @@ mod tests {
                     ..Default::default()
                 })
                 .unwrap();
+            collections
+        }
+
+        #[test]
+        fn enhance() {
+            let mut collections = collections(None);
+            collections.enhance_trip_headsign();
+            let vehicle_journey = collections
+                .vehicle_journeys
+                .get("vehicle_journey_id_1")
+                .unwrap();
+            assert_eq!("Stop Name", vehicle_journey.headsign.as_ref().unwrap());
+            let vehicle_journey = collections
+                .vehicle_journeys
+                .get("vehicle_journey_id_2")
+                .unwrap();
+            assert_eq!("Headsign", vehicle_journey.headsign.as_ref().unwrap());
+        }
+
+        #[test]
+        fn enhance_when_string_empty() {
+            let mut collections = collections(Some(String::new()));
             collections.enhance_trip_headsign();
             let vehicle_journey = collections
                 .vehicle_journeys
