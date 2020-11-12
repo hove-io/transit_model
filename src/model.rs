@@ -1178,7 +1178,10 @@ impl Collections {
                     find_best_origin_destination(route_idx, &self, routes_to_vehicle_journeys,),
                     LogLevel::Warn
                 );
-                if no_route_name {
+                if no_route_name
+                    && !origin.name.trim().is_empty()
+                    && !destination.name.trim().is_empty()
+                {
                     let route_name = format!("{} - {}", origin.name, destination.name);
                     route_names.insert(route_idx, route_name);
                 }
@@ -2194,6 +2197,30 @@ mod tests {
             collections.enhance_route_names(&routes_to_vehicle_journeys);
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("Stop Area 1 - Stop Area 2", route.name);
+            assert_eq!("stop_area:2", route.destination_id.as_ref().unwrap());
+        }
+
+        #[test]
+        fn do_not_generate_route_name_when_stops_names_are_empty() {
+            let mut collections = collections();
+            collections
+                .vehicle_journeys
+                .push(create_vehicle_journey_with(
+                    "trip:1",
+                    vec!["stop_point:1", "stop_point:2"],
+                    &collections,
+                ))
+                .unwrap();
+            let routes_to_vehicle_journeys = OneToMany::new(
+                &collections.routes,
+                &collections.vehicle_journeys,
+                "routes_to_vehicle_journeys",
+            )
+            .unwrap();
+            collections.stop_areas.get_mut("stop_area:1").unwrap().name = String::new();
+            collections.enhance_route_names(&routes_to_vehicle_journeys);
+            let route = collections.routes.get("route_id").unwrap();
+            assert_eq!("", route.name);
             assert_eq!("stop_area:2", route.destination_id.as_ref().unwrap());
         }
 
