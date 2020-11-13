@@ -12,7 +12,6 @@ readme = "README.md"
 exclude = [
 	".gitignore",
 	".mergify.yml",
-	".travis.yml",
 	"CONTRIBUTING.md",
 	"README.md",
 	"examples/",
@@ -20,9 +19,6 @@ exclude = [
 	"src/documentation/",
 	"tests/",
 ]
-
-[badges]
-travis-ci = { repository = "CanalTP/transit_model" }
 
 [workspace]
 members = [
