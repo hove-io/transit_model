@@ -608,7 +608,11 @@ pub struct VehicleJourney {
     pub physical_mode_id: String,
     pub dataset_id: String,
     pub service_id: String,
-    #[serde(rename = "trip_headsign")]
+    #[serde(
+        default,
+        rename = "trip_headsign",
+        deserialize_with = "de_option_empty_string"
+    )]
     pub headsign: Option<String>,
     #[serde(rename = "trip_short_name")]
     pub short_name: Option<String>,
