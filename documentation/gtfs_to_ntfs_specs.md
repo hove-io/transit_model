@@ -28,7 +28,10 @@ In addition, the NTFS format introduces 2 objects to enable the manipulation of 
 Two parameters can be specified in the configuration of the converter in order to determine if on demand transport (ODT) data should be considered when reading the input GTFS (in particular, when [reading the stop_times.txt file](#reading-stop_timestxt)):
 
 * a boolean parameter `odt`, by default set to `false`, indicating if the GTFS should be considered as containing ODT information
-* a string `odt_comment` setting the message associated to an ODT comment.
+* a string `odt_comment` setting the message associated to an ODT comment. 
+
+A third boolean parameter (`read-as-line`) may affect the reading of the file [routes.txt](#reading-routestxt). If true, each GTFS "Route" will generate a different "Line" else we group the routes by "agency_id" and "route_short_name" (or "route_long_name" if the short name is empty) and create a "Line" for each group.
+
 
 ## Mapping of objects between GTFS and NTFS
 

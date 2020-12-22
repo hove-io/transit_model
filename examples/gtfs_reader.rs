@@ -13,22 +13,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use serde_json::json;
-use std::collections::BTreeMap;
-use transit_model::{
-    gtfs,
-    objects::{Contributor, Dataset},
-    Result,
-};
+use transit_model::{gtfs, Result};
 
 fn run() -> Result<()> {
-    let configuration: gtfs::Configuration = gtfs::Configuration {
-        contributor: Contributor::default(),
-        dataset: Dataset::default(),
-        feed_infos: BTreeMap::new(),
-        prefix_conf: None,
-        on_demand_transport: false,
-        on_demand_transport_comment: None,
-    };
+    let configuration = gtfs::Configuration::default();
     // read GTFS from current directory
     let objects = gtfs::read_from_path(".", configuration)?;
     // output internal model as JSON

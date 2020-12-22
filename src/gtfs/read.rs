@@ -267,14 +267,18 @@ impl<'de> ::serde::Deserialize<'de> for RouteType {
 impl_id!(Route);
 
 impl Route {
-    fn get_line_key(&self) -> (Option<String>, String) {
+    fn generate_line_key(
+        &self,
+        read_as_line: bool,
+        idx: Idx<Route>,
+    ) -> (Option<String>, String, Option<Idx<Route>>) {
         let name = if !self.short_name.is_empty() {
             self.short_name.clone()
         } else {
             self.long_name.clone()
         };
-
-        (self.agency_id.clone(), name)
+        let key = if read_as_line { Some(idx) } else { None };
+        (self.agency_id.clone(), name, key)
     }
 
     fn get_id_by_direction(&self, d: DirectionType) -> String {
@@ -995,21 +999,24 @@ fn get_route_with_smallest_name<'a>(routes: &'a [&Route]) -> &'a Route {
     routes.iter().min_by_key(|r| &r.id).unwrap()
 }
 
-type MapLineRoutes<'a> = BTreeMap<(Option<String>, String), Vec<&'a Route>>;
+type MapLineRoutes<'a> = BTreeMap<(Option<String>, String, Option<Idx<Route>>), Vec<&'a Route>>;
 
 fn map_line_routes<'a>(
     gtfs_routes: &'a CollectionWithId<Route>,
     gtfs_trips: &[Trip],
+    read_as_line: bool,
 ) -> MapLineRoutes<'a> {
     let mut map = BTreeMap::new();
-    for r in gtfs_routes.values().filter(|r| {
+    for (idx, r) in gtfs_routes.iter().filter(|(_, r)| {
         if !gtfs_trips.iter().any(|t| t.route_id == r.id) {
             warn!("Couldn't find trips for route_id {}", r.id);
             return false;
         }
         true
     }) {
-        map.entry(r.get_line_key()).or_insert_with(Vec::new).push(r);
+        map.entry(r.generate_line_key(read_as_line, idx))
+            .or_insert_with(Vec::new)
+            .push(r);
     }
     map
 }
@@ -1158,6 +1165,7 @@ fn make_ntfs_vehicle_journeys(
 pub(in crate::gtfs) fn read_routes<H>(
     file_handler: &mut H,
     collections: &mut Collections,
+    read_as_line: bool,
 ) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -1169,7 +1177,7 @@ where
     collections.physical_modes = CollectionWithId::new(physical_modes)?;
 
     let gtfs_trips = read_objects(file_handler, "trips.txt")?;
-    let map_line_routes = map_line_routes(&gtfs_routes_collection, &gtfs_trips);
+    let map_line_routes = map_line_routes(&gtfs_routes_collection, &gtfs_trips, read_as_line);
     let lines = make_lines(&map_line_routes, &collections.networks)?;
     collections.lines = CollectionWithId::new(lines)?;
 
@@ -1643,7 +1651,7 @@ mod tests {
             let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             assert_eq!(4, collections.lines.len());
             assert_eq!(
                 vec!["agency_1", "agency_2", "agency_3", "agency_4"],
@@ -1712,7 +1720,7 @@ mod tests {
             let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             assert_eq!(3, collections.lines.len());
 
             assert_eq!(5, collections.routes.len());
@@ -1755,7 +1763,7 @@ mod tests {
             let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(
                 vec![
@@ -1827,7 +1835,7 @@ mod tests {
             let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
         });
     }
 
@@ -1858,7 +1866,7 @@ mod tests {
             let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
         });
     }
 
@@ -1893,7 +1901,7 @@ mod tests {
             let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
 
             assert_eq!(3, collections.lines.len());
             assert_eq!(
@@ -1936,7 +1944,7 @@ mod tests {
             let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
 
             assert_eq!(2, collections.lines.len());
 
@@ -1969,7 +1977,7 @@ mod tests {
             let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
 
             assert_eq!(2, collections.lines.len());
             assert_eq!(vec!["route_1", "route_3"], extract_ids(&collections.lines));
@@ -2003,7 +2011,7 @@ mod tests {
             let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             assert_eq!(1, collections.lines.len());
             assert_eq!(1, collections.routes.len());
         });
@@ -2073,7 +2081,7 @@ mod tests {
             collections.networks = networks;
             collections.companies = companies;
             collections.comments = comments;
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             super::manage_shapes(&mut collections, &mut handler).unwrap();
             calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
@@ -2242,7 +2250,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
@@ -2283,7 +2291,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
@@ -2316,7 +2324,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
 
@@ -2350,7 +2358,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             assert_eq!(2, collections.vehicle_journeys.len());
             assert_eq!(0, collections.trip_properties.len());
             for vj in collections.vehicle_journeys.values() {
@@ -2537,7 +2545,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
 
             assert_eq!(
@@ -2623,7 +2631,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
 
             assert_eq!(
@@ -2936,7 +2944,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             // physical mode file should contain only three modes
             // (5,7 => funicular; 2 => train; 6 => suspended cable car)
             assert_eq!(4, collections.lines.len());
@@ -3047,7 +3055,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
 
             assert_eq!(
@@ -3118,7 +3126,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             let val = super::manage_stop_times(&mut collections, &mut handler, false, None);
 
             // the first stop time of the vj has no departure/arrival, it's an error
@@ -3248,7 +3256,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections).unwrap();
+            super::read_routes(&mut handler, &mut collections, false).unwrap();
             super::manage_stop_times(&mut collections, &mut handler, true, None).unwrap();
 
             assert_eq!(
@@ -3296,5 +3304,116 @@ mod tests {
                 collections.vehicle_journeys.into_vec()[0].stop_times
             );
         });
+    }
+
+    mod read_gtfs_routes {
+        use super::*;
+        use crate::{
+            model::Collections,
+            read_utils::{self, PathFileHandler},
+        };
+        use pretty_assertions::assert_eq;
+        use std::path;
+
+        fn get_collection(path: &path::Path, read_as_line: bool) -> Collections {
+            let agency_content = "agency_id,agency_name,agency_url,agency_timezone\n\
+            id_agency,My agency,http://my-agency_url.com,Europe/London";
+
+            let routes_content = "route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color\n\
+                        route_1,agency_1,1,My line 1A,3,8F7A32,FFFFFF\n\
+                        route_2,agency_1,1,My line 1B,3,8F7A32,FFFFFF\n\
+                        route_4,agency_2,1,My line 1B,3,8F7A32,FFFFFF\n\
+                        route_3,agency_2,1,My line 1B,3,8F7A32,FFFFFF\n\
+                        route_5,,1,My line 1C,3,8F7A32,FFFFFF";
+
+            let trips_content =
+                "trip_id,route_id,direction_id,service_id,wheelchair_accessible,bikes_allowed\n\
+            1,route_1,0,service_1,,\n\
+            2,route_2,0,service_1,,\n\
+            3,route_3,0,service_2,,\n\
+            4,route_4,0,service_2,,\n\
+            5,route_5,0,service_2,,\n\
+            6,route_5,1,service_2,,";
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            create_file_with_content(path, "agency.txt", agency_content);
+            create_file_with_content(path, "routes.txt", routes_content);
+            create_file_with_content(path, "trips.txt", trips_content);
+            let mut collections = Collections::default();
+            let (networks, _) = super::read_agency(&mut handler).unwrap();
+            collections.networks = networks;
+            let (contributor, dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+            collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
+            collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
+            super::read_routes(&mut handler, &mut collections, read_as_line).unwrap();
+            collections
+        }
+
+        #[test]
+        fn read_gtfs_routes_as_route() {
+            test_in_tmp_dir(|path| {
+                // read route as route
+                let collections = get_collection(path, false);
+
+                assert_eq!(3, collections.lines.len());
+                assert_eq!(
+                    vec!["agency_1", "agency_2", "id_agency"],
+                    extract(|l| &l.network_id, &collections.lines)
+                );
+                assert_eq!(
+                    vec!["route_1", "route_3", "route_5"],
+                    extract_ids(&collections.lines)
+                );
+                assert_eq!(6, collections.routes.len());
+                assert_eq!(
+                    vec!["route_1", "route_1", "route_3", "route_3", "route_5", "route_5"],
+                    extract(|r| &r.line_id, &collections.routes)
+                );
+                assert_eq!(
+                    vec![
+                        "route_1",
+                        "route_2",
+                        "route_3",
+                        "route_4",
+                        "route_5",
+                        "route_5_R"
+                    ],
+                    extract(|r| &r.id, &collections.routes)
+                );
+            });
+        }
+
+        #[test]
+        fn read_gtfs_routes_as_line() {
+            test_in_tmp_dir(|path| {
+                // read route as line
+                let collections = get_collection(path, true);
+
+                assert_eq!(5, collections.lines.len());
+                assert_eq!(
+                    vec!["agency_1", "agency_1", "agency_2", "agency_2", "id_agency"],
+                    extract(|l| &l.network_id, &collections.lines)
+                );
+                assert_eq!(
+                    vec!["route_1", "route_2", "route_3", "route_4", "route_5"],
+                    extract_ids(&collections.lines)
+                );
+                assert_eq!(6, collections.routes.len());
+                assert_eq!(
+                    vec!["route_1", "route_2", "route_3", "route_4", "route_5", "route_5"],
+                    extract(|r| &r.line_id, &collections.routes)
+                );
+                assert_eq!(
+                    vec![
+                        "route_1",
+                        "route_2",
+                        "route_3",
+                        "route_4",
+                        "route_5",
+                        "route_5_R"
+                    ],
+                    extract(|r| &r.id, &collections.routes)
+                );
+            });
+        }
     }
 }

@@ -12,16 +12,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use std::{collections::BTreeMap, fs};
+use std::fs;
 #[cfg(feature = "xmllint")]
 use std::{ffi::OsStr, process::Command};
-use transit_model::{
-    gtfs,
-    model::Model,
-    netex_france, ntfs,
-    objects::{Contributor, Dataset},
-    test_utils::*,
-};
+use transit_model::{gtfs, model::Model, netex_france, ntfs, test_utils::*};
 
 fn test_write_netex_france(model: Model) {
     test_in_tmp_dir(|output_dir| {
@@ -63,14 +57,7 @@ fn test_write_netex_france_from_ntfs() {
 
 #[test]
 fn test_write_netex_france_from_gtfs() {
-    let configuration = gtfs::Configuration {
-        contributor: Contributor::default(),
-        dataset: Dataset::default(),
-        feed_infos: BTreeMap::new(),
-        prefix_conf: None,
-        on_demand_transport: false,
-        on_demand_transport_comment: None,
-    };
+    let configuration = gtfs::Configuration::default();
 
     let model =
         gtfs::read_from_path("tests/fixtures/netex_france/input_gtfs", configuration).unwrap();

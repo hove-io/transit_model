@@ -21,17 +21,6 @@ use transit_model::{
     PrefixConfiguration,
 };
 
-fn default_configuration() -> gtfs::Configuration {
-    gtfs::Configuration {
-        contributor: Contributor::default(),
-        dataset: Dataset::default(),
-        feed_infos: BTreeMap::new(),
-        prefix_conf: None,
-        on_demand_transport: false,
-        on_demand_transport_comment: None,
-    }
-}
-
 #[test]
 fn test_gtfs() {
     test_in_tmp_dir(|path| {
@@ -48,6 +37,7 @@ fn test_gtfs() {
             prefix_conf: Some(prefix_conf),
             on_demand_transport: false,
             on_demand_transport_comment: None,
+            read_as_line: false,
         };
         let model = transit_model::gtfs::read_from_path(input_dir, configuration).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
@@ -59,7 +49,7 @@ fn test_gtfs() {
 fn test_minimal_gtfs() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/minimal/input";
-        let model = gtfs::read_from_path(input_dir, default_configuration()).unwrap();
+        let model = gtfs::read_from_path(input_dir, gtfs::Configuration::default()).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
@@ -69,7 +59,7 @@ fn test_minimal_gtfs() {
 fn test_gtfs_physical_modes() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/physical_modes/input";
-        let model = gtfs::read_from_path(input_dir, default_configuration()).unwrap();
+        let model = gtfs::read_from_path(input_dir, gtfs::Configuration::default()).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
@@ -88,7 +78,7 @@ fn test_gtfs_physical_modes() {
 fn test_gtfs_remove_vjs_with_no_traffic() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/no_traffic/input";
-        let model = gtfs::read_from_path(input_dir, default_configuration()).unwrap();
+        let model = gtfs::read_from_path(input_dir, gtfs::Configuration::default()).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,
@@ -109,7 +99,7 @@ fn test_gtfs_remove_vjs_with_no_traffic() {
 fn test_minimal_ziped_gtfs() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/ziped_gtfs/gtfs.zip";
-        let model = gtfs::read_from_zip(input, default_configuration()).unwrap();
+        let model = gtfs::read_from_zip(input, gtfs::Configuration::default()).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
@@ -119,7 +109,7 @@ fn test_minimal_ziped_gtfs() {
 fn test_minimal_ziped_sub_dir_gtfs() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/ziped_gtfs/sub_dir_gtfs.zip";
-        let model = gtfs::read_from_zip(input, default_configuration()).unwrap();
+        let model = gtfs::read_from_zip(input, gtfs::Configuration::default()).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
@@ -129,7 +119,7 @@ fn test_minimal_ziped_sub_dir_gtfs() {
 fn test_minimal_ziped_sub_dir_gtfs_with_hidden_files() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/ziped_gtfs/sub_dir_gtfs_with_hidden_files.zip";
-        let model = gtfs::read_from_zip(input, default_configuration()).unwrap();
+        let model = gtfs::read_from_zip(input, gtfs::Configuration::default()).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
@@ -150,6 +140,7 @@ fn test_minimal_gtfs_with_odt_comment() {
             on_demand_transport_comment: Some(
                 "Service à réservation {agency_name} {agency_phone}".to_string(),
             ),
+            read_as_line: false,
         };
         let model = gtfs::read_from_path(input_dir, configuration).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
@@ -176,6 +167,7 @@ fn test_minimal_gtfs_frequencies_with_odt_comment() {
             on_demand_transport_comment: Some(
                 "Service à réservation {agency_name} {agency_phone}".to_string(),
             ),
+            read_as_line: false,
         };
 
         let model = gtfs::read_from_path(input_dir, configuration).unwrap();

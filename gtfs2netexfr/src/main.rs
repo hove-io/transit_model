@@ -101,9 +101,9 @@ fn run(opt: Opt) -> Result<()> {
         contributor,
         dataset,
         feed_infos,
-        prefix_conf: None,
         on_demand_transport: opt.odt,
         on_demand_transport_comment: opt.odt_comment,
+        ..Default::default()
     };
 
     let model = if opt.input.is_file() {

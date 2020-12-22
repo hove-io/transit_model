@@ -253,6 +253,7 @@ struct Shape {
 }
 
 ///parameters consolidation
+#[derive(Default)]
 pub struct Configuration {
     /// The Contributor providing the Dataset
     pub contributor: Contributor,
@@ -266,6 +267,10 @@ pub struct Configuration {
     pub on_demand_transport: bool,
     /// on demand transport comment template
     pub on_demand_transport_comment: Option<String>,
+    /// If true, each GTFS `Route` will generate a different `Line`.
+    /// Else we group the routes by `agency_id` and `route_short_name`
+    /// (or `route_long_name` if the short name is empty) and create a `Line` for each group.
+    pub read_as_line: bool,
 }
 
 fn read<H>(file_handler: &mut H, configuration: Configuration) -> Result<Model>
@@ -282,6 +287,7 @@ where
         prefix_conf,
         on_demand_transport,
         on_demand_transport_comment,
+        read_as_line,
     } = configuration;
 
     manage_calendars(file_handler, &mut collections)?;
@@ -303,7 +309,7 @@ where
 
     read::manage_shapes(&mut collections, file_handler)?;
 
-    read::read_routes(file_handler, &mut collections)?;
+    read::read_routes(file_handler, &mut collections, read_as_line)?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
     read::manage_stop_times(
         &mut collections,
