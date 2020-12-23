@@ -1835,6 +1835,48 @@ mod tests {
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
         }
+
+        #[test]
+        fn forbidden_drop_off_should_be_kept() {
+            let model = transit_model_builder::ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.block_id("block_1")
+                        .st_init("SP1", "10:00:00", "10:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        })
+                        .st_init("SP2", "11:00:00", "11:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        });
+                })
+                .vj("vj2", |vj| {
+                    vj.block_id("block_1")
+                        .st_init("SP3", "12:00:00", "12:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        })
+                        .st_init("SP4", "13:00:00", "13:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        });
+                })
+                .build();
+            let vj1 = model.vehicle_journeys.get("vj1").unwrap();
+            let stop_time = &vj1.stop_times[0];
+            assert_eq!(1, stop_time.pickup_type); //should still forbidden
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+            let vj2 = model.vehicle_journeys.get("vj2").unwrap();
+            let stop_time = &vj2.stop_times[0];
+            assert_eq!(1, stop_time.pickup_type); //should still forbidden
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+        }
     }
 
     mod enhance_trip_headsign {
