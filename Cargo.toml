@@ -15,7 +15,6 @@ exclude = [
 	"CONTRIBUTING.md",
 	"README.md",
 	"examples/",
-	"model-builder/",
 	"src/documentation/",
 	"tests/",
 ]
@@ -26,6 +25,7 @@ members = [
 	"gtfs2ntfs",
 	"ntfs2gtfs",
 	"ntfs2netexfr",
+	"model-builder",
 	"ntfs2ntfs",
 	"restrict-validity-period",
 ]
@@ -71,3 +71,4 @@ required-features = ["proj"]
 approx = "0.3"
 rust_decimal_macros = "1"
 testing_logger = "0.1"
+transit_model_builder = { path = "./model-builder"}

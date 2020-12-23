@@ -144,7 +144,16 @@ impl<'a> ModelBuilder {
     }
 
     /// Consume the builder to create a navitia model
-    pub fn build(self) -> Model {
+    pub fn build(mut self) -> Model {
+        {
+            let default_calendar = self.collections.calendars.get_mut("default_service");
+            if let Some(mut cal) = default_calendar {
+                cal.dates
+                    .insert(transit_model::objects::Date::from_ymd(2020, 1, 1));
+                //TODO use date in self and add more
+            }
+        }
+
         Model::new(self.collections).unwrap()
     }
 }
@@ -210,16 +219,29 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///        .build();
     /// # }
     /// ```
-    pub fn st(mut self, name: &str, arrival: impl IntoTime, departure: impl IntoTime) -> Self {
-        let stop_point_idx = self.find_or_create_sp(name);
+    pub fn st(self, name: &str, arrival: impl IntoTime, departure: impl IntoTime) -> Self {
+        self.st_init(name, arrival, departure, |_st| {})
+    }
+
+    pub fn st_init<F>(
+        mut self,
+        name: &str,
+        arrival: impl IntoTime,
+        departure: impl IntoTime,
+        st_initer: F,
+    ) -> Self
+    where
+        F: FnOnce(&mut StopTime),
+    {
         {
+            let stop_point_idx = self.find_or_create_sp(name);
             let vj = &mut self
                 .model
                 .collections
                 .vehicle_journeys
                 .index_mut(self.vj_idx);
             let sequence = vj.stop_times.len() as u32;
-            let stop_time = StopTime {
+            let mut stop_time = StopTime {
                 stop_point_idx,
                 sequence,
                 arrival_time: arrival.into_time(),
@@ -230,7 +252,9 @@ impl<'a> VehicleJourneyBuilder<'a> {
                 drop_off_type: 0u8,
                 datetime_estimated: false,
                 local_zone_id: None,
+                precision: None,
             };
+            st_initer(&mut stop_time);
 
             vj.stop_times.push(stop_time);
         }
@@ -293,6 +317,18 @@ impl<'a> VehicleJourneyBuilder<'a> {
 
         self
     }
+
+    pub fn block_id(self, block_id: &str) -> Self {
+        {
+            let vj = &mut self
+                .model
+                .collections
+                .vehicle_journeys
+                .index_mut(self.vj_idx);
+            vj.block_id = Some(block_id.to_owned());
+        }
+        self
+    }
 }
 
 impl<'a> Drop for VehicleJourneyBuilder<'a> {
@@ -307,6 +343,7 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
 
         collections.companies.get_or_create(&new_vj.company_id);
         collections.calendars.get_or_create(&new_vj.service_id);
+
         collections
             .physical_modes
             .get_or_create(&new_vj.physical_mode_id);
@@ -342,14 +379,14 @@ mod test {
         assert_eq!(
             model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
             ["A", "B"]
-                .into_iter()
+                .iter()
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
         assert_eq!(
             model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("tata").unwrap()),
             ["C", "D"]
-                .into_iter()
+                .iter()
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
@@ -371,14 +408,14 @@ mod test {
         assert_eq!(
             model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
             ["A", "B"]
-                .into_iter()
+                .iter()
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
         assert_eq!(
             model.get_corresponding_from_idx(model.stop_points.get_idx("A").unwrap()),
             ["toto", "tata"]
-                .into_iter()
+                .iter()
                 .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
                 .collect()
         );
@@ -415,14 +452,14 @@ mod test {
         assert_eq!(
             model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
             ["A", "B"]
-                .into_iter()
+                .iter()
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
         assert_eq!(
             model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("tata").unwrap()),
             ["C", "D"]
-                .into_iter()
+                .iter()
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
@@ -431,14 +468,14 @@ mod test {
         assert_eq!(
             model.get_corresponding_from_idx(model.routes.get_idx("1").unwrap()),
             ["toto"]
-                .into_iter()
+                .iter()
                 .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
                 .collect()
         );
         assert_eq!(
             model.get_corresponding_from_idx(model.routes.get_idx("2").unwrap()),
             ["tata"]
-                .into_iter()
+                .iter()
                 .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
                 .collect()
         );
@@ -446,7 +483,7 @@ mod test {
         assert_eq!(
             model.get_corresponding_from_idx(model.routes.get_idx("default_route").unwrap()),
             ["tutu"]
-                .into_iter()
+                .iter()
                 .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
                 .collect()
         );
