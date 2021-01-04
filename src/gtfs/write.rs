@@ -39,8 +39,10 @@ pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) 
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
     for t in transfers.values() {
-        wtr.serialize(Transfer::from(t))
-            .with_context(|_| format!("Error reading {:?}", path))?;
+        if t.from_stop_id != t.to_stop_id {
+            wtr.serialize(Transfer::from(t))
+                .with_context(|_| format!("Error reading {:?}", path))?;
+        }
     }
 
     wtr.flush()
@@ -1397,5 +1399,55 @@ mod tests {
         };
 
         assert_eq!(expected, make_gtfs_route_from_ntfs_line(&line, &pm));
+    }
+
+    #[test]
+    fn ntfs_tranfers_at_same_stop_point() {
+        let tmp_dir = tempdir().expect("create temp dir");
+
+        let transfers = Collection::new(vec![
+            NtfsTransfer {
+                from_stop_id: String::from("101937"),
+                to_stop_id: String::from("101937"),
+                min_transfer_time: None,
+                real_min_transfer_time: None,
+                equipment_id: None,
+            },
+            NtfsTransfer {
+                from_stop_id: String::from("101938"),
+                to_stop_id: String::from("101938"),
+                min_transfer_time: None,
+                real_min_transfer_time: None,
+                equipment_id: None,
+            },
+            NtfsTransfer {
+                from_stop_id: String::from("101937"),
+                to_stop_id: String::from("101938"),
+                min_transfer_time: None,
+                real_min_transfer_time: None,
+                equipment_id: None,
+            },
+            NtfsTransfer {
+                from_stop_id: String::from("101938"),
+                to_stop_id: String::from("101937"),
+                min_transfer_time: None,
+                real_min_transfer_time: None,
+                equipment_id: None,
+            },
+        ]);
+
+        write_transfers(tmp_dir.path(), &transfers).unwrap();
+        let output_file_path = tmp_dir.path().join("transfers.txt");
+        let mut output_file = File::open(output_file_path.clone())
+            .unwrap_or_else(|_| panic!("file {:?} not found", output_file_path));
+        let mut output_contents = String::new();
+        output_file.read_to_string(&mut output_contents).unwrap();
+        assert_eq!(
+            "from_stop_id,to_stop_id,transfer_type,min_transfer_time\n\
+            101937,101938,2,\n\
+            101938,101937,2,\n",
+            output_contents
+        );
+        tmp_dir.close().expect("delete temp dir");
     }
 }
