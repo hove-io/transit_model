@@ -272,9 +272,10 @@ impl AddPrefix for Dataset {
 
 impl WithId for Dataset {
     fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
+        Self {
+            id: id.to_owned(),
+            ..Default::default()
+        }
     }
 }
 
@@ -677,9 +678,10 @@ impl_comment_links!(VehicleJourney);
 
 impl WithId for VehicleJourney {
     fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
+        Self {
+            id: id.to_owned(),
+            ..Default::default()
+        }
     }
 }
 
@@ -1294,9 +1296,10 @@ impl AddPrefix for Calendar {
 
 impl WithId for Calendar {
     fn with_id(id: &str) -> Self {
-        let mut r = Self::default();
-        r.id = id.to_owned();
-        r
+        Self {
+            id: id.to_owned(),
+            ..Default::default()
+        }
     }
 }
 

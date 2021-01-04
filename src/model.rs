@@ -29,7 +29,6 @@ use std::{
     cmp::{self, Ordering, Reverse},
     collections::{BTreeMap, HashMap, HashSet},
     convert::TryFrom,
-    iter::FromIterator,
     ops,
 };
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
@@ -1095,10 +1094,10 @@ impl Collections {
                 }
                 max_indexes
             }
-            fn find_biggest_stop_areas<'a>(
+            fn find_biggest_stop_areas(
                 stop_area_indexes: Vec<Idx<StopArea>>,
-                collections: &'a Collections,
-            ) -> Vec<&'a StopArea> {
+                collections: &Collections,
+            ) -> Vec<&StopArea> {
                 if stop_area_indexes.is_empty() {
                     return Vec::new();
                 }
@@ -1126,9 +1125,9 @@ impl Collections {
                 }
                 biggest_stop_areas
             }
-            fn find_first_by_alphabetical_order<'a>(
-                mut stop_areas: Vec<&'a StopArea>,
-            ) -> Option<&'a StopArea> {
+            fn find_first_by_alphabetical_order(
+                mut stop_areas: Vec<&StopArea>,
+            ) -> Option<&StopArea> {
                 stop_areas.sort_by_key(|stop_area| &stop_area.name);
                 stop_areas.get(0).cloned()
             }
@@ -1148,9 +1147,8 @@ impl Collections {
                     find_biggest_stop_areas(most_frequent_stop_areas, collections);
                 find_first_by_alphabetical_order(biggest_stop_areas)
             }
-
             let vehicle_journey_idxs = routes_to_vehicle_journeys
-                .get_corresponding_forward(&IdxSet::from_iter(std::iter::once(route_idx)));
+                .get_corresponding_forward(&std::iter::once(route_idx).collect());
 
             let origin_stop_area =
                 find_best_stop_area_for(collections, &vehicle_journey_idxs, |vj| {
@@ -2151,9 +2149,11 @@ mod tests {
         }
 
         fn collections() -> Collections {
-            let mut collections = Collections::default();
-            collections.stop_areas = stop_areas();
-            collections.stop_points = stop_points();
+            let mut collections = Collections {
+                stop_areas: stop_areas(),
+                stop_points: stop_points(),
+                ..Default::default()
+            };
             collections
                 .routes
                 .push(Route {
@@ -2406,13 +2406,15 @@ mod tests {
 
         #[test]
         fn remove_dead_reference() {
-            let mut collections = Collections::default();
-            collections.vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
-                id: String::from("vehicle_journey_id"),
-                geometry_id: Some(String::from("geometry_id")),
+            let mut collections = Collections {
+                vehicle_journeys: CollectionWithId::new(vec![VehicleJourney {
+                    id: String::from("vehicle_journey_id"),
+                    geometry_id: Some(String::from("geometry_id")),
+                    ..Default::default()
+                }])
+                .unwrap(),
                 ..Default::default()
-            }])
-            .unwrap();
+            };
             collections.check_geometries_coherence();
             assert_eq!(
                 None,
@@ -2426,18 +2428,20 @@ mod tests {
 
         #[test]
         fn preserve_valid_reference() {
-            let mut collections = Collections::default();
-            collections.vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
-                id: String::from("vehicle_journey_id"),
-                geometry_id: Some(String::from("geometry_id")),
+            let mut collections = Collections {
+                vehicle_journeys: CollectionWithId::new(vec![VehicleJourney {
+                    id: String::from("vehicle_journey_id"),
+                    geometry_id: Some(String::from("geometry_id")),
+                    ..Default::default()
+                }])
+                .unwrap(),
+                geometries: CollectionWithId::new(vec![Geometry {
+                    id: String::from("geometry_id"),
+                    geometry: GeoGeometry::Point(GeoPoint::new(0.0, 0.0)),
+                }])
+                .unwrap(),
                 ..Default::default()
-            }])
-            .unwrap();
-            collections.geometries = CollectionWithId::new(vec![Geometry {
-                id: String::from("geometry_id"),
-                geometry: GeoGeometry::Point(GeoPoint::new(0.0, 0.0)),
-            }])
-            .unwrap();
+            };
             collections.check_geometries_coherence();
             assert_eq!(
                 Some(String::from("geometry_id")),
@@ -2455,10 +2459,11 @@ mod tests {
         use approx::assert_relative_eq;
 
         fn collections(sp_amount: usize) -> Collections {
-            let mut collections = Collections::default();
-            collections.stop_areas = stop_areas();
-            collections.stop_points = stop_points(sp_amount);
-            collections
+            Collections {
+                stop_areas: stop_areas(),
+                stop_points: stop_points(sp_amount),
+                ..Default::default()
+            }
         }
 
         fn stop_areas() -> CollectionWithId<StopArea> {

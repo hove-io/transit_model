@@ -179,31 +179,33 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let mut file_handle = read_utils::PathFileHandler::new(path.to_path_buf());
 
     info!("Loading NTFS from {:?}", path);
-    let mut collections = Collections::default();
-    collections.contributors = make_collection_with_id(path, "contributors.txt")?;
-    collections.datasets = make_collection_with_id(path, "datasets.txt")?;
-    collections.commercial_modes = make_collection_with_id(path, "commercial_modes.txt")?;
-    collections.networks = make_collection_with_id(path, "networks.txt")?;
-    collections.lines = make_collection_with_id(path, "lines.txt")?;
-    collections.routes = make_collection_with_id(path, "routes.txt")?;
-    collections.vehicle_journeys = make_collection_with_id(path, "trips.txt")?;
-    collections.frequencies = make_opt_collection(path, "frequencies.txt")?;
-    collections.physical_modes = make_collection_with_id(path, "physical_modes.txt")?;
-    collections.companies = make_collection_with_id(path, "companies.txt")?;
-    collections.equipments = make_opt_collection_with_id(path, "equipments.txt")?;
-    collections.trip_properties = make_opt_collection_with_id(path, "trip_properties.txt")?;
-    collections.transfers = make_opt_collection(path, "transfers.txt")?;
-    collections.admin_stations = make_opt_collection(path, "admin_stations.txt")?;
-    collections.tickets = make_opt_collection_with_id(path, "tickets.txt")?;
-    collections.ticket_uses = make_opt_collection_with_id(path, "ticket_uses.txt")?;
-    collections.ticket_prices = make_opt_collection(path, "ticket_prices.txt")?;
-    collections.ticket_use_perimeters = make_opt_collection(path, "ticket_use_perimeters.txt")?;
-    collections.ticket_use_restrictions = make_opt_collection(path, "ticket_use_restrictions.txt")?;
-    collections.levels = make_opt_collection_with_id(path, "levels.txt")?;
-    collections.grid_calendars = make_opt_collection_with_id(path, "grid_calendars.txt")?;
-    collections.grid_exception_dates = make_opt_collection(path, "grid_exception_dates.txt")?;
-    collections.grid_periods = make_opt_collection(path, "grid_periods.txt")?;
-    collections.grid_rel_calendar_line = make_opt_collection(path, "grid_rel_calendar_line.txt")?;
+    let mut collections = Collections {
+        contributors: make_collection_with_id(path, "contributors.txt")?,
+        datasets: make_collection_with_id(path, "datasets.txt")?,
+        commercial_modes: make_collection_with_id(path, "commercial_modes.txt")?,
+        networks: make_collection_with_id(path, "networks.txt")?,
+        lines: make_collection_with_id(path, "lines.txt")?,
+        routes: make_collection_with_id(path, "routes.txt")?,
+        vehicle_journeys: make_collection_with_id(path, "trips.txt")?,
+        frequencies: make_opt_collection(path, "frequencies.txt")?,
+        physical_modes: make_collection_with_id(path, "physical_modes.txt")?,
+        companies: make_collection_with_id(path, "companies.txt")?,
+        equipments: make_opt_collection_with_id(path, "equipments.txt")?,
+        trip_properties: make_opt_collection_with_id(path, "trip_properties.txt")?,
+        transfers: make_opt_collection(path, "transfers.txt")?,
+        admin_stations: make_opt_collection(path, "admin_stations.txt")?,
+        tickets: make_opt_collection_with_id(path, "tickets.txt")?,
+        ticket_uses: make_opt_collection_with_id(path, "ticket_uses.txt")?,
+        ticket_prices: make_opt_collection(path, "ticket_prices.txt")?,
+        ticket_use_perimeters: make_opt_collection(path, "ticket_use_perimeters.txt")?,
+        ticket_use_restrictions: make_opt_collection(path, "ticket_use_restrictions.txt")?,
+        levels: make_opt_collection_with_id(path, "levels.txt")?,
+        grid_calendars: make_opt_collection_with_id(path, "grid_calendars.txt")?,
+        grid_exception_dates: make_opt_collection(path, "grid_exception_dates.txt")?,
+        grid_periods: make_opt_collection(path, "grid_periods.txt")?,
+        grid_rel_calendar_line: make_opt_collection(path, "grid_rel_calendar_line.txt")?,
+        ..Default::default()
+    };
     manage_calendars(&mut file_handle, &mut collections)?;
     read::manage_geometries(&mut collections, path)?;
     read::manage_feed_infos(&mut collections, path)?;
@@ -376,9 +378,11 @@ mod tests {
             system: Some("GTFS V2".to_string()),
         };
 
-        let mut collections = Collections::default();
-        collections.datasets = CollectionWithId::from(dataset);
-        collections.feed_infos = feed_infos;
+        let mut collections = Collections {
+            datasets: CollectionWithId::from(dataset),
+            feed_infos,
+            ..Default::default()
+        };
 
         test_in_tmp_dir(|path| {
             write::write_feed_infos(path, &collections, get_test_datetime()).unwrap();
@@ -695,10 +699,12 @@ mod tests {
             )
             .unwrap();
 
-            let mut collections = Collections::default();
-            collections.vehicle_journeys =
-                make_collection_with_id::<VehicleJourney>(path, "trips.txt").unwrap();
-            collections.stop_points = stop_points;
+            let mut collections = Collections {
+                vehicle_journeys: make_collection_with_id::<VehicleJourney>(path, "trips.txt")
+                    .unwrap(),
+                stop_points,
+                ..Default::default()
+            };
 
             read::manage_stop_times(&mut collections, path).unwrap();
             assert_eq!(vehicle_journeys, collections.vehicle_journeys);
@@ -1135,11 +1141,13 @@ mod tests {
             write::write_codes(path, &ser_collections).unwrap();
             write::write_object_properties(path, &ser_collections).unwrap();
 
-            let mut des_collections = Collections::default();
-            des_collections.lines = make_collection_with_id(path, "lines.txt").unwrap();
-            des_collections.routes = make_collection_with_id(path, "routes.txt").unwrap();
-            des_collections.vehicle_journeys = make_collection_with_id(path, "trips.txt").unwrap();
-            des_collections.networks = make_collection_with_id(path, "networks.txt").unwrap();
+            let mut des_collections = Collections {
+                lines: make_collection_with_id(path, "lines.txt").unwrap(),
+                routes: make_collection_with_id(path, "routes.txt").unwrap(),
+                vehicle_journeys: make_collection_with_id(path, "trips.txt").unwrap(),
+                networks: make_collection_with_id(path, "networks.txt").unwrap(),
+                ..Default::default()
+            };
             read::manage_stops(&mut des_collections, path).unwrap();
             read::manage_stop_times(&mut des_collections, path).unwrap();
             read::manage_comments(&mut des_collections, path).unwrap();
