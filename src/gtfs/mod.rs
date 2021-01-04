@@ -416,15 +416,20 @@ fn remove_stop_zones(model: Model) -> Result<Collections> {
     collections
         .stop_points
         .retain(|sp| sp.stop_type != StopType::Zone);
-    let stop_point_ids: Vec<&Idx<StopPoint>> =
-        collections.stop_points.get_id_to_idx().values().collect();
-    let mut vjs = collections.vehicle_journeys.take();
-    for vj in &mut vjs {
+
+    let stop_point_ids: Vec<Idx<StopPoint>> = collections
+        .stop_points
+        .get_id_to_idx()
+        .values()
+        .copied()
+        .collect();
+
+    collections.vehicle_journeys.retain(|vj| {
         vj.stop_times
-            .retain(|st| stop_point_ids.contains(&&st.stop_point_idx));
-    }
-    vjs.retain(|vj| !vj.stop_times.is_empty());
-    collections.vehicle_journeys = CollectionWithId::new(vjs)?;
+            .iter()
+            .all(|st| stop_point_ids.contains(&st.stop_point_idx))
+    });
+
     Ok(collections)
 }
 
