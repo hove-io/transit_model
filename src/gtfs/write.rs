@@ -295,9 +295,9 @@ struct StopExtension {
     code: String,
 }
 
-fn stop_extensions_from_collection_with_id<'a, T>(
-    collections: &'a CollectionWithId<T>,
-) -> impl Iterator<Item = StopExtension> + 'a
+fn stop_extensions_from_collection_with_id<T>(
+    collections: &CollectionWithId<T>,
+) -> impl Iterator<Item = StopExtension> + '_
 where
     T: Id<T> + Codes,
 {
@@ -478,7 +478,7 @@ pub fn write_stop_times(
     Ok(())
 }
 
-fn ntfs_geometry_to_gtfs_shapes<'a>(g: &'a objects::Geometry) -> impl Iterator<Item = Shape> + 'a {
+fn ntfs_geometry_to_gtfs_shapes(g: &objects::Geometry) -> impl Iterator<Item = Shape> + '_ {
     let points = match g.geometry {
         GeoGeometry::LineString(ref linestring) => &linestring.0[..],
         _ => {

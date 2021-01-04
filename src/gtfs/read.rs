@@ -268,7 +268,7 @@ impl_id!(Route);
 
 impl Route {
     fn get_line_key(&self) -> (Option<String>, String) {
-        let name = if self.short_name != "" {
+        let name = if !self.short_name.is_empty() {
             self.short_name.clone()
         } else {
             self.long_name.clone()

@@ -73,7 +73,7 @@ impl FromStr for FrameType {
 /// Returns a map of all frames (pointer to an `Element`) per `FrameType`.
 /// The input parameter must be an `Element` (XML element) that contains frames.
 /// Usually, it will be an element call `<frames>` in NeTEx standard.
-pub fn parse_frames_by_type<'a>(frames: &'a Element) -> Result<Frames<'a>> {
+pub fn parse_frames_by_type(frames: &Element) -> Result<Frames<'_>> {
     frames
         .children()
         .try_fold(HashMap::new(), |mut map, frame| {

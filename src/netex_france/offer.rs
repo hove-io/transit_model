@@ -42,14 +42,14 @@ pub struct OfferExporter<'a> {
     line_modes: LineModes<'a>,
 }
 
-fn calculate_route_points<'a>(model: &'a Model) -> BTreeMap<&'a str, Vec<Idx<StopPoint>>> {
+fn calculate_route_points(model: &Model) -> BTreeMap<&str, Vec<Idx<StopPoint>>> {
     model
         .routes
         .iter()
         .map(|(route_idx, route)| {
             let vehicle_journeys_indexes: IdxSet<VehicleJourney> =
                 model.get_corresponding_from_idx(route_idx);
-            let mut vehicle_journeys: Vec<&'a VehicleJourney> = vehicle_journeys_indexes
+            let mut vehicle_journeys: Vec<&VehicleJourney> = vehicle_journeys_indexes
                 .into_iter()
                 .map(|idx| &model.vehicle_journeys[idx])
                 .collect();
