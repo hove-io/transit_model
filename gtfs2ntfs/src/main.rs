@@ -58,6 +58,12 @@ struct Opt {
     #[structopt(long = "odt-comment")]
     odt_comment: Option<String>,
 
+    /// If true, each GTFS `Route` will generate a different `Line`.
+    /// Else we group the routes by `agency_id` and `route_short_name`
+    /// (or `route_long_name` if the short name is empty) and create a `Line` for each group.
+    #[structopt(long = "read-as-line")]
+    read_as_line: bool,
+
     /// Current datetime.
     #[structopt(
         short = "x",
@@ -118,6 +124,7 @@ fn run(opt: Opt) -> Result<()> {
         prefix_conf: Some(prefix_conf),
         on_demand_transport: opt.odt,
         on_demand_transport_comment: opt.odt_comment,
+        read_as_line: opt.read_as_line,
     };
 
     let model = if opt.input.is_file() {
