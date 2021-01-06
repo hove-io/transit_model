@@ -1,7 +1,7 @@
 name: Publish on crates.io
 on:
   release:
-    types: [created]
+    types: [published]
 
 env:
   PROJ_VERSION: 7.1.0
