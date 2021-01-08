@@ -21,7 +21,7 @@ use failure::{bail, format_err};
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
 use lazy_static::lazy_static;
-use log::{debug, info, warn, Level as LogLevel};
+use log::{debug, warn, Level as LogLevel};
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
@@ -750,6 +750,10 @@ impl Collections {
     ///                         out         in   out         in
     ///                         |- Stay-In -|
     ///
+    /// In this example the stop SP2 is in both VJ, so we can forbid the pick-up
+    /// for VJ:1 / drop-off for VJ:2 since we don't want to tell a traveller to take VJ:1
+    /// at SP2 but VJ:2
+    ///
     /// Example 2:
     /// ##########
     ///       out          in  out               in
@@ -762,6 +766,7 @@ impl Collections {
     ///                                 out                 in  out          in
     ///                         |--------- Stay In ---------|
     ///
+    /// This example show an invalid stay in since the same vehicule cannot be at both stops.
     /// Note the overlap between the departure time of the last stop point SP2
     /// of VJ:1 and the arrival time of the first stop point SP3 of VJ:2. In
     /// this case, we still apply the default rule.
@@ -792,83 +797,72 @@ impl Collections {
     /// is undefined behavior (most likely, some stay-in will be forbidden by
     /// the default rule).
     pub fn enhance_pickup_dropoff(&mut self) {
-        let mut vj_idxs: Vec<Idx<VehicleJourney>> = self
-            .vehicle_journeys
+        let mut allowed_last_pick_up_vj = HashSet::<_>::new();
+        let mut allowed_first_drop_off_vj = HashSet::<_>::new();
+
+        let can_chain_without_overlap = |prev_vj: &VehicleJourney, next_vj: &VehicleJourney| {
+            let last_stop = &prev_vj.stop_times.last();
+            let first_stop = &next_vj.stop_times.first();
+            match (last_stop, first_stop) {
+                (Some(last_stop), Some(first_stop)) => {
+                    if last_stop.stop_point_idx == first_stop.stop_point_idx {
+                        // We can discard when the stop points are identicals (see
+                        // Example 1 above).
+                        false
+                    } else { 
+                        // The stay in is not really possible when timing overlaps
+                        // between arrival of first vehicle journey and departure of
+                        // next vehicle journey (see Example 2 above).
+                        last_stop.departure_time <= first_stop.arrival_time
+                    }
+                }
+                _ => false,
+            }
+        };
+
+        self.vehicle_journeys
             .iter()
-            // Filtering out vehicle journeys without any stop time allowing us
-            // below to access first and last stop_times safely.
-            .filter(|(_, vj)| !vj.stop_times.is_empty())
-            .map(|(idx, _)| idx)
-            .collect();
-        // Init all vehicle journeys with:
-        // - no drop-off on first stop
-        // - no pick-up on last stop
+            .filter_map(|(vj_idx, vj)| vj.block_id.clone().map(|b| (b, (vj_idx, vj))))
+            .fold(
+                HashMap::<_, Vec<(Idx<VehicleJourney>, &VehicleJourney)>>::new(),
+                |mut map, (b, (vj_idx, vj))| {
+                    let other_block_id_vj = map.entry(b).or_insert_with(Vec::new);
+
+                    // for every vj we check if it can really be a stay in and if the last stop
+                    // is not in both vj (example 1)
+                    // Note: this is quadratic but should not be too costly since
+                    // the number of vj checked should be limited
+                    other_block_id_vj
+                        .iter()
+                        .for_each(|(other_vj_idx, other_vj)| {
+                            if can_chain_without_overlap(vj, other_vj) {
+                                allowed_first_drop_off_vj.insert(*other_vj_idx);
+                                allowed_last_pick_up_vj.insert(vj_idx);
+                            } else if can_chain_without_overlap(other_vj, vj) {
+                                allowed_first_drop_off_vj.insert(vj_idx);
+                                allowed_last_pick_up_vj.insert(*other_vj_idx);
+                            }
+                        });
+                    other_block_id_vj.push((vj_idx, vj));
+                    map
+                },
+            );
+
+        let vj_idxs: Vec<Idx<VehicleJourney>> =
+            self.vehicle_journeys.iter().map(|(idx, _)| idx).collect();
         for vj_idx in &vj_idxs {
-            let mut vehicle_journey = self.vehicle_journeys.index_mut(*vj_idx);
-            vehicle_journey
-                .stop_times
-                .first_mut()
-                .unwrap()
-                .drop_off_type = 1;
-            vehicle_journey.stop_times.last_mut().unwrap().pickup_type = 1;
-        }
-        // Keep only vehicle journeys with a `block_id` (concerned with
-        // stay-in).
-        vj_idxs.retain(|vj_idx| self.vehicle_journeys[*vj_idx].block_id.is_some());
-        // Sort the vehicule journeys by block_id, and if equal, order them by
-        // departure time.
-        vj_idxs.sort_by(|vj1_idx, vj2_idx| {
-            let vj1 = &self.vehicle_journeys[*vj1_idx];
-            let vj2 = &self.vehicle_journeys[*vj2_idx];
-            match vj1.block_id.cmp(&vj2.block_id) {
-                Ordering::Equal => vj1
-                    .stop_times
-                    .first()
-                    .unwrap()
-                    .departure_time
-                    .cmp(&vj2.stop_times.first().unwrap().departure_time),
-                ordering => ordering,
+            let mut vj = self.vehicle_journeys.index_mut(*vj_idx);
+
+            if !allowed_first_drop_off_vj.contains(&vj_idx) {
+                if let Some(st) = vj.stop_times.first_mut() {
+                    st.drop_off_type = 1;
+                }
             }
-        });
-        for (prev_vj_idx, next_vj_idx) in vj_idxs.iter().zip(vj_idxs.iter().skip(1)) {
-            let prev_vj = &self.vehicle_journeys[*prev_vj_idx];
-            let next_vj = &self.vehicle_journeys[*next_vj_idx];
-            if prev_vj.block_id != next_vj.block_id {
-                // we can discard when two vehicle journeys are not in a stay-in
-                // situation.
-                continue;
+            if !allowed_last_pick_up_vj.contains(&vj_idx) {
+                if let Some(st) = vj.stop_times.last_mut() {
+                    st.pickup_type = 1;
+                }
             }
-            let last_stop = &prev_vj.stop_times.last().unwrap();
-            let first_stop = &next_vj.stop_times.first().unwrap();
-            if last_stop.stop_point_idx == first_stop.stop_point_idx {
-                // We can discard when the stop points are identicals (see
-                // Example 1 above).
-                continue;
-            }
-            if last_stop.departure_time > first_stop.arrival_time {
-                // We can discard when timing overlaps between arrival of first
-                // vehicle journey and departure of next vehicle journey (see
-                // Example 2 above).
-                continue;
-            }
-            // We're now in Example 3 (see above), let's allow pick-up and
-            // drop-off on stay-in situations.
-            // Note: Original value might have been either 0 (authorized) or 2
-            // (on-demand-transport), but we're putting back 0 so there is
-            // a possible degradation of information.
-            info!("Enabling pick-up on last stop time of vehicle journey '{}' and drop-off on first stop time of vehicle journey '{}' (stay-in).", prev_vj.id, next_vj.id);
-            self.vehicle_journeys
-                .index_mut(*prev_vj_idx)
-                .stop_times
-                .last_mut()
-                .unwrap()
-                .pickup_type = 0;
-            self.vehicle_journeys
-                .index_mut(*next_vj_idx)
-                .stop_times
-                .first_mut()
-                .unwrap()
-                .drop_off_type = 0;
         }
     }
 
