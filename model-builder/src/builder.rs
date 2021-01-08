@@ -31,10 +31,14 @@
 //! ```
 
 use crate::model::{Collections, Model};
-use crate::objects::{Calendar, Route, StopPoint, StopTime, Time, VehicleJourney};
+use crate::objects::{Calendar, Date, Route, StopPoint, StopTime, Time, VehicleJourney};
 use typed_index_collection::Idx;
 
+const DEFAULT_CALENDAR_ID: &str = "default_service";
+
 /// Builder used to easily create a `Model`
+/// Note: if not explicitly set all the vehicule journeys
+/// will be attached to a default calendar starting 2020-01-01
 #[derive(Default)]
 pub struct ModelBuilder {
     collections: Collections,
@@ -120,7 +124,61 @@ impl<'a> ModelBuilder {
     ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
-    ///      .calendar("c1", |c| {
+    ///      .calendar("c1", "2020-01-01")
+    ///      .calendar("c1", "2020-01-02")
+    ///      .calendar("default_service", Date::from_ymd(2019, 2, 6))
+    ///      .vj("toto", |vj| {
+    ///          vj.calendar("c1")
+    ///            .st("A", "10:00:00", "10:01:00")
+    ///            .st("B", "11:00:00", "11:01:00");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn calendar(mut self, id: &str, date: impl IntoDate) -> Self {
+        {
+            let mut c = self.collections.calendars.get_or_create(id);
+            c.dates.insert(date.into_date());
+        }
+        self
+    }
+
+    /// Change the default Calendar
+    /// If not explicitly set, all vehicule journey will be linked
+    /// to this calendar
+    ///
+    /// ```
+    /// # use transit_model::objects::Date;
+    ///
+    /// # fn main() {
+    /// let model = transit_model_builder::ModelBuilder::default()
+    ///      .default_calendar("2020-01-01")
+    ///      .vj("toto", |vj| {
+    ///          vj
+    ///            .st("A", "10:00:00", "10:01:00")
+    ///            .st("B", "11:00:00", "11:01:00");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn default_calendar(mut self, date: impl IntoDate) -> Self {
+        {
+            let mut c = self
+                .collections
+                .calendars
+                .get_or_create(DEFAULT_CALENDAR_ID);
+            c.dates.insert(date.into_date());
+        }
+        self
+    }
+    /// Add a new Calendar to the model
+    ///
+    /// ```
+    /// # use transit_model::objects::Date;
+    ///
+    /// # fn main() {
+    /// let model = transit_model_builder::ModelBuilder::default()
+    ///      .calendar_mut("c1", |c| {
     ///             c.dates.insert(Date::from_ymd(2019, 2, 6));
     ///         })
     ///      .vj("toto", |vj| {
@@ -131,7 +189,7 @@ impl<'a> ModelBuilder {
     ///      .build();
     /// # }
     /// ```
-    pub fn calendar<F>(mut self, id: &str, mut calendar_initer: F) -> Self
+    pub fn calendar_mut<F>(mut self, id: &str, mut calendar_initer: F) -> Self
     where
         F: FnMut(&mut Calendar),
     {
@@ -146,11 +204,11 @@ impl<'a> ModelBuilder {
     /// Consume the builder to create a navitia model
     pub fn build(mut self) -> Model {
         {
-            let default_calendar = self.collections.calendars.get_mut("default_service");
+            let default_calendar = self.collections.calendars.get_mut(DEFAULT_CALENDAR_ID);
             if let Some(mut cal) = default_calendar {
-                cal.dates
-                    .insert(transit_model::objects::Date::from_ymd(2020, 1, 1));
-                //TODO use date in self and add more
+                if cal.dates.is_empty() {
+                    cal.dates.insert(Date::from_ymd(2020, 1, 1));
+                }
             }
         }
 
@@ -177,6 +235,29 @@ impl IntoTime for &Time {
 impl IntoTime for &str {
     // Note: if the string is not in the right format, this conversion will fail
     fn into_time(self) -> Time {
+        self.parse().unwrap()
+    }
+}
+
+pub trait IntoDate {
+    fn into_date(self) -> Date;
+}
+
+impl IntoDate for Date {
+    fn into_date(self) -> Date {
+        self
+    }
+}
+
+impl IntoDate for &Date {
+    fn into_date(self) -> Date {
+        *self
+    }
+}
+
+impl IntoDate for &str {
+    // Note: if the string is not in the right format, this conversion will fail
+    fn into_date(self) -> Date {
         self.parse().unwrap()
     }
 }
@@ -220,15 +301,15 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// # }
     /// ```
     pub fn st(self, name: &str, arrival: impl IntoTime, departure: impl IntoTime) -> Self {
-        self.st_init(name, arrival, departure, |_st| {})
+        self.st_mut(name, arrival, departure, |_st| {})
     }
 
-    pub fn st_init<F>(
+    pub fn st_mut<F>(
         mut self,
         name: &str,
         arrival: impl IntoTime,
         departure: impl IntoTime,
-        st_initer: F,
+        st_muter: F,
     ) -> Self
     where
         F: FnOnce(&mut StopTime),
@@ -254,7 +335,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
                 local_zone_id: None,
                 precision: None,
             };
-            st_initer(&mut stop_time);
+            st_muter(&mut stop_time);
 
             vj.stop_times.push(stop_time);
         }
@@ -296,9 +377,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
-    ///        .calendar("c1", |c| {
-    ///             c.dates.insert(Date::from_ymd(2019, 2, 6));
-    ///         })
+    ///        .calendar("c1", "2021-01-07")
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder.calendar("c1");
     ///        })
@@ -390,6 +469,10 @@ mod test {
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
+        let default_calendar = model.calendars.get("default_service").unwrap();
+        let mut dates = std::collections::BTreeSet::new();
+        dates.insert(transit_model::objects::Date::from_ymd(2020, 1, 1));
+        assert_eq!(default_calendar.dates, dates);
     }
 
     #[test]

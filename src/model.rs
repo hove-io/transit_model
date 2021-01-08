@@ -809,7 +809,7 @@ impl Collections {
                         // We can discard when the stop points are identicals (see
                         // Example 1 above).
                         false
-                    } else { 
+                    } else {
                         // The stay in is not really possible when timing overlaps
                         // between arrival of first vehicle journey and departure of
                         // next vehicle journey (see Example 2 above).
@@ -1858,12 +1858,135 @@ mod tests {
                 .build();
             let vj1 = model.vehicle_journeys.get("vj1").unwrap();
             let stop_time = &vj1.stop_times[0];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+            let vj2 = model.vehicle_journeys.get("vj2").unwrap();
+            let stop_time = &vj2.stop_times[0];
+            assert_eq!(1, stop_time.pickup_type); //should still forbidden
+            assert_eq!(0, stop_time.drop_off_type);
+            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+        }
+
+        #[test]
+        fn block_id_on_overlaping_calendar_ok() {
+            // like the example 4 but on less days
+            // working days:
+            // days: 01 02 03 04
+            // VJ:1   X  X  X  X
+            // VJ:2   X  X  X
+            // VJ:3            X
+            let model = transit_model_builder::ModelBuilder::default()
+                .calendar("c1", "2020-01-01")
+                .calendar("c1", "2020-01-02")
+                .calendar("c1", "2020-01-03")
+                .calendar("c1", "2020-01-04")
+                .calendar("c2", "2020-01-01")
+                .calendar("c2", "2020-01-02")
+                .calendar("c2", "2020-01-03")
+                .calendar("c3", "2020-01-04")
+                .vj("VJ:1", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c1")
+                        .st_init("SP1", "10:00:00", "10:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        })
+                        .st_init("SP2", "11:00:00", "11:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        });
+                })
+                .vj("VJ:2", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c2")
+                        .st_init("SP3", "12:00:00", "12:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        })
+                        .st_init("SP4", "13:00:00", "13:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        });
+                })
+                .vj("VJ:3", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c3")
+                        .st_init("SP3", "12:30:00", "12:31:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        })
+                        .st_init("SP4", "13:30:00", "13:31:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        });
+                })
+                .build();
+            let vj1 = model.vehicle_journeys.get("VJ:1").unwrap();
+            let stop_time = &vj1.stop_times[0];
             assert_eq!(1, stop_time.pickup_type); //should still forbidden
             assert_eq!(1, stop_time.drop_off_type);
             let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type); //should still forbidden
-            let vj2 = model.vehicle_journeys.get("vj2").unwrap();
+            let vj2 = model.vehicle_journeys.get("VJ:2").unwrap();
+            let stop_time = &vj2.stop_times[0];
+            assert_eq!(1, stop_time.pickup_type); //should still forbidden
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+        }
+
+
+        #[test]
+        fn block_id_on_non_overlaping_calendar_ko() {
+            // like the example 4 but with non overlaping calendars
+            // working days:
+            // days: 01 02 03
+            // VJ:1   X  X
+            // VJ:2         X
+            let model = transit_model_builder::ModelBuilder::default()
+                .calendar("c1", "2020-01-01")
+                .calendar("c1", "2020-01-02")
+                .calendar("c2", "2020-01-03")
+                .vj("VJ:1", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c1")
+                        .st_init("SP1", "10:00:00", "10:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        })
+                        .st_init("SP2", "11:00:00", "11:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        });
+                })
+                .vj("VJ:2", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c2")
+                        .st_init("SP3", "12:00:00", "12:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        })
+                        .st_init("SP4", "13:00:00", "13:01:00", |st| {
+                            st.pickup_type = 1;
+                            st.drop_off_type = 1;
+                        });
+                })
+                .build();
+            let vj1 = model.vehicle_journeys.get("VJ:1").unwrap();
+            let stop_time = &vj1.stop_times[0];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+            let vj2 = model.vehicle_journeys.get("VJ:2").unwrap();
             let stop_time = &vj2.stop_times[0];
             assert_eq!(1, stop_time.pickup_type); //should still forbidden
             assert_eq!(1, stop_time.drop_off_type);
