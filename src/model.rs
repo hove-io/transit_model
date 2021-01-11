@@ -1746,10 +1746,10 @@ mod tests {
             collections.vehicle_journeys =
                 build_vehicle_journeys(stop_config, next_vj_config_config);
             let mut dates = std::collections::BTreeSet::new();
-            dates.insert(Date::from_ymd(2020, 01, 01));
+            dates.insert(Date::from_ymd(2020, 1, 1));
             collections.calendars = CollectionWithId::new(vec![Calendar {
                 id: "default_service".to_owned(),
-                dates: dates,
+                dates,
             }])
             .unwrap();
             collections.enhance_pickup_dropoff();
@@ -1788,10 +1788,10 @@ mod tests {
             collections.vehicle_journeys =
                 build_vehicle_journeys(stop_config, next_vj_config_config);
             let mut dates = std::collections::BTreeSet::new();
-            dates.insert(Date::from_ymd(2020, 01, 01));
+            dates.insert(Date::from_ymd(2020, 1, 1));
             collections.calendars = CollectionWithId::new(vec![Calendar {
                 id: "default_service".to_owned(),
-                dates: dates,
+                dates,
             }])
             .unwrap();
             collections.enhance_pickup_dropoff();
@@ -1830,10 +1830,10 @@ mod tests {
             collections.vehicle_journeys =
                 build_vehicle_journeys(stop_config, next_vj_config_config);
             let mut dates = std::collections::BTreeSet::new();
-            dates.insert(Date::from_ymd(2020, 01, 01));
+            dates.insert(Date::from_ymd(2020, 1, 1));
             collections.calendars = CollectionWithId::new(vec![Calendar {
                 id: "default_service".to_owned(),
-                dates: dates,
+                dates,
             }])
             .unwrap();
             collections.enhance_pickup_dropoff();
