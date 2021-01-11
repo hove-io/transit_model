@@ -792,10 +792,8 @@ impl Collections {
     ///  VJ:2 (Mon-Fri)                                       12:00-13:00       14:00-15:00
     ///  VJ:3 (Sat-Sun)                                       12:30-13:30       14:30-15:30
     ///
-    /// Example 4 might be a valid use case of stay-in but is not handled in the
-    /// current implementation since the validity patterns are different; this
-    /// is undefined behavior (most likely, some stay-in will be forbidden by
-    /// the default rule).
+    /// Example 4 is a valid use case of stay-in
+    /// The pickup/dropoff will be possible between VJ:1 and VJ:2/VJ:3
     pub fn enhance_pickup_dropoff(&mut self) {
         let mut allowed_last_pick_up_vj = HashSet::<_>::new();
         let mut allowed_first_drop_off_vj = HashSet::<_>::new();
@@ -810,6 +808,10 @@ impl Collections {
                         // Example 1 above).
                         false
                     } else {
+                        let prev_cal = self.calendars.get(&prev_vj.service_id);
+                        let next_cal = self.calendars.get(&next_vj.service_id);
+                        // for the stay in to be possible the vj should have at least one date in common
+                        prev_cal.map_or(false, |prev_cal| next_cal.map_or(false, |next_cal|prev_cal.overlaps(&next_cal))) &&
                         // The stay in is not really possible when timing overlaps
                         // between arrival of first vehicle journey and departure of
                         // next vehicle journey (see Example 2 above).
@@ -1743,6 +1745,13 @@ mod tests {
             );
             collections.vehicle_journeys =
                 build_vehicle_journeys(stop_config, next_vj_config_config);
+            let mut dates = std::collections::BTreeSet::new();
+            dates.insert(Date::from_ymd(2020, 01, 01));
+            collections.calendars = CollectionWithId::new(vec![Calendar {
+                id: "default_service".to_owned(),
+                dates: dates,
+            }])
+            .unwrap();
             collections.enhance_pickup_dropoff();
             let vj1 = collections.vehicle_journeys.get("vj1").unwrap();
             let stop_time = &vj1.stop_times[0];
@@ -1778,6 +1787,13 @@ mod tests {
             );
             collections.vehicle_journeys =
                 build_vehicle_journeys(stop_config, next_vj_config_config);
+            let mut dates = std::collections::BTreeSet::new();
+            dates.insert(Date::from_ymd(2020, 01, 01));
+            collections.calendars = CollectionWithId::new(vec![Calendar {
+                id: "default_service".to_owned(),
+                dates: dates,
+            }])
+            .unwrap();
             collections.enhance_pickup_dropoff();
             let vj1 = collections.vehicle_journeys.get("vj1").unwrap();
             let stop_time = &vj1.stop_times[0];
@@ -1813,6 +1829,13 @@ mod tests {
             );
             collections.vehicle_journeys =
                 build_vehicle_journeys(stop_config, next_vj_config_config);
+            let mut dates = std::collections::BTreeSet::new();
+            dates.insert(Date::from_ymd(2020, 01, 01));
+            collections.calendars = CollectionWithId::new(vec![Calendar {
+                id: "default_service".to_owned(),
+                dates: dates,
+            }])
+            .unwrap();
             collections.enhance_pickup_dropoff();
             let vj1 = collections.vehicle_journeys.get("vj1").unwrap();
             let stop_time = &vj1.stop_times[0];
@@ -1913,6 +1936,69 @@ mod tests {
             assert_eq!(1, stop_time.drop_off_type);
             let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
             assert_eq!(0, stop_time.pickup_type); // pickup should be possible since the traveller can stay in the vehicle
+            assert_eq!(0, stop_time.drop_off_type);
+            let vj2 = model.vehicle_journeys.get("VJ:2").unwrap();
+            let stop_time = &vj2.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay in
+            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type); // impossible to pickup on last stop
+            assert_eq!(0, stop_time.drop_off_type);
+            let vj3 = model.vehicle_journeys.get("VJ:3").unwrap();
+            let stop_time = &vj3.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay in
+            let stop_time = &vj3.stop_times[vj3.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+        }
+
+        #[test]
+        fn block_id_on_overlaping_calendar_forbidden_pickup() {
+            // like the example 4 but on less days
+            // working days:
+            // days: 01 02 03 04
+            // VJ:1   X  X  X  X
+            // VJ:2   X  X  X
+            // VJ:3            X
+            // VJ:1 has a forbidden pick up at 2 that should be kept
+            let model = transit_model_builder::ModelBuilder::default()
+                .calendar("c1", "2020-01-01")
+                .calendar("c1", "2020-01-02")
+                .calendar("c1", "2020-01-03")
+                .calendar("c1", "2020-01-04")
+                .calendar("c2", "2020-01-01")
+                .calendar("c2", "2020-01-02")
+                .calendar("c2", "2020-01-03")
+                .calendar("c3", "2020-01-04")
+                .vj("VJ:1", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c1")
+                        .st("SP1", "10:00:00", "10:01:00")
+                        .st_mut("SP2", "11:00:00", "11:01:00", |st| {
+                            st.pickup_type = 1;
+                        }); // forbidden
+                })
+                .vj("VJ:2", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c2")
+                        .st("SP3", "12:00:00", "12:01:00")
+                        .st("SP4", "13:00:00", "13:01:00");
+                })
+                .vj("VJ:3", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c3")
+                        .st("SP3", "12:30:00", "12:31:00")
+                        .st("SP4", "13:30:00", "13:31:00");
+                })
+                .build();
+
+            let vj1 = model.vehicle_journeys.get("VJ:1").unwrap();
+            let stop_time = &vj1.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type); // pickup should not be possible since it has been explicitly forbidden
             assert_eq!(0, stop_time.drop_off_type);
             let vj2 = model.vehicle_journeys.get("VJ:2").unwrap();
             let stop_time = &vj2.stop_times[0];
