@@ -73,8 +73,10 @@ impl<'a> ModelBuilder {
     where
         F: FnMut(VehicleJourneyBuilder),
     {
-        let mut new_vj = VehicleJourney::default();
-        new_vj.id = name.into();
+        let new_vj = VehicleJourney {
+            id: name.into(),
+            ..Default::default()
+        };
         let vj_idx = self
             .collections
             .vehicle_journeys
