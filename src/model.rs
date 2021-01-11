@@ -1832,44 +1832,42 @@ mod tests {
 
         #[test]
         fn forbidden_drop_off_should_be_kept() {
+            // if restriction are explicitly set they should not be overriden
             let model = transit_model_builder::ModelBuilder::default()
                 .vj("vj1", |vj| {
                     vj.block_id("block_1")
-                        .st_init("SP1", "10:00:00", "10:01:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        })
-                        .st_init("SP2", "11:00:00", "11:01:00", |st| {
+                        .st("SP1", "10:00:00", "10:01:00")
+                        .st_mut("SP2", "11:00:00", "11:01:00", |st| {
                             st.pickup_type = 1;
                             st.drop_off_type = 1;
                         });
                 })
                 .vj("vj2", |vj| {
                     vj.block_id("block_1")
-                        .st_init("SP3", "12:00:00", "12:01:00", |st| {
-                            st.pickup_type = 1;
+                        .st_mut("SP3", "12:00:00", "12:01:00", |st| {
                             st.drop_off_type = 1;
                         })
-                        .st_init("SP4", "13:00:00", "13:01:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        });
+                        .st("SP4", "13:00:00", "13:01:00");
                 })
                 .build();
             let vj1 = model.vehicle_journeys.get("vj1").unwrap();
             let stop_time = &vj1.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type); // it has not been explicitly changed so the 1st drop_off is forbiden
+                                                    // the vj should have the last st pickup forbidden even if it's a
+                                                    // stay in because it was explicitly forbidden
+            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
-            assert_eq!(0, stop_time.pickup_type);
-            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
             let vj2 = model.vehicle_journeys.get("vj2").unwrap();
+            // the vj should have the first st drop_off forbidden even if it's a
+            // stay in because it was explicitly forbidden
             let stop_time = &vj2.stop_times[0];
-            assert_eq!(1, stop_time.pickup_type); //should still forbidden
-            assert_eq!(0, stop_time.drop_off_type);
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
             let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
             assert_eq!(1, stop_time.pickup_type);
-            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+            assert_eq!(0, stop_time.drop_off_type);
         }
 
         #[test]
@@ -1892,56 +1890,45 @@ mod tests {
                 .vj("VJ:1", |vj| {
                     vj.block_id("block_1")
                         .calendar("c1")
-                        .st_init("SP1", "10:00:00", "10:01:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        })
-                        .st_init("SP2", "11:00:00", "11:01:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        });
+                        .st("SP1", "10:00:00", "10:01:00")
+                        .st("SP2", "11:00:00", "11:01:00");
                 })
                 .vj("VJ:2", |vj| {
                     vj.block_id("block_1")
                         .calendar("c2")
-                        .st_init("SP3", "12:00:00", "12:01:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        })
-                        .st_init("SP4", "13:00:00", "13:01:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        });
+                        .st("SP3", "12:00:00", "12:01:00")
+                        .st("SP4", "13:00:00", "13:01:00");
                 })
                 .vj("VJ:3", |vj| {
                     vj.block_id("block_1")
                         .calendar("c3")
-                        .st_init("SP3", "12:30:00", "12:31:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        })
-                        .st_init("SP4", "13:30:00", "13:31:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        });
+                        .st("SP3", "12:30:00", "12:31:00")
+                        .st("SP4", "13:30:00", "13:31:00");
                 })
                 .build();
+
             let vj1 = model.vehicle_journeys.get("VJ:1").unwrap();
             let stop_time = &vj1.stop_times[0];
-            assert_eq!(1, stop_time.pickup_type); //should still forbidden
+            assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
             let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
-            assert_eq!(1, stop_time.pickup_type);
-            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+            assert_eq!(0, stop_time.pickup_type); // pickup should be possible since the traveller can stay in the vehicle
+            assert_eq!(0, stop_time.drop_off_type);
             let vj2 = model.vehicle_journeys.get("VJ:2").unwrap();
             let stop_time = &vj2.stop_times[0];
-            assert_eq!(1, stop_time.pickup_type); //should still forbidden
-            assert_eq!(1, stop_time.drop_off_type);
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay in
             let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(1, stop_time.pickup_type); // impossible to pickup on last stop
+            assert_eq!(0, stop_time.drop_off_type);
+            let vj3 = model.vehicle_journeys.get("VJ:3").unwrap();
+            let stop_time = &vj3.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay in
+            let stop_time = &vj3.stop_times[vj3.stop_times.len() - 1];
             assert_eq!(1, stop_time.pickup_type);
-            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+            assert_eq!(0, stop_time.drop_off_type);
         }
-
 
         #[test]
         fn block_id_on_non_overlaping_calendar_ko() {
@@ -1957,11 +1944,8 @@ mod tests {
                 .vj("VJ:1", |vj| {
                     vj.block_id("block_1")
                         .calendar("c1")
-                        .st_init("SP1", "10:00:00", "10:01:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        })
-                        .st_init("SP2", "11:00:00", "11:01:00", |st| {
+                        .st("SP1", "10:00:00", "10:01:00")
+                        .st_mut("SP2", "11:00:00", "11:01:00", |st| {
                             st.pickup_type = 1;
                             st.drop_off_type = 1;
                         });
@@ -1969,30 +1953,31 @@ mod tests {
                 .vj("VJ:2", |vj| {
                     vj.block_id("block_1")
                         .calendar("c2")
-                        .st_init("SP3", "12:00:00", "12:01:00", |st| {
-                            st.pickup_type = 1;
+                        .st_mut("SP3", "12:00:00", "12:01:00", |st| {
                             st.drop_off_type = 1;
                         })
-                        .st_init("SP4", "13:00:00", "13:01:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        });
+                        .st("SP4", "13:00:00", "13:01:00");
                 })
                 .build();
+
             let vj1 = model.vehicle_journeys.get("VJ:1").unwrap();
             let stop_time = &vj1.stop_times[0];
-            assert_eq!(1, stop_time.pickup_type);
-            assert_eq!(1, stop_time.drop_off_type);
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type); // it has not been explicitly changed so the 1st drop_off is forbiden
+                                                    // the vj should have the last st pickup forbidden even if it's a
+                                                    // stay in because it was explicitly forbidden
             let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
             assert_eq!(1, stop_time.pickup_type);
-            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+            assert_eq!(1, stop_time.drop_off_type);
             let vj2 = model.vehicle_journeys.get("VJ:2").unwrap();
+            // the vj should have the first st drop_off forbidden even if it's a
+            // stay in because it was explicitly forbidden
             let stop_time = &vj2.stop_times[0];
-            assert_eq!(1, stop_time.pickup_type); //should still forbidden
+            assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
             let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
             assert_eq!(1, stop_time.pickup_type);
-            assert_eq!(1, stop_time.drop_off_type); //should still forbidden
+            assert_eq!(0, stop_time.drop_off_type);
         }
     }
 
