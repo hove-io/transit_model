@@ -1954,7 +1954,7 @@ mod tests {
         }
 
         #[test]
-        fn block_id_on_overlaping_calendar_forbidden_pickup() {
+        fn block_id_on_overlapping_calendar_forbidden_pickup() {
             // like the example 4 but on less days
             // working days:
             // days: 01 02 03 04
