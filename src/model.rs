@@ -751,7 +751,7 @@ impl Collections {
     ///                         |- Stay-In -|
     ///
     /// In this example the stop SP2 is in both VJ, so we can forbid the pick-up
-    /// for VJ:1 / drop-off for VJ:2 since we don't want to tell a traveller to take VJ:1
+    /// for VJ:1 / drop-off for VJ:2 since we don't want to tell a traveler to take VJ:1
     /// at SP2 but VJ:2
     ///
     /// Example 2:
