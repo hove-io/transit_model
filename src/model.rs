@@ -1876,7 +1876,7 @@ mod tests {
             let vj1 = model.vehicle_journeys.get("vj1").unwrap();
             let stop_time = &vj1.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
-            assert_eq!(1, stop_time.drop_off_type); // it has not been explicitly changed so the 1st drop_off is forbiden
+            assert_eq!(1, stop_time.drop_off_type); // it has not been explicitly changed so the 1st drop_off is forbidden
                                                     // the vj should have the last st pickup forbidden even if it's a
                                                     // stay in because it was explicitly forbidden
             let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
