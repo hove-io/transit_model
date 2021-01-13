@@ -1961,7 +1961,7 @@ mod tests {
             // VJ:1   X  X  X  X
             // VJ:2   X  X  X
             // VJ:3            X
-            // VJ:1 has a forbidden pick up at 2 that should be kept
+            // VJ:1 has a forbidden pick up at the 2nd stop-time that should be kept
             let model = transit_model_builder::ModelBuilder::default()
                 .calendar("c1", "2020-01-01")
                 .calendar("c1", "2020-01-02")
