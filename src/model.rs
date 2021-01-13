@@ -811,7 +811,7 @@ impl Collections {
                         let prev_cal = self.calendars.get(&prev_vj.service_id);
                         let next_cal = self.calendars.get(&next_vj.service_id);
                         // for the stay in to be possible the vj should have at least one date in common
-                        prev_cal.map_or(false, |prev_cal| next_cal.map_or(false, |next_cal|prev_cal.overlaps(&next_cal))) &&
+                        prev_cal.map_or(false, |prev_cal| next_cal.map_or(false, |next_cal| prev_cal.overlaps(&next_cal))) &&
                         // The stay in is not really possible when timing overlaps
                         // between arrival of first vehicle journey and departure of
                         // next vehicle journey (see Example 2 above).
