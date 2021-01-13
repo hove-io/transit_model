@@ -795,8 +795,8 @@ impl Collections {
     /// Example 4 is a valid use case of stay-in
     /// The pickup/dropoff will be possible between VJ:1 and VJ:2/VJ:3
     pub fn enhance_pickup_dropoff(&mut self) {
-        let mut allowed_last_pick_up_vj = HashSet::<_>::new();
-        let mut allowed_first_drop_off_vj = HashSet::<_>::new();
+        let mut allowed_last_pick_up_vj = HashSet::new();
+        let mut allowed_first_drop_off_vj = HashSet::new();
 
         let can_chain_without_overlap = |prev_vj: &VehicleJourney, next_vj: &VehicleJourney| {
             let last_stop = &prev_vj.stop_times.last();
