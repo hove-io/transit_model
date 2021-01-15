@@ -2059,6 +2059,73 @@ mod tests {
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
         }
+
+        #[test]
+        fn block_id_on_non_overlaping_calendar_with_overlaping_stops() {
+            // tricky test case when there is no good response
+            //
+            // working days:
+            // days: 01 02
+            // VJ:1   X  X
+            // VJ:2   X
+            // VJ:3      X
+            //
+            // and
+            // VJ:1  SP1 ---> SP2
+            // VJ:2                    SP3 ---> SP4
+            // VJ:3           SP2 ---> SP3
+            //
+            // VJ:1 and VJ:2 can be chained by stay-in so we need to let the pick-up
+            // on VJ:1 at SP2 even if we would have wanted to forbid it for the stay-in
+            // VJ:1 - VJ:3
+            // we can however forbid the drop-off on VJ:3 at SP:2
+            let model = transit_model_builder::ModelBuilder::default()
+                .calendar("c1", "2020-01-01")
+                .calendar("c1", "2020-01-02")
+                .calendar("c2", "2020-01-01")
+                .calendar("c3", "2020-01-02")
+                .vj("VJ:1", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c1")
+                        .st("SP1", "10:00:00", "10:01:00")
+                        .st("SP2", "11:00:00", "11:01:00");
+                })
+                .vj("VJ:2", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c2")
+                        .st("SP3", "12:00:00", "12:01:00")
+                        .st("SP4", "13:00:00", "13:01:00");
+                })
+                .vj("VJ:3", |vj| {
+                    vj.block_id("block_1")
+                        .calendar("c3")
+                        .st("SP2", "12:00:00", "12:01:00")
+                        .st("SP3", "13:00:00", "13:01:00");
+                })
+                .build();
+
+            let vj1 = model.vehicle_journeys.get("VJ:1").unwrap();
+            let stop_time = &vj1.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times.last().unwrap();
+            assert_eq!(0, stop_time.pickup_type); // pick-up is authorized
+            assert_eq!(0, stop_time.drop_off_type);
+            let vj2 = model.vehicle_journeys.get("VJ:2").unwrap();
+            let stop_time = &vj2.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type); // drop-off is authorized
+            let stop_time = &vj2.stop_times.last().unwrap();
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+            let vj3 = model.vehicle_journeys.get("VJ:3").unwrap();
+            let stop_time = &vj3.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type); // drop-off is forbidden
+            let stop_time = &vj3.stop_times.last().unwrap();
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+        }
     }
 
     mod enhance_trip_headsign {
