@@ -766,7 +766,7 @@ impl Collections {
     ///                                 out                 in  out          in
     ///                         |--------- Stay In ---------|
     ///
-    /// This example show an invalid stay in since the same vehicule cannot be at both stops.
+    /// This example show an invalid stay-in since the same vehicule cannot be at both stops.
     /// Note the overlap between the departure time of the last stop point SP2
     /// of VJ:1 and the arrival time of the first stop point SP3 of VJ:2. In
     /// this case, we still apply the default rule.
@@ -802,58 +802,59 @@ impl Collections {
             let last_stop = &prev_vj.stop_times.last();
             let first_stop = &next_vj.stop_times.first();
             match (last_stop, first_stop) {
-                (Some(last_stop), Some(first_stop)) => {
-                    if last_stop.stop_point_idx == first_stop.stop_point_idx {
-                        // We can discard when the stop points are identicals (see
-                        // Example 1 above).
-                        false
-                    } else {
-                        let prev_cal = self.calendars.get(&prev_vj.service_id);
-                        let next_cal = self.calendars.get(&next_vj.service_id);
-                        // for the stay in to be possible the vj should have at least one date in common
-                        prev_cal.map_or(false, |prev_cal| next_cal.map_or(false, |next_cal| prev_cal.overlaps(&next_cal))) &&
-                        // The stay in is not really possible when timing overlaps
-                        // between arrival of first vehicle journey and departure of
-                        // next vehicle journey (see Example 2 above).
-                        last_stop.departure_time <= first_stop.arrival_time
+                // We can discard when the stop points are identicals (see Example 1 above) or when there is no stop point
+                (Some(last_stop), Some(first_stop))
+                    if last_stop.stop_point_idx != first_stop.stop_point_idx =>
+                {
+                    match (
+                        self.calendars.get(&prev_vj.service_id),
+                        self.calendars.get(&next_vj.service_id),
+                    ) {
+                        (Some(prev), Some(next)) => {
+                            // The stay-in is not really possible when timing overlaps
+                            // between arrival of first vehicle journey and departure of
+                            // next vehicle journey (see Example 2 above).
+                            last_stop.departure_time <= first_stop.arrival_time
+                            // for the stay-in to be possible the vj should have at least one date in common
+                                && prev.overlaps(next)
+                        }
+                        _ => false,
                     }
                 }
                 _ => false,
             }
         };
+        type BlockId = String;
+        let mut vj_by_blocks =
+            HashMap::<BlockId, Vec<(Idx<VehicleJourney>, &VehicleJourney)>>::new();
 
-        self.vehicle_journeys
+        for (b, (vj_idx, vj)) in self
+            .vehicle_journeys
             .iter()
             .filter_map(|(vj_idx, vj)| vj.block_id.clone().map(|b| (b, (vj_idx, vj))))
-            .fold(
-                HashMap::<_, Vec<(Idx<VehicleJourney>, &VehicleJourney)>>::new(),
-                |mut map, (b, (vj_idx, vj))| {
-                    let other_block_id_vj = map.entry(b).or_insert_with(Vec::new);
+        {
+            let other_block_id_vj = vj_by_blocks.entry(b).or_insert_with(Vec::new);
 
-                    // for every vj we check if it can really be a stay in and if the last stop
-                    // is not in both vj (example 1)
-                    // Note: this is quadratic but should not be too costly since
-                    // the number of vj checked should be limited
-                    other_block_id_vj
-                        .iter()
-                        .for_each(|(other_vj_idx, other_vj)| {
-                            if can_chain_without_overlap(vj, other_vj) {
-                                allowed_first_drop_off_vj.insert(*other_vj_idx);
-                                allowed_last_pick_up_vj.insert(vj_idx);
-                            } else if can_chain_without_overlap(other_vj, vj) {
-                                allowed_first_drop_off_vj.insert(vj_idx);
-                                allowed_last_pick_up_vj.insert(*other_vj_idx);
-                            }
-                        });
-                    other_block_id_vj.push((vj_idx, vj));
-                    map
-                },
-            );
+            // for every vj we check if it can really be a stay-in and if the last stop
+            // is not in both vj (example 1)
+            // Note: this is quadratic but should not be too costly since
+            // the number of vj checked should be limited
+            for (other_vj_idx, other_vj) in other_block_id_vj.iter_mut() {
+                if can_chain_without_overlap(vj, other_vj) {
+                    allowed_first_drop_off_vj.insert(*other_vj_idx);
+                    allowed_last_pick_up_vj.insert(vj_idx);
+                } else if can_chain_without_overlap(other_vj, vj) {
+                    allowed_first_drop_off_vj.insert(vj_idx);
+                    allowed_last_pick_up_vj.insert(*other_vj_idx);
+                }
+            }
+            other_block_id_vj.push((vj_idx, vj));
+        }
 
         let vj_idxs: Vec<Idx<VehicleJourney>> =
             self.vehicle_journeys.iter().map(|(idx, _)| idx).collect();
-        for vj_idx in &vj_idxs {
-            let mut vj = self.vehicle_journeys.index_mut(*vj_idx);
+        for vj_idx in vj_idxs {
+            let mut vj = self.vehicle_journeys.index_mut(vj_idx);
 
             if !allowed_first_drop_off_vj.contains(&vj_idx) {
                 if let Some(st) = vj.stop_times.first_mut() {
@@ -1715,14 +1716,14 @@ mod tests {
             let stop_time = &vj1.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            let stop_time = &vj1.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
             let vj2 = collections.vehicle_journeys.get("vj2").unwrap();
             let stop_time = &vj2.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            let stop_time = &vj2.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
         }
@@ -1757,14 +1758,14 @@ mod tests {
             let stop_time = &vj1.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            let stop_time = &vj1.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
             let vj2 = collections.vehicle_journeys.get("vj2").unwrap();
             let stop_time = &vj2.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            let stop_time = &vj2.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
         }
@@ -1799,14 +1800,14 @@ mod tests {
             let stop_time = &vj1.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            let stop_time = &vj1.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
             let vj2 = collections.vehicle_journeys.get("vj2").unwrap();
             let stop_time = &vj2.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            let stop_time = &vj2.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
         }
@@ -1841,14 +1842,14 @@ mod tests {
             let stop_time = &vj1.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            let stop_time = &vj1.stop_times.last().unwrap();
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
             let vj2 = collections.vehicle_journeys.get("vj2").unwrap();
             let stop_time = &vj2.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
-            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            let stop_time = &vj2.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
         }
@@ -1868,7 +1869,7 @@ mod tests {
                 .vj("vj2", |vj| {
                     vj.block_id("block_1")
                         .st_mut("SP3", "12:00:00", "12:01:00", |st| {
-                            st.drop_off_type = 1;
+                            st.drop_off_type = 2; // for fun this has a 'must call' type, we should also keep it
                         })
                         .st("SP4", "13:00:00", "13:01:00");
                 })
@@ -1878,37 +1879,39 @@ mod tests {
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type); // it has not been explicitly changed so the 1st drop_off is forbidden
                                                     // the vj should have the last st pickup forbidden even if it's a
-                                                    // stay in because it was explicitly forbidden
+                                                    // stay-in because it was explicitly forbidden
             let stop_time = &vj1.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
             let vj2 = model.vehicle_journeys.get("vj2").unwrap();
             // the vj should have the first st drop_off forbidden even if it's a
-            // stay in because it was explicitly forbidden
+            // stay-in because it was explicitly forbidden
             let stop_time = &vj2.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
-            assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(2, stop_time.drop_off_type);
+            let stop_time = &vj2.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
         }
 
         #[test]
         fn block_id_on_overlapping_calendar_ok() {
-            // like the example 4 but on less days
+            // a bit like the example 4 but on less days
             // working days:
             // days: 01 02 03 04
-            // VJ:1   X  X  X  X
-            // VJ:2   X  X  X
-            // VJ:3            X
+            // VJ:1   X  X  X
+            // VJ:2   X  X         <- calendar is included in VJ:1's calendar
+            // VJ:3         X  X   <- calendar is overlaping in VJ:1's calendar
+            //
+            // VJ:3 can sometimes be taken after VJ:1 so we also don't want to forbid
+            // pick-up at last stop / drop-off at 1st stop
             let model = transit_model_builder::ModelBuilder::default()
                 .calendar("c1", "2020-01-01")
                 .calendar("c1", "2020-01-02")
                 .calendar("c1", "2020-01-03")
-                .calendar("c1", "2020-01-04")
                 .calendar("c2", "2020-01-01")
                 .calendar("c2", "2020-01-02")
-                .calendar("c2", "2020-01-03")
+                .calendar("c3", "2020-01-03")
                 .calendar("c3", "2020-01-04")
                 .vj("VJ:1", |vj| {
                     vj.block_id("block_1")
@@ -1934,21 +1937,21 @@ mod tests {
             let stop_time = &vj1.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
-            assert_eq!(0, stop_time.pickup_type); // pickup should be possible since the traveller can stay in the vehicle
+            let stop_time = &vj1.stop_times.last().unwrap();
+            assert_eq!(0, stop_time.pickup_type); // pickup should be possible since the traveler can stay-in the vehicle
             assert_eq!(0, stop_time.drop_off_type);
             let vj2 = model.vehicle_journeys.get("VJ:2").unwrap();
             let stop_time = &vj2.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
-            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay in
-            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay-in
+            let stop_time = &vj2.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type); // impossible to pickup on last stop
             assert_eq!(0, stop_time.drop_off_type);
             let vj3 = model.vehicle_journeys.get("VJ:3").unwrap();
             let stop_time = &vj3.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
-            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay in
-            let stop_time = &vj3.stop_times[vj3.stop_times.len() - 1];
+            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay-in
+            let stop_time = &vj3.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
         }
@@ -1997,21 +2000,21 @@ mod tests {
             let stop_time = &vj1.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
+            let stop_time = &vj1.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type); // pickup should not be possible since it has been explicitly forbidden
             assert_eq!(0, stop_time.drop_off_type);
             let vj2 = model.vehicle_journeys.get("VJ:2").unwrap();
             let stop_time = &vj2.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
-            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay in
-            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay-in
+            let stop_time = &vj2.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type); // impossible to pickup on last stop
             assert_eq!(0, stop_time.drop_off_type);
             let vj3 = model.vehicle_journeys.get("VJ:3").unwrap();
             let stop_time = &vj3.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
-            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay in
-            let stop_time = &vj3.stop_times[vj3.stop_times.len() - 1];
+            assert_eq!(0, stop_time.drop_off_type); // drop off on first stop possible if anyone took the stay-in
+            let stop_time = &vj3.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
         }
@@ -2031,17 +2034,12 @@ mod tests {
                     vj.block_id("block_1")
                         .calendar("c1")
                         .st("SP1", "10:00:00", "10:01:00")
-                        .st_mut("SP2", "11:00:00", "11:01:00", |st| {
-                            st.pickup_type = 1;
-                            st.drop_off_type = 1;
-                        });
+                        .st("SP2", "11:00:00", "11:01:00");
                 })
                 .vj("VJ:2", |vj| {
                     vj.block_id("block_1")
                         .calendar("c2")
-                        .st_mut("SP3", "12:00:00", "12:01:00", |st| {
-                            st.drop_off_type = 1;
-                        })
+                        .st("SP3", "12:00:00", "12:01:00")
                         .st("SP4", "13:00:00", "13:01:00");
                 })
                 .build();
@@ -2049,19 +2047,15 @@ mod tests {
             let vj1 = model.vehicle_journeys.get("VJ:1").unwrap();
             let stop_time = &vj1.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
-            assert_eq!(1, stop_time.drop_off_type); // it has not been explicitly changed so the 1st drop_off is forbiden
-                                                    // the vj should have the last st pickup forbidden even if it's a
-                                                    // stay in because it was explicitly forbidden
-            let stop_time = &vj1.stop_times[vj1.stop_times.len() - 1];
-            assert_eq!(1, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times.last().unwrap();
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
             let vj2 = model.vehicle_journeys.get("VJ:2").unwrap();
-            // the vj should have the first st drop_off forbidden even if it's a
-            // stay in because it was explicitly forbidden
             let stop_time = &vj2.stop_times[0];
             assert_eq!(0, stop_time.pickup_type);
             assert_eq!(1, stop_time.drop_off_type);
-            let stop_time = &vj2.stop_times[vj2.stop_times.len() - 1];
+            let stop_time = &vj2.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
         }
