@@ -2020,6 +2020,7 @@ mod tests {
             // days: 01 02 03
             // VJ:1   X  X
             // VJ:2         X
+            // The pick-up (resp drop-off) at first (resp last) stop should be forbidden
             let model = transit_model_builder::ModelBuilder::default()
                 .calendar("c1", &["2020-01-01", "2020-01-02"])
                 .calendar("c2", &["2020-01-03"])
