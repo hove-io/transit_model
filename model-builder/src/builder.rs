@@ -233,7 +233,7 @@ impl IntoTime for &Time {
 impl IntoTime for &str {
     // Note: if the string is not in the right format, this conversion will fail
     fn into_time(self) -> Time {
-        self.parse().unwrap()
+        self.parse().expect("invalid time format")
     }
 }
 
