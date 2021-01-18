@@ -1906,13 +1906,9 @@ mod tests {
             // VJ:3 can sometimes be taken after VJ:1 so we also don't want to forbid
             // pick-up at last stop / drop-off at 1st stop
             let model = transit_model_builder::ModelBuilder::default()
-                .calendar("c1", "2020-01-01")
-                .calendar("c1", "2020-01-02")
-                .calendar("c1", "2020-01-03")
-                .calendar("c2", "2020-01-01")
-                .calendar("c2", "2020-01-02")
-                .calendar("c3", "2020-01-03")
-                .calendar("c3", "2020-01-04")
+                .calendar("c1", &["2020-01-01", "2020-01-02", "2020-01-03"])
+                .calendar("c2", &["2020-01-01", "2020-01-02"])
+                .calendar("c3", &["2020-01-03", "2020-01-04"])
                 .vj("VJ:1", |vj| {
                     vj.block_id("block_1")
                         .calendar("c1")
@@ -1966,14 +1962,12 @@ mod tests {
             // VJ:3            X
             // VJ:1 has a forbidden pick up at the 2nd stop-time that should be kept
             let model = transit_model_builder::ModelBuilder::default()
-                .calendar("c1", "2020-01-01")
-                .calendar("c1", "2020-01-02")
-                .calendar("c1", "2020-01-03")
-                .calendar("c1", "2020-01-04")
-                .calendar("c2", "2020-01-01")
-                .calendar("c2", "2020-01-02")
-                .calendar("c2", "2020-01-03")
-                .calendar("c3", "2020-01-04")
+                .calendar(
+                    "c1",
+                    &["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04"],
+                )
+                .calendar("c2", &["2020-01-01", "2020-01-02", "2020-01-03"])
+                .calendar("c3", &["2020-01-04"])
                 .vj("VJ:1", |vj| {
                     vj.block_id("block_1")
                         .calendar("c1")
@@ -2027,9 +2021,8 @@ mod tests {
             // VJ:1   X  X
             // VJ:2         X
             let model = transit_model_builder::ModelBuilder::default()
-                .calendar("c1", "2020-01-01")
-                .calendar("c1", "2020-01-02")
-                .calendar("c2", "2020-01-03")
+                .calendar("c1", &["2020-01-01", "2020-01-02"])
+                .calendar("c2", &["2020-01-03"])
                 .vj("VJ:1", |vj| {
                     vj.block_id("block_1")
                         .calendar("c1")
@@ -2062,7 +2055,7 @@ mod tests {
 
         #[test]
         fn block_id_on_non_overlaping_calendar_with_overlaping_stops() {
-            // tricky test case when there is no good response
+            // tricky test case when there is no perfect response
             //
             // working days:
             // days: 01 02
@@ -2080,10 +2073,9 @@ mod tests {
             // VJ:1 - VJ:3
             // we can however forbid the drop-off on VJ:3 at SP:2
             let model = transit_model_builder::ModelBuilder::default()
-                .calendar("c1", "2020-01-01")
-                .calendar("c1", "2020-01-02")
-                .calendar("c2", "2020-01-01")
-                .calendar("c3", "2020-01-02")
+                .calendar("c1", &["2020-01-01", "2020-01-02"])
+                .calendar("c2", &["2020-01-01"])
+                .calendar("c3", &["2020-01-02"])
                 .vj("VJ:1", |vj| {
                     vj.block_id("block_1")
                         .calendar("c1")

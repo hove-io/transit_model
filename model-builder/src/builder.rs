@@ -45,6 +45,8 @@ pub struct ModelBuilder {
 }
 
 /// Builder used to create and modify a new VehicleJourney
+/// Note: if not explicitly set, the vehicule journey
+/// will be attached to a default calendar starting 2020-01-01
 pub struct VehicleJourneyBuilder<'a> {
     model: &'a mut ModelBuilder,
     vj_idx: Idx<VehicleJourney>,
@@ -119,16 +121,15 @@ impl<'a> ModelBuilder {
         self
     }
 
-    /// Add a new Calendar to the model
+    /// Add a new Calendar or change an existing one
     ///
     /// ```
     /// # use transit_model::objects::Date;
     ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
-    ///      .calendar("c1", "2020-01-01")
-    ///      .calendar("c1", "2020-01-02")
-    ///      .calendar("default_service", Date::from_ymd(2019, 2, 6))
+    ///      .calendar("c1", &["2020-01-01", "2020-01-02"])
+    ///      .calendar("default_service", &[Date::from_ymd(2019, 2, 6)])
     ///      .vj("toto", |vj| {
     ///          vj.calendar("c1")
     ///            .st("A", "10:00:00", "10:01:00")
@@ -137,16 +138,18 @@ impl<'a> ModelBuilder {
     ///      .build();
     /// # }
     /// ```
-    pub fn calendar(mut self, id: &str, date: impl IntoDate) -> Self {
+    pub fn calendar(mut self, id: &str, dates: &[impl IntoDate]) -> Self {
         {
             let mut c = self.collections.calendars.get_or_create(id);
-            c.dates.insert(date.into_date());
+            for d in dates {
+                c.dates.insert(d.into_date());
+            }
         }
         self
     }
 
     /// Change the default Calendar
-    /// If not explicitly set, all vehicule journey will be linked
+    /// If not explicitly set, all vehicule journeys will be linked
     /// to this calendar
     ///
     /// ```
@@ -154,7 +157,7 @@ impl<'a> ModelBuilder {
     ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
-    ///      .default_calendar("2020-01-01")
+    ///      .default_calendar(&["2020-01-01"])
     ///      .vj("toto", |vj| {
     ///          vj
     ///            .st("A", "10:00:00", "10:01:00")
@@ -163,15 +166,8 @@ impl<'a> ModelBuilder {
     ///      .build();
     /// # }
     /// ```
-    pub fn default_calendar(mut self, date: impl IntoDate) -> Self {
-        {
-            let mut c = self
-                .collections
-                .calendars
-                .get_or_create(DEFAULT_CALENDAR_ID);
-            c.dates.insert(date.into_date());
-        }
-        self
+    pub fn default_calendar(self, dates: &[impl IntoDate]) -> Self {
+        self.calendar(DEFAULT_CALENDAR_ID, dates)
     }
     /// Add a new Calendar to the model
     ///
@@ -242,25 +238,25 @@ impl IntoTime for &str {
 }
 
 pub trait IntoDate {
-    fn into_date(self) -> Date;
+    fn into_date(&self) -> Date;
 }
 
 impl IntoDate for Date {
-    fn into_date(self) -> Date {
-        self
+    fn into_date(&self) -> Date {
+        *self
     }
 }
 
 impl IntoDate for &Date {
-    fn into_date(self) -> Date {
-        *self
+    fn into_date(&self) -> Date {
+        **self
     }
 }
 
 impl IntoDate for &str {
     // Note: if the string is not in the right format, this conversion will fail
-    fn into_date(self) -> Date {
-        self.parse().unwrap()
+    fn into_date(&self) -> Date {
+        self.parse().expect("invalid date format")
     }
 }
 
@@ -379,7 +375,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
-    ///        .calendar("c1", "2021-01-07")
+    ///        .calendar("c1", &["2021-01-07"])
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder.calendar("c1");
     ///        })
@@ -472,8 +468,10 @@ mod test {
                 .collect()
         );
         let default_calendar = model.calendars.get("default_service").unwrap();
-        let mut dates = std::collections::BTreeSet::new();
-        dates.insert(transit_model::objects::Date::from_ymd(2020, 1, 1));
+        let dates = [transit_model::objects::Date::from_ymd(2020, 1, 1)]
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
         assert_eq!(default_calendar.dates, dates);
     }
 
