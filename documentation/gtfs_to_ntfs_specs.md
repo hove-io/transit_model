@@ -305,13 +305,13 @@ For exemple :
 (2) Depending of the value of the parameter `odt`, the GTFS `timepoint` conversion rules for NTFS `stop_time_precision` are :
 
 * if `odt` is set to `false` or empty:
-  * if `timepoint` is unspecified => `stop_time_precision` equals 0
-  * if `timepoint` equals 1 => `stop_time_precision` equals 0
-  * if `timepoint` equals 0 => `stop_time_precision` equals 1
+  * if `timepoint` is unspecified => `stop_time_precision` equals 0 (Exact)
+  * if `timepoint` equals 1 => `stop_time_precision` equals 0 (Exact)
+  * if `timepoint` equals 0 => `stop_time_precision` equals 1 (Approximate)
 * if `odt` is set to `true`:
-  * if `timepoint` is unspecified => `stop_time_precision` equals 0
-  * if `timepoint` equals 1 => `stop_time_precision` equals 0
-  * if `timepoint` equals 0 => `stop_time_precision` equals 2
+  * if `timepoint` is unspecified => `stop_time_precision` equals 0 (Exact)
+  * if `timepoint` equals 1 => `stop_time_precision` equals 0 (Exact)
+  * if `timepoint` equals 0 => `stop_time_precision` equals 2 (Estimated, the bus may not even pass through this point)
 
 (3) A comment associated to the stop_time is created in the files comments.txt and comment_links.txt as follows:
 
