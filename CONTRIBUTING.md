@@ -17,6 +17,23 @@ When making a feature request, please make it clear what problem you intend to
 solve with the feature, any ideas for how `transit_model` could support solving
 that problem, any possible alternatives, and any disadvantages.
 
+## Pull Request (PR)
+
+If you feel to directly submit a PR, please ensure to explain your motivations
+in your PR's description. See also the section below about updating versions of
+crates.
+
+### Update version
+
+The PR owner is the best to understand which evolution and breaking changes are
+introduced since the [last
+release](https://crates.io/crates/transit_model/versions). Therefore, the PR
+owner is in charge of updating the  version of the respective crates
+accordingly, **if needed**. The idea is that, at any point in time, if someone
+want to publish a release of the crate, this can be done right away, without
+the need to modify any file. Do not hesitate to ask project's owner for guidance on
+which version and how to do it.
+
 ### Internal work management tool
 
 At Kisio Digital (ex. CanalTP) we track tasks and bugs using a private tool.
