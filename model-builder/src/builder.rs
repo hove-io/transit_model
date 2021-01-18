@@ -123,6 +123,8 @@ impl<'a> ModelBuilder {
 
     /// Add a new Calendar or change an existing one
     ///
+    /// Note: if the date are in strings not in the right format, this conversion will fail
+    ///
     /// ```
     /// # use transit_model::objects::Date;
     ///
@@ -286,6 +288,9 @@ impl<'a> VehicleJourneyBuilder<'a> {
     }
 
     /// add a StopTime to the vehicle journey
+    ///
+    /// Note: if the arrival/departure are given in string
+    /// not in the right format, this conversion will fail
     ///
     /// ```
     /// # fn main() {
