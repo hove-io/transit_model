@@ -31,16 +31,22 @@
 //! ```
 
 use crate::model::{Collections, Model};
-use crate::objects::{Calendar, Route, StopPoint, StopTime, Time, VehicleJourney};
+use crate::objects::{Calendar, Date, Route, StopPoint, StopTime, Time, VehicleJourney};
 use typed_index_collection::Idx;
 
+const DEFAULT_CALENDAR_ID: &str = "default_service";
+
 /// Builder used to easily create a `Model`
+/// Note: if not explicitly set all the vehicule journeys
+/// will be attached to a default calendar starting 2020-01-01
 #[derive(Default)]
 pub struct ModelBuilder {
     collections: Collections,
 }
 
 /// Builder used to create and modify a new VehicleJourney
+/// Note: if not explicitly set, the vehicule journey
+/// will be attached to a default calendar starting 2020-01-01
 pub struct VehicleJourneyBuilder<'a> {
     model: &'a mut ModelBuilder,
     vj_idx: Idx<VehicleJourney>,
@@ -69,8 +75,10 @@ impl<'a> ModelBuilder {
     where
         F: FnMut(VehicleJourneyBuilder),
     {
-        let mut new_vj = VehicleJourney::default();
-        new_vj.id = name.into();
+        let new_vj = VehicleJourney {
+            id: name.into(),
+            ..Default::default()
+        };
         let vj_idx = self
             .collections
             .vehicle_journeys
@@ -113,6 +121,56 @@ impl<'a> ModelBuilder {
         self
     }
 
+    /// Add a new Calendar or change an existing one
+    ///
+    /// Note: if the date are in strings not in the right format, this conversion will fail
+    ///
+    /// ```
+    /// # use transit_model::objects::Date;
+    ///
+    /// # fn main() {
+    /// let model = transit_model_builder::ModelBuilder::default()
+    ///      .calendar("c1", &["2020-01-01", "2020-01-02"])
+    ///      .calendar("default_service", &[Date::from_ymd(2019, 2, 6)])
+    ///      .vj("toto", |vj| {
+    ///          vj.calendar("c1")
+    ///            .st("A", "10:00:00", "10:01:00")
+    ///            .st("B", "11:00:00", "11:01:00");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn calendar(mut self, id: &str, dates: &[impl IntoDate]) -> Self {
+        {
+            let mut c = self.collections.calendars.get_or_create(id);
+            for d in dates {
+                c.dates.insert(d.into_date());
+            }
+        }
+        self
+    }
+
+    /// Change the default Calendar
+    /// If not explicitly set, all vehicule journeys will be linked
+    /// to this calendar
+    ///
+    /// ```
+    /// # use transit_model::objects::Date;
+    ///
+    /// # fn main() {
+    /// let model = transit_model_builder::ModelBuilder::default()
+    ///      .default_calendar(&["2020-01-01"])
+    ///      .vj("toto", |vj| {
+    ///          vj
+    ///            .st("A", "10:00:00", "10:01:00")
+    ///            .st("B", "11:00:00", "11:01:00");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn default_calendar(self, dates: &[impl IntoDate]) -> Self {
+        self.calendar(DEFAULT_CALENDAR_ID, dates)
+    }
     /// Add a new Calendar to the model
     ///
     /// ```
@@ -120,7 +178,7 @@ impl<'a> ModelBuilder {
     ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
-    ///      .calendar("c1", |c| {
+    ///      .calendar_mut("c1", |c| {
     ///             c.dates.insert(Date::from_ymd(2019, 2, 6));
     ///         })
     ///      .vj("toto", |vj| {
@@ -131,7 +189,7 @@ impl<'a> ModelBuilder {
     ///      .build();
     /// # }
     /// ```
-    pub fn calendar<F>(mut self, id: &str, mut calendar_initer: F) -> Self
+    pub fn calendar_mut<F>(mut self, id: &str, mut calendar_initer: F) -> Self
     where
         F: FnMut(&mut Calendar),
     {
@@ -144,7 +202,16 @@ impl<'a> ModelBuilder {
     }
 
     /// Consume the builder to create a navitia model
-    pub fn build(self) -> Model {
+    pub fn build(mut self) -> Model {
+        {
+            let default_calendar = self.collections.calendars.get_mut(DEFAULT_CALENDAR_ID);
+            if let Some(mut cal) = default_calendar {
+                if cal.dates.is_empty() {
+                    cal.dates.insert(Date::from_ymd(2020, 1, 1));
+                }
+            }
+        }
+
         Model::new(self.collections).unwrap()
     }
 }
@@ -168,7 +235,30 @@ impl IntoTime for &Time {
 impl IntoTime for &str {
     // Note: if the string is not in the right format, this conversion will fail
     fn into_time(self) -> Time {
-        self.parse().unwrap()
+        self.parse().expect("invalid time format")
+    }
+}
+
+pub trait IntoDate {
+    fn into_date(&self) -> Date;
+}
+
+impl IntoDate for Date {
+    fn into_date(&self) -> Date {
+        *self
+    }
+}
+
+impl IntoDate for &Date {
+    fn into_date(&self) -> Date {
+        **self
+    }
+}
+
+impl IntoDate for &str {
+    // Note: if the string is not in the right format, this conversion will fail
+    fn into_date(&self) -> Date {
+        self.parse().expect("invalid date format")
     }
 }
 
@@ -199,6 +289,9 @@ impl<'a> VehicleJourneyBuilder<'a> {
 
     /// add a StopTime to the vehicle journey
     ///
+    /// Note: if the arrival/departure are given in string
+    /// not in the right format, this conversion will fail
+    ///
     /// ```
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
@@ -210,16 +303,29 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///        .build();
     /// # }
     /// ```
-    pub fn st(mut self, name: &str, arrival: impl IntoTime, departure: impl IntoTime) -> Self {
-        let stop_point_idx = self.find_or_create_sp(name);
+    pub fn st(self, name: &str, arrival: impl IntoTime, departure: impl IntoTime) -> Self {
+        self.st_mut(name, arrival, departure, |_st| {})
+    }
+
+    pub fn st_mut<F>(
+        mut self,
+        name: &str,
+        arrival: impl IntoTime,
+        departure: impl IntoTime,
+        st_muter: F,
+    ) -> Self
+    where
+        F: FnOnce(&mut StopTime),
+    {
         {
+            let stop_point_idx = self.find_or_create_sp(name);
             let vj = &mut self
                 .model
                 .collections
                 .vehicle_journeys
                 .index_mut(self.vj_idx);
             let sequence = vj.stop_times.len() as u32;
-            let stop_time = StopTime {
+            let mut stop_time = StopTime {
                 stop_point_idx,
                 sequence,
                 arrival_time: arrival.into_time(),
@@ -230,7 +336,9 @@ impl<'a> VehicleJourneyBuilder<'a> {
                 drop_off_type: 0u8,
                 datetime_estimated: false,
                 local_zone_id: None,
+                precision: None,
             };
+            st_muter(&mut stop_time);
 
             vj.stop_times.push(stop_time);
         }
@@ -272,9 +380,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
-    ///        .calendar("c1", |c| {
-    ///             c.dates.insert(Date::from_ymd(2019, 2, 6));
-    ///         })
+    ///        .calendar("c1", &["2021-01-07"])
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder.calendar("c1");
     ///        })
@@ -293,6 +399,18 @@ impl<'a> VehicleJourneyBuilder<'a> {
 
         self
     }
+
+    pub fn block_id(self, block_id: &str) -> Self {
+        {
+            let vj = &mut self
+                .model
+                .collections
+                .vehicle_journeys
+                .index_mut(self.vj_idx);
+            vj.block_id = Some(block_id.to_owned());
+        }
+        self
+    }
 }
 
 impl<'a> Drop for VehicleJourneyBuilder<'a> {
@@ -307,6 +425,7 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
 
         collections.companies.get_or_create(&new_vj.company_id);
         collections.calendars.get_or_create(&new_vj.service_id);
+
         collections
             .physical_modes
             .get_or_create(&new_vj.physical_mode_id);
@@ -342,17 +461,23 @@ mod test {
         assert_eq!(
             model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
             ["A", "B"]
-                .into_iter()
+                .iter()
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
         assert_eq!(
             model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("tata").unwrap()),
             ["C", "D"]
-                .into_iter()
+                .iter()
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
+        let default_calendar = model.calendars.get("default_service").unwrap();
+        let dates = [transit_model::objects::Date::from_ymd(2020, 1, 1)]
+            .iter()
+            .copied()
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(default_calendar.dates, dates);
     }
 
     #[test]
@@ -371,14 +496,14 @@ mod test {
         assert_eq!(
             model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
             ["A", "B"]
-                .into_iter()
+                .iter()
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
         assert_eq!(
             model.get_corresponding_from_idx(model.stop_points.get_idx("A").unwrap()),
             ["toto", "tata"]
-                .into_iter()
+                .iter()
                 .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
                 .collect()
         );
@@ -415,14 +540,14 @@ mod test {
         assert_eq!(
             model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
             ["A", "B"]
-                .into_iter()
+                .iter()
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
         assert_eq!(
             model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("tata").unwrap()),
             ["C", "D"]
-                .into_iter()
+                .iter()
                 .map(|s| model.stop_points.get_idx(s).unwrap())
                 .collect()
         );
@@ -431,14 +556,14 @@ mod test {
         assert_eq!(
             model.get_corresponding_from_idx(model.routes.get_idx("1").unwrap()),
             ["toto"]
-                .into_iter()
+                .iter()
                 .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
                 .collect()
         );
         assert_eq!(
             model.get_corresponding_from_idx(model.routes.get_idx("2").unwrap()),
             ["tata"]
-                .into_iter()
+                .iter()
                 .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
                 .collect()
         );
@@ -446,7 +571,7 @@ mod test {
         assert_eq!(
             model.get_corresponding_from_idx(model.routes.get_idx("default_route").unwrap()),
             ["tutu"]
-                .into_iter()
+                .iter()
                 .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
                 .collect()
         );

@@ -1286,6 +1286,11 @@ impl Calendar {
             dates: BTreeSet::new(),
         }
     }
+
+    /// Returns true if the calendars have at least one date in common
+    pub fn overlaps(&self, other: &Self) -> bool {
+        !self.dates.is_disjoint(&other.dates)
+    }
 }
 
 impl AddPrefix for Calendar {
