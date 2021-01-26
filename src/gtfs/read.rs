@@ -631,6 +631,16 @@ fn manage_comment_from_stop(
     comment_links
 }
 
+fn get_route_comment(route: &Route) -> Option<objects::Comment> {
+    route.desc.as_ref().map(|desc| objects::Comment {
+        id: "route:".to_string() + &route.id,
+        comment_type: objects::CommentType::Information,
+        label: None,
+        name: desc.to_string(),
+        url: None,
+    })
+}
+
 fn manage_odt_comment_from_stop_time(
     collections: &mut Collections,
     on_demand_transport_comment: &str,
@@ -1183,6 +1193,18 @@ where
 
     let routes = make_routes(&gtfs_trips, &map_line_routes);
     collections.routes = CollectionWithId::new(routes)?;
+
+    gtfs_routes_collection.iter().for_each(|(_id, gtfs_route)| {
+        if let Some(comment) = get_route_comment(&gtfs_route) {
+            if let Some(mut route) = collections.routes.get_mut(&gtfs_route.id) {
+                route.comment_links.insert(comment.id.to_string());
+                collections
+                    .comments
+                    .push(comment)
+                    .expect("Duplicated comment id that shouldn’t be possible");
+            }
+        }
+    });
 
     let (vehicle_journeys, trip_properties) = make_ntfs_vehicle_journeys(
         &gtfs_trips,

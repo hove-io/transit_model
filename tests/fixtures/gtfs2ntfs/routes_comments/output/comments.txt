@@ -1,0 +1,4 @@
+comment_id,comment_type,comment_label,comment_name,comment_url
+stop:stoparea:1,information,,stoparea:1_comment,
+stop:stop:11,information,,stop:11_comment,
+route:route:2,information,,route 2 comment,
