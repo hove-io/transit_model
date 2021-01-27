@@ -179,3 +179,17 @@ fn test_minimal_gtfs_frequencies_with_odt_comment() {
         );
     });
 }
+
+#[test]
+fn test_minimal_gtfs_with_routes_comments() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./tests/fixtures/gtfs2ntfs/routes_comments/input";
+        let model = gtfs::read_from_path(input_dir, gtfs::Configuration::default()).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            &path,
+            None,
+            "./tests/fixtures/gtfs2ntfs/routes_comments/output",
+        );
+    });
+}
