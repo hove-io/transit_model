@@ -130,7 +130,7 @@ compatibility reasons. It will be removed in the future.
 
 (3) The `comment` object is a complex type with additional properties :
 
-* `comment_id` : specify an identifier with the pattern **stop:<stop_id of GTFS>**
+* `comment_id` : specify an identifier with the pattern **<prefix>:stop:<stop_id of GTFS>**
 * `comment_type` : specify the fixed value "information"
 
 (4) The `equipment` object is a complex type with additional properties :
