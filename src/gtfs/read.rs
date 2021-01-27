@@ -611,24 +611,14 @@ where
     Ok((networks, companies))
 }
 
-fn manage_comment_from_stop(
-    comments: &mut CollectionWithId<objects::Comment>,
-    stop: &Stop,
-) -> CommentLinksT {
-    let mut comment_links: CommentLinksT = CommentLinksT::default();
-    if let Some(desc) = &stop.desc {
-        let comment_id = "stop:".to_string() + &stop.id;
-        let comment = objects::Comment {
-            id: comment_id.clone(),
-            comment_type: objects::CommentType::Information,
-            label: None,
-            name: desc.to_string(),
-            url: None,
-        };
-        comments.push(comment).unwrap();
-        comment_links.insert(comment_id);
-    }
-    comment_links
+fn get_stop_comment(stop: &Stop) -> Option<objects::Comment> {
+    stop.desc.as_ref().map(|desc| objects::Comment {
+        id: "stop:".to_string() + &stop.id,
+        comment_type: objects::CommentType::Information,
+        label: None,
+        name: desc.to_string(),
+        url: None,
+    })
 }
 
 fn get_route_comment(route: &Route) -> Option<objects::Comment> {
@@ -764,7 +754,13 @@ where
     let mut stop_points = vec![];
     let mut stop_locations = vec![];
     for stop in gtfs_stops {
-        let comment_links = manage_comment_from_stop(comments, &stop);
+        let mut comment_links = CommentLinksT::default();
+        if let Some(comment) = get_stop_comment(&stop) {
+            comment_links.insert(comment.id.to_string());
+            comments
+                .push(comment)
+                .expect("Duplicated comment id that shouldn’t be possible");
+        }
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
             StopLocationType::StopPoint => {
