@@ -611,7 +611,7 @@ where
     Ok((networks, companies))
 }
 
-fn get_stop_comment(stop: &Stop) -> Option<objects::Comment> {
+fn generate_stop_comment(stop: &Stop) -> Option<objects::Comment> {
     stop.desc.as_ref().map(|desc| objects::Comment {
         id: "stop:".to_string() + &stop.id,
         comment_type: objects::CommentType::Information,
@@ -621,7 +621,7 @@ fn get_stop_comment(stop: &Stop) -> Option<objects::Comment> {
     })
 }
 
-fn get_route_comment(route: &Route) -> Option<objects::Comment> {
+fn generate_route_comment(route: &Route) -> Option<objects::Comment> {
     route.desc.as_ref().map(|desc| objects::Comment {
         id: "route:".to_string() + &route.id,
         comment_type: objects::CommentType::Information,
@@ -755,7 +755,7 @@ where
     let mut stop_locations = vec![];
     for stop in gtfs_stops {
         let mut comment_links = CommentLinksT::default();
-        if let Some(comment) = get_stop_comment(&stop) {
+        if let Some(comment) = generate_stop_comment(&stop) {
             comment_links.insert(comment.id.to_string());
             comments
                 .push(comment)
@@ -1191,7 +1191,7 @@ where
     collections.routes = CollectionWithId::new(routes)?;
 
     gtfs_routes_collection.iter().for_each(|(_id, gtfs_route)| {
-        if let Some(comment) = get_route_comment(&gtfs_route) {
+        if let Some(comment) = generate_route_comment(&gtfs_route) {
             if let Some(mut route) = collections.routes.get_mut(&gtfs_route.id) {
                 route.comment_links.insert(comment.id.to_string());
                 collections
