@@ -402,8 +402,7 @@ where
             stop_time.with_context(|_| format!("Error reading {:?}", path))?;
         if let Some(vj_idx) = collections.vehicle_journeys.get_idx(&stop_time.trip_id) {
             // consume the stop headsign
-            let headsign = std::mem::replace(&mut stop_time.stop_headsign, None);
-            if let Some(headsign) = headsign {
+            if let Some(headsign) = stop_time.stop_headsign.take() {
                 headsigns.insert(
                     (stop_time.trip_id.clone(), stop_time.stop_sequence),
                     headsign,
