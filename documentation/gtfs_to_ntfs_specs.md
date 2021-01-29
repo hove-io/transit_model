@@ -188,7 +188,7 @@ _Warning :_ If the GTFS route has no trips, the Navitia Route should NOT be crea
 | routes.txt   | direction_type | Optional   |            |                 | (2)                                                                                                                                                         |
 | routes.txt   | line_id        | Required   |            |                 | corresponding `line.id` (see Line construction above)                                                                                                       |
 | routes.txt   | destination_id | Optional   |            |                 | This field contains a stop_area.id of the most frequent destination of the contained trips (ie. the parent_station of the most frequent last stop of trips) |
-| comments.txt | comment_value  | Optional   | routes.txt | route_desc      | See (3) for additional properties                                                                                                                           |
+| comments.txt | comment_value  | Optional   | routes.txt | route_desc      | The comment is generated only when the parameter `read-as-line` is deactivated. See (3) for additional properties                                                                                                                           |
 
 (1) if only one route is created (only one direction in included trips), use
 `route_long_name` or, if empty, use `route_short_name`. In case of multiple
@@ -219,8 +219,14 @@ specified, the conversion should stop immediately with an error.
 | lines.txt | line_text_color    | Optional   | routes.txt | route_text_color | same as line_color; if color format is incorrect, the value is dropped                                                                                                                                                                                                           |
 | lines.txt | line_sort_order    | Optional   | routes.txt | route_sort_order |                                                                                                                                                                                                                                                                                  |
 | lines.txt | commercial_mode_id | Required   | routes.txt | route_type       | See "Mapping of route_type with modes" chapter (1).                                                                                                                                                                                                                              |
+| comments.txt | comment_value | Optional | routes.txt | route_desc | The comment is generated only when the parameter `read-as-line` is activated. See (2) for additional properties. |
 
 (1) When several GTFS Routes with different `route_type`s are grouped together, the commercial_mode_id with the smallest priority should be used (as specified in chapter "Mapping of route_type with modes").
+
+(2) The `comment` object is a complex type with additional properties :
+
+* `comment_id` : specify an identifier with the pattern **\<prefix>:line:<route_id of GTFS>**
+* `comment_type` : specify the fixed value "Information"
 
 ### Reading calendars.txt and calendar_dates.txt
 
