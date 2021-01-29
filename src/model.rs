@@ -14,13 +14,13 @@
 
 //! Definition of the navitia transit model.
 
-use crate::{objects::*, Error, Result};
+use crate::{enhancers, objects::*, Error, Result};
 use chrono::NaiveDate;
 use derivative::Derivative;
+use enhancers::enhance_with_co2;
 use failure::{bail, format_err};
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
-use lazy_static::lazy_static;
 use log::{debug, warn, Level as LogLevel};
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
@@ -65,36 +65,6 @@ pub const TAXI_PHYSICAL_MODE: &str = "Taxi";
 pub const TRAIN_PHYSICAL_MODE: &str = "Train";
 /// Physical mode for Tramway
 pub const TRAMWAY_PHYSICAL_MODE: &str = "Tramway";
-lazy_static! {
-    static ref CO2_EMISSIONS: std::collections::HashMap<&'static str, f32> = {
-        let mut modes_map = std::collections::HashMap::new();
-        modes_map.insert(AIR_PHYSICAL_MODE, 144.6f32);
-        modes_map.insert(BIKE_PHYSICAL_MODE, 0f32);
-        modes_map.insert(BIKE_SHARING_SERVICE_PHYSICAL_MODE, 0f32);
-        // Unknown value
-        // modes_map.insert("Boat", 0.0f32);
-        modes_map.insert(BUS_PHYSICAL_MODE, 132f32);
-        modes_map.insert(BUS_RAPID_TRANSIT_PHYSICAL_MODE, 84f32);
-        modes_map.insert(CAR_PHYSICAL_MODE, 184f32);
-        modes_map.insert(COACH_PHYSICAL_MODE, 171f32);
-        modes_map.insert(FERRY_PHYSICAL_MODE, 279f32);
-        modes_map.insert(FUNICULAR_PHYSICAL_MODE, 3f32);
-        modes_map.insert(LOCAL_TRAIN_PHYSICAL_MODE, 30.7f32);
-        modes_map.insert(LONG_DISTANCE_TRAIN_PHYSICAL_MODE, 3.4f32);
-        modes_map.insert(METRO_PHYSICAL_MODE, 3f32);
-        modes_map.insert(RAPID_TRANSIT_PHYSICAL_MODE, 6.2f32);
-        // Unknown value
-        // modes_map.insert("RailShuttle", 0.0f32);
-        // Unknown value
-        // modes_map.insert("Shuttle", 0.0f32);
-        // Unknown value
-        // modes_map.insert("SuspendedCableCar", 0.0f32);
-        modes_map.insert(TAXI_PHYSICAL_MODE, 184f32);
-        modes_map.insert(TRAIN_PHYSICAL_MODE, 11.9f32);
-        modes_map.insert(TRAMWAY_PHYSICAL_MODE, 4f32);
-        modes_map
-    };
-}
 
 /// The set of collections representing the model.
 #[derive(Derivative, Serialize, Deserialize, Debug)]
@@ -505,35 +475,6 @@ impl Collections {
             .retain(|level| level_id_used.contains(&level.id));
         self.calendars.retain(|c| calendars_used.contains(&c.id));
         Ok(())
-    }
-
-    /// Physical mode should contains CO2 emissions. If the values are not present
-    /// in the NTFS, some default values will be used.
-    pub fn enhance_with_co2(&mut self) {
-        let mut physical_modes = self.physical_modes.take();
-        for physical_mode in &mut physical_modes {
-            if physical_mode.co2_emission.is_none() {
-                physical_mode.co2_emission = CO2_EMISSIONS.get(physical_mode.id.as_str()).copied();
-            }
-        }
-        self.physical_modes = CollectionWithId::new(physical_modes).unwrap();
-        // Add fallback modes
-        for &fallback_mode in &[
-            BIKE_PHYSICAL_MODE,
-            BIKE_SHARING_SERVICE_PHYSICAL_MODE,
-            CAR_PHYSICAL_MODE,
-        ] {
-            if !self.physical_modes.contains_id(fallback_mode) {
-                // Can unwrap because we first check that the ID doesn't exist
-                self.physical_modes
-                    .push(PhysicalMode {
-                        id: fallback_mode.to_string(),
-                        name: fallback_mode.to_string(),
-                        co2_emission: CO2_EMISSIONS.get(fallback_mode).copied(),
-                    })
-                    .unwrap();
-            }
-        }
     }
 
     /// Sets the opening and closing times of lines (if they are missing).
@@ -1448,7 +1389,7 @@ impl Model {
         )?;
 
         c.update_stop_area_coords();
-        c.enhance_with_co2();
+        enhance_with_co2(&mut c);
         c.enhance_trip_headsign();
         c.enhance_route_names(&routes_to_vehicle_journeys);
         c.enhance_route_directions();
@@ -1533,63 +1474,6 @@ impl ops::Deref for Model {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use approx::assert_relative_eq;
-
-    mod enhance_with_co2 {
-        use super::*;
-        use pretty_assertions::assert_eq;
-
-        #[test]
-        fn enhance_with_default() {
-            let mut collections = Collections::default();
-            collections
-                .physical_modes
-                .push(PhysicalMode {
-                    id: String::from(BUS_PHYSICAL_MODE),
-                    name: String::from("Bus"),
-                    ..Default::default()
-                })
-                .unwrap();
-            collections.enhance_with_co2();
-
-            let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
-            assert_relative_eq!(bus_mode.co2_emission.unwrap(), 132f32);
-        }
-
-        #[test]
-        fn preserve_existing() {
-            let mut collections = Collections::default();
-            collections
-                .physical_modes
-                .push(PhysicalMode {
-                    id: String::from(BUS_PHYSICAL_MODE),
-                    name: String::from("Bus"),
-                    co2_emission: Some(42.0f32),
-                })
-                .unwrap();
-            collections.enhance_with_co2();
-
-            let bus_mode = collections.physical_modes.get(BUS_PHYSICAL_MODE).unwrap();
-            assert_relative_eq!(bus_mode.co2_emission.unwrap(), 42.0f32);
-        }
-
-        #[test]
-        fn add_fallback_modes() {
-            let mut collections = Collections::default();
-            collections.enhance_with_co2();
-
-            assert_eq!(3, collections.physical_modes.len());
-            let bike_mode = collections.physical_modes.get(BIKE_PHYSICAL_MODE).unwrap();
-            assert_relative_eq!(bike_mode.co2_emission.unwrap(), 0.0f32);
-            let walk_mode = collections
-                .physical_modes
-                .get(BIKE_SHARING_SERVICE_PHYSICAL_MODE)
-                .unwrap();
-            assert_relative_eq!(walk_mode.co2_emission.unwrap(), 0.0f32);
-            let car_mode = collections.physical_modes.get(CAR_PHYSICAL_MODE).unwrap();
-            assert_relative_eq!(car_mode.co2_emission.unwrap(), 184.0f32);
-        }
-    }
 
     mod enhance_pickup_dropoff {
         use super::*;
