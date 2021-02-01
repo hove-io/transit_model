@@ -1,5 +1,5 @@
 //! This module contains various functions that enhance / cleanup `Collections`
 
-mod enhance_co2;
+mod fill_co2;
 
-pub(crate) use enhance_co2::enhance_with_co2;
+pub(crate) use fill_co2::fill_co2;

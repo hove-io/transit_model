@@ -37,7 +37,7 @@ lazy_static::lazy_static! {
 
 /// Physical mode should contains CO2 emissions. If the values are not present
 /// in the NTFS, some default values will be used.
-pub fn enhance_with_co2(collections: &mut Collections) {
+pub fn fill_co2(collections: &mut Collections) {
     let mut physical_modes = collections.physical_modes.take();
     for physical_mode in &mut physical_modes {
         if physical_mode.co2_emission.is_none() {
@@ -82,7 +82,7 @@ mod test {
                 ..Default::default()
             })
             .unwrap();
-        enhance_with_co2(&mut collections);
+        fill_co2(&mut collections);
 
         let bus_mode = collections
             .physical_modes
@@ -102,7 +102,7 @@ mod test {
                 co2_emission: Some(42.0f32),
             })
             .unwrap();
-        enhance_with_co2(&mut collections);
+        fill_co2(&mut collections);
 
         let bus_mode = collections
             .physical_modes
@@ -114,7 +114,7 @@ mod test {
     #[test]
     fn add_fallback_modes() {
         let mut collections = Collections::default();
-        enhance_with_co2(&mut collections);
+        fill_co2(&mut collections);
 
         assert_eq!(3, collections.physical_modes.len());
         let bike_mode = collections

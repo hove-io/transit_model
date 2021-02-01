@@ -17,7 +17,6 @@
 use crate::{enhancers, objects::*, Error, Result};
 use chrono::NaiveDate;
 use derivative::Derivative;
-use enhancers::enhance_with_co2;
 use failure::{bail, format_err};
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
@@ -1389,7 +1388,7 @@ impl Model {
         )?;
 
         c.update_stop_area_coords();
-        enhance_with_co2(&mut c);
+        enhancers::fill_co2(&mut c);
         c.enhance_trip_headsign();
         c.enhance_route_names(&routes_to_vehicle_journeys);
         c.enhance_route_directions();
