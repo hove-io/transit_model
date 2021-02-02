@@ -400,30 +400,25 @@ where
     for stop_time in rdr.deserialize() {
         let mut stop_time: StopTime =
             stop_time.with_context(|_| format!("Error reading {:?}", path))?;
-        let vj_idx = collections
-            .vehicle_journeys
-            .get_idx(&stop_time.trip_id)
-            .ok_or_else(|| {
-                format_err!(
-                    "Problem reading {:?}: trip_id={:?} not found",
-                    file_name,
-                    stop_time.trip_id
-                )
-            })?;
+        if let Some(vj_idx) = collections.vehicle_journeys.get_idx(&stop_time.trip_id) {
+            // consume the stop headsign
+            if let Some(headsign) = stop_time.stop_headsign.take() {
+                headsigns.insert(
+                    (stop_time.trip_id.clone(), stop_time.stop_sequence),
+                    headsign,
+                );
+            }
 
-        // consume the stop headsign
-        let headsign = std::mem::replace(&mut stop_time.stop_headsign, None);
-        if let Some(headsign) = headsign {
-            headsigns.insert(
-                (stop_time.trip_id.clone(), stop_time.stop_sequence),
-                headsign,
-            );
+            tmp_vjs
+                .entry(vj_idx)
+                .or_insert_with(Vec::new)
+                .push(stop_time);
+        } else {
+            warn!(
+                "Problem reading {:?}: trip_id={:?} not found. Skipping this stop_time",
+                file_name, stop_time.trip_id
+            )
         }
-
-        tmp_vjs
-            .entry(vj_idx)
-            .or_insert_with(Vec::new)
-            .push(stop_time);
     }
     collections.stop_time_headsigns = headsigns;
 
@@ -439,53 +434,49 @@ where
             .get_idx(&collections.vehicle_journeys[vj_idx].company_id);
 
         for (stop_time, st_values) in stop_times.iter().zip(st_values) {
-            let stop_point_idx = collections
-                .stop_points
-                .get_idx(&stop_time.stop_id)
-                .ok_or_else(|| {
-                    format_err!(
-                        "Problem reading {:?}: stop_id={:?} not found",
-                        file_name,
-                        stop_time.stop_id
-                    )
-                })?;
+            if let Some(stop_point_idx) = collections.stop_points.get_idx(&stop_time.stop_id) {
+                let precision = match (on_demand_transport, st_values.datetime_estimated) {
+                    (_, false) => Some(StopTimePrecision::Exact),
+                    (false, true) => Some(StopTimePrecision::Approximate),
+                    (true, true) => Some(StopTimePrecision::Estimated),
+                };
 
-            let precision = match (on_demand_transport, st_values.datetime_estimated) {
-                (_, false) => Some(StopTimePrecision::Exact),
-                (false, true) => Some(StopTimePrecision::Approximate),
-                (true, true) => Some(StopTimePrecision::Estimated),
-            };
-
-            if let Some(message) = on_demand_transport_comment.as_ref() {
-                if stop_time.pickup_type == 2 || stop_time.drop_off_type == 2 {
-                    if let Some(company_idx) = company_idx {
-                        manage_odt_comment_from_stop_time(
-                            collections,
-                            message,
-                            company_idx,
-                            vj_idx,
-                            stop_time,
-                        );
+                if let Some(message) = on_demand_transport_comment.as_ref() {
+                    if stop_time.pickup_type == 2 || stop_time.drop_off_type == 2 {
+                        if let Some(company_idx) = company_idx {
+                            manage_odt_comment_from_stop_time(
+                                collections,
+                                message,
+                                company_idx,
+                                vj_idx,
+                                stop_time,
+                            );
+                        }
                     }
                 }
+                collections
+                    .vehicle_journeys
+                    .index_mut(vj_idx)
+                    .stop_times
+                    .push(objects::StopTime {
+                        stop_point_idx,
+                        sequence: stop_time.stop_sequence,
+                        arrival_time: st_values.arrival_time,
+                        departure_time: st_values.departure_time,
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: stop_time.pickup_type,
+                        drop_off_type: stop_time.drop_off_type,
+                        datetime_estimated: st_values.datetime_estimated,
+                        local_zone_id: stop_time.local_zone_id,
+                        precision,
+                    });
+            } else {
+                warn!(
+                    "Problem reading {:?}: stop_id={:?} not found. Skipping this stop_time",
+                    file_name, stop_time.stop_id
+                );
             }
-            collections
-                .vehicle_journeys
-                .index_mut(vj_idx)
-                .stop_times
-                .push(objects::StopTime {
-                    stop_point_idx,
-                    sequence: stop_time.stop_sequence,
-                    arrival_time: st_values.arrival_time,
-                    departure_time: st_values.departure_time,
-                    boarding_duration: 0,
-                    alighting_duration: 0,
-                    pickup_type: stop_time.pickup_type,
-                    drop_off_type: stop_time.drop_off_type,
-                    datetime_estimated: st_values.datetime_estimated,
-                    local_zone_id: stop_time.local_zone_id,
-                    precision,
-                });
         }
     }
     Ok(())
