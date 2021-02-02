@@ -612,9 +612,10 @@ fn generate_stop_comment(stop: &Stop) -> Option<objects::Comment> {
     })
 }
 
-fn generate_route_comment(route: &Route) -> Option<objects::Comment> {
+fn generate_route_comment(route: &Route, read_as_line: bool) -> Option<objects::Comment> {
+    let prefix = if read_as_line { "line:" } else { "route:" };
     route.desc.as_ref().map(|desc| objects::Comment {
-        id: "route:".to_string() + &route.id,
+        id: prefix.to_string() + &route.id,
         comment_type: objects::CommentType::Information,
         label: None,
         name: desc.to_string(),
@@ -1182,8 +1183,16 @@ where
     collections.routes = CollectionWithId::new(routes)?;
 
     gtfs_routes_collection.iter().for_each(|(_id, gtfs_route)| {
-        if let Some(comment) = generate_route_comment(&gtfs_route) {
-            if let Some(mut route) = collections.routes.get_mut(&gtfs_route.id) {
+        if let Some(comment) = generate_route_comment(&gtfs_route, read_as_line) {
+            if read_as_line {
+                if let Some(mut line) = collections.lines.get_mut(&gtfs_route.id) {
+                    line.comment_links.insert(comment.id.to_string());
+                    collections
+                        .comments
+                        .push(comment)
+                        .expect("Duplicated comment id that shouldn’t be possible");
+                }
+            } else if let Some(mut route) = collections.routes.get_mut(&gtfs_route.id) {
                 route.comment_links.insert(comment.id.to_string());
                 collections
                     .comments
