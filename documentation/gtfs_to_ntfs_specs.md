@@ -188,7 +188,7 @@ _Warning :_ If the GTFS route has no trips, the Navitia Route should NOT be crea
 | routes.txt   | direction_type | Optional   |            |                 | (2)                                                                                                                                                         |
 | routes.txt   | line_id        | Required   |            |                 | corresponding `line.id` (see Line construction above)                                                                                                       |
 | routes.txt   | destination_id | Optional   |            |                 | This field contains a stop_area.id of the most frequent destination of the contained trips (ie. the parent_station of the most frequent last stop of trips) |
-| comments.txt | comment_value  | Optional   | routes.txt | route_desc      | The comment is generated only when the parameter `read-as-line` deactivated. See (3) for additional properties                                                                                                                           |
+| comments.txt | comment_value  | Optional   | routes.txt | route_desc      | The comment is generated only when the parameter `read-as-line` is deactivated. See (3) for additional properties                                                                                                                           |
 
 (1) if only one route is created (only one direction in included trips), use
 `route_long_name` or, if empty, use `route_short_name`. In case of multiple
