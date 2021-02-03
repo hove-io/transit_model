@@ -44,6 +44,7 @@ pub use add_prefix::{AddPrefix, PrefixConfiguration};
 pub mod calendars;
 #[macro_use]
 pub mod objects;
+mod enhancers;
 pub mod gtfs;
 pub mod model;
 #[cfg(feature = "proj")]
