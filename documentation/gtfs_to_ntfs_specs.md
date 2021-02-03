@@ -219,7 +219,7 @@ specified, the conversion should stop immediately with an error.
 | lines.txt | line_text_color    | Optional   | routes.txt | route_text_color | same as line_color; if color format is incorrect, the value is dropped                                                                                                                                                                                                           |
 | lines.txt | line_sort_order    | Optional   | routes.txt | route_sort_order |                                                                                                                                                                                                                                                                                  |
 | lines.txt | commercial_mode_id | Required   | routes.txt | route_type       | See "Mapping of route_type with modes" chapter (1).                                                                                                                                                                                                                              |
-| comments.txt | comment_value | Optional | routes.txt | route_desc | The comment is generated only when the parameter `read-as-line` activated. See (2) for additional properties. |
+| comments.txt | comment_value | Optional | routes.txt | route_desc | The comment is generated only when the parameter `read-as-line` is activated. See (2) for additional properties. |
 
 (1) When several GTFS Routes with different `route_type`s are grouped together, the commercial_mode_id with the smallest priority should be used (as specified in chapter "Mapping of route_type with modes").
 
