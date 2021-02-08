@@ -20,10 +20,10 @@ use crate::{
 use failure::{format_err, ResultExt};
 use log::info;
 use serde::Deserialize;
-use std::collections::BTreeMap;
-use std::fs::File;
 use std::path;
 use std::path::{Path, PathBuf};
+use std::{collections::BTreeMap, io::Read};
+use std::{fs::File, io::Seek};
 use typed_index_collection::{CollectionWithId, Id};
 
 #[derive(Deserialize, Debug)]
@@ -97,7 +97,7 @@ pub(crate) trait FileHandler
 where
     Self: std::marker::Sized,
 {
-    type Reader: std::io::Read;
+    type Reader: Read;
 
     fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)>;
 
@@ -142,16 +142,18 @@ impl<'a, P: AsRef<Path>> FileHandler for &'a mut PathFileHandler<P> {
 /// Unlike ZipArchive, it gives access to a file by its name not regarding its path in the ZipArchive
 /// It thus cannot be correct if there are 2 files with the same name in the archive,
 /// but for transport data if will make it possible to handle a zip with a sub directory
-pub(crate) struct ZipHandler {
-    archive: zip::ZipArchive<File>,
+pub(crate) struct ZipHandler<R: Seek + Read> {
+    archive: zip::ZipArchive<R>,
     archive_path: PathBuf,
     index_by_name: BTreeMap<String, usize>,
 }
 
-impl ZipHandler {
-    pub(crate) fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let file = File::open(path.as_ref())?;
-        let mut archive = zip::ZipArchive::new(file)?;
+impl<R> ZipHandler<R>
+where
+    R: Seek + Read,
+{
+    pub(crate) fn new<P: AsRef<Path>>(r: R, path: P) -> Result<Self> {
+        let mut archive = zip::ZipArchive::new(r)?;
         Ok(ZipHandler {
             index_by_name: Self::files_by_name(&mut archive),
             archive,
@@ -159,7 +161,7 @@ impl ZipHandler {
         })
     }
 
-    fn files_by_name(archive: &mut zip::ZipArchive<File>) -> BTreeMap<String, usize> {
+    fn files_by_name(archive: &mut zip::ZipArchive<R>) -> BTreeMap<String, usize> {
         (0..archive.len())
             .filter_map(|i| {
                 let file = archive.by_index(i).ok()?;
@@ -172,7 +174,10 @@ impl ZipHandler {
     }
 }
 
-impl<'a> FileHandler for &'a mut ZipHandler {
+impl<'a, R> FileHandler for &'a mut ZipHandler<R>
+where
+    R: Seek + Read,
+{
     type Reader = zip::read::ZipFile<'a>;
     fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
         let p = self.archive_path.join(name);
@@ -273,8 +278,9 @@ mod tests {
 
     #[test]
     fn zip_file_handler() {
-        let mut file_handler =
-            ZipHandler::new(PathBuf::from("tests/fixtures/file-handler.zip")).unwrap();
+        let p = "tests/fixtures/file-handler.zip";
+        let reader = File::open(p).unwrap();
+        let mut file_handler = ZipHandler::new(reader, p).unwrap();
 
         {
             let (mut hello, _) = file_handler.get_file("hello.txt").unwrap();

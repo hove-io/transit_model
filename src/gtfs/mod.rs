@@ -333,13 +333,7 @@ where
 /// Imports a `Model` from the [GTFS](https://gtfs.org/reference/static)
 /// files in the `path` directory.
 ///
-/// The `config_path` argument allows you to give a path to a file
-/// containing a json representing the contributor and dataset used
-/// for this GTFS. If not given, default values will be created.
-///
-/// The `prefix` argument is a string that will be prepended to every
-/// identifiers, allowing to namespace the dataset. By default, no
-/// prefix will be added to the identifiers.
+/// The `Configuration` is used to control various parameters during the import.
 pub fn read_from_path<P: AsRef<Path>>(p: P, configuration: Configuration) -> Result<Model> {
     let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
     read(&mut file_handle, configuration)
@@ -348,15 +342,33 @@ pub fn read_from_path<P: AsRef<Path>>(p: P, configuration: Configuration) -> Res
 /// Imports a `Model` from a zip file containing the
 /// [GTFS](https://gtfs.org/reference/static).
 ///
-/// The `config_path` argument allows you to give a path to a file
-/// containing a json representing the contributor and dataset used
-/// for this GTFS. If not given, default values will be created.
+/// The `Configuration` is used to control various parameters during the import.
+pub fn read_from_zip<P: AsRef<Path>>(p: P, configuration: Configuration) -> Result<Model> {
+    let reader = std::fs::File::open(p.as_ref())?;
+    let mut file_handler = read_utils::ZipHandler::new(reader, p)?;
+    read(&mut file_handler, configuration)
+}
+
+/// Imports a `Model` from an object implementing `Read` and `Seek` and containing the
+/// [GTFS](https://gtfs.org/reference/static).
 ///
-/// The `prefix` argument is a string that will be prepended to every
-/// identifiers, allowing to namespace the dataset. By default, no
-/// prefix will be added to the identifiers.
-pub fn read_from_zip<P: AsRef<Path>>(path: P, configuration: Configuration) -> Result<Model> {
-    let mut file_handler = read_utils::ZipHandler::new(path)?;
+/// This method makes it possible to read from a variety of sources like read a GTFS
+/// from the network.
+///
+/// ```
+// let url = "http://some_url/gtfs.zip";
+// let resp = reqwest::blocking::get(url)?; // or async call
+// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
+// let model = transit_model::gtfs::from_read(data, &url, configuration)?;
+/// ```
+///
+/// The `source_name` is needed to have nicer error messages.
+/// The `Configuration` is used to control various parameters during the import.
+pub fn from_read<R>(reader: R, source_name: &str, configuration: Configuration) -> Result<Model>
+where
+    R: std::io::Seek + std::io::Read,
+{
+    let mut file_handler = read_utils::ZipHandler::new(reader, &source_name)?;
     read(&mut file_handler, configuration)
 }
 
