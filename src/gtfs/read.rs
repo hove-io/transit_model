@@ -612,14 +612,28 @@ fn generate_stop_comment(stop: &Stop) -> Option<objects::Comment> {
     })
 }
 
-fn generate_route_comment(route: &Route) -> Option<objects::Comment> {
-    route.desc.as_ref().map(|desc| objects::Comment {
-        id: "route:".to_string() + &route.id,
+fn insert_comment<'c, T: typed_index_collection::Id<T> + objects::CommentLinks>(
+    collection: &'c mut CollectionWithId<T>,
+    comments: &mut CollectionWithId<objects::Comment>,
+    prefix: &str,
+    gtfs_route: &Route,
+) {
+    let opt_comment = gtfs_route.desc.as_ref().map(|desc| objects::Comment {
+        id: format!("{}:{}", prefix, gtfs_route.id),
         comment_type: objects::CommentType::Information,
         label: None,
         name: desc.to_string(),
         url: None,
-    })
+    });
+
+    if let Some(comment) = opt_comment {
+        if let Some(mut object) = collection.get_mut(&gtfs_route.id) {
+            object.comment_links_mut().insert(comment.id.to_string());
+            comments
+                .push(comment)
+                .expect("Duplicated comment id that shouldn’t be possible");
+        }
+    }
 }
 
 fn manage_odt_comment_from_stop_time(
@@ -1182,15 +1196,21 @@ where
     collections.routes = CollectionWithId::new(routes)?;
 
     gtfs_routes_collection.iter().for_each(|(_id, gtfs_route)| {
-        if let Some(comment) = generate_route_comment(&gtfs_route) {
-            if let Some(mut route) = collections.routes.get_mut(&gtfs_route.id) {
-                route.comment_links.insert(comment.id.to_string());
-                collections
-                    .comments
-                    .push(comment)
-                    .expect("Duplicated comment id that shouldn’t be possible");
-            }
-        }
+        if read_as_line {
+            insert_comment(
+                &mut collections.lines,
+                &mut collections.comments,
+                "line",
+                &gtfs_route,
+            );
+        } else {
+            insert_comment(
+                &mut collections.routes,
+                &mut collections.comments,
+                "route",
+                &gtfs_route,
+            );
+        };
     });
 
     let (vehicle_journeys, trip_properties) = make_ntfs_vehicle_journeys(

@@ -1,0 +1,4 @@
+object_id,object_type,comment_id
+route:2,line,line:route:2
+stoparea:1,stop_area,stop:stoparea:1
+stop:11,stop_point,stop:stop:11
