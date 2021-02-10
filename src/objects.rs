@@ -996,6 +996,21 @@ impl From<GeoPoint<f64>> for Coord {
     }
 }
 
+#[cfg(feature = "proj")]
+impl proj::Coord<f64> for Coord {
+    fn x(&self) -> f64 {
+        self.lon
+    }
+
+    fn y(&self) -> f64 {
+        self.lat
+    }
+
+    fn from_xy(x: f64, y: f64) -> Self {
+        Self { lon: x, lat: y }
+    }
+}
+
 impl Coord {
     /// Calculate the orthodromic distance in meters
     /// between 2 geographic coordinates

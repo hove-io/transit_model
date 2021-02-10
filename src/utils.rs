@@ -25,7 +25,7 @@ use std::io::{Read, Write};
 use std::path;
 use typed_index_collection::{Collection, CollectionWithId, Id};
 use walkdir::WalkDir;
-use wkt::{self, conversion::try_into_geometry, ToWkt};
+use wkt::ToWkt;
 
 pub fn zip_to<P, R>(source_path: P, zip_file: R) -> crate::Result<()>
 where
@@ -173,8 +173,13 @@ where
 {
     use serde::Deserialize;
     let s = String::deserialize(deserializer)?;
-    let wkt = wkt::Wkt::from_str(&s).map_err(serde::de::Error::custom)?;
-    try_into_geometry(&wkt.items[0]).map_err(serde::de::Error::custom)
+    let mut wkt = wkt::Wkt::from_str(&s).map_err(serde::de::Error::custom)?;
+    use std::convert::TryInto;
+    wkt.items
+        .pop()
+        .unwrap()
+        .try_into()
+        .map_err(serde::de::Error::custom)
 }
 
 pub fn de_positive_decimal<'de, D>(deserializer: D) -> Result<Decimal, D::Error>
