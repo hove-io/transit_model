@@ -1126,7 +1126,7 @@ fn make_ntfs_vehicle_journeys(
     routes: &CollectionWithId<Route>,
     datasets: &CollectionWithId<objects::Dataset>,
     networks: &CollectionWithId<objects::Network>,
-) -> Result<(Vec<objects::VehicleJourney>, Vec<objects::TripProperty>)> {
+) -> (Vec<objects::VehicleJourney>, Vec<objects::TripProperty>) {
     // there always is one dataset from config or a default one
     let (_, dataset) = datasets.iter().next().unwrap();
     let mut vehicle_journeys: Vec<objects::VehicleJourney> = vec![];
@@ -1170,7 +1170,7 @@ fn make_ntfs_vehicle_journeys(
         }
     }
 
-    Ok((vehicle_journeys, trip_properties))
+    (vehicle_journeys, trip_properties)
 }
 
 pub(in crate::gtfs) fn read_routes<H>(
@@ -1218,8 +1218,7 @@ where
         &gtfs_routes_collection,
         &collections.datasets,
         &collections.networks,
-    )
-    .with_context(|_| format!("Error reading {:?}", "trips.txt"))?;
+    );
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     collections.trip_properties = CollectionWithId::new(trip_properties)?;
 

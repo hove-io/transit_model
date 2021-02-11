@@ -183,7 +183,7 @@ impl<'a> Exporter<'a> {
 impl Exporter<'_> {
     // Include 'stop_frame' into a complete NeTEx XML tree with
     // 'PublicationDelivery' and 'dataObjects'
-    fn wrap_frame(&self, frame: Element, version_type: VersionType) -> Result<Element> {
+    fn wrap_frame(&self, frame: Element, version_type: VersionType) -> Element {
         let publication_timestamp = Element::builder("PublicationTimestamp")
             .ns("http://www.netex.org.uk/netex/")
             .append(self.timestamp.to_rfc3339())
@@ -196,7 +196,7 @@ impl Exporter<'_> {
             .ns("http://www.netex.org.uk/netex/")
             .append(frame)
             .build();
-        let root = Element::builder("PublicationDelivery")
+        Element::builder("PublicationDelivery")
             .attr("version", format!("1.09:FR-NETEX_{}-2.1-1.0", version_type))
             .attr("xmlns:siri", "http://www.siri.org.uk/siri")
             .attr("xmlns:core", "http://www.govtalk.gov.uk/core")
@@ -209,8 +209,7 @@ impl Exporter<'_> {
             .append(publication_timestamp)
             .append(participant_ref)
             .append(data_objects)
-            .build();
-        Ok(root)
+            .build()
     }
 
     fn generate_frame_id(&self, frame_type: FrameType, id: &str) -> String {
@@ -244,7 +243,7 @@ impl Exporter<'_> {
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_LINES_FILENAME);
         let file = File::create(&filepath)?;
-        let network_frames = self.create_networks_frames()?;
+        let network_frames = self.create_networks_frames();
         let lines_frame = self.create_lines_frame()?;
         let companies_frame = self.create_companies_frame();
         let frames = network_frames
@@ -256,7 +255,7 @@ impl Exporter<'_> {
             &format!("NETEX_{}", VersionType::Lines),
         );
         let composite_frame = Self::create_composite_frame(composite_frame_id, frames);
-        let netex = self.wrap_frame(composite_frame, VersionType::Lines)?;
+        let netex = self.wrap_frame(composite_frame, VersionType::Lines);
         let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
         writer.write(&netex)?;
@@ -264,9 +263,9 @@ impl Exporter<'_> {
     }
 
     // Returns a list of 'ServiceFrame' each containing a 'Network'
-    fn create_networks_frames(&self) -> Result<Vec<Element>> {
+    fn create_networks_frames(&self) -> Vec<Element> {
         let network_exporter = NetworkExporter::new(&self.model);
-        let network_elements = network_exporter.export()?;
+        let network_elements = network_exporter.export();
         let frames = network_elements
             .into_iter()
             .zip(self.model.networks.values())
@@ -279,7 +278,7 @@ impl Exporter<'_> {
                     .build()
             })
             .collect();
-        Ok(frames)
+        frames
     }
 
     // Returns a 'ServiceFrame' containing a list of 'Line' in 'lines'
@@ -318,7 +317,7 @@ impl Exporter<'_> {
         let filepath = path.as_ref().join(NETEX_FRANCE_STOPS_FILENAME);
         let file = File::create(&filepath)?;
         let stop_frame = self.create_stops_frame()?;
-        let netex = self.wrap_frame(stop_frame, VersionType::Stops)?;
+        let netex = self.wrap_frame(stop_frame, VersionType::Stops);
         let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
         writer.write(&netex)?;
@@ -347,7 +346,7 @@ impl Exporter<'_> {
         let filepath = path.as_ref().join(NETEX_FRANCE_CALENDARS_FILENAME);
         let file = File::create(&filepath)?;
         let calendars_frame = self.create_calendars_frame()?;
-        let netex = self.wrap_frame(calendars_frame, VersionType::Calendars)?;
+        let netex = self.wrap_frame(calendars_frame, VersionType::Calendars);
         let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
         writer.write(&netex)?;
@@ -398,7 +397,7 @@ impl Exporter<'_> {
         let filepath = path.as_ref().join(NETEX_FRANCE_TRANSFERS_FILENAME);
         let file = File::create(&filepath)?;
         let transfers_frame = self.create_transfers_frame()?;
-        let netex = self.wrap_frame(transfers_frame, VersionType::Transfers)?;
+        let netex = self.wrap_frame(transfers_frame, VersionType::Transfers);
         let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
         writer.write(&netex)?;
@@ -461,7 +460,7 @@ impl Exporter<'_> {
             let filepath = network_path.as_ref().join(file_name);
             let file = File::create(&filepath)?;
             let offer_frame = self.create_offer_frame(&offer_exporter, line_idx)?;
-            let netex = self.wrap_frame(offer_frame, VersionType::Schedule)?;
+            let netex = self.wrap_frame(offer_frame, VersionType::Schedule);
             let mut writer = ElementWriter::pretty(file);
             info!("Writing {:?}", &filepath);
             writer.write(&netex)?;

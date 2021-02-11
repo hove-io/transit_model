@@ -37,13 +37,13 @@ impl<'a> CalendarExporter<'a> {
             .calendars
             .values()
             .map(|calendar| self.export_day_type(calendar))
-            .collect::<Result<Vec<Element>>>()?;
+            .collect::<Vec<Element>>();
         let day_type_assignments_elements = self
             .model
             .calendars
             .values()
             .map(|calendar| self.export_day_type_assignement(calendar))
-            .collect::<Result<Vec<Element>>>()?;
+            .collect::<Vec<Element>>();
         let uic_operating_periods_elements = self
             .model
             .calendars
@@ -59,18 +59,18 @@ impl<'a> CalendarExporter<'a> {
 
 // Internal methods
 impl<'a> CalendarExporter<'a> {
-    fn export_day_type(&self, calendar: &'a Calendar) -> Result<Element> {
-        let element_builder = Element::builder(ObjectType::DayType.to_string())
+    fn export_day_type(&self, calendar: &'a Calendar) -> Element {
+        Element::builder(ObjectType::DayType.to_string())
             .attr(
                 "id",
                 Exporter::generate_id(&calendar.id, ObjectType::DayType),
             )
-            .attr("version", "any");
-        Ok(element_builder.build())
+            .attr("version", "any")
+            .build()
     }
 
-    fn export_day_type_assignement(&self, calendar: &'a Calendar) -> Result<Element> {
-        let day_type_assignment = Element::builder(ObjectType::DayTypeAssignment.to_string())
+    fn export_day_type_assignement(&self, calendar: &'a Calendar) -> Element {
+        Element::builder(ObjectType::DayTypeAssignment.to_string())
             .attr(
                 "id",
                 Exporter::generate_id(&calendar.id, ObjectType::DayTypeAssignment),
@@ -79,8 +79,7 @@ impl<'a> CalendarExporter<'a> {
             .attr("order", "0")
             .append(self.generate_operating_period_ref(&calendar.id))
             .append(self.generate_day_type_ref(&calendar.id))
-            .build();
-        Ok(day_type_assignment)
+            .build()
     }
 
     fn export_uic_operating_period(&self, calendar: &'a Calendar) -> Result<Element> {

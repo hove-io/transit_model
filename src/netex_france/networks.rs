@@ -15,7 +15,7 @@
 use crate::{
     netex_france::exporter::{Exporter, ObjectType},
     objects::{Line, Network},
-    Model, Result,
+    Model,
 };
 use minidom::{Element, Node};
 
@@ -28,7 +28,7 @@ impl<'a> NetworkExporter<'a> {
     pub fn new(model: &'a Model) -> Self {
         NetworkExporter { model }
     }
-    pub fn export(&self) -> Result<Vec<Element>> {
+    pub fn export(&self) -> Vec<Element> {
         self.model
             .networks
             .values()
@@ -39,7 +39,7 @@ impl<'a> NetworkExporter<'a> {
 
 // Internal methods
 impl<'a> NetworkExporter<'a> {
-    fn export_network(&self, network: &'a Network) -> Result<Element> {
+    fn export_network(&self, network: &'a Network) -> Element {
         let element_builder = Element::builder(ObjectType::Network.to_string())
             .attr(
                 "id",
@@ -54,7 +54,7 @@ impl<'a> NetworkExporter<'a> {
             .filter(|line| line.network_id == network.id)
             .map(|line| self.generate_line_ref(line));
         let element_builder = element_builder.append(Exporter::create_members(line_ref_elements));
-        Ok(element_builder.build())
+        element_builder.build()
     }
 
     fn generate_name(&self, network: &'a Network) -> Element {
