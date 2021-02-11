@@ -1,20 +1,9 @@
-PROJ_VERSION = 7.2.1
-install_proj: ## Install PROJ and clang (requirements to use proj crate)
+install_proj_deps: ## Install dependencies the proj crate needs in order to build libproj from source
 	sudo apt update
 	sudo apt install -y clang
 
 	# Needed only for proj install
 	sudo apt install -y wget build-essential pkg-config sqlite3 libsqlite3-dev libtiff-dev libcurl4-nss-dev
-
-	# remove PROJ system version from packages
-	sudo apt remove libproj-dev
-
-	wget https://github.com/OSGeo/proj.4/releases/download/$(PROJ_VERSION)/proj-$(PROJ_VERSION).tar.gz
-	tar -xzvf proj-$(PROJ_VERSION).tar.gz
-	cd proj-$(PROJ_VERSION) && ./configure --prefix=/usr
-	make -C proj-$(PROJ_VERSION)
-	sudo make install -C proj-$(PROJ_VERSION)
-	rm -rf proj-$(PROJ_VERSION) proj-$(PROJ_VERSION).tar.gz
 
 fmt: format ## Check formatting of the code (alias for 'format')
 format: ## Check formatting of the code
@@ -37,5 +26,5 @@ test: ## Launch all tests
 help: ## Print this help message
 	@grep -E '^[a-zA-Z_-]+:.*## .*$$' $(CURDIR)/$(firstword $(MAKEFILE_LIST)) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: install_proj fmt format clippy lint test help
+.PHONY: install_proj_deps fmt format clippy lint test help
 .DEFAULT_GOAL := help
