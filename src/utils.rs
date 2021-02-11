@@ -173,13 +173,9 @@ where
 {
     use serde::Deserialize;
     let s = String::deserialize(deserializer)?;
-    let mut wkt = wkt::Wkt::from_str(&s).map_err(serde::de::Error::custom)?;
+    let wkt = wkt::Wkt::from_str(&s).map_err(serde::de::Error::custom)?;
     use std::convert::TryInto;
-    wkt.items
-        .pop()
-        .unwrap()
-        .try_into()
-        .map_err(serde::de::Error::custom)
+    wkt.try_into().map_err(serde::de::Error::custom)
 }
 
 pub fn de_positive_decimal<'de, D>(deserializer: D) -> Result<Decimal, D::Error>
