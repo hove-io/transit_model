@@ -140,11 +140,11 @@ impl<'a> ModelBuilder {
     ///      .build();
     /// # }
     /// ```
-    pub fn calendar(mut self, id: &str, dates: &[impl IntoDate]) -> Self {
+    pub fn calendar(mut self, id: &str, dates: &[impl AsDate]) -> Self {
         {
             let mut c = self.collections.calendars.get_or_create(id);
             for d in dates {
-                c.dates.insert(d.into_date());
+                c.dates.insert(d.as_date());
             }
         }
         self
@@ -168,7 +168,7 @@ impl<'a> ModelBuilder {
     ///      .build();
     /// # }
     /// ```
-    pub fn default_calendar(self, dates: &[impl IntoDate]) -> Self {
+    pub fn default_calendar(self, dates: &[impl AsDate]) -> Self {
         self.calendar(DEFAULT_CALENDAR_ID, dates)
     }
     /// Add a new Calendar to the model
@@ -239,25 +239,25 @@ impl IntoTime for &str {
     }
 }
 
-pub trait IntoDate {
-    fn into_date(&self) -> Date;
+pub trait AsDate {
+    fn as_date(&self) -> Date;
 }
 
-impl IntoDate for Date {
-    fn into_date(&self) -> Date {
+impl AsDate for Date {
+    fn as_date(&self) -> Date {
         *self
     }
 }
 
-impl IntoDate for &Date {
-    fn into_date(&self) -> Date {
+impl AsDate for &Date {
+    fn as_date(&self) -> Date {
         **self
     }
 }
 
-impl IntoDate for &str {
+impl AsDate for &str {
     // Note: if the string is not in the right format, this conversion will fail
-    fn into_date(&self) -> Date {
+    fn as_date(&self) -> Date {
         self.parse().expect("invalid date format")
     }
 }

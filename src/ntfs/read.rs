@@ -713,7 +713,7 @@ mod tests {
     use crate::test_utils::*;
     use pretty_assertions::assert_eq;
 
-    fn generate_minimal_ntfs<P: AsRef<path::Path>>(path: P) -> Result<()> {
+    fn generate_minimal_ntfs<P: AsRef<path::Path>>(path: P) {
         let commercial_modes_content = "commercial_mode_id,commercial_mode_name\n\
                                         commercial_mode_1,My Commercial Mode 1";
 
@@ -771,8 +771,6 @@ mod tests {
         create_file_with_content(path, "trips.txt", trips_content);
         create_file_with_content(path, "calendar.txt", calendar_content);
         create_file_with_content(path, "stop_times.txt", stop_times_content);
-
-        Ok(())
     }
 
     fn make_collection(path: &path::Path) -> Collections {
