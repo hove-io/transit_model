@@ -171,8 +171,7 @@ impl<'a> Exporter<'a> {
     }
 
     pub(in crate::netex_france) fn get_coordinates_converter() -> Result<Proj> {
-        // FIXME: String 'EPSG:4326' is failing at runtime (string below is equivalent but works)
-        let from = "+proj=longlat +datum=WGS84 +no_defs"; // See https://epsg.io/4326
+        let from = "EPSG:4326";
         let to = "EPSG:2154";
         Proj::new_known_crs(from, to, None)
             .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))
