@@ -1,4 +1,4 @@
-PROJ_VERSION = 7.1.0
+PROJ_VERSION = 7.2.1
 install_proj: ## Install PROJ and clang (requirements to use proj crate)
 	sudo apt update
 	sudo apt install -y clang
