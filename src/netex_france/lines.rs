@@ -15,7 +15,7 @@
 use crate::{
     netex_france::{
         exporter::{Exporter, ObjectType},
-        NetexMode,
+        NetexMode, NETEX_NS,
     },
     objects::Line,
     Model, Result,
@@ -74,7 +74,7 @@ impl<'a> LineExporter<'a> {
 // Internal methods
 impl<'a> LineExporter<'a> {
     fn export_line(&self, line: &'a Line) -> Result<Element> {
-        let element_builder = Element::builder(ObjectType::Line.to_string())
+        let element_builder = Element::builder(ObjectType::Line.to_string(), NETEX_NS)
             .attr("id", Exporter::generate_id(&line.id, ObjectType::Line))
             .attr("version", "any");
         // Errors should never happen; a line always have one trip with associated mode
@@ -96,21 +96,21 @@ impl<'a> LineExporter<'a> {
     }
 
     fn generate_name(&self, line: &'a Line) -> Element {
-        Element::builder("Name")
+        Element::builder("Name", NETEX_NS)
             .append(Node::Text(line.name.to_owned()))
             .build()
     }
 
     fn generate_transport_mode(&self, netex_mode: NetexMode) -> Element {
         let transport_mode_text = Node::Text(netex_mode.to_string());
-        Element::builder("TransportMode")
+        Element::builder("TransportMode", NETEX_NS)
             .append(transport_mode_text)
             .build()
     }
 
     fn generate_public_code(&self, line: &'a Line) -> Option<Element> {
         line.code.as_ref().map(|code| {
-            Element::builder("PublicCode")
+            Element::builder("PublicCode", NETEX_NS)
                 .append(Node::Text(code.to_owned()))
                 .build()
         })

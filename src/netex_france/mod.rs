@@ -35,3 +35,11 @@ mod stops;
 use stops::StopExporter;
 mod transfers;
 use transfers::TransferExporter;
+
+const CORE_NS: &str = "http://www.govtalk.gov.uk/core";
+const GML_NS: &str = "http://www.opengis.net/gml/3.2";
+const IFOPT_NS: &str = "http://www.ifopt.org.uk/ifopt";
+const NETEX_NS: &str = "http://www.netex.org.uk/netex";
+const SIRI_NS: &str = "http://www.siri.org.uk/siri";
+const XLINK_NS: &str = "http://www.w3.org/1999/xlink";
+const XSI_NS: &str = "http://www.w3.org/2001/XMLSchema-instance";

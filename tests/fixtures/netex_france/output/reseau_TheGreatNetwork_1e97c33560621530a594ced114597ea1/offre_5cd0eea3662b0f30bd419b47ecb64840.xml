@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<PublicationDelivery version="1.09:FR-NETEX_HORAIRE-2.1-1.0" xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.netex.org.uk/netex">
+<?xml version="1.0" encoding="utf-8"?>
+<PublicationDelivery xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.09:FR-NETEX_HORAIRE-2.1-1.0" xsi:schemaLocation="http://www.netex.org.uk/netex">
 	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
@@ -8,50 +8,40 @@
 				<Route id="FR:Route:RERA:" version="any">
 					<Name>RER A</Name>
 					<Distance>0</Distance>
-					<LineRef ref="FR:Line:RERA:">
-					</LineRef>
+					<LineRef ref="FR:Line:RERA:"/>
 					<DirectionType>inbound</DirectionType>
 					<pointsInSequence>
 						<PointOnRoute id="FR:PointOnRoute:RERA_1:" order="1" version="any">
-							<RoutePointRef ref="FR:RoutePoint:RERA_1:">
-							</RoutePointRef>
+							<RoutePointRef ref="FR:RoutePoint:RERA_1:"/>
 						</PointOnRoute>
 						<PointOnRoute id="FR:PointOnRoute:RERA_2:" order="2" version="any">
-							<RoutePointRef ref="FR:RoutePoint:RERA_2:">
-							</RoutePointRef>
+							<RoutePointRef ref="FR:RoutePoint:RERA_2:"/>
 						</PointOnRoute>
 						<PointOnRoute id="FR:PointOnRoute:RERA_3:" order="3" version="any">
-							<RoutePointRef ref="FR:RoutePoint:RERA_3:">
-							</RoutePointRef>
+							<RoutePointRef ref="FR:RoutePoint:RERA_3:"/>
 						</PointOnRoute>
 						<PointOnRoute id="FR:PointOnRoute:RERA_4:" order="4" version="any">
-							<RoutePointRef ref="FR:RoutePoint:RERA_4:">
-							</RoutePointRef>
+							<RoutePointRef ref="FR:RoutePoint:RERA_4:"/>
 						</PointOnRoute>
 					</pointsInSequence>
 				</Route>
 				<Route id="FR:Route:RERA_Bus_R:" version="any">
 					<Name>RER A</Name>
 					<Distance>0</Distance>
-					<LineRef ref="FR:Line:RERA:">
-					</LineRef>
+					<LineRef ref="FR:Line:RERA:"/>
 					<DirectionType>outbound</DirectionType>
 					<pointsInSequence>
 						<PointOnRoute id="FR:PointOnRoute:RERA_Bus_R_1:" order="1" version="any">
-							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_1:">
-							</RoutePointRef>
+							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_1:"/>
 						</PointOnRoute>
 						<PointOnRoute id="FR:PointOnRoute:RERA_Bus_R_2:" order="2" version="any">
-							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_2:">
-							</RoutePointRef>
+							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_2:"/>
 						</PointOnRoute>
 						<PointOnRoute id="FR:PointOnRoute:RERA_Bus_R_3:" order="3" version="any">
-							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_3:">
-							</RoutePointRef>
+							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_3:"/>
 						</PointOnRoute>
 						<PointOnRoute id="FR:PointOnRoute:RERA_Bus_R_4:" order="4" version="any">
-							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_4:">
-							</RoutePointRef>
+							<RoutePointRef ref="FR:RoutePoint:RERA_Bus_R_4:"/>
 						</PointOnRoute>
 					</pointsInSequence>
 				</Route>
@@ -97,30 +87,25 @@
 				</RoutePoint>
 				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:RERAF1:" version="any">
 					<Distance>0</Distance>
-					<RouteRef ref="FR:Route:RERA:">
-					</RouteRef>
+					<RouteRef ref="FR:Route:RERA:"/>
 					<pointsInSequence>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAF1_1:" order="2" version="any">
-							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_1:">
-							</ScheduledStopPointRef>
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_1:"/>
 							<ForAlighting>false</ForAlighting>
 							<ForBoarding>true</ForBoarding>
 						</StopPointInJourneyPattern>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAF1_2:" order="3" version="any">
-							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_2:">
-							</ScheduledStopPointRef>
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_2:"/>
 							<ForAlighting>true</ForAlighting>
 							<ForBoarding>true</ForBoarding>
 						</StopPointInJourneyPattern>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAF1_3:" order="4" version="any">
-							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_3:">
-							</ScheduledStopPointRef>
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_3:"/>
 							<ForAlighting>true</ForAlighting>
 							<ForBoarding>true</ForBoarding>
 						</StopPointInJourneyPattern>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAF1_5:" order="6" version="any">
-							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_5:">
-							</ScheduledStopPointRef>
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_5:"/>
 							<ForAlighting>true</ForAlighting>
 							<ForBoarding>false</ForBoarding>
 						</StopPointInJourneyPattern>
@@ -128,30 +113,25 @@
 				</ServiceJourneyPattern>
 				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:RERAB1:" version="any">
 					<Distance>0</Distance>
-					<RouteRef ref="FR:Route:RERA_Bus_R:">
-					</RouteRef>
+					<RouteRef ref="FR:Route:RERA_Bus_R:"/>
 					<pointsInSequence>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAB1_5:" order="6" version="any">
-							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_5:">
-							</ScheduledStopPointRef>
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_5:"/>
 							<ForAlighting>false</ForAlighting>
 							<ForBoarding>true</ForBoarding>
 						</StopPointInJourneyPattern>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAB1_8:" order="9" version="any">
-							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_8:">
-							</ScheduledStopPointRef>
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_8:"/>
 							<ForAlighting>true</ForAlighting>
 							<ForBoarding>true</ForBoarding>
 						</StopPointInJourneyPattern>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAB1_13:" order="14" version="any">
-							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_13:">
-							</ScheduledStopPointRef>
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_13:"/>
 							<ForAlighting>true</ForAlighting>
 							<ForBoarding>true</ForBoarding>
 						</StopPointInJourneyPattern>
 						<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAB1_21:" order="22" version="any">
-							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_21:">
-							</ScheduledStopPointRef>
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_21:"/>
 							<ForAlighting>true</ForAlighting>
 							<ForBoarding>false</ForBoarding>
 						</StopPointInJourneyPattern>
@@ -198,78 +178,51 @@
 					</Location>
 				</ScheduledStopPoint>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:RERAF1_1:" order="2" version="any">
-					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_1:">
-					</ScheduledStopPointRef>
-					<StopPlaceRef ref="FR:StopPlace:NAT_rail:">
-					</StopPlaceRef>
-					<QuayRef ref="FR:Quay:NATR:">
-					</QuayRef>
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_1:"/>
+					<StopPlaceRef ref="FR:StopPlace:NAT_rail:"/>
+					<QuayRef ref="FR:Quay:NATR:"/>
 				</PassengerStopAssignment>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:RERAF1_2:" order="3" version="any">
-					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_2:">
-					</ScheduledStopPointRef>
-					<StopPlaceRef ref="FR:StopPlace:GDL_rail:">
-					</StopPlaceRef>
-					<QuayRef ref="FR:Quay:GDLR:">
-					</QuayRef>
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_2:"/>
+					<StopPlaceRef ref="FR:StopPlace:GDL_rail:"/>
+					<QuayRef ref="FR:Quay:GDLR:"/>
 				</PassengerStopAssignment>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:RERAF1_3:" order="4" version="any">
-					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_3:">
-					</ScheduledStopPointRef>
-					<StopPlaceRef ref="FR:StopPlace:CDG_rail:">
-					</StopPlaceRef>
-					<QuayRef ref="FR:Quay:CDGR:">
-					</QuayRef>
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_3:"/>
+					<StopPlaceRef ref="FR:StopPlace:CDG_rail:"/>
+					<QuayRef ref="FR:Quay:CDGR:"/>
 				</PassengerStopAssignment>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:RERAF1_5:" order="6" version="any">
-					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_5:">
-					</ScheduledStopPointRef>
-					<StopPlaceRef ref="FR:StopPlace:DEF_rail:">
-					</StopPlaceRef>
-					<QuayRef ref="FR:Quay:DEFR:">
-					</QuayRef>
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_5:"/>
+					<StopPlaceRef ref="FR:StopPlace:DEF_rail:"/>
+					<QuayRef ref="FR:Quay:DEFR:"/>
 				</PassengerStopAssignment>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:RERAB1_5:" order="6" version="any">
-					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_5:">
-					</ScheduledStopPointRef>
-					<StopPlaceRef ref="FR:StopPlace:DEF_bus:">
-					</StopPlaceRef>
-					<QuayRef ref="FR:Quay:DEFR:">
-					</QuayRef>
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_5:"/>
+					<StopPlaceRef ref="FR:StopPlace:DEF_bus:"/>
+					<QuayRef ref="FR:Quay:DEFR:"/>
 				</PassengerStopAssignment>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:RERAB1_8:" order="9" version="any">
-					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_8:">
-					</ScheduledStopPointRef>
-					<StopPlaceRef ref="FR:StopPlace:CDG_bus:">
-					</StopPlaceRef>
-					<QuayRef ref="FR:Quay:CDGR:">
-					</QuayRef>
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_8:"/>
+					<StopPlaceRef ref="FR:StopPlace:CDG_bus:"/>
+					<QuayRef ref="FR:Quay:CDGR:"/>
 				</PassengerStopAssignment>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:RERAB1_13:" order="14" version="any">
-					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_13:">
-					</ScheduledStopPointRef>
-					<StopPlaceRef ref="FR:StopPlace:GDL_bus:">
-					</StopPlaceRef>
-					<QuayRef ref="FR:Quay:GDLR:">
-					</QuayRef>
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_13:"/>
+					<StopPlaceRef ref="FR:StopPlace:GDL_bus:"/>
+					<QuayRef ref="FR:Quay:GDLR:"/>
 				</PassengerStopAssignment>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:RERAB1_21:" order="22" version="any">
-					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_21:">
-					</ScheduledStopPointRef>
-					<StopPlaceRef ref="FR:StopPlace:NAT_bus:">
-					</StopPlaceRef>
-					<QuayRef ref="FR:Quay:NATR:">
-					</QuayRef>
+					<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAB1_21:"/>
+					<StopPlaceRef ref="FR:StopPlace:NAT_bus:"/>
+					<QuayRef ref="FR:Quay:NATR:"/>
 				</PassengerStopAssignment>
 				<ServiceJourney id="FR:ServiceJourney:RERAF1:" version="any">
 					<dayTypes>
-						<DayTypeRef ref="FR:DayType:Week:">
-						</DayTypeRef>
+						<DayTypeRef ref="FR:DayType:Week:"/>
 					</dayTypes>
-					<JourneyPatternRef ref="FR:ServiceJourneyPattern:RERAF1:">
-					</JourneyPatternRef>
-					<OperatorRef ref="FR:Operator:TGN:">
-					</OperatorRef>
+					<JourneyPatternRef ref="FR:ServiceJourneyPattern:RERAF1:"/>
+					<OperatorRef ref="FR:Operator:TGN:"/>
 					<passingTimes>
 						<TimetabledPassingTime>
 							<ArrivalTime>08:09:00</ArrivalTime>
@@ -300,13 +253,10 @@
 				<ServiceJourney id="FR:ServiceJourney:RERAB1:" version="any">
 					<TransportMode>bus</TransportMode>
 					<dayTypes>
-						<DayTypeRef ref="FR:DayType:Week:">
-						</DayTypeRef>
+						<DayTypeRef ref="FR:DayType:Week:"/>
 					</dayTypes>
-					<JourneyPatternRef ref="FR:ServiceJourneyPattern:RERAB1:">
-					</JourneyPatternRef>
-					<OperatorRef ref="FR:Operator:TGN:">
-					</OperatorRef>
+					<JourneyPatternRef ref="FR:ServiceJourneyPattern:RERAB1:"/>
+					<OperatorRef ref="FR:Operator:TGN:"/>
 					<passingTimes>
 						<TimetabledPassingTime>
 							<ArrivalTime>09:24:00</ArrivalTime>

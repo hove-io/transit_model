@@ -44,13 +44,11 @@ iso4217 = "0.3"
 lazy_static = "1"
 log = "0.4"
 md5 = "0.7"
-minidom = "0.12"
+minidom = "0.13"
 minidom_ext = "1"
-minidom_writer = "1"
 num-traits = "0.2"
 pretty_assertions = "0.6"
 proj = { version = "0.19", optional = true }
-quick-xml = "0.18"
 relational_types = "1"
 rust_decimal = "1"
 serde = { version = "1", features = ["derive"] }
@@ -72,3 +70,6 @@ approx = "0.3"
 rust_decimal_macros = "1"
 testing_logger = "0.1"
 transit_model_builder = { path = "./model-builder"}
+
+[patch.crates-io]
+minidom_ext = { git = "https://github.com/CanalTP/minidom_ext", branch = "minidom-0.13" }

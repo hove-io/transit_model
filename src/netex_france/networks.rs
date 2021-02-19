@@ -13,7 +13,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    netex_france::exporter::{Exporter, ObjectType},
+    netex_france::{
+        exporter::{Exporter, ObjectType},
+        NETEX_NS,
+    },
     objects::{Line, Network},
     Model,
 };
@@ -40,7 +43,7 @@ impl<'a> NetworkExporter<'a> {
 // Internal methods
 impl<'a> NetworkExporter<'a> {
     fn export_network(&self, network: &'a Network) -> Element {
-        let element_builder = Element::builder(ObjectType::Network.to_string())
+        let element_builder = Element::builder(ObjectType::Network.to_string(), NETEX_NS)
             .attr(
                 "id",
                 Exporter::generate_id(&network.id, ObjectType::Network),
@@ -58,13 +61,15 @@ impl<'a> NetworkExporter<'a> {
     }
 
     fn generate_name(&self, network: &'a Network) -> Element {
-        Element::builder("Name")
+        Element::builder("Name", NETEX_NS)
             .append(Node::Text(network.name.to_owned()))
             .build()
     }
 
     fn generate_line_ref(&self, line: &'a Line) -> Element {
         let line_id = Exporter::generate_id(&line.id, ObjectType::Line);
-        Element::builder("LineRef").attr("ref", line_id).build()
+        Element::builder("LineRef", NETEX_NS)
+            .attr("ref", line_id)
+            .build()
     }
 }

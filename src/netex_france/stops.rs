@@ -15,7 +15,7 @@
 use crate::{
     netex_france::{
         exporter::{Exporter, ObjectType},
-        NetexMode,
+        NetexMode, GML_NS, NETEX_NS,
     },
     objects::{Availability, Coord, Equipment, StopArea, StopLocation, StopPoint, StopType},
     Model, Result,
@@ -178,7 +178,7 @@ impl<'a> StopExporter<'a> {
     }
 
     fn export_stop_point(&self, stop_point: &'a StopPoint) -> Result<Element> {
-        let element_builder = Element::builder("Quay")
+        let element_builder = Element::builder("Quay", NETEX_NS)
             .attr(
                 "id",
                 Exporter::generate_id(&stop_point.id, ObjectType::Quay),
@@ -260,7 +260,7 @@ impl<'a> StopExporter<'a> {
                             .unwrap_or(false)
                     })
                     .collect::<BTreeSet<_>>();
-                let element_builder = Element::builder("StopPlace")
+                let element_builder = Element::builder("StopPlace", NETEX_NS)
                     .attr(
                         "id",
                         Self::generate_stop_place_id(&stop_area.id, *netex_mode),
@@ -282,7 +282,7 @@ impl<'a> StopExporter<'a> {
                 stop_place_elements.push(element_builder.build());
             }
             // *** Multimodal stopplaces generation ***
-            let element_builder = Element::builder("StopPlace")
+            let element_builder = Element::builder("StopPlace", NETEX_NS)
                 .attr(
                     "id",
                     Exporter::generate_id(&stop_area.id, ObjectType::StopPlace),
@@ -319,14 +319,14 @@ impl<'a> StopExporter<'a> {
     }
 
     fn generate_name(&self, name: &'a str) -> Element {
-        Element::builder("Name")
+        Element::builder("Name", NETEX_NS)
             .append(Node::Text(name.to_owned()))
             .build()
     }
 
     fn generate_public_code(&self, stop_point: &'a StopPoint) -> Option<Element> {
         stop_point.code.as_ref().map(|code| {
-            Element::builder("PublicCode")
+            Element::builder("PublicCode", NETEX_NS)
                 .append(Node::Text(code.to_owned()))
                 .build()
         })
@@ -337,12 +337,14 @@ impl<'a> StopExporter<'a> {
             if let Ok(coord_epsg2154) = self.converter.convert(*coord) {
                 let coord_text =
                     Node::Text(format!("{} {}", coord_epsg2154.x(), coord_epsg2154.y()));
-                let pos = Element::builder("gml:pos")
+                let pos = Element::builder("pos", GML_NS)
                     .attr("srsName", "EPSG:2154")
                     .append(coord_text)
                     .build();
-                let location = Element::builder("Location").append(pos).build();
-                let centroid = Element::builder("Centroid").append(location).build();
+                let location = Element::builder("Location", NETEX_NS).append(pos).build();
+                let centroid = Element::builder("Centroid", NETEX_NS)
+                    .append(location)
+                    .build();
                 return Some(centroid);
             }
         }
@@ -355,7 +357,7 @@ impl<'a> StopExporter<'a> {
             .as_ref()
             .and_then(|eq_id| self.model.equipments.get(eq_id))
             .map(|eq| {
-                Element::builder("AccessibilityAssessment")
+                Element::builder("AccessibilityAssessment", NETEX_NS)
                     .attr(
                         "id",
                         Exporter::generate_id(
@@ -382,18 +384,18 @@ impl<'a> StopExporter<'a> {
             (Available, _, _) | (_, Available, _) | (_, _, Available) => "partial",
             _ => "unknown",
         };
-        Element::builder("MobilityImpairedAccess")
+        Element::builder("MobilityImpairedAccess", NETEX_NS)
             .append(Node::Text(impaired_access.to_owned()))
             .build()
     }
 
     fn generate_accessibility_limitations(&self, eq: &'a Equipment) -> Element {
-        let accessibility_limitations = Element::builder("AccessibilityLimitation")
+        let accessibility_limitations = Element::builder("AccessibilityLimitation", NETEX_NS)
             .append(self.generate_limitation("WheelchairAccess", eq.wheelchair_boarding))
             .append(self.generate_limitation("AudibleSignalsAvailable", eq.audible_announcement))
             .append(self.generate_limitation("VisualSignsAvailable", eq.visual_announcement))
             .build();
-        Element::builder("limitations")
+        Element::builder("limitations", NETEX_NS)
             .append(accessibility_limitations)
             .build()
     }
@@ -404,20 +406,20 @@ impl<'a> StopExporter<'a> {
             Availability::NotAvailable => "false",
             _ => "unknown",
         };
-        Element::builder(name)
+        Element::builder(name, NETEX_NS)
             .append(Node::Text(availability.to_owned()))
             .build()
     }
 
     fn generate_parent_site_ref(&self, parent_station_id: &'a str) -> Element {
-        Element::builder("ParentSiteRef")
+        Element::builder("ParentSiteRef", NETEX_NS)
             .attr("ref", parent_station_id)
             .build()
     }
 
     fn generate_transport_mode(&self, netex_mode: NetexMode) -> Element {
         let transport_mode_text = Node::Text(netex_mode.to_string());
-        Element::builder("TransportMode")
+        Element::builder("TransportMode", NETEX_NS)
             .append(transport_mode_text)
             .build()
     }
@@ -430,7 +432,7 @@ impl<'a> StopExporter<'a> {
             .flatten()
             .filter_map(|sl_id| self.model.stop_locations.get(sl_id))
             .map(|sl| self.generate_stop_place_entrance(sl));
-        let entrances = Element::builder("entrances")
+        let entrances = Element::builder("entrances", NETEX_NS)
             .append_all(stop_place_entrances)
             .build();
         if entrances.children().count() == 0 {
@@ -441,7 +443,7 @@ impl<'a> StopExporter<'a> {
     }
 
     fn generate_stop_place_entrance(&self, stop_location: &'a StopLocation) -> Element {
-        let element_builder = Element::builder("StopPlaceEntrance")
+        let element_builder = Element::builder("StopPlaceEntrance", NETEX_NS)
             .attr(
                 "id",
                 Exporter::generate_id(&stop_location.id, ObjectType::StopPlaceEntrance),
@@ -462,17 +464,17 @@ impl<'a> StopExporter<'a> {
     }
 
     fn generate_is_entry_exit(&self, node_name: &'a str) -> Element {
-        Element::builder(node_name)
+        Element::builder(node_name, NETEX_NS)
             .append(Node::Text("true".to_string()))
             .build()
     }
 
     fn generate_tariff_zones(&self, stop_point: &'a StopPoint) -> Option<Element> {
         stop_point.fare_zone_id.as_ref().map(|fare_zone_id| {
-            let tariff_zone_ref = Element::builder("TariffZoneRef")
+            let tariff_zone_ref = Element::builder("TariffZoneRef", NETEX_NS)
                 .attr("ref", format!("{}:{}", self.participant_ref, fare_zone_id))
                 .build();
-            Element::builder("tariffZones")
+            Element::builder("tariffZones", NETEX_NS)
                 .append(tariff_zone_ref)
                 .build()
         })
@@ -486,8 +488,14 @@ impl<'a> StopExporter<'a> {
         let quays = stop_point_ids
             .into_iter()
             .map(|stop_point_id| Exporter::generate_id(stop_point_id.borrow(), ObjectType::Quay))
-            .map(|quay_id| Element::builder("QuayRef").attr("ref", quay_id).build());
-        Element::builder("quays").append_all(quays).build()
+            .map(|quay_id| {
+                Element::builder("QuayRef", NETEX_NS)
+                    .attr("ref", quay_id)
+                    .build()
+            });
+        Element::builder("quays", NETEX_NS)
+            .append_all(quays)
+            .build()
     }
 
     fn generate_stop_place_type(&self, netex_mode: NetexMode) -> Element {
@@ -503,7 +511,7 @@ impl<'a> StopExporter<'a> {
             Coach => "coachStation",
             Bus => "busStation",
         };
-        Element::builder("StopPlaceType")
+        Element::builder("StopPlaceType", NETEX_NS)
             .append(Node::Text(stop_place_type.to_owned()))
             .build()
     }

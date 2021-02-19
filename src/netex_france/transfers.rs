@@ -13,7 +13,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    netex_france::exporter::{Exporter, ObjectType},
+    netex_france::{
+        exporter::{Exporter, ObjectType},
+        NETEX_NS,
+    },
     objects::Transfer,
     Model, Result,
 };
@@ -41,7 +44,7 @@ impl<'a> TransferExporter<'a> {
 // Internal methods
 impl<'a> TransferExporter<'a> {
     fn export_transfer(&self, transfer: &'a Transfer) -> Result<Element> {
-        let element_builder = Element::builder(ObjectType::SiteConnection.to_string())
+        let element_builder = Element::builder(ObjectType::SiteConnection.to_string(), NETEX_NS)
             .attr("id", self.generate_id(&transfer))
             .attr("version", "any");
         let element_builder = if let Some(walk_transfer_duration_element) =
@@ -70,19 +73,19 @@ impl<'a> TransferExporter<'a> {
         real_min_transfer_time
             .map(|time| format!("PT{}S", time))
             .map(|duration| {
-                Element::builder("DefaultDuration")
+                Element::builder("DefaultDuration", NETEX_NS)
                     .append(Node::Text(duration))
                     .build()
             })
             .map(|duration_element| {
-                Element::builder("WalkTransferDuration")
+                Element::builder("WalkTransferDuration", NETEX_NS)
                     .append(duration_element)
                     .build()
             })
     }
 
     fn generate_from(&self, from_stop_id: &'a str) -> Result<Element> {
-        let element = Element::builder("From")
+        let element = Element::builder("From", NETEX_NS)
             .append(self.generate_stop_place_ref(from_stop_id)?)
             .append(self.generate_quay_ref(from_stop_id))
             .build();
@@ -90,7 +93,7 @@ impl<'a> TransferExporter<'a> {
     }
 
     fn generate_to(&self, to_stop_id: &'a str) -> Result<Element> {
-        let element = Element::builder("To")
+        let element = Element::builder("To", NETEX_NS)
             .append(self.generate_stop_place_ref(to_stop_id)?)
             .append(self.generate_quay_ref(to_stop_id))
             .build();
@@ -109,7 +112,7 @@ impl<'a> TransferExporter<'a> {
                     stop_point_id
                 )
             })?;
-        let element = Element::builder("StopPlaceRef")
+        let element = Element::builder("StopPlaceRef", NETEX_NS)
             .attr(
                 "ref",
                 Exporter::generate_id(stop_area_id, ObjectType::StopPlace),
@@ -119,7 +122,7 @@ impl<'a> TransferExporter<'a> {
     }
 
     fn generate_quay_ref(&self, stop_point_id: &'a str) -> Element {
-        Element::builder("QuayRef")
+        Element::builder("QuayRef", NETEX_NS)
             .attr(
                 "ref",
                 Exporter::generate_id(stop_point_id, ObjectType::Quay),

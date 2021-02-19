@@ -13,7 +13,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    netex_france::exporter::{Exporter, ObjectType},
+    netex_france::{
+        exporter::{Exporter, ObjectType},
+        NETEX_NS,
+    },
     objects::{Calendar, Date},
     Model, Result,
 };
@@ -60,7 +63,7 @@ impl<'a> CalendarExporter<'a> {
 // Internal methods
 impl<'a> CalendarExporter<'a> {
     fn export_day_type(&self, calendar: &'a Calendar) -> Element {
-        Element::builder(ObjectType::DayType.to_string())
+        Element::builder(ObjectType::DayType.to_string(), NETEX_NS)
             .attr(
                 "id",
                 Exporter::generate_id(&calendar.id, ObjectType::DayType),
@@ -70,7 +73,7 @@ impl<'a> CalendarExporter<'a> {
     }
 
     fn export_day_type_assignement(&self, calendar: &'a Calendar) -> Element {
-        Element::builder(ObjectType::DayTypeAssignment.to_string())
+        Element::builder(ObjectType::DayTypeAssignment.to_string(), NETEX_NS)
             .attr(
                 "id",
                 Exporter::generate_id(&calendar.id, ObjectType::DayTypeAssignment),
@@ -86,15 +89,16 @@ impl<'a> CalendarExporter<'a> {
         if let Some(from_date) = calendar.dates.iter().next() {
             let from_date = Self::generate_from_date(*from_date);
             let valid_day_bits = Self::generate_valid_day_bits(&calendar.dates);
-            let uic_operating_period = Element::builder(ObjectType::UicOperatingPeriod.to_string())
-                .attr(
-                    "id",
-                    Exporter::generate_id(&calendar.id, ObjectType::UicOperatingPeriod),
-                )
-                .attr("version", "any")
-                .append(from_date)
-                .append(valid_day_bits)
-                .build();
+            let uic_operating_period =
+                Element::builder(ObjectType::UicOperatingPeriod.to_string(), NETEX_NS)
+                    .attr(
+                        "id",
+                        Exporter::generate_id(&calendar.id, ObjectType::UicOperatingPeriod),
+                    )
+                    .attr("version", "any")
+                    .append(from_date)
+                    .append(valid_day_bits)
+                    .build();
             Ok(uic_operating_period)
         } else {
             bail!(
@@ -106,7 +110,7 @@ impl<'a> CalendarExporter<'a> {
 
     fn generate_from_date(date: Date) -> Element {
         let date_string = DateTime::<Utc>::from_utc(date.and_hms(0, 0, 0), Utc).to_rfc3339();
-        Element::builder("FromDate")
+        Element::builder("FromDate", NETEX_NS)
             .append(Node::Text(date_string))
             .build()
     }
@@ -128,13 +132,13 @@ impl<'a> CalendarExporter<'a> {
                     valid_day_bits
                 })
         };
-        Element::builder("ValidDayBits")
+        Element::builder("ValidDayBits", NETEX_NS)
             .append(Node::Text(valid_day_bits_string))
             .build()
     }
 
     fn generate_operating_period_ref(&self, id: &'a str) -> Element {
-        Element::builder("OperatingPeriodRef")
+        Element::builder("OperatingPeriodRef", NETEX_NS)
             .attr(
                 "ref",
                 Exporter::generate_id(id, ObjectType::UicOperatingPeriod),
@@ -143,7 +147,7 @@ impl<'a> CalendarExporter<'a> {
     }
 
     fn generate_day_type_ref(&self, id: &'a str) -> Element {
-        Element::builder("DayTypeRef")
+        Element::builder("DayTypeRef", NETEX_NS)
             .attr("ref", Exporter::generate_id(id, ObjectType::DayType))
             .build()
     }

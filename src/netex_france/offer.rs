@@ -16,7 +16,7 @@ use crate::{
     netex_france::{
         self,
         exporter::{Exporter, ObjectType},
-        LineExporter, LineModes, NetexMode, StopExporter,
+        LineExporter, LineModes, NetexMode, StopExporter, GML_NS, NETEX_NS,
     },
     objects::{Coord, Line, Route, StopPoint, StopTime, Time, VehicleJourney},
     Model, Result,
@@ -156,7 +156,7 @@ impl<'a> OfferExporter<'a> {
 
     fn export_route(&self, route_idx: Idx<Route>) -> Result<Element> {
         let route = &self.model.routes[route_idx];
-        let element_builder = Element::builder(ObjectType::Route.to_string())
+        let element_builder = Element::builder(ObjectType::Route.to_string(), NETEX_NS)
             .attr("id", Exporter::generate_id(&route.id, ObjectType::Route))
             .attr("version", "any");
         let element_builder = element_builder.append(Self::generate_route_name(&route.name));
@@ -213,10 +213,10 @@ impl<'a> OfferExporter<'a> {
 
     fn export_journey_pattern(&self, journey_pattern_idx: Idx<JourneyPattern>) -> Element {
         let journey_pattern = &self.model.vehicle_journeys[journey_pattern_idx];
-        let points_in_sequence = Element::builder("pointsInSequence")
+        let points_in_sequence = Element::builder("pointsInSequence", NETEX_NS)
             .append_all(self.export_stop_points_in_journey_pattern(journey_pattern_idx))
             .build();
-        Element::builder(ObjectType::ServiceJourneyPattern.to_string())
+        Element::builder(ObjectType::ServiceJourneyPattern.to_string(), NETEX_NS)
             .attr(
                 "id",
                 Exporter::generate_id(&journey_pattern.id, ObjectType::ServiceJourneyPattern),
@@ -247,7 +247,7 @@ impl<'a> OfferExporter<'a> {
         vehicle_journey_id: &'a str,
         stop_time: &'a StopTime,
     ) -> Element {
-        Element::builder(ObjectType::StopPointInJourneyPattern.to_string())
+        Element::builder(ObjectType::StopPointInJourneyPattern.to_string(), NETEX_NS)
             .attr(
                 "id",
                 Self::generate_stop_sequence_id(
@@ -284,16 +284,17 @@ impl<'a> OfferExporter<'a> {
         vehicle_journey_id: &'a str,
         stop_time: &'a StopTime,
     ) -> Result<Element> {
-        let element_builder = Element::builder(ObjectType::ScheduledStopPoint.to_string())
-            .attr(
-                "id",
-                Self::generate_stop_sequence_id(
-                    &vehicle_journey_id,
-                    stop_time.sequence,
-                    ObjectType::ScheduledStopPoint,
-                ),
-            )
-            .attr("version", "any");
+        let element_builder =
+            Element::builder(ObjectType::ScheduledStopPoint.to_string(), NETEX_NS)
+                .attr(
+                    "id",
+                    Self::generate_stop_sequence_id(
+                        &vehicle_journey_id,
+                        stop_time.sequence,
+                        ObjectType::ScheduledStopPoint,
+                    ),
+                )
+                .attr("version", "any");
         let element_builder = if let Some(location_element) =
             self.generate_location(&self.model.stop_points[stop_time.stop_point_idx].coord)?
         {
@@ -321,17 +322,18 @@ impl<'a> OfferExporter<'a> {
         vehicle_journey: &'a VehicleJourney,
         stop_time: &'a StopTime,
     ) -> Element {
-        let element_builder = Element::builder(ObjectType::PassengerStopAssignment.to_string())
-            .attr(
-                "id",
-                Self::generate_stop_sequence_id(
-                    &vehicle_journey.id,
-                    stop_time.sequence,
-                    ObjectType::PassengerStopAssignment,
-                ),
-            )
-            .attr("version", "any")
-            .attr("order", stop_time.sequence + 1);
+        let element_builder =
+            Element::builder(ObjectType::PassengerStopAssignment.to_string(), NETEX_NS)
+                .attr(
+                    "id",
+                    Self::generate_stop_sequence_id(
+                        &vehicle_journey.id,
+                        stop_time.sequence,
+                        ObjectType::PassengerStopAssignment,
+                    ),
+                )
+                .attr("version", "any")
+                .attr("order", stop_time.sequence + 1);
         let element_builder = element_builder.append(Self::generate_scheduled_stop_point_ref(
             &vehicle_journey.id,
             stop_time.sequence,
@@ -378,7 +380,7 @@ impl<'a> OfferExporter<'a> {
             .get(line_id.as_str())
             .and_then(|line_netex_modes| NetexMode::calculate_highest_mode(line_netex_modes));
 
-        let element_builder = Element::builder(ObjectType::ServiceJourney.to_string())
+        let element_builder = Element::builder(ObjectType::ServiceJourney.to_string(), NETEX_NS)
             .attr(
                 "id",
                 Exporter::generate_id(&vehicle_journey.id, ObjectType::ServiceJourney),
@@ -398,7 +400,7 @@ impl<'a> OfferExporter<'a> {
             element_builder.append(Self::generate_journey_pattern_ref(journey_pattern_id));
         let element_builder =
             element_builder.append(Self::generate_operator_ref(&vehicle_journey.company_id));
-        let passing_times = Element::builder("passingTimes")
+        let passing_times = Element::builder("passingTimes", NETEX_NS)
             .append_all(Self::export_timetabled_passing_times(
                 &vehicle_journey.stop_times,
             ))
@@ -427,7 +429,7 @@ impl<'a> OfferExporter<'a> {
             stop_time.departure_time.minutes(),
             stop_time.departure_time.seconds(),
         );
-        Element::builder(ObjectType::TimetabledPassingTime.to_string())
+        Element::builder(ObjectType::TimetabledPassingTime.to_string(), NETEX_NS)
             .append(Self::generate_arrival_time(arrival_time))
             .append(Self::generate_arrival_day_offset(arrival_day_offset))
             .append(Self::generate_departure_time(departure_time))
@@ -436,13 +438,13 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn generate_route_name(route_name: &'a str) -> Element {
-        Element::builder("Name")
+        Element::builder("Name", NETEX_NS)
             .append(Node::Text(route_name.to_owned()))
             .build()
     }
 
     fn generate_distance() -> Element {
-        Element::builder("Distance")
+        Element::builder("Distance", NETEX_NS)
             .append(Node::Text(String::from("0")))
             .build()
     }
@@ -453,7 +455,7 @@ impl<'a> OfferExporter<'a> {
         })?;
         let points_on_route =
             (1..=route_points.len()).map(|order| self.generate_point_on_route(route_id, order));
-        let points_in_sequence = Element::builder("pointsInSequence")
+        let points_in_sequence = Element::builder("pointsInSequence", NETEX_NS)
             .append_all(points_on_route)
             .build();
         Ok(points_in_sequence)
@@ -465,13 +467,13 @@ impl<'a> OfferExporter<'a> {
 
     fn generate_point_on_route(&self, route_id: &'a str, order: usize) -> Element {
         let route_point_id = Self::generate_route_point_id(route_id, order);
-        let route_point_ref = Element::builder("RoutePointRef")
+        let route_point_ref = Element::builder("RoutePointRef", NETEX_NS)
             .attr(
                 "ref",
                 Exporter::generate_id(&route_point_id, ObjectType::RoutePoint),
             )
             .build();
-        Element::builder(ObjectType::PointOnRoute.to_string())
+        Element::builder(ObjectType::PointOnRoute.to_string(), NETEX_NS)
             .attr(
                 "id",
                 Exporter::generate_id(&route_point_id, ObjectType::PointOnRoute),
@@ -489,7 +491,7 @@ impl<'a> OfferExporter<'a> {
         stop_point: &'a StopPoint,
     ) -> Result<Element> {
         let route_point_id = Self::generate_route_point_id(route_id, order);
-        let element_builder = Element::builder(ObjectType::RoutePoint.to_string())
+        let element_builder = Element::builder(ObjectType::RoutePoint.to_string(), NETEX_NS)
             .attr(
                 "id",
                 Exporter::generate_id(&route_point_id, ObjectType::RoutePoint),
@@ -505,19 +507,19 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn generate_line_ref(line_id: &str) -> Element {
-        Element::builder("LineRef")
+        Element::builder("LineRef", NETEX_NS)
             .attr("ref", Exporter::generate_id(line_id, ObjectType::Line))
             .build()
     }
 
     fn generate_route_ref(route_id: &str) -> Element {
-        Element::builder("RouteRef")
+        Element::builder("RouteRef", NETEX_NS)
             .attr("ref", Exporter::generate_id(route_id, ObjectType::Route))
             .build()
     }
 
     fn generate_scheduled_stop_point_ref(vehicle_journey_id: &'a str, sequence: u32) -> Element {
-        Element::builder("ScheduledStopPointRef")
+        Element::builder("ScheduledStopPointRef", NETEX_NS)
             .attr(
                 "ref",
                 Self::generate_stop_sequence_id(
@@ -536,39 +538,39 @@ impl<'a> OfferExporter<'a> {
     ) -> Option<Element> {
         let netex_mode = NetexMode::from_physical_mode_id(physical_mode_id)?;
         let stop_place_id = StopExporter::generate_stop_place_id(stop_area_id, netex_mode);
-        let element = Element::builder("StopPlaceRef")
+        let element = Element::builder("StopPlaceRef", NETEX_NS)
             .attr("ref", stop_place_id)
             .build();
         Some(element)
     }
 
     fn generate_quay_ref(stop_id: &'a str) -> Element {
-        Element::builder("QuayRef")
+        Element::builder("QuayRef", NETEX_NS)
             .attr("ref", Exporter::generate_id(stop_id, ObjectType::Quay))
             .build()
     }
 
     fn generate_transport_mode(netex_mode: NetexMode) -> Element {
         let transport_mode_text = Node::Text(netex_mode.to_string());
-        Element::builder("TransportMode")
+        Element::builder("TransportMode", NETEX_NS)
             .append(transport_mode_text)
             .build()
     }
 
     fn generate_day_type_ref(service_id: &'a str) -> Element {
-        let day_type_ref_element = Element::builder("DayTypeRef")
+        let day_type_ref_element = Element::builder("DayTypeRef", NETEX_NS)
             .attr(
                 "ref",
                 Exporter::generate_id(service_id, ObjectType::DayType),
             )
             .build();
-        Element::builder("dayTypes")
+        Element::builder("dayTypes", NETEX_NS)
             .append(day_type_ref_element)
             .build()
     }
 
     fn generate_journey_pattern_ref(journey_pattern_id: &'a str) -> Element {
-        Element::builder("JourneyPatternRef")
+        Element::builder("JourneyPatternRef", NETEX_NS)
             .attr(
                 "ref",
                 Exporter::generate_id(journey_pattern_id, ObjectType::ServiceJourneyPattern),
@@ -577,7 +579,7 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn generate_operator_ref(company_id: &'a str) -> Element {
-        Element::builder("OperatorRef")
+        Element::builder("OperatorRef", NETEX_NS)
             .attr(
                 "ref",
                 Exporter::generate_id(company_id, ObjectType::Operator),
@@ -599,7 +601,7 @@ impl<'a> OfferExporter<'a> {
                 }
             })
             .map(|direction_type| {
-                Element::builder("DirectionType")
+                Element::builder("DirectionType", NETEX_NS)
                     .append(Node::Text(direction_type))
                     .build()
             })
@@ -616,48 +618,48 @@ impl<'a> OfferExporter<'a> {
         }
         let coord_epsg2154 = self.converter.convert(*coord)?;
         let coord_text = Node::Text(format!("{} {}", coord_epsg2154.x(), coord_epsg2154.y()));
-        let pos = Element::builder("gml:pos")
+        let pos = Element::builder("pos", GML_NS)
             .attr("srsName", "EPSG:2154")
             .append(coord_text)
             .build();
-        let location = Element::builder("Location").append(pos).build();
+        let location = Element::builder("Location", NETEX_NS).append(pos).build();
         Ok(Some(location))
     }
 
     fn generate_for_alighting(drop_off_type: u8) -> Element {
         let is_alighting = if drop_off_type == 0 { "true" } else { "false" };
-        Element::builder("ForAlighting")
+        Element::builder("ForAlighting", NETEX_NS)
             .append(Node::Text(is_alighting.to_owned()))
             .build()
     }
 
     fn generate_for_boarding(pickup_type: u8) -> Element {
         let is_boarding = if pickup_type == 0 { "true" } else { "false" };
-        Element::builder("ForBoarding")
+        Element::builder("ForBoarding", NETEX_NS)
             .append(Node::Text(is_boarding.to_owned()))
             .build()
     }
 
     fn generate_arrival_time(arrival_time: Time) -> Element {
-        Element::builder("ArrivalTime")
+        Element::builder("ArrivalTime", NETEX_NS)
             .append(Node::Text(arrival_time.to_string()))
             .build()
     }
 
     fn generate_departure_time(departure_time: Time) -> Element {
-        Element::builder("DepartureTime")
+        Element::builder("DepartureTime", NETEX_NS)
             .append(Node::Text(departure_time.to_string()))
             .build()
     }
 
     fn generate_arrival_day_offset(arrival_day_offset: u32) -> Element {
-        Element::builder("ArrivalDayOffset")
+        Element::builder("ArrivalDayOffset", NETEX_NS)
             .append(Node::Text(arrival_day_offset.to_string()))
             .build()
     }
 
     fn generate_departure_day_offset(departure_day_offset: u32) -> Element {
-        Element::builder("DepartureDayOffset")
+        Element::builder("DepartureDayOffset", NETEX_NS)
             .append(Node::Text(departure_day_offset.to_string()))
             .build()
     }

@@ -13,7 +13,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use crate::{
-    netex_france::exporter::{Exporter, ObjectType},
+    netex_france::{
+        exporter::{Exporter, ObjectType},
+        NETEX_NS,
+    },
     objects::Company,
     Model,
 };
@@ -40,7 +43,7 @@ impl<'a> CompanyExporter<'a> {
 // Internal methods
 impl<'a> CompanyExporter<'a> {
     fn export_company(&self, company: &'a Company) -> Element {
-        let element_builder = Element::builder(ObjectType::Operator.to_string())
+        let element_builder = Element::builder(ObjectType::Operator.to_string(), NETEX_NS)
             .attr(
                 "id",
                 Exporter::generate_id(&company.id, ObjectType::Operator),
@@ -53,13 +56,13 @@ impl<'a> CompanyExporter<'a> {
     }
 
     fn generate_name(&self, company: &'a Company) -> Element {
-        Element::builder("Name")
+        Element::builder("Name", NETEX_NS)
             .append(Node::Text(company.name.to_owned()))
             .build()
     }
 
     fn generate_contact_details(&self, company: &'a Company) -> Element {
-        let element_builder = Element::builder("ContactDetails");
+        let element_builder = Element::builder("ContactDetails", NETEX_NS);
         let element_builder = if let Some(email_element) = self.generate_email(company) {
             element_builder.append(email_element)
         } else {
@@ -80,7 +83,7 @@ impl<'a> CompanyExporter<'a> {
 
     fn generate_email(&self, company: &'a Company) -> Option<Element> {
         company.mail.as_ref().map(|email| {
-            Element::builder("Email")
+            Element::builder("Email", NETEX_NS)
                 .append(Node::Text(email.to_owned()))
                 .build()
         })
@@ -88,7 +91,7 @@ impl<'a> CompanyExporter<'a> {
 
     fn generate_phone(&self, company: &'a Company) -> Option<Element> {
         company.phone.as_ref().map(|phone| {
-            Element::builder("Phone")
+            Element::builder("Phone", NETEX_NS)
                 .append(Node::Text(phone.to_owned()))
                 .build()
         })
@@ -96,14 +99,14 @@ impl<'a> CompanyExporter<'a> {
 
     fn generate_url(&self, company: &'a Company) -> Option<Element> {
         company.url.as_ref().map(|url| {
-            Element::builder("Url")
+            Element::builder("Url", NETEX_NS)
                 .append(Node::Text(url.to_owned()))
                 .build()
         })
     }
 
     fn generate_organization_type() -> Element {
-        Element::builder("OrganisationType")
+        Element::builder("OrganisationType", NETEX_NS)
             .append(Node::Text(String::from("other")))
             .build()
     }

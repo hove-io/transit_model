@@ -17,7 +17,8 @@ use crate::{
     model::Model,
     netex_france::{
         CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, OfferExporter,
-        StopExporter, TransferExporter,
+        StopExporter, TransferExporter, CORE_NS, GML_NS, IFOPT_NS, NETEX_NS, SIRI_NS, XLINK_NS,
+        XSI_NS,
     },
     netex_utils::FrameType,
     objects::{Date, Line, Network},
@@ -27,7 +28,6 @@ use chrono::prelude::*;
 use failure::format_err;
 use log::info;
 use minidom::{Element, Node};
-use minidom_writer::ElementWriter;
 use proj::Proj;
 use relational_types::IdxSet;
 use std::{
@@ -35,7 +35,7 @@ use std::{
     fmt::{self, Display, Formatter},
     fs::{self, File},
     iter,
-    path::Path,
+    path::{Path, PathBuf},
 };
 use typed_index_collection::Idx;
 
@@ -120,6 +120,13 @@ fn only_alphanumeric(s: &str) -> String {
     s.chars().filter(|c| c.is_alphanumeric()).collect()
 }
 
+fn write_file(filepath: &PathBuf, netex: Element) -> Result<()> {
+    let file = File::create(filepath)?;
+    let mut writer = minidom::quick_xml::Writer::new_with_indent(file, b'\t', 1);
+    netex.to_writer_decl(&mut writer)?;
+    Ok(())
+}
+
 /// Struct that can write an export of Netex France profile from a Model
 pub struct Exporter<'a> {
     model: &'a Model,
@@ -184,28 +191,26 @@ impl Exporter<'_> {
     // Include 'stop_frame' into a complete NeTEx XML tree with
     // 'PublicationDelivery' and 'dataObjects'
     fn wrap_frame(&self, frame: Element, version_type: VersionType) -> Element {
-        let publication_timestamp = Element::builder("PublicationTimestamp")
-            .ns("http://www.netex.org.uk/netex/")
+        let publication_timestamp = Element::builder("PublicationTimestamp", NETEX_NS)
             .append(self.timestamp.to_rfc3339())
             .build();
-        let participant_ref = Element::builder("ParticipantRef")
-            .ns("http://www.netex.org.uk/netex/")
+        let participant_ref = Element::builder("ParticipantRef", NETEX_NS)
             .append(self.participant_ref.as_str())
             .build();
-        let data_objects = Element::builder("dataObjects")
-            .ns("http://www.netex.org.uk/netex/")
+        let data_objects = Element::builder("dataObjects", NETEX_NS)
             .append(frame)
             .build();
-        Element::builder("PublicationDelivery")
+        Element::builder("PublicationDelivery", NETEX_NS)
             .attr("version", format!("1.09:FR-NETEX_{}-2.1-1.0", version_type))
-            .attr("xmlns:siri", "http://www.siri.org.uk/siri")
-            .attr("xmlns:core", "http://www.govtalk.gov.uk/core")
-            .attr("xmlns:gml", "http://www.opengis.net/gml/3.2")
-            .attr("xmlns:ifopt", "http://www.ifopt.org.uk/ifopt")
-            .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
-            .attr("xmlns", "http://www.netex.org.uk/netex")
+            .prefix(None, NETEX_NS)
+            .and_then(|builder| builder.prefix(Some("core".to_string()), CORE_NS))
+            .and_then(|builder| builder.prefix(Some("gml".to_string()), GML_NS))
+            .and_then(|builder| builder.prefix(Some("ifopt".to_string()), IFOPT_NS))
+            .and_then(|builder| builder.prefix(Some("siri".to_string()), SIRI_NS))
+            .and_then(|builder| builder.prefix(Some("xlink".to_string()), XLINK_NS))
+            .and_then(|builder| builder.prefix(Some("xsi".to_string()), XSI_NS))
+            .expect("no conflict in all of the above namespaces")
             .attr("xsi:schemaLocation", "http://www.netex.org.uk/netex")
-            .attr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
             .append(publication_timestamp)
             .append(participant_ref)
             .append(data_objects)
@@ -221,8 +226,10 @@ impl Exporter<'_> {
         I: IntoIterator<Item = T>,
         T: Into<Node>,
     {
-        let frame_list = Element::builder("frames").append_all(frames).build();
-        Element::builder(FrameType::Composite.to_string())
+        let frame_list = Element::builder("frames", NETEX_NS)
+            .append_all(frames)
+            .build();
+        Element::builder(FrameType::Composite.to_string(), NETEX_NS)
             .attr("id", id)
             .attr("version", "any")
             .append(frame_list)
@@ -234,7 +241,9 @@ impl Exporter<'_> {
         I: IntoIterator<Item = T>,
         T: Into<Node>,
     {
-        Element::builder("members").append_all(members).build()
+        Element::builder("members", NETEX_NS)
+            .append_all(members)
+            .build()
     }
 
     fn write_lines<P>(&self, path: P) -> Result<()>
@@ -242,7 +251,6 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_LINES_FILENAME);
-        let file = File::create(&filepath)?;
         let network_frames = self.create_networks_frames();
         let lines_frame = self.create_lines_frame()?;
         let companies_frame = self.create_companies_frame();
@@ -256,9 +264,7 @@ impl Exporter<'_> {
         );
         let composite_frame = Self::create_composite_frame(composite_frame_id, frames);
         let netex = self.wrap_frame(composite_frame, VersionType::Lines);
-        let mut writer = ElementWriter::pretty(file);
-        info!("Writing {:?}", &filepath);
-        writer.write(&netex)?;
+        write_file(&filepath, netex)?;
         Ok(())
     }
 
@@ -271,7 +277,7 @@ impl Exporter<'_> {
             .zip(self.model.networks.values())
             .map(|(network_element, network)| {
                 let service_frame_id = self.generate_frame_id(FrameType::Service, &network.id);
-                Element::builder(FrameType::Service.to_string())
+                Element::builder(FrameType::Service.to_string(), NETEX_NS)
                     .attr("id", service_frame_id)
                     .attr("version", "any")
                     .append(network_element)
@@ -285,9 +291,11 @@ impl Exporter<'_> {
     fn create_lines_frame(&self) -> Result<Element> {
         let line_exporter = LineExporter::new(&self.model);
         let lines = line_exporter.export()?;
-        let line_list = Element::builder("lines").append_all(lines).build();
+        let line_list = Element::builder("lines", NETEX_NS)
+            .append_all(lines)
+            .build();
         let service_frame_id = self.generate_frame_id(FrameType::Service, "lines");
-        let frame = Element::builder(FrameType::Service.to_string())
+        let frame = Element::builder(FrameType::Service.to_string(), NETEX_NS)
             .attr("id", service_frame_id)
             .attr("version", "any")
             .append(line_list)
@@ -299,11 +307,11 @@ impl Exporter<'_> {
     fn create_companies_frame(&self) -> Element {
         let company_exporter = CompanyExporter::new(&self.model);
         let companies = company_exporter.export();
-        let companies_list = Element::builder("organisations")
+        let companies_list = Element::builder("organisations", NETEX_NS)
             .append_all(companies)
             .build();
         let resource_frame_id = self.generate_frame_id(FrameType::Resource, "operators");
-        Element::builder(FrameType::Resource.to_string())
+        Element::builder(FrameType::Resource.to_string(), NETEX_NS)
             .attr("id", resource_frame_id)
             .attr("version", "any")
             .append(companies_list)
@@ -315,12 +323,9 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_STOPS_FILENAME);
-        let file = File::create(&filepath)?;
         let stop_frame = self.create_stops_frame()?;
         let netex = self.wrap_frame(stop_frame, VersionType::Stops);
-        let mut writer = ElementWriter::pretty(file);
-        info!("Writing {:?}", &filepath);
-        writer.write(&netex)?;
+        write_file(&filepath, netex)?;
         Ok(())
     }
 
@@ -331,7 +336,7 @@ impl Exporter<'_> {
         let members = Self::create_members(stops);
         let general_frame_id =
             self.generate_frame_id(FrameType::General, &format!("NETEX_{}", VersionType::Stops));
-        let frame = Element::builder(FrameType::General.to_string())
+        let frame = Element::builder(FrameType::General.to_string(), NETEX_NS)
             .attr("id", general_frame_id)
             .attr("version", "any")
             .append(members)
@@ -344,12 +349,9 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_CALENDARS_FILENAME);
-        let file = File::create(&filepath)?;
         let calendars_frame = self.create_calendars_frame()?;
         let netex = self.wrap_frame(calendars_frame, VersionType::Calendars);
-        let mut writer = ElementWriter::pretty(file);
-        info!("Writing {:?}", &filepath);
-        writer.write(&netex)?;
+        write_file(&filepath, netex)?;
         Ok(())
     }
 
@@ -363,7 +365,7 @@ impl Exporter<'_> {
             FrameType::General,
             &format!("NETEX_{}", VersionType::Calendars),
         );
-        let frame = Element::builder(FrameType::General.to_string())
+        let frame = Element::builder(FrameType::General.to_string(), NETEX_NS)
             .attr("id", general_frame_id)
             .attr("version", "any")
             .append(valid_between)
@@ -377,13 +379,13 @@ impl Exporter<'_> {
             DateTime::<Utc>::from_utc(date.and_hms(hour, minute, second), Utc).to_rfc3339()
         };
         let (start_date, end_date) = self.model.calculate_validity_period()?;
-        let from_date = Element::builder("FromDate")
+        let from_date = Element::builder("FromDate", NETEX_NS)
             .append(Node::Text(format_date(start_date, 0, 0, 0)))
             .build();
-        let to_date = Element::builder("ToDate")
+        let to_date = Element::builder("ToDate", NETEX_NS)
             .append(Node::Text(format_date(end_date, 23, 59, 59)))
             .build();
-        let valid_between = Element::builder("ValidBetween")
+        let valid_between = Element::builder("ValidBetween", NETEX_NS)
             .append(from_date)
             .append(to_date)
             .build();
@@ -395,12 +397,9 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_TRANSFERS_FILENAME);
-        let file = File::create(&filepath)?;
         let transfers_frame = self.create_transfers_frame()?;
         let netex = self.wrap_frame(transfers_frame, VersionType::Transfers);
-        let mut writer = ElementWriter::pretty(file);
-        info!("Writing {:?}", &filepath);
-        writer.write(&netex)?;
+        write_file(&filepath, netex)?;
         Ok(())
     }
 
@@ -413,7 +412,7 @@ impl Exporter<'_> {
             FrameType::General,
             &format!("NETEX_{}", VersionType::Transfers),
         );
-        let frame = Element::builder(FrameType::General.to_string())
+        let frame = Element::builder(FrameType::General.to_string(), NETEX_NS)
             .attr("id", general_frame_id)
             .attr("version", "any")
             .append(members)
@@ -458,12 +457,9 @@ impl Exporter<'_> {
             };
             let file_name = format!("offre_{}{:x}.xml", line_code, line_id_md5);
             let filepath = network_path.as_ref().join(file_name);
-            let file = File::create(&filepath)?;
             let offer_frame = self.create_offer_frame(&offer_exporter, line_idx)?;
             let netex = self.wrap_frame(offer_frame, VersionType::Schedule);
-            let mut writer = ElementWriter::pretty(file);
-            info!("Writing {:?}", &filepath);
-            writer.write(&netex)?;
+            write_file(&filepath, netex)?;
         }
         Ok(())
     }
@@ -480,7 +476,7 @@ impl Exporter<'_> {
             FrameType::General,
             &format!("NETEX_{}", VersionType::Schedule),
         );
-        let frame = Element::builder(FrameType::General.to_string())
+        let frame = Element::builder(FrameType::General.to_string(), NETEX_NS)
             .attr("id", general_frame_id)
             .attr("version", "any")
             .append(members)

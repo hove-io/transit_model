@@ -104,7 +104,7 @@ pub fn get_only_frame<'a>(frames: &'a Frames<'a>, frame_type: FrameType) -> Resu
 /// ```
 /// # use minidom::Element;
 /// # use transit_model::netex_utils::get_value_in_keylist;
-/// let xml = r#"<root>
+/// let xml = r#"<root xmlns="ns">
 ///         <KeyList>
 ///             <KeyValue>
 ///                 <Key>key</Key>
@@ -174,7 +174,7 @@ mod tests {
 
         #[test]
         fn some_frame() {
-            let xml = r#"<root>
+            let xml = r#"<root xmlns="ns">
                     <FareFrame />
                     <ServiceFrame />
                     <FareFrame />
@@ -189,7 +189,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "Failed to convert \\'UnknownFrame\\' into a FrameType")]
         fn unknown_frame() {
-            let xml = r#"<root>
+            let xml = r#"<root xmlns="ns">
                     <UnknownFrame />
                 </root>"#;
             let root: Element = xml.parse().unwrap();
@@ -235,7 +235,7 @@ mod tests {
 
         #[test]
         fn has_value() {
-            let xml = r#"<root>
+            let xml = r#"<root xmlns="ns">
                     <KeyList>
                         <KeyValue>
                             <Key>key</Key>
@@ -251,7 +251,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "No children with name \\'KeyList\\' in Element \\'root\\'")]
         fn no_keylist_found() {
-            let xml = r#"<root />"#;
+            let xml = r#"<root xmlns="ns" />"#;
             let root: Element = xml.parse().unwrap();
             get_value_in_keylist::<u32>(&root, "key").unwrap();
         }
@@ -259,7 +259,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "Failed to find a unique key \\'key\\' in \\'root\\'")]
         fn no_key_found() {
-            let xml = r#"<root>
+            let xml = r#"<root xmlns="ns">
                     <KeyList />
                 </root>"#;
             let root: Element = xml.parse().unwrap();
@@ -269,7 +269,7 @@ mod tests {
         #[test]
         #[should_panic(expected = "No children with name \\'Value\\' in Element \\'KeyValue\\'")]
         fn no_value_found() {
-            let xml = r#"<root>
+            let xml = r#"<root xmlns="ns">
                     <KeyList>
                         <KeyValue>
                             <Key>key</Key>

@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<PublicationDelivery version="1.09:FR-NETEX_ARRET-2.1-1.0" xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.netex.org.uk/netex">
+<?xml version="1.0" encoding="utf-8"?>
+<PublicationDelivery xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.09:FR-NETEX_ARRET-2.1-1.0" xsi:schemaLocation="http://www.netex.org.uk/netex">
 	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
@@ -24,8 +24,7 @@
 					</AccessibilityAssessment>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
-						</TariffZoneRef>
+						<TariffZoneRef ref="Participant:ZoneParis"/>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:GDLM:" version="any">
@@ -47,8 +46,7 @@
 					</AccessibilityAssessment>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
-						</TariffZoneRef>
+						<TariffZoneRef ref="Participant:ZoneParis"/>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:GDLB:" version="any">
@@ -60,8 +58,7 @@
 					</Centroid>
 					<TransportMode>bus</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
-						</TariffZoneRef>
+						<TariffZoneRef ref="Participant:ZoneParis"/>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:NATR:" version="any">
@@ -83,8 +80,7 @@
 					</AccessibilityAssessment>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
-						</TariffZoneRef>
+						<TariffZoneRef ref="Participant:ZoneParis"/>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:NATM:" version="any">
@@ -96,8 +92,7 @@
 					</Centroid>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
-						</TariffZoneRef>
+						<TariffZoneRef ref="Participant:ZoneParis"/>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:CDGR:" version="any">
@@ -109,8 +104,7 @@
 					</Centroid>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneOffParis">
-						</TariffZoneRef>
+						<TariffZoneRef ref="Participant:ZoneOffParis"/>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:CDGM:" version="any">
@@ -122,8 +116,7 @@
 					</Centroid>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneOffParis">
-						</TariffZoneRef>
+						<TariffZoneRef ref="Participant:ZoneOffParis"/>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:DEFR:" version="any">
@@ -135,16 +128,14 @@
 					</Centroid>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneOffParis">
-						</TariffZoneRef>
+						<TariffZoneRef ref="Participant:ZoneOffParis"/>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:CHAM:" version="any">
 					<Name>Châtelet (Metro)</Name>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
-						</TariffZoneRef>
+						<TariffZoneRef ref="Participant:ZoneParis"/>
 					</tariffZones>
 					<PublicCode>The Big One</PublicCode>
 				</Quay>
@@ -157,8 +148,7 @@
 					</Centroid>
 					<TransportMode>bus</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
-						</TariffZoneRef>
+						<TariffZoneRef ref="Participant:ZoneParis"/>
 					</tariffZones>
 				</Quay>
 				<StopPlace id="FR:StopPlace:GDL_rail:" version="any">
@@ -168,13 +158,11 @@
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:GDL:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:GDL:"/>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:GDLR:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:GDLR:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:GDL_metro:" version="any">
@@ -184,13 +172,11 @@
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:GDL:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:GDL:"/>
 					<TransportMode>metro</TransportMode>
 					<StopPlaceType>metroStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:GDLM:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:GDLM:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:GDL_bus:" version="any">
@@ -200,15 +186,12 @@
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:GDL:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:GDL:"/>
 					<TransportMode>bus</TransportMode>
 					<StopPlaceType>busStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:GDLB:">
-						</QuayRef>
-						<QuayRef ref="FR:Quay:GDLR:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:GDLB:"/>
+						<QuayRef ref="FR:Quay:GDLR:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:GDL:" version="any">
@@ -250,13 +233,11 @@
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:NAT:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:NAT:"/>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:NATR:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:NATR:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:NAT_metro:" version="any">
@@ -266,13 +247,11 @@
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:NAT:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:NAT:"/>
 					<TransportMode>metro</TransportMode>
 					<StopPlaceType>metroStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:NATM:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:NATM:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:NAT_bus:" version="any">
@@ -282,13 +261,11 @@
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:NAT:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:NAT:"/>
 					<TransportMode>bus</TransportMode>
 					<StopPlaceType>busStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:NATR:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:NATR:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:NAT:" version="any">
@@ -308,13 +285,11 @@
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:CDG:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:CDG:"/>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:CDGR:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:CDGR:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:CDG_metro:" version="any">
@@ -324,13 +299,11 @@
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:CDG:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:CDG:"/>
 					<TransportMode>metro</TransportMode>
 					<StopPlaceType>metroStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:CDGM:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:CDGM:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:CDG_bus:" version="any">
@@ -340,13 +313,11 @@
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:CDG:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:CDG:"/>
 					<TransportMode>bus</TransportMode>
 					<StopPlaceType>busStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:CDGR:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:CDGR:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:CDG:" version="any">
@@ -378,13 +349,11 @@
 							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:DEF:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:DEF:"/>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:DEFR:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:DEFR:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:DEF_bus:" version="any">
@@ -394,13 +363,11 @@
 							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:DEF:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:DEF:"/>
 					<TransportMode>bus</TransportMode>
 					<StopPlaceType>busStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:DEFR:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:DEFR:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:DEF:" version="any">
@@ -420,13 +387,11 @@
 							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972682</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:CHA:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:CHA:"/>
 					<TransportMode>metro</TransportMode>
 					<StopPlaceType>metroStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:CHAM:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:CHAM:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:CHA:" version="any">
@@ -446,13 +411,11 @@
 							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
 						</Location>
 					</Centroid>
-					<ParentSiteRef ref="FR:StopPlace:MTP:">
-					</ParentSiteRef>
+					<ParentSiteRef ref="FR:StopPlace:MTP:"/>
 					<TransportMode>bus</TransportMode>
 					<StopPlaceType>busStation</StopPlaceType>
 					<quays>
-						<QuayRef ref="FR:Quay:MTPB:">
-						</QuayRef>
+						<QuayRef ref="FR:Quay:MTPB:"/>
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:MTP:" version="any">
