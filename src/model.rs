@@ -1393,6 +1393,7 @@ impl Model {
         c.enhance_route_names(&routes_to_vehicle_journeys);
         c.enhance_route_directions();
         c.check_geometries_coherence();
+        enhancers::adjust_lines_names(&mut c, &lines_to_routes);
         c.enhance_line_opening_time();
         c.enhance_pickup_dropoff();
 

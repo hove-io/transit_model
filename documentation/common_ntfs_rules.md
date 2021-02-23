@@ -132,6 +132,7 @@ The following rules apply to every converter, unless otherwise explicitly specif
        `[name of origin's stop area] - [name of destination's stop area]`
   * the `route.destination_id` is set (overridden if needed) with the
     destination's stop area selected with the above rule
+* If a line doesn't have a name (or empty), `name` is automatically set with the `name` of its first route in the forward direction (in alphabetical order)
 * If a line has an empty opening or closing times, then they are both generated.
   * the `line.opening_time` is generated with the smallest departure time (at the first stop) of all journeys on the lines.
   * the `line.closing_time` is generated with the biggest arrival time (at the last stop) of all journeys on the lines (+ 24h if the end is earlier than the start time).
