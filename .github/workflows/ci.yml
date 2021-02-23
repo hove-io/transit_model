@@ -8,40 +8,25 @@ jobs:
   rustfmt:
     name: Formatting check
     runs-on: ubuntu-latest
+    container: kisiodigital/rust-ci:latest
     steps:
     - uses: actions/checkout@master
-    - name: Install Rust stable
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: stable
-          profile: minimal
-          components: rustfmt
     - name: Check formatting
       run: make format
 
   clippy:
     name: Analyzing code with Clippy
     runs-on: ubuntu-latest
+    container: kisiodigital/rust-ci:latest-proj
     steps:
-    - name: Install proj
-      run: |
-        wget --quiet --output-document - "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public" | sudo apt-key add -
-        echo "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main" | sudo tee /etc/apt/sources.list.d/kisio-digital.list
-        sudo apt update
-        sudo apt install --yes pkg-config libssl-dev clang libtiff-dev libcurl4-nss-dev proj=${PROJ_VERSION}
     - uses: actions/checkout@master
-    - name: Install Rust stable
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: stable
-          profile: minimal
-          components: clippy
     - name: Linting
       run: make lint
 
   audit:
     name: Audits
     runs-on: ubuntu-latest
+    container: kisiodigital/rust-ci:latest-proj
     continue-on-error: true
     steps:
     - uses: actions/checkout@v1
@@ -52,55 +37,27 @@ jobs:
 
   tests:
     name: Tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        build: [stable, beta]
-        include:
-          - build: stable
-            os: ubuntu-latest
-            rust: stable
-          - build: beta
-            os: ubuntu-latest
-            rust: beta
+    runs-on: ubuntu-latest
+    container: kisiodigital/rust-ci:latest-proj
     steps:
-    - name: Install proj
-      run: |
-        wget --quiet --output-document - "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public" | sudo apt-key add -
-        echo "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main" | sudo tee /etc/apt/sources.list.d/kisio-digital.list
-        sudo apt update
-        sudo apt install --yes libxml2-utils pkg-config libssl-dev clang libtiff-dev libcurl4-nss-dev proj=${PROJ_VERSION}
     - uses: actions/checkout@master
     - name: Checkout Submodules
       uses: textbook/git-checkout-submodule-action@2.1.1
-    - name: Install Rust ${{ matrix.rust }}
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: ${{ matrix.rust }}
-          profile: minimal
-          override: true
+    - name: Install xmllint
+      run: apt update && apt install --yes libxml2-utils
     - name: Run tests with and without features
       run: make test
 
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
+    container: kisiodigital/rust-ci:latest-proj
     steps:
-    - name: Install proj
-      run: |
-        wget --quiet --output-document - "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public" | sudo apt-key add -
-        echo "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main" | sudo tee /etc/apt/sources.list.d/kisio-digital.list
-        sudo apt update
-        sudo apt install --yes libxml2-utils pkg-config libssl-dev clang proj=${PROJ_VERSION}
     - uses: actions/checkout@master
     - name: Checkout Submodules
       uses: textbook/git-checkout-submodule-action@2.1.1
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: stable
-          profile: minimal
-          override: true
+    - name: Install xmllint
+      run: apt update && apt install --yes libxml2-utils pkg-config libssl-dev
     - name: Install `cargo-tarpaulin`
       uses: actions-rs/cargo@v1
       with:

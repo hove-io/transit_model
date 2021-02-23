@@ -3,27 +3,13 @@ on:
   release:
     types: [published]
 
-env:
-  PROJ_VERSION: 7.1.0
-
 jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    containers: kisiodigital/rust-ci:latest-proj
     steps:
-    - name: Install proj
-      run: |
-        wget --quiet --output-document - "https://kisiodigital.jfrog.io/kisiodigital/api/gpg/key/public" | sudo apt-key add -
-        echo "deb [arch=amd64] https://kisiodigital.jfrog.io/kisiodigital/debian-local stretch main" | sudo tee /etc/apt/sources.list.d/kisio-digital.list
-        sudo apt update
-        sudo apt install --yes pkg-config libssl-dev clang libtiff-dev libcurl4-nss-dev proj=${PROJ_VERSION}
     - uses: actions/checkout@master
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: stable
-          profile: minimal
-          override: true
     - name: Cargo login
       uses: actions-rs/cargo@v1
       with:
