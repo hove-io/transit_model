@@ -40,7 +40,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH "/root/.cargo/bin:$PATH"
 # build the project
 RUN cargo build --workspace --release
-RUN mkdir /usr/src/bin && for file in ls ./target/release/*; do if test -f $file -a -x $file; then cp $file /usr/src/bin; fi; done 
+RUN mkdir /usr/src/bin && for file in ls ./target/release/*; do if test -f $file -a -x $file; then cp $file /usr/src/bin; fi; done
 
 FROM debian:stretch-slim
 ARG RUNTIME_DEPENDENCIES
