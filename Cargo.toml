@@ -44,6 +44,8 @@ iso4217 = "0.3"
 lazy_static = "1"
 log = "0.4"
 md5 = "0.7"
+# do not upgrade to 'minidom:0.13.0' (too strict on namespaces and no XML comment support)
+# https://github.com/CanalTP/transit_model/pull/746
 minidom = "0.12"
 minidom_ext = "1"
 minidom_writer = "1"
