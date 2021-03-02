@@ -27,13 +27,13 @@ jobs:
     name: Audits
     runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj
-    continue-on-error: true
     steps:
     - uses: actions/checkout@v1
     - name: Security audit
-      uses: actions-rs/audit-check@v1
+      uses: actions-rs/audit-check@v1.2.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
 
   tests:
     name: Tests
