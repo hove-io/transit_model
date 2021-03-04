@@ -23,8 +23,10 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use transit_model::{read_utils, transfers::generates_transfers, PrefixConfiguration, Result};
 
+const GIT_VERSION: &str = transit_model::git_version();
+
 #[derive(Debug, StructOpt)]
-#[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.")]
+#[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.", version = GIT_VERSION)]
 struct Opt {
     /// Input directory.
     #[structopt(short, long, parse(from_os_str), default_value = ".")]
