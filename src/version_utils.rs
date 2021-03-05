@@ -13,7 +13,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 //! Some utility to get the transit_model version
 
-/// get the precise git version of transit_model
-pub const fn git_version() -> &'static str {
-    git_version::git_version!(args = ["--tags", "--dirty=-modified"])
-}
+/// Precise git version of transit_model
+pub const GIT_VERSION: &'static str =
+    git_version::git_version!(args = ["--tags", "--dirty=-modified"]);

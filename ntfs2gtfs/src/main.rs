@@ -22,10 +22,16 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 use transit_model::Result;
 
-const GIT_VERSION: &str = transit_model::git_version();
+lazy_static::lazy_static! {
+    pub static ref GIT_VERSION: String = format!("{version} (transit_model = {lib_version})", version=env!("CARGO_PKG_VERSION"), lib_version=transit_model::GIT_VERSION);
+}
+
+fn get_version() -> &'static str {
+    &GIT_VERSION
+}
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "ntfs2gtfs", about = "Convert an NTFS to a GTFS.", version = GIT_VERSION)]
+#[structopt(name = "ntfs2gtfs", about = "Convert an NTFS to a GTFS.", version = get_version())]
 struct Opt {
     /// Input directory.
     #[structopt(short, long, parse(from_os_str), default_value = ".")]
