@@ -14,5 +14,12 @@
 //! Some utility to get the transit_model version
 
 /// Precise git version of transit_model
+/// the version will be:
+/// v{last github tag}-{commit number}-{commit hash}{"-modified" if some changes have been done since last commit}
 pub const GIT_VERSION: &str =
     git_version::git_version!(args = ["--tags", "--dirty=-modified"], fallback = "unknown");
+
+/// get the binary version and the transit_model version
+pub fn binary_full_version(binary_version: &str) -> String {
+    format!("{} (transit_model = {})", binary_version, GIT_VERSION)
+}

@@ -23,7 +23,7 @@ use structopt::StructOpt;
 use transit_model::{transfers::generates_transfers, Result};
 
 lazy_static::lazy_static! {
-    pub static ref GIT_VERSION: String = format!("{version} (transit_model = {lib_version})", version=env!("CARGO_PKG_VERSION"), lib_version=transit_model::GIT_VERSION);
+    pub static ref GIT_VERSION: String = transit_model::binary_full_version(env!("CARGO_PKG_VERSION"));
 }
 
 fn get_version() -> &'static str {
