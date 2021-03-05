@@ -14,5 +14,4 @@
 //! Some utility to get the transit_model version
 
 /// Precise git version of transit_model
-pub const GIT_VERSION: &'static str =
-    git_version::git_version!(args = ["--tags", "--dirty=-modified"]);
+pub const GIT_VERSION: &str = git_version::git_version!(args = ["--tags", "--dirty=-modified"]);
