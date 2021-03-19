@@ -63,6 +63,7 @@ typed_index_collection = "1"
 walkdir = "2"
 wkt = "0.8"
 zip = { version = "0.5", default-features = false, features = ["deflate"] }
+git-version = "0.3"
 
 [[test]]
 name = "write_netex_france"

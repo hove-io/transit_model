@@ -56,6 +56,7 @@ pub mod read_utils;
 pub mod test_utils;
 pub mod transfers;
 pub mod validity_period;
+mod version_utils;
 pub mod vptranslator;
 
 /// Current version of the NTFS format
@@ -82,3 +83,5 @@ pub type Error = failure::Error;
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 pub use crate::model::Model;
+
+pub use crate::version_utils::{binary_full_version, GIT_VERSION};
