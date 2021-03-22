@@ -1,9 +1,6 @@
 name: Continuous Integration
 on: [push, pull_request]
 
-env:
-  PROJ_VERSION: 7.1.0
-
 jobs:
   rustfmt:
     name: Formatting check
@@ -17,7 +14,7 @@ jobs:
   clippy:
     name: Analyzing code with Clippy
     runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj
+    container: kisiodigital/rust-ci:latest-proj7.2.1
     steps:
     - uses: actions/checkout@master
     - name: Linting
@@ -26,7 +23,7 @@ jobs:
   audit:
     name: Audits
     runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj
+    container: kisiodigital/rust-ci:latest-proj7.2.1
     continue-on-error: true
     steps:
     - uses: actions/checkout@v1
@@ -38,7 +35,7 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj
+    container: kisiodigital/rust-ci:latest-proj7.2.1
     steps:
     - uses: actions/checkout@master
     - name: Checkout Submodules
@@ -51,7 +48,7 @@ jobs:
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj
+    container: kisiodigital/rust-ci:latest-proj7.2.1
     steps:
     - uses: actions/checkout@master
     - name: Checkout Submodules
