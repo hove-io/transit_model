@@ -31,5 +31,5 @@ pub fn add_mode_to_line_code(model: Model) -> Result<Model> {
         line.code = code;
     }
 
-    Ok(Model::new(collections)?)
+    Model::new(collections)
 }

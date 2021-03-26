@@ -146,5 +146,5 @@ pub fn generates_transfers(
 
     let mut collections = model.into_collections();
     collections.transfers = Collection::new(new_transfers);
-    Ok(Model::new(collections)?)
+    Model::new(collections)
 }

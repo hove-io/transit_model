@@ -232,7 +232,7 @@ pub fn manage_fares_v1(collections: &mut Collections, base_path: &path::Path) ->
         .with_context(|_| format!("Error reading {:?}", path))?;
     let od_fares_v1 = rdr
         .deserialize()
-        .collect::<std::result::Result<Vec<ODFareV1>, _>>()
+        .collect::<std::result::Result<Vec<OdFareV1>, _>>()
         .with_context(|_| format!("Error reading {:?}", path))?;
     collections.od_fares_v1 = Collection::new(od_fares_v1);
 

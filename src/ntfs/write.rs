@@ -135,7 +135,7 @@ pub fn write_vehicle_journeys_and_stop_times(
 fn do_write_fares_v1(
     base_path: &path::Path,
     prices_v1: &Collection<PriceV1>,
-    od_fares_v1: &Collection<ODFareV1>,
+    od_fares_v1: &Collection<OdFareV1>,
     fares_v1: &Collection<FareV1>,
 ) -> Result<()> {
     let file_prices = "prices.csv";

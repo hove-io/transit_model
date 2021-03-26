@@ -923,6 +923,12 @@ impl From<Coord> for (String, String) {
     }
 }
 
+impl From<Coord> for GeoPoint<f64> {
+    fn from(coord: Coord) -> Self {
+        GeoPoint::new(coord.lon, coord.lat)
+    }
+}
+
 // Mean Earth radius in meters
 const EARTH_RADIUS: f64 = 6_371_000.0;
 
@@ -932,12 +938,6 @@ impl From<GeoPoint<f64>> for Coord {
             lon: point.x(),
             lat: point.y(),
         }
-    }
-}
-
-impl Into<GeoPoint<f64>> for Coord {
-    fn into(self) -> GeoPoint<f64> {
-        GeoPoint::new(self.lon, self.lat)
     }
 }
 
@@ -1589,7 +1589,7 @@ impl AddPrefix for PriceV1 {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ODFareV1 {
+pub struct OdFareV1 {
     #[serde(rename = "Origin ID")]
     pub origin_stop_area_id: String,
     #[serde(rename = "Origin name")]
@@ -1605,7 +1605,7 @@ pub struct ODFareV1 {
     pub ticket_id: String,
 }
 
-impl AddPrefix for ODFareV1 {
+impl AddPrefix for OdFareV1 {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
         self.ticket_id = prefix_conf.referential_prefix(self.ticket_id.as_str());
         self.origin_stop_area_id =
