@@ -452,6 +452,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
     let collections = remove_stop_zones(model);
     let model = Model::new(collections)?;
     let path = path.as_ref();
+    std::fs::create_dir_all(path)?;
     info!("Writing GTFS to {:?}", path);
 
     write::write_transfers(path, &model.transfers)?;

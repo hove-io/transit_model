@@ -232,6 +232,7 @@ pub fn write<P: AsRef<path::Path>>(
     current_datetime: DateTime<FixedOffset>,
 ) -> Result<()> {
     let path = path.as_ref();
+    std::fs::create_dir_all(path)?;
     info!("Writing NTFS to {:?}", path);
 
     write::write_feed_infos(path, &model, current_datetime)?;
