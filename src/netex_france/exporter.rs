@@ -153,6 +153,7 @@ impl<'a> Exporter<'a> {
     where
         P: AsRef<Path>,
     {
+        std::fs::create_dir_all(&path)?;
         self.write_lines(&path)?;
         self.write_stops(&path)?;
         self.write_calendars(&path)?;
