@@ -22,5 +22,5 @@ slog-scope = "4.1"
 slog-stdlog = "4.0"
 slog-term = "2.4"
 structopt = "0.3"
-transit_model = { version = "0.34", path = "../", features = ["proj"] }
+transit_model = { version = "0.35", path = "../", features = ["proj"] }
 lazy_static = "1"
