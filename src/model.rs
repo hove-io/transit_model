@@ -101,7 +101,7 @@ pub struct Collections {
     //HashMap<(vehicle_journey_id, stop_sequence), comment_id>
     pub stop_time_comments: HashMap<(String, u32), String>,
     pub prices_v1: Collection<PriceV1>,
-    pub od_fares_v1: Collection<ODFareV1>,
+    pub od_fares_v1: Collection<OdFareV1>,
     pub fares_v1: Collection<FareV1>,
     pub tickets: CollectionWithId<Ticket>,
     pub ticket_uses: CollectionWithId<TicketUse>,
@@ -1484,7 +1484,7 @@ mod tests {
         // - stop_point_idx (usize -> index of one of the four test stop points)
         // - arrival_time (Time)
         // - departure_time (Time)
-        type VJConfig = (String, usize, Time, Time);
+        type VjConfig = (String, usize, Time, Time);
 
         // This creates 2 vehicle journeys, each with 2 stop times. There is 4
         // available test stop points 'sp0' ―▶ 'sp3'. First vehicle journey has
@@ -1492,8 +1492,8 @@ mod tests {
         // 'prev_vj_config'. Second vehicle journey has a first stop time
         // configurable with 'next_vj_config' and second stop time with 'sp3'.
         fn build_vehicle_journeys(
-            prev_vj_config: VJConfig,
-            next_vj_config: VJConfig,
+            prev_vj_config: VjConfig,
+            next_vj_config: VjConfig,
         ) -> CollectionWithId<VehicleJourney> {
             let mut stop_points = CollectionWithId::default();
             let mut sp_idxs = Vec::new();

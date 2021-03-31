@@ -1391,7 +1391,7 @@ mod tests {
     #[test]
     fn od_fares_v1_serialization_deserialization() {
         test_serialize_deserialize_collection(vec![
-            ODFareV1 {
+            OdFareV1 {
                 origin_stop_area_id: "stop_area:0:SA:8727114".to_string(),
                 origin_name: Some("EPINAY-S/SEINE".to_string()),
                 origin_mode: "stop".to_string(),
@@ -1400,7 +1400,7 @@ mod tests {
                 destination_mode: "stop".to_string(),
                 ticket_id: "29".to_string(),
             },
-            ODFareV1 {
+            OdFareV1 {
                 origin_stop_area_id: "stop_area:0:SA:8773006".to_string(),
                 origin_name: None,
                 origin_mode: "zone".to_string(),
