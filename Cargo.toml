@@ -32,6 +32,8 @@ members = [
 
 [features]
 xmllint = ["proj"]
+# Experimental feature, use at your own risks
+mutable-model = []
 
 [dependencies]
 chrono = "0.4"
