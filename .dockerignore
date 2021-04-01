@@ -1,6 +1,5 @@
 ./examples
 **/target
-**/.git
 *.md
 Dockerfile
 ./tests
