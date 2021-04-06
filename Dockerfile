@@ -35,7 +35,7 @@ COPY --from=proj-builder /tmp/proj-build /
 WORKDIR /usr/src/app
 COPY . ./
 # install rustup
-RUN apt install --yes curl
+RUN apt install --yes curl git
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH "/root/.cargo/bin:$PATH"
 # build the project
