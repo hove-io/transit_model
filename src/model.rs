@@ -1242,6 +1242,7 @@ impl Collections {
 pub struct Model {
     collections: Collections,
 
+    // WARNING: Please check all methods that takes &mut self before adding a new relation (see feature 'mutable-model')
     // original relations
     networks_to_lines: OneToMany<Network, Line>,
     commercial_modes_to_lines: OneToMany<CommercialMode, Line>,
@@ -1446,6 +1447,86 @@ impl Model {
         self.collections
     }
 }
+#[cfg(feature = "mutable-model")]
+impl Model {
+    /// Add a Calendar inside the model
+    pub fn add_calendar(&mut self, calendar: Calendar) -> Result<Idx<Calendar>> {
+        self.collections
+            .calendars
+            .push(calendar)
+            .map_err(|e| format_err!("{}", e))
+    }
+    /// Add a new relation between a calendar and some vehicle journeys
+    pub fn connect_calendar_to_vehicle_journeys(
+        &mut self,
+        calendar_idx: Idx<Calendar>,
+        vehicle_journey_idxs: impl IntoIterator<Item = Idx<VehicleJourney>>,
+    ) -> Result<()> {
+        let calendar_id = &self.collections.calendars[calendar_idx].id;
+        for vehicle_journey_idx in vehicle_journey_idxs {
+            self.collections
+                .vehicle_journeys
+                .index_mut(vehicle_journey_idx)
+                .service_id = calendar_id.clone();
+        }
+        self.calendars_to_vehicle_journeys = OneToMany::new(
+            &self.collections.calendars,
+            &self.collections.vehicle_journeys,
+            "calendars_to_vehicle_journeys",
+        )?;
+        Ok(())
+    }
+}
+
+#[cfg(all(test, feature = "mutable-model"))]
+mod mutable_model_tests {
+    use relational_types::IdxSet;
+    use transit_model_builder::{Calendar, VehicleJourney};
+
+    #[test]
+    fn test_add_calendar() {
+        let mut model = transit_model_builder::ModelBuilder::default()
+            .calendar("service1", &["2021-03-14", "2021-05-04"])
+            .vj("vj1", |vj| {
+                vj.calendar("service1")
+                    .st("SP1", "10:00:00", "10:01:00")
+                    .st("SP2", "11:00:00", "11:01:00");
+            })
+            .vj("vj2", |vj| {
+                vj.calendar("service1")
+                    .st("SP3", "12:00:00", "12:01:00")
+                    .st("SP4", "13:00:00", "13:01:00");
+            })
+            .build();
+        let service1_idx = model.calendars.get_idx("service1").unwrap();
+        let vj1_idx = model.vehicle_journeys.get_idx("vj1").unwrap();
+        let vj2_idx = model.vehicle_journeys.get_idx("vj2").unwrap();
+
+        // Add a new calendar
+        let service2_idx = model
+            .add_calendar(Calendar {
+                id: "service2".to_string(),
+                ..Default::default()
+            })
+            .unwrap();
+        model
+            .connect_calendar_to_vehicle_journeys(service2_idx, vec![vj2_idx])
+            .unwrap();
+
+        // Verify that 'service2' is accessible from 'vj2'
+        let calendar_indexes: IdxSet<Calendar> = model.get_corresponding_from_idx(vj2_idx);
+        assert_eq!(*calendar_indexes.iter().next().unwrap(), service2_idx);
+
+        // Verify that 'vj2' is accessible from 'service2'
+        let vj_indexes: IdxSet<VehicleJourney> = model.get_corresponding_from_idx(service2_idx);
+        assert_eq!(*vj_indexes.iter().next().unwrap(), vj2_idx);
+
+        // Verify that only 'vj1' is accessible from 'service1' now ('vj2' is not anymore)
+        let vj_indexes: IdxSet<VehicleJourney> = model.get_corresponding_from_idx(service1_idx);
+        assert_eq!(*vj_indexes.iter().next().unwrap(), vj1_idx);
+    }
+}
+
 impl ::serde::Serialize for Model {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

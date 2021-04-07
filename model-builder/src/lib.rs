@@ -17,3 +17,4 @@ use transit_model::{model, objects};
 mod builder;
 
 pub use crate::builder::ModelBuilder;
+pub use transit_model::objects::*;
