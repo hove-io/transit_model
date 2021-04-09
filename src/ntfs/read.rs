@@ -45,7 +45,7 @@ impl TryFrom<Stop> for StopArea {
             id: stop.id,
             name: stop.name,
             codes: KeysValues::default(),
-            object_properties: KeysValues::default(),
+            object_properties: PropertiesMap::default(),
             comment_links: CommentLinksT::default(),
             visible: stop.visible,
             coord,
@@ -556,10 +556,10 @@ where
             return;
         }
     };
-    collection.index_mut(idx).properties_mut().insert((
+    collection.index_mut(idx).properties_mut().insert(
         obj_prop.object_property_name,
         obj_prop.object_property_value,
-    ));
+    );
 }
 
 pub(crate) fn manage_object_properties<H>(

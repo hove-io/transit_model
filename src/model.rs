@@ -2436,7 +2436,7 @@ mod tests {
             VehicleJourney {
                 id: String::from(trip_id),
                 codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
+                object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
                 route_id: String::from("route_id"),
                 physical_mode_id: String::new(),

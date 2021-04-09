@@ -529,10 +529,7 @@ mod tests {
         calendars::write_calendar_dates,
         gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType},
         model::Collections,
-        objects::{
-            Calendar, CommentLinksT, Coord, KeysValues, StopPoint, StopTime,
-            Transfer as NtfsTransfer,
-        },
+        objects::{Calendar, CommentLinksT, Coord, StopPoint, StopTime, Transfer as NtfsTransfer},
     };
     use geo::{line_string, point};
     use pretty_assertions::assert_eq;
@@ -768,7 +765,7 @@ mod tests {
             ]
             .into_iter()
             .collect(),
-            object_properties: BTreeSet::default(),
+            object_properties: PropertiesMap::default(),
             comment_links,
             visible: true,
             coord: objects::Coord {
@@ -914,7 +911,7 @@ mod tests {
         let vj = objects::VehicleJourney {
             id: "OIF:87604986-1_11595-1".to_string(),
             codes: BTreeSet::default(),
-            object_properties: BTreeSet::default(),
+            object_properties: PropertiesMap::default(),
             comment_links: BTreeSet::default(),
             route_id: "OIF:078078001:1".to_string(),
             physical_mode_id: "Bus".to_string(),
@@ -959,7 +956,7 @@ mod tests {
         let vj_coach = objects::VehicleJourney {
             id: "OIF:87604986-1_11595-1:Coach".to_string(),
             codes: BTreeSet::default(),
-            object_properties: BTreeSet::default(),
+            object_properties: PropertiesMap::default(),
             comment_links: BTreeSet::default(),
             route_id: "OIF:078078001:1".to_string(),
             physical_mode_id: "Coach".to_string(),
@@ -1031,7 +1028,7 @@ mod tests {
             id: "sa:01".to_string(),
             name: "sa:01".to_string(),
             codes: sa_codes,
-            object_properties: KeysValues::default(),
+            object_properties: PropertiesMap::default(),
             comment_links: CommentLinksT::default(),
             visible: true,
             coord: Coord {
@@ -1231,7 +1228,7 @@ mod tests {
         let vehicle_journeys = CollectionWithId::from(VehicleJourney {
             id: "vj:01".to_string(),
             codes: BTreeSet::new(),
-            object_properties: KeysValues::default(),
+            object_properties: PropertiesMap::default(),
             comment_links: CommentLinksT::default(),
             route_id: "r:01".to_string(),
             physical_mode_id: "pm:01".to_string(),
@@ -1305,7 +1302,7 @@ mod tests {
             name: "3".to_string(),
             code: None,
             codes: BTreeSet::default(),
-            object_properties: BTreeSet::default(),
+            object_properties: PropertiesMap::default(),
             comment_links: BTreeSet::default(),
             forward_name: None,
             forward_direction: None,
@@ -1353,7 +1350,7 @@ mod tests {
             name: "DEF".to_string(),
             code: Some("DEF".to_string()),
             codes: BTreeSet::default(),
-            object_properties: BTreeSet::default(),
+            object_properties: PropertiesMap::default(),
             comment_links: BTreeSet::default(),
             forward_name: Some("Hôtels - Hôtels".to_string()),
             forward_direction: Some("OIF:SA:4:126".to_string()),
