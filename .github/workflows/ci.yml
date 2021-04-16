@@ -1,5 +1,10 @@
 name: Continuous Integration
-on: [push, pull_request]
+
+on:
+    push:
+        branches:  # Build 'master' branch
+            - 'master'
+    pull_request:  # Build any PR
 
 jobs:
   rustfmt:
