@@ -334,7 +334,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
     collections.stop_time_ids = stop_time_ids;
     let mut vehicle_journeys = collections.vehicle_journeys.take();
     for vj in &mut vehicle_journeys {
-        vj.stop_times.sort_unstable_by_key(|st| st.sequence);
+        vj.sort_and_check_stop_times()?;
     }
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     Ok(())
@@ -754,9 +754,9 @@ mod tests {
         let stop_times_content = "stop_time_id,trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,shape_dist_traveled,stop_time_precision\n\
                                   1,1,06:00:00,06:00:00,sp:01,1,0,0,,0\n\
                                   2,1,06:06:27,06:06:27,sp:02,2,2,1,,1\n\
-                                  3,1,06:06:27,06:06:27,sp:03,3,2,1,,2\n\
-                                  4,1,06:06:27,06:06:27,sp:04,3,2,1,,\n\
-                                  5,1,06:06:27,06:06:27,sp:05,3,2,1,,";
+                                  3,1,06:07:27,06:07:27,sp:03,3,2,1,,2\n\
+                                  4,1,06:08:27,06:08:27,sp:04,4,2,1,,\n\
+                                  5,1,06:09:27,06:09:27,sp:05,5,2,1,,";
 
         let path = path.as_ref();
         create_file_with_content(path, "commercial_modes.txt", commercial_modes_content);
@@ -850,8 +850,8 @@ mod tests {
                     objects::StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
                         sequence: 3,
-                        arrival_time: Time::new(6, 6, 27),
-                        departure_time: Time::new(6, 6, 27),
+                        arrival_time: Time::new(6, 7, 27),
+                        departure_time: Time::new(6, 7, 27),
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 2,
@@ -862,9 +862,9 @@ mod tests {
                     },
                     objects::StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:04").unwrap(),
-                        sequence: 3,
-                        arrival_time: Time::new(6, 6, 27),
-                        departure_time: Time::new(6, 6, 27),
+                        sequence: 4,
+                        arrival_time: Time::new(6, 8, 27),
+                        departure_time: Time::new(6, 8, 27),
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 2,
@@ -875,9 +875,9 @@ mod tests {
                     },
                     objects::StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:05").unwrap(),
-                        sequence: 3,
-                        arrival_time: Time::new(6, 6, 27),
-                        departure_time: Time::new(6, 6, 27),
+                        sequence: 5,
+                        arrival_time: Time::new(6, 9, 27),
+                        departure_time: Time::new(6, 9, 27),
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 2,
@@ -907,6 +907,40 @@ mod tests {
             let code = company.codes.iter().next().unwrap();
             assert_eq!(code.0, "source");
             assert_eq!(code.1, "source_code");
+        });
+    }
+    #[test]
+    #[should_panic(expected = "DuplicateStopSequence { vj_id: \"1\", duplicated_sequence: 3 }")]
+    fn stop_sequence_growing() {
+        test_in_tmp_dir(|path| {
+            let _ = generate_minimal_ntfs(path);
+            let stop_times_content = "stop_time_id,trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,shape_dist_traveled,stop_time_precision\n\
+            1,1,06:00:00,06:00:00,sp:01,1,0,0,,0\n\
+            2,1,06:06:27,06:06:27,sp:02,2,2,1,,1\n\
+            3,1,06:07:27,06:06:27,sp:03,3,2,1,,2\n\
+            4,1,06:08:27,06:06:27,sp:04,3,2,1,,\n\
+            5,1,06:09:27,06:06:27,sp:05,3,2,1,,";
+            create_file_with_content(path, "stop_times.txt", stop_times_content);
+
+            let _collections = make_collection(path);
+        });
+    }
+    #[test]
+    #[should_panic(
+        expected = "IncoherentStopTimes { vj_id: \"1\", first_incorrect_sequence: 2, first_incorrect_time: Time(21987) }"
+    )]
+    fn stop_times_growing() {
+        test_in_tmp_dir(|path| {
+            let _ = generate_minimal_ntfs(path);
+            let stop_times_content = "stop_time_id,trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,shape_dist_traveled,stop_time_precision\n\
+            1,1,06:00:00,06:00:00,sp:01,1,0,0,,0\n\
+            2,1,06:06:27,06:06:27,sp:02,2,2,1,,1\n\
+            3,1,06:06:00,06:06:27,sp:03,3,2,1,,2\n\
+            4,1,06:06:27,06:06:27,sp:04,4,2,1,,\n\
+            5,1,06:06:27,06:06:27,sp:05,5,2,1,,";
+            create_file_with_content(path, "stop_times.txt", stop_times_content);
+
+            make_collection(path);
         });
     }
 }
