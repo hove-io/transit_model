@@ -198,7 +198,10 @@ where
     let file_name = path.file_name();
     let basename = file_name.map_or(path.to_string_lossy(), |b| b.to_string_lossy());
     info!("Reading {}", basename);
-    let mut rdr = csv::Reader::from_reader(reader);
+    let mut rdr = csv::ReaderBuilder::new()
+        .flexible(true)
+        .trim(csv::Trim::All)
+        .from_reader(reader);
     Ok(rdr
         .deserialize()
         .collect::<Result<_, _>>()
@@ -221,7 +224,10 @@ where
         }
         Some(reader) => {
             info!("Reading {}", basename);
-            let mut rdr = csv::Reader::from_reader(reader);
+            let mut rdr = csv::ReaderBuilder::new()
+                .flexible(true)
+                .trim(csv::Trim::All)
+                .from_reader(reader);
             Ok(rdr
                 .deserialize()
                 .collect::<Result<_, _>>()

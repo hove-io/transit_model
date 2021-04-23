@@ -343,7 +343,10 @@ where
         }
         Some(reader) => {
             info!("Reading {}", file);
-            let mut rdr = csv::Reader::from_reader(reader);
+            let mut rdr = csv::ReaderBuilder::new()
+                .flexible(true)
+                .trim(csv::Trim::All)
+                .from_reader(reader);
             let mut shapes = vec![];
             for shape in rdr.deserialize() {
                 let shape: Shape = skip_error_and_log!(
@@ -393,6 +396,7 @@ where
     info!("Reading stop_times.txt");
 
     let mut rdr = csv::ReaderBuilder::new()
+        .flexible(true)
         .trim(csv::Trim::All)
         .from_reader(reader);
     let mut headsigns = HashMap::new();
@@ -748,6 +752,7 @@ where
 
     let (reader, path) = file_handler.get_file(file)?;
     let mut rdr = csv::ReaderBuilder::new()
+        .flexible(true)
         .trim(csv::Trim::All)
         .from_reader(reader);
     let gtfs_stops: Vec<Stop> = rdr
@@ -817,7 +822,10 @@ where
         }
         Some(reader) => {
             info!("Reading {}", file);
-            let mut rdr = csv::Reader::from_reader(reader);
+            let mut rdr = csv::ReaderBuilder::new()
+                .flexible(true)
+                .trim(csv::Trim::All)
+                .from_reader(reader);
             let mut pathways = vec![];
             for pathway in rdr.deserialize() {
                 let mut pathway: Pathway =
@@ -885,7 +893,10 @@ where
         }
         Some(reader) => {
             info!("Reading {}", file);
-            let mut rdr = csv::Reader::from_reader(reader);
+            let mut rdr = csv::ReaderBuilder::new()
+                .flexible(true)
+                .trim(csv::Trim::All)
+                .from_reader(reader);
             let mut transfers = vec![];
             for transfer in rdr.deserialize() {
                 let transfer: Transfer = skip_error_and_log!(
@@ -1261,7 +1272,10 @@ where
             Ok(())
         }
         Some(reader) => {
-            let mut rdr = csv::Reader::from_reader(reader);
+            let mut rdr = csv::ReaderBuilder::new()
+                .flexible(true)
+                .trim(csv::Trim::All)
+                .from_reader(reader);
             let gtfs_frequencies: Vec<Frequency> = rdr
                 .deserialize()
                 .collect::<Result<_, _>>()
