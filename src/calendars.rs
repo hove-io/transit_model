@@ -19,7 +19,7 @@
 
 use crate::model::Collections;
 use crate::objects::{self, Date, ExceptionType};
-use crate::read_utils::FileHandler;
+use crate::read_utils::{read_objects, FileHandler};
 use crate::utils::*;
 use crate::utils::{de_from_date_string, ser_from_naive_date};
 use crate::vptranslator::translate;
@@ -135,48 +135,34 @@ fn manage_calendar_dates<H>(
 where
     for<'a> &'a mut H: FileHandler,
 {
-    let file = "calendar_dates.txt";
-    let (reader, path) = file_handler.get_file_if_exists(file)?;
-    match reader {
-        None => {
-            if !calendar_exists {
-                bail!("calendar_dates.txt or calendar.txt not found");
+    let calendar_dates =
+        read_objects::<_, CalendarDate>(file_handler, "calendar_dates.txt", false)?;
+    if calendar_dates.is_empty() && !calendar_exists {
+        bail!("calendar_dates.txt or calendar.txt not found");
+    }
+    for calendar_date in calendar_dates {
+        let is_inserted = calendars
+            .get_mut(&calendar_date.service_id)
+            .map(|mut calendar| match calendar_date.exception_type {
+                ExceptionType::Add => {
+                    calendar.dates.insert(calendar_date.date);
+                }
+                ExceptionType::Remove => {
+                    calendar.dates.remove(&calendar_date.date);
+                }
+            });
+        is_inserted.unwrap_or_else(|| {
+            if calendar_date.exception_type == ExceptionType::Add {
+                let mut dates = BTreeSet::new();
+                dates.insert(calendar_date.date);
+                calendars
+                    .push(objects::Calendar {
+                        id: calendar_date.service_id,
+                        dates,
+                    })
+                    .unwrap();
             }
-            info!("Skipping {}", file);
-        }
-        Some(reader) => {
-            info!("Reading {}", file);
-
-            let mut rdr = csv::Reader::from_reader(reader);
-            for calendar_date in rdr.deserialize() {
-                let calendar_date: CalendarDate =
-                    calendar_date.with_context(|_| format!("Error reading {:?}", path))?;
-
-                let is_inserted =
-                    calendars
-                        .get_mut(&calendar_date.service_id)
-                        .map(|mut calendar| match calendar_date.exception_type {
-                            ExceptionType::Add => {
-                                calendar.dates.insert(calendar_date.date);
-                            }
-                            ExceptionType::Remove => {
-                                calendar.dates.remove(&calendar_date.date);
-                            }
-                        });
-                is_inserted.unwrap_or_else(|| {
-                    if calendar_date.exception_type == ExceptionType::Add {
-                        let mut dates = BTreeSet::new();
-                        dates.insert(calendar_date.date);
-                        calendars
-                            .push(objects::Calendar {
-                                id: calendar_date.service_id,
-                                dates,
-                            })
-                            .unwrap();
-                    }
-                });
-            }
-        }
+        });
     }
     Ok(())
 }
@@ -186,34 +172,18 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let mut calendars: Vec<objects::Calendar> = vec![];
-    let calendar_exists = {
-        let file = "calendar.txt";
-        let (calendar_reader, path) = file_handler.get_file_if_exists(file)?;
-        match calendar_reader {
-            None => {
-                info!("Skipping {}", file);
-                false
-            }
-            Some(calendar_reader) => {
-                info!("Reading {}", file);
-                let mut rdr = csv::Reader::from_reader(calendar_reader);
-                for calendar in rdr.deserialize() {
-                    let calendar: Calendar =
-                        calendar.with_context(|_| format!("Error reading {:?}", path))?;
-                    let dates = calendar.get_valid_dates();
-                    if !dates.is_empty() {
-                        calendars.push(objects::Calendar {
-                            id: calendar.id.clone(),
-                            dates,
-                        });
-                    }
-                }
-                collections.calendars = CollectionWithId::new(calendars)?;
-                true
-            }
+    let ntfs_calendars = read_objects::<_, Calendar>(file_handler, "calendar.txt", false)?;
+    let calendar_exists = !ntfs_calendars.is_empty();
+    for calendar in ntfs_calendars {
+        let dates = calendar.get_valid_dates();
+        if !dates.is_empty() {
+            calendars.push(objects::Calendar {
+                id: calendar.id.clone(),
+                dates,
+            });
         }
-    };
-
+    }
+    collections.calendars = CollectionWithId::new(calendars)?;
     manage_calendar_dates(&mut collections.calendars, file_handler, calendar_exists)?;
 
     Ok(())
