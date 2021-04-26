@@ -28,6 +28,7 @@ use std::collections::BTreeSet;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Rem, Sub};
 use std::str::FromStr;
+use thiserror::Error;
 use typed_index_collection::{impl_id, impl_with_id, Idx, WithId};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -688,6 +689,48 @@ impl WithId for VehicleJourney {
 impl GetObjectType for VehicleJourney {
     fn get_object_type() -> ObjectType {
         ObjectType::VehicleJourney
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum StopTimeError {
+    #[error("duplicate stop_sequence '{duplicated_sequence}' for the trip '{vj_id}'")]
+    DuplicateStopSequence {
+        vj_id: String,
+        duplicated_sequence: u32,
+    },
+    #[error("incoherent stop times '{first_incorrect_sequence}' at time '{first_incorrect_time}' for the trip '{vj_id}'")]
+    IncoherentStopTimes {
+        vj_id: String,
+        first_incorrect_sequence: u32,
+        first_incorrect_time: Time,
+    },
+}
+
+impl VehicleJourney {
+    pub fn sort_and_check_stop_times(&mut self) -> Result<(), StopTimeError> {
+        self.stop_times.sort_unstable_by_key(|st| st.sequence);
+        for window in self.stop_times.windows(2) {
+            let curr_st = &window[0];
+            let next_st = &window[1];
+            if curr_st.sequence == next_st.sequence {
+                return Err(StopTimeError::DuplicateStopSequence {
+                    duplicated_sequence: curr_st.sequence,
+                    vj_id: self.id.clone(),
+                });
+            }
+            #[allow(clippy::suspicious_operation_groupings)]
+            if (curr_st.arrival_time > curr_st.departure_time)
+                || (curr_st.departure_time > next_st.arrival_time)
+            {
+                return Err(StopTimeError::IncoherentStopTimes {
+                    first_incorrect_sequence: curr_st.sequence,
+                    first_incorrect_time: curr_st.departure_time,
+                    vj_id: self.id.clone(),
+                });
+            }
+        }
+        Ok(())
     }
 }
 

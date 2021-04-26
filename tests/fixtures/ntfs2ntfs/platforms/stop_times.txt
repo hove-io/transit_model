@@ -1,4 +1,4 @@
 trip_id,stop_sequence,stop_id,arrival_time,departure_time,datetime_estimated
 B42F1,10,sp:1,10:10:00,10:10:00,
 B42F1,20,sp:2,10:20:00,10:20:00,
-B42F1,20,sp:4,10:30:00,10:30:00,
+B42F1,30,sp:4,10:30:00,10:30:00,
