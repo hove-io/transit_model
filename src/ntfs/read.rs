@@ -16,7 +16,7 @@ use super::{Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime}
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
 use crate::objects::*;
-use crate::read_utils::{read_objects, read_objects_skip_error, PathFileHandler};
+use crate::read_utils::{read_objects, read_objects_loose, PathFileHandler};
 use crate::utils::make_collection_with_id;
 use crate::Result;
 use failure::{bail, ensure, format_err, ResultExt};
@@ -571,8 +571,7 @@ pub fn manage_object_properties(collections: &mut Collections, path: &path::Path
 
 pub fn manage_geometries(collections: &mut Collections, path: &path::Path) -> Result<()> {
     let mut file_handle = PathFileHandler::new(path);
-    let geometries =
-        read_objects_skip_error::<_, Geometry>(&mut file_handle, "geometries.txt", false)?;
+    let geometries = read_objects_loose::<_, Geometry>(&mut file_handle, "geometries.txt", false)?;
     collections.geometries = CollectionWithId::new(geometries)?;
 
     Ok(())
@@ -605,7 +604,7 @@ pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Resu
     let file = "pathways.txt";
     let mut pathways = vec![];
     let mut file_handle = PathFileHandler::new(path);
-    let ntfs_pathways = read_objects_skip_error::<_, Pathway>(&mut file_handle, file, false)?;
+    let ntfs_pathways = read_objects_loose::<_, Pathway>(&mut file_handle, file, false)?;
     for mut pathway in ntfs_pathways {
         pathway.from_stop_type = skip_error_and_log!(
             collections

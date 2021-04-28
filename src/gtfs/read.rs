@@ -22,7 +22,7 @@ use crate::{
         self, Availability, CommentLinksT, Coord, KeysValues, Pathway, StopLocation, StopPoint,
         StopTime as NtfsStopTime, StopTimePrecision, StopType, Time, TransportType, VehicleJourney,
     },
-    read_utils::{read_collection, read_objects, read_objects_skip_error, FileHandler},
+    read_utils::{read_collection, read_objects, read_objects_loose, FileHandler},
     utils::*,
     Result,
 };
@@ -335,7 +335,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "shapes.txt";
-    let mut shapes = read_objects_skip_error::<_, Shape>(file_handler, file, false)?;
+    let mut shapes = read_objects_loose::<_, Shape>(file_handler, file, false)?;
     shapes.sort_unstable_by_key(|s| s.sequence);
     let mut map: HashMap<String, Vec<Point<f64>>> = HashMap::new();
     for s in &shapes {
@@ -777,7 +777,7 @@ where
 {
     let file = "pathways.txt";
 
-    let gtfs_pathways = read_objects_skip_error::<_, Pathway>(file_handler, file, false)?;
+    let gtfs_pathways = read_objects_loose::<_, Pathway>(file_handler, file, false)?;
     let mut pathways = vec![];
     for mut pathway in gtfs_pathways {
         pathway.from_stop_type = skip_error_and_log!(
@@ -832,7 +832,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "transfers.txt";
-    let gtfs_transfers = read_objects_skip_error::<_, Transfer>(file_handler, file, false)?;
+    let gtfs_transfers = read_objects_loose::<_, Transfer>(file_handler, file, false)?;
 
     let mut transfers = vec![];
     for transfer in gtfs_transfers {

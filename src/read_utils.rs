@@ -226,7 +226,7 @@ where
 }
 
 /// Read a vector of objects from a zip in a file_handler ignoring error
-pub(crate) fn read_objects_skip_error<H, O>(
+pub(crate) fn read_objects_loose<H, O>(
     file_handler: &mut H,
     file_name: &str,
     required_file: bool,
