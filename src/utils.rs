@@ -12,7 +12,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::objects::Date;
+use crate::{
+    objects::Date,
+    read_utils::{read_objects, PathFileHandler},
+};
 use chrono::NaiveDate;
 use failure::{format_err, ResultExt};
 use log::{debug, error, info};
@@ -314,14 +317,8 @@ pub fn make_collection_with_id<T>(
 where
     for<'de> T: Id<T> + serde::Deserialize<'de>,
 {
-    info!("Reading {}", file);
-    let path = path.join(file);
-    let mut rdr =
-        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
-    let vec = rdr
-        .deserialize()
-        .collect::<Result<_, _>>()
-        .with_context(|_| format!("Error reading {:?}", path))?;
+    let mut file_handle = PathFileHandler::new(path);
+    let vec = read_objects::<_, T>(&mut file_handle, file, true)?;
     CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
 }
 
@@ -341,14 +338,8 @@ pub fn make_collection<T>(path: &path::Path, file: &str) -> crate::Result<Collec
 where
     for<'de> T: serde::Deserialize<'de>,
 {
-    info!("Reading {}", file);
-    let path = path.join(file);
-    let mut rdr =
-        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
-    let vec = rdr
-        .deserialize()
-        .collect::<Result<_, _>>()
-        .with_context(|_| format!("Error reading {:?}", path))?;
+    let mut file_handle = PathFileHandler::new(path);
+    let vec = read_objects::<_, T>(&mut file_handle, file, true)?;
     Ok(Collection::new(vec))
 }
 

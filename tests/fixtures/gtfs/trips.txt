@@ -1,5 +1,5 @@
-route_id,service_id,trip_id,wheelchair_accessible
-route:2,service:1,trip:3,1
+route_id,service_id,trip_id,wheelchair_accessible,block_id
+route:2,service:1,trip:3,1,
 route:2,service:1,trip:4,1
 route:3,service:2,trip:5,2
 route:3,service:2,trip:6,0

@@ -22,12 +22,12 @@ use crate::{
         self, Availability, CommentLinksT, Coord, KeysValues, Pathway, StopLocation, StopPoint,
         StopTime as NtfsStopTime, StopTimePrecision, StopType, Time, TransportType, VehicleJourney,
     },
-    read_utils::{read_collection, read_objects, FileHandler},
+    read_utils::{read_collection, read_objects, read_objects_loose, FileHandler},
     utils::*,
     Result,
 };
 use derivative::Derivative;
-use failure::{bail, format_err, Error, ResultExt};
+use failure::{bail, format_err, Error};
 use geo::{LineString, Point};
 use log::{info, warn, Level as LogLevel};
 use serde::Deserialize;
@@ -335,48 +335,29 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "shapes.txt";
-    let (reader, path) = file_handler.get_file_if_exists(file)?;
-    match reader {
-        None => {
-            info!("Skipping {}", file);
-            Ok(())
-        }
-        Some(reader) => {
-            info!("Reading {}", file);
-            let mut rdr = csv::Reader::from_reader(reader);
-            let mut shapes = vec![];
-            for shape in rdr.deserialize() {
-                let shape: Shape = skip_error_and_log!(
-                    shape.with_context(|_| format!("Error reading {:?}", path)),
-                    LogLevel::Warn
-                );
-                shapes.push(shape);
-            }
-
-            shapes.sort_unstable_by_key(|s| s.sequence);
-            let mut map: HashMap<String, Vec<Point<f64>>> = HashMap::new();
-            for s in &shapes {
-                map.entry(s.id.clone())
-                    .or_insert_with(Vec::new)
-                    .push((s.lon, s.lat).into())
-            }
-
-            collections.geometries = CollectionWithId::new(
-                map.iter()
-                    .filter(|(_, points)| !points.is_empty())
-                    .map(|(id, points)| {
-                        let linestring: LineString<f64> = points.to_vec().into();
-                        objects::Geometry {
-                            id: id.to_string(),
-                            geometry: linestring.into(),
-                        }
-                    })
-                    .collect(),
-            )?;
-
-            Ok(())
-        }
+    let mut shapes = read_objects_loose::<_, Shape>(file_handler, file, false)?;
+    shapes.sort_unstable_by_key(|s| s.sequence);
+    let mut map: HashMap<String, Vec<Point<f64>>> = HashMap::new();
+    for s in &shapes {
+        map.entry(s.id.clone())
+            .or_insert_with(Vec::new)
+            .push((s.lon, s.lat).into())
     }
+
+    collections.geometries = CollectionWithId::new(
+        map.iter()
+            .filter(|(_, points)| !points.is_empty())
+            .map(|(id, points)| {
+                let linestring: LineString<f64> = points.to_vec().into();
+                objects::Geometry {
+                    id: id.to_string(),
+                    geometry: linestring.into(),
+                }
+            })
+            .collect(),
+    )?;
+
+    Ok(())
 }
 
 pub(in crate::gtfs) fn manage_stop_times<H>(
@@ -389,17 +370,11 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file_name = "stop_times.txt";
-    let (reader, path) = file_handler.get_file(file_name)?;
-    info!("Reading stop_times.txt");
-
-    let mut rdr = csv::ReaderBuilder::new()
-        .trim(csv::Trim::All)
-        .from_reader(reader);
     let mut headsigns = HashMap::new();
     let mut tmp_vjs = BTreeMap::new();
-    for stop_time in rdr.deserialize() {
-        let mut stop_time: StopTime =
-            stop_time.with_context(|_| format!("Error reading {:?}", path))?;
+    let stop_times = read_objects::<_, StopTime>(file_handler, file_name, true)?;
+
+    for mut stop_time in stop_times {
         if let Some(vj_idx) = collections.vehicle_journeys.get_idx(&stop_time.trip_id) {
             // consume the stop headsign
             if let Some(headsign) = stop_time.stop_headsign.take() {
@@ -571,7 +546,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let filename = "agency.txt";
-    let gtfs_agencies = read_objects::<_, Agency>(file_handler, filename)?;
+    let gtfs_agencies = read_objects::<_, Agency>(file_handler, filename, true)?;
 
     if let Some(referent_agency) = gtfs_agencies.first() {
         for agency in gtfs_agencies.iter().skip(1) {
@@ -745,16 +720,7 @@ where
 {
     info!("Reading stops.txt");
     let file = "stops.txt";
-
-    let (reader, path) = file_handler.get_file(file)?;
-    let mut rdr = csv::ReaderBuilder::new()
-        .trim(csv::Trim::All)
-        .from_reader(reader);
-    let gtfs_stops: Vec<Stop> = rdr
-        .deserialize()
-        .collect::<Result<_, _>>()
-        .with_context(|_| format!("Error reading {:?}", path))?;
-
+    let gtfs_stops = read_objects::<_, Stop>(file_handler, file, true)?;
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
     let mut stop_locations = vec![];
@@ -810,61 +776,50 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "pathways.txt";
-    let (reader, _path) = file_handler.get_file_if_exists(file)?;
-    match reader {
-        None => {
-            info!("Skipping {}", file);
-        }
-        Some(reader) => {
-            info!("Reading {}", file);
-            let mut rdr = csv::Reader::from_reader(reader);
-            let mut pathways = vec![];
-            for pathway in rdr.deserialize() {
-                let mut pathway: Pathway =
-                    skip_error_and_log!(pathway.map_err(|e| format_err!("{}", e)), LogLevel::Warn);
 
-                pathway.from_stop_type = skip_error_and_log!(
-                    collections
-                        .stop_points
-                        .get(&pathway.from_stop_id)
-                        .map(|st| st.stop_type.clone())
-                        .or_else(|| collections
-                            .stop_locations
-                            .get(&pathway.from_stop_id)
-                            .map(|sl| sl.stop_type.clone()))
-                        .ok_or_else(|| {
-                            format_err!(
-                                "Problem reading {:?}: from_stop_id={:?} not found",
-                                file,
-                                pathway.from_stop_id
-                            )
-                        }),
-                    LogLevel::Warn
-                );
+    let gtfs_pathways = read_objects_loose::<_, Pathway>(file_handler, file, false)?;
+    let mut pathways = vec![];
+    for mut pathway in gtfs_pathways {
+        pathway.from_stop_type = skip_error_and_log!(
+            collections
+                .stop_points
+                .get(&pathway.from_stop_id)
+                .map(|st| st.stop_type.clone())
+                .or_else(|| collections
+                    .stop_locations
+                    .get(&pathway.from_stop_id)
+                    .map(|sl| sl.stop_type.clone()))
+                .ok_or_else(|| {
+                    format_err!(
+                        "Problem reading {:?}: from_stop_id={:?} not found",
+                        file,
+                        pathway.from_stop_id
+                    )
+                }),
+            LogLevel::Warn
+        );
 
-                pathway.to_stop_type = skip_error_and_log!(
-                    collections
-                        .stop_points
-                        .get(&pathway.to_stop_id)
-                        .map(|st| st.stop_type.clone())
-                        .or_else(|| collections
-                            .stop_locations
-                            .get(&pathway.to_stop_id)
-                            .map(|sl| sl.stop_type.clone()))
-                        .ok_or_else(|| {
-                            format_err!(
-                                "Problem reading {:?}: to_stop_id={:?} not found",
-                                file,
-                                pathway.to_stop_id
-                            )
-                        }),
-                    LogLevel::Warn
-                );
-                pathways.push(pathway);
-            }
-            collections.pathways = CollectionWithId::new(pathways)?;
-        }
+        pathway.to_stop_type = skip_error_and_log!(
+            collections
+                .stop_points
+                .get(&pathway.to_stop_id)
+                .map(|st| st.stop_type.clone())
+                .or_else(|| collections
+                    .stop_locations
+                    .get(&pathway.to_stop_id)
+                    .map(|sl| sl.stop_type.clone()))
+                .ok_or_else(|| {
+                    format_err!(
+                        "Problem reading {:?}: to_stop_id={:?} not found",
+                        file,
+                        pathway.to_stop_id
+                    )
+                }),
+            LogLevel::Warn
+        );
+        pathways.push(pathway);
     }
+    collections.pathways = CollectionWithId::new(pathways)?;
     Ok(())
 }
 
@@ -877,88 +832,73 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "transfers.txt";
-    let (reader, _path) = file_handler.get_file_if_exists(file)?;
-    match reader {
-        None => {
-            info!("Skipping {}", file);
-            Ok(Collection::new(vec![]))
-        }
-        Some(reader) => {
-            info!("Reading {}", file);
-            let mut rdr = csv::Reader::from_reader(reader);
-            let mut transfers = vec![];
-            for transfer in rdr.deserialize() {
-                let transfer: Transfer = skip_error_and_log!(
-                    transfer.map_err(|e| format_err!("Problem reading {:?}: {}", file, e)),
-                    LogLevel::Warn
-                );
-                let expand_stop_area = |stop_id: &str| -> Result<Vec<&StopPoint>> {
-                    if stop_areas.get(stop_id).is_some() {
-                        let list_stop_points = stop_points
-                            .values()
-                            .filter(|stop_point| stop_point.stop_area_id == stop_id)
-                            .collect();
-                        Ok(list_stop_points)
-                    } else {
-                        stop_points
-                            .get(stop_id)
-                            .ok_or_else(|| {
-                                format_err!(
-                                    "Problem reading {:?}: stop_id={:?} not found",
-                                    file,
-                                    stop_id
-                                )
-                            })
-                            .map(|stop_point| vec![stop_point])
-                    }
-                };
-                let from_stop_points = skip_error_and_log!(
-                    expand_stop_area(transfer.from_stop_id.as_str()),
-                    LogLevel::Warn
-                );
-                let to_stop_points = skip_error_and_log!(
-                    expand_stop_area(transfer.to_stop_id.as_str()),
-                    LogLevel::Warn
-                );
-                for from_stop_point in &from_stop_points {
-                    let approx = from_stop_point.coord.approx();
-                    for to_stop_point in &to_stop_points {
-                        let (min_transfer_time, real_min_transfer_time) = match transfer
-                            .transfer_type
-                        {
-                            TransferType::Recommended => {
-                                let sq_distance = approx.sq_distance_to(&to_stop_point.coord);
-                                let transfer_time = (sq_distance.sqrt() / 0.785) as u32;
+    let gtfs_transfers = read_objects_loose::<_, Transfer>(file_handler, file, false)?;
 
-                                (Some(transfer_time), Some(transfer_time + 2 * 60))
-                            }
-                            TransferType::Timed => (Some(0), Some(0)),
-                            TransferType::WithTransferTime => {
-                                if transfer.min_transfer_time.is_none() {
-                                    warn!(
-                                        "The min_transfer_time between from_stop_id {} and to_stop_id {} is empty",
-                                        from_stop_point.id, to_stop_point.id
-                                    );
-                                }
-                                (transfer.min_transfer_time, transfer.min_transfer_time)
-                            }
-                            TransferType::NotPossible => (Some(86400), Some(86400)),
-                        };
-
-                        transfers.push(objects::Transfer {
-                            from_stop_id: from_stop_point.id.clone(),
-                            to_stop_id: to_stop_point.id.clone(),
-                            min_transfer_time,
-                            real_min_transfer_time,
-                            equipment_id: None,
-                        });
-                    }
-                }
+    let mut transfers = vec![];
+    for transfer in gtfs_transfers {
+        let expand_stop_area = |stop_id: &str| -> Result<Vec<&StopPoint>> {
+            if stop_areas.get(stop_id).is_some() {
+                let list_stop_points = stop_points
+                    .values()
+                    .filter(|stop_point| stop_point.stop_area_id == stop_id)
+                    .collect();
+                Ok(list_stop_points)
+            } else {
+                stop_points
+                    .get(stop_id)
+                    .ok_or_else(|| {
+                        format_err!(
+                            "Problem reading {:?}: stop_id={:?} not found",
+                            file,
+                            stop_id
+                        )
+                    })
+                    .map(|stop_point| vec![stop_point])
             }
+        };
+        let from_stop_points = skip_error_and_log!(
+            expand_stop_area(transfer.from_stop_id.as_str()),
+            LogLevel::Warn
+        );
+        let to_stop_points = skip_error_and_log!(
+            expand_stop_area(transfer.to_stop_id.as_str()),
+            LogLevel::Warn
+        );
+        for from_stop_point in &from_stop_points {
+            let approx = from_stop_point.coord.approx();
+            for to_stop_point in &to_stop_points {
+                let (min_transfer_time, real_min_transfer_time) = match transfer.transfer_type {
+                    TransferType::Recommended => {
+                        let sq_distance = approx.sq_distance_to(&to_stop_point.coord);
+                        let transfer_time = (sq_distance.sqrt() / 0.785) as u32;
 
-            Ok(Collection::new(transfers))
+                        (Some(transfer_time), Some(transfer_time + 2 * 60))
+                    }
+                    TransferType::Timed => (Some(0), Some(0)),
+                    TransferType::WithTransferTime => {
+                        if transfer.min_transfer_time.is_none() {
+                            warn!(
+                            "The min_transfer_time between from_stop_id {} and to_stop_id {} is empty",
+                            from_stop_point.id, to_stop_point.id
+                        );
+                        }
+                        (transfer.min_transfer_time, transfer.min_transfer_time)
+                    }
+                    TransferType::NotPossible => (Some(86400), Some(86400)),
+                };
+
+                transfers.push(objects::Transfer {
+                    from_stop_id: from_stop_point.id.clone(),
+                    to_stop_id: to_stop_point.id.clone(),
+                    min_transfer_time,
+                    real_min_transfer_time,
+                    equipment_id: None,
+                });
+            }
         }
     }
+
+    Ok(Collection::new(transfers))
 }
 
 fn get_commercial_mode(route_type: &RouteType) -> objects::CommercialMode {
@@ -1187,7 +1127,7 @@ where
     collections.commercial_modes = CollectionWithId::new(commercial_modes)?;
     collections.physical_modes = CollectionWithId::new(physical_modes)?;
 
-    let gtfs_trips = read_objects(file_handler, "trips.txt")?;
+    let gtfs_trips = read_objects(file_handler, "trips.txt", true)?;
     let map_line_routes = map_line_routes(&gtfs_routes_collection, &gtfs_trips, read_as_line);
     let lines = make_lines(&map_line_routes, &collections.networks)?;
     collections.lines = CollectionWithId::new(lines)?;
@@ -1253,164 +1193,147 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "frequencies.txt";
-    let (reader, path) = file_handler.get_file_if_exists(file)?;
-    info!("Reading {}", file);
-    match reader {
-        None => {
-            info!("Skipping {}", file);
-            Ok(())
+    let gtfs_frequencies = read_objects::<_, Frequency>(file_handler, file, false)?;
+    let mut trip_id_sequence: HashMap<String, u32> = HashMap::new();
+    let mut new_vehicle_journeys: Vec<VehicleJourney> = vec![];
+    for frequency in &gtfs_frequencies {
+        if frequency.start_time == frequency.end_time {
+            warn!(
+                "frequency for trip {:?} has same start and end time",
+                frequency.trip_id
+            );
+            continue;
         }
-        Some(reader) => {
-            let mut rdr = csv::Reader::from_reader(reader);
-            let gtfs_frequencies: Vec<Frequency> = rdr
-                .deserialize()
-                .collect::<Result<_, _>>()
-                .with_context(|_| format!("Error reading {:?}", path))?;
-            let mut trip_id_sequence: HashMap<String, u32> = HashMap::new();
-            let mut new_vehicle_journeys: Vec<VehicleJourney> = vec![];
-            for frequency in &gtfs_frequencies {
-                if frequency.start_time == frequency.end_time {
-                    warn!(
-                        "frequency for trip {:?} has same start and end time",
-                        frequency.trip_id
-                    );
-                    continue;
-                }
-                let datetime_estimated = match frequency.exact_times {
-                    FrequencyPrecision::Exact => false,
-                    FrequencyPrecision::Inexact => true,
-                };
-                let corresponding_vj = skip_error_and_log!(
-                    collections
-                        .vehicle_journeys
-                        .get(&frequency.trip_id)
-                        .cloned()
-                        .ok_or_else(|| format_err!(
-                            "frequency mapped to an unexisting trip {:?}",
-                            frequency.trip_id
-                        )),
-                    LogLevel::Warn
+        let datetime_estimated = match frequency.exact_times {
+            FrequencyPrecision::Exact => false,
+            FrequencyPrecision::Inexact => true,
+        };
+        let corresponding_vj = skip_error_and_log!(
+            collections
+                .vehicle_journeys
+                .get(&frequency.trip_id)
+                .cloned()
+                .ok_or_else(|| format_err!(
+                    "frequency mapped to an unexisting trip {:?}",
+                    frequency.trip_id
+                )),
+            LogLevel::Warn
+        );
+        let mut start_time = frequency.start_time;
+        let mut arrival_time_delta = match corresponding_vj.stop_times.iter().min() {
+            None => {
+                warn!(
+                    "frequency mapped to trip {:?} with no stop_times",
+                    frequency.trip_id
                 );
-                let mut start_time = frequency.start_time;
-                let mut arrival_time_delta = match corresponding_vj.stop_times.iter().min() {
-                    None => {
-                        warn!(
-                            "frequency mapped to trip {:?} with no stop_times",
-                            frequency.trip_id
-                        );
-                        continue;
-                    }
-                    Some(st) => st.arrival_time,
-                };
-                while start_time < frequency.end_time {
-                    trip_id_sequence
-                        .entry(frequency.trip_id.clone())
-                        .and_modify(|counter| *counter += 1)
-                        .or_insert(0);
-                    let generated_trip_id = format!(
-                        "{}-{}",
-                        frequency.trip_id, trip_id_sequence[&frequency.trip_id]
-                    );
-                    // the following handles generated trip starting after midnight, we need to generate a
-                    // new service in case the next day is not covered
-                    let service_id = if start_time.hours() >= 24 {
-                        let nb_days = start_time.hours() / 24;
-                        let service = collections
-                            .calendars
-                            .get(&corresponding_vj.service_id)
-                            .cloned()
-                            .unwrap();
-                        let new_service_id = format!("{}:+{}days", service.id, nb_days);
-                        if !collections.calendars.contains_id(&new_service_id) {
-                            arrival_time_delta = arrival_time_delta + Time::new(24, 0, 0);
-                            let new_dates: BTreeSet<_> = service
-                                .dates
-                                .iter()
-                                .map(|d| *d + chrono::Duration::days(i64::from(nb_days)))
-                                .collect();
+                continue;
+            }
+            Some(st) => st.arrival_time,
+        };
+        while start_time < frequency.end_time {
+            trip_id_sequence
+                .entry(frequency.trip_id.clone())
+                .and_modify(|counter| *counter += 1)
+                .or_insert(0);
+            let generated_trip_id = format!(
+                "{}-{}",
+                frequency.trip_id, trip_id_sequence[&frequency.trip_id]
+            );
+            // the following handles generated trip starting after midnight, we need to generate a
+            // new service in case the next day is not covered
+            let service_id = if start_time.hours() >= 24 {
+                let nb_days = start_time.hours() / 24;
+                let service = collections
+                    .calendars
+                    .get(&corresponding_vj.service_id)
+                    .cloned()
+                    .unwrap();
+                let new_service_id = format!("{}:+{}days", service.id, nb_days);
+                if !collections.calendars.contains_id(&new_service_id) {
+                    arrival_time_delta = arrival_time_delta + Time::new(24, 0, 0);
+                    let new_dates: BTreeSet<_> = service
+                        .dates
+                        .iter()
+                        .map(|d| *d + chrono::Duration::days(i64::from(nb_days)))
+                        .collect();
 
-                            let new_service = objects::Calendar {
-                                id: new_service_id.clone(),
-                                dates: new_dates,
-                            };
-                            collections.calendars.push(new_service)?;
-                        }
-                        new_service_id
-                    } else {
-                        corresponding_vj.service_id.clone()
+                    let new_service = objects::Calendar {
+                        id: new_service_id.clone(),
+                        dates: new_dates,
                     };
-                    let stop_times: Vec<NtfsStopTime> = corresponding_vj
-                        .stop_times
-                        .iter()
-                        .map(|stop_time| NtfsStopTime {
-                            stop_point_idx: stop_time.stop_point_idx,
-                            sequence: stop_time.sequence,
-                            arrival_time: stop_time.arrival_time + start_time - arrival_time_delta,
-                            departure_time: stop_time.departure_time + start_time
-                                - arrival_time_delta,
-                            boarding_duration: stop_time.boarding_duration,
-                            alighting_duration: stop_time.alighting_duration,
-                            pickup_type: stop_time.pickup_type,
-                            drop_off_type: stop_time.drop_off_type,
-                            datetime_estimated,
-                            local_zone_id: stop_time.local_zone_id,
-                            precision: stop_time.precision.clone(),
-                        })
-                        .collect();
-                    start_time = start_time + Time::new(0, 0, frequency.headway_secs);
-                    let generated_vj = VehicleJourney {
-                        id: generated_trip_id.clone(),
-                        service_id,
-                        stop_times,
-                        ..corresponding_vj.clone()
-                    };
-                    new_vehicle_journeys.push(generated_vj);
-                    let stop_time_comments: HashMap<(String, u32), String> = corresponding_vj
-                        .stop_times
-                        .iter()
-                        .filter(|stop_time| {
-                            stop_time.pickup_type == 2 || stop_time.drop_off_type == 2
-                        })
-                        .filter_map(|stop_time| {
-                            collections
-                                .stop_time_comments
-                                .get(&(frequency.trip_id.clone(), stop_time.sequence))
-                                .map(|comment_id| {
-                                    (
-                                        (generated_trip_id.clone(), stop_time.sequence),
-                                        comment_id.to_string(),
-                                    )
-                                })
-                        })
-                        .collect();
-                    let stop_time_ids: HashMap<(String, u32), String> = stop_time_comments
-                        .keys()
-                        .map(|(trip_id, sequence)| {
+                    collections.calendars.push(new_service)?;
+                }
+                new_service_id
+            } else {
+                corresponding_vj.service_id.clone()
+            };
+            let stop_times: Vec<NtfsStopTime> = corresponding_vj
+                .stop_times
+                .iter()
+                .map(|stop_time| NtfsStopTime {
+                    stop_point_idx: stop_time.stop_point_idx,
+                    sequence: stop_time.sequence,
+                    arrival_time: stop_time.arrival_time + start_time - arrival_time_delta,
+                    departure_time: stop_time.departure_time + start_time - arrival_time_delta,
+                    boarding_duration: stop_time.boarding_duration,
+                    alighting_duration: stop_time.alighting_duration,
+                    pickup_type: stop_time.pickup_type,
+                    drop_off_type: stop_time.drop_off_type,
+                    datetime_estimated,
+                    local_zone_id: stop_time.local_zone_id,
+                    precision: stop_time.precision.clone(),
+                })
+                .collect();
+            start_time = start_time + Time::new(0, 0, frequency.headway_secs);
+            let generated_vj = VehicleJourney {
+                id: generated_trip_id.clone(),
+                service_id,
+                stop_times,
+                ..corresponding_vj.clone()
+            };
+            new_vehicle_journeys.push(generated_vj);
+            let stop_time_comments: HashMap<(String, u32), String> = corresponding_vj
+                .stop_times
+                .iter()
+                .filter(|stop_time| stop_time.pickup_type == 2 || stop_time.drop_off_type == 2)
+                .filter_map(|stop_time| {
+                    collections
+                        .stop_time_comments
+                        .get(&(frequency.trip_id.clone(), stop_time.sequence))
+                        .map(|comment_id| {
                             (
-                                (trip_id.to_string(), *sequence),
-                                format!("{}-{}", trip_id, sequence),
+                                (generated_trip_id.clone(), stop_time.sequence),
+                                comment_id.to_string(),
                             )
                         })
-                        .collect();
-                    collections.stop_time_comments.extend(stop_time_comments);
-                    collections.stop_time_ids.extend(stop_time_ids);
-                }
-            }
-            let mut vehicle_journeys = collections.vehicle_journeys.take();
-            let trip_ids_to_remove: Vec<_> = gtfs_frequencies.iter().map(|f| &f.trip_id).collect();
-            vehicle_journeys.retain(|vj| !trip_ids_to_remove.contains(&&vj.id));
-            collections
-                .stop_time_ids
-                .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&&vj_id));
-            collections
-                .stop_time_comments
-                .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&&vj_id));
-
-            vehicle_journeys.append(&mut new_vehicle_journeys);
-            collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
-            Ok(())
+                })
+                .collect();
+            let stop_time_ids: HashMap<(String, u32), String> = stop_time_comments
+                .keys()
+                .map(|(trip_id, sequence)| {
+                    (
+                        (trip_id.to_string(), *sequence),
+                        format!("{}-{}", trip_id, sequence),
+                    )
+                })
+                .collect();
+            collections.stop_time_comments.extend(stop_time_comments);
+            collections.stop_time_ids.extend(stop_time_ids);
         }
     }
+    let mut vehicle_journeys = collections.vehicle_journeys.take();
+    let trip_ids_to_remove: Vec<_> = gtfs_frequencies.iter().map(|f| &f.trip_id).collect();
+    vehicle_journeys.retain(|vj| !trip_ids_to_remove.contains(&&vj.id));
+    collections
+        .stop_time_ids
+        .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&&vj_id));
+    collections
+        .stop_time_comments
+        .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&&vj_id));
+
+    vehicle_journeys.append(&mut new_vehicle_journeys);
+    collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
+    Ok(())
 }
 
 #[cfg(test)]

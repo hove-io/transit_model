@@ -17,9 +17,10 @@ use crate::{
     objects::{self, Contributor},
     Result,
 };
-use failure::{format_err, ResultExt};
-use log::info;
+use failure::{bail, format_err, ResultExt};
+use log::{info, Level as LogLevel};
 use serde::Deserialize;
+use skip_error::skip_error_and_log;
 use std::path;
 use std::path::{Path, PathBuf};
 use std::{collections::BTreeMap, io::Read};
@@ -189,23 +190,11 @@ where
 }
 
 /// Read a vector of objects from a zip in a file_handler
-pub(crate) fn read_objects<H, O>(file_handler: &mut H, file_name: &str) -> Result<Vec<O>>
-where
-    for<'a> &'a mut H: FileHandler,
-    O: for<'de> serde::Deserialize<'de>,
-{
-    let (reader, path) = file_handler.get_file(file_name)?;
-    let file_name = path.file_name();
-    let basename = file_name.map_or(path.to_string_lossy(), |b| b.to_string_lossy());
-    info!("Reading {}", basename);
-    let mut rdr = csv::Reader::from_reader(reader);
-    Ok(rdr
-        .deserialize()
-        .collect::<Result<_, _>>()
-        .with_context(|_| format!("Error reading {:?}", path))?)
-}
-
-pub(crate) fn read_opt_objects<H, O>(file_handler: &mut H, file_name: &str) -> Result<Vec<O>>
+pub(crate) fn read_objects<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+    required_file: bool,
+) -> Result<Vec<O>>
 where
     for<'a> &'a mut H: FileHandler,
     O: for<'de> serde::Deserialize<'de>,
@@ -214,18 +203,65 @@ where
     let file_name = path.file_name();
     let basename = file_name.map_or(path.to_string_lossy(), |b| b.to_string_lossy());
 
-    match reader {
-        None => {
+    match (reader, required_file) {
+        (None, false) => {
             info!("Skipping {}", basename);
             Ok(vec![])
         }
-        Some(reader) => {
+        (None, true) => {
+            bail!("file {:?} not found", path)
+        }
+        (Some(reader), _) => {
             info!("Reading {}", basename);
-            let mut rdr = csv::Reader::from_reader(reader);
+            let mut rdr = csv::ReaderBuilder::new()
+                .flexible(true)
+                .trim(csv::Trim::All)
+                .from_reader(reader);
             Ok(rdr
                 .deserialize()
                 .collect::<Result<_, _>>()
                 .with_context(|_| format!("Error reading {:?}", path))?)
+        }
+    }
+}
+
+/// Read a vector of objects from a zip in a file_handler ignoring error
+pub(crate) fn read_objects_loose<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+    required_file: bool,
+) -> Result<Vec<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de>,
+{
+    let (reader, path) = file_handler.get_file_if_exists(file_name)?;
+    let file_name = path.file_name();
+    let basename = file_name.map_or(path.to_string_lossy(), |b| b.to_string_lossy());
+
+    match (reader, required_file) {
+        (None, false) => {
+            info!("Skipping {}", basename);
+            Ok(vec![])
+        }
+        (None, true) => {
+            bail!("file {:?} not found", path)
+        }
+        (Some(reader), _) => {
+            info!("Reading {}", basename);
+            let mut rdr = csv::ReaderBuilder::new()
+                .flexible(true)
+                .trim(csv::Trim::All)
+                .from_reader(reader);
+            let mut objects: Vec<O> = vec![];
+            for object in rdr.deserialize() {
+                let object: O = skip_error_and_log!(
+                    object.with_context(|_| format!("Error reading {:?}", path)),
+                    LogLevel::Warn
+                );
+                objects.push(object);
+            }
+            Ok(objects)
         }
     }
 }
@@ -239,7 +275,7 @@ where
     for<'a> &'a mut H: FileHandler,
     O: for<'de> serde::Deserialize<'de> + Id<O>,
 {
-    let vec = read_objects(file_handler, file_name)?;
+    let vec = read_objects(file_handler, file_name, true)?;
     CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
 }
 
@@ -251,7 +287,7 @@ where
     for<'a> &'a mut H: FileHandler,
     O: for<'de> serde::Deserialize<'de> + Id<O>,
 {
-    let vec = read_opt_objects(file_handler, file_name)?;
+    let vec = read_objects(file_handler, file_name, false)?;
     CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
 }
 

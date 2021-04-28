@@ -16,6 +16,7 @@ use super::{Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime}
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
 use crate::objects::*;
+use crate::read_utils::{read_objects, read_objects_loose, PathFileHandler};
 use crate::utils::make_collection_with_id;
 use crate::Result;
 use failure::{bail, ensure, format_err, ResultExt};
@@ -152,16 +153,12 @@ impl TryFrom<Stop> for StopLocation {
 }
 
 pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    info!("Reading stops.txt");
-    let path = path.join("stops.txt");
-    let mut rdr =
-        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
-
+    let mut file_handle = PathFileHandler::new(path);
+    let stops = read_objects::<_, Stop>(&mut file_handle, "stops.txt", true)?;
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
     let mut stop_locations = vec![];
-    for stop in rdr.deserialize() {
-        let stop: Stop = stop.with_context(|_| format!("Error reading {:?}", path))?;
+    for stop in stops {
         match stop.location_type {
             StopLocationType::StopPoint | StopLocationType::GeographicArea => {
                 let mut stop_point =
@@ -256,15 +253,11 @@ pub fn manage_fares_v1(collections: &mut Collections, base_path: &path::Path) ->
 }
 
 pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    info!("Reading stop_times.txt");
-    let path = path.join("stop_times.txt");
-    let mut rdr =
-        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
+    let mut file_handle = PathFileHandler::new(path);
+    let stop_times = read_objects::<_, StopTime>(&mut file_handle, "stop_times.txt", true)?;
     let mut headsigns = HashMap::new();
     let mut stop_time_ids = HashMap::new();
-    for stop_time in rdr.deserialize() {
-        let stop_time: StopTime =
-            stop_time.with_context(|_| format!("Error reading {:?}", path))?;
+    for stop_time in stop_times {
         let stop_point_idx = collections
             .stop_points
             .get_idx(&stop_time.stop_id)
@@ -368,17 +361,9 @@ where
 }
 
 pub fn manage_codes(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    let file = "object_codes.txt";
-    if !path.join(file).exists() {
-        info!("Skipping {}", file);
-        return Ok(());
-    }
-    info!("Reading {}", file);
-    let path = path.join(file);
-    let mut rdr =
-        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
-    for code in rdr.deserialize() {
-        let code: Code = code.with_context(|_| format!("Error reading {:?}", path))?;
+    let mut file_handle = PathFileHandler::new(path);
+    let codes = read_objects::<_, Code>(&mut file_handle, "object_codes.txt", false)?;
+    for code in codes {
         match code.object_type {
             ObjectType::StopArea => insert_code(&mut collections.stop_areas, code),
             ObjectType::StopPoint => insert_code(&mut collections.stop_points, code),
@@ -406,14 +391,10 @@ struct FeedInfo {
 }
 
 pub fn manage_feed_infos(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    info!("Reading feed_infos.txt");
-    let path = path.join("feed_infos.txt");
-    let mut rdr =
-        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
+    let mut file_handle = PathFileHandler::new(path);
+    let feed_infos = read_objects::<_, FeedInfo>(&mut file_handle, "feed_infos.txt", true)?;
     collections.feed_infos.clear();
-    for feed_info in rdr.deserialize() {
-        let feed_info: FeedInfo =
-            feed_info.with_context(|_| format!("Error reading {:?}", path))?;
+    for feed_info in feed_infos {
         ensure!(
             collections
                 .feed_infos
@@ -489,56 +470,55 @@ pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Resu
     if path.join("comments.txt").exists() {
         collections.comments = make_collection_with_id(path, "comments.txt")?;
 
-        let path = path.join("comment_links.txt");
-        if let Ok(mut rdr) = csv::Reader::from_path(&path) {
-            // invert the stop_time_ids map to search a stop_time by it's id
-            let stop_time_ids = collections
-                .stop_time_ids
-                .iter()
-                .map(|(k, v)| (v, k.clone()))
-                .collect();
-            info!("Reading comment_links.txt");
-            for comment_link in rdr.deserialize() {
-                let comment_link: CommentLink =
-                    comment_link.with_context(|_| format!("Error reading {:?}", path))?;
-                match comment_link.object_type {
-                    ObjectType::StopArea => insert_comment_link(
-                        &mut collections.stop_areas,
-                        &collections.comments,
-                        &comment_link,
-                    )?,
-                    ObjectType::StopPoint => insert_comment_link(
-                        &mut collections.stop_points,
-                        &collections.comments,
-                        &comment_link,
-                    )?,
-                    ObjectType::Line => insert_comment_link(
-                        &mut collections.lines,
-                        &collections.comments,
-                        &comment_link,
-                    )?,
-                    ObjectType::Route => insert_comment_link(
-                        &mut collections.routes,
-                        &collections.comments,
-                        &comment_link,
-                    )?,
-                    ObjectType::VehicleJourney => insert_comment_link(
-                        &mut collections.vehicle_journeys,
-                        &collections.comments,
-                        &comment_link,
-                    )?,
-                    ObjectType::StopTime => insert_stop_time_comment_link(
-                        &mut collections.stop_time_comments,
-                        &stop_time_ids,
-                        &collections.comments,
-                        &comment_link,
-                    )?,
-                    ObjectType::LineGroup => warn!("line_groups.txt is not parsed yet"),
-                    _ => bail!(
-                        "comment does not support {}",
-                        comment_link.object_type.as_str()
-                    ),
-                }
+        let mut file_handle = PathFileHandler::new(path);
+        let comment_links =
+            read_objects::<_, CommentLink>(&mut file_handle, "comment_links.txt", false)?;
+
+        // invert the stop_time_ids map to search a stop_time by it's id
+        let stop_time_ids = collections
+            .stop_time_ids
+            .iter()
+            .map(|(k, v)| (v, k.clone()))
+            .collect();
+        // info!("Reading comment_links.txt");
+        for comment_link in comment_links {
+            match comment_link.object_type {
+                ObjectType::StopArea => insert_comment_link(
+                    &mut collections.stop_areas,
+                    &collections.comments,
+                    &comment_link,
+                )?,
+                ObjectType::StopPoint => insert_comment_link(
+                    &mut collections.stop_points,
+                    &collections.comments,
+                    &comment_link,
+                )?,
+                ObjectType::Line => insert_comment_link(
+                    &mut collections.lines,
+                    &collections.comments,
+                    &comment_link,
+                )?,
+                ObjectType::Route => insert_comment_link(
+                    &mut collections.routes,
+                    &collections.comments,
+                    &comment_link,
+                )?,
+                ObjectType::VehicleJourney => insert_comment_link(
+                    &mut collections.vehicle_journeys,
+                    &collections.comments,
+                    &comment_link,
+                )?,
+                ObjectType::StopTime => insert_stop_time_comment_link(
+                    &mut collections.stop_time_comments,
+                    &stop_time_ids,
+                    &collections.comments,
+                    &comment_link,
+                )?,
+                ObjectType::LineGroup => warn!("line_groups.txt is not parsed yet"),
+                _ => bail!(
+                    "comment does not support {}",
+                    comment_link.object_type.as_str()
+                ),
             }
         }
     }
@@ -567,18 +547,10 @@ where
 }
 
 pub fn manage_object_properties(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    let file = "object_properties.txt";
-    let path = path.join(file);
-    if !path.exists() {
-        info!("Skipping {}", file);
-        return Ok(());
-    }
-    info!("Reading {}", file);
-    let mut rdr =
-        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
-    for obj_prop in rdr.deserialize() {
-        let obj_prop: ObjectProperty =
-            obj_prop.with_context(|_| format!("Error reading {:?}", path))?;
+    let mut file_handle = PathFileHandler::new(path);
+    let obj_props =
+        read_objects::<_, ObjectProperty>(&mut file_handle, "object_properties.txt", false)?;
+    for obj_prop in obj_props {
         match obj_prop.object_type {
             ObjectType::StopArea => insert_object_property(&mut collections.stop_areas, obj_prop),
             ObjectType::StopPoint => insert_object_property(&mut collections.stop_points, obj_prop),
@@ -598,23 +570,8 @@ pub fn manage_object_properties(collections: &mut Collections, path: &path::Path
 }
 
 pub fn manage_geometries(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    let file = "geometries.txt";
-    let path = path.join(file);
-    if !path.exists() {
-        info!("Skipping {}", file);
-        return Ok(());
-    }
-
-    info!("Reading {}", file);
-
-    let mut geometries: Vec<Geometry> = vec![];
-    let mut rdr =
-        csv::Reader::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
-    for geometry in rdr.deserialize() {
-        let geometry: Geometry = skip_error_and_log!(geometry, LogLevel::Warn);
-        geometries.push(geometry)
-    }
-
+    let mut file_handle = PathFileHandler::new(path);
+    let geometries = read_objects_loose::<_, Geometry>(&mut file_handle, "geometries.txt", false)?;
     collections.geometries = CollectionWithId::new(geometries)?;
 
     Ok(())
@@ -645,21 +602,10 @@ pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {
 
 pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Result<()> {
     let file = "pathways.txt";
-    let pathway_path = path.join(file);
-    if !pathway_path.exists() {
-        info!("Skipping {}", file);
-        return Ok(());
-    }
-
-    info!("Reading {}", file);
     let mut pathways = vec![];
-    let mut rdr = csv::Reader::from_path(&pathway_path)
-        .with_context(|_| format!("Error reading {:?}", pathway_path))?;
-
-    for pathway in rdr.deserialize() {
-        let mut pathway: Pathway =
-            skip_error_and_log!(pathway.map_err(|e| format_err!("{}", e)), LogLevel::Warn);
-
+    let mut file_handle = PathFileHandler::new(path);
+    let ntfs_pathways = read_objects_loose::<_, Pathway>(&mut file_handle, file, false)?;
+    for mut pathway in ntfs_pathways {
         pathway.from_stop_type = skip_error_and_log!(
             collections
                 .stop_points
