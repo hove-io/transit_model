@@ -5,6 +5,11 @@ on:
         branches:  # Build 'master' branch
             - 'master'
     pull_request:  # Build any PR
+env:
+  SLACK_TEXT: '{"attachments":[{
+                "text":"Un job demande votre attention !","color":"#D00000",
+                "fields":[{"title": ":warning: Action URL","value": "${{ env.GITHUB_SERVER_URL }}/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID}}"
+                }]}]}'
 
 jobs:
   rustfmt:
@@ -15,6 +20,10 @@ jobs:
     - uses: actions/checkout@master
     - name: Check formatting
       run: make format
+    - name: slack notification (the job has failed)
+      if: failure() && github.ref == 'ref/head/master'
+      run: |
+         curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
 
   clippy:
     name: Analyzing code with Clippy
@@ -24,6 +33,10 @@ jobs:
     - uses: actions/checkout@master
     - name: Linting
       run: make lint
+    - name: slack notification (the job has failed)
+      if: failure() && github.ref == 'ref/head/master'
+      run: |
+         curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
 
   audit:
     name: Audits
@@ -36,6 +49,10 @@ jobs:
       uses: actions-rs/audit-check@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+    - name: slack notification (the job has failed)
+      if: failure() && github.ref == 'ref/head/master'
+      run: |
+         curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
 
   tests:
     name: Tests
@@ -49,6 +66,10 @@ jobs:
       run: apt update && apt install --yes libxml2-utils
     - name: Run tests with and without features
       run: make test
+    - name: slack notification (the job has failed)
+      if: failure() && github.ref == 'ref/head/master'
+      run: |
+         curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
 
   coverage:
     name: Code coverage
@@ -74,3 +95,8 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+    - name: slack notification (the job has failed)
+      if: failure() && github.ref == 'ref/head/master'
+      run: |
+         curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+
