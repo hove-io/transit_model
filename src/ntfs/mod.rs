@@ -29,6 +29,7 @@ use crate::{
 use chrono::{DateTime, FixedOffset};
 use chrono_tz::Tz;
 use derivative::Derivative;
+use failure::ResultExt;
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::path;
@@ -220,9 +221,10 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let p = path.as_ref();
     if p.is_file() {
         // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
-        read_from_zip(path)
+        Ok(read_from_zip(p).with_context(|_| format!("impossible to read ziped ntfs {:?}", p))?)
     } else if p.is_dir() {
-        read_from_path(path)
+        Ok(read_from_path(p)
+            .with_context(|_| format!("impossible to read ntfs directory from {:?}", p))?)
     } else {
         Err(failure::format_err!(
             "file {:?} is neither a file nor a directory, cannot read a ntfs from it",
