@@ -8,8 +8,8 @@ on:
 
 env:
   SLACK_TEXT: '{"attachments":[{
-                "text":"Un job demande votre attention !","color":"#D00000",
-                "fields":[{"title": ":warning: Action URL","value": "https://github.com/CanalTP/transit_model/actions/runs/actions"
+                "text":":warning: Un job demande votre attention !","color":"#D00000",
+                "fields":[{"title":"TEST","value": "https://github.com/CanalTP/transit_model/actions/workflows/ci.yml"
                 }]}]}'
 
 jobs:
@@ -22,9 +22,9 @@ jobs:
     - name: Check formatting
       run: make format
     - name: slack notification (the job has failed)
-      if: failure() && github.ref == 'ref/head/master'
+      #if: failure() && github.ref == 'ref/head/master'
       run: |
-         curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+         echo '${{ env.SLACK_TEXT }}' | http --json POST ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
 
   clippy:
     name: Analyzing code with Clippy
@@ -68,7 +68,7 @@ jobs:
     - name: Run tests with and without features
       run: make test
     - name: slack notification (the job has failed)
-      #if: failure() && github.ref == 'ref/head/master'
+      if: failure() && github.ref == 'ref/head/master'
       run: |
          curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
 
