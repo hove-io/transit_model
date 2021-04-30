@@ -139,6 +139,10 @@ fn test_minimal_platforms_stay_same() {
 #[test]
 fn test_minimal_fares_stay_same_with_empty_of_fares() {
     let ntm = transit_model::ntfs::read("tests/fixtures/ntfs2ntfs/empty_od_fares").unwrap();
+    println!("prices: {}", ntm.prices_v1.len());
+    for p in &ntm.prices_v1 {
+        println!("p == {:?}", p);
+    }
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(

@@ -22,7 +22,7 @@ use crate::{
     calendars::{manage_calendars, write_calendar_dates},
     model::{Collections, Model},
     objects::*,
-    read_utils,
+    read_utils::{self, FileHandler},
     utils::*,
     Result,
 };
@@ -171,51 +171,108 @@ fn has_fares_v2(collections: &Collections) -> bool {
 fn has_fares_v1(collections: &Collections) -> bool {
     !collections.prices_v1.is_empty()
 }
+
 /// Imports a `Model` from the
 /// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
-pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
-    let path = path.as_ref();
-    let mut file_handle = read_utils::PathFileHandler::new(path.to_path_buf());
+pub fn read_from_path<P: AsRef<path::Path>>(p: P) -> Result<Model> {
+    let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
+    read_file_handler(&mut file_handle)
+}
 
-    info!("Loading NTFS from {:?}", path);
+/// Imports a `Model` from a zip file containing the
+/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
+pub fn read_from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
+    let reader = std::fs::File::open(p.as_ref())?;
+    let mut file_handler = read_utils::ZipHandler::new(reader, p)?;
+    read_file_handler(&mut file_handler)
+}
+
+/// Imports a `Model` from an object implementing `Read` and `Seek` and containing a zip file with a
+/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
+///
+/// This method makes it possible to read from a variety of sources like read a NTFS
+/// from the network.
+///
+/// ```
+// let url = "http://some_url/ntfs.zip";
+// let resp = reqwest::blocking::get(url)?; // or async call
+// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
+// let model = transit_model::ntfs::from_read(data, &url)?;
+/// ```
+///
+/// The `source_name` is needed to have nicer error messages.
+pub fn from_read<R>(reader: R, source_name: &str) -> Result<Model>
+where
+    R: std::io::Seek + std::io::Read,
+{
+    let mut file_handler = read_utils::ZipHandler::new(reader, &source_name)?;
+    read_file_handler(&mut file_handler)
+}
+
+/// Imports a `Model` from the
+/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
+/// files in the given directory.
+/// This method will try to detect if the input is a ziped archive or not.
+/// If the default file type mechanism is not enough, you can use
+/// [read_from_zip] or [read_from_path].
+pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
+    let p = path.as_ref();
+    if p.is_file() {
+        // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
+        read_from_zip(path)
+    } else if p.is_dir() {
+        read_from_path(path)
+    } else {
+        Err(failure::format_err!(
+            "file {:?} is neither a file nor a directory, cannot read a ntfs from it",
+            p
+        ))
+    }
+}
+
+fn read_file_handler<H>(file_handler: &mut H) -> Result<Model>
+where
+    for<'a> &'a mut H: read_utils::FileHandler,
+{
+    info!("Loading NTFS from {:?}", file_handler.source_name());
     let mut collections = Collections {
-        contributors: make_collection_with_id(path, "contributors.txt")?,
-        datasets: make_collection_with_id(path, "datasets.txt")?,
-        commercial_modes: make_collection_with_id(path, "commercial_modes.txt")?,
-        networks: make_collection_with_id(path, "networks.txt")?,
-        lines: make_collection_with_id(path, "lines.txt")?,
-        routes: make_collection_with_id(path, "routes.txt")?,
-        vehicle_journeys: make_collection_with_id(path, "trips.txt")?,
-        frequencies: make_opt_collection(path, "frequencies.txt")?,
-        physical_modes: make_collection_with_id(path, "physical_modes.txt")?,
-        companies: make_collection_with_id(path, "companies.txt")?,
-        equipments: make_opt_collection_with_id(path, "equipments.txt")?,
-        trip_properties: make_opt_collection_with_id(path, "trip_properties.txt")?,
-        transfers: make_opt_collection(path, "transfers.txt")?,
-        admin_stations: make_opt_collection(path, "admin_stations.txt")?,
-        tickets: make_opt_collection_with_id(path, "tickets.txt")?,
-        ticket_uses: make_opt_collection_with_id(path, "ticket_uses.txt")?,
-        ticket_prices: make_opt_collection(path, "ticket_prices.txt")?,
-        ticket_use_perimeters: make_opt_collection(path, "ticket_use_perimeters.txt")?,
-        ticket_use_restrictions: make_opt_collection(path, "ticket_use_restrictions.txt")?,
-        levels: make_opt_collection_with_id(path, "levels.txt")?,
-        grid_calendars: make_opt_collection_with_id(path, "grid_calendars.txt")?,
-        grid_exception_dates: make_opt_collection(path, "grid_exception_dates.txt")?,
-        grid_periods: make_opt_collection(path, "grid_periods.txt")?,
-        grid_rel_calendar_line: make_opt_collection(path, "grid_rel_calendar_line.txt")?,
+        contributors: make_collection_with_id(file_handler, "contributors.txt")?,
+        datasets: make_collection_with_id(file_handler, "datasets.txt")?,
+        commercial_modes: make_collection_with_id(file_handler, "commercial_modes.txt")?,
+        networks: make_collection_with_id(file_handler, "networks.txt")?,
+        lines: make_collection_with_id(file_handler, "lines.txt")?,
+        routes: make_collection_with_id(file_handler, "routes.txt")?,
+        vehicle_journeys: make_collection_with_id(file_handler, "trips.txt")?,
+        frequencies: make_opt_collection(file_handler, "frequencies.txt")?,
+        physical_modes: make_collection_with_id(file_handler, "physical_modes.txt")?,
+        companies: make_collection_with_id(file_handler, "companies.txt")?,
+        equipments: make_opt_collection_with_id(file_handler, "equipments.txt")?,
+        trip_properties: make_opt_collection_with_id(file_handler, "trip_properties.txt")?,
+        transfers: make_opt_collection(file_handler, "transfers.txt")?,
+        admin_stations: make_opt_collection(file_handler, "admin_stations.txt")?,
+        tickets: make_opt_collection_with_id(file_handler, "tickets.txt")?,
+        ticket_uses: make_opt_collection_with_id(file_handler, "ticket_uses.txt")?,
+        ticket_prices: make_opt_collection(file_handler, "ticket_prices.txt")?,
+        ticket_use_perimeters: make_opt_collection(file_handler, "ticket_use_perimeters.txt")?,
+        ticket_use_restrictions: make_opt_collection(file_handler, "ticket_use_restrictions.txt")?,
+        levels: make_opt_collection_with_id(file_handler, "levels.txt")?,
+        grid_calendars: make_opt_collection_with_id(file_handler, "grid_calendars.txt")?,
+        grid_exception_dates: make_opt_collection(file_handler, "grid_exception_dates.txt")?,
+        grid_periods: make_opt_collection(file_handler, "grid_periods.txt")?,
+        grid_rel_calendar_line: make_opt_collection(file_handler, "grid_rel_calendar_line.txt")?,
         ..Default::default()
     };
-    manage_calendars(&mut file_handle, &mut collections)?;
-    read::manage_geometries(&mut collections, path)?;
-    read::manage_feed_infos(&mut collections, path)?;
-    read::manage_stops(&mut collections, path)?;
-    read::manage_pathways(&mut collections, path)?;
-    read::manage_stop_times(&mut collections, path)?;
-    read::manage_codes(&mut collections, path)?;
-    read::manage_comments(&mut collections, path)?;
-    read::manage_object_properties(&mut collections, path)?;
-    read::manage_fares_v1(&mut collections, path)?;
+    manage_calendars(file_handler, &mut collections)?;
+    read::manage_geometries(&mut collections, file_handler)?;
+    read::manage_feed_infos(&mut collections, file_handler)?;
+    read::manage_stops(&mut collections, file_handler)?;
+    read::manage_pathways(&mut collections, file_handler)?;
+    read::manage_stop_times(&mut collections, file_handler)?;
+    read::manage_codes(&mut collections, file_handler)?;
+    read::manage_comments(&mut collections, file_handler)?;
+    read::manage_object_properties(&mut collections, file_handler)?;
+    read::manage_fares_v1(&mut collections, file_handler)?;
     read::manage_companies_on_vj(&mut collections)?;
     info!("Indexing");
     let res = Model::new(collections)?;
@@ -340,7 +397,8 @@ mod tests {
         let collection = CollectionWithId::new(objects).unwrap();
         test_in_tmp_dir(|path| {
             write_collection_with_id(path, "file.txt", &collection).unwrap();
-            let des_collection = make_collection_with_id(path, "file.txt").unwrap();
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            let des_collection = make_collection_with_id(&mut handler, "file.txt").unwrap();
             assert_eq!(collection, des_collection);
         });
     }
@@ -353,7 +411,8 @@ mod tests {
         let collection = Collection::new(objects);
         test_in_tmp_dir(|path| {
             write_collection(path, "file.txt", &collection).unwrap();
-            let des_collection = make_opt_collection(path, "file.txt").unwrap();
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            let des_collection = make_opt_collection(&mut handler, "file.txt").unwrap();
             assert_eq!(collection, des_collection);
         });
     }
@@ -387,7 +446,8 @@ mod tests {
 
         test_in_tmp_dir(|path| {
             write::write_feed_infos(path, &collections, get_test_datetime()).unwrap();
-            read::manage_feed_infos(&mut collections, path).unwrap();
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            read::manage_feed_infos(&mut collections, &mut handler).unwrap();
             assert_eq!(
                 vec![
                     ("feed_creation_date".to_string(), "20190403".to_string()),
@@ -700,14 +760,14 @@ mod tests {
             )
             .unwrap();
 
+            let mut handler = PathFileHandler::new(path.to_path_buf());
             let mut collections = Collections {
-                vehicle_journeys: make_collection_with_id::<VehicleJourney>(path, "trips.txt")
-                    .unwrap(),
+                vehicle_journeys: make_collection_with_id(&mut handler, "trips.txt").unwrap(),
                 stop_points,
                 ..Default::default()
             };
 
-            read::manage_stop_times(&mut collections, path).unwrap();
+            read::manage_stop_times(&mut collections, &mut handler).unwrap();
             assert_eq!(vehicle_journeys, collections.vehicle_journeys);
             assert_eq!(collections.stop_time_headsigns, headsigns);
             assert_eq!(collections.stop_time_ids, stop_time_ids);
@@ -813,7 +873,8 @@ mod tests {
         let expected_collection = Collection::new(expected_transfers);
         test_in_tmp_dir(|path| {
             write_collection(path, "file.txt", &collection).unwrap();
-            let des_collection = make_opt_collection(path, "file.txt").unwrap();
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            let des_collection = make_opt_collection(&mut handler, "file.txt").unwrap();
             assert_eq!(expected_collection, des_collection);
         });
     }
@@ -927,7 +988,8 @@ mod tests {
             write::write_stops(path, &stop_points, &stop_areas, &stop_locations).unwrap();
 
             let mut collections = Collections::default();
-            read::manage_stops(&mut collections, path).unwrap();
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            read::manage_stops(&mut collections, &mut handler).unwrap();
 
             assert_eq!(stop_points, collections.stop_points);
             assert_eq!(stop_areas, collections.stop_areas);
@@ -1141,19 +1203,20 @@ mod tests {
             write::write_comments(path, &ser_collections).unwrap();
             write::write_codes(path, &ser_collections).unwrap();
             write::write_object_properties(path, &ser_collections).unwrap();
+            let mut handler = PathFileHandler::new(path.to_path_buf());
 
             let mut des_collections = Collections {
-                lines: make_collection_with_id(path, "lines.txt").unwrap(),
-                routes: make_collection_with_id(path, "routes.txt").unwrap(),
-                vehicle_journeys: make_collection_with_id(path, "trips.txt").unwrap(),
-                networks: make_collection_with_id(path, "networks.txt").unwrap(),
+                lines: make_collection_with_id(&mut handler, "lines.txt").unwrap(),
+                routes: make_collection_with_id(&mut handler, "routes.txt").unwrap(),
+                vehicle_journeys: make_collection_with_id(&mut handler, "trips.txt").unwrap(),
+                networks: make_collection_with_id(&mut handler, "networks.txt").unwrap(),
                 ..Default::default()
             };
-            read::manage_stops(&mut des_collections, path).unwrap();
-            read::manage_stop_times(&mut des_collections, path).unwrap();
-            read::manage_comments(&mut des_collections, path).unwrap();
-            read::manage_codes(&mut des_collections, path).unwrap();
-            read::manage_object_properties(&mut des_collections, path).unwrap();
+            read::manage_stops(&mut des_collections, &mut handler).unwrap();
+            read::manage_stop_times(&mut des_collections, &mut handler).unwrap();
+            read::manage_comments(&mut des_collections, &mut handler).unwrap();
+            read::manage_codes(&mut des_collections, &mut handler).unwrap();
+            read::manage_object_properties(&mut des_collections, &mut handler).unwrap();
 
             assert_eq!(ser_collections.comments, des_collections.comments);
 

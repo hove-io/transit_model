@@ -138,10 +138,12 @@ impl<'a, P: AsRef<Path>> FileHandler for &'a mut PathFileHandler<P> {
         }
     }
     fn source_name(&self) -> &str {
-        self.base_path.as_ref().to_str().expect(&format!(
-            "the path '{:?}' should be valid UTF-8",
-            self.base_path.as_ref()
-        ))
+        self.base_path.as_ref().to_str().unwrap_or_else(|| {
+            panic!(
+                "the path '{:?}' should be valid UTF-8",
+                self.base_path.as_ref()
+            )
+        })
     }
 }
 
@@ -196,10 +198,9 @@ where
         }
     }
     fn source_name(&self) -> &str {
-        self.archive_path.to_str().expect(&format!(
-            "the path '{:?}' should be valid UTF-8",
-            self.archive_path
-        ))
+        self.archive_path
+            .to_str()
+            .unwrap_or_else(|| panic!("the path '{:?}' should be valid UTF-8", self.archive_path))
     }
 }
 
