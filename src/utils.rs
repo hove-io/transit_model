@@ -331,18 +331,6 @@ where
     Ok(Collection::new(vec))
 }
 
-pub(crate) fn make_collection<T, H>(
-    file_handler: &mut H,
-    file: &str,
-) -> crate::Result<Collection<T>>
-where
-    for<'de> T: serde::Deserialize<'de>,
-    for<'a> &'a mut H: FileHandler,
-{
-    let vec = read_objects::<_, T>(file_handler, file, true)?;
-    Ok(Collection::new(vec))
-}
-
 pub fn write_collection_with_id<T>(
     path: &path::Path,
     file: &str,
