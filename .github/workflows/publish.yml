@@ -2,6 +2,7 @@ name: Publish on crates.io
 on:
   release:
     types: [published]
+
 env:
   SLACK_TEXT: '{"attachments":[{
                 "text":"Un job demande votre attention !","color":"#D00000",
