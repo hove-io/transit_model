@@ -16,8 +16,8 @@ use super::{Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime}
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
 use crate::objects::*;
-use crate::read_utils::{read_objects, read_objects_loose, PathFileHandler};
-use crate::utils::make_collection_with_id;
+use crate::read_utils::{read_objects, read_objects_loose, FileHandler};
+use crate::utils;
 use crate::Result;
 use failure::{bail, ensure, format_err, ResultExt};
 use log::{error, info, warn, Level as LogLevel};
@@ -25,7 +25,6 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::path;
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 impl TryFrom<Stop> for StopArea {
@@ -152,9 +151,11 @@ impl TryFrom<Stop> for StopLocation {
     }
 }
 
-pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    let mut file_handle = PathFileHandler::new(path);
-    let stops = read_objects::<_, Stop>(&mut file_handle, "stops.txt", true)?;
+pub(crate) fn manage_stops<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let stops = read_objects::<_, Stop>(file_handler, "stops.txt", true)?;
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
     let mut stop_locations = vec![];
@@ -189,72 +190,79 @@ pub fn manage_stops(collections: &mut Collections, path: &path::Path) -> Result<
     Ok(())
 }
 
-pub fn manage_fares_v1(collections: &mut Collections, base_path: &path::Path) -> Result<()> {
+// for legacy reason fares files are csv, and some don't have any headers, so we use a custom function
+fn read_fares_v1<T, H>(
+    file_handler: &mut H,
+    file_name: &str,
+    has_headers: bool,
+) -> Result<Collection<T>>
+where
+    for<'a> &'a mut H: FileHandler,
+    for<'de> T: serde::Deserialize<'de>,
+{
+    let (reader, path) = file_handler.get_file_if_exists(file_name)?;
+    let file_name = path.file_name();
+    let basename = file_name.map_or(path.to_string_lossy(), |b| b.to_string_lossy());
+
+    match reader {
+        None => {
+            info!("Skipping {}", basename);
+            Ok(Collection::default())
+        }
+        Some(reader) => {
+            info!("Reading {}", basename);
+            let mut rdr = csv::ReaderBuilder::new()
+                .flexible(true)
+                .has_headers(has_headers)
+                .trim(csv::Trim::All)
+                .delimiter(b';')
+                .from_reader(reader);
+            let res = rdr
+                .deserialize()
+                .collect::<Result<_, _>>()
+                .with_context(|_| format!("Error reading {:?}", path))?;
+            Ok(Collection::new(res))
+        }
+    }
+}
+
+pub(crate) fn manage_fares_v1<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     let file_prices = "prices.csv";
     let file_od_fares = "od_fares.csv";
     let file_fares = "fares.csv";
 
-    if !base_path.join(file_prices).exists()
-        || !base_path.join(file_od_fares).exists()
-        || has_fares_v2(collections)
-    {
+    if has_fares_v2(collections) {
         info!(
-            "Skipping {}, {} and {}",
+            "data has fares v2, skipping fares v1 files ({}, {} and {})",
             file_prices, file_od_fares, file_fares
         );
         return Ok(());
     }
-
-    let mut builder = csv::ReaderBuilder::new();
-    builder.delimiter(b';');
-    builder.has_headers(false);
-
-    info!("Reading {}", file_prices);
-    let path = base_path.join(file_prices);
-    let mut rdr = builder
-        .from_path(&path)
-        .with_context(|_| format!("Error reading {:?}", path))?;
-    let prices_v1 = rdr
-        .deserialize()
-        .collect::<std::result::Result<Vec<PriceV1>, _>>()
-        .with_context(|_| format!("Error reading {:?}", path))?;
-    collections.prices_v1 = Collection::new(prices_v1);
-
-    builder.has_headers(true);
-
-    info!("Reading {}", file_od_fares);
-    let path = base_path.join(file_od_fares);
-    let mut rdr = builder
-        .from_path(&path)
-        .with_context(|_| format!("Error reading {:?}", path))?;
-    let od_fares_v1 = rdr
-        .deserialize()
-        .collect::<std::result::Result<Vec<OdFareV1>, _>>()
-        .with_context(|_| format!("Error reading {:?}", path))?;
-    collections.od_fares_v1 = Collection::new(od_fares_v1);
-
-    if !base_path.join(file_fares).exists() {
-        info!("Skipping {}", file_fares);
+    collections.prices_v1 = read_fares_v1(file_handler, "prices.csv", false)?;
+    if collections.prices_v1.is_empty() {
+        info!(
+            "no prices found, skipping {} and {}",
+            file_od_fares, file_fares
+        );
         return Ok(());
     }
-
-    info!("Reading {}", file_fares);
-    let path = base_path.join(file_fares);
-    let mut rdr = builder
-        .from_path(&path)
-        .with_context(|_| format!("Error reading {:?}", path))?;
-    let fares_v1 = rdr
-        .deserialize()
-        .collect::<std::result::Result<Vec<FareV1>, _>>()
-        .with_context(|_| format!("Error reading {:?}", path))?;
-    collections.fares_v1 = Collection::new(fares_v1);
+    collections.od_fares_v1 = read_fares_v1(file_handler, file_od_fares, true)?;
+    collections.fares_v1 = read_fares_v1(file_handler, file_fares, true)?;
 
     Ok(())
 }
 
-pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    let mut file_handle = PathFileHandler::new(path);
-    let stop_times = read_objects::<_, StopTime>(&mut file_handle, "stop_times.txt", true)?;
+pub(crate) fn manage_stop_times<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let stop_times = read_objects::<_, StopTime>(file_handler, "stop_times.txt", true)?;
     let mut headsigns = HashMap::new();
     let mut stop_time_ids = HashMap::new();
     for stop_time in stop_times {
@@ -264,7 +272,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             .ok_or_else(|| {
                 format_err!(
                     "Problem reading {:?}: stop_id={:?} not found",
-                    path,
+                    file_handler.source_name(),
                     stop_time.stop_id
                 )
             })?;
@@ -274,7 +282,7 @@ pub fn manage_stop_times(collections: &mut Collections, path: &path::Path) -> Re
             .ok_or_else(|| {
                 format_err!(
                     "Problem reading {:?}: trip_id={:?} not found",
-                    path,
+                    file_handler.source_name(),
                     stop_time.trip_id
                 )
             })?;
@@ -360,9 +368,11 @@ where
     insert_code_with_idx(collection, idx, code);
 }
 
-pub fn manage_codes(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    let mut file_handle = PathFileHandler::new(path);
-    let codes = read_objects::<_, Code>(&mut file_handle, "object_codes.txt", false)?;
+pub(crate) fn manage_codes<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let codes = read_objects::<_, Code>(file_handler, "object_codes.txt", false)?;
     for code in codes {
         match code.object_type {
             ObjectType::StopArea => insert_code(&mut collections.stop_areas, code),
@@ -374,7 +384,7 @@ pub fn manage_codes(collections: &mut Collections, path: &path::Path) -> Result<
             ObjectType::Company => insert_code(&mut collections.companies, code),
             _ => bail!(
                 "Problem reading {:?}: code does not support {}",
-                path,
+                file_handler.source_name(),
                 code.object_type.as_str()
             ),
         }
@@ -390,9 +400,14 @@ struct FeedInfo {
     info_value: String,
 }
 
-pub fn manage_feed_infos(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    let mut file_handle = PathFileHandler::new(path);
-    let feed_infos = read_objects::<_, FeedInfo>(&mut file_handle, "feed_infos.txt", true)?;
+pub(crate) fn manage_feed_infos<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let feed_infos = read_objects::<_, FeedInfo>(file_handler, "feed_infos.txt", true)?;
     collections.feed_infos.clear();
     for feed_info in feed_infos {
         ensure!(
@@ -401,7 +416,7 @@ pub fn manage_feed_infos(collections: &mut Collections, path: &path::Path) -> Re
                 .insert(feed_info.info_param.clone(), feed_info.info_value)
                 .is_none(),
             "Problem reading {:?}: {} already found in file feed_infos.txt",
-            path,
+            file_handler.source_name(),
             feed_info.info_param,
         );
     }
@@ -466,60 +481,61 @@ fn insert_stop_time_comment_link(
     Ok(())
 }
 
-pub fn manage_comments(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    if path.join("comments.txt").exists() {
-        collections.comments = make_collection_with_id(path, "comments.txt")?;
+pub(crate) fn manage_comments<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    collections.comments = utils::make_opt_collection_with_id(file_handler, "comments.txt")?;
 
-        let mut file_handle = PathFileHandler::new(path);
-        let comment_links =
-            read_objects::<_, CommentLink>(&mut file_handle, "comment_links.txt", false)?;
+    if collections.comments.is_empty() {
+        // no need to read the comment_links (and invert the huge stoptimes collection)
+        return Ok(());
+    }
+    let comment_links = read_objects::<_, CommentLink>(file_handler, "comment_links.txt", false)?;
 
-        // invert the stop_time_ids map to search a stop_time by it's id
-        let stop_time_ids = collections
-            .stop_time_ids
-            .iter()
-            .map(|(k, v)| (v, k.clone()))
-            .collect();
-        // info!("Reading comment_links.txt");
-        for comment_link in comment_links {
-            match comment_link.object_type {
-                ObjectType::StopArea => insert_comment_link(
-                    &mut collections.stop_areas,
-                    &collections.comments,
-                    &comment_link,
-                )?,
-                ObjectType::StopPoint => insert_comment_link(
-                    &mut collections.stop_points,
-                    &collections.comments,
-                    &comment_link,
-                )?,
-                ObjectType::Line => insert_comment_link(
-                    &mut collections.lines,
-                    &collections.comments,
-                    &comment_link,
-                )?,
-                ObjectType::Route => insert_comment_link(
-                    &mut collections.routes,
-                    &collections.comments,
-                    &comment_link,
-                )?,
-                ObjectType::VehicleJourney => insert_comment_link(
-                    &mut collections.vehicle_journeys,
-                    &collections.comments,
-                    &comment_link,
-                )?,
-                ObjectType::StopTime => insert_stop_time_comment_link(
-                    &mut collections.stop_time_comments,
-                    &stop_time_ids,
-                    &collections.comments,
-                    &comment_link,
-                )?,
-                ObjectType::LineGroup => warn!("line_groups.txt is not parsed yet"),
-                _ => bail!(
-                    "comment does not support {}",
-                    comment_link.object_type.as_str()
-                ),
+    // invert the stop_time_ids map to search a stop_time by it's id
+    let stop_time_ids = collections
+        .stop_time_ids
+        .iter()
+        .map(|(k, v)| (v, k.clone()))
+        .collect();
+    // info!("Reading comment_links.txt");
+    for comment_link in comment_links {
+        match comment_link.object_type {
+            ObjectType::StopArea => insert_comment_link(
+                &mut collections.stop_areas,
+                &collections.comments,
+                &comment_link,
+            )?,
+            ObjectType::StopPoint => insert_comment_link(
+                &mut collections.stop_points,
+                &collections.comments,
+                &comment_link,
+            )?,
+            ObjectType::Line => {
+                insert_comment_link(&mut collections.lines, &collections.comments, &comment_link)?
             }
+            ObjectType::Route => insert_comment_link(
+                &mut collections.routes,
+                &collections.comments,
+                &comment_link,
+            )?,
+            ObjectType::VehicleJourney => insert_comment_link(
+                &mut collections.vehicle_journeys,
+                &collections.comments,
+                &comment_link,
+            )?,
+            ObjectType::StopTime => insert_stop_time_comment_link(
+                &mut collections.stop_time_comments,
+                &stop_time_ids,
+                &collections.comments,
+                &comment_link,
+            )?,
+            ObjectType::LineGroup => warn!("line_groups.txt is not parsed yet"),
+            _ => bail!(
+                "comment does not support {}",
+                comment_link.object_type.as_str()
+            ),
         }
     }
     Ok(())
@@ -546,10 +562,15 @@ where
     ));
 }
 
-pub fn manage_object_properties(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    let mut file_handle = PathFileHandler::new(path);
+pub(crate) fn manage_object_properties<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     let obj_props =
-        read_objects::<_, ObjectProperty>(&mut file_handle, "object_properties.txt", false)?;
+        read_objects::<_, ObjectProperty>(file_handler, "object_properties.txt", false)?;
     for obj_prop in obj_props {
         match obj_prop.object_type {
             ObjectType::StopArea => insert_object_property(&mut collections.stop_areas, obj_prop),
@@ -561,7 +582,7 @@ pub fn manage_object_properties(collections: &mut Collections, path: &path::Path
             }
             _ => bail!(
                 "Problem with {:?}: object_property does not support {}",
-                path,
+                file_handler.source_name(),
                 obj_prop.object_type.as_str()
             ),
         }
@@ -569,9 +590,14 @@ pub fn manage_object_properties(collections: &mut Collections, path: &path::Path
     Ok(())
 }
 
-pub fn manage_geometries(collections: &mut Collections, path: &path::Path) -> Result<()> {
-    let mut file_handle = PathFileHandler::new(path);
-    let geometries = read_objects_loose::<_, Geometry>(&mut file_handle, "geometries.txt", false)?;
+pub(crate) fn manage_geometries<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let geometries = read_objects_loose::<_, Geometry>(file_handler, "geometries.txt", false)?;
     collections.geometries = CollectionWithId::new(geometries)?;
 
     Ok(())
@@ -600,11 +626,13 @@ pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {
     Ok(())
 }
 
-pub fn manage_pathways(collections: &mut Collections, path: &path::Path) -> Result<()> {
+pub(crate) fn manage_pathways<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     let file = "pathways.txt";
     let mut pathways = vec![];
-    let mut file_handle = PathFileHandler::new(path);
-    let ntfs_pathways = read_objects_loose::<_, Pathway>(&mut file_handle, file, false)?;
+    let ntfs_pathways = read_objects_loose::<_, Pathway>(file_handler, file, false)?;
     for mut pathway in ntfs_pathways {
         pathway.from_stop_type = skip_error_and_log!(
             collections
@@ -655,9 +683,11 @@ mod tests {
     use super::*;
     use crate::calendars;
     use crate::objects;
-    use crate::read_utils;
+    use crate::read_utils::{self, PathFileHandler};
     use crate::test_utils::*;
+    use crate::utils::make_collection_with_id;
     use pretty_assertions::assert_eq;
+    use std::path;
 
     fn generate_minimal_ntfs<P: AsRef<path::Path>>(path: P) {
         let commercial_modes_content = "commercial_mode_id,commercial_mode_name\n\
@@ -721,21 +751,25 @@ mod tests {
 
     fn make_collection(path: &path::Path) -> Collections {
         let mut collections = Collections::default();
-        let mut file_handle = read_utils::PathFileHandler::new(path.to_path_buf());
-        collections.contributors = make_collection_with_id(path, "contributors.txt").unwrap();
-        collections.datasets = make_collection_with_id(path, "datasets.txt").unwrap();
+        let mut file_handler = read_utils::PathFileHandler::new(path.to_path_buf());
+        collections.contributors =
+            make_collection_with_id(&mut file_handler, "contributors.txt").unwrap();
+        collections.datasets = make_collection_with_id(&mut file_handler, "datasets.txt").unwrap();
         collections.commercial_modes =
-            make_collection_with_id(path, "commercial_modes.txt").unwrap();
-        collections.networks = make_collection_with_id(path, "networks.txt").unwrap();
-        collections.lines = make_collection_with_id(path, "lines.txt").unwrap();
-        collections.routes = make_collection_with_id(path, "routes.txt").unwrap();
-        collections.vehicle_journeys = make_collection_with_id(path, "trips.txt").unwrap();
-        collections.physical_modes = make_collection_with_id(path, "physical_modes.txt").unwrap();
-        collections.companies = make_collection_with_id(path, "companies.txt").unwrap();
-        calendars::manage_calendars(&mut file_handle, &mut collections).unwrap();
-        manage_stops(&mut collections, path).unwrap();
-        manage_stop_times(&mut collections, path).unwrap();
-        manage_codes(&mut collections, path).unwrap();
+            make_collection_with_id(&mut file_handler, "commercial_modes.txt").unwrap();
+        collections.networks = make_collection_with_id(&mut file_handler, "networks.txt").unwrap();
+        collections.lines = make_collection_with_id(&mut file_handler, "lines.txt").unwrap();
+        collections.routes = make_collection_with_id(&mut file_handler, "routes.txt").unwrap();
+        collections.vehicle_journeys =
+            make_collection_with_id(&mut file_handler, "trips.txt").unwrap();
+        collections.physical_modes =
+            make_collection_with_id(&mut file_handler, "physical_modes.txt").unwrap();
+        collections.companies =
+            make_collection_with_id(&mut file_handler, "companies.txt").unwrap();
+        calendars::manage_calendars(&mut file_handler, &mut collections).unwrap();
+        manage_stops(&mut collections, &mut file_handler).unwrap();
+        manage_stop_times(&mut collections, &mut file_handler).unwrap();
+        manage_codes(&mut collections, &mut file_handler).unwrap();
         collections
     }
 
@@ -748,7 +782,8 @@ mod tests {
         test_in_tmp_dir(|path| {
             create_file_with_content(path, "stops.txt", stops_content);
             let mut collections = Collections::default();
-            manage_stops(&mut collections, path).unwrap();
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            manage_stops(&mut collections, &mut handler).unwrap();
             assert_eq!(1, collections.stop_points.len());
             let stop_point = collections.stop_points.values().next().unwrap();
             assert_eq!("sp:01", stop_point.id);
@@ -846,7 +881,8 @@ mod tests {
             create_file_with_content(path, "object_codes.txt", object_codes_content);
 
             let mut collections = make_collection(path);
-            manage_codes(&mut collections, path).unwrap();
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            manage_codes(&mut collections, &mut handler).unwrap();
 
             let company = collections.companies.values().next().unwrap();
             assert_eq!(company.codes.len(), 1);

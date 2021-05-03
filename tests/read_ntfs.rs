@@ -34,10 +34,7 @@ where
     ids
 }
 
-#[test]
-fn minimal() {
-    let ntm = transit_model::ntfs::read("tests/fixtures/minimal_ntfs/").unwrap();
-
+fn test_minimal_ntfs(ntm: &Model) {
     assert_eq!(8, ntm.stop_areas.len());
     assert_eq!(12, ntm.stop_points.len());
     assert_eq!(3, ntm.commercial_modes.len());
@@ -86,6 +83,46 @@ fn minimal() {
         vec!["CDG", "DEF", "GDL", "NAT", "Navitia:CDGZ", "Navitia:MTPZ"],
         get(rera, &ntm.stop_areas, &ntm)
     );
+}
+
+#[test]
+fn minimal() {
+    let ntm = transit_model::ntfs::read("tests/fixtures/minimal_ntfs/").unwrap();
+    test_minimal_ntfs(&ntm);
+}
+
+#[test]
+fn ziped_minimal() {
+    let ntm = transit_model::ntfs::read("tests/fixtures/ziped_ntfs/minimal_ntfs.zip").unwrap();
+    test_minimal_ntfs(&ntm);
+}
+
+#[test]
+#[should_panic(
+    expected = "ErrorMessage { msg: \"file \\\"tests/fixtures/i_m_not_here\\\" is neither a file nor a directory, cannot read a ntfs from it\" }"
+)]
+fn unexistent_file() {
+    // reading a file that does not exists will lead to an error
+    let _ = transit_model::ntfs::read("tests/fixtures/i_m_not_here").unwrap();
+}
+
+#[test]
+#[should_panic(
+    expected = "InvalidArchive(\"Could not find central directory end\")\n\nimpossible to read ziped ntfs \"tests/fixtures/ntfs/stops.txt\""
+)]
+fn file_not_a_ntfs() {
+    // reading a file that is not either a directory with the ntfs files nor a zip archive will lead to an error
+    // here we read the stops.txt
+    let _ = transit_model::ntfs::read("tests/fixtures/ntfs/stops.txt").unwrap();
+}
+
+#[test]
+#[should_panic(
+    expected = "ErrorMessage { msg: \"file \\\"tests/fixtures/netex_france/contributors.txt\\\" not found\" }\n\nimpossible to read ntfs directory from \"tests/fixtures/netex_france\""
+)]
+fn directory_not_a_ntfs() {
+    // reading a directory that does not contain the ntfs files will lead to an error
+    let _ = transit_model::ntfs::read("tests/fixtures/netex_france").unwrap();
 }
 
 #[test]

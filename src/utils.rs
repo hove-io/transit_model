@@ -14,7 +14,7 @@
 
 use crate::{
     objects::Date,
-    read_utils::{read_objects, PathFileHandler},
+    read_utils::{read_objects, FileHandler},
 };
 use chrono::NaiveDate;
 use failure::{format_err, ResultExt};
@@ -295,51 +295,39 @@ where
         .map(|option| option.filter(|s| !s.trim().is_empty()))
 }
 
-pub fn make_opt_collection_with_id<T>(
-    path: &path::Path,
+pub(crate) fn make_opt_collection_with_id<T, H>(
+    file_handler: &mut H,
     file: &str,
 ) -> crate::Result<CollectionWithId<T>>
 where
     for<'de> T: Id<T> + serde::Deserialize<'de>,
+    for<'a> &'a mut H: FileHandler,
 {
-    if !path.join(file).exists() {
-        info!("Skipping {}", file);
-        Ok(CollectionWithId::default())
-    } else {
-        make_collection_with_id(path, file)
-    }
-}
-
-pub fn make_collection_with_id<T>(
-    path: &path::Path,
-    file: &str,
-) -> crate::Result<CollectionWithId<T>>
-where
-    for<'de> T: Id<T> + serde::Deserialize<'de>,
-{
-    let mut file_handle = PathFileHandler::new(path);
-    let vec = read_objects::<_, T>(&mut file_handle, file, true)?;
+    let vec = read_objects::<_, T>(file_handler, file, false)?;
     CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
 }
 
-pub fn make_opt_collection<T>(path: &path::Path, file: &str) -> crate::Result<Collection<T>>
+pub(crate) fn make_collection_with_id<T, H>(
+    file_handler: &mut H,
+    file: &str,
+) -> crate::Result<CollectionWithId<T>>
 where
-    for<'de> T: serde::Deserialize<'de>,
+    for<'de> T: Id<T> + serde::Deserialize<'de>,
+    for<'a> &'a mut H: FileHandler,
 {
-    if !path.join(file).exists() {
-        info!("Skipping {}", file);
-        Ok(Collection::default())
-    } else {
-        make_collection(path, file)
-    }
+    let vec = read_objects::<_, T>(file_handler, file, true)?;
+    CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
 }
 
-pub fn make_collection<T>(path: &path::Path, file: &str) -> crate::Result<Collection<T>>
+pub(crate) fn make_opt_collection<T, H>(
+    file_handler: &mut H,
+    file: &str,
+) -> crate::Result<Collection<T>>
 where
     for<'de> T: serde::Deserialize<'de>,
+    for<'a> &'a mut H: FileHandler,
 {
-    let mut file_handle = PathFileHandler::new(path);
-    let vec = read_objects::<_, T>(&mut file_handle, file, true)?;
+    let vec = read_objects::<_, T>(file_handler, file, false)?;
     Ok(Collection::new(vec))
 }
 
