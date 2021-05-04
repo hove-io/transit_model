@@ -16,7 +16,7 @@ jobs:
     - name: Check formatting
       run: make format
     - name: slack notification (the job has failed)
-      #if: failure() && github.ref == 'ref/head/master'
+      if: failure() && github.ref == 'ref/head/master'
       run: |
         curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
       env:
