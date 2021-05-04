@@ -23,7 +23,7 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: `Formatting check` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"}]}
+        "fields":[{"title":"Action URL","value": "${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
         ]}'
 
   clippy:
