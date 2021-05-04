@@ -23,7 +23,7 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: `Formatting check` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
+        "fields":[{"title":"Action URL","value": "https://github.com:/${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
         ]}'
 
   clippy:
@@ -42,7 +42,7 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: `Analyzing code with Clippy` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "${{ env.GITHUB_SERVER_URL }}/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}"}]}
+        "fields":[{"title":"Action URL","value": "https://github.com:/${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
         ]}'
 
   audit:
@@ -64,7 +64,7 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: `Audit` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "${{ env.GITHUB_SERVER_URL }}/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}"}]}
+        "fields":[{"title":"Action URL","value": "https://github.com:/${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
         ]}'
 
   tests:
@@ -87,7 +87,7 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: `Tests` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "${{ env.GITHUB_SERVER_URL }}/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}"}]}
+        "fields":[{"title":"Action URL","value": "https://github.com:/${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
         ]}'
 
   coverage:
@@ -122,5 +122,5 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: `Code coverage` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "${{ env.GITHUB_SERVER_URL }}/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}"}]}
+        "fields":[{"title":"Action URL","value": "https://github.com:/${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
         ]}'
