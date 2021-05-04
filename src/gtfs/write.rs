@@ -980,7 +980,7 @@ mod tests {
             service_id: vj.service_id.clone(),
             id: "OIF:87604986-1_11595-1".to_string(),
             headsign: Some("2005".to_string()),
-            short_name: None,
+            short_name: Some("42".to_string()),
             direction: DirectionType::Forward,
             block_id: Some("PLOI".to_string()),
             shape_id: vj.geometry_id.clone(),
