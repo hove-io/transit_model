@@ -2,11 +2,6 @@ name: Publish on crates.io
 on:
   release:
     types: [published]
-env:
-  SLACK_TEXT: '{"attachments":[{
-                "text":":warning: Un job demande votre attention !","color":"#D00000",
-                "fields":[{"title":"GitHub URL","value": "https://github.com/CanalTP/transit_model/actions/workflows/publish.yml"}]
-                }]}'
 
 jobs:
   publish:
@@ -26,6 +21,12 @@ jobs:
         command: publish
         args: --all-features
     - name: slack notification (the job has failed)
-      if: failure() && github.ref == 'ref/head/master'
+      if: failure()
       run: |
         curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+      env:
+        SLACK_TEXT: '{"attachments":[{
+        "pretext": "`transit_model Publish` requires your attention!",
+        "text":" :warning: Publish failed!","color":"#D00000",
+        "fields":[{"title":"Action URL","value": "${{ env.GITHUB_SERVER_URL }}/${{ env.GITHUB_REPOSITORY }}/actions/runs/${{ env.GITHUB_RUN_ID }}"}]}
+        ]}'
