@@ -106,25 +106,13 @@ Stop zones (NTFS stops having `location_type` = 2) are ignored in the current ve
 | route_id              | yes      | trips.txt           | route_id              |                                                                                         |
 | service_id            | yes      | trips.txt           | service_id            |                                                                                         |
 | trip_id               | yes      | trips.txt           | trip_id               |                                                                                         |
-| trip_headsign         | no       | trips.txt           |                       | (1)                                                                                     |
-| trip_short_name       | no       | trips.txt           |                       | (1)                                                                                     |
+| trip_headsign         | no       | trips.txt           | trip_headsign         |                                                                                         |
+| trip_short_name       | no       | trips.txt           | trip_short_name       |                                                                                         |
 | direction_id          | no       | routes.txt          | direction_type        | `0` if the corresponding value is `forward`, `clockwise` or `inbound`. `1` otherwise.   |
 | block_id              | no       | trips.txt           | block_id              |                                                                                         |
 | shape_id              | no       | trips.txt           | geometry_id           | (link to the [shapes.txt](#shapestxt) file)                                             |
 | wheelchair_accessible | no       | trip_properties.txt | wheelchair_accessible | The value of `wheelchair_accessible` referenced by the `trip_property_id` of this trip. |
 | bikes_allowed         | no       | trip_properties.txt | bike_accepted         | The value of `bike_accepted` referenced by the `trip_property_id` of this trip.         |
-
-(1) If the value of the `physical_mode_id` for this trip is `LocalTrain`, `LongDistanceTrain`, `Metro`, `RapidTransit` or `Train`,
-
-* the field `trip_short_name` takes after the value of the `trip_headsign` field in the NTFS
-* the field `trip_headsign` contains the value of the `stop_name` linked to the stop_point of this trip with the higher order in the trip (i.e. the name of the last stop of the trip).
-
-Otherwise,
-
-* the field `trip_short_name` is empty
-* the field `trip_headsign` contains
-  * the value of the `trip_headsign` field in the NTFS, if present
-  * otherwise, the value of the `stop_name` linked to the stop_point of this trip with the higher order in the trip (i.e. the name of the last stop of the trip).
 
 ### stop_times.txt
 

@@ -207,31 +207,6 @@ pub fn write_stops(
     Ok(())
 }
 
-fn get_gtfs_trip_shortname_and_headsign_from_ntfs_vj(
-    vj: &objects::VehicleJourney,
-    sps: &CollectionWithId<objects::StopPoint>,
-) -> (Option<String>, Option<String>) {
-    fn get_last_stop_name(
-        vj: &objects::VehicleJourney,
-        sps: &CollectionWithId<objects::StopPoint>,
-    ) -> Option<String> {
-        vj.stop_times
-            .last()
-            .map(|st| &sps[st.stop_point_idx].name)
-            .cloned()
-    }
-
-    match vj.physical_mode_id.as_str() {
-        "LocalTrain" | "LongDistanceTrain" | "Metro" | "RapidTransit" | "Train" => {
-            (vj.headsign.clone(), get_last_stop_name(vj, sps))
-        }
-        _ => (
-            None,
-            vj.headsign.clone().or_else(|| get_last_stop_name(vj, sps)),
-        ),
-    }
-}
-
 fn get_gtfs_direction_id_from_ntfs_route(route: &objects::Route) -> DirectionType {
     match route.direction_type.as_deref() {
         Some("forward") | Some("clockwise") | Some("inbound") => DirectionType::Forward,
@@ -240,8 +215,6 @@ fn get_gtfs_direction_id_from_ntfs_route(route: &objects::Route) -> DirectionTyp
 }
 
 fn make_gtfs_trip_from_ntfs_vj(vj: &objects::VehicleJourney, model: &Model) -> Trip {
-    let (short_name, headsign) =
-        get_gtfs_trip_shortname_and_headsign_from_ntfs_vj(vj, &model.stop_points);
     let mut wheelchair_and_bike = (Availability::default(), Availability::default());
     if let Some(tp_id) = &vj.trip_property_id {
         if let Some(tp) = &model.trip_properties.get(&tp_id) {
@@ -260,8 +233,8 @@ fn make_gtfs_trip_from_ntfs_vj(vj: &objects::VehicleJourney, model: &Model) -> T
         route_id: route_id.to_string(),
         service_id: vj.service_id.clone(),
         id: vj.id.clone(),
-        headsign,
-        short_name,
+        headsign: vj.headsign.clone(),
+        short_name: vj.short_name.clone(),
         direction: get_gtfs_direction_id_from_ntfs_route(&route),
         block_id: vj.block_id.clone(),
         shape_id: vj.geometry_id.clone(),
