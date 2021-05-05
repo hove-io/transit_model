@@ -20,3 +20,12 @@ jobs:
       with:
         command: publish
         args: --all-features
+    - name: slack notification (the job has failed)
+      if: failure()
+      run: |
+        curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+      env:
+        SLACK_TEXT: '{"attachments":[{
+        "pretext": "`transit_model Publish` requires your attention!",
+        "text":" :warning: Publish failed!","color":"#D00000",
+        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'

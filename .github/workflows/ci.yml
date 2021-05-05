@@ -15,6 +15,15 @@ jobs:
     - uses: actions/checkout@master
     - name: Check formatting
       run: make format
+    - name: slack notification (the job has failed)
+      if: failure() && github.ref == 'ref/head/master'
+      run: |
+        curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+      env:
+        SLACK_TEXT: '{"attachments":[{
+        "pretext": "`transit_model CI` requires your attention!",
+        "text":" :warning: Formatting check failed!","color":"#D00000",
+        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
 
   clippy:
     name: Analyzing code with Clippy
@@ -24,6 +33,15 @@ jobs:
     - uses: actions/checkout@master
     - name: Linting
       run: make lint
+    - name: slack notification (the job has failed)
+      if: failure() && github.ref == 'ref/head/master'
+      run: |
+        curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+      env:
+        SLACK_TEXT: '{"attachments":[{
+        "pretext": "`transit_model CI` requires your attention!",
+        "text":" :warning: Analyzing code with Clippy failed!","color":"#D00000",
+        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
 
   audit:
     name: Audits
@@ -36,6 +54,15 @@ jobs:
       uses: actions-rs/audit-check@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+    - name: slack notification (the job has failed)
+      if: failure() && github.ref == 'ref/head/master'
+      run: |
+        curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+      env:
+        SLACK_TEXT: '{"attachments":[{
+        "pretext": "`transit_model CI` requires your attention!",
+        "text":" :warning: Audits failed!","color":"#D00000",
+        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
 
   tests:
     name: Tests
@@ -49,6 +76,15 @@ jobs:
       run: apt update && apt install --yes libxml2-utils
     - name: Run tests with and without features
       run: make test
+    - name: slack notification (the job has failed)
+      if: failure() && github.ref == 'ref/head/master'
+      run: |
+        curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+      env:
+        SLACK_TEXT: '{"attachments":[{
+        "pretext": "`transit_model CI` requires your attention!",
+        "text":" :warning: Tests failed!","color":"#D00000",
+        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
 
   coverage:
     name: Code coverage
@@ -74,3 +110,12 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+    - name: slack notification (the job has failed)
+      if: failure() && github.ref == 'ref/head/master'
+      run: |
+        curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+      env:
+        SLACK_TEXT: '{"attachments":[{
+        "pretext": "`transit_model CI` requires your attention!",
+        "text":" :warning: Code coverage failed!","color":"#D00000",
+        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
