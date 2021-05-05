@@ -335,7 +335,7 @@ where
     collections.stop_time_ids = stop_time_ids;
     let mut vehicle_journeys = collections.vehicle_journeys.take();
     for vj in &mut vehicle_journeys {
-        vj.sort_and_check_stop_times()?;
+        skip_error_and_log!(vj.sort_and_check_stop_times(), LogLevel::Error);
     }
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     Ok(())
@@ -892,7 +892,6 @@ mod tests {
         });
     }
     #[test]
-    #[should_panic(expected = "DuplicateStopSequence { vj_id: \"1\", duplicated_sequence: 3 }")]
     fn stop_sequence_growing() {
         test_in_tmp_dir(|path| {
             let _ = generate_minimal_ntfs(path);
@@ -904,13 +903,21 @@ mod tests {
             5,1,06:09:27,06:06:27,sp:05,3,2,1,,";
             create_file_with_content(path, "stop_times.txt", stop_times_content);
 
-            let _collections = make_collection(path);
+            testing_logger::setup();
+            make_collection(path);
+            testing_logger::validate(|captured_logs| {
+                let error_log = captured_logs
+                    .iter()
+                    .find(|captured_log| captured_log.level == LogLevel::Error)
+                    .expect("log error expected");
+                assert_eq!(
+                    error_log.body,
+                    "duplicate stop_sequence \'3\' for the trip \'1\'"
+                );
+            });
         });
     }
     #[test]
-    #[should_panic(
-        expected = "IncoherentStopTimes { vj_id: \"1\", first_incorrect_sequence: 2, first_incorrect_time: Time(21987) }"
-    )]
     fn stop_times_growing() {
         test_in_tmp_dir(|path| {
             let _ = generate_minimal_ntfs(path);
@@ -922,7 +929,18 @@ mod tests {
             5,1,06:06:27,06:06:27,sp:05,5,2,1,,";
             create_file_with_content(path, "stop_times.txt", stop_times_content);
 
+            testing_logger::setup();
             make_collection(path);
+            testing_logger::validate(|captured_logs| {
+                let error_log = captured_logs
+                    .iter()
+                    .find(|captured_log| captured_log.level == LogLevel::Error)
+                    .expect("log error expected");
+                assert_eq!(
+                    error_log.body,
+                    "incoherent stop times \'2\' at time \'06:06:27\' for the trip \'1\'"
+                );
+            });
         });
     }
 }
