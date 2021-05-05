@@ -28,5 +28,4 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model Publish` requires your attention!",
         "text":" :warning: Publish failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "https://github.com/{{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
-        ]}'
+        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
