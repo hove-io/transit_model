@@ -16,15 +16,17 @@ jobs:
     - name: Check formatting
       run: make format
     - name: slack notification (the job has failed)
-      if: failure() && github.ref == 'ref/head/master'
+      #if: failure() && github.ref == 'ref/head/master'
       run: |
         curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
       env:
         SLACK_TEXT: '{"attachments":[{
-        "pretext": "`transit_model CI` requires your attention!",
-        "text":" :warning: `Formatting check` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "https://github.com:/${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
-        ]}'
+        "pretext":"`transit_model CI` requires your attention!",
+        "text":" :"warning: `Formatting check` failed!","color":"#D00000",
+        "fields":[
+          {"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"},
+          {"title":"Job URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_number }}?check_suite_focus=true"}
+        ]}]}'
 
   clippy:
     name: Analyzing code with Clippy
@@ -42,8 +44,9 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: `Analyzing code with Clippy` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "https://github.com:/${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
-        ]}'
+        "fields":[
+          {"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
+        ]}]}'
 
   audit:
     name: Audits
@@ -64,8 +67,9 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: `Audit` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "https://github.com:/${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
-        ]}'
+        "fields":[
+          {"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
+        ]}]}'
 
   tests:
     name: Tests
@@ -87,8 +91,9 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: `Tests` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "https://github.com:/${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
-        ]}'
+        "fields":[
+          {"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
+        ]}]}'
 
   coverage:
     name: Code coverage
@@ -122,5 +127,6 @@ jobs:
         SLACK_TEXT: '{"attachments":[{
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: `Code coverage` failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "https://github.com:/${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}
-        ]}'
+        "fields":[
+          {"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
+        ]}]}'
