@@ -1414,7 +1414,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "IdentifierAlreadyExists(\"1\")")]
+    #[should_panic(
+        expected = "IdentifierAlreadyExists Error { id: \"1\", type: \"transit_model::objects::Network\" }"
+    )]
     fn load_2_agencies_with_no_id() {
         let agency_content = "agency_name,agency_url,agency_timezone\n\
                               My agency 1,http://my-agency_url.com,Europe/London\n\

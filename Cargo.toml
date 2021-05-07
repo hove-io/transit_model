@@ -55,14 +55,14 @@ num-traits = "0.2"
 pretty_assertions = "0.6"
 proj = { version = "0.19", optional = true }
 quick-xml = "0.18"
-relational_types = "1"
+relational_types = "2"
 rust_decimal = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 skip_error = { version = "1", features = ["log"] }
 tempfile = "3"
 thiserror = "1"
-typed_index_collection = "1"
+typed_index_collection = "2"
 walkdir = "2"
 wkt = "0.8"
 zip = { version = "0.5", default-features = false, features = ["deflate"] }
