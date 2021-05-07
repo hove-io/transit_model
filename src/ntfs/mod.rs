@@ -195,11 +195,11 @@ pub fn read_from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
 /// This method makes it possible to read from a variety of sources like read a NTFS
 /// from the network.
 ///
-/// ```
-// let url = "http://some_url/ntfs.zip";
-// let resp = reqwest::blocking::get(url)?; // or async call
-// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
-// let model = transit_model::ntfs::from_read(data, &url)?;
+/// ```ignore
+/// let url = "http://some_url/ntfs.zip";
+/// let resp = reqwest::blocking::get(url)?; // or async call
+/// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
+/// let model = transit_model::ntfs::from_read(data, &url)?;
 /// ```
 ///
 /// The `source_name` is needed to have nicer error messages.
