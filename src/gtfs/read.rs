@@ -1166,8 +1166,8 @@ where
     Ok(())
 }
 
-#[derivative(Default)]
 #[derive(Derivative, Deserialize, Debug, Clone, PartialEq)]
+#[derivative(Default)]
 enum FrequencyPrecision {
     #[derivative(Default)]
     #[serde(rename = "0")]

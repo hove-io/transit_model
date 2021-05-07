@@ -58,8 +58,8 @@ struct StopTime {
     precision: Option<StopTimePrecision>,
 }
 
-#[derivative(Default)]
 #[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derivative(Default)]
 enum StopLocationType {
     #[derivative(Default)]
     #[serde(rename = "0")]

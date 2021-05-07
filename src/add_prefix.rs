@@ -20,8 +20,8 @@ use std::collections::HashMap;
 use typed_index_collection::{Collection, CollectionWithId, Id};
 
 /// Metadata for building the prefix.
-#[derivative(Default)]
 #[derive(Derivative, Debug)]
+#[derivative(Default)]
 pub struct PrefixConfiguration {
     /// Separator used in the prefix, usually ':'.
     #[derivative(Default(value = "\":\".to_string()"))]
