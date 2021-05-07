@@ -486,11 +486,9 @@ impl Collections {
             c.vehicle_journeys
                 .iter()
                 .filter_map(|(vj_idx, vj)| {
-                    if let Some(route) = c.routes.get(&vj.route_id) {
-                        Some((route.line_id.clone(), vj_idx))
-                    } else {
-                        None
-                    }
+                    c.routes
+                        .get(&vj.route_id)
+                        .map(|route| (route.line_id.clone(), vj_idx))
                 })
                 .filter_map(|(line_id, vj_idx)| {
                     if let Some(line) = c.lines.get(&line_id) {
