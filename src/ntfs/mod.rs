@@ -547,7 +547,7 @@ mod tests {
                 name: "DEF".to_string(),
                 code: Some("DEF".to_string()),
                 codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
+                object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
                 forward_name: Some("Hôtels - Hôtels".to_string()),
                 forward_direction: None,
@@ -575,7 +575,7 @@ mod tests {
                 name: "3".to_string(),
                 code: None,
                 codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
+                object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
                 forward_name: None,
                 forward_direction: None,
@@ -622,7 +622,7 @@ mod tests {
                 name: "Hôtels - Hôtels".to_string(),
                 direction_type: Some("forward".to_string()),
                 codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
+                object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
                 line_id: "OIF:002002002:BDEOIF829".to_string(),
                 geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
@@ -633,7 +633,7 @@ mod tests {
                 name: "Hôtels - Hôtels".to_string(),
                 direction_type: None,
                 codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
+                object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
                 line_id: "OIF:002002002:BDEOIF829".to_string(),
                 geometry_id: None,
@@ -678,7 +678,7 @@ mod tests {
             VehicleJourney {
                 id: "OIF:87604986-1_11595-1".to_string(),
                 codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
+                object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
                 route_id: "OIF:078078001:1".to_string(),
                 physical_mode_id: "Bus".to_string(),
@@ -723,7 +723,7 @@ mod tests {
             VehicleJourney {
                 id: "OIF:90014407-1_425283-1".to_string(),
                 codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
+                object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
                 route_id: "OIF:800:TER".to_string(),
                 physical_mode_id: "Bus".to_string(),
@@ -953,7 +953,7 @@ mod tests {
                 id: "Navitia:sa_2".to_string(),
                 name: "sa_name_2".to_string(),
                 codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
+                object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
@@ -969,7 +969,7 @@ mod tests {
                 id: "sa_1".to_string(),
                 name: "sa_name_1".to_string(),
                 codes: KeysValues::default(),
-                object_properties: KeysValues::default(),
+                object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
                 visible: true,
                 coord: Coord {
@@ -1033,10 +1033,10 @@ mod tests {
                 "object_system:1".to_string(),
                 "object_code:1".to_string(),
             )]),
-            object_properties: btree_set_from_vec(vec![(
+            object_properties: properties_map![(
                 "prop_name:1".to_string(),
-                "prop_value:1".to_string(),
-            )]),
+                "prop_value:1".to_string()
+            )],
             comment_links: btree_set_from_vec(vec!["c:1".to_string()]),
             visible: true,
             coord: Coord {
@@ -1055,10 +1055,10 @@ mod tests {
                 "object_system:2".to_string(),
                 "object_code:2".to_string(),
             )]),
-            object_properties: btree_set_from_vec(vec![(
+            object_properties: properties_map![(
                 "prop_name:2".to_string(),
-                "prop_value:2".to_string(),
-            )]),
+                "prop_value:2".to_string()
+            )],
             comment_links: btree_set_from_vec(vec!["c:2".to_string()]),
             visible: true,
             coord: Coord {
@@ -1081,10 +1081,10 @@ mod tests {
                 "object_system:3".to_string(),
                 "object_code:3".to_string(),
             )]),
-            object_properties: btree_set_from_vec(vec![(
+            object_properties: properties_map![(
                 "prop_name:3".to_string(),
-                "prop_value:3".to_string(),
-            )]),
+                "prop_value:3".to_string()
+            )],
             comment_links: btree_set_from_vec(vec!["c:1".to_string(), "c:2".to_string()]),
             forward_name: None,
             forward_direction: None,
@@ -1108,10 +1108,10 @@ mod tests {
                 ("object_system:4".to_string(), "object_code:4".to_string()),
                 ("object_system:5".to_string(), "object_code:5".to_string()),
             ]),
-            object_properties: btree_set_from_vec(vec![(
+            object_properties: properties_map![(
                 "prop_name:4".to_string(),
-                "prop_value:4".to_string(),
-            )]),
+                "prop_value:4".to_string()
+            )],
             comment_links: btree_set_from_vec(vec!["c:3".to_string()]),
             line_id: "OIF:002002002:BDEOIF829".to_string(),
             geometry_id: None,
@@ -1124,10 +1124,10 @@ mod tests {
                 "object_system:6".to_string(),
                 "object_code:6".to_string(),
             )]),
-            object_properties: btree_set_from_vec(vec![(
+            object_properties: properties_map![(
                 "prop_name:6".to_string(),
-                "prop_value:6".to_string(),
-            )]),
+                "prop_value:6".to_string()
+            )],
             comment_links: CommentLinksT::default(),
             route_id: "OIF:800:TER".to_string(),
             physical_mode_id: "Bus".to_string(),

@@ -88,17 +88,29 @@ macro_rules! impl_codes {
     };
 }
 
+pub type PropertiesMap = std::collections::BTreeMap<String, String>;
+/// Helper to create a map of properties. Take a list of tuples `(key, value)`.
+#[macro_export]
+macro_rules! properties_map {
+    ($(($k:expr, $v:expr)),*) => {{
+        let mut map = std::collections::BTreeMap::default();
+            $(
+                map.insert($k, $v);
+            )*
+            map
+    }};
+}
 pub trait Properties {
-    fn properties(&self) -> &KeysValues;
-    fn properties_mut(&mut self) -> &mut KeysValues;
+    fn properties(&self) -> &PropertiesMap;
+    fn properties_mut(&mut self) -> &mut PropertiesMap;
 }
 macro_rules! impl_properties {
     ($ty:ty) => {
         impl Properties for $ty {
-            fn properties(&self) -> &KeysValues {
+            fn properties(&self) -> &PropertiesMap {
                 &self.object_properties
             }
-            fn properties_mut(&mut self) -> &mut KeysValues {
+            fn properties_mut(&mut self) -> &mut PropertiesMap {
                 &mut self.object_properties
             }
         }
@@ -474,7 +486,7 @@ pub struct Line {
     #[serde(skip)]
     pub codes: KeysValues,
     #[serde(skip)]
-    pub object_properties: KeysValues,
+    pub object_properties: PropertiesMap,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     #[serde(rename = "line_name")]
@@ -559,7 +571,7 @@ pub struct Route {
     #[serde(skip)]
     pub codes: KeysValues,
     #[serde(skip)]
-    pub object_properties: KeysValues,
+    pub object_properties: PropertiesMap,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     #[derivative(Default(value = "\"default_line\".into()"))]
@@ -603,7 +615,7 @@ pub struct VehicleJourney {
     #[serde(skip)]
     pub codes: KeysValues,
     #[serde(skip)]
-    pub object_properties: KeysValues,
+    pub object_properties: PropertiesMap,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     pub route_id: String,
@@ -631,7 +643,7 @@ impl Default for VehicleJourney {
         VehicleJourney {
             id: "default_vehiclejourney".to_string(),
             codes: KeysValues::default(),
-            object_properties: KeysValues::default(),
+            object_properties: PropertiesMap::default(),
             comment_links: CommentLinksT::default(),
             route_id: "default_route".to_string(),
             physical_mode_id: "default_physical_mode".to_string(),
@@ -1067,7 +1079,7 @@ pub struct StopArea {
     #[serde(skip)]
     pub codes: KeysValues,
     #[serde(skip)]
-    pub object_properties: KeysValues,
+    pub object_properties: PropertiesMap,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     pub visible: bool,
@@ -1085,7 +1097,7 @@ impl From<StopPoint> for StopArea {
             id: format!("Navitia:{}", stop_point.id),
             name: stop_point.name,
             codes: KeysValues::default(),
-            object_properties: KeysValues::default(),
+            object_properties: PropertiesMap::default(),
             comment_links: CommentLinksT::default(),
             visible: stop_point.visible,
             coord: stop_point.coord,
@@ -1144,7 +1156,7 @@ pub struct StopPoint {
     #[serde(skip)]
     pub codes: KeysValues,
     #[serde(skip)]
-    pub object_properties: KeysValues,
+    pub object_properties: PropertiesMap,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
     pub visible: bool,
