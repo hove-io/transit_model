@@ -68,8 +68,8 @@ impl<'a> From<&'a objects::Network> for Agency {
     }
 }
 
-#[derivative(Default)]
 #[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derivative(Default)]
 enum StopLocationType {
     #[derivative(Default)]
     #[serde(rename = "0")]
