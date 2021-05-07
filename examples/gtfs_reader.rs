@@ -16,9 +16,8 @@ use serde_json::json;
 use transit_model::{gtfs, Result};
 
 fn run() -> Result<()> {
-    let configuration = gtfs::Configuration::default();
     // read GTFS from current directory
-    let objects = gtfs::read_from_path(".", configuration)?;
+    let objects = gtfs::read(".")?;
     // output internal model as JSON
     let json_objs = json!(objects);
     println!("{}", json_objs.to_string());

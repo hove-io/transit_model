@@ -15,7 +15,6 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::{DateTime, FixedOffset};
-use failure::bail;
 use log::info;
 use slog::{slog_o, Drain};
 use slog_async::OverflowStrategy;
@@ -114,13 +113,7 @@ fn run(opt: Opt) -> Result<()> {
         ..Default::default()
     };
 
-    let model = if opt.input.is_file() {
-        transit_model::gtfs::read_from_zip(opt.input, configuration)?
-    } else if opt.input.is_dir() {
-        transit_model::gtfs::read_from_path(opt.input, configuration)?
-    } else {
-        bail!("Invalid input data: must be an existing directory or a ZIP archive");
-    };
+    let model = transit_model::gtfs::Reader::new(configuration).from(opt.input)?;
 
     let netex_exporter = transit_model::netex_france::Exporter::new(
         &model,

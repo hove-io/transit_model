@@ -28,6 +28,7 @@ use crate::{
 };
 use chrono_tz::Tz;
 use derivative::Derivative;
+use failure::ResultExt;
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fmt, path::Path};
@@ -273,7 +274,7 @@ pub struct Configuration {
     pub read_as_line: bool,
 }
 
-fn read<H>(file_handler: &mut H, configuration: Configuration) -> Result<Model>
+fn read_file_handler<H>(file_handler: &mut H, configuration: Configuration) -> Result<Model>
 where
     for<'a> &'a mut H: read_utils::FileHandler,
 {
@@ -334,19 +335,14 @@ where
 /// files in the `path` directory.
 ///
 /// The `Configuration` is used to control various parameters during the import.
-pub fn read_from_path<P: AsRef<Path>>(p: P, configuration: Configuration) -> Result<Model> {
-    let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
-    read(&mut file_handle, configuration)
+pub fn read_from_path<P: AsRef<Path>>(p: P) -> Result<Model> {
+    Reader::default().from_path(p)
 }
 
 /// Imports a `Model` from a zip file containing the
 /// [GTFS](https://gtfs.org/reference/static).
-///
-/// The `Configuration` is used to control various parameters during the import.
-pub fn read_from_zip<P: AsRef<Path>>(p: P, configuration: Configuration) -> Result<Model> {
-    let reader = std::fs::File::open(p.as_ref())?;
-    let mut file_handler = read_utils::ZipHandler::new(reader, p)?;
-    read(&mut file_handler, configuration)
+pub fn read_from_zip<P: AsRef<Path>>(p: P) -> Result<Model> {
+    Reader::default().from_zip(p)
 }
 
 /// Imports a `Model` from an object implementing `Read` and `Seek` and containing the
@@ -355,21 +351,106 @@ pub fn read_from_zip<P: AsRef<Path>>(p: P, configuration: Configuration) -> Resu
 /// This method makes it possible to read from a variety of sources like read a GTFS
 /// from the network.
 ///
-/// ```
-// let url = "http://some_url/gtfs.zip";
-// let resp = reqwest::blocking::get(url)?; // or async call
-// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
-// let model = transit_model::gtfs::from_read(data, &url, configuration)?;
+/// ```ignore
+/// let url = "http://some_url/gtfs.zip";
+/// let resp = reqwest::blocking::get(url)?; // or async call
+/// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
+/// let model = transit_model::gtfs::from_read(data, &url)?;
+/// # Ok::<(), Error>(())
 /// ```
 ///
 /// The `source_name` is needed to have nicer error messages.
-/// The `Configuration` is used to control various parameters during the import.
-pub fn from_read<R>(reader: R, source_name: &str, configuration: Configuration) -> Result<Model>
+pub fn from_read<R>(reader: R, source_name: &str) -> Result<Model>
 where
     R: std::io::Seek + std::io::Read,
 {
-    let mut file_handler = read_utils::ZipHandler::new(reader, &source_name)?;
-    read(&mut file_handler, configuration)
+    Reader::default().from_reader(reader, source_name)
+}
+
+/// Imports a `Model` from the
+/// [GTFS](https://gtfs.org/reference/static).
+/// files in the given directory.
+/// This method will try to detect if the input is a ziped archive or not.
+/// If the default file type mechanism is not enough, you can use
+/// [read_from_zip] or [read_from_path].
+pub fn read<P: AsRef<Path>>(p: P) -> Result<Model> {
+    Reader::default().from(p)
+}
+
+/// Structure to configure the GTFS reading
+#[derive(Default)]
+pub struct Reader {
+    configuration: Configuration,
+}
+
+impl Reader {
+    /// Build a Reader with a custom configuration
+    pub fn new(configuration: Configuration) -> Self {
+        Self { configuration }
+    }
+
+    /// Imports a `Model` from the
+    /// [GTFS](https://gtfs.org/reference/static).
+    /// files in the given directory.
+    /// This method will try to detect if the input is a ziped archive or not.
+    /// If the default file type mechanism is not enough, you can use
+    /// [Reader::from_zip] or [Reader::from_path].
+    pub fn from(self, path: impl AsRef<Path>) -> Result<Model> {
+        let p = path.as_ref();
+        if p.is_file() {
+            // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
+            Ok(self
+                .from_zip(p)
+                .with_context(|_| format!("impossible to read ziped gtfs {:?}", p))?)
+        } else if p.is_dir() {
+            Ok(self
+                .from_path(p)
+                .with_context(|_| format!("impossible to read gtfs directory from {:?}", p))?)
+        } else {
+            Err(failure::format_err!(
+                "file {:?} is neither a file nor a directory, cannot read a gtfs from it",
+                p
+            ))
+        }
+    }
+
+    /// Imports a `Model` from a zip file containing the
+    /// [GTFS](https://gtfs.org/reference/static).
+    pub fn from_zip(self, path: impl AsRef<Path>) -> Result<Model> {
+        let reader = std::fs::File::open(path.as_ref())?;
+        let mut file_handler = read_utils::ZipHandler::new(reader, path)?;
+        read_file_handler(&mut file_handler, self.configuration)
+    }
+
+    /// Imports a `Model` from the [GTFS](https://gtfs.org/reference/static)
+    /// files in the `path` directory.
+    pub fn from_path(self, path: impl AsRef<Path>) -> Result<Model> {
+        let mut file_handler = read_utils::PathFileHandler::new(path.as_ref().to_path_buf());
+        read_file_handler(&mut file_handler, self.configuration)
+    }
+
+    /// Imports a `Model` from an object implementing `Read` and `Seek` and containing the
+    /// [GTFS](https://gtfs.org/reference/static).
+    ///
+    /// This method makes it possible to read from a variety of sources like read a GTFS
+    /// from the network.
+    ///
+    /// ```ignore
+    /// let url = "http://some_url/gtfs.zip";
+    /// let resp = reqwest::blocking::get(url)?; // or async call
+    /// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
+    /// let model = transit_model::gtfs::Reader::default().from_reader(data, &url)?;
+    /// # Ok::<(), Error>(())
+    /// ```
+    ///
+    /// The `source_name` is needed to have nicer error messages.
+    pub fn from_reader<R>(self, reader: R, source_name: &str) -> Result<Model>
+    where
+        R: std::io::Seek + std::io::Read,
+    {
+        let mut file_handler = read_utils::ZipHandler::new(reader, source_name)?;
+        read_file_handler(&mut file_handler, self.configuration)
+    }
 }
 
 #[derive(PartialOrd, Ord, Debug, Clone, Eq, PartialEq, Hash)]
