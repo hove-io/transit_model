@@ -20,7 +20,7 @@ use crate::{
 use failure::{bail, format_err, ResultExt};
 use log::{info, Level as LogLevel};
 use serde::Deserialize;
-use skip_error::skip_error_and_log;
+use skip_error::SkipError;
 use std::path;
 use std::path::{Path, PathBuf};
 use std::{collections::BTreeMap, io::Read};
@@ -268,14 +268,11 @@ where
                 .flexible(true)
                 .trim(csv::Trim::All)
                 .from_reader(reader);
-            let mut objects: Vec<O> = vec![];
-            for object in rdr.deserialize() {
-                let object: O = skip_error_and_log!(
-                    object.with_context(|_| format!("Error reading {:?}", path)),
-                    LogLevel::Warn
-                );
-                objects.push(object);
-            }
+            let objects = rdr
+                .deserialize()
+                .map(|object| object.with_context(|_| format!("Error reading {:?}", path)))
+                .skip_error_and_log(LogLevel::Warn)
+                .collect();
             Ok(objects)
         }
     }

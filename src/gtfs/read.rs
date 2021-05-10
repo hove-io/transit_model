@@ -32,7 +32,7 @@ use failure::{bail, format_err, Error};
 use geo::{LineString, Point};
 use log::{info, warn, Level as LogLevel};
 use serde::Deserialize;
-use skip_error::skip_error_and_log;
+use skip_error::{skip_error_and_log, SkipError};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
 use typed_index_collection::{impl_id, Collection, CollectionWithId, Idx};
@@ -1103,12 +1103,11 @@ fn make_ntfs_vehicle_journeys(
             });
             id_incr += 1;
         }
-        for t in trips {
-            vehicle_journeys.push(skip_error_and_log!(
-                t.to_ntfs_vehicle_journey(routes, dataset, &property_id, networks,),
-                LogLevel::Warn
-            ));
-        }
+        trips
+            .iter()
+            .map(|t| t.to_ntfs_vehicle_journey(routes, dataset, &property_id, networks))
+            .skip_error_and_log(LogLevel::Warn)
+            .for_each(|vj| vehicle_journeys.push(vj));
     }
 
     (vehicle_journeys, trip_properties)
