@@ -134,7 +134,7 @@ fn run(opt: Opt) -> Result<()> {
         read_as_line: opt.read_as_line,
     };
 
-    let model = transit_model::gtfs::Reader::new(configuration).from(opt.input)?;
+    let model = transit_model::gtfs::Reader::new(configuration).parse(opt.input)?;
 
     let model = generates_transfers(
         model,

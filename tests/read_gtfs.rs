@@ -13,7 +13,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use pretty_assertions::assert_eq;
-use transit_model;
 
 #[test]
 fn simple_gtfs_reading() {
@@ -36,7 +35,7 @@ fn gtfs_with_config_reading() {
         ..Default::default()
     };
     let model = transit_model::gtfs::Reader::new(c)
-        .from("tests/fixtures/gtfs")
+        .parse("tests/fixtures/gtfs")
         .unwrap();
     assert_eq!(model.stop_areas.len(), 2);
     // we should find our custom feed info in the loaded model

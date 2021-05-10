@@ -40,7 +40,7 @@ fn test_gtfs() {
             read_as_line: false,
         };
         let model = transit_model::gtfs::Reader::new(configuration)
-            .from(input_dir)
+            .parse(input_dir)
             .unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/full_output");
@@ -145,7 +145,7 @@ fn test_minimal_gtfs_with_odt_comment() {
             read_as_line: false,
         };
         let model = transit_model::gtfs::Reader::new(configuration)
-            .from(input_dir)
+            .parse(input_dir)
             .unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
@@ -175,7 +175,7 @@ fn test_minimal_gtfs_frequencies_with_odt_comment() {
         };
 
         let model = transit_model::gtfs::Reader::new(configuration)
-            .from(input_dir)
+            .parse(input_dir)
             .unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
@@ -209,7 +209,7 @@ fn test_minimal_gtfs_with_routes_as_lines_comments() {
             ..Default::default()
         };
         let model = transit_model::gtfs::Reader::new(configuration)
-            .from(input_dir)
+            .parse(input_dir)
             .unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(

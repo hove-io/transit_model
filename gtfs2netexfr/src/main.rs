@@ -113,7 +113,7 @@ fn run(opt: Opt) -> Result<()> {
         ..Default::default()
     };
 
-    let model = transit_model::gtfs::Reader::new(configuration).from(opt.input)?;
+    let model = transit_model::gtfs::Reader::new(configuration).parse(opt.input)?;
 
     let netex_exporter = transit_model::netex_france::Exporter::new(
         &model,
