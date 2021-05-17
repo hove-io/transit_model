@@ -336,13 +336,13 @@ where
 ///
 /// The `Configuration` is used to control various parameters during the import.
 pub fn from_dir<P: AsRef<Path>>(p: P) -> Result<Model> {
-    Reader::default().parse_from_path(p)
+    Reader::default().parse_dir(p)
 }
 
 /// Imports a `Model` from a zip file containing the
 /// [GTFS](https://gtfs.org/reference/static).
 pub fn from_zip<P: AsRef<Path>>(p: P) -> Result<Model> {
-    Reader::default().parse_from_zip(p)
+    Reader::default().parse_zip(p)
 }
 
 /// Imports a `Model` from an object implementing `Read` and `Seek` and containing the
@@ -364,7 +364,7 @@ pub fn from_zip_reader<R>(reader: R, source_name: &str) -> Result<Model>
 where
     R: std::io::Seek + std::io::Read,
 {
-    Reader::default().parse_from_zip_reader(reader, source_name)
+    Reader::default().parse_zip_reader(reader, source_name)
 }
 
 /// Imports a `Model` from the
@@ -394,17 +394,17 @@ impl Reader {
     /// files in the given directory.
     /// This method will try to detect if the input is a zipped archive or not.
     /// If the default file type mechanism is not enough, you can use
-    /// [Reader::parse_from_zip] or [Reader::parse_from_path].
+    /// [Reader::parse_zip] or [Reader::parse_dir].
     pub fn parse(self, path: impl AsRef<Path>) -> Result<Model> {
         let p = path.as_ref();
         if p.is_file() {
             // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
             Ok(self
-                .parse_from_zip(p)
+                .parse_zip(p)
                 .with_context(|_| format!("impossible to read zipped gtfs {:?}", p))?)
         } else if p.is_dir() {
             Ok(self
-                .parse_from_path(p)
+                .parse_dir(p)
                 .with_context(|_| format!("impossible to read gtfs directory from {:?}", p))?)
         } else {
             Err(failure::format_err!(
@@ -416,7 +416,7 @@ impl Reader {
 
     /// Imports a `Model` from a zip file containing the
     /// [GTFS](https://gtfs.org/reference/static).
-    pub fn parse_from_zip(self, path: impl AsRef<Path>) -> Result<Model> {
+    pub fn parse_zip(self, path: impl AsRef<Path>) -> Result<Model> {
         let reader = std::fs::File::open(path.as_ref())?;
         let mut file_handler = read_utils::ZipHandler::new(reader, path)?;
         read_file_handler(&mut file_handler, self.configuration)
@@ -424,7 +424,7 @@ impl Reader {
 
     /// Imports a `Model` from the [GTFS](https://gtfs.org/reference/static)
     /// files in the `path` directory.
-    pub fn parse_from_path(self, path: impl AsRef<Path>) -> Result<Model> {
+    pub fn parse_dir(self, path: impl AsRef<Path>) -> Result<Model> {
         let mut file_handler = read_utils::PathFileHandler::new(path.as_ref().to_path_buf());
         read_file_handler(&mut file_handler, self.configuration)
     }
@@ -439,12 +439,12 @@ impl Reader {
     /// let url = "http://some_url/gtfs.zip";
     /// let resp = reqwest::blocking::get(url)?; // or async call
     /// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
-    /// let model = transit_model::gtfs::Reader::default().parse_from_zip_reader(data, &url)?;
+    /// let model = transit_model::gtfs::Reader::default().parse_zip_reader(data, &url)?;
     /// # Ok::<(), Error>(())
     /// ```
     ///
     /// The `source_name` is needed to have nicer error messages.
-    pub fn parse_from_zip_reader<R>(self, reader: R, source_name: &str) -> Result<Model>
+    pub fn parse_zip_reader<R>(self, reader: R, source_name: &str) -> Result<Model>
     where
         R: std::io::Seek + std::io::Read,
     {
