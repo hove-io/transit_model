@@ -21,8 +21,8 @@ fn simple_gtfs_reading() {
 }
 
 #[test]
-fn ziped_gtfs_reading() {
-    let ntm = transit_model::gtfs::read("tests/fixtures/ziped_gtfs/gtfs.zip").unwrap();
+fn zipped_gtfs_reading() {
+    let ntm = transit_model::gtfs::read("tests/fixtures/zipped_gtfs/gtfs.zip").unwrap();
     assert_eq!(ntm.stop_areas.len(), 1);
 }
 
@@ -53,7 +53,7 @@ fn unexistent_file() {
 
 #[test]
 #[should_panic(
-    expected = "InvalidArchive(\"Could not find central directory end\")\n\nimpossible to read ziped gtfs \"tests/fixtures/gtfs/stops.txt\""
+    expected = "InvalidArchive(\"Could not find central directory end\")\n\nimpossible to read zipped gtfs \"tests/fixtures/gtfs/stops.txt\""
 )]
 fn file_not_a_gtfs() {
     // reading a file that is not either a directory with the gtfs files nor a zip archive will lead to an error

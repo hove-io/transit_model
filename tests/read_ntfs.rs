@@ -92,8 +92,8 @@ fn minimal() {
 }
 
 #[test]
-fn ziped_minimal() {
-    let ntm = transit_model::ntfs::read("tests/fixtures/ziped_ntfs/minimal_ntfs.zip").unwrap();
+fn zipped_minimal() {
+    let ntm = transit_model::ntfs::read("tests/fixtures/zipped_ntfs/minimal_ntfs.zip").unwrap();
     test_minimal_ntfs(&ntm);
 }
 
@@ -108,7 +108,7 @@ fn unexistent_file() {
 
 #[test]
 #[should_panic(
-    expected = "InvalidArchive(\"Could not find central directory end\")\n\nimpossible to read ziped ntfs \"tests/fixtures/ntfs/stops.txt\""
+    expected = "InvalidArchive(\"Could not find central directory end\")\n\nimpossible to read zipped ntfs \"tests/fixtures/ntfs/stops.txt\""
 )]
 fn file_not_a_ntfs() {
     // reading a file that is not either a directory with the ntfs files nor a zip archive will lead to an error

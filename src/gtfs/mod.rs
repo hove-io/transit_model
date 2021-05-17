@@ -370,7 +370,7 @@ where
 /// Imports a `Model` from the
 /// [GTFS](https://gtfs.org/reference/static).
 /// files in the given directory.
-/// This method will try to detect if the input is a ziped archive or not.
+/// This method will try to detect if the input is a zipped archive or not.
 /// If the default file type mechanism is not enough, you can use
 /// [from_zip] or [from_dir].
 pub fn read<P: AsRef<Path>>(p: P) -> Result<Model> {
@@ -392,7 +392,7 @@ impl Reader {
     /// Imports a `Model` from the
     /// [GTFS](https://gtfs.org/reference/static).
     /// files in the given directory.
-    /// This method will try to detect if the input is a ziped archive or not.
+    /// This method will try to detect if the input is a zipped archive or not.
     /// If the default file type mechanism is not enough, you can use
     /// [Reader::parse_from_zip] or [Reader::parse_from_path].
     pub fn parse(self, path: impl AsRef<Path>) -> Result<Model> {
@@ -401,7 +401,7 @@ impl Reader {
             // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
             Ok(self
                 .parse_from_zip(p)
-                .with_context(|_| format!("impossible to read ziped gtfs {:?}", p))?)
+                .with_context(|_| format!("impossible to read zipped gtfs {:?}", p))?)
         } else if p.is_dir() {
             Ok(self
                 .parse_from_path(p)

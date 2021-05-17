@@ -214,14 +214,14 @@ where
 /// Imports a `Model` from the
 /// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
-/// This method will try to detect if the input is a ziped archive or not.
+/// This method will try to detect if the input is a zipped archive or not.
 /// If the default file type mechanism is not enough, you can use
 /// [from_zip] or [from_dir].
 pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let p = path.as_ref();
     if p.is_file() {
         // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
-        Ok(from_zip(p).with_context(|_| format!("impossible to read ziped ntfs {:?}", p))?)
+        Ok(from_zip(p).with_context(|_| format!("impossible to read zipped ntfs {:?}", p))?)
     } else if p.is_dir() {
         Ok(from_dir(p)
             .with_context(|_| format!("impossible to read ntfs directory from {:?}", p))?)

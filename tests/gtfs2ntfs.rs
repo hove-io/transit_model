@@ -98,9 +98,9 @@ fn test_gtfs_remove_vjs_with_no_traffic() {
 }
 
 #[test]
-fn test_minimal_ziped_gtfs() {
+fn test_minimal_zipped_gtfs() {
     test_in_tmp_dir(|path| {
-        let input = "./tests/fixtures/ziped_gtfs/gtfs.zip";
+        let input = "./tests/fixtures/zipped_gtfs/gtfs.zip";
         let model = transit_model::gtfs::read(input).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
@@ -108,9 +108,9 @@ fn test_minimal_ziped_gtfs() {
 }
 
 #[test]
-fn test_minimal_ziped_sub_dir_gtfs() {
+fn test_minimal_zipped_sub_dir_gtfs() {
     test_in_tmp_dir(|path| {
-        let input = "./tests/fixtures/ziped_gtfs/sub_dir_gtfs.zip";
+        let input = "./tests/fixtures/zipped_gtfs/sub_dir_gtfs.zip";
         let model = transit_model::gtfs::read(input).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
@@ -118,9 +118,9 @@ fn test_minimal_ziped_sub_dir_gtfs() {
 }
 
 #[test]
-fn test_minimal_ziped_sub_dir_gtfs_with_hidden_files() {
+fn test_minimal_zipped_sub_dir_gtfs_with_hidden_files() {
     test_in_tmp_dir(|path| {
-        let input = "./tests/fixtures/ziped_gtfs/sub_dir_gtfs_with_hidden_files.zip";
+        let input = "./tests/fixtures/zipped_gtfs/sub_dir_gtfs_with_hidden_files.zip";
         let model = transit_model::gtfs::read(input).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
