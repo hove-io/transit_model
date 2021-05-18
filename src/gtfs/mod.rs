@@ -351,8 +351,8 @@ pub fn from_zip<P: AsRef<Path>>(p: P) -> Result<Model> {
 /// This method makes it possible to read from a variety of sources like read a GTFS
 /// from the network.
 ///
-/// ```ignore
-/// let url = "http://some_url/gtfs.zip";
+/// ```
+/// let url = "https://github.com/CanalTP/transit_model/raw/master/tests/fixtures/ziped_gtfs/gtfs.zip";
 /// let resp = reqwest::blocking::get(url)?; // or async call
 /// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
 /// let model = transit_model::gtfs::from_zip_reader(data, &url)?;
@@ -435,8 +435,8 @@ impl Reader {
     /// This method makes it possible to read from a variety of sources like read a GTFS
     /// from the network.
     ///
-    /// ```ignore
-    /// let url = "http://some_url/gtfs.zip";
+    /// ```
+    /// let url = "https://github.com/CanalTP/transit_model/raw/master/tests/fixtures/ziped_gtfs/gtfs.zip";
     /// let resp = reqwest::blocking::get(url)?; // or async call
     /// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
     /// let model = transit_model::gtfs::Reader::default().parse_zip_reader(data, &url)?;
