@@ -356,7 +356,7 @@ pub fn from_zip<P: AsRef<Path>>(p: P) -> Result<Model> {
 /// let resp = reqwest::blocking::get(url)?; // or async call
 /// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
 /// let model = transit_model::gtfs::from_zip_reader(data, &url)?;
-/// # Ok::<(), Error>(())
+/// # Ok::<(), transit_model::Error>(())
 /// ```
 ///
 /// The `source_name` is needed to have nicer error messages.
@@ -440,7 +440,7 @@ impl Reader {
     /// let resp = reqwest::blocking::get(url)?; // or async call
     /// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
     /// let model = transit_model::gtfs::Reader::default().parse_zip_reader(data, &url)?;
-    /// # Ok::<(), Error>(())
+    /// # Ok::<(), transit_model::Error>(())
     /// ```
     ///
     /// The `source_name` is needed to have nicer error messages.
