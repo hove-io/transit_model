@@ -176,14 +176,14 @@ fn has_fares_v1(collections: &Collections) -> bool {
 /// Imports a `Model` from the
 /// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
-pub fn read_from_path<P: AsRef<path::Path>>(p: P) -> Result<Model> {
+pub fn from_dir<P: AsRef<path::Path>>(p: P) -> Result<Model> {
     let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
     read_file_handler(&mut file_handle)
 }
 
 /// Imports a `Model` from a zip file containing the
 /// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
-pub fn read_from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
+pub fn from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
     let reader = std::fs::File::open(p.as_ref())?;
     let mut file_handler = read_utils::ZipHandler::new(reader, p)?;
     read_file_handler(&mut file_handler)
@@ -195,15 +195,16 @@ pub fn read_from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
 /// This method makes it possible to read from a variety of sources like read a NTFS
 /// from the network.
 ///
-/// ```
-// let url = "http://some_url/ntfs.zip";
-// let resp = reqwest::blocking::get(url)?; // or async call
-// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
-// let model = transit_model::ntfs::from_read(data, &url)?;
+/// ```ignore
+/// let url = "http://some_url/ntfs.zip";
+/// let resp = reqwest::blocking::get(url)?; // or async call
+/// let data = std::io::Cursor::new(resp.bytes()?.to_vec());
+/// let model = transit_model::ntfs::from_zip_reader(data, &url)?;
+/// # Ok::<(), transit_model::Error>(())
 /// ```
 ///
 /// The `source_name` is needed to have nicer error messages.
-pub fn from_read<R>(reader: R, source_name: &str) -> Result<Model>
+pub fn from_zip_reader<R>(reader: R, source_name: &str) -> Result<Model>
 where
     R: std::io::Seek + std::io::Read,
 {
@@ -214,16 +215,16 @@ where
 /// Imports a `Model` from the
 /// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
-/// This method will try to detect if the input is a ziped archive or not.
+/// This method will try to detect if the input is a zipped archive or not.
 /// If the default file type mechanism is not enough, you can use
-/// [read_from_zip] or [read_from_path].
+/// [from_zip] or [from_dir].
 pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let p = path.as_ref();
     if p.is_file() {
         // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
-        Ok(read_from_zip(p).with_context(|_| format!("impossible to read ziped ntfs {:?}", p))?)
+        Ok(from_zip(p).with_context(|_| format!("impossible to read zipped ntfs {:?}", p))?)
     } else if p.is_dir() {
-        Ok(read_from_path(p)
+        Ok(from_dir(p)
             .with_context(|_| format!("impossible to read ntfs directory from {:?}", p))?)
     } else {
         Err(failure::format_err!(

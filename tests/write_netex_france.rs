@@ -57,10 +57,7 @@ fn test_write_netex_france_from_ntfs() {
 
 #[test]
 fn test_write_netex_france_from_gtfs() {
-    let configuration = gtfs::Configuration::default();
-
-    let model =
-        gtfs::read_from_path("tests/fixtures/netex_france/input_gtfs", configuration).unwrap();
+    let model = gtfs::read("tests/fixtures/netex_france/input_gtfs").unwrap();
     test_write_netex_france(model);
 }
 
