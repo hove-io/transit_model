@@ -174,44 +174,41 @@ impl Collections {
         let mut comments_used = HashSet::<String>::new();
         let mut level_id_used = HashSet::<String>::new();
         let mut calendars_used = HashSet::<String>::new();
+        let mut vjs_used = HashSet::<String>::new();
 
         let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
 
-        let vjs: HashMap<String, VehicleJourney> = self
-            .vehicle_journeys
-            .take()
-            .into_iter()
-            .filter_map(|vj| {
-                if vj.stop_times.is_empty() {
-                    return None;
+        let mut vjs: Vec<VehicleJourney> = self.vehicle_journeys.take();
+        vjs.retain(|vj| {
+            if vj.stop_times.is_empty() {
+                return false;
+            }
+            if vj.stop_times.len() == 1 {
+                warn!("vehicle journey {} only have 1 stop time", vj.id);
+            }
+            if self.calendars.contains_id(&vj.service_id) {
+                calendars_used.insert(vj.service_id.clone());
+                if let Some(geo_id) = &vj.geometry_id {
+                    geometries_used.insert(geo_id.clone());
                 }
-                if vj.stop_times.len() == 1 {
-                    warn!("vehicle journey {} only have 1 stop time", vj.id);
+                if let Some(prop_id) = &vj.trip_property_id {
+                    trip_properties_used.insert(prop_id.clone());
                 }
-                if self.calendars.contains_id(&vj.service_id) {
-                    calendars_used.insert(vj.service_id.clone());
-                    if let Some(geo_id) = &vj.geometry_id {
-                        geometries_used.insert(geo_id.clone());
-                    }
-                    if let Some(prop_id) = &vj.trip_property_id {
-                        trip_properties_used.insert(prop_id.clone());
-                    }
-                    companies_used.insert(vj.company_id.clone());
-                    route_ids_used.insert(vj.route_id.clone());
-                    for stop_time in &vj.stop_times {
-                        stop_points_used
-                            .insert(self.stop_points[stop_time.stop_point_idx].id.clone());
-                    }
-                    data_sets_used.insert(vj.dataset_id.clone());
-                    physical_modes_used.insert(vj.physical_mode_id.clone());
-                    comments_used.extend(&mut vj.comment_links.iter().map(|cl| cl.to_string()));
-                    Some((vj.id.clone(), vj))
-                } else {
-                    log_object_removed("Vehicle Journey", &vj.id);
-                    None
+                companies_used.insert(vj.company_id.clone());
+                route_ids_used.insert(vj.route_id.clone());
+                for stop_time in &vj.stop_times {
+                    stop_points_used.insert(self.stop_points[stop_time.stop_point_idx].id.clone());
                 }
-            })
-            .collect();
+                data_sets_used.insert(vj.dataset_id.clone());
+                physical_modes_used.insert(vj.physical_mode_id.clone());
+                comments_used.extend(&mut vj.comment_links.iter().map(|cl| cl.to_string()));
+                vjs_used.insert(vj.id.clone());
+                true
+            } else {
+                log_object_removed("Vehicle Journey", &vj.id);
+                false
+            }
+        });
         let mut line_ids_used: HashSet<String> = HashSet::new();
         let routes = self
             .routes
@@ -373,7 +370,7 @@ impl Collections {
 
         comments_used.extend(self.stop_time_comments.iter().filter_map(
             |((vj_id, _), comment_id)| {
-                if vjs.contains_key(vj_id) {
+                if vjs_used.contains(vj_id.as_str()) {
                     Some(comment_id.clone())
                 } else {
                     None
@@ -393,7 +390,6 @@ impl Collections {
             .iter()
             .map(|(new_idx, stop_point)| (stop_point_id_to_old_idx[&stop_point.id], new_idx))
             .collect();
-        let mut vjs: Vec<VehicleJourney> = vjs.into_iter().map(|(_, vj)| vj).collect();
         for vj in vjs.iter_mut() {
             for st in vj.stop_times.iter_mut() {
                 st.stop_point_idx = stop_point_old_idx_to_new_idx[&st.stop_point_idx];
