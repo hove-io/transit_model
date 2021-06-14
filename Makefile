@@ -2,7 +2,7 @@ PROJ_VERSION = 7.2.1 # Version required by `proj` crate used in cargo.toml
 
 install_proj_deps: ## Install dependencies the proj crate needs in order to build libproj from source
 	sudo apt update
-	sudo apt install -y clang
+	sudo apt install -y clang # clang >=3.9 is required
 
 	# Needed only for proj install
 	sudo apt install -y wget build-essential pkg-config sqlite3 libsqlite3-dev libtiff-dev libcurl4-nss-dev
