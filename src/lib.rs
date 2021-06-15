@@ -71,7 +71,7 @@ pub const NTFS_VERSION: &str = "0.11.4";
 pub const TRANSFER_MAX_DISTANCE: &str = "300";
 
 /// The walking speed in meters per second
-pub const TRANSFER_WAKING_SPEED: &str = "0.785";
+pub const TRANSFER_WALKING_SPEED: &str = "0.785";
 
 /// Waiting time at stop in second
 pub const TRANSFER_WAITING_TIME: &str = "60";
