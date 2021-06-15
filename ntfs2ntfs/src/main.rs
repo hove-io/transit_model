@@ -56,7 +56,7 @@ struct Opt {
 
     /// The walking speed in meters per second. You may want to divide your
     /// initial speed by sqrt(2) to simulate Manhattan distances.
-    #[structopt(long, short = "s", default_value = transit_model::TRANSFER_WAKING_SPEED)]
+    #[structopt(long, short = "s", default_value = transit_model::TRANSFER_WALKING_SPEED)]
     walking_speed: f64,
 
     /// Waiting time at stop in seconds.
