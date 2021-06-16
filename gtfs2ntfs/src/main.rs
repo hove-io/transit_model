@@ -18,6 +18,7 @@ use chrono::{DateTime, FixedOffset};
 use log::info;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
 use transit_model::{read_utils, transfers::generates_transfers, PrefixConfiguration, Result};
 
 lazy_static::lazy_static! {
@@ -93,8 +94,6 @@ struct Opt {
 }
 
 fn run(opt: Opt) -> Result<()> {
-    tracing_subscriber::fmt::init();
-
     info!("Launching gtfs2ntfs...");
 
     let (contributor, dataset, feed_infos) = read_utils::read_config(opt.config)?;
@@ -130,6 +129,10 @@ fn run(opt: Opt) -> Result<()> {
 }
 
 fn main() {
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::filter::EnvFilter::from_default_env())
+        .init();
     if let Err(err) = run(Opt::from_args()) {
         for cause in err.iter_chain() {
             eprintln!("{}", cause);
