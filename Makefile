@@ -1,11 +1,13 @@
-PROJ_VERSION = 7.2.1
-install_proj: ## Install PROJ and clang (requirements to use proj crate)
+PROJ_VERSION = 7.2.1 # Version required by `proj` crate used in cargo.toml
+
+install_proj_deps: ## Install dependencies the proj crate needs in order to build libproj from source
 	sudo apt update
-	sudo apt install -y clang
+	sudo apt install -y clang # clang >=3.9 is required
 
 	# Needed only for proj install
 	sudo apt install -y wget build-essential pkg-config sqlite3 libsqlite3-dev libtiff-dev libcurl4-nss-dev
 
+install_proj: install_proj_deps ## Install PROJ on system (avoid PROJ recompiling for cargo clean if using proj crate)
 	# remove PROJ system version from packages
 	sudo apt remove libproj-dev
 
@@ -37,5 +39,5 @@ test: ## Launch all tests
 help: ## Print this help message
 	@grep -E '^[a-zA-Z_-]+:.*## .*$$' $(CURDIR)/$(firstword $(MAKEFILE_LIST)) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: install_proj fmt format clippy lint test help
+.PHONY: install_proj_deps install_proj fmt format clippy lint test help
 .DEFAULT_GOAL := help

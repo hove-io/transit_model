@@ -615,7 +615,7 @@ impl<'a> OfferExporter<'a> {
             return Ok(None);
         }
         let coord_epsg2154 = self.converter.convert(*coord)?;
-        let coord_text = Node::Text(format!("{} {}", coord_epsg2154.x(), coord_epsg2154.y()));
+        let coord_text = Node::Text(format!("{} {}", coord_epsg2154.lon, coord_epsg2154.lat));
         let pos = Element::builder("gml:pos")
             .attr("srsName", "EPSG:2154")
             .append(coord_text)
