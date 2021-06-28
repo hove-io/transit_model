@@ -74,7 +74,14 @@ fn run(opt: Opt) -> Result<()> {
         model = add_mode_to_line_code(model)?;
     }
 
-    transit_model::gtfs::write(model, opt.output)?;
+    match opt.output.extension() {
+        Some(ext) if ext == "zip" => {
+            transit_model::gtfs::write_to_zip(model, opt.output)?;
+        }
+        _ => {
+            transit_model::gtfs::write(model, opt.output)?;
+        }
+    };
     Ok(())
 }
 

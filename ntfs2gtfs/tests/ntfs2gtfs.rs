@@ -12,7 +12,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+use assert_cmd::prelude::*;
 use ntfs2gtfs::add_mode_to_line_code;
+use std::process::Command;
+use tempfile::TempDir;
 use transit_model::test_utils::*;
 
 #[test]
@@ -52,4 +55,49 @@ fn test_platforms_preserving() {
             "./tests/fixtures/platforms/output",
         );
     });
+}
+
+#[test]
+fn test_ntfs2gtfs() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::cargo_bin("ntfs2gtfs")
+        .expect("Failed to find binary 'ntfs2gtfs'")
+        .arg("--input")
+        .arg("tests/fixtures/input/")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .assert()
+        .success();
+    assert!(output_dir.path().join("agency.txt").exists())
+}
+
+#[test]
+fn test_ntfs2gtfs_create_output_directory() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    let unexisting_dir = output_dir.path().join("unexisting-folder");
+    Command::cargo_bin("ntfs2gtfs")
+        .expect("Failed to find binary 'ntfs2gtfs'")
+        .arg("--input")
+        .arg("tests/fixtures/input/")
+        .arg("--output")
+        .arg(unexisting_dir.to_str().unwrap())
+        .assert()
+        .success();
+    assert!(unexisting_dir.join("agency.txt").exists())
+}
+
+#[test]
+fn test_ntfs2gtfs_create_zip() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    let ntfs_zip = output_dir.path().join("ntfs.zip");
+    assert!(!ntfs_zip.exists());
+    Command::cargo_bin("ntfs2gtfs")
+        .expect("Failed to find binary 'ntfs2gtfs'")
+        .arg("--input")
+        .arg("tests/fixtures/input/")
+        .arg("--output")
+        .arg(ntfs_zip.to_str().unwrap())
+        .assert()
+        .success();
+    assert!(ntfs_zip.is_file());
 }
