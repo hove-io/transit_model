@@ -89,13 +89,19 @@ fn run(opt: Opt) -> Result<()> {
 
     let model = transit_model::ntfs::read(opt.input)?;
 
-    let netex_exporter = transit_model::netex_france::Exporter::new(
-        &model,
-        opt.participant,
-        opt.stop_provider,
-        opt.current_datetime,
-    );
-    netex_exporter.write(opt.output)?;
+    let mut config = transit_model::netex_france::WriteConfiguration::new(opt.participant)
+        .current_datetime(opt.current_datetime);
+    if let Some(stop_provider) = opt.stop_provider {
+        config = config.stop_provider(stop_provider);
+    }
+    match opt.output.extension() {
+        Some(ext) if ext == "zip" => {
+            transit_model::netex_france::write_to_zip(&model, opt.output, config)?;
+        }
+        _ => {
+            transit_model::netex_france::write(&model, opt.output, config)?;
+        }
+    };
     Ok(())
 }
 
