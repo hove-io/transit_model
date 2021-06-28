@@ -96,7 +96,14 @@ fn run(opt: Opt) -> Result<()> {
     )?;
 
     if let Some(output) = opt.output {
-        transit_model::ntfs::write(&model, output, opt.current_datetime)?;
+        match output.extension() {
+            Some(ext) if ext == "zip" => {
+                transit_model::ntfs::write_to_zip(&model, output, opt.current_datetime)?;
+            }
+            _ => {
+                transit_model::ntfs::write(&model, output, opt.current_datetime)?;
+            }
+        };
     }
     Ok(())
 }
