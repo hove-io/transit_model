@@ -1,4 +1,5 @@
-PROJ_VERSION = 7.2.1 # Version required by `proj` crate used in cargo.toml
+# Version required by `proj` crate used in cargo.toml
+PROJ_VERSION = 7.2.1
 
 install_proj_deps: ## Install dependencies the proj crate needs in order to build libproj from source
 	sudo apt update
