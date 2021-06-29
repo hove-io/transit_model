@@ -58,3 +58,22 @@ fn test_gtfs2netexfr_create_zip() {
         .success();
     assert!(netexfr_zip.is_file());
 }
+
+#[test]
+fn test_gtfs2netexfr_create_not_zip_extension() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    let netexfr_foobar = output_dir.path().join("netexfr.foobar");
+    Command::cargo_bin("gtfs2netexfr")
+        .expect("Failed to find binary 'gtfs2netexfr'")
+        .arg("--input")
+        .arg("../tests/fixtures/netex_france/input_gtfs")
+        .arg("--output")
+        .arg(netexfr_foobar.to_str().unwrap())
+        .arg("--participant")
+        .arg("Participant")
+        .arg("--current-datetime")
+        .arg("2019-04-03T17:19:00Z")
+        .assert()
+        .success();
+    assert!(netexfr_foobar.join("arrets.xml").is_file());
+}

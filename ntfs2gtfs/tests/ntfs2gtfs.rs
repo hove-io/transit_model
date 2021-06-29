@@ -101,3 +101,19 @@ fn test_ntfs2gtfs_create_zip() {
         .success();
     assert!(ntfs_zip.is_file());
 }
+
+#[test]
+fn test_ntfs2gtfs_create_foobar() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    let ntfs_foobar = output_dir.path().join("ntfs.foobar");
+    assert!(!ntfs_foobar.is_file());
+    Command::cargo_bin("ntfs2gtfs")
+        .expect("Failed to find binary 'ntfs2gtfs'")
+        .arg("--input")
+        .arg("tests/fixtures/input/")
+        .arg("--output")
+        .arg(ntfs_foobar.to_str().unwrap())
+        .assert()
+        .success();
+    assert!(ntfs_foobar.join("agency.txt").is_file());
+}
