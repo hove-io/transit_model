@@ -19,7 +19,7 @@ use calendars::CalendarExporter;
 mod companies;
 use companies::CompanyExporter;
 mod exporter;
-pub use exporter::Exporter;
+use exporter::Exporter;
 mod lines;
 use lines::LineExporter;
 use lines::LineModes;
@@ -52,18 +52,18 @@ pub struct WriteConfiguration {
 
 impl WriteConfiguration {
     /// Create a new `WriteConfiguration`.
-    pub fn new(participant: String) -> Self {
+    pub fn new<S: Into<String>>(participant: S) -> Self {
         WriteConfiguration {
-            participant,
+            participant: participant.into(),
             stop_provider: None,
             current_datetime: chrono::FixedOffset::east(0)
                 .from_utc_datetime(&chrono::Utc::now().naive_utc()),
         }
     }
     /// Setup the Stop Provider (see [specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details)
-    pub fn stop_provider(self, stop_provider: String) -> Self {
+    pub fn stop_provider<S: Into<String>>(self, stop_provider: S) -> Self {
         WriteConfiguration {
-            stop_provider: Some(stop_provider),
+            stop_provider: Some(stop_provider.into()),
             ..self
         }
     }

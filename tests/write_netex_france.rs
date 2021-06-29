@@ -19,15 +19,10 @@ use transit_model::{gtfs, model::Model, netex_france, ntfs, test_utils::*};
 
 fn test_write_netex_france(model: Model) {
     test_in_tmp_dir(|output_dir| {
-        let participant_ref = String::from("Participant");
-        let stop_provider_code = Some(String::from("ProviderCode"));
-        let netex_france_exporter = netex_france::Exporter::new(
-            &model,
-            participant_ref,
-            stop_provider_code,
-            get_test_datetime(),
-        );
-        netex_france_exporter.write(output_dir).unwrap();
+        let config = netex_france::WriteConfiguration::new("Participant")
+            .stop_provider("ProviderCode")
+            .current_datetime(get_test_datetime());
+        netex_france::write(&model, &output_dir, config).unwrap();
         compare_output_dir_with_expected_content(
             &output_dir,
             None,
