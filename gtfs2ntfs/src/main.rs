@@ -144,7 +144,14 @@ fn run(opt: Opt) -> Result<()> {
         None,
     )?;
 
-    transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
+    match opt.output.extension() {
+        Some(ext) if ext == "zip" => {
+            transit_model::ntfs::write_to_zip(&model, opt.output, opt.current_datetime)?;
+        }
+        _ => {
+            transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
+        }
+    };
     Ok(())
 }
 

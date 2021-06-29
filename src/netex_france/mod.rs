@@ -19,7 +19,7 @@ use calendars::CalendarExporter;
 mod companies;
 use companies::CompanyExporter;
 mod exporter;
-pub use exporter::Exporter;
+use exporter::Exporter;
 mod lines;
 use lines::LineExporter;
 use lines::LineModes;
@@ -35,3 +35,76 @@ mod stops;
 use stops::StopExporter;
 mod transfers;
 use transfers::TransferExporter;
+
+use crate::{model::Model, Result};
+use chrono::{DateTime, FixedOffset, TimeZone};
+
+/// Configuration options for exporting a NeTEx France.
+/// 3 options can be configured:
+/// - participant (required): see [specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details
+/// - stop_provider (optional): see [specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details. Default to no stop provider.
+/// - current_datetime (optional): date of the export. Default to the current date of execution in UTC.
+pub struct WriteConfiguration {
+    participant: String,
+    stop_provider: Option<String>,
+    current_datetime: DateTime<FixedOffset>,
+}
+
+impl WriteConfiguration {
+    /// Create a new `WriteConfiguration`.
+    pub fn new<S: Into<String>>(participant: S) -> Self {
+        WriteConfiguration {
+            participant: participant.into(),
+            stop_provider: None,
+            current_datetime: chrono::FixedOffset::east(0)
+                .from_utc_datetime(&chrono::Utc::now().naive_utc()),
+        }
+    }
+    /// Setup the Stop Provider (see [specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details)
+    pub fn stop_provider<S: Into<String>>(self, stop_provider: S) -> Self {
+        WriteConfiguration {
+            stop_provider: Some(stop_provider.into()),
+            ..self
+        }
+    }
+    /// Setup the date and time of the export.
+    pub fn current_datetime(self, current_datetime: DateTime<FixedOffset>) -> Self {
+        WriteConfiguration {
+            current_datetime,
+            ..self
+        }
+    }
+}
+
+/// Exports a `Model` to the
+/// [NeTEx France](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md)
+/// files in the given directory.
+pub fn write<P: AsRef<std::path::Path>>(
+    model: &Model,
+    path: P,
+    config: WriteConfiguration,
+) -> Result<()> {
+    let exporter = Exporter::new(
+        model,
+        config.participant,
+        config.stop_provider,
+        config.current_datetime,
+    );
+    exporter.write(path)?;
+    Ok(())
+}
+
+/// Exports a `Model` to a
+/// [NeTEx France](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md)
+/// ZIP archive at the given full path.
+pub fn write_to_zip<P: AsRef<std::path::Path>>(
+    model: &Model,
+    path: P,
+    config: WriteConfiguration,
+) -> Result<()> {
+    let output_dir = tempfile::tempdir()?;
+    write(model, output_dir.path(), config)?;
+    crate::utils::zip_to(output_dir.path(), path)?;
+    output_dir.close()?;
+    Ok(())
+}

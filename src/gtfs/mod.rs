@@ -562,3 +562,16 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
 
     Ok(())
 }
+
+/// Exports a `Model` to [GTFS](https://gtfs.org/reference/static) files
+/// in the given ZIP archive.
+/// see [NTFS to GTFS conversion](https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
+pub fn write_to_zip<P: AsRef<std::path::Path>>(model: Model, path: P) -> Result<()> {
+    let path = path.as_ref();
+    info!("Writing GTFS to ZIP File {:?}", path);
+    let input_tmp_dir = tempfile::tempdir()?;
+    write(model, input_tmp_dir.path())?;
+    zip_to(input_tmp_dir.path(), path)?;
+    input_tmp_dir.close()?;
+    Ok(())
+}

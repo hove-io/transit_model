@@ -24,3 +24,7 @@ slog-term = "2.4"
 structopt = "0.3"
 transit_model = { path = "../" }
 lazy_static = "1"
+
+[dev-dependencies]
+assert_cmd = "1"
+tempfile = "3"
