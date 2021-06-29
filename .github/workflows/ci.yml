@@ -100,7 +100,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: install
-        args: cargo-tarpaulin
+        args: cargo-tarpaulin --version 0.16.0
     - name: Run tests for coverage
       uses: actions-rs/cargo@v1
       with:
