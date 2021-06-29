@@ -15,7 +15,7 @@ fn test_ntfs2ntfs() {
         .arg("2019-04-03T17:19:00Z")
         .assert()
         .success();
-    assert!(output_dir.path().join("feed_infos.txt").exists())
+    assert!(output_dir.path().join("feed_infos.txt").is_file())
 }
 
 #[test]
@@ -32,7 +32,7 @@ fn test_ntfs2ntfs_create_output_directory() {
         .arg("2019-04-03T17:19:00Z")
         .assert()
         .success();
-    assert!(unexisting_dir.join("feed_infos.txt").exists())
+    assert!(unexisting_dir.join("feed_infos.txt").is_file())
 }
 
 #[test]
