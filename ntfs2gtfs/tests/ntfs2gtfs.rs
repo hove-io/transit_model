@@ -68,7 +68,7 @@ fn test_ntfs2gtfs() {
         .arg(output_dir.path().to_str().unwrap())
         .assert()
         .success();
-    assert!(output_dir.path().join("agency.txt").exists())
+    assert!(output_dir.path().join("agency.txt").is_file())
 }
 
 #[test]
@@ -83,14 +83,14 @@ fn test_ntfs2gtfs_create_output_directory() {
         .arg(unexisting_dir.to_str().unwrap())
         .assert()
         .success();
-    assert!(unexisting_dir.join("agency.txt").exists())
+    assert!(unexisting_dir.join("agency.txt").is_file())
 }
 
 #[test]
 fn test_ntfs2gtfs_create_zip() {
     let output_dir = TempDir::new().expect("create temp dir failed");
     let ntfs_zip = output_dir.path().join("ntfs.zip");
-    assert!(!ntfs_zip.exists());
+    assert!(!ntfs_zip.is_file());
     Command::cargo_bin("ntfs2gtfs")
         .expect("Failed to find binary 'ntfs2gtfs'")
         .arg("--input")
