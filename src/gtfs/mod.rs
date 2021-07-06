@@ -61,7 +61,7 @@ impl<'a> From<&'a objects::Network> for Agency {
                 .url
                 .clone()
                 .unwrap_or_else(|| "http://www.navitia.io/".to_string()),
-            timezone: obj.timezone.clone().unwrap_or(chrono_tz::Europe::Paris),
+            timezone: obj.timezone.unwrap_or(chrono_tz::Europe::Paris),
             lang: obj.lang.clone(),
             phone: obj.phone.clone(),
             email: None,
