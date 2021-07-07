@@ -162,7 +162,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to convert \\'NotAFrameType\\' into a FrameType")]
+        #[should_panic(expected = "Failed to convert 'NotAFrameType' into a FrameType")]
         fn parse_invalid_frame_type() {
             "NotAFrameType".parse::<FrameType>().unwrap();
         }
@@ -187,7 +187,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to convert \\'UnknownFrame\\' into a FrameType")]
+        #[should_panic(expected = "Failed to convert 'UnknownFrame' into a FrameType")]
         fn unknown_frame() {
             let xml = r#"<root>
                     <UnknownFrame />
@@ -211,7 +211,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a \\'ServiceFrame\\' frame in the Netex file")]
+        #[should_panic(expected = "Failed to find a 'ServiceFrame' frame in the Netex file")]
         fn no_frame() {
             let frames = HashMap::new();
             get_only_frame(&frames, FrameType::Service).unwrap();
@@ -219,7 +219,7 @@ mod tests {
 
         #[test]
         #[should_panic(
-            expected = "Failed to find a unique \\'ResourceFrame\\' frame in the Netex file"
+            expected = "Failed to find a unique 'ResourceFrame' frame in the Netex file"
         )]
         fn multiple_frames() {
             let mut frames = HashMap::new();
@@ -249,7 +249,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "No children with name \\'KeyList\\' in Element \\'root\\'")]
+        #[should_panic(expected = "No children with name 'KeyList' in Element 'root'")]
         fn no_keylist_found() {
             let xml = r#"<root />"#;
             let root: Element = xml.parse().unwrap();
@@ -257,7 +257,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find a unique key \\'key\\' in \\'root\\'")]
+        #[should_panic(expected = "Failed to find a unique key 'key' in 'root'")]
         fn no_key_found() {
             let xml = r#"<root>
                     <KeyList />
@@ -267,7 +267,7 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "No children with name \\'Value\\' in Element \\'KeyValue\\'")]
+        #[should_panic(expected = "No children with name 'Value' in Element 'KeyValue'")]
         fn no_value_found() {
             let xml = r#"<root>
                     <KeyList>

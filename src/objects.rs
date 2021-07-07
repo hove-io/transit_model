@@ -121,7 +121,7 @@ pub type CommentLinksT = BTreeSet<String>;
 
 impl AddPrefix for CommentLinksT {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
-        let updated_ids = std::mem::replace(self, BTreeSet::new());
+        let updated_ids = std::mem::take(self);
         *self = updated_ids
             .into_iter()
             .map(|comment_id| prefix_conf.schedule_prefix(comment_id.as_str()))
