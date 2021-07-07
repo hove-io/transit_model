@@ -33,6 +33,24 @@ Please check documentation attached to each crate:
 * binary [**restrict-validity-period**](restrict-validity-period/README.md)
   restricts the validity period of a [NTFS] dataset and purges out-of-date data.
 
+## Usage with Docker
+
+For all the binaries mentioned above, it is also possible to use them with
+Docker. All the binaries are part of the image [`navitia/transit_model`] which
+is tagged alongside the crate [`transit_model`].  Let's use `gtfs2ntfs` as an
+example.
+
+```shell
+mkdir output-ntfs/
+docker run \
+	--volume "${PWD}/tests/fixtures/gtfs:/gtfs" \
+	--volume "${PWD}/output-ntfs:/ntfs" \
+	navitia/transit_model \
+	gtfs2ntfs \
+	--input /gtfs \
+	--output /ntfs
+```
+
 ## Setup Rust environment
 
 `transit_model` is developed in [Rust].
@@ -107,3 +125,5 @@ Licensed under [GNU Affero General Public License v3.0](LICENSE)
 [NTFS changelog in French]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_changelog_fr.md
 [PROJ]: https://proj.org
 [`proj` crate]: https://crates.io/crates/proj
+[`navitia/transit_model`]: https://hub.docker.com/r/navitia/transit_model
+[`transit_model`]: https://crates.io/crates/transit_model
