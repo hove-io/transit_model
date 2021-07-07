@@ -1,0 +1,12 @@
+object_type,object_id,object_system,object_code
+trip,ME:4bf028:trip:3-0,source,trip:3
+trip,ME:4bf028:trip:3-0,source,trip:33
+trip,ME:4bf028:trip:4-0,source,trip:4
+network,ME:ntw1,source,1
+network,ME:ntw2,source,2
+route,ME:route1,source,1
+stop_point,ME:stop:11,source,stop:11
+stop_point,ME:stop:22,source,stop:22
+stop_point,ME:stop:53,source,stop:53
+stop_point,ME:stop:61,source,stop:61
+stop_area,ME:stoparea:1,source,stoparea:1

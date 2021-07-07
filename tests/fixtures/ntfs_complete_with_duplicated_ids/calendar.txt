@@ -1,0 +1,5 @@
+service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+ME:4bf028:service:1,1,1,1,0,0,0,0,20180101,20180103
+ME:4bf028:service:2,0,0,0,0,1,1,0,20180105,20180106
+ME:4bf028:service:2,1,0,0,0,1,1,0,20180104,20180105
+ME:4bf028:service:2:+1days,0,0,0,0,0,1,1,20180106,20180107

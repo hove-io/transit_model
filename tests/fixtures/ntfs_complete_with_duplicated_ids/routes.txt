@@ -1,0 +1,4 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+ME:route1,My route 1,forward,ME:line1,,ME:stoparea:2
+ME:route1,My route 1 bis,backward,ME:line2,,ME:stoparea:2
+ME:route2,My route 2,forward,ME:line2,,ME:stoparea:2

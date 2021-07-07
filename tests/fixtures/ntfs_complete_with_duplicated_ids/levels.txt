@@ -1,0 +1,4 @@
+level_id,level_index,level_name
+ME:level0,0.0,
+ME:level0,1,1
+ME:level1,-1.0,

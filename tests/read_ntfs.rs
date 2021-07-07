@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+use log::Level as LogLevel;
 use pretty_assertions::assert_eq;
 use relational_types::IdxSet;
 use std::collections::HashMap;
@@ -390,4 +391,64 @@ fn sanitize_grid_with_line_external_code() {
     collections.sanitize().unwrap();
     assert_eq!(1, collections.grid_calendars.len());
     assert_eq!(1, collections.grid_rel_calendar_line.len());
+}
+
+#[test]
+// Test that possible objects from same collection and with the same id don't cause panic at ntfs::read
+fn ntfs_with_duplicated_ids() {
+    testing_logger::setup();
+    let model =
+        transit_model::ntfs::read("tests/fixtures/ntfs_complete_with_duplicated_ids").unwrap();
+
+    assert_eq!(1, model.contributors.len());
+    assert_eq!(1, model.datasets.len());
+    assert_eq!(1, model.commercial_modes.len());
+    assert_eq!(2, model.networks.len());
+    assert_eq!(2, model.lines.len());
+    assert_eq!(2, model.routes.len());
+    assert_eq!(9, model.vehicle_journeys.len());
+    assert_eq!(4, model.physical_modes.len());
+    assert_eq!(2, model.companies.len());
+    assert_eq!(1, model.equipments.len());
+    assert_eq!(2, model.trip_properties.len());
+    assert_eq!(2, model.levels.len());
+    assert_eq!(3, model.calendars.len());
+    assert_eq!(4, model.geometries.len());
+    assert_eq!(9, model.stop_points.len());
+    assert_eq!(2, model.stop_areas.len());
+    assert_eq!(5, model.stop_locations.len());
+    assert_eq!(3, model.pathways.len());
+    assert_eq!(4, model.comments.len());
+
+    testing_logger::validate(|captured_logs| {
+        let captured_warn_logs = captured_logs
+            .iter()
+            .filter(|log| log.level == LogLevel::Warn)
+            .collect::<Vec<_>>();
+        assert_eq!(19, captured_warn_logs.len());
+        let expected_logs = vec![
+            "identifier ME:DefaultContributorId already exists", // Contributors
+            "identifier ME:4bf028c5-276a-411c-9f56-3fc1e9d005d0 already exists", // Datasets
+            "identifier Metro already exists",                   // CommercialModes
+            "identifier ME:ntw1 already exists",                 // Networks
+            "identifier ME:line2 already exists",                // Lines
+            "identifier ME:route1 already exists",               // Routes
+            "identifier ME:4bf028:trip:3-0 already exists",      // Trips
+            "identifier Metro already exists",                   // PhysicalModes
+            "identifier ME:comp1 already exists",                // Companies
+            "identifier ME:4bf028:equip0 already exists",        // Equipments
+            "identifier ME:4bf028:1 already exists",             // TripProperties
+            "identifier ME:level0 already exists",               // Levels
+            "identifier ME:4bf028:service:2 already exists",     // Calendars
+            "identifier ME:4bf028:geo1 already exists",          // Geometries
+            "identifier ME:stop:11 already exists",              // StopPoints
+            "identifier ME:stoparea:1 already exists",           // StopAreas
+            "identifier ME:node:1 already exists",               // StopLocations
+            "identifier ME:path1 already exists",                // Pathways
+            "identifier ME:4bf028:1 already exists",             // Comments
+        ];
+        for (i, expected_log) in expected_logs.iter().enumerate() {
+            assert_eq!(expected_log.to_string(), captured_warn_logs[i].body);
+        }
+    });
 }
