@@ -156,9 +156,9 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let stops = read_objects::<_, Stop>(file_handler, "stops.txt", true)?;
-    let mut stop_areas = vec![];
-    let mut stop_points = vec![];
-    let mut stop_locations = vec![];
+    let mut stop_areas: CollectionWithId<StopArea> = CollectionWithId::default();
+    let mut stop_points: CollectionWithId<StopPoint> = CollectionWithId::default();
+    let mut stop_locations: CollectionWithId<StopLocation> = CollectionWithId::default();
     for stop in stops {
         match stop.location_type {
             StopLocationType::StopPoint | StopLocationType::GeographicArea => {
@@ -168,25 +168,24 @@ where
                     let mut stop_area = StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
                     stop_area.visible = stop.location_type == StopLocationType::StopPoint;
-                    stop_areas.push(stop_area);
+                    skip_error_and_log!(stop_areas.push(stop_area), LogLevel::Warn);
                 };
-                stop_points.push(stop_point);
+                skip_error_and_log!(stop_points.push(stop_point), LogLevel::Warn);
             }
-            StopLocationType::StopArea => stop_areas.push(skip_error_and_log!(
-                StopArea::try_from(stop),
-                LogLevel::Warn
-            )),
+            StopLocationType::StopArea => {
+                skip_error_and_log!(stop_areas.push(StopArea::try_from(stop)?), LogLevel::Warn);
+            }
             _ => {
-                stop_locations.push(skip_error_and_log!(
-                    StopLocation::try_from(stop),
+                skip_error_and_log!(
+                    stop_locations.push(StopLocation::try_from(stop)?),
                     LogLevel::Warn
-                ));
+                );
             }
         }
     }
-    collections.stop_areas = CollectionWithId::new(stop_areas)?;
-    collections.stop_points = CollectionWithId::new(stop_points)?;
-    collections.stop_locations = CollectionWithId::new(stop_locations)?;
+    collections.stop_areas = stop_areas;
+    collections.stop_points = stop_points;
+    collections.stop_locations = stop_locations;
     Ok(())
 }
 
@@ -597,9 +596,11 @@ pub(crate) fn manage_geometries<H>(
 where
     for<'a> &'a mut H: FileHandler,
 {
-    let geometries = read_objects_loose::<_, Geometry>(file_handler, "geometries.txt", false)?;
-    collections.geometries = CollectionWithId::new(geometries)?;
-
+    let mut geometries: CollectionWithId<Geometry> = CollectionWithId::default();
+    for geo in read_objects_loose::<_, Geometry>(file_handler, "geometries.txt", false)? {
+        skip_error_and_log!(geometries.push(geo), LogLevel::Warn);
+    }
+    collections.geometries = geometries;
     Ok(())
 }
 
@@ -631,7 +632,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "pathways.txt";
-    let mut pathways = vec![];
+    let mut pathways: CollectionWithId<Pathway> = CollectionWithId::default();
     let ntfs_pathways = read_objects_loose::<_, Pathway>(file_handler, file, false)?;
     for mut pathway in ntfs_pathways {
         pathway.from_stop_type = skip_error_and_log!(
@@ -652,7 +653,6 @@ where
                 }),
             LogLevel::Warn
         );
-
         pathway.to_stop_type = skip_error_and_log!(
             collections
                 .stop_points
@@ -671,10 +671,10 @@ where
                 }),
             LogLevel::Warn
         );
-        pathways.push(pathway);
+        skip_error_and_log!(pathways.push(pathway), LogLevel::Warn);
     }
 
-    collections.pathways = CollectionWithId::new(pathways)?;
+    collections.pathways = pathways;
     Ok(())
 }
 
