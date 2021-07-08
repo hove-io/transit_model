@@ -17,9 +17,10 @@ use crate::{
     read_utils::{read_objects, FileHandler},
 };
 use chrono::NaiveDate;
-use failure::{format_err, ResultExt};
-use log::{debug, error, info};
+use failure::ResultExt;
+use log::{debug, error, info, Level as LogLevel};
 use rust_decimal::Decimal;
+use skip_error::skip_error_and_log;
 use std::fs;
 use std::io::{Read, Write};
 use std::path;
@@ -304,8 +305,11 @@ where
     for<'de> T: Id<T> + serde::Deserialize<'de>,
     for<'a> &'a mut H: FileHandler,
 {
-    let vec = read_objects::<_, T>(file_handler, file, false)?;
-    CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
+    let mut collection = CollectionWithId::<T>::default();
+    for object in read_objects::<_, T>(file_handler, file, false)? {
+        skip_error_and_log!(collection.push(object), LogLevel::Warn);
+    }
+    Ok(collection)
 }
 
 pub(crate) fn make_collection_with_id<T, H>(
@@ -316,8 +320,11 @@ where
     for<'de> T: Id<T> + serde::Deserialize<'de>,
     for<'a> &'a mut H: FileHandler,
 {
-    let vec = read_objects::<_, T>(file_handler, file, true)?;
-    CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
+    let mut collection = CollectionWithId::<T>::default();
+    for object in read_objects::<_, T>(file_handler, file, true)? {
+        skip_error_and_log!(collection.push(object), LogLevel::Warn);
+    }
+    Ok(collection)
 }
 
 pub(crate) fn make_opt_collection<T, H>(

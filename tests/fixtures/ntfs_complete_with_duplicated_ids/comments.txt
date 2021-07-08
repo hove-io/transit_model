@@ -1,0 +1,6 @@
+comment_id,comment_type,comment_label,comment_name,comment_url
+ME:4bf028:1,information,,stoparea:1_comment,
+ME:4bf028:1,on_demand_transport,,Service à réservation my agency 0123456789,
+ME:4bf028:2,information,,stop:11_comment,
+ME:4bf028:3,information,,trip:4-2_comment,
+ME:4bf028:4,information,,stop_time:trip:5-0-2_comment,

@@ -1,0 +1,4 @@
+trip_property_id,wheelchair_accessible,bike_accepted,air_conditioned,visual_announcement,audible_announcement,appropriate_escort,appropriate_signage,school_vehicle_type
+ME:4bf028:1,1,0,0,0,0,0,0,0
+ME:4bf028:1,0,1,2,0,0,0,0,0
+ME:4bf028:2,2,0,0,0,0,0,0,0

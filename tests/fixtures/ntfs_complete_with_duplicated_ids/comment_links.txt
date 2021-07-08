@@ -1,0 +1,5 @@
+object_id,object_type,comment_id
+ME:stoparea:1,stop_area,ME:4bf028:1
+ME:stop:11,stop_point,ME:4bf028:2
+ME:4bf028:trip:4-2,trip,ME:4bf028:3
+ME:4bf028:trip:5-0-2,stop_time,ME:4bf028:4

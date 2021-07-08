@@ -171,19 +171,22 @@ pub(crate) fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collec
 where
     for<'a> &'a mut H: FileHandler,
 {
-    let mut calendars: Vec<objects::Calendar> = vec![];
+    let mut calendars: CollectionWithId<objects::Calendar> = CollectionWithId::default();
     let ntfs_calendars = read_objects::<_, Calendar>(file_handler, "calendar.txt", false)?;
     let calendar_exists = !ntfs_calendars.is_empty();
     for calendar in ntfs_calendars {
         let dates = calendar.get_valid_dates();
         if !dates.is_empty() {
-            calendars.push(objects::Calendar {
-                id: calendar.id.clone(),
-                dates,
-            });
+            skip_error_and_log!(
+                calendars.push(objects::Calendar {
+                    id: calendar.id.clone(),
+                    dates,
+                }),
+                LogLevel::Warn
+            );
         }
     }
-    collections.calendars = CollectionWithId::new(calendars)?;
+    collections.calendars = calendars;
     manage_calendar_dates(&mut collections.calendars, file_handler, calendar_exists)?;
 
     Ok(())

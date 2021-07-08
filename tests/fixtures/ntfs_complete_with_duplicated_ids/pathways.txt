@@ -1,0 +1,5 @@
+pathway_id,from_stop_id,to_stop_id,pathway_mode,is_bidirectional,length,traversal_time,stair_count,max_slope,min_width,signposted_as,reversed_signposted_as
+ME:path1,ME:entrance:1,ME:node:1,1,0,,,,,,,
+ME:path1,ME:node:1,ME:boarding:1,2,0,200,100,50,,,,
+ME:path2,ME:node:1,ME:boarding:1,2,1,,,,,,,
+ME:path3,ME:node:2,ME:boarding:2,2,1,,,42,,,,

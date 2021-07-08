@@ -1,0 +1,4 @@
+line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+ME:line1,Line 1,My Line 1,,,,,,ME:ntw1,Metro,ME:4bf028:geo3,10:00:00,21:47:00
+ME:line2,Line 2,My Line 2,,,,,,ME:ntw2,Metro,,14:40:00,25:57:00
+ME:line2,Line 2 bis,My Line 2 bis,Aller,Retour,00FFFF,FFFF00,1,ME:ntw1,Tramway,,14:45:00,25:47:00
