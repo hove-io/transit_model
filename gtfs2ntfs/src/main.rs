@@ -18,7 +18,11 @@ use chrono::{DateTime, FixedOffset};
 use log::info;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
+use tracing_subscriber::{
+    filter::{EnvFilter, LevelFilter},
+    layer::SubscriberExt as _,
+    util::SubscriberInitExt as _,
+};
 use transit_model::{read_utils, transfers::generates_transfers, PrefixConfiguration, Result};
 
 lazy_static::lazy_static! {
@@ -135,11 +139,24 @@ fn run(opt: Opt) -> Result<()> {
     Ok(())
 }
 
-fn main() {
+fn init_logger() {
+    let default_level = LevelFilter::INFO;
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
-        .with(tracing_subscriber::filter::EnvFilter::from_default_env())
+        .with(EnvFilter::try_from_default_env().unwrap_or_else(|e| {
+            eprintln!(
+                "missing or invalid {}, falling back to level '{}' - {}",
+                EnvFilter::DEFAULT_ENV,
+                default_level,
+                e,
+            );
+            EnvFilter::new(default_level.to_string())
+        }))
         .init();
+}
+
+fn main() {
+    init_logger();
     if let Err(err) = run(Opt::from_args()) {
         for cause in err.iter_chain() {
             eprintln!("{}", cause);
