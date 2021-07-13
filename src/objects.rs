@@ -404,33 +404,14 @@ impl std::fmt::Display for Rgb {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum RgbError {
+    #[error("String is not a valid Hexadecimal value")]
     NotHexa,
+    #[error("String is too long (6 characters expected)")]
     TooLongHexa,
+    #[error("String is too short (6 characters expected)")]
     TooShortHexa,
-}
-
-use std::error::Error;
-
-impl std::fmt::Display for RgbError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            RgbError::NotHexa => f.write_str("RgbError_NotHexa"),
-            RgbError::TooLongHexa => f.write_str("RgbError_TooLongHexa"),
-            RgbError::TooShortHexa => f.write_str("RgbError_NumberOfChar"),
-        }
-    }
-}
-
-impl Error for RgbError {
-    fn description(&self) -> &str {
-        match *self {
-            RgbError::NotHexa => "String is not a valid Hexadecimal value",
-            RgbError::TooLongHexa => "String is too long (6 characters expected)",
-            RgbError::TooShortHexa => "String is too short (6 characters expected)",
-        }
-    }
 }
 
 impl FromStr for Rgb {
@@ -761,30 +742,16 @@ impl AddPrefix for Frequency {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum TimeError {
+    #[error("Time format should be HH:MM:SS")]
     WrongFormat,
+    #[error("Minutes and Seconds should be in [0..59] range")]
     WrongValue,
 }
 impl From<std::num::ParseIntError> for TimeError {
     fn from(_error: std::num::ParseIntError) -> Self {
         TimeError::WrongFormat
-    }
-}
-impl std::fmt::Display for TimeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
-            TimeError::WrongFormat => f.write_str("wrong format"),
-            TimeError::WrongValue => f.write_str("wrong value"),
-        }
-    }
-}
-impl Error for TimeError {
-    fn description(&self) -> &str {
-        match *self {
-            TimeError::WrongFormat => "Time format should be HH:MM:SS",
-            TimeError::WrongValue => "Minutes and Seconds should be in [0..59] range",
-        }
     }
 }
 
