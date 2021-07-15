@@ -20,7 +20,7 @@ use crate::read_utils::{read_objects, read_objects_loose, FileHandler};
 use crate::utils;
 use crate::Result;
 use failure::{bail, ensure, format_err, ResultExt};
-use log::{error, info, warn, Level as LogLevel};
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::collections::HashMap;
@@ -163,22 +163,25 @@ where
         match stop.location_type {
             StopLocationType::StopPoint | StopLocationType::GeographicArea => {
                 let mut stop_point =
-                    skip_error_and_log!(StopPoint::try_from(stop.clone()), LogLevel::Warn);
+                    skip_error_and_log!(StopPoint::try_from(stop.clone()), tracing::Level::WARN);
                 if stop.parent_station.is_none() {
                     let mut stop_area = StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
                     stop_area.visible = stop.location_type == StopLocationType::StopPoint;
-                    skip_error_and_log!(stop_areas.push(stop_area), LogLevel::Warn);
+                    skip_error_and_log!(stop_areas.push(stop_area), tracing::Level::WARN);
                 };
-                skip_error_and_log!(stop_points.push(stop_point), LogLevel::Warn);
+                skip_error_and_log!(stop_points.push(stop_point), tracing::Level::WARN);
             }
             StopLocationType::StopArea => {
-                skip_error_and_log!(stop_areas.push(StopArea::try_from(stop)?), LogLevel::Warn);
+                skip_error_and_log!(
+                    stop_areas.push(StopArea::try_from(stop)?),
+                    tracing::Level::WARN
+                );
             }
             _ => {
                 skip_error_and_log!(
                     stop_locations.push(StopLocation::try_from(stop)?),
-                    LogLevel::Warn
+                    tracing::Level::WARN
                 );
             }
         }
@@ -334,7 +337,7 @@ where
     collections.stop_time_ids = stop_time_ids;
     let mut vehicle_journeys = collections.vehicle_journeys.take();
     for vj in &mut vehicle_journeys {
-        skip_error_and_log!(vj.sort_and_check_stop_times(), LogLevel::Error);
+        skip_error_and_log!(vj.sort_and_check_stop_times(), tracing::Level::ERROR);
     }
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     Ok(())
@@ -598,7 +601,7 @@ where
 {
     let mut geometries: CollectionWithId<Geometry> = CollectionWithId::default();
     for geo in read_objects_loose::<_, Geometry>(file_handler, "geometries.txt", false)? {
-        skip_error_and_log!(geometries.push(geo), LogLevel::Warn);
+        skip_error_and_log!(geometries.push(geo), tracing::Level::WARN);
     }
     collections.geometries = geometries;
     Ok(())
@@ -651,7 +654,7 @@ where
                         pathway.from_stop_id
                     )
                 }),
-            LogLevel::Warn
+            tracing::Level::WARN
         );
         pathway.to_stop_type = skip_error_and_log!(
             collections
@@ -669,9 +672,9 @@ where
                         pathway.to_stop_id
                     )
                 }),
-            LogLevel::Warn
+            tracing::Level::WARN
         );
-        skip_error_and_log!(pathways.push(pathway), LogLevel::Warn);
+        skip_error_and_log!(pathways.push(pathway), tracing::Level::WARN);
     }
 
     collections.pathways = pathways;
@@ -908,12 +911,11 @@ mod tests {
             testing_logger::validate(|captured_logs| {
                 let error_log = captured_logs
                     .iter()
-                    .find(|captured_log| captured_log.level == LogLevel::Error)
+                    .find(|captured_log| captured_log.level == log::Level::Error)
                     .expect("log error expected");
-                assert_eq!(
-                    error_log.body,
-                    "duplicate stop_sequence \'3\' for the trip \'1\'"
-                );
+                assert!(error_log
+                    .body
+                    .contains("duplicate stop_sequence \'3\' for the trip \'1\'"));
             });
         });
     }
@@ -934,12 +936,11 @@ mod tests {
             testing_logger::validate(|captured_logs| {
                 let error_log = captured_logs
                     .iter()
-                    .find(|captured_log| captured_log.level == LogLevel::Error)
+                    .find(|captured_log| captured_log.level == log::Level::Error)
                     .expect("log error expected");
-                assert_eq!(
-                    error_log.body,
+                assert!(error_log.body.contains(
                     "incoherent stop times \'2\' at time \'06:06:27\' for the trip \'1\'"
-                );
+                ));
             });
         });
     }

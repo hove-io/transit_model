@@ -18,7 +18,7 @@ use crate::{
     Result,
 };
 use failure::{bail, format_err, ResultExt};
-use log::{info, Level as LogLevel};
+use log::info;
 use serde::Deserialize;
 use skip_error::SkipError;
 use std::path;
@@ -271,7 +271,7 @@ where
             let objects = rdr
                 .deserialize()
                 .map(|object| object.with_context(|_| format!("Error reading {:?}", path)))
-                .skip_error_and_log(LogLevel::Warn)
+                .skip_error_and_log(tracing::Level::WARN)
                 .collect();
             Ok(objects)
         }
