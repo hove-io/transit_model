@@ -59,9 +59,10 @@ relational_types = "2"
 rust_decimal = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-skip_error = { version = "1.1", features = ["log"] }
+skip_error = { version = "2.0", features = ["tracing"] }
 tempfile = "3"
 thiserror = "1"
+tracing = { version = "0.1", features = ["log", "release_max_level_info"] }
 typed_index_collection = "2"
 walkdir = "2"
 wkt = "0.9"

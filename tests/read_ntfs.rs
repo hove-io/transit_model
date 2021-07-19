@@ -448,7 +448,7 @@ fn ntfs_with_duplicated_ids() {
             "identifier ME:4bf028:1 already exists",             // Comments
         ];
         for (i, expected_log) in expected_logs.iter().enumerate() {
-            assert_eq!(expected_log.to_string(), captured_warn_logs[i].body);
+            assert!(captured_warn_logs[i].body.contains(expected_log));
         }
     });
 }

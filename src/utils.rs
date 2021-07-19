@@ -18,7 +18,7 @@ use crate::{
 };
 use chrono::NaiveDate;
 use failure::ResultExt;
-use log::{debug, error, info, Level as LogLevel};
+use log::{debug, error, info};
 use rust_decimal::Decimal;
 use skip_error::skip_error_and_log;
 use std::fs;
@@ -307,7 +307,7 @@ where
 {
     let mut collection = CollectionWithId::<T>::default();
     for object in read_objects::<_, T>(file_handler, file, false)? {
-        skip_error_and_log!(collection.push(object), LogLevel::Warn);
+        skip_error_and_log!(collection.push(object), tracing::Level::WARN);
     }
     Ok(collection)
 }
@@ -322,7 +322,7 @@ where
 {
     let mut collection = CollectionWithId::<T>::default();
     for object in read_objects::<_, T>(file_handler, file, true)? {
-        skip_error_and_log!(collection.push(object), LogLevel::Warn);
+        skip_error_and_log!(collection.push(object), tracing::Level::WARN);
     }
     Ok(collection)
 }

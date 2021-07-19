@@ -26,7 +26,7 @@ use crate::vptranslator::translate;
 use crate::Result;
 use chrono::{self, Datelike, Weekday};
 use failure::{bail, format_err, ResultExt};
-use log::{info, Level as LogLevel};
+use log::info;
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::collections::BTreeSet;
@@ -182,7 +182,7 @@ where
                     id: calendar.id.clone(),
                     dates,
                 }),
-                LogLevel::Warn
+                tracing::Level::WARN
             );
         }
     }
@@ -209,7 +209,7 @@ pub fn write_calendar_dates(
                     "Validity period not found for service id {}",
                     c.id.clone()
                 )),
-                LogLevel::Warn
+                tracing::Level::WARN
             );
             translations.push(Calendar {
                 id: c.id.clone(),

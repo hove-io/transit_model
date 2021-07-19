@@ -30,7 +30,7 @@ use crate::{
 use derivative::Derivative;
 use failure::{bail, format_err, Error};
 use geo::{LineString, Point};
-use log::{info, warn, Level as LogLevel};
+use log::{info, warn};
 use serde::Deserialize;
 use skip_error::{skip_error_and_log, SkipError};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -736,8 +736,10 @@ where
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
             StopLocationType::StopPoint => {
-                let mut stop_point =
-                    skip_error_and_log!(objects::StopPoint::try_from(stop.clone()), LogLevel::Warn);
+                let mut stop_point = skip_error_and_log!(
+                    objects::StopPoint::try_from(stop.clone()),
+                    tracing::Level::WARN
+                );
                 if stop.parent_station.is_none() {
                     let stop_area = objects::StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
@@ -749,14 +751,16 @@ where
             }
             StopLocationType::StopArea => {
                 let mut stop_area =
-                    skip_error_and_log!(objects::StopArea::try_from(stop), LogLevel::Warn);
+                    skip_error_and_log!(objects::StopArea::try_from(stop), tracing::Level::WARN);
                 stop_area.comment_links = comment_links;
                 stop_area.equipment_id = equipment_id;
                 stop_areas.push(stop_area);
             }
             _ => {
-                let mut stop_location =
-                    skip_error_and_log!(objects::StopLocation::try_from(stop), LogLevel::Warn);
+                let mut stop_location = skip_error_and_log!(
+                    objects::StopLocation::try_from(stop),
+                    tracing::Level::WARN
+                );
                 stop_location.comment_links = comment_links;
                 stop_location.equipment_id = equipment_id;
                 stop_locations.push(stop_location);
@@ -797,7 +801,7 @@ where
                         pathway.from_stop_id
                     )
                 }),
-            LogLevel::Warn
+            tracing::Level::WARN
         );
 
         pathway.to_stop_type = skip_error_and_log!(
@@ -816,7 +820,7 @@ where
                         pathway.to_stop_id
                     )
                 }),
-            LogLevel::Warn
+            tracing::Level::WARN
         );
         pathways.push(pathway);
     }
@@ -859,11 +863,11 @@ where
         };
         let from_stop_points = skip_error_and_log!(
             expand_stop_area(transfer.from_stop_id.as_str()),
-            LogLevel::Warn
+            tracing::Level::WARN
         );
         let to_stop_points = skip_error_and_log!(
             expand_stop_area(transfer.to_stop_id.as_str()),
-            LogLevel::Warn
+            tracing::Level::WARN
         );
         for from_stop_point in &from_stop_points {
             let approx = from_stop_point.coord.approx();
@@ -1106,7 +1110,7 @@ fn make_ntfs_vehicle_journeys(
         trips
             .iter()
             .map(|t| t.to_ntfs_vehicle_journey(routes, dataset, &property_id, networks))
-            .skip_error_and_log(LogLevel::Warn)
+            .skip_error_and_log(tracing::Level::WARN)
             .for_each(|vj| vehicle_journeys.push(vj));
     }
 
@@ -1217,7 +1221,7 @@ where
                     "frequency mapped to an unexisting trip {:?}",
                     frequency.trip_id
                 )),
-            LogLevel::Warn
+            tracing::Level::WARN
         );
         let mut start_time = frequency.start_time;
         let mut arrival_time_delta = match corresponding_vj.stop_times.iter().min() {
@@ -1445,7 +1449,7 @@ mod tests {
                     captured_logs[1].body,
                     "different agency timezone: Europe/London (id_1) - Europe/Paris (id_2)"
                 );
-                assert_eq!(captured_logs[1].level, LogLevel::Warn);
+                assert_eq!(captured_logs[1].level, log::Level::Warn);
             });
         });
     }

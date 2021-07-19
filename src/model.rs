@@ -20,7 +20,7 @@ use derivative::Derivative;
 use failure::{bail, format_err};
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
-use log::{debug, warn, Level as LogLevel};
+use log::{debug, warn};
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
@@ -625,7 +625,7 @@ impl Collections {
                                     &mut opening_timetable,
                                     &mut closing_timetable,
                                 ),
-                                LogLevel::Warn
+                                tracing::Level::WARN
                             );
                         }
                     }
@@ -1110,7 +1110,7 @@ impl Collections {
             if no_route_name || no_destination_id {
                 let (origin, destination) = skip_error_and_log!(
                     find_best_origin_destination(route_idx, &self, routes_to_vehicle_journeys,),
-                    LogLevel::Warn
+                    tracing::Level::WARN
                 );
                 if no_route_name
                     && !origin.name.trim().is_empty()
