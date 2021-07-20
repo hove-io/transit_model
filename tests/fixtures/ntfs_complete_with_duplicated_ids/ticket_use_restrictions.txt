@@ -1,0 +1,4 @@
+ticket_use_id,restriction_type,use_origin,use_destination
+ME:ticketuse.2,OD,ME:stoparea:1,ME:stoparea:2
+ME:ticketuse.2,OD,ME:stoparea:1,ME:stoparea:2
+ME:ticketuse.2,OD,ME:stoparea:2,ME:stoparea:1

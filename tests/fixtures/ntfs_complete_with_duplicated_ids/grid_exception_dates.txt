@@ -1,0 +1,3 @@
+grid_calendar_id,date,type
+ME:1,20180104,0
+ME:1,20180104,0

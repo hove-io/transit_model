@@ -26,9 +26,8 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_log;
 use std::{
     cmp::{self, Ordering, Reverse},
-    collections::{hash_map::DefaultHasher, BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, HashMap, HashSet},
     convert::TryFrom,
-    hash::{Hash, Hasher},
     ops,
 };
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
@@ -160,19 +159,14 @@ impl Collections {
             }
         }
 
-        fn dedup_collection<T: Clone + Eq + Hash>(source: &mut Collection<T>) -> Collection<T> {
-            let calculate_hash = |t: &T| -> u64 {
-                let mut s = DefaultHasher::new();
-                t.hash(&mut s);
-                s.finish()
-            };
-            let mut set: BTreeMap<u64, T> = BTreeMap::new();
-            let items = source.take();
-            for item in items {
-                set.insert(calculate_hash(&item), item);
+        fn dedup_collection<T: PartialEq>(source: &mut Collection<T>) {
+            let mut dedup = Vec::default();
+            for object in source.take() {
+                if !dedup.contains(&object) {
+                    dedup.push(object);
+                }
             }
-            let collection: Vec<T> = set.values().cloned().collect();
-            Collection::new(collection)
+            *source = Collection::new(dedup);
         }
 
         self.calendars
@@ -486,18 +480,18 @@ impl Collections {
             .retain(|level| level_id_used.contains(&level.id));
         self.calendars.retain(|c| calendars_used.contains(&c.id));
 
-        self.frequencies = dedup_collection(&mut self.frequencies);
-        self.transfers = dedup_collection(&mut self.transfers);
-        self.admin_stations = dedup_collection(&mut self.admin_stations);
-        self.prices_v1 = dedup_collection(&mut self.prices_v1);
-        self.od_fares_v1 = dedup_collection(&mut self.od_fares_v1);
-        self.fares_v1 = dedup_collection(&mut self.fares_v1);
-        self.ticket_prices = dedup_collection(&mut self.ticket_prices);
-        self.ticket_use_perimeters = dedup_collection(&mut self.ticket_use_perimeters);
-        self.ticket_use_restrictions = dedup_collection(&mut self.ticket_use_restrictions);
-        self.grid_exception_dates = dedup_collection(&mut self.grid_exception_dates);
-        self.grid_periods = dedup_collection(&mut self.grid_periods);
-        self.grid_rel_calendar_line = dedup_collection(&mut self.grid_rel_calendar_line);
+        dedup_collection(&mut self.frequencies);
+        dedup_collection(&mut self.transfers);
+        dedup_collection(&mut self.admin_stations);
+        dedup_collection(&mut self.prices_v1);
+        dedup_collection(&mut self.od_fares_v1);
+        dedup_collection(&mut self.fares_v1);
+        dedup_collection(&mut self.ticket_prices);
+        dedup_collection(&mut self.ticket_use_perimeters);
+        dedup_collection(&mut self.ticket_use_restrictions);
+        dedup_collection(&mut self.grid_exception_dates);
+        dedup_collection(&mut self.grid_periods);
+        dedup_collection(&mut self.grid_rel_calendar_line);
 
         Ok(())
     }

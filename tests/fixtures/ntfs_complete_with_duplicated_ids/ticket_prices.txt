@@ -1,0 +1,3 @@
+ticket_id,ticket_price,ticket_currency,ticket_validity_start,ticket_validity_end
+ME:ticket.1,1.50,EUR,20180101,20180106
+ME:ticket.2,3.14,EUR,20180101,20180106

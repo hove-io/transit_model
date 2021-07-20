@@ -1,0 +1,5 @@
+ticket_use_id,object_type,object_id,perimeter_action
+ME:ticketuse.1,network,ME:ntw1,1
+ME:ticketuse.1,network,ME:ntw1,1
+ME:ticketuse.2,network,ME:ntw1,1
+ME:ticketuse.2,network,ME:ntw2,1

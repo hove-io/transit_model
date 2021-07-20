@@ -5,37 +5,20 @@
 	<dataObjects>
 		<GeneralFrame id="FR:GeneralFrame:NETEX_RESEAU:" version="any">
 			<members>
-				<SiteConnection id="FR:SiteConnection:GDLB_GDLM:" version="any">
+				<SiteConnection id="FR:SiteConnection:GDLR_GDLM:" version="any">
 					<WalkTransferDuration>
-						<DefaultDuration>PT120S</DefaultDuration>
+						<DefaultDuration>PT180S</DefaultDuration>
 					</WalkTransferDuration>
 					<From>
 						<StopPlaceRef ref="FR:StopPlace:GDL:">
 						</StopPlaceRef>
-						<QuayRef ref="FR:Quay:GDLB:">
+						<QuayRef ref="FR:Quay:GDLR:">
 						</QuayRef>
 					</From>
 					<To>
 						<StopPlaceRef ref="FR:StopPlace:GDL:">
 						</StopPlaceRef>
 						<QuayRef ref="FR:Quay:GDLM:">
-						</QuayRef>
-					</To>
-				</SiteConnection>
-				<SiteConnection id="FR:SiteConnection:GDLM_GDLB:" version="any">
-					<WalkTransferDuration>
-						<DefaultDuration>PT120S</DefaultDuration>
-					</WalkTransferDuration>
-					<From>
-						<StopPlaceRef ref="FR:StopPlace:GDL:">
-						</StopPlaceRef>
-						<QuayRef ref="FR:Quay:GDLM:">
-						</QuayRef>
-					</From>
-					<To>
-						<StopPlaceRef ref="FR:StopPlace:GDL:">
-						</StopPlaceRef>
-						<QuayRef ref="FR:Quay:GDLB:">
 						</QuayRef>
 					</To>
 				</SiteConnection>
@@ -90,14 +73,31 @@
 						</QuayRef>
 					</To>
 				</SiteConnection>
-				<SiteConnection id="FR:SiteConnection:GDLR_GDLM:" version="any">
+				<SiteConnection id="FR:SiteConnection:GDLM_GDLB:" version="any">
 					<WalkTransferDuration>
-						<DefaultDuration>PT180S</DefaultDuration>
+						<DefaultDuration>PT120S</DefaultDuration>
 					</WalkTransferDuration>
 					<From>
 						<StopPlaceRef ref="FR:StopPlace:GDL:">
 						</StopPlaceRef>
-						<QuayRef ref="FR:Quay:GDLR:">
+						<QuayRef ref="FR:Quay:GDLM:">
+						</QuayRef>
+					</From>
+					<To>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLB:">
+						</QuayRef>
+					</To>
+				</SiteConnection>
+				<SiteConnection id="FR:SiteConnection:GDLB_GDLM:" version="any">
+					<WalkTransferDuration>
+						<DefaultDuration>PT120S</DefaultDuration>
+					</WalkTransferDuration>
+					<From>
+						<StopPlaceRef ref="FR:StopPlace:GDL:">
+						</StopPlaceRef>
+						<QuayRef ref="FR:Quay:GDLB:">
 						</QuayRef>
 					</From>
 					<To>

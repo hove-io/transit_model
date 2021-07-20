@@ -31,7 +31,7 @@ use std::str::FromStr;
 use thiserror::Error;
 use typed_index_collection::{impl_id, impl_with_id, Idx, WithId};
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum ObjectType {
     StopArea,
@@ -727,7 +727,7 @@ impl VehicleJourney {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Frequency {
     #[serde(rename = "trip_id")]
     pub vehicle_journey_id: String,
@@ -755,7 +755,7 @@ impl From<std::num::ParseIntError> for TimeError {
     }
 }
 
-#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Time(u32);
 impl Time {
     pub fn new(h: u32, m: u32, s: u32) -> Time {
@@ -1488,14 +1488,18 @@ impl Equipment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Derivative)]
+#[derivative(PartialEq)]
 pub struct Transfer {
     pub from_stop_id: String,
     pub to_stop_id: String,
     #[serde(serialize_with = "ser_option_u32_with_default")]
+    #[derivative(PartialEq = "ignore")]
     pub min_transfer_time: Option<u32>,
     #[serde(serialize_with = "ser_option_u32_with_default")]
+    #[derivative(PartialEq = "ignore")]
     pub real_min_transfer_time: Option<u32>,
+    #[derivative(PartialEq = "ignore")]
     pub equipment_id: Option<String>,
 }
 
@@ -1509,20 +1513,6 @@ impl AddPrefix for Transfer {
             .map(|id| prefix_conf.schedule_prefix(id.as_str()));
     }
 }
-
-impl Hash for Transfer {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        (&self.from_stop_id, &self.to_stop_id).hash(state);
-    }
-}
-
-impl PartialEq for Transfer {
-    fn eq(&self, other: &Transfer) -> bool {
-        self.from_stop_id == other.from_stop_id && self.to_stop_id == other.to_stop_id
-    }
-}
-
-impl Eq for Transfer {}
 
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Clone)]
 #[derivative(Default)]
@@ -1599,7 +1589,7 @@ impl AddPrefix for Geometry {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct AdminStation {
     pub admin_id: String,
     pub admin_name: String,
@@ -1613,7 +1603,7 @@ impl AddPrefix for AdminStation {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct PriceV1 {
     pub id: String,
     #[serde(
@@ -1639,7 +1629,7 @@ impl AddPrefix for PriceV1 {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct OdFareV1 {
     #[serde(rename = "Origin ID")]
     pub origin_stop_area_id: String,
@@ -1666,7 +1656,7 @@ impl AddPrefix for OdFareV1 {
     }
 }
 
-#[derive(Clone, Default, Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct FareV1 {
     #[serde(rename = "avant changement")]
     pub before_change: String,
@@ -1711,7 +1701,7 @@ impl AddPrefix for Ticket {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct TicketPrice {
     pub ticket_id: String,
     #[serde(rename = "ticket_price", deserialize_with = "de_positive_decimal")]
@@ -1758,7 +1748,7 @@ impl AddPrefix for TicketUse {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum PerimeterAction {
     #[serde(rename = "1")]
     Included,
@@ -1766,7 +1756,7 @@ pub enum PerimeterAction {
     Excluded,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct TicketUsePerimeter {
     pub ticket_use_id: String,
     pub object_type: ObjectType,
@@ -1781,7 +1771,7 @@ impl AddPrefix for TicketUsePerimeter {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub enum RestrictionType {
     #[serde(rename = "zone")]
     Zone,
@@ -1789,7 +1779,7 @@ pub enum RestrictionType {
     OriginDestination,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct TicketUseRestriction {
     pub ticket_use_id: String,
     pub restriction_type: RestrictionType,
@@ -1833,7 +1823,7 @@ impl AddPrefix for GridCalendar {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct GridExceptionDate {
     pub grid_calendar_id: String,
     #[serde(
@@ -1852,7 +1842,7 @@ impl AddPrefix for GridExceptionDate {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct GridPeriod {
     pub grid_calendar_id: String,
     #[serde(
@@ -1874,7 +1864,7 @@ impl AddPrefix for GridPeriod {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct GridRelCalendarLine {
     pub grid_calendar_id: String,
     pub line_id: String,
