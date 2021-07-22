@@ -727,7 +727,7 @@ impl VehicleJourney {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Frequency {
     #[serde(rename = "trip_id")]
     pub vehicle_journey_id: String,
@@ -1488,14 +1488,18 @@ impl Equipment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Derivative)]
+#[derivative(PartialEq)]
 pub struct Transfer {
     pub from_stop_id: String,
     pub to_stop_id: String,
     #[serde(serialize_with = "ser_option_u32_with_default")]
+    #[derivative(PartialEq = "ignore")]
     pub min_transfer_time: Option<u32>,
     #[serde(serialize_with = "ser_option_u32_with_default")]
+    #[derivative(PartialEq = "ignore")]
     pub real_min_transfer_time: Option<u32>,
+    #[derivative(PartialEq = "ignore")]
     pub equipment_id: Option<String>,
 }
 
@@ -1819,7 +1823,7 @@ impl AddPrefix for GridCalendar {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct GridExceptionDate {
     pub grid_calendar_id: String,
     #[serde(
@@ -1838,7 +1842,7 @@ impl AddPrefix for GridExceptionDate {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct GridPeriod {
     pub grid_calendar_id: String,
     #[serde(
@@ -1860,7 +1864,7 @@ impl AddPrefix for GridPeriod {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct GridRelCalendarLine {
     pub grid_calendar_id: String,
     pub line_id: String,

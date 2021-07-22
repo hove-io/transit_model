@@ -159,6 +159,16 @@ impl Collections {
             }
         }
 
+        fn dedup_collection<T: PartialEq>(source: &mut Collection<T>) {
+            let mut dedup = Vec::default();
+            for object in source.take() {
+                if !dedup.contains(&object) {
+                    dedup.push(object);
+                }
+            }
+            *source = Collection::new(dedup);
+        }
+
         self.calendars
             .retain(log_predicate("Calendar", |cal: &Calendar| {
                 !cal.dates.is_empty()
@@ -469,6 +479,20 @@ impl Collections {
         self.levels
             .retain(|level| level_id_used.contains(&level.id));
         self.calendars.retain(|c| calendars_used.contains(&c.id));
+
+        dedup_collection(&mut self.frequencies);
+        dedup_collection(&mut self.transfers);
+        dedup_collection(&mut self.admin_stations);
+        dedup_collection(&mut self.prices_v1);
+        dedup_collection(&mut self.od_fares_v1);
+        dedup_collection(&mut self.fares_v1);
+        dedup_collection(&mut self.ticket_prices);
+        dedup_collection(&mut self.ticket_use_perimeters);
+        dedup_collection(&mut self.ticket_use_restrictions);
+        dedup_collection(&mut self.grid_exception_dates);
+        dedup_collection(&mut self.grid_periods);
+        dedup_collection(&mut self.grid_rel_calendar_line);
+
         Ok(())
     }
 

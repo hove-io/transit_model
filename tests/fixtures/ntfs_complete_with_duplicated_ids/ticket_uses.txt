@@ -1,0 +1,3 @@
+ticket_use_id,ticket_id,max_transfers,boarding_time_limit,alighting_time_limit
+ME:ticketuse.1,ME:ticket.1,3,,120
+ME:ticketuse.2,ME:ticket.2,0,,

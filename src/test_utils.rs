@@ -34,17 +34,19 @@ pub fn get_file_content<P: AsRef<Path>>(path: P) -> Vec<String> {
     }
     vec
 }
-pub fn get_lines_content<P: AsRef<Path>>(path: P) -> BTreeSet<String> {
+pub fn get_lines_content<P: AsRef<Path>>(path: P) -> Vec<String> {
     let path = path.as_ref();
     let file = File::open(path).unwrap_or_else(|_| panic!("file {:?} not found", path));
     let reader = BufReader::new(file);
-    let mut set = BTreeSet::new();
-    for result_line in reader.lines() {
-        let line =
-            result_line.unwrap_or_else(|_| panic!("Cannot parse as a line in file {:?}", path));
-        set.insert(line);
-    }
-    set
+    let mut lines_vec: Vec<String> = reader
+        .lines()
+        .into_iter()
+        .map(|result_line| {
+            result_line.unwrap_or_else(|_| panic!("Cannot parse as a line in file {:?}", path))
+        })
+        .collect();
+    lines_vec.sort();
+    lines_vec
 }
 
 fn get_files_to_compare<P>(dir: P, files_to_check: Option<&Vec<&str>>) -> BTreeSet<String>

@@ -1,0 +1,4 @@
+admin_id,admin_name,stop_id
+ME:A,A Name,ME:stoparea:1
+ME:A,A Name,ME:stoparea:1
+ME:B,B Name,ME:stoparea:2

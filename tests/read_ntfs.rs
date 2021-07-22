@@ -452,3 +452,19 @@ fn ntfs_with_duplicated_ids() {
         }
     });
 }
+
+#[test]
+// Test the sanitation of duplicated objects in collections without id
+fn ntfs_with_duplicated_objects_without_id() {
+    let model =
+        transit_model::ntfs::read("tests/fixtures/ntfs_complete_with_duplicated_ids").unwrap();
+    assert_eq!(2, model.frequencies.len());
+    assert_eq!(1, model.transfers.len());
+    assert_eq!(2, model.admin_stations.len());
+    assert_eq!(2, model.ticket_prices.len());
+    assert_eq!(3, model.ticket_use_perimeters.len());
+    assert_eq!(2, model.ticket_use_restrictions.len());
+    assert_eq!(1, model.grid_exception_dates.len());
+    assert_eq!(1, model.grid_periods.len());
+    assert_eq!(2, model.grid_rel_calendar_line.len());
+}
