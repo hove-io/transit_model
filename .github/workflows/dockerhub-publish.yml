@@ -14,7 +14,7 @@ on:
 
 env:
   IMAGE_ID: "navitia/transit_model"
-  DOCKER_REGISTRY_URL: https://index.docker.io/v1
+  DOCKER_REGISTRY_URL: docker.io
 
 jobs:
   push:
@@ -35,7 +35,7 @@ jobs:
 
       - name: Log into registry
         run: |
-          docker login $DOCKER_REGISTRY_URL --username "${{ secrets.DOCKER_USERNAME }}" --password "${{ secrets.DOCKER_PASSWORD }}" 
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login $DOCKER_REGISTRY_URL --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Push image
         run: |
