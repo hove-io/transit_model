@@ -395,7 +395,7 @@ where
             let is_same_seq = st2.stop_sequence == st1.stop_sequence;
             if is_same_seq {
                 warn!(
-                    "remove duplicated stop_sequence '{}' of vehicle '{}'",
+                    "remove duplicated stop_sequence '{}' of trip '{}'",
                     st2.stop_sequence, st2.trip_id
                 );
             }
