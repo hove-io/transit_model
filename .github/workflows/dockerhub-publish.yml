@@ -13,8 +13,8 @@ on:
       types: [published]
 
 env:
-  IMAGE_ID: ${{ secrets.DOCKER_REPOSITORY_NAME }}
-
+  IMAGE_ID: "navitia/transit_model"
+  DOCKER_REGISTRY_URL: https://index.docker.io/v1
 
 jobs:
   push:
@@ -30,12 +30,12 @@ jobs:
       - name: Tag image
         if: github.event.action == 'published'
         run: |
-          VERSION="v$(echo "$(grep "^version =" Cargo.toml)" | tr -cd '[:digit:].')"
+          VERSION="v$( grep "^version =" Cargo.toml | tr -cd '[:digit:].' )"
           docker tag $IMAGE_ID $IMAGE_ID:$VERSION
 
       - name: Log into registry
         run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login ${{ secrets.DOCKER_REGISTRY_URL }} -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+          docker login $DOCKER_REGISTRY_URL --username "${{ secrets.DOCKER_USERNAME }}" --password "${{ secrets.DOCKER_PASSWORD }}" 
 
       - name: Push image
         run: |
