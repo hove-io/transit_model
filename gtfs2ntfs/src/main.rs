@@ -141,17 +141,20 @@ fn run(opt: Opt) -> Result<()> {
 
 fn init_logger() {
     let default_level = LevelFilter::INFO;
+    let rust_log =
+        std::env::var(EnvFilter::DEFAULT_ENV).unwrap_or_else(|_| default_level.to_string());
+    let env_filter_subscriber = EnvFilter::try_new(rust_log).unwrap_or_else(|e| {
+        eprintln!(
+            "invalid {}, falling back to level '{}' - {}",
+            EnvFilter::DEFAULT_ENV,
+            default_level,
+            e,
+        );
+        EnvFilter::new(default_level.to_string())
+    });
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
-        .with(EnvFilter::try_from_default_env().unwrap_or_else(|e| {
-            eprintln!(
-                "missing or invalid {}, falling back to level '{}' - {}",
-                EnvFilter::DEFAULT_ENV,
-                default_level,
-                e,
-            );
-            EnvFilter::new(default_level.to_string())
-        }))
+        .with(env_filter_subscriber)
         .init();
 }
 

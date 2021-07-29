@@ -16,10 +16,13 @@
 
 use chrono::{DateTime, FixedOffset, NaiveDate};
 use log::info;
-use slog::{slog_o, Drain};
-use slog_async::OverflowStrategy;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use tracing_subscriber::{
+    filter::{EnvFilter, LevelFilter},
+    layer::SubscriberExt as _,
+    util::SubscriberInitExt as _,
+};
 use transit_model::{Model, Result};
 
 #[derive(Debug, StructOpt)]
@@ -55,23 +58,23 @@ struct Opt {
     current_datetime: DateTime<FixedOffset>,
 }
 
-fn init_logger() -> slog_scope::GlobalLoggerGuard {
-    let decorator = slog_term::TermDecorator::new().stdout().build();
-    let drain = slog_term::CompactFormat::new(decorator).build().fuse();
-    let mut builder = slog_envlogger::LogBuilder::new(drain).filter(None, slog::FilterLevel::Info);
-    if let Ok(s) = std::env::var("RUST_LOG") {
-        builder = builder.parse(&s);
-    }
-    let drain = slog_async::Async::new(builder.build())
-        .chan_size(256) // Double the default size
-        .overflow_strategy(OverflowStrategy::Block)
-        .build()
-        .fuse();
-    let logger = slog::Logger::root(drain, slog_o!());
-
-    let scope_guard = slog_scope::set_global_logger(logger);
-    slog_stdlog::init().unwrap();
-    scope_guard
+fn init_logger() {
+    let default_level = LevelFilter::INFO;
+    let rust_log =
+        std::env::var(EnvFilter::DEFAULT_ENV).unwrap_or_else(|_| default_level.to_string());
+    let env_filter_subscriber = EnvFilter::try_new(rust_log).unwrap_or_else(|e| {
+        eprintln!(
+            "invalid {}, falling back to level '{}' - {}",
+            EnvFilter::DEFAULT_ENV,
+            default_level,
+            e,
+        );
+        EnvFilter::new(default_level.to_string())
+    });
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(env_filter_subscriber)
+        .init();
 }
 
 fn run(opt: Opt) -> Result<()> {
@@ -86,7 +89,7 @@ fn run(opt: Opt) -> Result<()> {
 }
 
 fn main() {
-    let _log_guard = init_logger();
+    init_logger();
     if let Err(err) = run(Opt::from_args()) {
         for cause in err.iter_chain() {
             eprintln!("{}", cause);
