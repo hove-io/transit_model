@@ -251,7 +251,7 @@ impl<'a> OfferExporter<'a> {
             .attr(
                 "id",
                 Self::generate_stop_sequence_id(
-                    &vehicle_journey_id,
+                    vehicle_journey_id,
                     stop_time.sequence,
                     ObjectType::StopPointInJourneyPattern,
                 ),
@@ -259,7 +259,7 @@ impl<'a> OfferExporter<'a> {
             .attr("version", "any")
             .attr("order", stop_time.sequence + 1)
             .append(Self::generate_scheduled_stop_point_ref(
-                &vehicle_journey_id,
+                vehicle_journey_id,
                 stop_time.sequence,
             ))
             .append(Self::generate_for_alighting(stop_time.drop_off_type))
@@ -288,7 +288,7 @@ impl<'a> OfferExporter<'a> {
             .attr(
                 "id",
                 Self::generate_stop_sequence_id(
-                    &vehicle_journey_id,
+                    vehicle_journey_id,
                     stop_time.sequence,
                     ObjectType::ScheduledStopPoint,
                 ),

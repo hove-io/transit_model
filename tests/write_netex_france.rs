@@ -68,7 +68,7 @@ fn validate_xml_schemas() {
             .unwrap()
             .map(|result| result.unwrap())
             .map(|dir_entry| dir_entry.path())
-            .filter(|path| path.extension() == Some(&OsStr::new("xml")));
+            .filter(|path| path.extension() == Some(OsStr::new("xml")));
         for path in paths {
             let status = Command::new("xmllint")
                 .arg("--noout")

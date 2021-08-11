@@ -217,7 +217,7 @@ fn get_gtfs_direction_id_from_ntfs_route(route: &objects::Route) -> DirectionTyp
 fn make_gtfs_trip_from_ntfs_vj(vj: &objects::VehicleJourney, model: &Model) -> Trip {
     let mut wheelchair_and_bike = (Availability::default(), Availability::default());
     if let Some(tp_id) = &vj.trip_property_id {
-        if let Some(tp) = &model.trip_properties.get(&tp_id) {
+        if let Some(tp) = &model.trip_properties.get(tp_id) {
             wheelchair_and_bike = (tp.wheelchair_accessible, tp.bike_accepted);
         };
     }
@@ -235,7 +235,7 @@ fn make_gtfs_trip_from_ntfs_vj(vj: &objects::VehicleJourney, model: &Model) -> T
         id: vj.id.clone(),
         headsign: vj.headsign.clone(),
         short_name: vj.short_name.clone(),
-        direction: get_gtfs_direction_id_from_ntfs_route(&route),
+        direction: get_gtfs_direction_id_from_ntfs_route(route),
         block_id: vj.block_id.clone(),
         shape_id: vj.geometry_id.clone(),
         wheelchair_accessible: wheelchair_and_bike.0,
@@ -290,8 +290,8 @@ pub fn write_stop_extensions(
     stop_areas: &CollectionWithId<StopArea>,
 ) -> Result<()> {
     let mut stop_extensions = Vec::new();
-    stop_extensions.extend(stop_extensions_from_collection_with_id(&stop_points));
-    stop_extensions.extend(stop_extensions_from_collection_with_id(&stop_areas));
+    stop_extensions.extend(stop_extensions_from_collection_with_id(stop_points));
+    stop_extensions.extend(stop_extensions_from_collection_with_id(stop_areas));
     if stop_extensions.is_empty() {
         return Ok(());
     }
@@ -1095,9 +1095,7 @@ mod tests {
             geometry: point!(x: 1.1, y: 2.2).into(),
         };
 
-        let shapes: Vec<Shape> = ntfs_geometry_to_gtfs_shapes(&geo).collect();
-
-        assert!(shapes.is_empty());
+        assert!(ntfs_geometry_to_gtfs_shapes(&geo).next().is_none());
     }
 
     #[test]

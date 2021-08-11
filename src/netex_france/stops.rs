@@ -193,7 +193,7 @@ impl<'a> StopExporter<'a> {
             };
 
         let element_builder =
-            if let Some(accessibility_element) = self.generate_quay_accessibility(&stop_point) {
+            if let Some(accessibility_element) = self.generate_quay_accessibility(stop_point) {
                 element_builder.append(accessibility_element)
             } else {
                 element_builder
@@ -212,7 +212,7 @@ impl<'a> StopExporter<'a> {
             );
         }
         let highest_netex_mode =
-            NetexMode::calculate_highest_mode(&netex_modes).ok_or_else(|| {
+            NetexMode::calculate_highest_mode(netex_modes).ok_or_else(|| {
                 // Should never happen, a Stop Point always have at least one associated mode
                 format_err!(
                     "Unable to resolve main NeTEx mode for Stop Point {}",

@@ -54,35 +54,35 @@ fn test_minimal_ntfs(ntm: &Model) {
     assert_eq!(3, ntm.get_corresponding_from_idx::<_, StopPoint>(gdl).len());
     assert_eq!(
         vec!["Bus", "Metro", "RapidTransit"],
-        get(gdl, &ntm.physical_modes, &ntm)
+        get(gdl, &ntm.physical_modes, ntm)
     );
     assert_eq!(
         vec!["Bus", "Metro", "RER"],
-        get(gdl, &ntm.commercial_modes, &ntm)
+        get(gdl, &ntm.commercial_modes, ntm)
     );
-    assert_eq!(vec!["TGN"], get(gdl, &ntm.networks, &ntm));
-    assert_eq!(vec!["TGC"], get(gdl, &ntm.contributors, &ntm));
+    assert_eq!(vec!["TGN"], get(gdl, &ntm.networks, ntm));
+    assert_eq!(vec!["TGC"], get(gdl, &ntm.contributors, ntm));
 
     let rera = ntm.lines.get_idx("RERA").unwrap();
     assert_eq!(
         vec!["Bus", "RapidTransit"],
-        get(rera, &ntm.physical_modes, &ntm)
+        get(rera, &ntm.physical_modes, ntm)
     );
-    assert_eq!(vec!["RER"], get(rera, &ntm.commercial_modes, &ntm));
-    assert_eq!(vec!["TGN"], get(rera, &ntm.networks, &ntm));
-    assert_eq!(vec!["TGC"], get(rera, &ntm.contributors, &ntm));
-    assert_eq!(vec!["RERAB", "RERAF"], get(rera, &ntm.routes, &ntm));
+    assert_eq!(vec!["RER"], get(rera, &ntm.commercial_modes, ntm));
+    assert_eq!(vec!["TGN"], get(rera, &ntm.networks, ntm));
+    assert_eq!(vec!["TGC"], get(rera, &ntm.contributors, ntm));
+    assert_eq!(vec!["RERAB", "RERAF"], get(rera, &ntm.routes, ntm));
     assert_eq!(
         vec!["RERAB1", "RERAF1"],
-        get(rera, &ntm.vehicle_journeys, &ntm)
+        get(rera, &ntm.vehicle_journeys, ntm)
     );
     assert_eq!(
         vec!["CDGR", "CDGZ", "DEFR", "GDLR", "MTPZ", "NATR"],
-        get(rera, &ntm.stop_points, &ntm)
+        get(rera, &ntm.stop_points, ntm)
     );
     assert_eq!(
         vec!["CDG", "DEF", "GDL", "NAT", "Navitia:CDGZ", "Navitia:MTPZ"],
-        get(rera, &ntm.stop_areas, &ntm)
+        get(rera, &ntm.stop_areas, ntm)
     );
 }
 

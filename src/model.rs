@@ -256,7 +256,7 @@ impl Collections {
                         stop_points_used.insert(stop_point_id.clone());
                         if let Some(stop_area_id) = self
                             .stop_points
-                            .get(&stop_point_id)
+                            .get(stop_point_id)
                             .map(|sp| sp.stop_area_id.clone())
                         {
                             stop_area_ids_used.insert(stop_area_id);
@@ -281,7 +281,7 @@ impl Collections {
                         stop_points_used.insert(stop_id.clone());
                         if let Some(stop_area_id) = self
                             .stop_points
-                            .get(&stop_id)
+                            .get(stop_id)
                             .map(|sp| sp.stop_area_id.clone())
                         {
                             stop_area_ids_used.insert(stop_area_id);
@@ -634,7 +634,7 @@ impl Collections {
         let required_operation = self.lines.values().any(|line| check_time_empty(line));
 
         if required_operation {
-            let vjs_by_line = get_vjs_by_line(&self);
+            let vjs_by_line = get_vjs_by_line(self);
             let mut lines = self.lines.take();
             for line in &mut lines {
                 // 2nd check (see above) to avoid overwriting line opening/closing
@@ -1133,7 +1133,7 @@ impl Collections {
             let no_destination_id = route.destination_id.is_none();
             if no_route_name || no_destination_id {
                 let (origin, destination) = skip_error_and_log!(
-                    find_best_origin_destination(route_idx, &self, routes_to_vehicle_journeys,),
+                    find_best_origin_destination(route_idx, self, routes_to_vehicle_journeys,),
                     tracing::Level::WARN
                 );
                 if no_route_name
