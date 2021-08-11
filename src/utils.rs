@@ -406,21 +406,21 @@ mod tests {
         #[test]
         fn with_string() {
             let json = r#"{"name": "baz"}"#;
-            let object: WithOption = serde_json::from_str(&json).unwrap();
+            let object: WithOption = serde_json::from_str(json).unwrap();
             assert_eq!(object.name.unwrap(), "baz");
         }
 
         #[test]
         fn with_empty_string() {
             let json = r#"{"name": ""}"#;
-            let object: WithOption = serde_json::from_str(&json).unwrap();
+            let object: WithOption = serde_json::from_str(json).unwrap();
             assert_eq!(object.name, None);
         }
 
         #[test]
         fn without_field() {
             let json = r#"{}"#;
-            let object: WithOption = serde_json::from_str(&json).unwrap();
+            let object: WithOption = serde_json::from_str(json).unwrap();
             assert_eq!(object.name, None);
         }
     }

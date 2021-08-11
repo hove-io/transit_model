@@ -334,7 +334,7 @@ impl Ord for PhysicalMode {
 
 impl PartialOrd for PhysicalMode {
     fn partial_cmp(&self, other: &PhysicalMode) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 
@@ -885,7 +885,7 @@ impl Ord for StopTime {
 
 impl PartialOrd for StopTime {
     fn partial_cmp(&self, other: &StopTime) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 

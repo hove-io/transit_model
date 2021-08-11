@@ -42,7 +42,7 @@ impl<'a> TransferExporter<'a> {
 impl<'a> TransferExporter<'a> {
     fn export_transfer(&self, transfer: &'a Transfer) -> Result<Element> {
         let element_builder = Element::builder(ObjectType::SiteConnection.to_string())
-            .attr("id", self.generate_id(&transfer))
+            .attr("id", self.generate_id(transfer))
             .attr("version", "any");
         let element_builder = if let Some(walk_transfer_duration_element) =
             self.generate_walk_transfer_duration(transfer.real_min_transfer_time)

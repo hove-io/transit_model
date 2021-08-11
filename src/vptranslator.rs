@@ -119,7 +119,7 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
     let end_date: Date = *dates.iter().next_back().unwrap();
 
     let mut monday_ref = get_prev_monday(start_date);
-    let validity_pattern = compute_validity_pattern(monday_ref, end_date, &dates);
+    let validity_pattern = compute_validity_pattern(monday_ref, end_date, dates);
     let best_week = get_min_week_pattern(&validity_pattern);
     let operating_days = get_operating_days(best_week);
     let mut exceptions_list = Vec::new();

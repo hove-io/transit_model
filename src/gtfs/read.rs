@@ -1153,14 +1153,14 @@ where
                 &mut collections.lines,
                 &mut collections.comments,
                 "line",
-                &gtfs_route,
+                gtfs_route,
             );
         } else {
             insert_comment(
                 &mut collections.routes,
                 &mut collections.comments,
                 "route",
-                &gtfs_route,
+                gtfs_route,
             );
         };
     });
@@ -1338,10 +1338,10 @@ where
     vehicle_journeys.retain(|vj| !trip_ids_to_remove.contains(&&vj.id));
     collections
         .stop_time_ids
-        .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&&vj_id));
+        .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&vj_id));
     collections
         .stop_time_comments
-        .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&&vj_id));
+        .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&vj_id));
 
     vehicle_journeys.append(&mut new_vehicle_journeys);
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;

@@ -81,7 +81,7 @@ impl PrefixConfiguration {
             prefix = prefix + data_prefix + &self.sep;
         }
         if let Some(schedule_subprefix) = self.schedule_subprefix.as_ref() {
-            prefix = prefix + &schedule_subprefix + &self.sep;
+            prefix = prefix + schedule_subprefix + &self.sep;
         }
         prefix + id
     }

@@ -348,7 +348,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
                 );
                 continue;
             }
-            let price_v1 = build_price_v1(&ticket_use.id, &ticket, &price)?;
+            let price_v1 = build_price_v1(&ticket_use.id, ticket, price)?;
             prices_v1.insert(price_v1);
             at_least_one_price = true;
         }

@@ -264,7 +264,7 @@ impl Exporter<'_> {
 
     // Returns a list of 'ServiceFrame' each containing a 'Network'
     fn create_networks_frames(&self) -> Vec<Element> {
-        let network_exporter = NetworkExporter::new(&self.model);
+        let network_exporter = NetworkExporter::new(self.model);
         let network_elements = network_exporter.export();
         let frames = network_elements
             .into_iter()
@@ -283,7 +283,7 @@ impl Exporter<'_> {
 
     // Returns a 'ServiceFrame' containing a list of 'Line' in 'lines'
     fn create_lines_frame(&self) -> Result<Element> {
-        let line_exporter = LineExporter::new(&self.model);
+        let line_exporter = LineExporter::new(self.model);
         let lines = line_exporter.export()?;
         let line_list = Element::builder("lines").append_all(lines).build();
         let service_frame_id = self.generate_frame_id(FrameType::Service, "lines");
@@ -297,7 +297,7 @@ impl Exporter<'_> {
 
     // Returns a 'ServiceFrame' containing a list of 'Operator' in 'organisations'
     fn create_companies_frame(&self) -> Element {
-        let company_exporter = CompanyExporter::new(&self.model);
+        let company_exporter = CompanyExporter::new(self.model);
         let companies = company_exporter.export();
         let companies_list = Element::builder("organisations")
             .append_all(companies)
@@ -326,7 +326,7 @@ impl Exporter<'_> {
 
     // Returns a 'GeneralFrame' containing all 'StopArea' and 'Quay'
     fn create_stops_frame(&self) -> Result<Element> {
-        let stop_exporter = StopExporter::new(&self.model, &self.participant_ref)?;
+        let stop_exporter = StopExporter::new(self.model, &self.participant_ref)?;
         let stops = stop_exporter.export()?;
         let members = Self::create_members(stops);
         let general_frame_id =
@@ -355,7 +355,7 @@ impl Exporter<'_> {
 
     // Returns a 'GeneralFrame' containing all 'DayType', 'DayTypeAssignment' and 'UicOperatingPeriod'
     fn create_calendars_frame(&self) -> Result<Element> {
-        let calendar_exporter = CalendarExporter::new(&self.model);
+        let calendar_exporter = CalendarExporter::new(self.model);
         let calendars = calendar_exporter.export()?;
         let valid_between = self.create_valid_between()?;
         let members = Self::create_members(calendars);
@@ -406,7 +406,7 @@ impl Exporter<'_> {
 
     // Returns a 'GeneralFrame' containing all 'SiteConnection'
     fn create_transfers_frame(&self) -> Result<Element> {
-        let transfer_exporter = TransferExporter::new(&self.model);
+        let transfer_exporter = TransferExporter::new(self.model);
         let transfers = transfer_exporter.export()?;
         let members = Self::create_members(transfers);
         let general_frame_id = self.generate_frame_id(
@@ -447,7 +447,7 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let line_indexes: IdxSet<Line> = self.model.get_corresponding_from_idx(network_idx);
-        let offer_exporter = OfferExporter::new(&self.model)?;
+        let offer_exporter = OfferExporter::new(self.model)?;
         for line_idx in line_indexes {
             let line = &self.model.lines[line_idx];
             let line_id_md5 = md5::compute(line.id.as_bytes());

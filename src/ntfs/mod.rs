@@ -295,7 +295,7 @@ pub fn write<P: AsRef<path::Path>>(
     std::fs::create_dir_all(path)?;
     info!("Writing NTFS to {:?}", path);
 
-    write::write_feed_infos(path, &model, current_datetime)?;
+    write::write_feed_infos(path, model, current_datetime)?;
     write_collection_with_id(path, "contributors.txt", &model.contributors)?;
     write_collection_with_id(path, "datasets.txt", &model.datasets)?;
     write_collection_with_id(path, "networks.txt", &model.networks)?;
@@ -352,7 +352,7 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_comments(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
-    write::write_fares_v1(path, &model)?;
+    write::write_fares_v1(path, model)?;
     write_collection_with_id(path, "pathways.txt", &model.pathways)?;
     write_collection_with_id(path, "levels.txt", &model.levels)?;
 
