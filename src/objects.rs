@@ -1152,6 +1152,7 @@ pub struct StopPoint {
     pub platform_code: Option<String>,
     #[serde(skip)]
     pub stop_type: StopType,
+    pub address_id: Option<String>,
 }
 
 impl_id!(StopPoint);
@@ -1174,6 +1175,10 @@ impl AddPrefix for StopPoint {
             .take()
             .map(|id| prefix_conf.referential_prefix(id.as_str()));
         self.comment_links.prefix(prefix_conf);
+        self.address_id = self
+            .address_id
+            .take()
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()));
     }
 }
 impl_codes!(StopPoint);
@@ -1885,6 +1890,22 @@ impl AddPrefix for GridRelCalendarLine {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
         self.grid_calendar_id = prefix_conf.referential_prefix(self.grid_calendar_id.as_str());
         self.line_id = prefix_conf.referential_prefix(self.line_id.as_str());
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
+pub struct Address {
+    #[serde(rename = "address_id")]
+    pub id: String,
+    pub street_name: String,
+    pub house_number: Option<String>,
+}
+
+impl_id!(Address);
+
+impl AddPrefix for Address {
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.schedule_prefix(self.id.as_str());
     }
 }
 

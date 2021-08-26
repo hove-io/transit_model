@@ -88,6 +88,7 @@ impl TryFrom<Stop> for StopPoint {
             stop_type: stop.location_type.into(),
             platform_code: stop.platform_code,
             level_id: stop.level_id,
+            address_id: stop.address_id,
             ..Default::default()
         };
         Ok(stop_point)

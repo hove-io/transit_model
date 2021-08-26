@@ -129,6 +129,7 @@ struct Stop {
     equipment_id: Option<String>,
     level_id: Option<String>,
     platform_code: Option<String>,
+    address_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -264,6 +265,7 @@ where
         grid_exception_dates: make_opt_collection(file_handler, "grid_exception_dates.txt")?,
         grid_periods: make_opt_collection(file_handler, "grid_periods.txt")?,
         grid_rel_calendar_line: make_opt_collection(file_handler, "grid_rel_calendar_line.txt")?,
+        addresses: make_opt_collection_with_id(file_handler, "addresses.txt")?,
         ..Default::default()
     };
     manage_calendars(file_handler, &mut collections)?;
@@ -355,6 +357,7 @@ pub fn write<P: AsRef<path::Path>>(
     write::write_fares_v1(path, model)?;
     write_collection_with_id(path, "pathways.txt", &model.pathways)?;
     write_collection_with_id(path, "levels.txt", &model.levels)?;
+    write_collection_with_id(path, "addresses.txt", &model.addresses)?;
 
     Ok(())
 }
@@ -382,7 +385,7 @@ mod tests {
     use super::*;
     use super::{read, write};
     use crate::calendars::{manage_calendars, write_calendar_dates};
-    use crate::objects::Availability;
+    use crate::objects;
     use crate::{read_utils::PathFileHandler, test_utils::*};
     use geo::line_string;
     use pretty_assertions::assert_eq;
@@ -692,7 +695,7 @@ mod tests {
                 trip_property_id: Some("0".to_string()),
                 geometry_id: Some("Geometry:Line:Relation:6883353".to_string()),
                 stop_times: vec![
-                    StopTime {
+                    objects::StopTime {
                         stop_point_idx: stop_points.get_idx("OIF:SP:36:2085").unwrap(),
                         sequence: 0,
                         arrival_time: Time::new(14, 40, 0),
@@ -705,7 +708,7 @@ mod tests {
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
-                    StopTime {
+                    objects::StopTime {
                         stop_point_idx: stop_points.get_idx("OIF:SP:36:2127").unwrap(),
                         sequence: 1,
                         arrival_time: Time::new(14, 42, 0),
@@ -1140,7 +1143,7 @@ mod tests {
             company_id: "OIF:743".to_string(),
             trip_property_id: None,
             geometry_id: None,
-            stop_times: vec![StopTime {
+            stop_times: vec![objects::StopTime {
                 stop_point_idx: stop_points.get_idx("sp_1").unwrap(),
                 sequence: 0,
                 arrival_time: Time::new(9, 0, 0),
