@@ -162,7 +162,7 @@ fn ntfs_stop_location_to_gtfs_stop(
         fare_zone_id: None,
         location_type: StopLocationType::from(sl.stop_type.clone()),
         parent_station: sl.parent_id.clone(),
-        code: None,
+        code: sl.code.clone(),
         desc: get_first_comment_name(sl, comments),
         wheelchair_boarding: wheelchair,
         url: None,
