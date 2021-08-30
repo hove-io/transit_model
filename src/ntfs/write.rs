@@ -549,6 +549,7 @@ pub fn write_stops(
                 geometry_id: sl.geometry_id.clone(),
                 level_id: sl.level_id.clone(),
                 platform_code: None,
+                address_id: None,
             })?;
         }
         Ok(())
@@ -579,6 +580,7 @@ pub fn write_stops(
             geometry_id: st.geometry_id.clone(),
             level_id: st.level_id.clone(),
             platform_code: st.platform_code.clone(),
+            address_id: st.address_id.clone(),
         })
         .with_context(|_| format!("Error reading {:?}", path))?;
     }
@@ -599,6 +601,7 @@ pub fn write_stops(
             geometry_id: sa.geometry_id.clone(),
             level_id: sa.level_id.clone(),
             platform_code: None,
+            address_id: None,
         })
         .with_context(|_| format!("Error reading {:?}", path))?;
     }

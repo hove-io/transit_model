@@ -1,0 +1,5 @@
+address_id,street_name,house_number
+1,rue de Bercy,Face au 9
+2,nation,
+3,boulevard Montparnasse,23
+4,must be sanitized,

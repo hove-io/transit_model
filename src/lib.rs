@@ -65,7 +65,7 @@ mod version_utils;
 pub mod vptranslator;
 
 /// Current version of the NTFS format
-pub const NTFS_VERSION: &str = "0.11.4";
+pub const NTFS_VERSION: &str = "0.12.0";
 
 /// The max distance in meters to compute the transfer
 pub const TRANSFER_MAX_DISTANCE: &str = "300";

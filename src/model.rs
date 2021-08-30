@@ -115,6 +115,7 @@ pub struct Collections {
     pub grid_exception_dates: Collection<GridExceptionDate>,
     pub grid_periods: Collection<GridPeriod>,
     pub grid_rel_calendar_line: Collection<GridRelCalendarLine>,
+    pub addresses: CollectionWithId<Address>,
 }
 
 impl Collections {
@@ -191,6 +192,7 @@ impl Collections {
         let mut level_id_used = HashSet::<String>::new();
         let mut calendars_used = HashSet::<String>::new();
         let mut vjs_used = HashSet::<String>::new();
+        let mut addresses_used = HashSet::<String>::new();
 
         let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
 
@@ -318,6 +320,9 @@ impl Collections {
                         level_id_used.insert(level_id.clone());
                     }
                     comments_used.extend(&mut sp.comment_links.iter().map(|cl| cl.to_string()));
+                    if let Some(address_id) = &sp.address_id {
+                        addresses_used.insert(address_id.clone());
+                    }
                     true
                 } else {
                     log_object_removed("Stop Point", &sp.id);
@@ -485,6 +490,8 @@ impl Collections {
         self.levels
             .retain(|level| level_id_used.contains(&level.id));
         self.calendars.retain(|c| calendars_used.contains(&c.id));
+        self.addresses
+            .retain(|address| addresses_used.contains(&address.id));
 
         self.frequencies = dedup_collection(&mut self.frequencies);
         self.transfers = dedup_collection(&mut self.transfers);
