@@ -694,6 +694,24 @@ impl Collections {
         }
     }
 
+    /// If the vehicle didn't stop (point of route) on pickup,
+    /// it must not stop on drop off and conversely
+    pub fn pickup_drop_off_harmonisation(&mut self) {
+        let vj_idxs: Vec<Idx<VehicleJourney>> =
+            self.vehicle_journeys.iter().map(|(idx, _)| idx).collect();
+        for vj_idx in vj_idxs {
+            let mut vj = self.vehicle_journeys.index_mut(vj_idx);
+            for stop_time in vj
+                .stop_times
+                .iter_mut()
+                .filter(|stop_time| stop_time.pickup_type == 3 || stop_time.drop_off_type == 3)
+            {
+                stop_time.pickup_type = 3;
+                stop_time.drop_off_type = 3;
+            }
+        }
+    }
+
     /// Forbid pickup on last stop point of vehicle journeys and forbid dropoff
     /// on first stop point of vehicle journeys.
     ///
@@ -1427,6 +1445,7 @@ impl Model {
         c.check_geometries_coherence();
         enhancers::adjust_lines_names(&mut c, &lines_to_routes);
         c.enhance_line_opening_time();
+        c.pickup_drop_off_harmonisation();
         c.enhance_pickup_dropoff();
 
         Ok(Model {
@@ -2787,6 +2806,69 @@ mod tests {
             let stop_area = collections.stop_areas.get("stop_area:1").unwrap();
             assert_relative_eq!(stop_area.coord.lon, 0.0);
             assert_relative_eq!(stop_area.coord.lat, 0.0);
+        }
+    }
+
+    mod pickup_dropoff_harmonisation {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn update_pickup_drop_off_type() {
+            let mut collections = Collections::default();
+
+            let stop_point_idx = collections
+                .stop_points
+                .push(StopPoint {
+                    id: "sp1".to_string(),
+                    ..Default::default()
+                })
+                .expect("Failed to create StopPoint sp1");
+            let stop_time_1 = StopTime {
+                stop_point_idx,
+                sequence: 0,
+                arrival_time: Time::new(1, 0, 0),
+                departure_time: Time::new(1, 0, 0),
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 3,
+                datetime_estimated: false,
+                local_zone_id: None,
+                precision: None,
+            };
+            let stop_time_2 = StopTime {
+                stop_point_idx,
+                sequence: 0,
+                arrival_time: Time::new(1, 0, 0),
+                departure_time: Time::new(1, 0, 0),
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 3,
+                drop_off_type: 2,
+                datetime_estimated: false,
+                local_zone_id: None,
+                precision: None,
+            };
+
+            let vj = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times: vec![stop_time_1, stop_time_2],
+                ..Default::default()
+            };
+            collections.vehicle_journeys = CollectionWithId::new(vec![vj])
+                .expect("Failed to create vehicle_journey collection");
+            collections.pickup_drop_off_harmonisation();
+            let vj = collections
+                .vehicle_journeys
+                .get("vj1")
+                .expect("Failed to find vehicle journey vj1");
+            let stop_time = &vj.stop_times[0];
+            assert_eq!(3, stop_time.pickup_type);
+            assert_eq!(3, stop_time.drop_off_type);
+            let stop_time = &vj.stop_times[1];
+            assert_eq!(3, stop_time.pickup_type);
+            assert_eq!(3, stop_time.drop_off_type);
         }
     }
 }
