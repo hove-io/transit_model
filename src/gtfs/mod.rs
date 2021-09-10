@@ -530,7 +530,8 @@ fn remove_stop_zones(model: Model) -> Collections {
 /// in the given directory.
 /// see [NTFS to GTFS conversion](https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
 pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
-    let collections = remove_stop_zones(model);
+    let mut collections = remove_stop_zones(model);
+    collections.remove_points_of_route();
     let model = Model::new(collections)?;
     let path = path.as_ref();
     std::fs::create_dir_all(path)?;

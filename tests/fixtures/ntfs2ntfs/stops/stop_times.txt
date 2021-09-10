@@ -1,6 +1,6 @@
 stop_id,trip_id,stop_sequence,arrival_time,departure_time,boarding_duration,alighting_duration,pickup_type,drop_off_type,datetime_estimated,local_zone_id,stop_headsign,stop_time_id,stop_time_precision
 NATM,M1F1,0,09:00:00,09:00:00,0,0,0,1,0,,,,0
-GDLM,M1F1,1,09:10:00,09:10:00,0,0,0,0,0,,,,0
+GDLM,M1F1,1,09:10:00,09:10:00,0,0,3,3,0,,,,0
 CHAM,M1F1,2,09:20:00,09:20:00,0,0,0,0,0,,,,0
 CDGM,M1F1,3,09:40:00,09:40:00,0,0,1,0,0,,,,0
 CDGM,M1B1,6,10:40:00,10:40:00,0,0,0,1,0,,,,0
@@ -19,6 +19,6 @@ DEFR,RERAB1,5,09:24:00,09:25:00,0,0,0,1,1,,,,2
 CDGR,RERAB1,8,09:39:00,09:40:00,0,0,0,0,0,,,,0
 GDLR,RERAB1,13,09:44:00,09:45:00,0,0,0,0,0,,,,0
 NATR,RERAB1,21,09:49:00,09:50:00,0,0,0,0,0,,,,0
-MTPZ,RERAB1,50,19:24:00,19:25:00,0,0,0,0,1,,,,2
+MTPZ,RERAB1,50,19:24:00,19:25:00,0,0,0,0,0,,,,0
 CDGZ,RERAB1,51,19:26:00,19:27:00,0,0,0,0,0,,,,0
 MTPZ,RERAB1,52,19:34:00,19:35:00,0,0,1,0,1,,,,2
