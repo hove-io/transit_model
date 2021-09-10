@@ -694,6 +694,24 @@ impl Collections {
         }
     }
 
+    /// If the vehicle didn't stop (point of route) on pickup,
+    /// it must not stop on drop off and conversely
+    pub fn pickup_drop_off_harmonisation(&mut self) {
+        let vj_idxs: Vec<Idx<VehicleJourney>> =
+            self.vehicle_journeys.iter().map(|(idx, _)| idx).collect();
+        for vj_idx in vj_idxs {
+            let mut vj = self.vehicle_journeys.index_mut(vj_idx);
+            for stop_time in vj
+                .stop_times
+                .iter_mut()
+                .filter(|stop_time| stop_time.pickup_type == 3 || stop_time.drop_off_type == 3)
+            {
+                stop_time.pickup_type = 3;
+                stop_time.drop_off_type = 3;
+            }
+        }
+    }
+
     /// Forbid pickup on last stop point of vehicle journeys and forbid dropoff
     /// on first stop point of vehicle journeys.
     ///
@@ -1427,6 +1445,7 @@ impl Model {
         c.check_geometries_coherence();
         enhancers::adjust_lines_names(&mut c, &lines_to_routes);
         c.enhance_line_opening_time();
+        c.pickup_drop_off_harmonisation();
         c.enhance_pickup_dropoff();
 
         Ok(Model {
@@ -2787,6 +2806,39 @@ mod tests {
             let stop_area = collections.stop_areas.get("stop_area:1").unwrap();
             assert_relative_eq!(stop_area.coord.lon, 0.0);
             assert_relative_eq!(stop_area.coord.lat, 0.0);
+        }
+    }
+
+    mod pickup_dropoff_harmonisation {
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn update_pickup_drop_off_type() {
+            let model = transit_model_builder::ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.st_mut("SP1", "10:00:00", "10:01:00", |st| {
+                        st.pickup_type = 0;
+                        st.drop_off_type = 3;
+                    })
+                    .st_mut("SP2", "11:00:00", "11:01:00", |st| {
+                        st.pickup_type = 3;
+                        st.drop_off_type = 2;
+                    });
+                })
+                .build();
+
+            let mut collections = model.into_collections();
+            collections.pickup_drop_off_harmonisation();
+            let vj = collections
+                .vehicle_journeys
+                .get("vj1")
+                .expect("Failed to find vehicle journey vj1");
+            let stop_time = &vj.stop_times[0];
+            assert_eq!(3, stop_time.pickup_type);
+            assert_eq!(3, stop_time.drop_off_type);
+            let stop_time = &vj.stop_times[1];
+            assert_eq!(3, stop_time.pickup_type);
+            assert_eq!(3, stop_time.drop_off_type);
         }
     }
 }
