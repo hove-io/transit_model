@@ -2810,54 +2810,24 @@ mod tests {
     }
 
     mod pickup_dropoff_harmonisation {
-        use super::*;
         use pretty_assertions::assert_eq;
 
         #[test]
         fn update_pickup_drop_off_type() {
-            let mut collections = Collections::default();
-
-            let stop_point_idx = collections
-                .stop_points
-                .push(StopPoint {
-                    id: "sp1".to_string(),
-                    ..Default::default()
+            let model = transit_model_builder::ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.st_mut("SP1", "10:00:00", "10:01:00", |st| {
+                        st.pickup_type = 0;
+                        st.drop_off_type = 3;
+                    })
+                    .st_mut("SP2", "11:00:00", "11:01:00", |st| {
+                        st.pickup_type = 3;
+                        st.drop_off_type = 2;
+                    });
                 })
-                .expect("Failed to create StopPoint sp1");
-            let stop_time_1 = StopTime {
-                stop_point_idx,
-                sequence: 0,
-                arrival_time: Time::new(1, 0, 0),
-                departure_time: Time::new(1, 0, 0),
-                boarding_duration: 0,
-                alighting_duration: 0,
-                pickup_type: 0,
-                drop_off_type: 3,
-                datetime_estimated: false,
-                local_zone_id: None,
-                precision: None,
-            };
-            let stop_time_2 = StopTime {
-                stop_point_idx,
-                sequence: 0,
-                arrival_time: Time::new(1, 0, 0),
-                departure_time: Time::new(1, 0, 0),
-                boarding_duration: 0,
-                alighting_duration: 0,
-                pickup_type: 3,
-                drop_off_type: 2,
-                datetime_estimated: false,
-                local_zone_id: None,
-                precision: None,
-            };
+                .build();
 
-            let vj = VehicleJourney {
-                id: "vj1".to_string(),
-                stop_times: vec![stop_time_1, stop_time_2],
-                ..Default::default()
-            };
-            collections.vehicle_journeys = CollectionWithId::new(vec![vj])
-                .expect("Failed to create vehicle_journey collection");
+            let mut collections = model.into_collections();
             collections.pickup_drop_off_harmonisation();
             let vj = collections
                 .vehicle_journeys
