@@ -133,6 +133,20 @@ impl Collections {
         }
     }
 
+    /// Remove stop zone
+    pub fn remove_stop_zones(&mut self) {
+        self.stop_points.retain(|sp| sp.stop_type != StopType::Zone);
+
+        let stop_point_ids: Vec<Idx<StopPoint>> =
+            self.stop_points.get_id_to_idx().values().copied().collect();
+
+        self.vehicle_journeys.retain(|vj| {
+            vj.stop_times
+                .iter()
+                .all(|st| stop_point_ids.contains(&st.stop_point_idx))
+        });
+    }
+
     /// Restrict the validity period of the current `Collections` with the start_date and end_date
     pub fn restrict_period(&mut self, start_date: NaiveDate, end_date: NaiveDate) -> Result<()> {
         let mut calendars = self.calendars.take();

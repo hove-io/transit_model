@@ -16,13 +16,16 @@ use assert_cmd::prelude::*;
 use ntfs2gtfs::add_mode_to_line_code;
 use std::process::Command;
 use tempfile::TempDir;
-use transit_model::test_utils::*;
+use transit_model::{test_utils::*, Model};
 
 #[test]
 fn test_stop_zones_not_exported_and_cleaned() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/input";
-        let model = transit_model::ntfs::read(input).unwrap();
+        let mut collections = transit_model::ntfs::read_collections(input).unwrap();
+        collections.remove_stop_zones();
+        collections.remove_route_points();
+        let model = Model::new(collections).unwrap();
         transit_model::gtfs::write(model, path).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/output");
     });
