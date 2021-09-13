@@ -119,6 +119,20 @@ pub struct Collections {
 }
 
 impl Collections {
+    /// Remove associated schedules with route points
+    pub fn remove_route_points(&mut self) {
+        let vj_idxs: Vec<Idx<VehicleJourney>> =
+            self.vehicle_journeys.iter().map(|(idx, _)| idx).collect();
+        let is_point_of_route = |stop_time: &StopTime| -> bool {
+            stop_time.pickup_type == 3 || stop_time.drop_off_type == 3
+        };
+        for vj_idx in vj_idxs {
+            let mut vj = self.vehicle_journeys.index_mut(vj_idx);
+            vj.stop_times
+                .retain(|stop_time| !is_point_of_route(stop_time));
+        }
+    }
+
     /// Restrict the validity period of the current `Collections` with the start_date and end_date
     pub fn restrict_period(&mut self, start_date: NaiveDate, end_date: NaiveDate) -> Result<()> {
         let mut calendars = self.calendars.take();
@@ -2839,6 +2853,38 @@ mod tests {
             let stop_time = &vj.stop_times[1];
             assert_eq!(3, stop_time.pickup_type);
             assert_eq!(3, stop_time.drop_off_type);
+        }
+
+        #[test]
+        fn remove_pickup_drop_off_type_3() {
+            let model = transit_model_builder::ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.st_mut("SP1", "10:00:00", "10:01:00", |st| {
+                        st.pickup_type = 0;
+                        st.drop_off_type = 1;
+                    })
+                    .st_mut("SP2", "11:00:00", "11:01:00", |st| {
+                        st.pickup_type = 3;
+                        st.drop_off_type = 2;
+                    })
+                    .st_mut("SP3", "12:00:00", "12:01:00", |st| {
+                        st.pickup_type = 3;
+                        st.drop_off_type = 2;
+                    })
+                    .st_mut("SP4", "13:00:00", "13:01:00", |st| {
+                        st.pickup_type = 1;
+                        st.drop_off_type = 0;
+                    });
+                })
+                .build();
+
+            let mut collections = model.into_collections();
+            collections.remove_route_points();
+            let vj = collections
+                .vehicle_journeys
+                .get("vj1")
+                .expect("Failed to find vehicle journey vj1");
+            assert_eq!(2, vj.stop_times.len());
         }
     }
 }
