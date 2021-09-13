@@ -6,6 +6,9 @@ on:
             - 'master'
     pull_request:  # Build any PR
 
+env:
+  CARGO_INCREMENTAL: 0
+
 jobs:
   rustfmt:
     name: Formatting check
