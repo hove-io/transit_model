@@ -123,13 +123,12 @@ impl Collections {
     pub fn remove_route_points(&mut self) {
         let vj_idxs: Vec<Idx<VehicleJourney>> =
             self.vehicle_journeys.iter().map(|(idx, _)| idx).collect();
-        let is_point_of_route = |stop_time: &StopTime| -> bool {
+        let is_route_point = |stop_time: &StopTime| -> bool {
             stop_time.pickup_type == 3 || stop_time.drop_off_type == 3
         };
         for vj_idx in vj_idxs {
             let mut vj = self.vehicle_journeys.index_mut(vj_idx);
-            vj.stop_times
-                .retain(|stop_time| !is_point_of_route(stop_time));
+            vj.stop_times.retain(|stop_time| !is_route_point(stop_time));
         }
     }
 
