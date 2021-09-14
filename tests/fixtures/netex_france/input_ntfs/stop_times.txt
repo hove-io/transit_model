@@ -1,8 +1,9 @@
 trip_id,stop_sequence,stop_id,arrival_time,departure_time,stop_time_id,pickup_type,drop_off_type
 M1F1,0,NATM,00:00:00,00:00:00,,0,0
 M1F1,1,GDLM,00:10:00,00:10:00,,0,0
-M1F1,2,CHAM,00:20:00,00:20:00,,0,0
-M1F1,3,CDGM,00:40:00,00:40:00,,0,0
+M1F1,2,MTPB,00:15:00,00:15:00,,3,3
+M1F1,3,CHAM,00:20:00,00:20:00,,0,0
+M1F1,4,CDGM,00:40:00,00:40:00,,0,0
 M1B1,9,NATM,00:30:00,00:30:00,,0,0
 M1B1,8,GDLM,00:20:00,00:20:00,,0,0
 M1B1,7,CHAM,00:10:00,00:10:00,,0,0
