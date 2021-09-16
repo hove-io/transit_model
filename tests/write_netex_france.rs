@@ -15,7 +15,7 @@
 use std::fs;
 #[cfg(feature = "xmllint")]
 use std::{ffi::OsStr, process::Command};
-use transit_model::{gtfs, model::Model, netex_france, ntfs, test_utils::*};
+use transit_model::{gtfs, model::Model, netex_france, test_utils::*};
 
 fn test_write_netex_france(model: Model) {
     test_in_tmp_dir(|output_dir| {
@@ -46,7 +46,10 @@ fn test_write_netex_france(model: Model) {
 
 #[test]
 fn test_write_netex_france_from_ntfs() {
-    let model = ntfs::read("tests/fixtures/netex_france/input_ntfs").unwrap();
+    let mut collections =
+        transit_model::ntfs::read_collections("tests/fixtures/netex_france/input_ntfs").unwrap();
+    collections.remove_route_points();
+    let model = Model::new(collections).unwrap();
     test_write_netex_france(model);
 }
 

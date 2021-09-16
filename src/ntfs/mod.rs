@@ -181,13 +181,28 @@ pub fn from_dir<P: AsRef<path::Path>>(p: P) -> Result<Model> {
     let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
     read_file_handler(&mut file_handle)
 }
-
 /// Imports a `Model` from a zip file containing the
 /// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
 pub fn from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
     let reader = std::fs::File::open(p.as_ref())?;
     let mut file_handler = read_utils::ZipHandler::new(reader, p)?;
     read_file_handler(&mut file_handler)
+}
+
+/// Imports `Collections` from a zip file containing the
+/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
+pub fn collections_from_zip<P: AsRef<path::Path>>(p: P) -> Result<Collections> {
+    let reader = std::fs::File::open(p.as_ref())?;
+    let mut file_handler = read_utils::ZipHandler::new(reader, p)?;
+    read_collections_file_handler(&mut file_handler)
+}
+
+/// Imports `Collections` from the
+/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
+/// files in the given directory.
+pub fn collections_from_dir<P: AsRef<path::Path>>(p: P) -> Result<Collections> {
+    let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
+    read_collections_file_handler(&mut file_handle)
 }
 
 /// Imports a `Model` from an object implementing `Read` and `Seek` and containing a zip file with a
@@ -235,7 +250,41 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     }
 }
 
+/// Imports `Collections` from the
+/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
+/// files in the given directory.
+/// This method will try to detect if the input is a zipped archive or not.
+/// If the default file type mechanism is not enough, you can use
+/// [from_zip] or [from_dir].
+pub fn read_collections<P: AsRef<path::Path>>(path: P) -> Result<Collections> {
+    let p = path.as_ref();
+    if p.is_file() {
+        // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
+        Ok(collections_from_zip(p)
+            .with_context(|_| format!("impossible to read zipped ntfs {:?}", p))?)
+    } else if p.is_dir() {
+        Ok(collections_from_dir(p)
+            .with_context(|_| format!("impossible to read ntfs directory from {:?}", p))?)
+    } else {
+        Err(failure::format_err!(
+            "file {:?} is neither a file nor a directory, cannot read a ntfs from it",
+            p
+        ))
+    }
+}
+
 fn read_file_handler<H>(file_handler: &mut H) -> Result<Model>
+where
+    for<'a> &'a mut H: read_utils::FileHandler,
+{
+    let collections = read_collections_file_handler(file_handler)?;
+    info!("Indexing");
+    let res = Model::new(collections)?;
+    info!("Loading NTFS done");
+    Ok(res)
+}
+
+fn read_collections_file_handler<H>(file_handler: &mut H) -> Result<Collections>
 where
     for<'a> &'a mut H: read_utils::FileHandler,
 {
@@ -279,10 +328,7 @@ where
     read::manage_object_properties(&mut collections, file_handler)?;
     read::manage_fares_v1(&mut collections, file_handler)?;
     read::manage_companies_on_vj(&mut collections)?;
-    info!("Indexing");
-    let res = Model::new(collections)?;
-    info!("Loading NTFS done");
-    Ok(res)
+    Ok(collections)
 }
 
 /// Exports a `Model` to the

@@ -23,7 +23,7 @@ use tracing_subscriber::{
     layer::SubscriberExt as _,
     util::SubscriberInitExt as _,
 };
-use transit_model::Result;
+use transit_model::{Model, Result};
 
 lazy_static::lazy_static! {
     pub static ref GIT_VERSION: String = transit_model::binary_full_version(env!("CARGO_PKG_VERSION"));
@@ -70,8 +70,10 @@ fn init_logger() {
 
 fn run(opt: Opt) -> Result<()> {
     info!("Launching ntfs2gtfs...");
-    let mut model;
-    model = transit_model::ntfs::read(opt.input)?;
+    let mut collections = transit_model::ntfs::read_collections(opt.input)?;
+    collections.remove_stop_zones();
+    collections.remove_route_points();
+    let mut model = Model::new(collections)?;
 
     if opt.mode_in_route_short_name {
         model = add_mode_to_line_code(model)?;

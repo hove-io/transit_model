@@ -21,7 +21,7 @@ use crate::{
     calendars::{manage_calendars, write_calendar_dates},
     gtfs::read::EquipmentList,
     model::{Collections, Model},
-    objects::{self, Availability, Contributor, Dataset, StopPoint, StopType, Time},
+    objects::{self, Availability, Contributor, Dataset, StopType, Time},
     read_utils,
     utils::*,
     validity_period, AddPrefix, PrefixConfiguration, Result,
@@ -32,7 +32,7 @@ use failure::ResultExt;
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fmt, path::Path};
-use typed_index_collection::{CollectionWithId, Idx};
+use typed_index_collection::CollectionWithId;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Agency {
@@ -504,34 +504,10 @@ struct Route {
     sort_order: Option<u32>,
 }
 
-fn remove_stop_zones(model: Model) -> Collections {
-    let mut collections = model.into_collections();
-    collections
-        .stop_points
-        .retain(|sp| sp.stop_type != StopType::Zone);
-
-    let stop_point_ids: Vec<Idx<StopPoint>> = collections
-        .stop_points
-        .get_id_to_idx()
-        .values()
-        .copied()
-        .collect();
-
-    collections.vehicle_journeys.retain(|vj| {
-        vj.stop_times
-            .iter()
-            .all(|st| stop_point_ids.contains(&st.stop_point_idx))
-    });
-
-    collections
-}
-
 /// Exports a `Model` to [GTFS](https://gtfs.org/reference/static) files
 /// in the given directory.
 /// see [NTFS to GTFS conversion](https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
 pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
-    let collections = remove_stop_zones(model);
-    let model = Model::new(collections)?;
     let path = path.as_ref();
     std::fs::create_dir_all(path)?;
     info!("Writing GTFS to {:?}", path);

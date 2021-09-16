@@ -1,8 +1,9 @@
-trip_id,stop_sequence,stop_id,arrival_time,departure_time,datetime_estimated,stop_time_id,stop_headsign
-trip:1,0,stop:point:1,9:00:00,9:00:00,,stoptime:1,
-trip:1,1,stop:point:2,09:10:00,09:10:00,,stoptime:2,
-trip:2,0,stop:zone:1,9:00:00,9:00:00,,stoptime:3,
-trip:2,1,stop:zone:2,09:10:00,09:10:00,,stoptime:4,
-trip:3,0,stop:point:1,9:00:00,9:00:00,,stoptime:5,
-trip:3,1,stop:zone:2,09:10:00,09:10:00,,stoptime:5,
-trip:3,3,stop:point:2,9:20:00,9:20:00,,stoptime:6,
+trip_id,stop_sequence,stop_id,arrival_time,departure_time,datetime_estimated,stop_time_id,stop_headsign,pickup_type,drop_off_type
+trip:1,0,stop:point:1,9:00:00,9:00:00,,stoptime:1,,0,0
+trip:1,1,stop:point:3,09:05:00,09:05:00,,stoptime:3,,0,3
+trip:1,2,stop:point:2,09:10:00,09:10:00,,stoptime:2,,0,0
+trip:2,0,stop:zone:1,9:00:00,9:00:00,,stoptime:3,,0,0
+trip:2,1,stop:zone:2,09:10:00,09:10:00,,stoptime:4,,0,0
+trip:3,0,stop:point:1,9:00:00,9:00:00,,stoptime:5,,0,0
+trip:3,1,stop:zone:2,09:10:00,09:10:00,,stoptime:5,,0,0
+trip:3,3,stop:point:2,9:20:00,9:20:00,,stoptime:6,,0,0
