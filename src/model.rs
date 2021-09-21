@@ -1907,6 +1907,75 @@ mod tests {
             assert_eq!(0, stop_time.drop_off_type);
         }
 
+        // Example 3... but with route points (should not considered it a valid stay-in case)
+        // This is the same test as above, just adding an additional route-point.
+        #[test]
+        fn stay_in_different_stop_but_with_route_point() {
+            let mut collections = Collections::default();
+            let stop_config = (
+                "block_id_1".to_string(),
+                1,
+                Time::new(10, 0, 0),
+                Time::new(11, 0, 0),
+            );
+            let next_vj_config_config = (
+                "block_id_1".to_string(),
+                2,
+                Time::new(12, 0, 0),
+                Time::new(13, 0, 0),
+            );
+            collections.vehicle_journeys =
+                build_vehicle_journeys(stop_config, next_vj_config_config);
+            let sp4_idx = collections
+                .stop_points
+                .push(StopPoint {
+                    id: String::from("sp4"),
+                    ..Default::default()
+                })
+                .unwrap();
+            let vj_idx = collections.vehicle_journeys.get_idx("vj1").unwrap();
+            let mut vj_mut = collections.vehicle_journeys.index_mut(vj_idx);
+            vj_mut.stop_times.push(StopTime {
+                stop_point_idx: sp4_idx,
+                sequence: 2,
+                arrival_time: Time::new(11, 30, 0),
+                departure_time: Time::new(11, 30, 0),
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 3,
+                drop_off_type: 3,
+                datetime_estimated: true,
+                local_zone_id: None,
+                precision: None,
+            });
+            drop(vj_mut);
+            let mut dates = std::collections::BTreeSet::new();
+            dates.insert(Date::from_ymd(2020, 1, 1));
+            collections.calendars = CollectionWithId::new(vec![Calendar {
+                id: "default_service".to_owned(),
+                dates,
+            }])
+            .unwrap();
+            collections.enhance_pickup_dropoff();
+            let vj1 = collections.vehicle_journeys.get("vj1").unwrap();
+            let stop_time = &vj1.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[2];
+            assert_eq!(3, stop_time.pickup_type);
+            assert_eq!(3, stop_time.drop_off_type);
+            let vj2 = collections.vehicle_journeys.get("vj2").unwrap();
+            let stop_time = &vj2.stop_times[0];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj2.stop_times[1];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+        }
+
         #[test]
         fn forbidden_drop_off_should_be_kept() {
             // if restriction are explicitly set they should not be overriden
