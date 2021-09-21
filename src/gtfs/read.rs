@@ -32,7 +32,7 @@ use failure::{bail, format_err, Error};
 use geo::{LineString, Point};
 use log::{info, warn};
 use serde::Deserialize;
-use skip_error::{skip_error_and_log, SkipError};
+use skip_error::{skip_error_and_warn, SkipError};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
 use typed_index_collection::{impl_id, Collection, CollectionWithId, Idx};
@@ -744,10 +744,8 @@ where
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
             StopLocationType::StopPoint => {
-                let mut stop_point = skip_error_and_log!(
-                    objects::StopPoint::try_from(stop.clone()),
-                    tracing::Level::WARN
-                );
+                let mut stop_point =
+                    skip_error_and_warn!(objects::StopPoint::try_from(stop.clone()));
                 if stop.parent_station.is_none() {
                     let stop_area = objects::StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
@@ -758,17 +756,13 @@ where
                 stop_points.push(stop_point);
             }
             StopLocationType::StopArea => {
-                let mut stop_area =
-                    skip_error_and_log!(objects::StopArea::try_from(stop), tracing::Level::WARN);
+                let mut stop_area = skip_error_and_warn!(objects::StopArea::try_from(stop));
                 stop_area.comment_links = comment_links;
                 stop_area.equipment_id = equipment_id;
                 stop_areas.push(stop_area);
             }
             _ => {
-                let mut stop_location = skip_error_and_log!(
-                    objects::StopLocation::try_from(stop),
-                    tracing::Level::WARN
-                );
+                let mut stop_location = skip_error_and_warn!(objects::StopLocation::try_from(stop));
                 stop_location.comment_links = comment_links;
                 stop_location.equipment_id = equipment_id;
                 stop_locations.push(stop_location);
@@ -793,43 +787,37 @@ where
     let gtfs_pathways = read_objects_loose::<_, Pathway>(file_handler, file, false)?;
     let mut pathways = vec![];
     for mut pathway in gtfs_pathways {
-        pathway.from_stop_type = skip_error_and_log!(
-            collections
-                .stop_points
+        pathway.from_stop_type = skip_error_and_warn!(collections
+            .stop_points
+            .get(&pathway.from_stop_id)
+            .map(|st| st.stop_type.clone())
+            .or_else(|| collections
+                .stop_locations
                 .get(&pathway.from_stop_id)
-                .map(|st| st.stop_type.clone())
-                .or_else(|| collections
-                    .stop_locations
-                    .get(&pathway.from_stop_id)
-                    .map(|sl| sl.stop_type.clone()))
-                .ok_or_else(|| {
-                    format_err!(
-                        "Problem reading {:?}: from_stop_id={:?} not found",
-                        file,
-                        pathway.from_stop_id
-                    )
-                }),
-            tracing::Level::WARN
-        );
+                .map(|sl| sl.stop_type.clone()))
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: from_stop_id={:?} not found",
+                    file,
+                    pathway.from_stop_id
+                )
+            }));
 
-        pathway.to_stop_type = skip_error_and_log!(
-            collections
-                .stop_points
+        pathway.to_stop_type = skip_error_and_warn!(collections
+            .stop_points
+            .get(&pathway.to_stop_id)
+            .map(|st| st.stop_type.clone())
+            .or_else(|| collections
+                .stop_locations
                 .get(&pathway.to_stop_id)
-                .map(|st| st.stop_type.clone())
-                .or_else(|| collections
-                    .stop_locations
-                    .get(&pathway.to_stop_id)
-                    .map(|sl| sl.stop_type.clone()))
-                .ok_or_else(|| {
-                    format_err!(
-                        "Problem reading {:?}: to_stop_id={:?} not found",
-                        file,
-                        pathway.to_stop_id
-                    )
-                }),
-            tracing::Level::WARN
-        );
+                .map(|sl| sl.stop_type.clone()))
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: to_stop_id={:?} not found",
+                    file,
+                    pathway.to_stop_id
+                )
+            }));
         pathways.push(pathway);
     }
     collections.pathways = CollectionWithId::new(pathways)?;
@@ -869,14 +857,9 @@ where
                     .map(|stop_point| vec![stop_point])
             }
         };
-        let from_stop_points = skip_error_and_log!(
-            expand_stop_area(transfer.from_stop_id.as_str()),
-            tracing::Level::WARN
-        );
-        let to_stop_points = skip_error_and_log!(
-            expand_stop_area(transfer.to_stop_id.as_str()),
-            tracing::Level::WARN
-        );
+        let from_stop_points =
+            skip_error_and_warn!(expand_stop_area(transfer.from_stop_id.as_str()));
+        let to_stop_points = skip_error_and_warn!(expand_stop_area(transfer.to_stop_id.as_str()));
         for from_stop_point in &from_stop_points {
             let approx = from_stop_point.coord.approx();
             for to_stop_point in &to_stop_points {
@@ -1118,7 +1101,7 @@ fn make_ntfs_vehicle_journeys(
         trips
             .iter()
             .map(|t| t.to_ntfs_vehicle_journey(routes, dataset, &property_id, networks))
-            .skip_error_and_log(tracing::Level::WARN)
+            .skip_error_and_warn()
             .for_each(|vj| vehicle_journeys.push(vj));
     }
 
@@ -1220,17 +1203,14 @@ where
             FrequencyPrecision::Exact => false,
             FrequencyPrecision::Inexact => true,
         };
-        let corresponding_vj = skip_error_and_log!(
-            collections
-                .vehicle_journeys
-                .get(&frequency.trip_id)
-                .cloned()
-                .ok_or_else(|| format_err!(
-                    "frequency mapped to an unexisting trip {:?}",
-                    frequency.trip_id
-                )),
-            tracing::Level::WARN
-        );
+        let corresponding_vj = skip_error_and_warn!(collections
+            .vehicle_journeys
+            .get(&frequency.trip_id)
+            .cloned()
+            .ok_or_else(|| format_err!(
+                "frequency mapped to an unexisting trip {:?}",
+                frequency.trip_id
+            )));
         let mut start_time = frequency.start_time;
         let mut arrival_time_delta = match corresponding_vj.stop_times.iter().min() {
             None => {

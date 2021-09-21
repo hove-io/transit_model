@@ -23,7 +23,7 @@ use geo::MultiPoint;
 use log::{debug, warn};
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
-use skip_error::skip_error_and_log;
+use skip_error::skip_error_and_warn;
 use std::{
     cmp::{self, Ordering, Reverse},
     collections::{hash_map::DefaultHasher, BTreeMap, HashMap, HashSet},
@@ -683,14 +683,11 @@ impl Collections {
                     let mut closing_timetable = TimeTable::new();
                     if let Some(vjs_idx) = vjs_by_line.get(&line.id) {
                         for vj_idx in vjs_idx {
-                            skip_error_and_log!(
-                                fill_timetables(
-                                    &self.vehicle_journeys[*vj_idx],
-                                    &mut opening_timetable,
-                                    &mut closing_timetable,
-                                ),
-                                tracing::Level::WARN
-                            );
+                            skip_error_and_warn!(fill_timetables(
+                                &self.vehicle_journeys[*vj_idx],
+                                &mut opening_timetable,
+                                &mut closing_timetable,
+                            ));
                         }
                     }
                     line.opening_time = find_main_hole_boundaries(&opening_timetable)
@@ -1190,10 +1187,11 @@ impl Collections {
             let no_route_name = route.name.is_empty();
             let no_destination_id = route.destination_id.is_none();
             if no_route_name || no_destination_id {
-                let (origin, destination) = skip_error_and_log!(
-                    find_best_origin_destination(route_idx, self, routes_to_vehicle_journeys,),
-                    tracing::Level::WARN
-                );
+                let (origin, destination) = skip_error_and_warn!(find_best_origin_destination(
+                    route_idx,
+                    self,
+                    routes_to_vehicle_journeys,
+                ));
                 if no_route_name
                     && !origin.name.trim().is_empty()
                     && !destination.name.trim().is_empty()

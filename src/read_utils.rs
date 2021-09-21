@@ -271,7 +271,7 @@ where
             let objects = rdr
                 .deserialize()
                 .map(|object| object.with_context(|_| format!("Error reading {:?}", path)))
-                .skip_error_and_log(tracing::Level::WARN)
+                .skip_error_and_warn()
                 .collect();
             Ok(objects)
         }

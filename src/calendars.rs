@@ -28,7 +28,7 @@ use chrono::{self, Datelike, Weekday};
 use failure::{bail, format_err, ResultExt};
 use log::info;
 use serde::{Deserialize, Serialize};
-use skip_error::skip_error_and_log;
+use skip_error::skip_error_and_warn;
 use std::collections::BTreeSet;
 use std::path;
 use typed_index_collection::*;
@@ -177,13 +177,10 @@ where
     for calendar in ntfs_calendars {
         let dates = calendar.get_valid_dates();
         if !dates.is_empty() {
-            skip_error_and_log!(
-                calendars.push(objects::Calendar {
-                    id: calendar.id.clone(),
-                    dates,
-                }),
-                tracing::Level::WARN
-            );
+            skip_error_and_warn!(calendars.push(objects::Calendar {
+                id: calendar.id.clone(),
+                dates,
+            }));
         }
     }
     collections.calendars = calendars;
@@ -204,13 +201,9 @@ pub fn write_calendar_dates(
     for c in calendars.values() {
         let translation = translate(&c.dates);
         if !translation.operating_days.is_empty() {
-            let validity_period = skip_error_and_log!(
-                translation.validity_period.ok_or_else(|| format_err!(
-                    "Validity period not found for service id {}",
-                    c.id.clone()
-                )),
-                tracing::Level::WARN
-            );
+            let validity_period = skip_error_and_warn!(translation.validity_period.ok_or_else(
+                || format_err!("Validity period not found for service id {}", c.id.clone())
+            ));
             translations.push(Calendar {
                 id: c.id.clone(),
                 monday: translation.operating_days.contains(&Weekday::Mon),
