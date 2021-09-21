@@ -817,11 +817,15 @@ impl Collections {
         let can_chain_without_overlap = |prev_vj: &VehicleJourney, next_vj: &VehicleJourney| {
             let last_stop = &prev_vj.stop_times.last();
             let first_stop = &next_vj.stop_times.first();
-            match (last_stop, first_stop) {
-                // We can discard when the stop points are identicals (see Example 1 above) or when there is no stop point
-                (Some(last_stop), Some(first_stop))
-                    if last_stop.stop_point_idx != first_stop.stop_point_idx =>
+            if let (Some(last_stop), Some(first_stop)) = (last_stop, first_stop) {
+                if last_stop.pickup_type == 3
+                    || first_stop.pickup_type == 3
+                    || last_stop.drop_off_type == 3
+                    || first_stop.drop_off_type == 3
                 {
+                    return false;
+                }
+                if last_stop.stop_point_idx != first_stop.stop_point_idx {
                     match (
                         self.calendars.get(&prev_vj.service_id),
                         self.calendars.get(&next_vj.service_id),
@@ -830,15 +834,15 @@ impl Collections {
                             // The stay-in is not really possible when timing overlaps
                             // between arrival of first vehicle journey and departure of
                             // next vehicle journey (see Example 2 above).
-                            last_stop.departure_time <= first_stop.arrival_time
+                            return last_stop.departure_time <= first_stop.arrival_time
                             // for the stay-in to be possible the vj should have at least one date in common
-                                && prev.overlaps(next)
+                                && prev.overlaps(next);
                         }
-                        _ => false,
+                        _ => return false,
                     }
                 }
-                _ => false,
             }
+            false
         };
         type BlockId = String;
         let mut vj_by_blocks =
@@ -869,16 +873,23 @@ impl Collections {
 
         let vj_idxs: Vec<Idx<VehicleJourney>> =
             self.vehicle_journeys.iter().map(|(idx, _)| idx).collect();
+        let is_route_point =
+            |stop_time: &StopTime| stop_time.pickup_type == 3 || stop_time.drop_off_type == 3;
         for vj_idx in vj_idxs {
             let mut vj = self.vehicle_journeys.index_mut(vj_idx);
 
             if !allowed_first_drop_off_vj.contains(&vj_idx) {
-                if let Some(st) = vj.stop_times.first_mut() {
+                if let Some(st) = vj.stop_times.iter_mut().find(|st| !is_route_point(*st)) {
                     st.drop_off_type = 1;
                 }
             }
             if !allowed_last_pick_up_vj.contains(&vj_idx) {
-                if let Some(st) = vj.stop_times.last_mut() {
+                if let Some(st) = vj
+                    .stop_times
+                    .iter_mut()
+                    .rev()
+                    .find(|st| !is_route_point(*st))
+                {
                     st.pickup_type = 1;
                 }
             }
@@ -2160,6 +2171,37 @@ mod tests {
             let stop_time = &vj3.stop_times.last().unwrap();
             assert_eq!(1, stop_time.pickup_type);
             assert_eq!(0, stop_time.drop_off_type);
+        }
+
+        #[test]
+        fn ignore_route_points() {
+            let model = transit_model_builder::ModelBuilder::default()
+                .vj("VJ1:1", |vj| {
+                    vj.st_mut("SP1", "10:00:00", "10:01:00", |st| {
+                        st.pickup_type = 3;
+                        st.drop_off_type = 3;
+                    })
+                    .st("SP2", "10:30:00", "10:31:00")
+                    .st("SP3", "11:00:00", "11:01:00")
+                    .st_mut("SP4", "11:30:00", "11:31:00", |st| {
+                        st.pickup_type = 3;
+                        st.drop_off_type = 3;
+                    });
+                })
+                .build();
+            let vj1 = model.vehicle_journeys.get("VJ1:1").unwrap();
+            let stop_time = &vj1.stop_times[0];
+            assert_eq!(3, stop_time.pickup_type);
+            assert_eq!(3, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[1];
+            assert_eq!(0, stop_time.pickup_type);
+            assert_eq!(1, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[2];
+            assert_eq!(1, stop_time.pickup_type);
+            assert_eq!(0, stop_time.drop_off_type);
+            let stop_time = &vj1.stop_times[3];
+            assert_eq!(3, stop_time.pickup_type);
+            assert_eq!(3, stop_time.drop_off_type);
         }
     }
 
