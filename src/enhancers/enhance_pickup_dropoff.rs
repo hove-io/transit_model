@@ -274,19 +274,19 @@ mod tests {
     #[test]
     fn no_stay_in() {
         let mut collections = Collections::default();
-        let stop_config = (
+        let prev_vj_config = (
             "block_id_1".to_string(),
             1,
             Time::new(10, 0, 0),
             Time::new(11, 0, 0),
         );
-        let next_vj_config_config = (
+        let next_vj_config = (
             "block_id_2".to_string(),
             2,
             Time::new(10, 0, 0),
             Time::new(11, 0, 0),
         );
-        collections.vehicle_journeys = build_vehicle_journeys(stop_config, next_vj_config_config);
+        collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         enhance_pickup_dropoff(&mut collections);
         let vj1 = collections.vehicle_journeys.get("vj1").unwrap();
         let stop_time = &vj1.stop_times[0];
@@ -308,19 +308,19 @@ mod tests {
     #[test]
     fn stay_in_same_stop() {
         let mut collections = Collections::default();
-        let stop_config = (
+        let prev_vj_config = (
             "block_id_1".to_string(),
             1,
             Time::new(10, 0, 0),
             Time::new(11, 0, 0),
         );
-        let next_vj_config_config = (
+        let next_vj_config = (
             "block_id_1".to_string(),
             1,
             Time::new(10, 0, 0),
             Time::new(11, 0, 0),
         );
-        collections.vehicle_journeys = build_vehicle_journeys(stop_config, next_vj_config_config);
+        collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
         dates.insert(Date::from_ymd(2020, 1, 1));
         collections.calendars = CollectionWithId::new(vec![Calendar {
@@ -349,19 +349,19 @@ mod tests {
     #[test]
     fn stay_in_different_stop_overlapping_time() {
         let mut collections = Collections::default();
-        let stop_config = (
+        let prev_vj_config = (
             "block_id_1".to_string(),
             1,
             Time::new(10, 0, 0),
             Time::new(12, 0, 0),
         );
-        let next_vj_config_config = (
+        let next_vj_config = (
             "block_id_1".to_string(),
             2,
             Time::new(11, 0, 0),
             Time::new(13, 0, 0),
         );
-        collections.vehicle_journeys = build_vehicle_journeys(stop_config, next_vj_config_config);
+        collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
         dates.insert(Date::from_ymd(2020, 1, 1));
         collections.calendars = CollectionWithId::new(vec![Calendar {
@@ -390,19 +390,19 @@ mod tests {
     #[test]
     fn stay_in_different_stop() {
         let mut collections = Collections::default();
-        let stop_config = (
+        let prev_vj_config = (
             "block_id_1".to_string(),
             1,
             Time::new(10, 0, 0),
             Time::new(11, 0, 0),
         );
-        let next_vj_config_config = (
+        let next_vj_config = (
             "block_id_1".to_string(),
             2,
             Time::new(12, 0, 0),
             Time::new(13, 0, 0),
         );
-        collections.vehicle_journeys = build_vehicle_journeys(stop_config, next_vj_config_config);
+        collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
         dates.insert(Date::from_ymd(2020, 1, 1));
         collections.calendars = CollectionWithId::new(vec![Calendar {
@@ -432,19 +432,19 @@ mod tests {
     #[test]
     fn stay_in_different_stop_but_with_route_point() {
         let mut collections = Collections::default();
-        let stop_config = (
+        let prev_vj_config = (
             "block_id_1".to_string(),
             1,
             Time::new(10, 0, 0),
             Time::new(11, 0, 0),
         );
-        let next_vj_config_config = (
+        let next_vj_config = (
             "block_id_1".to_string(),
             2,
             Time::new(12, 0, 0),
             Time::new(13, 0, 0),
         );
-        collections.vehicle_journeys = build_vehicle_journeys(stop_config, next_vj_config_config);
+        collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let sp4_idx = collections
             .stop_points
             .push(StopPoint {
