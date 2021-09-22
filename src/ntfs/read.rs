@@ -22,7 +22,7 @@ use crate::Result;
 use failure::{bail, ensure, format_err, ResultExt};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
-use skip_error::skip_error_and_log;
+use skip_error::{skip_error_and_error, skip_error_and_warn};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
@@ -163,27 +163,20 @@ where
     for stop in stops {
         match stop.location_type {
             StopLocationType::StopPoint | StopLocationType::GeographicArea => {
-                let mut stop_point =
-                    skip_error_and_log!(StopPoint::try_from(stop.clone()), tracing::Level::WARN);
+                let mut stop_point = skip_error_and_warn!(StopPoint::try_from(stop.clone()));
                 if stop.parent_station.is_none() {
                     let mut stop_area = StopArea::from(stop_point.clone());
                     stop_point.stop_area_id = stop_area.id.clone();
                     stop_area.visible = stop.location_type == StopLocationType::StopPoint;
-                    skip_error_and_log!(stop_areas.push(stop_area), tracing::Level::WARN);
+                    skip_error_and_warn!(stop_areas.push(stop_area));
                 };
-                skip_error_and_log!(stop_points.push(stop_point), tracing::Level::WARN);
+                skip_error_and_warn!(stop_points.push(stop_point));
             }
             StopLocationType::StopArea => {
-                skip_error_and_log!(
-                    stop_areas.push(StopArea::try_from(stop)?),
-                    tracing::Level::WARN
-                );
+                skip_error_and_warn!(stop_areas.push(StopArea::try_from(stop)?));
             }
             _ => {
-                skip_error_and_log!(
-                    stop_locations.push(StopLocation::try_from(stop)?),
-                    tracing::Level::WARN
-                );
+                skip_error_and_warn!(stop_locations.push(StopLocation::try_from(stop)?));
             }
         }
     }
@@ -338,7 +331,7 @@ where
     collections.stop_time_ids = stop_time_ids;
     let mut vehicle_journeys = collections.vehicle_journeys.take();
     for vj in &mut vehicle_journeys {
-        skip_error_and_log!(vj.sort_and_check_stop_times(), tracing::Level::ERROR);
+        skip_error_and_error!(vj.sort_and_check_stop_times());
     }
     collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     Ok(())
@@ -602,7 +595,7 @@ where
 {
     let mut geometries: CollectionWithId<Geometry> = CollectionWithId::default();
     for geo in read_objects_loose::<_, Geometry>(file_handler, "geometries.txt", false)? {
-        skip_error_and_log!(geometries.push(geo), tracing::Level::WARN);
+        skip_error_and_warn!(geometries.push(geo));
     }
     collections.geometries = geometries;
     Ok(())
@@ -639,43 +632,37 @@ where
     let mut pathways: CollectionWithId<Pathway> = CollectionWithId::default();
     let ntfs_pathways = read_objects_loose::<_, Pathway>(file_handler, file, false)?;
     for mut pathway in ntfs_pathways {
-        pathway.from_stop_type = skip_error_and_log!(
-            collections
-                .stop_points
+        pathway.from_stop_type = skip_error_and_warn!(collections
+            .stop_points
+            .get(&pathway.from_stop_id)
+            .map(|st| st.stop_type.clone())
+            .or_else(|| collections
+                .stop_locations
                 .get(&pathway.from_stop_id)
-                .map(|st| st.stop_type.clone())
-                .or_else(|| collections
-                    .stop_locations
-                    .get(&pathway.from_stop_id)
-                    .map(|sl| sl.stop_type.clone()))
-                .ok_or_else(|| {
-                    format_err!(
-                        "Problem reading {:?}: from_stop_id={:?} not found",
-                        file,
-                        pathway.from_stop_id
-                    )
-                }),
-            tracing::Level::WARN
-        );
-        pathway.to_stop_type = skip_error_and_log!(
-            collections
-                .stop_points
+                .map(|sl| sl.stop_type.clone()))
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: from_stop_id={:?} not found",
+                    file,
+                    pathway.from_stop_id
+                )
+            }));
+        pathway.to_stop_type = skip_error_and_warn!(collections
+            .stop_points
+            .get(&pathway.to_stop_id)
+            .map(|st| st.stop_type.clone())
+            .or_else(|| collections
+                .stop_locations
                 .get(&pathway.to_stop_id)
-                .map(|st| st.stop_type.clone())
-                .or_else(|| collections
-                    .stop_locations
-                    .get(&pathway.to_stop_id)
-                    .map(|sl| sl.stop_type.clone()))
-                .ok_or_else(|| {
-                    format_err!(
-                        "Problem reading {:?}: to_stop_id={:?} not found",
-                        file,
-                        pathway.to_stop_id
-                    )
-                }),
-            tracing::Level::WARN
-        );
-        skip_error_and_log!(pathways.push(pathway), tracing::Level::WARN);
+                .map(|sl| sl.stop_type.clone()))
+            .ok_or_else(|| {
+                format_err!(
+                    "Problem reading {:?}: to_stop_id={:?} not found",
+                    file,
+                    pathway.to_stop_id
+                )
+            }));
+        skip_error_and_warn!(pathways.push(pathway));
     }
 
     collections.pathways = pathways;
