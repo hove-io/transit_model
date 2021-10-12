@@ -29,9 +29,9 @@ use crate::{
 use chrono_tz::Tz;
 use derivative::Derivative;
 use failure::ResultExt;
-use log::info;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fmt, path::Path};
+use tracing::info;
 use typed_index_collection::CollectionWithId;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]

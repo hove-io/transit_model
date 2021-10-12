@@ -15,9 +15,9 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::{DateTime, FixedOffset, NaiveDate};
-use log::info;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use tracing::info;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
     layer::SubscriberExt as _,

@@ -26,11 +26,11 @@ use crate::vptranslator::translate;
 use crate::Result;
 use chrono::{self, Datelike, Weekday};
 use failure::{bail, format_err, ResultExt};
-use log::info;
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_warn;
 use std::collections::BTreeSet;
 use std::path;
+use tracing::info;
 use typed_index_collection::*;
 
 /// Structure to serialize/deserialize the file calendar_dates.txt

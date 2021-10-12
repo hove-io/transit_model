@@ -21,13 +21,13 @@ use crate::{
     Model, Result,
 };
 use failure::format_err;
-use log::warn;
 use minidom::{Element, Node};
 use proj::Proj;
 use std::{
     borrow::Borrow,
     collections::{BTreeSet, HashMap},
 };
+use tracing::warn;
 
 // `stop_point_modes` is storing all the modes for a StopPoint.
 //

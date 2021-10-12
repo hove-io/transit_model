@@ -20,11 +20,11 @@ use crate::NTFS_VERSION;
 use chrono::{DateTime, Duration, FixedOffset};
 use csv::Writer;
 use failure::{bail, format_err, ResultExt};
-use log::{info, warn};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
 use std::collections::{BTreeSet, HashMap};
 use std::fs::File;
 use std::path;
+use tracing::{info, warn};
 use typed_index_collection::{Collection, CollectionWithId, Id};
 
 pub fn write_feed_infos(

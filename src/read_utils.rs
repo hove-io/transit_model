@@ -18,13 +18,13 @@ use crate::{
     Result,
 };
 use failure::{bail, format_err, ResultExt};
-use log::info;
 use serde::Deserialize;
 use skip_error::SkipError;
 use std::path;
 use std::path::{Path, PathBuf};
 use std::{collections::BTreeMap, io::Read};
 use std::{fs::File, io::Seek};
+use tracing::info;
 use typed_index_collection::{CollectionWithId, Id};
 
 #[derive(Deserialize, Debug)]
