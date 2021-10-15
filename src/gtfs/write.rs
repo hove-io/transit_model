@@ -23,11 +23,11 @@ use crate::objects::*;
 use crate::Result;
 use failure::ResultExt;
 use geo::Geometry as GeoGeometry;
-use log::{info, warn};
 use relational_types::IdxSet;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path;
+use tracing::{info, warn};
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) -> Result<()> {

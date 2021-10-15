@@ -20,11 +20,11 @@ use crate::read_utils::{read_objects, read_objects_loose, FileHandler};
 use crate::utils;
 use crate::Result;
 use failure::{bail, ensure, format_err, ResultExt};
-use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use skip_error::{skip_error_and_error, skip_error_and_warn};
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use tracing::{error, info, warn};
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 impl TryFrom<Stop> for StopArea {
@@ -899,7 +899,7 @@ mod tests {
             testing_logger::validate(|captured_logs| {
                 let error_log = captured_logs
                     .iter()
-                    .find(|captured_log| captured_log.level == log::Level::Error)
+                    .find(|captured_log| captured_log.level == tracing::log::Level::Error)
                     .expect("log error expected");
                 assert!(error_log
                     .body
@@ -924,7 +924,7 @@ mod tests {
             testing_logger::validate(|captured_logs| {
                 let error_log = captured_logs
                     .iter()
-                    .find(|captured_log| captured_log.level == log::Level::Error)
+                    .find(|captured_log| captured_log.level == tracing::log::Level::Error)
                     .expect("log error expected");
                 assert!(error_log.body.contains(
                     "incoherent stop times \'2\' at time \'06:06:27\' for the trip \'1\'"

@@ -22,11 +22,11 @@ use crate::{
     Model, Result,
 };
 use failure::format_err;
-use log::warn;
 use minidom::{Element, Node};
 use proj::Proj;
 use relational_types::IdxSet;
 use std::collections::BTreeMap;
+use tracing::warn;
 use typed_index_collection::Idx;
 
 // A journey pattern is the sequence of stops of a particular trip.

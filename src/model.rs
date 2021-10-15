@@ -20,7 +20,6 @@ use derivative::Derivative;
 use failure::{bail, format_err};
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
-use log::{debug, warn};
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_warn;
@@ -31,6 +30,7 @@ use std::{
     hash::{Hash, Hasher},
     ops,
 };
+use tracing::{debug, warn};
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 /// Physical mode for Air

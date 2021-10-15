@@ -18,12 +18,12 @@ use crate::{
 };
 use chrono::NaiveDate;
 use failure::ResultExt;
-use log::{debug, error, info};
 use rust_decimal::Decimal;
 use skip_error::skip_error_and_warn;
 use std::fs;
 use std::io::{Read, Write};
 use std::path;
+use tracing::{debug, error, info};
 use typed_index_collection::{Collection, CollectionWithId, Id};
 use walkdir::WalkDir;
 use wkt::ToWkt;

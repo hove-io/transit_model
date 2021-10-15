@@ -13,7 +13,6 @@ keywords = ["ntfs", "transit"]
 
 [dependencies]
 chrono = "0.4"
-log = "0.4"
 structopt = "0.3"
 tracing = { version = "0.1", features = ["log", "release_max_level_info"] }
 tracing-log = "0.1"

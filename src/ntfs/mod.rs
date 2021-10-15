@@ -30,10 +30,10 @@ use chrono::{DateTime, FixedOffset};
 use chrono_tz::Tz;
 use derivative::Derivative;
 use failure::ResultExt;
-use log::info;
 use serde::{Deserialize, Serialize};
 use std::path;
 use tempfile::tempdir;
+use tracing::info;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct StopTime {

@@ -12,7 +12,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use log::Level as LogLevel;
 use pretty_assertions::assert_eq;
 use relational_types::IdxSet;
 use std::collections::HashMap;
@@ -423,7 +422,7 @@ fn ntfs_with_duplicated_ids() {
     testing_logger::validate(|captured_logs| {
         let captured_warn_logs = captured_logs
             .iter()
-            .filter(|log| log.level == LogLevel::Warn)
+            .filter(|log| log.level == tracing::log::Level::Warn)
             .collect::<Vec<_>>();
         assert_eq!(19, captured_warn_logs.len());
         let expected_logs = vec![

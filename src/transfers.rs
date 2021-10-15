@@ -19,8 +19,8 @@ use crate::{
     objects::{Coord, StopPoint, Transfer},
     Result,
 };
-use log::{info, warn};
 use std::collections::HashMap;
+use tracing::{info, warn};
 use typed_index_collection::{Collection, CollectionWithId, Idx};
 
 type TransferMap = HashMap<(Idx<StopPoint>, Idx<StopPoint>), Transfer>;

@@ -30,11 +30,11 @@ use crate::{
 use derivative::Derivative;
 use failure::{bail, format_err, Error};
 use geo::{LineString, Point};
-use log::{info, warn};
 use serde::Deserialize;
 use skip_error::{skip_error_and_warn, SkipError};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
+use tracing::{info, warn};
 use typed_index_collection::{impl_id, Collection, CollectionWithId, Idx};
 
 fn default_agency_id() -> String {
@@ -506,11 +506,11 @@ fn interpolate_undefined_stop_times(
         // if only one in departure/arrival value is defined, we set it to the other value
         let (departure_time, arrival_time) = match (st.departure_time, st.arrival_time) {
             (Some(departure_time), None) => {
-                log::debug!("for vj '{}', stop time n° {} has no arrival defined, we set it to its departure value", vj_id, st.stop_sequence);
+                tracing::debug!("for vj '{}', stop time n° {} has no arrival defined, we set it to its departure value", vj_id, st.stop_sequence);
                 (departure_time, departure_time)
             }
             (None, Some(arrival_time)) => {
-                log::debug!("for vj '{}', stop time n° {} has no departure defined, we set it to its arrival value", vj_id, st.stop_sequence);
+                tracing::debug!("for vj '{}', stop time n° {} has no departure defined, we set it to its arrival value", vj_id, st.stop_sequence);
                 (arrival_time, arrival_time)
             }
             (Some(departure_time), Some(arrival_time)) => (departure_time, arrival_time),
@@ -1433,11 +1433,10 @@ mod tests {
             super::read_agency(&mut handler).unwrap();
             testing_logger::validate(|captured_logs| {
                 assert_eq!(captured_logs.len(), 2);
-                assert_eq!(
-                    captured_logs[1].body,
+                assert!(captured_logs[1].body.contains(
                     "different agency timezone: Europe/London (id_1) - Europe/Paris (id_2)"
-                );
-                assert_eq!(captured_logs[1].level, log::Level::Warn);
+                ));
+                assert_eq!(captured_logs[1].level, tracing::log::Level::Warn);
             });
         });
     }

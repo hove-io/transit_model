@@ -25,7 +25,6 @@ use crate::{
 };
 use chrono::prelude::*;
 use failure::format_err;
-use log::info;
 use minidom::{Element, Node};
 use minidom_writer::ElementWriter;
 use proj::Proj;
@@ -37,6 +36,7 @@ use std::{
     iter,
     path::Path,
 };
+use tracing::info;
 use typed_index_collection::Idx;
 
 const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";

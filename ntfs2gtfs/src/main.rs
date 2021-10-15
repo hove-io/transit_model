@@ -14,10 +14,10 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use log::info;
 use ntfs2gtfs::add_mode_to_line_code;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use tracing::info;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
     layer::SubscriberExt as _,
