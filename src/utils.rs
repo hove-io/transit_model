@@ -121,7 +121,7 @@ where
     T: serde::Deserialize<'de>,
 {
     use serde::Deserialize;
-    Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_else(Default::default))
+    Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_default())
 }
 
 pub fn ser_option_u32_with_default<S>(value: &Option<u32>, serializer: S) -> Result<S::Ok, S::Error>
@@ -147,7 +147,7 @@ pub fn de_without_slashes<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    de_option_without_slashes(deserializer).map(|opt| opt.unwrap_or_else(Default::default))
+    de_option_without_slashes(deserializer).map(|opt| opt.unwrap_or_default())
 }
 
 pub fn de_option_without_slashes<'de, D>(de: D) -> Result<Option<String>, D::Error>
@@ -165,7 +165,7 @@ where
     Option<T>: serde::Deserialize<'de>,
     T: Default,
 {
-    de_with_invalid_option(de).map(|opt| opt.unwrap_or_else(Default::default))
+    de_with_invalid_option(de).map(|opt| opt.unwrap_or_default())
 }
 
 pub fn de_wkt<'de, D>(deserializer: D) -> Result<geo::Geometry<f64>, D::Error>
