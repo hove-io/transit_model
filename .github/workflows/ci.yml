@@ -85,37 +85,3 @@ jobs:
         "pretext": "`transit_model CI` requires your attention!",
         "text":" :warning: Tests failed!","color":"#D00000",
         "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
-
-  coverage:
-    name: Code coverage
-    runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj7.2.1
-    steps:
-    - uses: actions/checkout@master
-    - name: Checkout Submodules
-      uses: textbook/git-checkout-submodule-action@2.1.1
-    - name: Install xmllint
-      run: apt update && apt install --yes libxml2-utils pkg-config libssl-dev
-    - name: Install `cargo-tarpaulin`
-      uses: actions-rs/cargo@v1
-      with:
-        command: install
-        args: cargo-tarpaulin --version 0.16.0
-    - name: Run tests for coverage
-      uses: actions-rs/cargo@v1
-      with:
-        command: tarpaulin
-        args: --all-features --all-targets --workspace --count --out Xml --run-types AllTargets
-    - name: Codecov upload
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-    - name: slack notification (the job has failed)
-      if: failure() && github.ref == 'ref/head/master'
-      run: |
-        curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
-      env:
-        SLACK_TEXT: '{"attachments":[{
-        "pretext": "`transit_model CI` requires your attention!",
-        "text":" :warning: Code coverage failed!","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
