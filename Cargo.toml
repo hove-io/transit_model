@@ -36,7 +36,7 @@ xmllint = ["proj"]
 mutable-model = []
 
 [dependencies]
-chrono = "0.4"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 chrono-tz = { version = "0.5", features = ["serde"] }
 csv = "1"
 derivative = "2"
