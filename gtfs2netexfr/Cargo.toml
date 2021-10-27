@@ -12,7 +12,7 @@ categories = ["command-line-utilities", "data-structures", "encoding", "parser-i
 keywords = ["gtfs", "netex", "transit"]
 
 [dependencies]
-chrono = "0.4"
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 failure = "0.1"
 structopt = "0.3"
 tracing = { version = "0.1", features = ["log", "release_max_level_info"] }
