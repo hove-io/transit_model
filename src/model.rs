@@ -1232,6 +1232,7 @@ impl Model {
     /// assert!(Model::new(collections).is_ok());
     /// ```
     pub fn new(mut c: Collections) -> Result<Self> {
+        enhancers::check_stop_times_order(&mut c);
         c.comment_deduplication();
         c.clean_comments();
         c.sanitize()?;

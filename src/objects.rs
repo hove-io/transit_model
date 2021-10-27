@@ -2042,4 +2042,85 @@ mod tests {
             epsilon = EPSILON
         );
     }
+
+    mod sort_and_check_stop_times {
+        use super::*;
+
+        fn generate_stop_times(configs: Vec<(u32, &str, &str)>) -> Vec<StopTime> {
+            let stop_points = typed_index_collection::CollectionWithId::from(StopPoint {
+                id: "sp1".to_string(),
+                ..Default::default()
+            });
+            let stop_point_idx = stop_points.get_idx("sp1").unwrap();
+            configs
+                .into_iter()
+                .map(|(sequence, arrival, departure)| StopTime {
+                    stop_point_idx,
+                    sequence,
+                    arrival_time: Time::from_str(arrival).unwrap(),
+                    departure_time: Time::from_str(departure).unwrap(),
+                    boarding_duration: 0,
+                    alighting_duration: 0,
+                    pickup_type: 0,
+                    drop_off_type: 0,
+                    datetime_estimated: false,
+                    local_zone_id: None,
+                    precision: None,
+                })
+                .collect()
+        }
+
+        #[test]
+        fn stop_sequence_growing() {
+            let stop_times = generate_stop_times(vec![
+                (1, "06:00:00", "06:00:00"),
+                (2, "06:06:27", "06:06:27"),
+                (3, "06:07:27", "06:07:27"),
+                (3, "06:08:27", "06:08:27"),
+                (3, "06:09:27", "06:09:27"),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            let error = vehicle_journey.sort_and_check_stop_times().unwrap_err();
+            let _expected_vj_id = "vj1".to_string();
+            let _expected_duplicated_sequence = 2;
+            assert!(matches!(
+                error,
+                StopTimeError::DuplicateStopSequence {
+                    vj_id: _expected_vj_id,
+                    duplicated_sequence: _expected_duplicated_sequence,
+                }
+            ));
+        }
+        #[test]
+        fn stop_times_growing() {
+            let stop_times = generate_stop_times(vec![
+                (1, "06:00:00", "06:00:00"),
+                (2, "06:06:27", "06:06:27"),
+                (3, "06:06:00", "06:06:27"),
+                (4, "06:06:27", "06:06:27"),
+                (5, "06:06:27", "06:06:27"),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            let error = vehicle_journey.sort_and_check_stop_times().unwrap_err();
+            let _expected_vj_id = "vj1".to_string();
+            let _expected_first_incorrect_sequence = 2;
+            let _expected_first_incorrect_time = Time::new(6, 6, 27);
+            assert!(matches!(
+                error,
+                StopTimeError::IncoherentStopTimes {
+                    vj_id: _expected_vj_id,
+                    first_incorrect_sequence: _expected_first_incorrect_sequence,
+                    first_incorrect_time: _expected_first_incorrect_time,
+                },
+            ));
+        }
+    }
 }

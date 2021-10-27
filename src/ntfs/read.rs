@@ -21,7 +21,7 @@ use crate::utils;
 use crate::Result;
 use failure::{bail, ensure, format_err, ResultExt};
 use serde::{Deserialize, Serialize};
-use skip_error::{skip_error_and_error, skip_error_and_warn};
+use skip_error::skip_error_and_warn;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use tracing::{error, info, warn};
@@ -329,11 +329,6 @@ where
     }
     collections.stop_time_headsigns = headsigns;
     collections.stop_time_ids = stop_time_ids;
-    let mut vehicle_journeys = collections.vehicle_journeys.take();
-    for vj in &mut vehicle_journeys {
-        skip_error_and_error!(vj.sort_and_check_stop_times());
-    }
-    collections.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
     Ok(())
 }
 
@@ -880,56 +875,6 @@ mod tests {
             let code = company.codes.iter().next().unwrap();
             assert_eq!(code.0, "source");
             assert_eq!(code.1, "source_code");
-        });
-    }
-    #[test]
-    fn stop_sequence_growing() {
-        test_in_tmp_dir(|path| {
-            let _ = generate_minimal_ntfs(path);
-            let stop_times_content = "stop_time_id,trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,shape_dist_traveled,stop_time_precision\n\
-            1,1,06:00:00,06:00:00,sp:01,1,0,0,,0\n\
-            2,1,06:06:27,06:06:27,sp:02,2,2,1,,1\n\
-            3,1,06:07:27,06:06:27,sp:03,3,2,1,,2\n\
-            4,1,06:08:27,06:06:27,sp:04,3,2,1,,\n\
-            5,1,06:09:27,06:06:27,sp:05,3,2,1,,";
-            create_file_with_content(path, "stop_times.txt", stop_times_content);
-
-            testing_logger::setup();
-            make_collection(path);
-            testing_logger::validate(|captured_logs| {
-                let error_log = captured_logs
-                    .iter()
-                    .find(|captured_log| captured_log.level == tracing::log::Level::Error)
-                    .expect("log error expected");
-                assert!(error_log
-                    .body
-                    .contains("duplicate stop_sequence \'3\' for the trip \'1\'"));
-            });
-        });
-    }
-    #[test]
-    fn stop_times_growing() {
-        test_in_tmp_dir(|path| {
-            let _ = generate_minimal_ntfs(path);
-            let stop_times_content = "stop_time_id,trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,shape_dist_traveled,stop_time_precision\n\
-            1,1,06:00:00,06:00:00,sp:01,1,0,0,,0\n\
-            2,1,06:06:27,06:06:27,sp:02,2,2,1,,1\n\
-            3,1,06:06:00,06:06:27,sp:03,3,2,1,,2\n\
-            4,1,06:06:27,06:06:27,sp:04,4,2,1,,\n\
-            5,1,06:06:27,06:06:27,sp:05,5,2,1,,";
-            create_file_with_content(path, "stop_times.txt", stop_times_content);
-
-            testing_logger::setup();
-            make_collection(path);
-            testing_logger::validate(|captured_logs| {
-                let error_log = captured_logs
-                    .iter()
-                    .find(|captured_log| captured_log.level == tracing::log::Level::Error)
-                    .expect("log error expected");
-                assert!(error_log.body.contains(
-                    "incoherent stop times \'2\' at time \'06:06:27\' for the trip \'1\'"
-                ));
-            });
         });
     }
 }
