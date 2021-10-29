@@ -138,7 +138,8 @@ The following rules apply to every converter, unless otherwise explicitly specif
   * the `line.closing_time` is generated with the biggest arrival time (at the last stop) of all journeys on the lines (+ 24h if the end is earlier than the start time).
   * if a line has several periods without circulation in the day, only the main one (larger and earlier) is used to define the opening and closing times.
   * lines with continuous circulation are indicated by default with an opening at 00:00 and a closing at 23:59.
-* If a trip contains stop times matching any of the two following conditions, the trip is deleted:
+* If a trip contains stop times matching any of the following conditions, the trip is deleted and logged with a WARN:
+  * two stop times with the same sequence number
   * if the arrival time of a stop time is greater that the departure time of the same stop time
   * if the departure time of a stop time is greater that the arrival time of the next stop time
 
