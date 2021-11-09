@@ -69,9 +69,10 @@ jobs:
     runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj7.2.1
     steps:
-    - uses: actions/checkout@master
-    - name: Checkout Submodules
-      uses: textbook/git-checkout-submodule-action@2.1.1
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Install xmllint
       run: apt update && apt install --yes libxml2-utils
     - name: Run tests with and without features
