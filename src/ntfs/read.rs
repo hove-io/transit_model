@@ -490,40 +490,44 @@ where
         .iter()
         .map(|(k, v)| (v, k.clone()))
         .collect();
-    // info!("Reading comment_links.txt");
+    info!("Reading comment_links.txt");
     for comment_link in comment_links {
         match comment_link.object_type {
-            ObjectType::StopArea => insert_comment_link(
+            ObjectType::StopArea => skip_error_and_warn!(insert_comment_link(
                 &mut collections.stop_areas,
                 &collections.comments,
                 &comment_link,
-            )?,
-            ObjectType::StopPoint => insert_comment_link(
+            )),
+            ObjectType::StopPoint => skip_error_and_warn!(insert_comment_link(
                 &mut collections.stop_points,
                 &collections.comments,
                 &comment_link,
-            )?,
+            )),
             ObjectType::Line => {
-                insert_comment_link(&mut collections.lines, &collections.comments, &comment_link)?
+                skip_error_and_warn!(insert_comment_link(
+                    &mut collections.lines,
+                    &collections.comments,
+                    &comment_link
+                ))
             }
-            ObjectType::Route => insert_comment_link(
+            ObjectType::Route => skip_error_and_warn!(insert_comment_link(
                 &mut collections.routes,
                 &collections.comments,
                 &comment_link,
-            )?,
-            ObjectType::VehicleJourney => insert_comment_link(
+            )),
+            ObjectType::VehicleJourney => skip_error_and_warn!(insert_comment_link(
                 &mut collections.vehicle_journeys,
                 &collections.comments,
                 &comment_link,
-            )?,
-            ObjectType::StopTime => insert_stop_time_comment_link(
+            )),
+            ObjectType::StopTime => skip_error_and_warn!(insert_stop_time_comment_link(
                 &mut collections.stop_time_comments,
                 &stop_time_ids,
                 &collections.comments,
                 &comment_link,
-            )?,
+            )),
             ObjectType::LineGroup => warn!("line_groups.txt is not parsed yet"),
-            _ => bail!(
+            _ => warn!(
                 "comment does not support {}",
                 comment_link.object_type.as_str()
             ),
