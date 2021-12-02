@@ -19,7 +19,7 @@ use crate::objects::*;
 use crate::read_utils::{read_objects, read_objects_loose, FileHandler};
 use crate::utils;
 use crate::Result;
-use failure::{bail, ensure, format_err, ResultExt};
+use anyhow::{anyhow, bail, ensure, Context};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_warn;
 use std::collections::HashMap;
@@ -28,7 +28,7 @@ use tracing::{error, info, warn};
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
 impl TryFrom<Stop> for StopArea {
-    type Error = failure::Error;
+    type Error = anyhow::Error;
     fn try_from(stop: Stop) -> Result<Self> {
         if stop.name.is_empty() {
             warn!("stop_id: {}: for platform stop_name is required", stop.id);
@@ -59,7 +59,7 @@ impl TryFrom<Stop> for StopArea {
 }
 
 impl TryFrom<Stop> for StopPoint {
-    type Error = failure::Error;
+    type Error = anyhow::Error;
     fn try_from(stop: Stop) -> Result<Self> {
         if stop.name.is_empty() {
             warn!("stop_id: {}: for platform name is required", stop.id);
@@ -96,7 +96,7 @@ impl TryFrom<Stop> for StopPoint {
 }
 
 impl TryFrom<Stop> for StopLocation {
-    type Error = failure::Error;
+    type Error = anyhow::Error;
     fn try_from(stop: Stop) -> Result<Self> {
         let coord = Coord::from((stop.lon, stop.lat));
 
@@ -216,7 +216,7 @@ where
             let res = rdr
                 .deserialize()
                 .collect::<Result<_, _>>()
-                .with_context(|_| format!("Error reading {:?}", path))?;
+                .with_context(|| format!("Error reading {:?}", path))?;
             Ok(Collection::new(res))
         }
     }
@@ -266,7 +266,7 @@ where
             .stop_points
             .get_idx(&stop_time.stop_id)
             .ok_or_else(|| {
-                format_err!(
+                anyhow!(
                     "Problem reading {:?}: stop_id={:?} not found",
                     file_handler.source_name(),
                     stop_time.stop_id
@@ -276,7 +276,7 @@ where
             .vehicle_journeys
             .get_idx(&stop_time.trip_id)
             .ok_or_else(|| {
-                format_err!(
+                anyhow!(
                     "Problem reading {:?}: trip_id={:?} not found",
                     file_handler.source_name(),
                     stop_time.trip_id
@@ -640,7 +640,7 @@ where
                 .get(&pathway.from_stop_id)
                 .map(|sl| sl.stop_type.clone()))
             .ok_or_else(|| {
-                format_err!(
+                anyhow!(
                     "Problem reading {:?}: from_stop_id={:?} not found",
                     file,
                     pathway.from_stop_id
@@ -655,7 +655,7 @@ where
                 .get(&pathway.to_stop_id)
                 .map(|sl| sl.stop_type.clone()))
             .ok_or_else(|| {
-                format_err!(
+                anyhow!(
                     "Problem reading {:?}: to_stop_id={:?} not found",
                     file,
                     pathway.to_stop_id

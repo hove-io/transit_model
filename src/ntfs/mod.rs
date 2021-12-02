@@ -26,10 +26,10 @@ use crate::{
     utils::*,
     Result,
 };
+use anyhow::{anyhow, Context};
 use chrono::{DateTime, FixedOffset};
 use chrono_tz::Tz;
 use derivative::Derivative;
-use failure::ResultExt;
 use serde::{Deserialize, Serialize};
 use std::path;
 use tempfile::tempdir;
@@ -238,12 +238,12 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let p = path.as_ref();
     if p.is_file() {
         // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
-        Ok(from_zip(p).with_context(|_| format!("impossible to read zipped ntfs {:?}", p))?)
+        Ok(from_zip(p).with_context(|| format!("impossible to read zipped ntfs {:?}", p))?)
     } else if p.is_dir() {
         Ok(from_dir(p)
-            .with_context(|_| format!("impossible to read ntfs directory from {:?}", p))?)
+            .with_context(|| format!("impossible to read ntfs directory from {:?}", p))?)
     } else {
-        Err(failure::format_err!(
+        Err(anyhow!(
             "file {:?} is neither a file nor a directory, cannot read a ntfs from it",
             p
         ))
@@ -261,12 +261,12 @@ pub fn read_collections<P: AsRef<path::Path>>(path: P) -> Result<Collections> {
     if p.is_file() {
         // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
         Ok(collections_from_zip(p)
-            .with_context(|_| format!("impossible to read zipped ntfs {:?}", p))?)
+            .with_context(|| format!("impossible to read zipped ntfs {:?}", p))?)
     } else if p.is_dir() {
         Ok(collections_from_dir(p)
-            .with_context(|_| format!("impossible to read ntfs directory from {:?}", p))?)
+            .with_context(|| format!("impossible to read ntfs directory from {:?}", p))?)
     } else {
-        Err(failure::format_err!(
+        Err(anyhow!(
             "file {:?} is neither a file nor a directory, cannot read a ntfs from it",
             p
         ))

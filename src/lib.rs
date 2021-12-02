@@ -82,7 +82,7 @@ lazy_static::lazy_static! {
 }
 
 /// The error type used by the crate.
-pub type Error = failure::Error;
+pub type Error = anyhow::Error;
 
 /// The corresponding result type used by the crate.
 pub type Result<T, E = Error> = std::result::Result<T, E>;

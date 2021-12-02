@@ -27,8 +27,8 @@ use crate::{
     utils::*,
     Result,
 };
+use anyhow::{anyhow, bail, Error};
 use derivative::Derivative;
-use failure::{bail, format_err, Error};
 use geo::{LineString, Point};
 use serde::Deserialize;
 use skip_error::{skip_error_and_warn, SkipError};
@@ -529,7 +529,7 @@ fn interpolate_undefined_stop_times(
         if !undefined_stops_bulk.is_empty() {
             let values = ventilate_stop_times(
                 &undefined_stops_bulk,
-                res.last().ok_or_else(|| format_err!("the first stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))?,
+                res.last().ok_or_else(|| anyhow!("the first stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))?,
                 &st_value,
             );
             res.extend(values);
@@ -539,7 +539,7 @@ fn interpolate_undefined_stop_times(
     }
 
     if !undefined_stops_bulk.is_empty() {
-        Err(format_err!("the last stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))
+        Err(anyhow!("the last stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))
     } else {
         Ok(res)
     }
@@ -796,7 +796,7 @@ where
                 .get(&pathway.from_stop_id)
                 .map(|sl| sl.stop_type.clone()))
             .ok_or_else(|| {
-                format_err!(
+                anyhow!(
                     "Problem reading {:?}: from_stop_id={:?} not found",
                     file,
                     pathway.from_stop_id
@@ -812,7 +812,7 @@ where
                 .get(&pathway.to_stop_id)
                 .map(|sl| sl.stop_type.clone()))
             .ok_or_else(|| {
-                format_err!(
+                anyhow!(
                     "Problem reading {:?}: to_stop_id={:?} not found",
                     file,
                     pathway.to_stop_id
@@ -848,7 +848,7 @@ where
                 stop_points
                     .get(stop_id)
                     .ok_or_else(|| {
-                        format_err!(
+                        anyhow!(
                             "Problem reading {:?}: stop_id={:?} not found",
                             file,
                             stop_id
@@ -1207,7 +1207,7 @@ where
             .vehicle_journeys
             .get(&frequency.trip_id)
             .cloned()
-            .ok_or_else(|| format_err!(
+            .ok_or_else(|| anyhow!(
                 "frequency mapped to an unexisting trip {:?}",
                 frequency.trip_id
             )));
@@ -1405,9 +1405,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(
-        expected = "IdentifierAlreadyExists Error { id: \"1\", type: \"transit_model::objects::Network\" }"
-    )]
+    #[should_panic(expected = "`Err` value: identifier 1 already exists")]
     fn load_2_agencies_with_no_id() {
         let agency_content = "agency_name,agency_url,agency_timezone\n\
                               My agency 1,http://my-agency_url.com,Europe/London\n\

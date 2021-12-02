@@ -15,9 +15,9 @@
 //! Definition of the navitia transit model.
 
 use crate::{enhancers, objects::*, Error, Result};
+use anyhow::{anyhow, bail};
 use chrono::NaiveDate;
 use derivative::Derivative;
-use failure::{bail, format_err};
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
@@ -588,13 +588,13 @@ impl Collections {
                 .first()
                 .map(|st| st.departure_time)
                 .map(|departure_time| departure_time % SECONDS_PER_DAY)
-                .ok_or_else(|| format_err!("undefined departure time for vj {}", vj.id))?;
+                .ok_or_else(|| anyhow!("undefined departure time for vj {}", vj.id))?;
             let vj_arrival_time = vj
                 .stop_times
                 .last()
                 .map(|st| st.arrival_time)
                 .map(|arrival_time| arrival_time % SECONDS_PER_DAY)
-                .ok_or_else(|| format_err!("undefined arrival time for vj {}", vj.id))?;
+                .ok_or_else(|| anyhow!("undefined arrival time for vj {}", vj.id))?;
             let departure_hour = u8::try_from(vj_departure_time.hours())?;
             let arrival_hour = u8::try_from(vj_arrival_time.hours())?;
             opening_timetable
@@ -1252,10 +1252,10 @@ impl Model {
             .map(|(idx, tr)| {
                 let mut stop_points = IdxSet::default();
                 stop_points.insert(c.stop_points.get_idx(&tr.from_stop_id).ok_or_else(|| {
-                    format_err!("Invalid id: transfer.from_stop_id={:?}", tr.from_stop_id)
+                    anyhow!("Invalid id: transfer.from_stop_id={:?}", tr.from_stop_id)
                 })?);
                 stop_points.insert(c.stop_points.get_idx(&tr.to_stop_id).ok_or_else(|| {
-                    format_err!("Invalid id: transfer.to_stop_id={:?}", tr.to_stop_id)
+                    anyhow!("Invalid id: transfer.to_stop_id={:?}", tr.to_stop_id)
                 })?);
                 Ok((idx, stop_points))
             })
@@ -1384,7 +1384,7 @@ impl Model {
         self.collections
             .calendars
             .push(calendar)
-            .map_err(|e| format_err!("{}", e))
+            .map_err(|e| anyhow!("{}", e))
     }
     /// Add a new relation between a calendar and some vehicle journeys
     pub fn connect_calendar_to_vehicle_journeys(

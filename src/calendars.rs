@@ -24,8 +24,8 @@ use crate::utils::*;
 use crate::utils::{de_from_date_string, ser_from_naive_date};
 use crate::vptranslator::translate;
 use crate::Result;
+use anyhow::{anyhow, bail, Context};
 use chrono::{self, Datelike, Weekday};
-use failure::{bail, format_err, ResultExt};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_warn;
 use std::collections::BTreeSet;
@@ -202,7 +202,7 @@ pub fn write_calendar_dates(
         let translation = translate(&c.dates);
         if !translation.operating_days.is_empty() {
             let validity_period = skip_error_and_warn!(translation.validity_period.ok_or_else(
-                || format_err!("Validity period not found for service id {}", c.id.clone())
+                || anyhow!("Validity period not found for service id {}", c.id.clone())
             ));
             translations.push(Calendar {
                 id: c.id.clone(),
@@ -227,13 +227,13 @@ pub fn write_calendar_dates(
     }
     if !exceptions.is_empty() {
         let mut wtr = csv::Writer::from_path(&calendar_dates_path)
-            .with_context(|_| format!("Error reading {:?}", calendar_dates_path))?;
+            .with_context(|| format!("Error reading {:?}", calendar_dates_path))?;
         for e in exceptions {
             wtr.serialize(&e)
-                .with_context(|_| format!("Error reading {:?}", calendar_dates_path))?;
+                .with_context(|| format!("Error reading {:?}", calendar_dates_path))?;
         }
         wtr.flush()
-            .with_context(|_| format!("Error reading {:?}", calendar_dates_path))?;
+            .with_context(|| format!("Error reading {:?}", calendar_dates_path))?;
     }
     write_calendar(path, &translations)
 }
@@ -247,12 +247,12 @@ pub fn write_calendar(path: &path::Path, calendars: &[Calendar]) -> Result<()> {
 
     let calendar_path = path.join("calendar.txt");
     let mut wtr = csv::Writer::from_path(&calendar_path)
-        .with_context(|_| format!("Error reading {:?}", calendar_path))?;
+        .with_context(|| format!("Error reading {:?}", calendar_path))?;
     for calendar in calendars {
         wtr.serialize(calendar)
-            .with_context(|_| format!("Error reading {:?}", calendar_path))?;
+            .with_context(|| format!("Error reading {:?}", calendar_path))?;
     }
     wtr.flush()
-        .with_context(|_| format!("Error reading {:?}", calendar_path))?;
+        .with_context(|| format!("Error reading {:?}", calendar_path))?;
     Ok(())
 }

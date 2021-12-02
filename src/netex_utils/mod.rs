@@ -15,7 +15,7 @@
 //! Some utils to work with the NeTEx format, especially the frames.
 
 use crate::Result;
-use failure::{bail, format_err, Error};
+use anyhow::{anyhow, bail, Error};
 use minidom::Element;
 use minidom_ext::OnlyChildElementExt;
 use std::{
@@ -88,7 +88,7 @@ pub fn parse_frames_by_type(frames: &Element) -> Result<Frames<'_>> {
 pub fn get_only_frame<'a>(frames: &'a Frames<'a>, frame_type: FrameType) -> Result<&'a Element> {
     let frame = frames
         .get(&frame_type)
-        .ok_or_else(|| format_err!("Failed to find a '{}' frame in the Netex file", frame_type))?;
+        .ok_or_else(|| anyhow!("Failed to find a '{}' frame in the Netex file", frame_type))?;
     if frame.len() == 1 {
         Ok(frame[0])
     } else {
@@ -122,7 +122,7 @@ where
 {
     let values = element
         .try_only_child("KeyList")
-        .map_err(|e| format_err!("{}", e))?
+        .map_err(|e| anyhow!("{}", e))?
         .children()
         .filter(|key_value| match key_value.try_only_child("Key") {
             Ok(k) => k.text() == key,
@@ -131,7 +131,7 @@ where
         .map(|key_value| {
             key_value
                 .try_only_child("Value")
-                .map_err(|e| format_err!("{}", e))
+                .map_err(|e| anyhow!("{}", e))
         })
         .collect::<Result<Vec<_>>>()?;
     if values.len() != 1 {
@@ -144,7 +144,7 @@ where
     values[0]
         .text()
         .parse()
-        .map_err(|_| format_err!("Failed to get the value out of 'KeyList' for key '{}'", key))
+        .map_err(|_| anyhow!("Failed to get the value out of 'KeyList' for key '{}'", key))
 }
 
 #[cfg(test)]
