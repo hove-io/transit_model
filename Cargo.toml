@@ -37,7 +37,7 @@ mutable-model = []
 
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
-chrono-tz = { version = "0.5", features = ["serde"] }
+chrono-tz = { version = "0.6", features = ["serde"] }
 csv = "1"
 derivative = "2"
 failure = "0.1"
@@ -51,8 +51,8 @@ minidom = "0.12"
 minidom_ext = "1"
 minidom_writer = "1"
 num-traits = "0.2"
-pretty_assertions = "0.7"
-proj = { version = "0.22", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
+pretty_assertions = "1"
+proj = { version = "0.24", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
 quick-xml = "0.22"
 relational_types = "2"
 rust_decimal = "1"
