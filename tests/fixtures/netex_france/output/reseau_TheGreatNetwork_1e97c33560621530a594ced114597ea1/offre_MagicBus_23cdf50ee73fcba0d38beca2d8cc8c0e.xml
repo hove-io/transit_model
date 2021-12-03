@@ -41,22 +41,22 @@
 				</Route>
 				<RoutePoint id="FR:RoutePoint:B42_1:" version="any">
 					<Location>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:B42_2:" version="any">
 					<Location>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:B42_R_1:" version="any">
 					<Location>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:B42_R_2:" version="any">
 					<Location>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</RoutePoint>
 				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:B42F1:" version="any">
@@ -99,22 +99,22 @@
 				</ServiceJourneyPattern>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42F1_10:" version="any">
 					<Location>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42F1_20:" version="any">
 					<Location>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_20:" version="any">
 					<Location>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_30:" version="any">
 					<Location>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42F1_10:" order="11" version="any">
