@@ -23,8 +23,8 @@ use crate::{
     objects::{Date, Line, Network},
     Result,
 };
+use anyhow::anyhow;
 use chrono::prelude::*;
-use failure::format_err;
 use minidom::{Element, Node};
 use minidom_writer::ElementWriter;
 use proj::Proj;
@@ -175,7 +175,7 @@ impl<'a> Exporter<'a> {
         let from = "+proj=longlat +datum=WGS84 +no_defs"; // https://epsg.io/4326
         let to = "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"; // https://epsg.io/2154
         Proj::new_known_crs(from, to, None)
-            .ok_or_else(|| format_err!("Proj cannot build a converter from '{}' to '{}'", from, to))
+            .ok_or_else(|| anyhow!("Proj cannot build a converter from '{}' to '{}'", from, to))
     }
 }
 

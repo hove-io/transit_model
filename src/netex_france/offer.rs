@@ -21,7 +21,7 @@ use crate::{
     objects::{Coord, Line, Route, StopPoint, StopTime, Time, VehicleJourney},
     Model, Result,
 };
-use failure::format_err;
+use anyhow::anyhow;
 use minidom::{Element, Node};
 use proj::Proj;
 use relational_types::IdxSet;
@@ -188,7 +188,7 @@ impl<'a> OfferExporter<'a> {
         let route_points = self
             .route_points
             .get(route_id)
-            .ok_or_else(|| format_err!("Failed to generate RoutePoint for Route '{}'", route_id))?;
+            .ok_or_else(|| anyhow!("Failed to generate RoutePoint for Route '{}'", route_id))?;
         route_points
             .iter()
             .enumerate()
@@ -448,9 +448,10 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn generate_points_on_route(&self, route_id: &'a str) -> Result<Element> {
-        let route_points = self.route_points.get(route_id).ok_or_else(|| {
-            format_err!("Failed to generate PointOnRoute for Route '{}'", route_id)
-        })?;
+        let route_points = self
+            .route_points
+            .get(route_id)
+            .ok_or_else(|| anyhow!("Failed to generate PointOnRoute for Route '{}'", route_id))?;
         let points_on_route =
             (1..=route_points.len()).map(|order| self.generate_point_on_route(route_id, order));
         let points_in_sequence = Element::builder("pointsInSequence")
