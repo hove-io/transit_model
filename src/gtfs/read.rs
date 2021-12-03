@@ -929,13 +929,10 @@ fn get_modes_from_gtfs(
     let gtfs_mode_types: BTreeSet<RouteType> =
         gtfs_routes.values().map(|r| r.route_type.clone()).collect();
 
-    let commercial_modes = gtfs_mode_types
-        .iter()
-        .map(|mt| get_commercial_mode(mt))
-        .collect();
+    let commercial_modes = gtfs_mode_types.iter().map(get_commercial_mode).collect();
     let physical_modes = gtfs_mode_types
         .iter()
-        .map(|mt| get_physical_mode(mt))
+        .map(get_physical_mode)
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect();
