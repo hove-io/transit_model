@@ -161,7 +161,7 @@ fn init_logger() {
 fn main() {
     init_logger();
     if let Err(err) = run(Opt::from_args()) {
-        for cause in err.iter_chain() {
+        for cause in err.chain() {
             eprintln!("{}", cause);
         }
         std::process::exit(1);

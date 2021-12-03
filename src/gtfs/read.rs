@@ -1343,7 +1343,7 @@ mod tests {
     use typed_index_collection::Id;
 
     fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
-        let mut extracted_props: Vec<S> = c.values().map(|l| f(l)).collect();
+        let mut extracted_props: Vec<S> = c.values().map(f).collect();
         extracted_props.sort();
         extracted_props
     }

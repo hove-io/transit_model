@@ -376,7 +376,7 @@ impl<'a> OfferExporter<'a> {
         let line_netex_mode = &self
             .line_modes
             .get(line_id.as_str())
-            .and_then(|line_netex_modes| NetexMode::calculate_highest_mode(line_netex_modes));
+            .and_then(NetexMode::calculate_highest_mode);
 
         let element_builder = Element::builder(ObjectType::ServiceJourney.to_string())
             .attr(
@@ -410,7 +410,7 @@ impl<'a> OfferExporter<'a> {
     fn export_timetabled_passing_times(stop_times: &'a [StopTime]) -> Vec<Element> {
         stop_times
             .iter()
-            .map(|stop_time| Self::export_timetabled_passing_time(stop_time))
+            .map(Self::export_timetabled_passing_time)
             .collect()
     }
 
