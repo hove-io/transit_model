@@ -17,8 +17,8 @@ use crate::{
     objects::{Calendar, Date},
     Model, Result,
 };
+use anyhow::bail;
 use chrono::prelude::*;
-use failure::bail;
 use minidom::{Element, Node};
 use std::collections::BTreeSet;
 

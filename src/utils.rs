@@ -16,8 +16,8 @@ use crate::{
     objects::Date,
     read_utils::{read_objects, FileHandler},
 };
+use anyhow::Context;
 use chrono::NaiveDate;
-use failure::ResultExt;
 use rust_decimal::Decimal;
 use skip_error::skip_error_and_warn;
 use std::fs;
@@ -353,13 +353,13 @@ where
     info!("Writing {}", file);
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
     for obj in collection.values() {
         wtr.serialize(obj)
-            .with_context(|_| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {:?}", path))?;
     }
     wtr.flush()
-        .with_context(|_| format!("Error reading {:?}", path))?;
+        .with_context(|| format!("Error reading {:?}", path))?;
 
     Ok(())
 }
@@ -378,13 +378,13 @@ where
     info!("Writing {}", file);
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|_| format!("Error reading {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
     for obj in collection.values() {
         wtr.serialize(obj)
-            .with_context(|_| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {:?}", path))?;
     }
     wtr.flush()
-        .with_context(|_| format!("Error reading {:?}", path))?;
+        .with_context(|| format!("Error reading {:?}", path))?;
 
     Ok(())
 }

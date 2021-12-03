@@ -28,7 +28,7 @@ jobs:
   clippy:
     name: Analyzing code with Clippy
     runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj7.2.1
+    container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
     - uses: actions/checkout@master
     - name: Linting
@@ -46,7 +46,7 @@ jobs:
   audit:
     name: Audits
     runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj7.2.1
+    container: kisiodigital/rust-ci:latest-proj8.1.0
     continue-on-error: true
     steps:
     - uses: actions/checkout@v1
@@ -67,7 +67,7 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj7.2.1
+    container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
     - name: Checkout repository and submodules
       uses: actions/checkout@v2

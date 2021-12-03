@@ -44,7 +44,7 @@ fn gtfs_with_config_reading() {
 
 #[test]
 #[should_panic(
-    expected = "ErrorMessage { msg: \"file \\\"tests/fixtures/i_m_not_here\\\" is neither a file nor a directory, cannot read a gtfs from it\" }"
+    expected = r#"file "tests/fixtures/i_m_not_here" is neither a file nor a directory, cannot read a gtfs from it"#
 )]
 fn unexistent_file() {
     // reading a file that does not exists will lead to an error
@@ -53,7 +53,7 @@ fn unexistent_file() {
 
 #[test]
 #[should_panic(
-    expected = "InvalidArchive(\"Could not find central directory end\")\n\nimpossible to read zipped gtfs \"tests/fixtures/gtfs/stops.txt\""
+    expected = "impossible to read zipped gtfs \"tests/fixtures/gtfs/stops.txt\"\n\nCaused by:\n    invalid Zip archive"
 )]
 fn file_not_a_gtfs() {
     // reading a file that is not either a directory with the gtfs files nor a zip archive will lead to an error
@@ -63,7 +63,7 @@ fn file_not_a_gtfs() {
 
 #[test]
 #[should_panic(
-    expected = "ErrorMessage { msg: \"calendar_dates.txt or calendar.txt not found\" }\n\nimpossible to read gtfs directory from \"tests/fixtures/netex_france\""
+    expected = "impossible to read gtfs directory from \"tests/fixtures/netex_france\"\n\nCaused by:\n    calendar_dates.txt or calendar.txt not found"
 )]
 fn directory_not_a_gtfs() {
     // reading a directory that does not contain the gtfs files will lead to an error

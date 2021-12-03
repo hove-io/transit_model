@@ -99,7 +99,7 @@ fn zipped_minimal() {
 
 #[test]
 #[should_panic(
-    expected = "ErrorMessage { msg: \"file \\\"tests/fixtures/i_m_not_here\\\" is neither a file nor a directory, cannot read a ntfs from it\" }"
+    expected = "file \"tests/fixtures/i_m_not_here\" is neither a file nor a directory, cannot read a ntfs from it"
 )]
 fn unexistent_file() {
     // reading a file that does not exists will lead to an error
@@ -108,7 +108,7 @@ fn unexistent_file() {
 
 #[test]
 #[should_panic(
-    expected = "InvalidArchive(\"Could not find central directory end\")\n\nimpossible to read zipped ntfs \"tests/fixtures/ntfs/stops.txt\""
+    expected = "impossible to read zipped ntfs \"tests/fixtures/ntfs/stops.txt\"\n\nCaused by:\n    invalid Zip archive"
 )]
 fn file_not_a_ntfs() {
     // reading a file that is not either a directory with the ntfs files nor a zip archive will lead to an error
@@ -118,7 +118,7 @@ fn file_not_a_ntfs() {
 
 #[test]
 #[should_panic(
-    expected = "ErrorMessage { msg: \"file \\\"tests/fixtures/netex_france/contributors.txt\\\" not found\" }\n\nimpossible to read ntfs directory from \"tests/fixtures/netex_france\""
+    expected = "impossible to read ntfs directory from \"tests/fixtures/netex_france\"\n\nCaused by:\n    file \"tests/fixtures/netex_france/contributors.txt\" not found"
 )]
 fn directory_not_a_ntfs() {
     // reading a directory that does not contain the ntfs files will lead to an error

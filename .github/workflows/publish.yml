@@ -7,7 +7,7 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj7.2.1
+    container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
     - uses: actions/checkout@master
     - name: Cargo login

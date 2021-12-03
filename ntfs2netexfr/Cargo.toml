@@ -1,6 +1,6 @@
 [package]
 name = "ntfs2netexfr"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Kisio Digital <team.coretools@kisio.com>"]
 license = "AGPL-3.0-only"
 description = "Binary to convert Transit data from NTFS format to NeTEx France"
@@ -12,8 +12,8 @@ categories = ["command-line-utilities", "data-structures", "encoding", "parser-i
 keywords = ["ntfs", "netex", "transit"]
 
 [dependencies]
+anyhow = "1"
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
-failure = "0.1"
 structopt = "0.3"
 tracing = { version = "0.1", features = ["log", "release_max_level_info"] }
 tracing-log = "0.1"

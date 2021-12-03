@@ -20,7 +20,7 @@ use crate::{
     objects::{Availability, Coord, Equipment, StopArea, StopLocation, StopPoint, StopType},
     Model, Result,
 };
-use failure::format_err;
+use anyhow::anyhow;
 use minidom::{Element, Node};
 use proj::Proj;
 use std::{
@@ -203,7 +203,7 @@ impl<'a> StopExporter<'a> {
             .get(stop_point.id.as_str())
             .ok_or_else(|| {
                 // Should never happen, a Stop Point always have some associated mode
-                format_err!("Unable to find modes for Stop Point '{}'", stop_point.id)
+                anyhow!("Unable to find modes for Stop Point '{}'", stop_point.id)
             })?;
         if netex_modes.len() > 1 {
             warn!(
@@ -214,9 +214,9 @@ impl<'a> StopExporter<'a> {
         let highest_netex_mode =
             NetexMode::calculate_highest_mode(netex_modes).ok_or_else(|| {
                 // Should never happen, a Stop Point always have at least one associated mode
-                format_err!(
+                anyhow!(
                     "Unable to resolve main NeTEx mode for Stop Point {}",
-                    stop_point.id
+                    stop_point.id,
                 )
             })?;
         let element_builder =
@@ -302,7 +302,7 @@ impl<'a> StopExporter<'a> {
             let highest_netex_mode =
                 NetexMode::calculate_highest_mode(&netex_modes).ok_or_else(|| {
                     // Should never happen, a Stop Area always have at least one associated mode
-                    format_err!(
+                    anyhow!(
                         "Unable to resolve main NeTEx mode for Stop Area {}",
                         stop_area.id
                     )

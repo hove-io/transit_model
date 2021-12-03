@@ -20,7 +20,7 @@ use crate::{
     objects::Line,
     Model, Result,
 };
-use failure::format_err;
+use anyhow::anyhow;
 use minidom::{Element, Node};
 use std::collections::{BTreeSet, HashMap};
 
@@ -81,9 +81,9 @@ impl<'a> LineExporter<'a> {
         let netex_modes = self
             .line_modes
             .get(line.id.as_str())
-            .ok_or_else(|| format_err!("Unable to find modes for Line '{}'", line.id))?;
+            .ok_or_else(|| anyhow!("Unable to find modes for Line '{}'", line.id))?;
         let highest_netex_mode = NetexMode::calculate_highest_mode(netex_modes)
-            .ok_or_else(|| format_err!("Unable to resolve main NeTEx mode for Line {}", line.id))?;
+            .ok_or_else(|| anyhow!("Unable to resolve main NeTEx mode for Line {}", line.id))?;
         let element_builder = element_builder
             .append(self.generate_name(line))
             .append(self.generate_transport_mode(highest_netex_mode));

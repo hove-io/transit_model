@@ -17,7 +17,7 @@ use crate::{
     objects::Transfer,
     Model, Result,
 };
-use failure::format_err;
+use anyhow::anyhow;
 use minidom::{Element, Node};
 
 pub struct TransferExporter<'a> {
@@ -104,7 +104,7 @@ impl<'a> TransferExporter<'a> {
             .get(stop_point_id)
             .map(|stop_point| &stop_point.stop_area_id)
             .ok_or_else(|| {
-                format_err!(
+                anyhow!(
                     "StopPoint '{}' doesn't have a corresponding StopArea",
                     stop_point_id
                 )

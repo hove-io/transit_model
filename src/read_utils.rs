@@ -17,7 +17,7 @@ use crate::{
     objects::{self, Contributor},
     Result,
 };
-use failure::{bail, format_err, ResultExt};
+use anyhow::{anyhow, bail, Context};
 use serde::Deserialize;
 use skip_error::SkipError;
 use std::path;
@@ -105,7 +105,7 @@ where
     fn get_file(self, name: &str) -> Result<(Self::Reader, PathBuf)> {
         let (reader, path) = self.get_file_if_exists(name)?;
         Ok((
-            reader.ok_or_else(|| format_err!("file {:?} not found", path))?,
+            reader.ok_or_else(|| anyhow!("file {:?} not found", path))?,
             path,
         ))
     }
@@ -130,7 +130,7 @@ impl<'a, P: AsRef<Path>> FileHandler for &'a mut PathFileHandler<P> {
         let f = self.base_path.as_ref().join(name);
         if f.exists() {
             Ok((
-                Some(File::open(&f).with_context(|_| format!("Error reading {:?}", &f))?),
+                Some(File::open(&f).with_context(|| format!("Error reading {:?}", &f))?),
                 f,
             ))
         } else {
@@ -235,7 +235,7 @@ where
             Ok(rdr
                 .deserialize()
                 .collect::<Result<_, _>>()
-                .with_context(|_| format!("Error reading {:?}", path))?)
+                .with_context(|| format!("Error reading {:?}", path))?)
         }
     }
 }
@@ -270,7 +270,7 @@ where
                 .from_reader(reader);
             let objects = rdr
                 .deserialize()
-                .map(|object| object.with_context(|_| format!("Error reading {:?}", path)))
+                .map(|object| object.with_context(|| format!("Error reading {:?}", path)))
                 .skip_error_and_warn()
                 .collect();
             Ok(objects)
@@ -288,7 +288,7 @@ where
     O: for<'de> serde::Deserialize<'de> + Id<O>,
 {
     let vec = read_objects(file_handler, file_name, true)?;
-    CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
+    CollectionWithId::new(vec).map_err(|e| anyhow!("{}", e))
 }
 
 pub(crate) fn read_opt_collection<H, O>(
@@ -300,7 +300,7 @@ where
     O: for<'de> serde::Deserialize<'de> + Id<O>,
 {
     let vec = read_objects(file_handler, file_name, false)?;
-    CollectionWithId::new(vec).map_err(|e| format_err!("{}", e))
+    CollectionWithId::new(vec).map_err(|e| anyhow!("{}", e))
 }
 
 #[cfg(test)]

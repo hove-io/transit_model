@@ -9,7 +9,7 @@
 					<Name>Gare de Lyon (RER)</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<AccessibilityAssessment id="FR:AccessibilityAssessment:GDLR_0:" version="any">
@@ -32,7 +32,7 @@
 					<Name>Gare de Lyon (Metro)</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<AccessibilityAssessment id="FR:AccessibilityAssessment:GDLM_1:" version="any">
@@ -55,7 +55,7 @@
 					<Name>Gare de Lyon (Bus)</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>bus</TransportMode>
@@ -68,7 +68,7 @@
 					<Name>Nation (RER)</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<AccessibilityAssessment id="FR:AccessibilityAssessment:NATR_0:" version="any">
@@ -91,7 +91,7 @@
 					<Name>Nation (Metro)</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>metro</TransportMode>
@@ -104,7 +104,7 @@
 					<Name>Charles de Gaulle (RER)</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>rail</TransportMode>
@@ -117,7 +117,7 @@
 					<Name>Charles de Gaulle (Metro)</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>metro</TransportMode>
@@ -152,7 +152,7 @@
 					<Name>Montparnasse (Bus)</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>bus</TransportMode>
@@ -165,7 +165,7 @@
 					<Name>Gare de Lyon</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
@@ -181,7 +181,7 @@
 					<Name>Gare de Lyon</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
@@ -197,7 +197,7 @@
 					<Name>Gare de Lyon</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
@@ -215,7 +215,7 @@
 					<Name>Gare de Lyon</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453682</gml:pos>
+							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<entrances>
@@ -223,7 +223,7 @@
 							<Name>Gate 1</Name>
 							<Centroid>
 								<Location>
-									<gml:pos srsName="EPSG:2154">654143.0840251445 6860726.200273179</gml:pos>
+									<gml:pos srsName="EPSG:2154">654143.0840251445 6860726.200273181</gml:pos>
 								</Location>
 							</Centroid>
 							<IsEntry>true</IsEntry>
@@ -233,7 +233,7 @@
 							<Name>Gate 2</Name>
 							<Centroid>
 								<Location>
-									<gml:pos srsName="EPSG:2154">654109.4203976962 6860534.540309813</gml:pos>
+									<gml:pos srsName="EPSG:2154">654109.4203976962 6860534.540309815</gml:pos>
 								</Location>
 							</Centroid>
 							<IsEntry>true</IsEntry>
@@ -247,7 +247,7 @@
 					<Name>Nation</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
@@ -263,7 +263,7 @@
 					<Name>Nation</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
@@ -279,7 +279,7 @@
 					<Name>Nation</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
@@ -295,7 +295,7 @@
 					<Name>Nation</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821124</gml:pos>
+							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>rail</TransportMode>
@@ -305,7 +305,7 @@
 					<Name>Charles de Gaulle</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
@@ -321,7 +321,7 @@
 					<Name>Charles de Gaulle</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
@@ -337,7 +337,7 @@
 					<Name>Charles de Gaulle</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
@@ -353,7 +353,7 @@
 					<Name>Charles de Gaulle</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.8185047405</gml:pos>
+							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<entrances>
@@ -361,7 +361,7 @@
 							<Name>Gate A</Name>
 							<Centroid>
 								<Location>
-									<gml:pos srsName="EPSG:2154">648335.545974931 6863941.034152591</gml:pos>
+									<gml:pos srsName="EPSG:2154">648335.545974931 6863941.0341525925</gml:pos>
 								</Location>
 							</Centroid>
 							<IsEntry>true</IsEntry>
@@ -417,7 +417,7 @@
 					<Name>Châtelet</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972682</gml:pos>
+							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972684</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:CHA:">
@@ -433,7 +433,7 @@
 					<Name>Châtelet</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972682</gml:pos>
+							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972684</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>metro</TransportMode>
@@ -443,7 +443,7 @@
 					<Name>Montparnasse</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:MTP:">
@@ -459,7 +459,7 @@
 					<Name>Montparnasse</Name>
 					<Centroid>
 						<Location>
-							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.10406642</gml:pos>
+							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>bus</TransportMode>
