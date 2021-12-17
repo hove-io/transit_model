@@ -14,9 +14,11 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use chrono::{DateTime, FixedOffset, NaiveDate};
 use std::path::PathBuf;
 use structopt::StructOpt;
+use time::{
+    format_description::well_known::Rfc3339, macros::format_description, Date, OffsetDateTime,
+};
 use tracing::info;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
@@ -24,6 +26,14 @@ use tracing_subscriber::{
     util::SubscriberInitExt as _,
 };
 use transit_model::{Model, Result};
+
+fn parse_date(date: &str) -> Result<Date, time::error::Parse> {
+    Date::parse(date, format_description!("[year]-[month]-[day]"))
+}
+
+fn parse_offset_datetime(offset_date_time: &str) -> Result<OffsetDateTime, time::error::Parse> {
+    OffsetDateTime::parse(offset_date_time, &Rfc3339)
+}
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -37,12 +47,12 @@ struct Opt {
     input: PathBuf,
 
     /// start of the desired validity period [included], e.g. 2019-01-01
-    #[structopt(short, long)]
-    start_validity_date: NaiveDate,
+    #[structopt(short, long, parse(try_from_str = parse_date))]
+    start_validity_date: Date,
 
     /// end of the desired validity period [included], e.g. 2019-01-01
-    #[structopt(short, long)]
-    end_validity_date: NaiveDate,
+    #[structopt(short, long, parse(try_from_str = parse_date))]
+    end_validity_date: Date,
 
     /// output directory
     #[structopt(short, long, parse(from_os_str))]
@@ -52,10 +62,10 @@ struct Opt {
     #[structopt(
         short = "x",
         long,
-        parse(try_from_str),
+        parse(try_from_str = parse_offset_datetime),
         default_value = &transit_model::CURRENT_DATETIME
     )]
-    current_datetime: DateTime<FixedOffset>,
+    current_datetime: time::OffsetDateTime,
 }
 
 fn init_logger() {

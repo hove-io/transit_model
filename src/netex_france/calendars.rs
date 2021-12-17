@@ -14,13 +14,13 @@
 
 use crate::{
     netex_france::exporter::{Exporter, ObjectType},
-    objects::{Calendar, Date},
+    objects::Calendar,
     Model, Result,
 };
 use anyhow::bail;
-use chrono::prelude::*;
 use minidom::{Element, Node};
 use std::collections::BTreeSet;
+use time::{format_description::well_known::Rfc3339, Date};
 
 pub struct CalendarExporter<'a> {
     model: &'a Model,
@@ -105,7 +105,12 @@ impl<'a> CalendarExporter<'a> {
     }
 
     fn generate_from_date(date: Date) -> Element {
-        let date_string = DateTime::<Utc>::from_utc(date.and_hms(0, 0, 0), Utc).to_rfc3339();
+        let date_string = date
+            .with_hms(0, 0, 0)
+            .expect("a date is always valid at midnight")
+            .assume_utc()
+            .format(&Rfc3339)
+            .expect("format description is correct at compile time");
         Element::builder("FromDate")
             .append(Node::Text(date_string))
             .build()
@@ -119,7 +124,7 @@ impl<'a> CalendarExporter<'a> {
                 .iter()
                 .zip(dates.iter().skip(1))
                 .map(|(date_1, date_2)| *date_2 - *date_1)
-                .map(|duration| duration.num_days())
+                .map(|duration| duration.whole_days())
                 .fold(String::from("1"), |mut valid_day_bits, days_diff| {
                     for _ in 1..days_diff {
                         valid_day_bits += "0"
@@ -156,6 +161,7 @@ mod tests {
     mod valid_day_bits {
         use super::*;
         use pretty_assertions::assert_eq;
+        use time::Month;
 
         fn get_valid_day_bits(element: Element) -> String {
             element
@@ -176,7 +182,9 @@ mod tests {
 
         #[test]
         fn only_one_date() {
-            let dates = vec![NaiveDate::from_ymd(2020, 1, 1)].into_iter().collect();
+            let dates = vec![Date::from_calendar_date(2020, Month::January, 1).unwrap()]
+                .into_iter()
+                .collect();
             let valid_day_bits_element = CalendarExporter::generate_valid_day_bits(&dates);
             assert_eq!("1", get_valid_day_bits(valid_day_bits_element));
         }
@@ -184,8 +192,8 @@ mod tests {
         #[test]
         fn successive_dates() {
             let dates = vec![
-                NaiveDate::from_ymd(2020, 1, 1),
-                NaiveDate::from_ymd(2020, 1, 2),
+                Date::from_calendar_date(2020, Month::January, 1).unwrap(),
+                Date::from_calendar_date(2020, Month::January, 2).unwrap(),
             ]
             .into_iter()
             .collect();
@@ -196,8 +204,8 @@ mod tests {
         #[test]
         fn not_successive_dates() {
             let dates = vec![
-                NaiveDate::from_ymd(2020, 1, 1),
-                NaiveDate::from_ymd(2020, 1, 3),
+                Date::from_calendar_date(2020, Month::January, 1).unwrap(),
+                Date::from_calendar_date(2020, Month::January, 3).unwrap(),
             ]
             .into_iter()
             .collect();

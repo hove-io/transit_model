@@ -13,11 +13,11 @@ keywords = ["ntfs", "transit"]
 
 [dependencies]
 anyhow = "1"
-chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 structopt = "0.3"
+time = "0.3"
 tracing = { version = "0.1", features = ["log", "release_max_level_info"] }
 tracing-log = "0.1"
-tracing-subscriber = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 transit_model = { path = "../" }
 lazy_static = "1"
 

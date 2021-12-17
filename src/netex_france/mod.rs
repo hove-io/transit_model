@@ -37,7 +37,7 @@ mod transfers;
 use transfers::TransferExporter;
 
 use crate::{model::Model, Result};
-use chrono::{DateTime, FixedOffset, TimeZone};
+use time::OffsetDateTime;
 
 /// Configuration options for exporting a NeTEx France.
 /// 3 options can be configured:
@@ -47,7 +47,7 @@ use chrono::{DateTime, FixedOffset, TimeZone};
 pub struct WriteConfiguration {
     participant: String,
     stop_provider: Option<String>,
-    current_datetime: DateTime<FixedOffset>,
+    current_datetime: OffsetDateTime,
 }
 
 impl WriteConfiguration {
@@ -56,8 +56,7 @@ impl WriteConfiguration {
         WriteConfiguration {
             participant: participant.into(),
             stop_provider: None,
-            current_datetime: chrono::FixedOffset::east(0)
-                .from_utc_datetime(&chrono::Utc::now().naive_utc()),
+            current_datetime: OffsetDateTime::now_utc(),
         }
     }
     /// Setup the Stop Provider (see [specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details)
@@ -68,7 +67,7 @@ impl WriteConfiguration {
         }
     }
     /// Setup the date and time of the export.
-    pub fn current_datetime(self, current_datetime: DateTime<FixedOffset>) -> Self {
+    pub fn current_datetime(self, current_datetime: OffsetDateTime) -> Self {
         WriteConfiguration {
             current_datetime,
             ..self

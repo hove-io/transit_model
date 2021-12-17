@@ -14,9 +14,9 @@
 
 //! See function translate
 
-use crate::objects::{Date, ExceptionType, ValidityPeriod};
-use chrono::{Datelike, Duration, Weekday};
-use num_traits::cast::FromPrimitive;
+use time::{Date, Duration, Weekday};
+
+use crate::objects::{ExceptionType, ValidityPeriod};
 use std::collections::BTreeSet;
 use std::vec::Vec;
 
@@ -41,14 +41,14 @@ pub struct BlockPattern {
 }
 
 fn get_prev_monday(date: Date) -> Date {
-    date - Duration::days(i64::from(date.weekday().num_days_from_monday()))
+    date - Duration::days(i64::from(date.weekday().number_days_from_monday()))
 }
 
 fn compute_validity_pattern(start_date: Date, end_date: Date, dates: &BTreeSet<Date>) -> Vec<u8> {
-    let length = (end_date.signed_duration_since(start_date).num_weeks() + 1) as usize;
+    let length = ((end_date - start_date).whole_weeks() + 1) as usize;
     let mut res = vec![0; length];
     for date in dates {
-        let w = date.signed_duration_since(start_date).num_weeks() as usize;
+        let w = (*date - start_date).whole_weeks() as usize;
         res[w] |= 1 << (7 - date.weekday().number_from_monday());
     }
     res
@@ -99,10 +99,20 @@ fn get_operating_days(week: u8) -> Vec<Weekday> {
     let mut res = Vec::new();
     for i in 0..7 {
         if week & (1 << i) == (1 << i) {
-            res.push(Weekday::from_u8(6 - i).unwrap());
+            let weekday = match 6 - i {
+                0 => Weekday::Monday,
+                1 => Weekday::Tuesday,
+                2 => Weekday::Wednesday,
+                3 => Weekday::Thursday,
+                4 => Weekday::Friday,
+                5 => Weekday::Saturday,
+                6 => Weekday::Sunday,
+                _ => unreachable!(),
+            };
+            res.push(weekday);
         }
     }
-    res.sort_by_key(Weekday::num_days_from_monday);
+    res.sort_by_key(|weekday| weekday.number_days_from_monday());
     res
 }
 
@@ -168,6 +178,7 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use time::Month;
 
     fn compute_between(start_date: Date, end_date: Date) -> Vec<u8> {
         let mut dates = BTreeSet::new();
@@ -180,7 +191,11 @@ mod tests {
     fn one_week() {
         assert_eq!(
             1,
-            compute_between(Date::from_ymd(2012, 7, 2), Date::from_ymd(2012, 7, 8)).len()
+            compute_between(
+                Date::from_calendar_date(2012, Month::July, 2).unwrap(),
+                Date::from_calendar_date(2012, Month::July, 8).unwrap()
+            )
+            .len()
         );
     }
 
@@ -188,7 +203,11 @@ mod tests {
     fn partial_one_week() {
         assert_eq!(
             2,
-            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 15)).len()
+            compute_between(
+                Date::from_calendar_date(2012, Month::July, 4).unwrap(),
+                Date::from_calendar_date(2012, Month::July, 15).unwrap()
+            )
+            .len()
         );
     }
 
@@ -196,7 +215,11 @@ mod tests {
     fn one_week_partial() {
         assert_eq!(
             2,
-            compute_between(Date::from_ymd(2012, 7, 2), Date::from_ymd(2012, 7, 13)).len()
+            compute_between(
+                Date::from_calendar_date(2012, Month::July, 2).unwrap(),
+                Date::from_calendar_date(2012, Month::July, 13).unwrap()
+            )
+            .len()
         );
     }
 
@@ -204,7 +227,11 @@ mod tests {
     fn partial_one_week_partial_with_nb_partial_6() {
         assert_eq!(
             3,
-            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 17)).len()
+            compute_between(
+                Date::from_calendar_date(2012, Month::July, 4).unwrap(),
+                Date::from_calendar_date(2012, Month::July, 17).unwrap()
+            )
+            .len()
         );
     }
 
@@ -212,7 +239,11 @@ mod tests {
     fn partial_one_week_partial_with_nb_partial_7() {
         assert_eq!(
             3,
-            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 18)).len()
+            compute_between(
+                Date::from_calendar_date(2012, Month::July, 4).unwrap(),
+                Date::from_calendar_date(2012, Month::July, 18).unwrap()
+            )
+            .len()
         );
     }
 
@@ -220,31 +251,35 @@ mod tests {
     fn partial_one_week_partial_with_nb_partial_8() {
         assert_eq!(
             3,
-            compute_between(Date::from_ymd(2012, 7, 4), Date::from_ymd(2012, 7, 19)).len()
+            compute_between(
+                Date::from_calendar_date(2012, Month::July, 4).unwrap(),
+                Date::from_calendar_date(2012, Month::July, 19).unwrap()
+            )
+            .len()
         );
     }
 
     #[test]
     fn prev_monday_from_monday() {
         assert_eq!(
-            Date::from_ymd(2012, 7, 2),
-            get_prev_monday(Date::from_ymd(2012, 7, 2))
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
+            get_prev_monday(Date::from_calendar_date(2012, Month::July, 2).unwrap())
         );
     }
 
     #[test]
     fn prev_monday_from_thursday() {
         assert_eq!(
-            Date::from_ymd(2012, 7, 2),
-            get_prev_monday(Date::from_ymd(2012, 7, 5))
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
+            get_prev_monday(Date::from_calendar_date(2012, Month::July, 5).unwrap())
         );
     }
 
     #[test]
     fn prev_monday_from_sunday() {
         assert_eq!(
-            Date::from_ymd(2012, 7, 2),
-            get_prev_monday(Date::from_ymd(2012, 7, 8))
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
+            get_prev_monday(Date::from_calendar_date(2012, Month::July, 8).unwrap())
         );
     }
 
@@ -270,15 +305,15 @@ mod tests {
     fn only_first_day() {
         let mut dates = BTreeSet::new();
 
-        dates.insert(Date::from_ymd(2012, 7, 2));
+        dates.insert(Date::from_calendar_date(2012, Month::July, 2).unwrap());
         let res = translate(&dates);
         assert_eq!(0b100_0000, get_week_from_weekday(res.operating_days));
 
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 2),
-                end_date: Date::from_ymd(2012, 7, 2),
+                start_date: Date::from_calendar_date(2012, Month::July, 2).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             },
             res.validity_period.unwrap()
         );
@@ -287,7 +322,7 @@ mod tests {
     #[test]
     fn bound_cut() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 16),
+            Date::from_calendar_date(2012, Month::July, 16).unwrap(),
             &format!("{}{}", "0011101", "000"),
         ));
 
@@ -295,8 +330,8 @@ mod tests {
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 18),
-                end_date: Date::from_ymd(2012, 7, 22),
+                start_date: Date::from_calendar_date(2012, Month::July, 18).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 22).unwrap(),
             },
             res.validity_period.unwrap()
         );
@@ -305,7 +340,7 @@ mod tests {
     #[test]
     fn bound_cut_one_day() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 16),
+            Date::from_calendar_date(2012, Month::July, 16).unwrap(),
             &format!("{}{}", "0000010", "00"),
         ));
 
@@ -313,8 +348,8 @@ mod tests {
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 21),
-                end_date: Date::from_ymd(2012, 7, 21),
+                start_date: Date::from_calendar_date(2012, Month::July, 21).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 21).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -323,7 +358,7 @@ mod tests {
     #[test]
     fn empty_vp() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 16),
+            Date::from_calendar_date(2012, Month::July, 16).unwrap(),
             &"0000000".to_string(),
         ));
 
@@ -335,7 +370,7 @@ mod tests {
     #[test]
     fn only_one_thursday() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 2),
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             &format!("{}{}", "0000000", "0001000"),
         ));
 
@@ -343,8 +378,8 @@ mod tests {
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 12),
-                end_date: Date::from_ymd(2012, 7, 12),
+                start_date: Date::from_calendar_date(2012, Month::July, 12).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 12).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -353,7 +388,7 @@ mod tests {
     #[test]
     fn only_one_monday() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 2),
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             &format!("{}{}", "0000000", "1000000"),
         ));
 
@@ -361,8 +396,8 @@ mod tests {
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 9),
-                end_date: Date::from_ymd(2012, 7, 9),
+                start_date: Date::from_calendar_date(2012, Month::July, 9).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 9).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -371,7 +406,7 @@ mod tests {
     #[test]
     fn only_one_sunday() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 2),
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             &format!("{}{}", "0000001", "0000000"),
         ));
 
@@ -379,8 +414,8 @@ mod tests {
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 8),
-                end_date: Date::from_ymd(2012, 7, 8),
+                start_date: Date::from_calendar_date(2012, Month::July, 8).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 8).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -390,7 +425,7 @@ mod tests {
     #[test]
     fn only_one_tfss() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 2),
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             &format!("{}{}", "0000000", "0001111"),
         ));
 
@@ -398,8 +433,8 @@ mod tests {
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 12),
-                end_date: Date::from_ymd(2012, 7, 15),
+                start_date: Date::from_calendar_date(2012, Month::July, 12).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 15).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -408,7 +443,7 @@ mod tests {
     #[test]
     fn three_complete_weeks() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 2),
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             &format!("{}{}{}", "1111111", "1111111", "1111111"),
         ));
 
@@ -416,8 +451,8 @@ mod tests {
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 2),
-                end_date: Date::from_ymd(2012, 7, 22),
+                start_date: Date::from_calendar_date(2012, Month::July, 2).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 22).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -426,7 +461,7 @@ mod tests {
     #[test]
     fn three_mtwss_excluding_one_day() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 2),
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             &format!("{}{}{}", "1100111", "1100011", "1100111"),
         ));
 
@@ -434,15 +469,15 @@ mod tests {
         assert_eq!(1, res.exceptions.len());
         assert_eq!(
             &ExceptionDate {
-                date: Date::from_ymd(2012, 7, 13),
+                date: Date::from_calendar_date(2012, Month::July, 13).unwrap(),
                 exception_type: ExceptionType::Remove,
             },
             res.exceptions.get(0).unwrap()
         );
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 2),
-                end_date: Date::from_ymd(2012, 7, 22),
+                start_date: Date::from_calendar_date(2012, Month::July, 2).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 22).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -451,7 +486,7 @@ mod tests {
     #[test]
     fn three_mtwss_including_one_day() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 2),
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             &format!("{}{}{}", "1100111", "1101111", "1100111"),
         ));
 
@@ -459,15 +494,15 @@ mod tests {
         assert_eq!(1, res.exceptions.len());
         assert_eq!(
             &ExceptionDate {
-                date: Date::from_ymd(2012, 7, 12),
+                date: Date::from_calendar_date(2012, Month::July, 12).unwrap(),
                 exception_type: ExceptionType::Add,
             },
             res.exceptions.get(0).unwrap()
         );
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 2),
-                end_date: Date::from_ymd(2012, 7, 22),
+                start_date: Date::from_calendar_date(2012, Month::July, 2).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 22).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -476,7 +511,7 @@ mod tests {
     #[test]
     fn mwtfss_mttfss_mtwfss() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 2),
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             &format!("{}{}{}", "1011111", "1101111", "1110111"),
         ));
 
@@ -485,29 +520,29 @@ mod tests {
 
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2012, 7, 3),
+                date: Date::from_calendar_date(2012, Month::July, 3).unwrap(),
                 exception_type: ExceptionType::Remove,
             },
             res.exceptions[0]
         );
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2012, 7, 11),
+                date: Date::from_calendar_date(2012, Month::July, 11).unwrap(),
                 exception_type: ExceptionType::Remove,
             },
             res.exceptions[1]
         );
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2012, 7, 19),
+                date: Date::from_calendar_date(2012, Month::July, 19).unwrap(),
                 exception_type: ExceptionType::Remove,
             },
             res.exceptions[2]
         );
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 2),
-                end_date: Date::from_ymd(2012, 7, 22),
+                start_date: Date::from_calendar_date(2012, Month::July, 2).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 22).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -516,7 +551,7 @@ mod tests {
     #[test]
     fn t_w_t() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 2),
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             &format!("{}{}{}", "0100000", "0010000", "0001000"),
         ));
 
@@ -524,29 +559,29 @@ mod tests {
         assert_eq!(3, res.exceptions.len());
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2012, 7, 3),
+                date: Date::from_calendar_date(2012, Month::July, 3).unwrap(),
                 exception_type: ExceptionType::Add,
             },
             res.exceptions[0]
         );
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2012, 7, 11),
+                date: Date::from_calendar_date(2012, Month::July, 11).unwrap(),
                 exception_type: ExceptionType::Add,
             },
             res.exceptions[1]
         );
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2012, 7, 19),
+                date: Date::from_calendar_date(2012, Month::July, 19).unwrap(),
                 exception_type: ExceptionType::Add,
             },
             res.exceptions[2]
         );
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 3),
-                end_date: Date::from_ymd(2012, 7, 19),
+                start_date: Date::from_calendar_date(2012, Month::July, 3).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 19).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -555,7 +590,7 @@ mod tests {
     #[test]
     fn bound_compression() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2012, 7, 2),
+            Date::from_calendar_date(2012, Month::July, 2).unwrap(),
             &format!("{}{}{}", "0000111", "0001111", "0001110"),
         ));
 
@@ -563,8 +598,8 @@ mod tests {
         assert!(res.exceptions.is_empty());
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2012, 7, 6),
-                end_date: Date::from_ymd(2012, 7, 21),
+                start_date: Date::from_calendar_date(2012, Month::July, 6).unwrap(),
+                end_date: Date::from_calendar_date(2012, Month::July, 21).unwrap(),
             },
             res.validity_period.unwrap()
         )
@@ -574,7 +609,7 @@ mod tests {
     #[test]
     fn may2015() {
         let res = translate(&get_dates_from_bitset(
-            Date::from_ymd(2015, 4, 27),
+            Date::from_calendar_date(2015, Month::April, 27).unwrap(),
             &format!(
                 "{}{}{}{}{}",
                 "1111000", "1111000", "1110100", "1111100", "0111110"
@@ -585,43 +620,43 @@ mod tests {
         assert_eq!(5, res.exceptions.len());
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2015, 5, 1),
+                date: Date::from_calendar_date(2015, Month::May, 1).unwrap(),
                 exception_type: ExceptionType::Remove,
             },
             res.exceptions[0]
         );
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2015, 5, 8),
+                date: Date::from_calendar_date(2015, Month::May, 8).unwrap(),
                 exception_type: ExceptionType::Remove,
             },
             res.exceptions[1]
         );
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2015, 5, 14),
+                date: Date::from_calendar_date(2015, Month::May, 14).unwrap(),
                 exception_type: ExceptionType::Remove,
             },
             res.exceptions[2]
         );
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2015, 5, 30),
+                date: Date::from_calendar_date(2015, Month::May, 30).unwrap(),
                 exception_type: ExceptionType::Add,
             },
             res.exceptions[3]
         );
         assert_eq!(
             ExceptionDate {
-                date: Date::from_ymd(2015, 5, 25),
+                date: Date::from_calendar_date(2015, Month::May, 25).unwrap(),
                 exception_type: ExceptionType::Remove,
             },
             res.exceptions[4]
         );
         assert_eq!(
             ValidityPeriod {
-                start_date: Date::from_ymd(2015, 4, 27),
-                end_date: Date::from_ymd(2015, 5, 30),
+                start_date: Date::from_calendar_date(2015, Month::April, 27).unwrap(),
+                end_date: Date::from_calendar_date(2015, Month::May, 30).unwrap(),
             },
             res.validity_period.unwrap()
         )

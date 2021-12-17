@@ -94,7 +94,7 @@ pub const TRANSFER_WAITING_TIME: &str = "60";
 
 lazy_static::lazy_static! {
     /// Current datetime
-    pub static ref CURRENT_DATETIME: String = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+    pub static ref CURRENT_DATETIME: String = time::OffsetDateTime::now_utc().format(&time::format_description::well_known::Rfc3339).unwrap();
 }
 
 /// The error type used by the crate.

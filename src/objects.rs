@@ -17,7 +17,6 @@
 #![allow(missing_docs)]
 
 use crate::{serde_utils::*, AddPrefix, PrefixConfiguration};
-use chrono::NaiveDate;
 use chrono_tz::Tz;
 use derivative::Derivative;
 use geo::{Geometry as GeoGeometry, Point as GeoPoint};
@@ -29,6 +28,7 @@ use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Rem, Sub};
 use std::str::FromStr;
 use thiserror::Error;
+use time::{Date, Duration, OffsetDateTime};
 use typed_index_collection::{impl_id, impl_with_id, Idx, WithId};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
@@ -197,15 +197,14 @@ pub struct ValidityPeriod {
 
 impl Default for ValidityPeriod {
     fn default() -> ValidityPeriod {
-        use chrono::{Duration, Utc};
         let duration = Duration::days(15);
-        let today = Utc::today();
+        let today = OffsetDateTime::now_utc();
         let start_date = today - duration;
         let end_date = today + duration;
 
         ValidityPeriod {
-            start_date: start_date.naive_utc(),
-            end_date: end_date.naive_utc(),
+            start_date: start_date.date(),
+            end_date: end_date.date(),
         }
     }
 }
@@ -217,14 +216,14 @@ pub struct Dataset {
     pub contributor_id: String,
     #[serde(
         rename = "dataset_start_date",
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
     pub start_date: Date,
     #[serde(
         rename = "dataset_end_date",
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
     pub end_date: Date,
     pub dataset_type: Option<DatasetType>,
@@ -1291,8 +1290,6 @@ impl AddPrefix for Level {
 }
 impl_id!(Level);
 
-pub type Date = chrono::NaiveDate;
-
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum ExceptionType {
     #[serde(rename = "1")]
@@ -1607,15 +1604,15 @@ impl AddPrefix for AdminStation {
 pub struct PriceV1 {
     pub id: String,
     #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
-    pub start_date: NaiveDate,
+    pub start_date: Date,
     #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
-    pub end_date: NaiveDate,
+    pub end_date: Date,
     pub price: u32,
     pub name: String,
     pub ignored: String,
@@ -1713,13 +1710,13 @@ pub struct TicketPrice {
     )]
     pub currency: String,
     #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
     pub ticket_validity_start: Date,
     #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
     pub ticket_validity_end: Date,
 }
@@ -1827,8 +1824,8 @@ impl AddPrefix for GridCalendar {
 pub struct GridExceptionDate {
     pub grid_calendar_id: String,
     #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
     pub date: Date,
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
@@ -1846,13 +1843,13 @@ impl AddPrefix for GridExceptionDate {
 pub struct GridPeriod {
     pub grid_calendar_id: String,
     #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
     pub start_date: Date,
     #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
     pub end_date: Date,
 }

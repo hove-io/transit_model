@@ -718,11 +718,12 @@ mod tests {
     use crate::{
         model::Collections,
         objects::{
-            Calendar, CommercialMode, Company, Contributor, Dataset, Date, Network, PhysicalMode,
+            Calendar, CommercialMode, Company, Contributor, Dataset, Network, PhysicalMode,
             StopArea, StopPoint, StopTimePrecision, Time,
         },
     };
     use pretty_assertions::assert_eq;
+    use time::{Date, Month};
     use typed_index_collection::CollectionWithId;
 
     fn default_collections() -> Collections {
@@ -789,7 +790,9 @@ mod tests {
         });
         collections.calendars = CollectionWithId::from(Calendar {
             id: String::from("service_id"),
-            dates: vec![Date::from_ymd(2020, 1, 1)].into_iter().collect(),
+            dates: vec![Date::from_calendar_date(2020, Month::January, 1).unwrap()]
+                .into_iter()
+                .collect(),
         });
         collections.vehicle_journeys = CollectionWithId::from(VehicleJourney {
             id: String::from("vj_id_1"),

@@ -75,19 +75,19 @@ mod tests {
 
     mod set_validity_period {
         use super::super::*;
-        use crate::objects::{Dataset, Date, ValidityPeriod};
-        use chrono::naive::{MAX_DATE, MIN_DATE};
+        use crate::objects::{Dataset, ValidityPeriod};
         use pretty_assertions::assert_eq;
+        use time::{Date, Month};
 
         #[test]
         fn no_existing_validity_period() {
-            let start_date = Date::from_ymd(2019, 1, 1);
-            let end_date = Date::from_ymd(2019, 6, 30);
+            let start_date = Date::from_calendar_date(2019, Month::January, 1).unwrap();
+            let end_date = Date::from_calendar_date(2019, Month::June, 30).unwrap();
             let mut dataset = Dataset {
                 id: String::from("dataset_id"),
                 contributor_id: String::from("contributor_id"),
-                start_date: MAX_DATE,
-                end_date: MIN_DATE,
+                start_date: Date::MAX,
+                end_date: Date::MIN,
                 ..Default::default()
             };
             let service_validity_period = ValidityPeriod {
@@ -101,13 +101,13 @@ mod tests {
 
         #[test]
         fn with_extended_validity_period() {
-            let start_date = Date::from_ymd(2019, 1, 1);
-            let end_date = Date::from_ymd(2019, 6, 30);
+            let start_date = Date::from_calendar_date(2019, Month::January, 1).unwrap();
+            let end_date = Date::from_calendar_date(2019, Month::June, 30).unwrap();
             let mut dataset = Dataset {
                 id: String::from("dataset_id"),
                 contributor_id: String::from("contributor_id"),
-                start_date: Date::from_ymd(2019, 3, 1),
-                end_date: Date::from_ymd(2019, 4, 30),
+                start_date: Date::from_calendar_date(2019, Month::March, 1).unwrap(),
+                end_date: Date::from_calendar_date(2019, Month::April, 30).unwrap(),
                 ..Default::default()
             };
             let service_validity_period = ValidityPeriod {
@@ -121,8 +121,8 @@ mod tests {
 
         #[test]
         fn with_included_validity_period() {
-            let start_date = Date::from_ymd(2019, 1, 1);
-            let end_date = Date::from_ymd(2019, 6, 30);
+            let start_date = Date::from_calendar_date(2019, Month::January, 1).unwrap();
+            let end_date = Date::from_calendar_date(2019, Month::June, 30).unwrap();
             let mut dataset = Dataset {
                 id: String::from("dataset_id"),
                 contributor_id: String::from("contributor_id"),
@@ -131,8 +131,8 @@ mod tests {
                 ..Default::default()
             };
             let service_validity_period = ValidityPeriod {
-                start_date: Date::from_ymd(2019, 3, 1),
-                end_date: Date::from_ymd(2019, 4, 30),
+                start_date: Date::from_calendar_date(2019, Month::March, 1).unwrap(),
+                end_date: Date::from_calendar_date(2019, Month::April, 30).unwrap(),
             };
             set_dataset_validity_period(&mut dataset, &service_validity_period);
             assert_eq!(start_date, dataset.start_date);
@@ -146,6 +146,7 @@ mod tests {
             calendars, configuration::*, file_handler::PathFileHandler, model::Collections,
             test_utils::*,
         };
+        use time::{Date, Month};
 
         #[test]
         fn test_compute_dataset_validity_period() {
@@ -171,8 +172,8 @@ mod tests {
                     Dataset {
                         id: "default_dataset".to_string(),
                         contributor_id: "default_contributor".to_string(),
-                        start_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
-                        end_date: chrono::NaiveDate::from_ymd(2018, 5, 19),
+                        start_date: Date::from_calendar_date(2018, Month::May, 1).unwrap(),
+                        end_date: Date::from_calendar_date(2018, Month::May, 19).unwrap(),
                         dataset_type: None,
                         extrapolation: false,
                         desc: None,
@@ -202,8 +203,8 @@ mod tests {
                     Dataset {
                         id: "default_dataset".to_string(),
                         contributor_id: "default_contributor".to_string(),
-                        start_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
-                        end_date: chrono::NaiveDate::from_ymd(2018, 5, 1),
+                        start_date: Date::from_calendar_date(2018, Month::May, 1).unwrap(),
+                        end_date: Date::from_calendar_date(2018, Month::May, 1).unwrap(),
                         dataset_type: None,
                         extrapolation: false,
                         desc: None,

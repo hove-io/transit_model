@@ -20,11 +20,10 @@ use crate::{
         StopExporter, TransferExporter,
     },
     netex_utils::FrameType,
-    objects::{Date, Line, Network},
+    objects::{Line, Network},
     Result,
 };
 use anyhow::anyhow;
-use chrono::prelude::*;
 use minidom::{Element, Node};
 use minidom_writer::ElementWriter;
 use proj::Proj;
@@ -36,6 +35,7 @@ use std::{
     iter,
     path::Path,
 };
+use time::{format_description::well_known::Rfc3339, Date, OffsetDateTime};
 use tracing::info;
 use typed_index_collection::Idx;
 
@@ -125,7 +125,7 @@ pub struct Exporter<'a> {
     model: &'a Model,
     participant_ref: String,
     _stop_provider_code: String,
-    timestamp: DateTime<FixedOffset>,
+    timestamp: OffsetDateTime,
 }
 
 // Publicly exposed methods
@@ -137,7 +137,7 @@ impl<'a> Exporter<'a> {
         model: &'a Model,
         participant_ref: String,
         stop_provider_code: Option<String>,
-        timestamp: DateTime<FixedOffset>,
+        timestamp: OffsetDateTime,
     ) -> Self {
         let _stop_provider_code = stop_provider_code.unwrap_or_else(|| String::from("LOC"));
         Exporter {
@@ -186,7 +186,11 @@ impl Exporter<'_> {
     fn wrap_frame(&self, frame: Element, version_type: VersionType) -> Element {
         let publication_timestamp = Element::builder("PublicationTimestamp")
             .ns("http://www.netex.org.uk/netex/")
-            .append(self.timestamp.to_rfc3339())
+            .append(
+                self.timestamp
+                    .format(&Rfc3339)
+                    .expect("format description is correct at compile time"),
+            )
             .build();
         let participant_ref = Element::builder("ParticipantRef")
             .ns("http://www.netex.org.uk/netex/")
@@ -373,15 +377,19 @@ impl Exporter<'_> {
     }
 
     fn create_valid_between(&self) -> Result<Element> {
-        let format_date = |date: Date, hour, minute, second| -> String {
-            DateTime::<Utc>::from_utc(date.and_hms(hour, minute, second), Utc).to_rfc3339()
+        let format_date = |date: Date, hour, minute, second| -> Result<String> {
+            date.with_hms(hour, minute, second)
+                .map_err(anyhow::Error::from)?
+                .assume_utc()
+                .format(&Rfc3339)
+                .map_err(anyhow::Error::from)
         };
         let (start_date, end_date) = self.model.calculate_validity_period()?;
         let from_date = Element::builder("FromDate")
-            .append(Node::Text(format_date(start_date, 0, 0, 0)))
+            .append(Node::Text(format_date(start_date, 0, 0, 0)?))
             .build();
         let to_date = Element::builder("ToDate")
-            .append(Node::Text(format_date(end_date, 23, 59, 59)))
+            .append(Node::Text(format_date(end_date, 23, 59, 59)?))
             .build();
         let valid_between = Element::builder("ValidBetween")
             .append(from_date)

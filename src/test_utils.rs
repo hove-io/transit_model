@@ -12,7 +12,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use chrono::{DateTime, FixedOffset};
 use pretty_assertions::assert_eq;
 use std::collections::BTreeSet;
 use std::fs;
@@ -21,6 +20,7 @@ use std::io::{prelude::*, BufReader};
 use std::path;
 use std::path::Path;
 use tempfile::tempdir;
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 pub fn get_file_content<P: AsRef<Path>>(path: P) -> Vec<String> {
     let path = path.as_ref();
@@ -144,6 +144,6 @@ where
     tmp_dir.close().expect("delete temp dir");
 }
 
-pub fn get_test_datetime() -> DateTime<FixedOffset> {
-    DateTime::parse_from_rfc3339("2019-04-03T17:19:00Z").unwrap()
+pub fn get_test_datetime() -> OffsetDateTime {
+    OffsetDateTime::parse("2019-04-03T17:19:00Z", &Rfc3339).unwrap()
 }

@@ -38,6 +38,7 @@ use std::{
     cmp,
     collections::{BTreeMap, BTreeSet, HashMap},
 };
+use time::Duration;
 use tracing::{info, warn};
 use typed_index_collection::{impl_id, Collection, CollectionWithId, Idx};
 
@@ -1258,7 +1259,7 @@ where
                     let new_dates: BTreeSet<_> = service
                         .dates
                         .iter()
-                        .map(|d| *d + chrono::Duration::days(i64::from(nb_days)))
+                        .map(|d| *d + Duration::days(i64::from(nb_days)))
                         .collect();
 
                     let new_service = objects::Calendar {
@@ -1356,6 +1357,7 @@ mod tests {
     };
     use geo::line_string;
     use pretty_assertions::assert_eq;
+    use time::{Date, Month};
     use typed_index_collection::Id;
 
     fn extract<'a, T, S: ::std::cmp::Ord>(f: fn(&'a T) -> S, c: &'a Collection<T>) -> Vec<S> {
@@ -2825,8 +2827,8 @@ mod tests {
             calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
-            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
-            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+            dates.insert(Date::from_calendar_date(2018, Month::May, 5).unwrap());
+            dates.insert(Date::from_calendar_date(2018, Month::May, 6).unwrap());
             assert_eq!(
                 vec![Calendar {
                     id: "1".to_string(),
@@ -2852,7 +2854,7 @@ mod tests {
             calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
-            dates.insert(chrono::NaiveDate::from_ymd(2018, 2, 12));
+            dates.insert(Date::from_calendar_date(2018, Month::February, 12).unwrap());
             assert_eq!(
                 vec![Calendar {
                     id: "1".to_string(),
@@ -2884,8 +2886,8 @@ mod tests {
             calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
-            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
-            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 7));
+            dates.insert(Date::from_calendar_date(2018, Month::May, 6).unwrap());
+            dates.insert(Date::from_calendar_date(2018, Month::May, 7).unwrap());
             assert_eq!(
                 vec![
                     Calendar {

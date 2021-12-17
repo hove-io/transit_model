@@ -12,8 +12,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use chrono::NaiveDate;
 use std::path::Path;
+use time::{Date, Month};
 use transit_model::model::Model;
 use transit_model::test_utils::*;
 
@@ -26,8 +26,8 @@ fn test_restrict_global() {
         let mut collections = objects.into_collections();
         collections
             .restrict_period(
-                NaiveDate::from_ymd(2018, 5, 1),
-                NaiveDate::from_ymd(2018, 8, 5),
+                Date::from_calendar_date(2018, Month::May, 1).unwrap(),
+                Date::from_calendar_date(2018, Month::August, 5).unwrap(),
             )
             .unwrap();
         let new_model = Model::new(collections).unwrap();
@@ -49,8 +49,8 @@ fn test_restrict_no_panic() {
         let mut collections = objects.into_collections();
         collections
             .restrict_period(
-                NaiveDate::from_ymd(2018, 8, 2),
-                NaiveDate::from_ymd(2019, 7, 31),
+                Date::from_calendar_date(2018, Month::August, 2).unwrap(),
+                Date::from_calendar_date(2019, Month::July, 31).unwrap(),
             )
             .unwrap();
         let new_model = Model::new(collections).unwrap();

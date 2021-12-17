@@ -31,7 +31,8 @@
 //! ```
 
 use crate::model::{Collections, Model};
-use crate::objects::{Calendar, Date, Route, StopPoint, StopTime, Time, VehicleJourney};
+use crate::objects::{Calendar, Route, StopPoint, StopTime, Time, VehicleJourney};
+use time::{macros::format_description, Date, Month};
 use typed_index_collection::Idx;
 
 const DEFAULT_CALENDAR_ID: &str = "default_service";
@@ -126,12 +127,10 @@ impl<'a> ModelBuilder {
     /// Note: if the date are in strings not in the right format, this conversion will fail
     ///
     /// ```
-    /// # use transit_model::objects::Date;
-    ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
     ///      .calendar("c1", &["2020-01-01", "2020-01-02"])
-    ///      .calendar("default_service", &[Date::from_ymd(2019, 2, 6)])
+    ///      .calendar("default_service", &[time::Date::from_calendar_date(2019, time::Month::February, 6).unwrap()])
     ///      .vj("toto", |vj| {
     ///          vj.calendar("c1")
     ///            .st("A", "10:00:00", "10:01:00")
@@ -155,8 +154,6 @@ impl<'a> ModelBuilder {
     /// to this calendar
     ///
     /// ```
-    /// # use transit_model::objects::Date;
-    ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
     ///      .default_calendar(&["2020-01-01"])
@@ -174,12 +171,10 @@ impl<'a> ModelBuilder {
     /// Add a new Calendar to the model
     ///
     /// ```
-    /// # use transit_model::objects::Date;
-    ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
     ///      .calendar_mut("c1", |c| {
-    ///             c.dates.insert(Date::from_ymd(2019, 2, 6));
+    ///             c.dates.insert(time::Date::from_calendar_date(2019, time::Month::February, 6).unwrap());
     ///         })
     ///      .vj("toto", |vj| {
     ///          vj.calendar("c1")
@@ -207,7 +202,8 @@ impl<'a> ModelBuilder {
             let default_calendar = self.collections.calendars.get_mut(DEFAULT_CALENDAR_ID);
             if let Some(mut cal) = default_calendar {
                 if cal.dates.is_empty() {
-                    cal.dates.insert(Date::from_ymd(2020, 1, 1));
+                    cal.dates
+                        .insert(Date::from_calendar_date(2020, Month::January, 1).unwrap());
                 }
             }
         }
@@ -258,7 +254,7 @@ impl AsDate for &Date {
 impl AsDate for &str {
     // Note: if the string is not in the right format, this conversion will fail
     fn as_date(&self) -> Date {
-        self.parse().expect("invalid date format")
+        Date::parse(self, format_description!("[year]-[month]-[day]")).expect("invalid date format")
     }
 }
 
@@ -375,8 +371,6 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// Set the calendar (service_id) of the vj
     ///
     /// ```
-    /// # use transit_model::objects::Date;
-    ///
     /// # fn main() {
     /// let model = transit_model_builder::ModelBuilder::default()
     ///        .calendar("c1", &["2021-01-07"])
@@ -440,7 +434,7 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
 
 #[cfg(test)]
 mod test {
-    use super::ModelBuilder;
+    use super::*;
 
     #[test]
     fn simple_model_creation() {
@@ -472,7 +466,7 @@ mod test {
                 .collect()
         );
         let default_calendar = model.calendars.get("default_service").unwrap();
-        let dates = [transit_model::objects::Date::from_ymd(2020, 1, 1)]
+        let dates = [Date::from_calendar_date(2020, Month::January, 1).unwrap()]
             .iter()
             .copied()
             .collect::<std::collections::BTreeSet<_>>();

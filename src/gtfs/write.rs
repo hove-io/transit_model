@@ -508,6 +508,7 @@ mod tests {
     use pretty_assertions::assert_eq;
     use std::{collections::BTreeSet, fs::File, io::Read};
     use tempfile::tempdir;
+    use time::{Date, Month};
 
     #[test]
     fn write_agency() {
@@ -839,7 +840,7 @@ mod tests {
             })
             .unwrap();
         let mut dates = BTreeSet::new();
-        dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+        dates.insert(Date::from_calendar_date(2018, Month::May, 6).unwrap());
         collections
             .calendars
             .push(objects::Calendar {
@@ -1118,9 +1119,9 @@ mod tests {
     fn write_calendar_file_from_calendar() {
         let mut dates = BTreeSet::new();
         //saturday
-        dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
+        dates.insert(Date::from_calendar_date(2018, Month::May, 5).unwrap());
         //sunday
-        dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+        dates.insert(Date::from_calendar_date(2018, Month::May, 6).unwrap());
         let calendar = CollectionWithId::new(vec![
             Calendar {
                 id: "1".to_string(),

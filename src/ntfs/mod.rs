@@ -28,12 +28,12 @@ use crate::{
     Result,
 };
 use anyhow::{anyhow, Context};
-use chrono::{DateTime, FixedOffset};
 use chrono_tz::Tz;
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use std::path;
 use tempfile::tempdir;
+use time::OffsetDateTime;
 use tracing::info;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -339,7 +339,7 @@ where
 pub fn write<P: AsRef<path::Path>>(
     model: &Model,
     path: P,
-    current_datetime: DateTime<FixedOffset>,
+    current_datetime: OffsetDateTime,
 ) -> Result<()> {
     let path = path.as_ref();
     std::fs::create_dir_all(path)?;
@@ -416,7 +416,7 @@ pub fn write<P: AsRef<path::Path>>(
 pub fn write_to_zip<P: AsRef<path::Path>>(
     model: &Model,
     path: P,
-    current_datetime: DateTime<FixedOffset>,
+    current_datetime: OffsetDateTime,
 ) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to ZIP File {:?}", path);
@@ -441,6 +441,7 @@ mod tests {
         collections::{BTreeMap, BTreeSet, HashMap},
         fmt::Debug,
     };
+    use time::{Date, Month};
     use typed_index_collection::{Collection, CollectionWithId, Id};
 
     fn test_serialize_deserialize_collection_with_id<T>(objects: Vec<T>)
@@ -484,8 +485,8 @@ mod tests {
         let dataset = Dataset {
             id: "Foo:0".to_string(),
             contributor_id: "Foo".to_string(),
-            start_date: chrono::NaiveDate::from_ymd(2018, 1, 30),
-            end_date: chrono::NaiveDate::from_ymd(2018, 1, 31),
+            start_date: Date::from_calendar_date(2018, Month::January, 30).unwrap(),
+            end_date: Date::from_calendar_date(2018, Month::January, 31).unwrap(),
             dataset_type: Some(DatasetType::Theorical),
             extrapolation: false,
             desc: Some("description".to_string()),
@@ -507,7 +508,7 @@ mod tests {
                     ("feed_creation_date".to_string(), "20190403".to_string()),
                     (
                         "feed_creation_datetime".to_string(),
-                        "2019-04-03T17:19:00+00:00".to_string()
+                        "2019-04-03T17:19:00Z".to_string()
                     ),
                     ("feed_creation_time".to_string(), "17:19:00".to_string()),
                     ("feed_end_date".to_string(), "20180131".to_string()),
@@ -846,8 +847,8 @@ mod tests {
             Dataset {
                 id: "Foo:0".to_string(),
                 contributor_id: "Foo".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2018, 1, 30),
-                end_date: chrono::NaiveDate::from_ymd(2018, 1, 31),
+                start_date: Date::from_calendar_date(2018, Month::January, 30).unwrap(),
+                end_date: Date::from_calendar_date(2018, Month::January, 31).unwrap(),
                 dataset_type: Some(DatasetType::Theorical),
                 extrapolation: false,
                 desc: Some("description".to_string()),
@@ -856,8 +857,8 @@ mod tests {
             Dataset {
                 id: "Bar:0".to_string(),
                 contributor_id: "Bar".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2018, 1, 30),
-                end_date: chrono::NaiveDate::from_ymd(2018, 1, 31),
+                start_date: Date::from_calendar_date(2018, Month::January, 30).unwrap(),
+                end_date: Date::from_calendar_date(2018, Month::January, 31).unwrap(),
                 dataset_type: None,
                 extrapolation: false,
                 desc: None,
@@ -930,11 +931,11 @@ mod tests {
     #[test]
     fn calendar_serialization_deserialization() {
         let mut dates1 = ::std::collections::BTreeSet::new();
-        dates1.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
-        dates1.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+        dates1.insert(Date::from_calendar_date(2018, Month::May, 5).unwrap());
+        dates1.insert(Date::from_calendar_date(2018, Month::May, 6).unwrap());
 
         let mut dates2 = ::std::collections::BTreeSet::new();
-        dates2.insert(chrono::NaiveDate::from_ymd(2018, 6, 1));
+        dates2.insert(Date::from_calendar_date(2018, Month::June, 1).unwrap());
 
         let calendars = CollectionWithId::new(vec![
             Calendar {
@@ -1475,8 +1476,8 @@ mod tests {
         test_serialize_deserialize_collection(vec![
             PriceV1 {
                 id: "PV1-01".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2019, 1, 1),
-                end_date: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                start_date: Date::from_calendar_date(2019, Month::January, 1).unwrap(),
+                end_date: Date::from_calendar_date(2019, Month::December, 31).unwrap(),
                 price: 190,
                 name: "Ticket PV1-01".to_string(),
                 ignored: "".to_string(),
@@ -1485,8 +1486,8 @@ mod tests {
             },
             PriceV1 {
                 id: "PV1-02".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2019, 1, 1),
-                end_date: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                start_date: Date::from_calendar_date(2019, Month::January, 1).unwrap(),
+                end_date: Date::from_calendar_date(2019, Month::December, 31).unwrap(),
                 price: 280,
                 name: "Ticket PV1-02".to_string(),
                 ignored: "".to_string(),
@@ -1586,15 +1587,15 @@ mod tests {
                 ticket_id: "PF1:Ticket1".to_string(),
                 price: dec!(150.0),
                 currency: "EUR".to_string(),
-                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 1, 1),
-                ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                ticket_validity_start: Date::from_calendar_date(2019, Month::January, 1).unwrap(),
+                ticket_validity_end: Date::from_calendar_date(2019, Month::December, 31).unwrap(),
             },
             TicketPrice {
                 ticket_id: "PF2:Ticket2".to_string(),
                 price: dec!(900.0),
                 currency: "GHS".to_string(),
-                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 1, 1),
-                ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                ticket_validity_start: Date::from_calendar_date(2019, Month::January, 1).unwrap(),
+                ticket_validity_end: Date::from_calendar_date(2019, Month::December, 31).unwrap(),
             },
         ]);
     }

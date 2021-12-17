@@ -16,7 +16,6 @@
 
 use crate::{enhancers, objects::*, Error, Result};
 use anyhow::{anyhow, bail};
-use chrono::NaiveDate;
 use derivative::Derivative;
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
@@ -30,6 +29,7 @@ use std::{
     hash::{Hash, Hasher},
     ops,
 };
+use time::Date;
 use tracing::{debug, warn};
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
 
@@ -147,7 +147,7 @@ impl Collections {
     }
 
     /// Restrict the validity period of the current `Collections` with the start_date and end_date
-    pub fn restrict_period(&mut self, start_date: NaiveDate, end_date: NaiveDate) -> Result<()> {
+    pub fn restrict_period(&mut self, start_date: Date, end_date: Date) -> Result<()> {
         let mut calendars = self.calendars.take();
         for calendar in calendars.iter_mut() {
             calendar.dates = calendar
@@ -1568,29 +1568,52 @@ mod tests {
     mod calendar_deduplication {
         use super::*;
         use pretty_assertions::assert_eq;
+        use time::Month;
 
         #[test]
         fn enhance() {
             let mut collections = Collections::default();
 
             let mut service_1 = Calendar::new(String::from("service_1"));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 1));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 2));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 3));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            service_1
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 1).unwrap());
+            service_1
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 2).unwrap());
+            service_1
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 3).unwrap());
+            service_1
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 10).unwrap());
             collections.calendars.push(service_1).unwrap();
 
             let mut service_2 = Calendar::new(String::from("service_2"));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 1));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 2));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 3));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            service_2
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 1).unwrap());
+            service_2
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 2).unwrap());
+            service_2
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 3).unwrap());
+            service_2
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 10).unwrap());
             collections.calendars.push(service_2).unwrap();
 
             let mut service_3 = Calendar::new(String::from("service_3"));
-            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 1));
-            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 3));
-            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            service_3
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 1).unwrap());
+            service_3
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 3).unwrap());
+            service_3
+                .dates
+                .insert(Date::from_calendar_date(2019, Month::October, 10).unwrap());
             collections.calendars.push(service_3).unwrap();
 
             collections

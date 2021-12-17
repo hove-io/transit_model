@@ -13,8 +13,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 //! Some utilities for serialize / deserialize transit model objects.
 
-use crate::objects::Date;
-use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use tracing::error;
 use wkt::ToWkt;
@@ -62,25 +60,27 @@ where
     serializer.serialize_u8(*v as u8)
 }
 
-/// deserialize date from String
-pub fn de_from_date_string<'de, D>(deserializer: D) -> Result<Date, D::Error>
+/// deserialize into time::Date
+pub fn de_into_time_date<'de, D>(deserializer: D) -> Result<time::Date, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
     use serde::Deserialize;
     let s = String::deserialize(deserializer)?;
 
-    NaiveDate::parse_from_str(&s, "%Y%m%d").map_err(serde::de::Error::custom)
+    time::Date::parse(&s, time::macros::format_description!("[year][month][day]"))
+        .map_err(serde::de::Error::custom)
 }
 
-/// serialize naive date to String
-// The signature of the function must pass by reference for 'serde' to be able to use the function
-pub fn ser_from_naive_date<S>(date: &Date, serializer: S) -> Result<S::Ok, S::Error>
+/// serialize time::Date
+pub fn ser_from_time_date<S>(date: &time::Date, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
-    let s = format!("{}", date.format("%Y%m%d"));
-    serializer.serialize_str(&s)
+    let format = date
+        .format(time::macros::format_description!("[year][month][day]"))
+        .map_err(serde::ser::Error::custom)?;
+    serializer.serialize_str(format.as_str())
 }
 
 /// deserialize type T or returns its default value

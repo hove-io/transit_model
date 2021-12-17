@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PublicationDelivery version="1.09:FR-NETEX_CALENDRIER-2.1-1.0" xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.netex.org.uk/netex">
-	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
+	<PublicationTimestamp>2019-04-03T17:19:00Z</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
 		<GeneralFrame id="FR:GeneralFrame:NETEX_CALENDRIER:" version="any">
 			<ValidBetween>
-				<FromDate>2018-01-01T00:00:00+00:00</FromDate>
-				<ToDate>2018-12-31T23:59:59+00:00</ToDate>
+				<FromDate>2018-01-01T00:00:00Z</FromDate>
+				<ToDate>2018-12-31T23:59:59Z</ToDate>
 			</ValidBetween>
 			<members>
 				<DayType id="FR:DayType:Week:" version="any">
@@ -18,7 +18,7 @@
 					</DayTypeRef>
 				</DayTypeAssignment>
 				<UicOperatingPeriod id="FR:UicOperatingPeriod:Week:" version="any">
-					<FromDate>2018-01-01T00:00:00+00:00</FromDate>
+					<FromDate>2018-01-01T00:00:00Z</FromDate>
 					<ValidDayBits>11111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001111100111110011111001</ValidDayBits>
 				</UicOperatingPeriod>
 			</members>

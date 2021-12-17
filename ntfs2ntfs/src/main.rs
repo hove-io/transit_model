@@ -14,9 +14,9 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use chrono::{DateTime, FixedOffset};
 use std::path::PathBuf;
 use structopt::StructOpt;
+use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 use tracing::info;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
@@ -31,6 +31,10 @@ lazy_static::lazy_static! {
 
 fn get_version() -> &'static str {
     &GIT_VERSION
+}
+
+fn parse_offset_datetime(offset_date_time: &str) -> Result<OffsetDateTime, time::error::Parse> {
+    OffsetDateTime::parse(offset_date_time, &Rfc3339)
 }
 
 #[derive(Debug, StructOpt)]
@@ -48,10 +52,10 @@ struct Opt {
     #[structopt(
         short = "x",
         long,
-        parse(try_from_str),
+        parse(try_from_str = parse_offset_datetime),
         default_value = &transit_model::CURRENT_DATETIME
     )]
-    current_datetime: DateTime<FixedOffset>,
+    current_datetime: time::OffsetDateTime,
 
     /// The maximum distance in meters to compute the tranfer.
     #[structopt(long, short = "d", default_value = transit_model::TRANSFER_MAX_DISTANCE)]

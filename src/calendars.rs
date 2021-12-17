@@ -19,17 +19,17 @@
 
 use crate::file_handler::FileHandler;
 use crate::model::Collections;
-use crate::objects::{self, Date, ExceptionType};
+use crate::objects::{self, ExceptionType};
 use crate::parser::read_objects;
 use crate::serde_utils::*;
 use crate::vptranslator::translate;
 use crate::Result;
 use anyhow::{anyhow, bail, Context};
-use chrono::{self, Datelike, Weekday};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_warn;
 use std::collections::BTreeSet;
 use std::path;
+use time::{Date, Duration, Weekday};
 use tracing::info;
 use typed_index_collection::*;
 
@@ -39,8 +39,8 @@ pub struct CalendarDate {
     /// Identifiers of the Service
     pub service_id: String,
     #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
     /// Date at which the CalendarDate applies
     pub date: Date,
@@ -77,14 +77,14 @@ pub struct Calendar {
     sunday: bool,
     /// The Service is active starting from this date
     #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
     start_date: Date,
     /// The Service is active until this date
     #[serde(
-        deserialize_with = "de_from_date_string",
-        serialize_with = "ser_from_naive_date"
+        deserialize_with = "de_into_time_date",
+        serialize_with = "ser_from_time_date"
     )]
     end_date: Date,
 }
@@ -93,25 +93,25 @@ impl Calendar {
     fn get_valid_days(&self) -> Vec<Weekday> {
         let mut valid_days: Vec<Weekday> = vec![];
         if self.monday {
-            valid_days.push(Weekday::Mon);
+            valid_days.push(Weekday::Monday);
         }
         if self.tuesday {
-            valid_days.push(Weekday::Tue);
+            valid_days.push(Weekday::Tuesday);
         }
         if self.wednesday {
-            valid_days.push(Weekday::Wed);
+            valid_days.push(Weekday::Wednesday);
         }
         if self.thursday {
-            valid_days.push(Weekday::Thu);
+            valid_days.push(Weekday::Thursday);
         }
         if self.friday {
-            valid_days.push(Weekday::Fri);
+            valid_days.push(Weekday::Friday);
         }
         if self.saturday {
-            valid_days.push(Weekday::Sat);
+            valid_days.push(Weekday::Saturday);
         }
         if self.sunday {
-            valid_days.push(Weekday::Sun);
+            valid_days.push(Weekday::Sunday);
         }
 
         valid_days
@@ -120,8 +120,8 @@ impl Calendar {
     fn get_valid_dates(&self) -> BTreeSet<Date> {
         let valid_days = self.get_valid_days();
         let duration = self.end_date - self.start_date;
-        (0..=duration.num_days())
-            .map(|i| self.start_date + chrono::Duration::days(i))
+        (0..=duration.whole_days())
+            .map(|i| self.start_date + Duration::days(i))
             .filter(|d| valid_days.contains(&d.weekday()))
             .collect()
     }
@@ -225,13 +225,13 @@ pub fn write_calendar_dates(
             ));
             translations.push(Calendar {
                 id: c.id.clone(),
-                monday: translation.operating_days.contains(&Weekday::Mon),
-                tuesday: translation.operating_days.contains(&Weekday::Tue),
-                wednesday: translation.operating_days.contains(&Weekday::Wed),
-                thursday: translation.operating_days.contains(&Weekday::Thu),
-                friday: translation.operating_days.contains(&Weekday::Fri),
-                saturday: translation.operating_days.contains(&Weekday::Sat),
-                sunday: translation.operating_days.contains(&Weekday::Sun),
+                monday: translation.operating_days.contains(&Weekday::Monday),
+                tuesday: translation.operating_days.contains(&Weekday::Tuesday),
+                wednesday: translation.operating_days.contains(&Weekday::Wednesday),
+                thursday: translation.operating_days.contains(&Weekday::Thursday),
+                friday: translation.operating_days.contains(&Weekday::Friday),
+                saturday: translation.operating_days.contains(&Weekday::Saturday),
+                sunday: translation.operating_days.contains(&Weekday::Sunday),
                 start_date: validity_period.start_date,
                 end_date: validity_period.end_date,
             });

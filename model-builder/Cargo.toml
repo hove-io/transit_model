@@ -12,6 +12,7 @@ categories = ["data-structures"]
 keywords = ["transit"]
 
 [dependencies]
+time = { version = "0.3", features = ["macros", "parsing"]}
 # Swap the next two lines when publishing
 # transit_model = "0.6"
 transit_model = { path = "../" }

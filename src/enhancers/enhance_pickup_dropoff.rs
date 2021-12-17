@@ -167,9 +167,10 @@ pub fn enhance_pickup_dropoff(collections: &mut Collections) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::objects::{Calendar, Date, StopPoint, Time};
+    use crate::objects::{Calendar, StopPoint, Time};
     use pretty_assertions::assert_eq;
     use std::collections::BTreeSet;
+    use time::{Date, Month};
     use typed_index_collection::CollectionWithId;
 
     // For testing, we need to configure:
@@ -318,7 +319,7 @@ mod tests {
         );
         collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_calendar_date(2020, Month::January, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,
@@ -359,7 +360,7 @@ mod tests {
         );
         collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_calendar_date(2020, Month::January, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,
@@ -400,7 +401,7 @@ mod tests {
         );
         collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_calendar_date(2020, Month::January, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,
@@ -464,7 +465,7 @@ mod tests {
         });
         drop(vj_mut);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_calendar_date(2020, Month::January, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,

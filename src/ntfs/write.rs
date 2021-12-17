@@ -18,44 +18,50 @@ use crate::ntfs::{has_fares_v1, has_fares_v2};
 use crate::objects::*;
 use crate::NTFS_VERSION;
 use anyhow::{anyhow, bail, Context};
-use chrono::{DateTime, Duration, FixedOffset};
 use csv::Writer;
 use rust_decimal::{prelude::ToPrimitive, Decimal};
 use std::collections::{BTreeSet, HashMap};
 use std::fs::File;
 use std::path;
+use time::{
+    format_description::well_known::Rfc3339, macros::format_description, Duration, OffsetDateTime,
+};
 use tracing::{info, warn};
 use typed_index_collection::{Collection, CollectionWithId, Id};
 
 pub fn write_feed_infos(
     path: &path::Path,
     collections: &Collections,
-    current_datetime: DateTime<FixedOffset>,
+    current_datetime: OffsetDateTime,
 ) -> Result<()> {
     info!("Writing feed_infos.txt");
     let path = path.join("feed_infos.txt");
     let mut feed_infos = collections.feed_infos.clone();
     feed_infos.insert(
         "feed_creation_date".to_string(),
-        current_datetime.format("%Y%m%d").to_string(),
+        current_datetime.format(format_description!("[year][month][day]"))?,
     );
     feed_infos.insert(
         "feed_creation_time".to_string(),
-        current_datetime.format("%T").to_string(),
+        current_datetime.format(format_description!("[hour]:[minute]:[second]"))?,
     );
     feed_infos.insert(
         "feed_creation_datetime".to_string(),
-        current_datetime.to_rfc3339(),
+        current_datetime.format(&Rfc3339)?,
     );
     feed_infos.insert("ntfs_version".to_string(), NTFS_VERSION.to_string());
     let (start_date, end_date) = collections.calculate_validity_period()?;
     feed_infos.insert(
         "feed_start_date".to_string(),
-        start_date.format("%Y%m%d").to_string(),
+        start_date
+            .format(format_description!("[year][month][day]"))
+            .unwrap(),
     );
     feed_infos.insert(
         "feed_end_date".to_string(),
-        end_date.format("%Y%m%d").to_string(),
+        end_date
+            .format(format_description!("[year][month][day]"))
+            .unwrap(),
     );
 
     let mut wtr =
