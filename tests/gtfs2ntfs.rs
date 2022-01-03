@@ -18,7 +18,7 @@ use transit_model::{
     objects::{Contributor, Dataset},
     read_utils::read_config,
     test_utils::*,
-    PrefixConfiguration,
+    Model, PrefixConfiguration,
 };
 
 #[test]
@@ -51,7 +51,11 @@ fn test_gtfs() {
 fn test_minimal_gtfs() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/minimal/input";
-        let model = transit_model::gtfs::read(input_dir).unwrap();
+        let mut collections = transit_model::gtfs::Reader::default()
+            .parse_collections(input_dir)
+            .unwrap();
+        transit_model::gtfs::convert_gtfs_pickup_drop_off_type_to_ntfs_type(&mut collections);
+        let model = Model::new(collections).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
@@ -144,9 +148,11 @@ fn test_minimal_gtfs_with_odt_comment() {
             ),
             read_as_line: false,
         };
-        let model = transit_model::gtfs::Reader::new(configuration)
-            .parse(input_dir)
+        let mut collections = transit_model::gtfs::Reader::new(configuration)
+            .parse_collections(input_dir)
             .unwrap();
+        transit_model::gtfs::convert_gtfs_pickup_drop_off_type_to_ntfs_type(&mut collections);
+        let model = Model::new(collections).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             &path,

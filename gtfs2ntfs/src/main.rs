@@ -23,7 +23,9 @@ use tracing_subscriber::{
     layer::SubscriberExt as _,
     util::SubscriberInitExt as _,
 };
-use transit_model::{read_utils, transfers::generates_transfers, PrefixConfiguration, Result};
+use transit_model::{
+    read_utils, transfers::generates_transfers, Model, PrefixConfiguration, Result,
+};
 
 lazy_static::lazy_static! {
     pub static ref GIT_VERSION: String = transit_model::binary_full_version(env!("CARGO_PKG_VERSION"));
@@ -118,7 +120,11 @@ fn run(opt: Opt) -> Result<()> {
         read_as_line: opt.read_as_line,
     };
 
-    let model = transit_model::gtfs::Reader::new(configuration).parse(opt.input)?;
+    let mut collections =
+        transit_model::gtfs::Reader::new(configuration).parse_collections(opt.input)?;
+    transit_model::gtfs::convert_gtfs_pickup_drop_off_type_to_ntfs_type(&mut collections);
+
+    let model = Model::new(collections)?;
 
     let model = generates_transfers(
         model,

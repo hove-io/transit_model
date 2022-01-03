@@ -21,7 +21,7 @@ use crate::{
     calendars::{manage_calendars, write_calendar_dates},
     gtfs::read::EquipmentList,
     model::{Collections, Model},
-    objects::{self, Availability, Contributor, Dataset, StopType, Time},
+    objects::{self, Availability, Contributor, Dataset, StopType, Time, VehicleJourney},
     read_utils,
     utils::*,
     validity_period, AddPrefix, PrefixConfiguration, Result,
@@ -30,9 +30,9 @@ use anyhow::{anyhow, Context};
 use chrono_tz::Tz;
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, fmt, path::Path};
+use std::{cmp, collections::BTreeMap, fmt, path::Path};
 use tracing::info;
-use typed_index_collection::CollectionWithId;
+use typed_index_collection::{CollectionWithId, Idx};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Agency {
@@ -278,6 +278,17 @@ fn read_file_handler<H>(file_handler: &mut H, configuration: Configuration) -> R
 where
     for<'a> &'a mut H: read_utils::FileHandler,
 {
+    let collections = read_file_handler_to_collections(file_handler, configuration)?;
+    Model::new(collections)
+}
+
+fn read_file_handler_to_collections<H>(
+    file_handler: &mut H,
+    configuration: Configuration,
+) -> Result<Collections>
+where
+    for<'a> &'a mut H: read_utils::FileHandler,
+{
     let mut collections = Collections::default();
     let mut equipments = EquipmentList::default();
 
@@ -328,7 +339,7 @@ where
     }
 
     collections.calendar_deduplication();
-    Model::new(collections)
+    Ok(collections)
 }
 
 /// Imports a `Model` from the [GTFS](https://gtfs.org/reference/static)
@@ -413,20 +424,58 @@ impl Reader {
             ))
         }
     }
+    /// Imports `Collections` from the
+    /// [GTFS](https://gtfs.org/reference/static).
+    /// files in the given directory.
+    /// This method will try to detect if the input is a zipped archive or not.
+    /// If the default file type mechanism is not enough, you can use
+    /// [Reader::parse_zip] or [Reader::parse_dir].
+    pub fn parse_collections(self, path: impl AsRef<Path>) -> Result<Collections> {
+        let p = path.as_ref();
+        if p.is_file() {
+            // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
+            Ok(self
+                .parse_zip_collections(p)
+                .with_context(|| format!("impossible to read zipped gtfs {:?}", p))?)
+        } else if p.is_dir() {
+            Ok(self
+                .parse_dir_collections(p)
+                .with_context(|| format!("impossible to read gtfs directory from {:?}", p))?)
+        } else {
+            Err(anyhow!(
+                "file {:?} is neither a file nor a directory, cannot read a gtfs from it",
+                p
+            ))
+        }
+    }
 
     /// Imports a `Model` from a zip file containing the
     /// [GTFS](https://gtfs.org/reference/static).
     pub fn parse_zip(self, path: impl AsRef<Path>) -> Result<Model> {
-        let reader = std::fs::File::open(path.as_ref())?;
-        let mut file_handler = read_utils::ZipHandler::new(reader, path)?;
-        read_file_handler(&mut file_handler, self.configuration)
+        let collections = self.parse_zip_collections(path)?;
+        Model::new(collections)
     }
 
     /// Imports a `Model` from the [GTFS](https://gtfs.org/reference/static)
     /// files in the `path` directory.
     pub fn parse_dir(self, path: impl AsRef<Path>) -> Result<Model> {
+        let collections = self.parse_dir_collections(path)?;
+        Model::new(collections)
+    }
+
+    /// Imports `Collections` from the [GTFS](https://gtfs.org/reference/static)
+    /// files in the `path` directory.
+    fn parse_dir_collections(self, path: impl AsRef<Path>) -> Result<Collections> {
         let mut file_handler = read_utils::PathFileHandler::new(path.as_ref().to_path_buf());
-        read_file_handler(&mut file_handler, self.configuration)
+        read_file_handler_to_collections(&mut file_handler, self.configuration)
+    }
+
+    /// Imports `Collections` from a zip file containing the
+    /// [GTFS](https://gtfs.org/reference/static).
+    fn parse_zip_collections(self, path: impl AsRef<Path>) -> Result<Collections> {
+        let reader = std::fs::File::open(path.as_ref())?;
+        let mut file_handler = read_utils::ZipHandler::new(reader, path)?;
+        read_file_handler_to_collections(&mut file_handler, self.configuration)
     }
 
     /// Imports a `Model` from an object implementing `Read` and `Seek` and containing the
@@ -550,4 +599,25 @@ pub fn write_to_zip<P: AsRef<std::path::Path>>(model: Model, path: P) -> Result<
     zip_to(input_tmp_dir.path(), path)?;
     input_tmp_dir.close()?;
     Ok(())
+}
+
+/// gtfs pickup or drop off method "Must coordinate with driver to arrange pickup" (type 3)
+/// corresponds to pickup or drop off method "upon reservation only" in ntfs (type 2)
+pub fn convert_gtfs_pickup_drop_off_type_to_ntfs_type(collections: &mut Collections) {
+    let vj_idxs: Vec<Idx<VehicleJourney>> = collections
+        .vehicle_journeys
+        .iter()
+        .map(|(idx, _)| idx)
+        .collect();
+    for vj_idx in vj_idxs {
+        let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
+        for st in vj
+            .stop_times
+            .iter_mut()
+            .filter(|st| st.pickup_type == 3 || st.drop_off_type == 3)
+        {
+            st.pickup_type = cmp::min(st.pickup_type, 2);
+            st.drop_off_type = cmp::min(st.drop_off_type, 2);
+        }
+    }
 }
