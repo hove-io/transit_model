@@ -603,7 +603,7 @@ pub fn write_to_zip<P: AsRef<std::path::Path>>(model: Model, path: P) -> Result<
 
 /// gtfs pickup or drop off method "Must coordinate with driver to arrange pickup" (type 3)
 /// corresponds to pickup or drop off method "upon reservation only" in ntfs (type 2)
-pub fn convert_gtfs_pickup_drop_off_type_to_ntfs_type(collections: &mut Collections) {
+pub fn convert_pickup_dropoff_to_ntfs(collections: &mut Collections) {
     let vj_idxs: Vec<Idx<VehicleJourney>> = collections
         .vehicle_journeys
         .iter()

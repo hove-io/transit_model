@@ -122,7 +122,7 @@ fn run(opt: Opt) -> Result<()> {
 
     let mut collections =
         transit_model::gtfs::Reader::new(configuration).parse_collections(opt.input)?;
-    transit_model::gtfs::convert_gtfs_pickup_drop_off_type_to_ntfs_type(&mut collections);
+    transit_model::gtfs::convert_pickup_dropoff_to_ntfs(&mut collections);
 
     let model = Model::new(collections)?;
 

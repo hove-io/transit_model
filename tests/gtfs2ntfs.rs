@@ -54,7 +54,7 @@ fn test_minimal_gtfs() {
         let mut collections = transit_model::gtfs::Reader::default()
             .parse_collections(input_dir)
             .unwrap();
-        transit_model::gtfs::convert_gtfs_pickup_drop_off_type_to_ntfs_type(&mut collections);
+        transit_model::gtfs::convert_pickup_dropoff_to_ntfs(&mut collections);
         let model = Model::new(collections).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
@@ -151,7 +151,7 @@ fn test_minimal_gtfs_with_odt_comment() {
         let mut collections = transit_model::gtfs::Reader::new(configuration)
             .parse_collections(input_dir)
             .unwrap();
-        transit_model::gtfs::convert_gtfs_pickup_drop_off_type_to_ntfs_type(&mut collections);
+        transit_model::gtfs::convert_pickup_dropoff_to_ntfs(&mut collections);
         let model = Model::new(collections).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
