@@ -32,8 +32,11 @@ use derivative::Derivative;
 use geo::{LineString, Point};
 use serde::Deserialize;
 use skip_error::{skip_error_and_warn, SkipError};
-use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryFrom;
+use std::{
+    cmp,
+    collections::{BTreeMap, BTreeSet, HashMap},
+};
 use tracing::{info, warn};
 use typed_index_collection::{impl_id, Collection, CollectionWithId, Idx};
 
@@ -422,6 +425,7 @@ where
                         headsign.clone(),
                     );
                 }
+
                 if let Some(message) = on_demand_transport_comment.as_ref() {
                     if stop_time.pickup_type == 2 || stop_time.drop_off_type == 2 {
                         if let Some(company_idx) = company_idx {
@@ -435,6 +439,15 @@ where
                         }
                     }
                 }
+                let (pickup_type, drop_off_type) =
+                    if stop_time.pickup_type == 3 || stop_time.drop_off_type == 3 {
+                        (
+                            cmp::min(stop_time.pickup_type, 2),
+                            cmp::min(stop_time.drop_off_type, 2),
+                        )
+                    } else {
+                        (stop_time.pickup_type, stop_time.drop_off_type)
+                    };
                 collections
                     .vehicle_journeys
                     .index_mut(vj_idx)
@@ -446,8 +459,8 @@ where
                         departure_time: st_values.departure_time,
                         boarding_duration: 0,
                         alighting_duration: 0,
-                        pickup_type: stop_time.pickup_type,
-                        drop_off_type: stop_time.drop_off_type,
+                        pickup_type,
+                        drop_off_type,
                         datetime_estimated: st_values.datetime_estimated,
                         local_zone_id: stop_time.local_zone_id,
                         precision,
