@@ -50,6 +50,7 @@ struct StopTime {
     pickup_type: u8,
     #[serde(default)]
     drop_off_type: u8,
+    #[serde(skip_serializing)]
     datetime_estimated: Option<u8>,
     local_zone_id: Option<u16>,
     stop_headsign: Option<String>,
@@ -750,7 +751,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 0,
                         drop_off_type: 1,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
@@ -763,7 +763,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 0,
                         drop_off_type: 0,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
@@ -1198,7 +1197,6 @@ mod tests {
                 alighting_duration: 3,
                 pickup_type: 1,
                 drop_off_type: 2,
-                datetime_estimated: false,
                 local_zone_id: None,
                 precision: None,
             }],

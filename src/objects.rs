@@ -872,7 +872,6 @@ pub struct StopTime {
     pub alighting_duration: u16,
     pub pickup_type: u8,
     pub drop_off_type: u8,
-    pub datetime_estimated: bool,
     pub local_zone_id: Option<u16>,
     pub precision: Option<StopTimePrecision>,
 }
@@ -2063,7 +2062,6 @@ mod tests {
                     alighting_duration: 0,
                     pickup_type: 0,
                     drop_off_type: 0,
-                    datetime_estimated: false,
                     local_zone_id: None,
                     precision: None,
                 })

@@ -91,13 +91,7 @@ pub fn write_vehicle_journeys_and_stop_times(
             .with_context(|| format!("Error reading {:?}", trip_path))?;
 
         for st in &vj.stop_times {
-            let precision = st.precision.clone().or_else(|| {
-                if st.datetime_estimated {
-                    Some(StopTimePrecision::Estimated)
-                } else {
-                    Some(StopTimePrecision::Exact)
-                }
-            });
+            let precision = st.precision.clone();
             st_wtr
                 .serialize(StopTime {
                     stop_id: stop_points[st.stop_point_idx].id.clone(),
@@ -109,7 +103,7 @@ pub fn write_vehicle_journeys_and_stop_times(
                     alighting_duration: st.alighting_duration,
                     pickup_type: st.pickup_type,
                     drop_off_type: st.drop_off_type,
-                    datetime_estimated: Some(st.datetime_estimated as u8),
+                    datetime_estimated: None,
                     local_zone_id: st.local_zone_id,
                     stop_headsign: stop_time_headsigns
                         .get(&(vehicle_journeys[vj_idx].id.clone(), st.sequence))

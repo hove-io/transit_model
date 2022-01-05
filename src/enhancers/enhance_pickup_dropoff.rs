@@ -209,7 +209,6 @@ mod tests {
             alighting_duration: 0,
             pickup_type: 0,
             drop_off_type: 0,
-            datetime_estimated: false,
             local_zone_id: None,
             precision: None,
         };
@@ -223,7 +222,6 @@ mod tests {
             alighting_duration: 0,
             pickup_type: 0,
             drop_off_type: 0,
-            datetime_estimated: false,
             local_zone_id: None,
             precision: None,
         };
@@ -237,7 +235,6 @@ mod tests {
             alighting_duration: 0,
             pickup_type: 0,
             drop_off_type: 0,
-            datetime_estimated: false,
             local_zone_id: None,
             precision: None,
         };
@@ -251,7 +248,6 @@ mod tests {
             alighting_duration: 0,
             pickup_type: 0,
             drop_off_type: 0,
-            datetime_estimated: false,
             local_zone_id: None,
             precision: None,
         };
@@ -463,7 +459,6 @@ mod tests {
             alighting_duration: 0,
             pickup_type: 3,
             drop_off_type: 3,
-            datetime_estimated: true,
             local_zone_id: None,
             precision: None,
         });
