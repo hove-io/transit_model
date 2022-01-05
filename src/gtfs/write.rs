@@ -440,10 +440,7 @@ pub fn write_stop_times(
                     stop_headsign: stop_times_headsigns
                         .get(&(vehicle_journeys[vj_idx].id.clone(), st.sequence))
                         .cloned(),
-                    timepoint: st
-                        .precision
-                        .as_ref()
-                        .map_or_else(|| true, |p| p == &StopTimePrecision::Exact),
+                    timepoint: matches!(st.precision, None | Some(StopTimePrecision::Exact)),
                 })
                 .with_context(|| format!("Error reading {:?}", st_wtr))?;
         }
