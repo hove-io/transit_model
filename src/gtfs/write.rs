@@ -440,7 +440,7 @@ pub fn write_stop_times(
                     stop_headsign: stop_times_headsigns
                         .get(&(vehicle_journeys[vj_idx].id.clone(), st.sequence))
                         .cloned(),
-                    timepoint: !st.datetime_estimated,
+                    timepoint: matches!(st.precision, None | Some(StopTimePrecision::Exact)),
                 })
                 .with_context(|| format!("Error reading {:?}", st_wtr))?;
         }
@@ -904,7 +904,6 @@ mod tests {
                     alighting_duration: 0,
                     pickup_type: 0,
                     drop_off_type: 1,
-                    datetime_estimated: false,
                     local_zone_id: None,
                     precision: None,
                 },
@@ -917,7 +916,6 @@ mod tests {
                     alighting_duration: 0,
                     pickup_type: 0,
                     drop_off_type: 0,
-                    datetime_estimated: false,
                     local_zone_id: None,
                     precision: None,
                 },
@@ -949,7 +947,6 @@ mod tests {
                     alighting_duration: 0,
                     pickup_type: 0,
                     drop_off_type: 1,
-                    datetime_estimated: false,
                     local_zone_id: None,
                     precision: None,
                 },
@@ -962,7 +959,6 @@ mod tests {
                     alighting_duration: 0,
                     pickup_type: 0,
                     drop_off_type: 0,
-                    datetime_estimated: false,
                     local_zone_id: None,
                     precision: None,
                 },
@@ -1178,7 +1174,6 @@ mod tests {
                 alighting_duration: 0,
                 pickup_type: 0,
                 drop_off_type: 0,
-                datetime_estimated: false,
                 local_zone_id: None,
                 precision: None,
             },
@@ -1191,9 +1186,8 @@ mod tests {
                 alighting_duration: 0,
                 pickup_type: 2,
                 drop_off_type: 1,
-                datetime_estimated: true,
                 local_zone_id: Some(3),
-                precision: None,
+                precision: Some(StopTimePrecision::Estimated),
             },
         ];
         let vehicle_journeys = CollectionWithId::from(VehicleJourney {

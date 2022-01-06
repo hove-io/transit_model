@@ -334,7 +334,6 @@ impl<'a> VehicleJourneyBuilder<'a> {
                 alighting_duration: 0u16,
                 pickup_type: 0u8,
                 drop_off_type: 0u8,
-                datetime_estimated: false,
                 local_zone_id: None,
                 precision: None,
             };

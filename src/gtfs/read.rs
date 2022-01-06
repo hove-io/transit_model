@@ -414,11 +414,14 @@ where
 
         for (stop_time, st_values) in stop_times.iter().zip(st_values) {
             if let Some(stop_point_idx) = collections.stop_points.get_idx(&stop_time.stop_id) {
-                let precision = match (on_demand_transport, st_values.datetime_estimated) {
-                    (_, false) => Some(StopTimePrecision::Exact),
-                    (false, true) => Some(StopTimePrecision::Approximate),
-                    (true, true) => Some(StopTimePrecision::Estimated),
+                let precision = if on_demand_transport
+                    && st_values.precision == StopTimePrecision::Approximate
+                {
+                    Some(StopTimePrecision::Estimated)
+                } else {
+                    Some(st_values.precision)
                 };
+
                 if let Some(headsign) = &stop_time.stop_headsign {
                     headsigns.insert(
                         (stop_time.trip_id.clone(), stop_time.stop_sequence),
@@ -461,7 +464,6 @@ where
                         alighting_duration: 0,
                         pickup_type,
                         drop_off_type,
-                        datetime_estimated: st_values.datetime_estimated,
                         local_zone_id: stop_time.local_zone_id,
                         precision,
                     });
@@ -493,7 +495,7 @@ fn ventilate_stop_times(
         res.push(StopTimesValues {
             departure_time: time,
             arrival_time: time,
-            datetime_estimated: true,
+            precision: StopTimePrecision::Approximate,
         });
     }
     res
@@ -503,7 +505,7 @@ fn ventilate_stop_times(
 struct StopTimesValues {
     arrival_time: Time,
     departure_time: Time,
-    datetime_estimated: bool,
+    precision: StopTimePrecision,
 }
 
 // in the GTFS some stoptime can have undefined departure/arrival (all stop_times but the first and the last)
@@ -536,7 +538,11 @@ fn interpolate_undefined_stop_times(
         let st_value = StopTimesValues {
             departure_time,
             arrival_time,
-            datetime_estimated: !st.timepoint,
+            precision: if !st.timepoint {
+                StopTimePrecision::Approximate
+            } else {
+                StopTimePrecision::Exact
+            },
         };
 
         if !undefined_stops_bulk.is_empty() {
@@ -1209,10 +1215,6 @@ where
             );
             continue;
         }
-        let datetime_estimated = match frequency.exact_times {
-            FrequencyPrecision::Exact => false,
-            FrequencyPrecision::Inexact => true,
-        };
         let corresponding_vj = skip_error_and_warn!(collections
             .vehicle_journeys
             .get(&frequency.trip_id)
@@ -1281,7 +1283,6 @@ where
                     alighting_duration: stop_time.alighting_duration,
                     pickup_type: stop_time.pickup_type,
                     drop_off_type: stop_time.drop_off_type,
-                    datetime_estimated,
                     local_zone_id: stop_time.local_zone_id,
                     precision: stop_time.precision.clone(),
                 })
@@ -2511,7 +2512,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 0,
                         drop_off_type: 0,
-                        datetime_estimated: true,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Approximate),
                     },
@@ -2524,7 +2524,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 2,
                         drop_off_type: 1,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
@@ -2537,7 +2536,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 2,
                         drop_off_type: 1,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
@@ -2606,7 +2604,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 0,
                         drop_off_type: 0,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
@@ -2619,7 +2616,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 0,
                         drop_off_type: 0,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
@@ -2632,7 +2628,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 0,
                         drop_off_type: 0,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
@@ -2692,7 +2687,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 0,
                         drop_off_type: 0,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
@@ -2705,7 +2699,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 2,
                         drop_off_type: 1,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
@@ -3317,7 +3310,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 0,
                         drop_off_type: 0,
-                        datetime_estimated: true,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Estimated),
                     },
@@ -3330,7 +3322,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 2,
                         drop_off_type: 1,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
@@ -3343,7 +3334,6 @@ mod tests {
                         alighting_duration: 0,
                         pickup_type: 2,
                         drop_off_type: 1,
-                        datetime_estimated: false,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
                     },
