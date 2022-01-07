@@ -474,12 +474,8 @@ pub struct Line {
     pub name: String,
     #[serde(rename = "forward_line_name")]
     pub forward_name: Option<String>,
-    #[serde(skip)]
-    pub forward_direction: Option<String>,
     #[serde(rename = "backward_line_name")]
     pub backward_name: Option<String>,
-    #[serde(skip)]
-    pub backward_direction: Option<String>,
     #[serde(
         rename = "line_color",
         default,
@@ -512,14 +508,6 @@ impl AddPrefix for Line {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
         self.id = prefix_conf.referential_prefix(self.id.as_str());
         self.network_id = prefix_conf.referential_prefix(self.network_id.as_str());
-        self.forward_direction = self
-            .forward_direction
-            .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
-        self.backward_direction = self
-            .backward_direction
-            .take()
-            .map(|id| prefix_conf.referential_prefix(id.as_str()));
         self.geometry_id = self
             .geometry_id
             .take()
