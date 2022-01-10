@@ -145,9 +145,7 @@ mod test {
                 id: String::from("line_id1"),
                 name: String::new(),
                 forward_name: Some("A".to_string()),
-                forward_direction: Some("B".to_string()),
                 backward_name: Some("C".to_string()),
-                backward_direction: Some("D".to_string()),
                 ..Default::default()
             })
             .unwrap();
@@ -169,9 +167,7 @@ mod test {
         let line1 = collections.lines.get("line_id1").unwrap();
         assert_eq!("my route id1", line1.name);
         assert_eq!("A", line1.forward_name.as_ref().unwrap());
-        assert_eq!("B", line1.forward_direction.as_ref().unwrap());
         assert_eq!("C", line1.backward_name.as_ref().unwrap());
-        assert_eq!("D", line1.backward_direction.as_ref().unwrap());
     }
 
     #[test]

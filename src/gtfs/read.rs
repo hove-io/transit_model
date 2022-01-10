@@ -1009,9 +1009,7 @@ fn make_lines(
             comment_links: CommentLinksT::default(),
             name: r.long_name.to_string(),
             forward_name: None,
-            forward_direction: None,
             backward_name: None,
-            backward_direction: None,
             color: r.color.clone(),
             text_color: r.text_color.clone(),
             sort_order: r.sort_order,
@@ -2080,16 +2078,14 @@ mod tests {
             );
             assert_eq!(
                 vec![
-                    ("my_prefix:route_1", "my_prefix:agency_1", "Bus", None, None),
-                    ("my_prefix:route_2", "my_prefix:agency_1", "Bus", None, None),
+                    ("my_prefix:route_1", "my_prefix:agency_1", "Bus"),
+                    ("my_prefix:route_2", "my_prefix:agency_1", "Bus"),
                 ],
                 extract(
                     |obj| (
                         obj.id.as_str(),
                         obj.network_id.as_str(),
                         obj.commercial_mode_id.as_str(),
-                        obj.forward_direction.as_deref(),
-                        obj.backward_direction.as_deref(),
                     ),
                     &collections.lines,
                 )
