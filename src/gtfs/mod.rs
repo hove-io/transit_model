@@ -278,6 +278,17 @@ fn read_file_handler<H>(file_handler: &mut H, configuration: Configuration) -> R
 where
     for<'a> &'a mut H: read_utils::FileHandler,
 {
+    let collections = read_file_handler_to_collections(file_handler, configuration)?;
+    Model::new(collections)
+}
+
+fn read_file_handler_to_collections<H>(
+    file_handler: &mut H,
+    configuration: Configuration,
+) -> Result<Collections>
+where
+    for<'a> &'a mut H: read_utils::FileHandler,
+{
     let mut collections = Collections::default();
     let mut equipments = EquipmentList::default();
 
@@ -328,7 +339,7 @@ where
     }
 
     collections.calendar_deduplication();
-    Model::new(collections)
+    Ok(collections)
 }
 
 /// Imports a `Model` from the [GTFS](https://gtfs.org/reference/static)
@@ -413,20 +424,56 @@ impl Reader {
             ))
         }
     }
+    /// Imports `Collections` from the
+    /// [GTFS](https://gtfs.org/reference/static).
+    /// files in the given directory.
+    /// This method will try to detect if the input is a zipped archive or not.
+    pub fn parse_collections(self, path: impl AsRef<Path>) -> Result<Collections> {
+        let p = path.as_ref();
+        if p.is_file() {
+            // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
+            Ok(self
+                .parse_zip_collections(p)
+                .with_context(|| format!("impossible to read zipped gtfs {:?}", p))?)
+        } else if p.is_dir() {
+            Ok(self
+                .parse_dir_collections(p)
+                .with_context(|| format!("impossible to read gtfs directory from {:?}", p))?)
+        } else {
+            Err(anyhow!(
+                "file {:?} is neither a file nor a directory, cannot read a gtfs from it",
+                p
+            ))
+        }
+    }
 
     /// Imports a `Model` from a zip file containing the
     /// [GTFS](https://gtfs.org/reference/static).
     pub fn parse_zip(self, path: impl AsRef<Path>) -> Result<Model> {
-        let reader = std::fs::File::open(path.as_ref())?;
-        let mut file_handler = read_utils::ZipHandler::new(reader, path)?;
-        read_file_handler(&mut file_handler, self.configuration)
+        let collections = self.parse_zip_collections(path)?;
+        Model::new(collections)
     }
 
     /// Imports a `Model` from the [GTFS](https://gtfs.org/reference/static)
     /// files in the `path` directory.
     pub fn parse_dir(self, path: impl AsRef<Path>) -> Result<Model> {
+        let collections = self.parse_dir_collections(path)?;
+        Model::new(collections)
+    }
+
+    /// Imports `Collections` from the [GTFS](https://gtfs.org/reference/static)
+    /// files in the `path` directory.
+    fn parse_dir_collections(self, path: impl AsRef<Path>) -> Result<Collections> {
         let mut file_handler = read_utils::PathFileHandler::new(path.as_ref().to_path_buf());
-        read_file_handler(&mut file_handler, self.configuration)
+        read_file_handler_to_collections(&mut file_handler, self.configuration)
+    }
+
+    /// Imports `Collections` from a zip file containing the
+    /// [GTFS](https://gtfs.org/reference/static).
+    fn parse_zip_collections(self, path: impl AsRef<Path>) -> Result<Collections> {
+        let reader = std::fs::File::open(path.as_ref())?;
+        let mut file_handler = read_utils::ZipHandler::new(reader, path)?;
+        read_file_handler_to_collections(&mut file_handler, self.configuration)
     }
 
     /// Imports a `Model` from an object implementing `Read` and `Seek` and containing the
