@@ -24,7 +24,7 @@ use crate::{
         VehicleJourney,
     },
     read_utils::{read_collection, read_objects, read_objects_loose, FileHandler},
-    utils::*,
+    serde_utils::de_with_empty_default,
     Result,
 };
 use anyhow::{anyhow, bail, Error};

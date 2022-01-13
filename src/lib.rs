@@ -45,6 +45,7 @@
 #[macro_use]
 mod utils;
 mod add_prefix;
+pub mod serde_utils;
 pub use add_prefix::{AddPrefix, PrefixConfiguration};
 pub mod calendars;
 #[macro_use]
