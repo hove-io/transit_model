@@ -23,6 +23,7 @@ use crate::{
     model::{Collections, Model},
     objects::{self, Availability, Contributor, Dataset, StopType, Time},
     read_utils,
+    serde_utils::*,
     utils::*,
     validity_period, AddPrefix, PrefixConfiguration, Result,
 };

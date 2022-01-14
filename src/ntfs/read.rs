@@ -17,7 +17,7 @@ use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
 use crate::objects::*;
 use crate::read_utils::{read_objects, read_objects_loose, FileHandler};
-use crate::utils;
+use crate::utils::make_opt_collection_with_id;
 use crate::Result;
 use anyhow::{anyhow, bail, ensure, Context};
 use serde::{Deserialize, Serialize};
@@ -475,7 +475,7 @@ pub(crate) fn manage_comments<H>(collections: &mut Collections, file_handler: &m
 where
     for<'a> &'a mut H: FileHandler,
 {
-    collections.comments = utils::make_opt_collection_with_id(file_handler, "comments.txt")?;
+    collections.comments = make_opt_collection_with_id(file_handler, "comments.txt")?;
 
     if collections.comments.is_empty() {
         // no need to read the comment_links (and invert the huge stoptimes collection)

@@ -16,7 +16,7 @@
 
 #![allow(missing_docs)]
 
-use crate::{utils::*, AddPrefix, PrefixConfiguration};
+use crate::{serde_utils::*, AddPrefix, PrefixConfiguration};
 use chrono::NaiveDate;
 use chrono_tz::Tz;
 use derivative::Derivative;
