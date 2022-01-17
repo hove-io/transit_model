@@ -562,13 +562,13 @@ struct Route {
 }
 
 #[derive(Default)]
-///to associate a list of equipment with a stop
+/// To associate a list of equipment with a stop
 pub struct EquipmentList {
     equipments: HashMap<objects::Equipment, String>,
 }
 
 impl EquipmentList {
-    ///convert EquipmentList to a list of transit model equipment
+    /// Convert EquipmentList to a list of transit model equipments
     pub fn into_equipments(self) -> Vec<objects::Equipment> {
         let mut eqs: Vec<_> = self
             .equipments
@@ -582,7 +582,7 @@ impl EquipmentList {
         eqs.sort_by(|l, r| l.id.cmp(&r.id));
         eqs
     }
-    ///insert transit model equipment into EquipmentList
+    /// Insert transit model equipment into EquipmentList
     pub fn push(&mut self, equipment: objects::Equipment) -> String {
         let equipment_id = self.equipments.len().to_string();
         let id = self.equipments.entry(equipment).or_insert(equipment_id);
