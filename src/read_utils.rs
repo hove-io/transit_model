@@ -94,14 +94,18 @@ pub fn read_config<P: AsRef<path::Path>>(
     Ok((contributor, dataset, feed_infos))
 }
 
-pub(crate) trait FileHandler
+/// Allows files in a directory or ZipArchive to be read either
+pub trait FileHandler
 where
     Self: std::marker::Sized,
 {
+    /// Reader
     type Reader: Read;
 
+    /// Return a file if exist
     fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)>;
 
+    /// Return a file or an error if not exist
     fn get_file(self, name: &str) -> Result<(Self::Reader, PathBuf)> {
         let (reader, path) = self.get_file_if_exists(name)?;
         Ok((
@@ -110,16 +114,18 @@ where
         ))
     }
 
+    /// Allows to have nicer error messages
     fn source_name(&self) -> &str;
 }
 
 /// PathFileHandler is used to read files for a directory
-pub(crate) struct PathFileHandler<P: AsRef<Path>> {
+pub struct PathFileHandler<P: AsRef<Path>> {
     base_path: P,
 }
 
 impl<P: AsRef<Path>> PathFileHandler<P> {
-    pub(crate) fn new(path: P) -> Self {
+    /// Constructs a new PathFileHandler
+    pub fn new(path: P) -> Self {
         PathFileHandler { base_path: path }
     }
 }
@@ -205,7 +211,7 @@ where
 }
 
 /// Read a vector of objects from a zip in a file_handler
-pub(crate) fn read_objects<H, O>(
+pub fn read_objects<H, O>(
     file_handler: &mut H,
     file_name: &str,
     required_file: bool,
@@ -278,11 +284,8 @@ where
     }
 }
 
-/// Read a CollectionId from a zip in a file_handler
-pub(crate) fn read_collection<H, O>(
-    file_handler: &mut H,
-    file_name: &str,
-) -> Result<CollectionWithId<O>>
+/// Read a CollectionId from a required file in a file_handler
+pub fn read_collection<H, O>(file_handler: &mut H, file_name: &str) -> Result<CollectionWithId<O>>
 where
     for<'a> &'a mut H: FileHandler,
     O: for<'de> serde::Deserialize<'de> + Id<O>,
@@ -291,7 +294,8 @@ where
     CollectionWithId::new(vec).map_err(|e| anyhow!("{}", e))
 }
 
-pub(crate) fn read_opt_collection<H, O>(
+/// Read a CollectionId from a optional file in a file_handler
+pub fn read_opt_collection<H, O>(
     file_handler: &mut H,
     file_name: &str,
 ) -> Result<CollectionWithId<O>>

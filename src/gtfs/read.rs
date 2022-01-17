@@ -13,8 +13,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{
-    Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
-    TransferType, Trip,
+    Agency, DirectionType, EquipmentList, Route, RouteType, Shape, Stop, StopLocationType,
+    StopTime, Transfer, TransferType, Trip,
 };
 use crate::{
     model::Collections,
@@ -331,10 +331,8 @@ impl Trip {
     }
 }
 
-pub(in crate::gtfs) fn manage_shapes<H>(
-    collections: &mut Collections,
-    file_handler: &mut H,
-) -> Result<()>
+/// Reading rules for mapping vehicle travel paths, sometimes referred to as route alignments.
+pub fn manage_shapes<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -364,7 +362,8 @@ where
     Ok(())
 }
 
-pub(in crate::gtfs) fn manage_stop_times<H>(
+/// Reading times that a vehicle arrives at and departs from stops for each trip
+pub fn manage_stop_times<H>(
     collections: &mut Collections,
     file_handler: &mut H,
     on_demand_transport: bool,
@@ -564,7 +563,8 @@ fn interpolate_undefined_stop_times(
     }
 }
 
-pub(in crate::gtfs) fn read_agency<H>(
+///Reading transit agencies with service represented in this dataset.
+pub fn read_agency<H>(
     file_handler: &mut H,
 ) -> Result<(
     CollectionWithId<objects::Network>,
@@ -683,33 +683,6 @@ fn manage_odt_comment_from_stop_time(
     );
 }
 
-#[derive(Default)]
-pub struct EquipmentList {
-    equipments: HashMap<objects::Equipment, String>,
-}
-
-impl EquipmentList {
-    pub fn into_equipments(self) -> Vec<objects::Equipment> {
-        let mut eqs: Vec<_> = self
-            .equipments
-            .into_iter()
-            .map(|(mut eq, id)| {
-                eq.id = id;
-                eq
-            })
-            .collect();
-
-        eqs.sort_by(|l, r| l.id.cmp(&r.id));
-        eqs
-    }
-
-    pub fn push(&mut self, equipment: objects::Equipment) -> String {
-        let equipment_id = self.equipments.len().to_string();
-        let id = self.equipments.entry(equipment).or_insert(equipment_id);
-        id.clone()
-    }
-}
-
 fn get_equipment_id_and_populate_equipments(
     equipments: &mut EquipmentList,
     stop: &Stop,
@@ -734,7 +707,8 @@ fn get_equipment_id_and_populate_equipments(
     }
 }
 
-pub(in crate::gtfs) fn read_stops<H>(
+/// Reading stops where vehicles pick up or drop off riders. Also defines stations and station entrances.
+pub fn read_stops<H>(
     file_handler: &mut H,
     comments: &mut CollectionWithId<objects::Comment>,
     equipments: &mut EquipmentList,
@@ -794,10 +768,8 @@ where
     Ok((stopareas, stoppoints, stoplocations))
 }
 
-pub(in crate::gtfs) fn manage_pathways<H>(
-    collections: &mut Collections,
-    file_handler: &mut H,
-) -> Result<()>
+/// Reading pathways linking together locations within stations.
+pub fn manage_pathways<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -843,7 +815,8 @@ where
     Ok(())
 }
 
-pub(in crate::gtfs) fn read_transfers<H>(
+/// Reading rules for making connections at transfer points between routes.
+pub fn read_transfers<H>(
     file_handler: &mut H,
     stop_points: &CollectionWithId<objects::StopPoint>,
     stop_areas: &CollectionWithId<objects::StopArea>,
@@ -1122,7 +1095,8 @@ fn make_ntfs_vehicle_journeys(
     (vehicle_journeys, trip_properties)
 }
 
-pub(in crate::gtfs) fn read_routes<H>(
+/// Reading transit routes. A route is a group of trips that are displayed to riders as a single service.
+pub fn read_routes<H>(
     file_handler: &mut H,
     collections: &mut Collections,
     read_as_line: bool,
@@ -1194,10 +1168,8 @@ struct Frequency {
     exact_times: FrequencyPrecision,
 }
 
-pub(in crate::gtfs) fn manage_frequencies<H>(
-    collections: &mut Collections,
-    file_handler: &mut H,
-) -> Result<()>
+///Reading headway (time between trips) for headway-based service or a compressed representation of fixed-schedule service.
+pub fn manage_frequencies<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {

@@ -32,6 +32,7 @@ members = [
 
 [features]
 xmllint = ["proj"]
+gtfs_parser = []
 # Experimental feature, use at your own risks
 mutable-model = []
 

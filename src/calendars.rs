@@ -166,7 +166,8 @@ where
     Ok(())
 }
 
-pub(crate) fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+/// read calendar_dates.txt and / or calendar.txt files from a file handler
+pub fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
