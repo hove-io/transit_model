@@ -159,7 +159,7 @@ impl<'a, P: AsRef<Path>> FileHandler for &'a mut PathFileHandler<P> {
 /// Unlike ZipArchive, it gives access to a file by its name not regarding its path in the ZipArchive
 /// It thus cannot be correct if there are 2 files with the same name in the archive,
 /// but for transport data if will make it possible to handle a zip with a sub directory
-pub(crate) struct ZipHandler<R: Seek + Read> {
+pub struct ZipHandler<R: Seek + Read> {
     archive: zip::ZipArchive<R>,
     archive_path: PathBuf,
     index_by_name: BTreeMap<String, usize>,
