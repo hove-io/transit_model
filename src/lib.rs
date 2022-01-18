@@ -61,6 +61,10 @@ pub mod model;
 pub mod netex_france;
 pub mod netex_utils;
 pub mod ntfs;
+#[cfg(not(feature = "parser"))]
+pub(crate) mod parser;
+#[cfg(feature = "parser")]
+pub mod parser;
 pub mod read_utils;
 #[doc(hidden)]
 pub mod test_utils;

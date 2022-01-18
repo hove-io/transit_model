@@ -20,7 +20,7 @@
 use crate::file_handler::FileHandler;
 use crate::model::Collections;
 use crate::objects::{self, Date, ExceptionType};
-use crate::read_utils::read_objects;
+use crate::parser::read_objects;
 use crate::serde_utils::*;
 use crate::vptranslator::translate;
 use crate::Result;

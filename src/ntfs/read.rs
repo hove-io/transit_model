@@ -17,7 +17,7 @@ use crate::file_handler::FileHandler;
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
 use crate::objects::*;
-use crate::read_utils::{read_objects, read_objects_loose};
+use crate::parser::{read_objects, read_objects_loose};
 use crate::utils::make_opt_collection_with_id;
 use crate::Result;
 use anyhow::{anyhow, bail, ensure, Context};

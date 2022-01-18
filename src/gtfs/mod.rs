@@ -22,7 +22,7 @@ use crate::{
     file_handler::{FileHandler, PathFileHandler, ZipHandler},
     model::{Collections, Model},
     objects::{self, Availability, Contributor, Dataset, StopType, Time},
-    read_utils::read_opt_collection,
+    parser::read_opt_collection,
     serde_utils::*,
     utils::*,
     validity_period, AddPrefix, PrefixConfiguration, Result,
