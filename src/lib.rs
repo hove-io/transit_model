@@ -52,7 +52,7 @@ pub mod calendars;
 pub mod objects;
 mod enhancers;
 #[cfg(not(feature = "parser"))]
-pub(crate) mod file_handler; // to keep backward compatibility, not exposing FileHandler
+pub(crate) mod file_handler;
 #[cfg(feature = "parser")]
 pub mod file_handler;
 pub mod gtfs;

@@ -95,7 +95,7 @@ pub fn read_config<P: AsRef<path::Path>>(
 }
 
 /// Read a vector of objects from a zip in a file_handler
-pub fn read_objects<H, O>(
+pub(crate) fn _read_objects<H, O>(
     file_handler: &mut H,
     file_name: &str,
     required_file: bool,
@@ -130,8 +130,35 @@ where
     }
 }
 
+#[cfg(not(feature = "parser"))]
+pub(crate) fn read_objects<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+    required_file: bool,
+) -> Result<Vec<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de>,
+{
+    _read_objects(file_handler, file_name, required_file)
+}
+
+#[cfg(feature = "parser")]
+/// See function _read_objects
+pub fn read_objects<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+    required_file: bool,
+) -> Result<Vec<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de>,
+{
+    _read_objects(file_handler, file_name, required_file)
+}
+
 /// Read a vector of objects from a zip in a file_handler ignoring error
-pub(crate) fn read_objects_loose<H, O>(
+pub(crate) fn _read_objects_loose<H, O>(
     file_handler: &mut H,
     file_name: &str,
     required_file: bool,
@@ -168,8 +195,38 @@ where
     }
 }
 
+#[cfg(not(feature = "parser"))]
+pub(crate) fn read_objects_loose<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+    required_file: bool,
+) -> Result<Vec<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de>,
+{
+    _read_objects_loose(file_handler, file_name, required_file)
+}
+
+#[cfg(feature = "parser")]
+/// See function _read_objects_loose
+pub fn read_objects_loose<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+    required_file: bool,
+) -> Result<Vec<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de>,
+{
+    _read_objects_loose(file_handler, file_name, required_file)
+}
+
 /// Read a CollectionId from a required file in a file_handler
-pub fn read_collection<H, O>(file_handler: &mut H, file_name: &str) -> Result<CollectionWithId<O>>
+pub(crate) fn _read_collection<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+) -> Result<CollectionWithId<O>>
 where
     for<'a> &'a mut H: FileHandler,
     O: for<'de> serde::Deserialize<'de> + Id<O>,
@@ -178,8 +235,30 @@ where
     CollectionWithId::new(vec).map_err(|e| anyhow!("{}", e))
 }
 
+#[cfg(not(feature = "parser"))]
+pub(crate) fn read_collection<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+) -> Result<CollectionWithId<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de> + Id<O>,
+{
+    _read_collection(file_handler, file_name)
+}
+
+#[cfg(feature = "parser")]
+/// See function _read_collection
+pub fn read_collection<H, O>(file_handler: &mut H, file_name: &str) -> Result<CollectionWithId<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de> + Id<O>,
+{
+    _read_collection(file_handler, file_name)
+}
+
 /// Read a CollectionId from a optional file in a file_handler
-pub fn read_opt_collection<H, O>(
+pub(crate) fn _read_opt_collection<H, O>(
     file_handler: &mut H,
     file_name: &str,
 ) -> Result<CollectionWithId<O>>
@@ -189,4 +268,29 @@ where
 {
     let vec = read_objects(file_handler, file_name, false)?;
     CollectionWithId::new(vec).map_err(|e| anyhow!("{}", e))
+}
+
+#[cfg(not(feature = "parser"))]
+pub(crate) fn read_opt_collection<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+) -> Result<CollectionWithId<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de> + Id<O>,
+{
+    _read_opt_collection(file_handler, file_name)
+}
+
+#[cfg(feature = "parser")]
+/// See function _read_opt_collection
+pub fn read_opt_collection<H, O>(
+    file_handler: &mut H,
+    file_name: &str,
+) -> Result<CollectionWithId<O>>
+where
+    for<'a> &'a mut H: FileHandler,
+    O: for<'de> serde::Deserialize<'de> + Id<O>,
+{
+    _read_opt_collection(file_handler, file_name)
 }

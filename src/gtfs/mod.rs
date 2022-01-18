@@ -31,19 +31,15 @@ use anyhow::{anyhow, Context};
 use chrono_tz::Tz;
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::{BTreeMap, HashMap},
-    fmt,
-    path::Path,
-};
+use std::{collections::BTreeMap, fmt, path::Path};
 
 use tracing::info;
 use typed_index_collection::CollectionWithId;
 
-#[cfg(feature = "gtfs")]
+#[cfg(all(feature = "gtfs", feature = "parser"))]
 pub use read::{
     manage_frequencies, manage_pathways, manage_shapes, manage_stop_times, read_agency,
-    read_routes, read_stops, read_transfers,
+    read_routes, read_stops, read_transfers, EquipmentList,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -302,7 +298,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let mut collections = Collections::default();
-    let mut equipments = EquipmentList::default();
+    let mut equipments = read::EquipmentList::default();
 
     let Configuration {
         contributor,
@@ -561,35 +557,6 @@ struct Route {
     text_color: Option<objects::Rgb>,
     #[serde(rename = "route_sort_order")]
     sort_order: Option<u32>,
-}
-
-#[derive(Default)]
-/// To associate a list of equipment with a stop
-pub struct EquipmentList {
-    equipments: HashMap<objects::Equipment, String>,
-}
-
-impl EquipmentList {
-    /// Convert EquipmentList to a list of transit model equipments
-    pub fn into_equipments(self) -> Vec<objects::Equipment> {
-        let mut eqs: Vec<_> = self
-            .equipments
-            .into_iter()
-            .map(|(mut eq, id)| {
-                eq.id = id;
-                eq
-            })
-            .collect();
-
-        eqs.sort_by(|l, r| l.id.cmp(&r.id));
-        eqs
-    }
-    /// Insert transit model equipment into EquipmentList
-    pub fn push(&mut self, equipment: objects::Equipment) -> String {
-        let equipment_id = self.equipments.len().to_string();
-        let id = self.equipments.entry(equipment).or_insert(equipment_id);
-        id.clone()
-    }
 }
 
 /// Exports a `Model` to [GTFS](https://gtfs.org/reference/static) files

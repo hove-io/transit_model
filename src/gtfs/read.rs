@@ -13,8 +13,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{
-    Agency, DirectionType, EquipmentList, Route, RouteType, Shape, Stop, StopLocationType,
-    StopTime, Transfer, TransferType, Trip,
+    Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
+    TransferType, Trip,
 };
 use crate::{
     file_handler::FileHandler,
@@ -682,6 +682,35 @@ fn manage_odt_comment_from_stop_time(
         ),
         stop_time_id,
     );
+}
+
+/// To associate a list of equipment with a stop
+#[derive(Default)]
+pub struct EquipmentList {
+    equipments: HashMap<objects::Equipment, String>,
+}
+
+impl EquipmentList {
+    /// Convert EquipmentList to a list of transit model equipments
+    pub fn into_equipments(self) -> Vec<objects::Equipment> {
+        let mut eqs: Vec<_> = self
+            .equipments
+            .into_iter()
+            .map(|(mut eq, id)| {
+                eq.id = id;
+                eq
+            })
+            .collect();
+
+        eqs.sort_by(|l, r| l.id.cmp(&r.id));
+        eqs
+    }
+    /// Insert transit model equipment into EquipmentList
+    pub fn push(&mut self, equipment: objects::Equipment) -> String {
+        let equipment_id = self.equipments.len().to_string();
+        let id = self.equipments.entry(equipment).or_insert(equipment_id);
+        id.clone()
+    }
 }
 
 fn get_equipment_id_and_populate_equipments(
