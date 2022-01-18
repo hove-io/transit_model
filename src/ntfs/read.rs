@@ -13,10 +13,11 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime};
+use crate::file_handler::FileHandler;
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
 use crate::objects::*;
-use crate::read_utils::{read_objects, read_objects_loose, FileHandler};
+use crate::read_utils::{read_objects, read_objects_loose};
 use crate::utils::make_opt_collection_with_id;
 use crate::Result;
 use anyhow::{anyhow, bail, ensure, Context};
@@ -671,8 +672,8 @@ where
 mod tests {
     use super::*;
     use crate::calendars;
+    use crate::file_handler::PathFileHandler;
     use crate::objects;
-    use crate::read_utils::{self, PathFileHandler};
     use crate::test_utils::*;
     use crate::utils::make_collection_with_id;
     use pretty_assertions::assert_eq;
@@ -740,7 +741,7 @@ mod tests {
 
     fn make_collection(path: &path::Path) -> Collections {
         let mut collections = Collections::default();
-        let mut file_handler = read_utils::PathFileHandler::new(path.to_path_buf());
+        let mut file_handler = PathFileHandler::new(path.to_path_buf());
         collections.contributors =
             make_collection_with_id(&mut file_handler, "contributors.txt").unwrap();
         collections.datasets = make_collection_with_id(&mut file_handler, "datasets.txt").unwrap();

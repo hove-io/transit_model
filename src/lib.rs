@@ -51,6 +51,10 @@ pub mod calendars;
 #[macro_use]
 pub mod objects;
 mod enhancers;
+#[cfg(not(feature = "parser"))]
+pub(crate) mod file_handler; // to keep backward compatibility, not exposing FileHandler
+#[cfg(feature = "parser")]
+pub mod file_handler;
 pub mod gtfs;
 pub mod model;
 #[cfg(feature = "proj")]
@@ -64,7 +68,6 @@ pub mod transfers;
 pub mod validity_period;
 mod version_utils;
 pub mod vptranslator;
-
 /// Current version of the NTFS format
 pub const NTFS_VERSION: &str = "0.12.1";
 

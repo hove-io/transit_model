@@ -143,9 +143,7 @@ mod tests {
     mod compute_dataset_validity_period {
         use super::super::*;
         use crate::{
-            calendars,
-            model::Collections,
-            read_utils::{self, PathFileHandler},
+            calendars, file_handler::PathFileHandler, model::Collections, read_utils::*,
             test_utils::*,
         };
 
@@ -164,7 +162,7 @@ mod tests {
                 create_file_with_content(path, "calendar_dates.txt", calendar_dates_content);
 
                 let mut collections = Collections::default();
-                let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+                let (_, mut dataset, _) = read_config(None::<&str>).unwrap();
 
                 calendars::manage_calendars(&mut handler, &mut collections).unwrap();
                 compute_dataset_validity_period(&mut dataset, &collections.calendars).unwrap();
@@ -195,7 +193,7 @@ mod tests {
                 create_file_with_content(path, "calendar.txt", calendars_content);
 
                 let mut collections = Collections::default();
-                let (_, mut dataset, _) = read_utils::read_config(None::<&str>).unwrap();
+                let (_, mut dataset, _) = read_config(None::<&str>).unwrap();
 
                 calendars::manage_calendars(&mut handler, &mut collections).unwrap();
                 compute_dataset_validity_period(&mut dataset, &collections.calendars).unwrap();

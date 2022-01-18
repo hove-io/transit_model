@@ -18,7 +18,8 @@ mod read;
 mod write;
 
 use crate::{
-    calendars::write_calendar_dates,
+    calendars::{manage_calendars, write_calendar_dates},
+    file_handler::{FileHandler, PathFileHandler, ZipHandler},
     model::{Collections, Model},
     objects::{self, Availability, Contributor, Dataset, StopType, Time},
     read_utils::read_opt_collection,
@@ -43,12 +44,6 @@ use typed_index_collection::CollectionWithId;
 pub use read::{
     manage_frequencies, manage_pathways, manage_shapes, manage_stop_times, read_agency,
     read_routes, read_stops, read_transfers,
-};
-
-#[cfg(feature = "parser")]
-pub use crate::{
-    calendars::manage_calendars,
-    read_utils::{FileHandler, PathFileHandler, ZipHandler},
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]

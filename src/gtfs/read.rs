@@ -17,13 +17,14 @@ use super::{
     StopTime, Transfer, TransferType, Trip,
 };
 use crate::{
+    file_handler::FileHandler,
     model::Collections,
     objects::{
         self, Availability, CommentLinksT, Coord, KeysValues, Pathway, PropertiesMap, StopLocation,
         StopPoint, StopTime as NtfsStopTime, StopTimePrecision, StopType, Time, TransportType,
         VehicleJourney,
     },
-    read_utils::{read_collection, read_objects, read_objects_loose, FileHandler},
+    read_utils::{read_collection, read_objects, read_objects_loose},
     serde_utils::de_with_empty_default,
     Result,
 };
@@ -1314,11 +1315,12 @@ mod tests {
     use super::*;
     use crate::{
         calendars,
+        file_handler::PathFileHandler,
         gtfs::read::EquipmentList,
         model::Collections,
         objects::*,
         objects::{Calendar, Comment, CommentType, Equipment, Geometry, Rgb, StopTime, Transfer},
-        read_utils::{self, read_opt_collection, PathFileHandler},
+        read_utils::{self, read_opt_collection},
         test_utils::*,
         AddPrefix, PrefixConfiguration,
     };
@@ -3313,10 +3315,7 @@ mod tests {
 
     mod read_gtfs_routes {
         use super::*;
-        use crate::{
-            model::Collections,
-            read_utils::{self, PathFileHandler},
-        };
+        use crate::{file_handler::PathFileHandler, model::Collections};
         use pretty_assertions::assert_eq;
         use std::path;
 
