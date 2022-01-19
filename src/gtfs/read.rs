@@ -1344,13 +1344,13 @@ mod tests {
     use super::*;
     use crate::{
         calendars,
+        configuration::read_config,
         file_handler::PathFileHandler,
         gtfs::read::EquipmentList,
         model::Collections,
         objects::*,
         objects::{Calendar, Comment, CommentType, Equipment, Geometry, Rgb, StopTime, Transfer},
         parser::read_opt_collection,
-        read_utils::read_config,
         test_utils::*,
         AddPrefix, PrefixConfiguration,
     };

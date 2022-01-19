@@ -23,7 +23,7 @@ use tracing_subscriber::{
     layer::SubscriberExt as _,
     util::SubscriberInitExt as _,
 };
-use transit_model::{read_utils, transfers::generates_transfers, PrefixConfiguration, Result};
+use transit_model::{configuration, transfers::generates_transfers, PrefixConfiguration, Result};
 
 lazy_static::lazy_static! {
     pub static ref GIT_VERSION: String = transit_model::binary_full_version(env!("CARGO_PKG_VERSION"));
@@ -100,7 +100,7 @@ struct Opt {
 fn run(opt: Opt) -> Result<()> {
     info!("Launching gtfs2ntfs...");
 
-    let (contributor, dataset, feed_infos) = read_utils::read_config(opt.config)?;
+    let (contributor, dataset, feed_infos) = configuration::read_config(opt.config)?;
     let mut prefix_conf = PrefixConfiguration::default();
     if let Some(data_prefix) = opt.prefix {
         prefix_conf.set_data_prefix(data_prefix);

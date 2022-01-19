@@ -143,7 +143,7 @@ mod tests {
     mod compute_dataset_validity_period {
         use super::super::*;
         use crate::{
-            calendars, file_handler::PathFileHandler, model::Collections, read_utils::*,
+            calendars, configuration::*, file_handler::PathFileHandler, model::Collections,
             test_utils::*,
         };
 

@@ -50,6 +50,7 @@ pub use add_prefix::{AddPrefix, PrefixConfiguration};
 pub mod calendars;
 #[macro_use]
 pub mod objects;
+pub mod configuration;
 mod enhancers;
 #[cfg(not(feature = "parser"))]
 pub(crate) mod file_handler;
@@ -65,7 +66,6 @@ pub mod ntfs;
 pub(crate) mod parser;
 #[cfg(feature = "parser")]
 pub mod parser;
-pub mod read_utils;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
