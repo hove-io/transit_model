@@ -38,6 +38,13 @@
 //! mutate a `Model`. It might not be completely stable at the moment so use
 //! with care (or not at all!).
 //!
+//! ## `gtfs`
+//! This feature is only used to expose some gtfs functions for use in external projects
+//!
+//! ## `parser`
+//! Some utilities to turn csv files into vector of objects or CollectionWithId (See
+//! https://github.com/CanalTP/typed_index_collection/)
+//!
 //! [`CONTRIBUTING.md`]: https://github.com/CanalTP/transit_model/blob/master/CONTRIBUTING.md
 
 #![deny(missing_docs)]
