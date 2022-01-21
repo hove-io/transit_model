@@ -39,7 +39,8 @@
 //! with care (or not at all!).
 //!
 //! ## `gtfs`
-//! This feature is only used to expose some gtfs functions for use in external projects
+//! This is an experimental feature that exposes some gtfs functions for use
+//! in external projects
 //!
 //! ## `parser`
 //! Some utilities to turn csv files into vector of objects or CollectionWithId (See
