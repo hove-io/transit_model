@@ -79,11 +79,13 @@ pub struct ZipHandler<R: Seek + Read> {
     index_by_name: BTreeMap<String, usize>,
 }
 
+/// ZipHandler is used to read files from an archive
 impl<R> ZipHandler<R>
 where
     R: Seek + Read,
 {
-    pub(crate) fn new<P: AsRef<Path>>(r: R, path: P) -> Result<Self> {
+    /// Constructs a new ZipHandler
+    pub fn new<P: AsRef<Path>>(r: R, path: P) -> Result<Self> {
         let mut archive = zip::ZipArchive::new(r)?;
         Ok(ZipHandler {
             index_by_name: Self::files_by_name(&mut archive),
@@ -91,7 +93,6 @@ where
             archive_path: path.as_ref().to_path_buf(),
         })
     }
-
     fn files_by_name(archive: &mut zip::ZipArchive<R>) -> BTreeMap<String, usize> {
         (0..archive.len())
             .filter_map(|i| {
