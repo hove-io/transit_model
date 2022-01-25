@@ -38,6 +38,14 @@
 //! mutate a `Model`. It might not be completely stable at the moment so use
 //! with care (or not at all!).
 //!
+//! ## `gtfs`
+//! This is an experimental feature that exposes some gtfs functions for use
+//! in external projects
+//!
+//! ## `parser`
+//! Some utilities to turn csv files into vector of objects or CollectionWithId (See
+//! https://github.com/CanalTP/typed_index_collection/)
+//!
 //! [`CONTRIBUTING.md`]: https://github.com/CanalTP/transit_model/blob/master/CONTRIBUTING.md
 
 #![deny(missing_docs)]
@@ -50,21 +58,28 @@ pub use add_prefix::{AddPrefix, PrefixConfiguration};
 pub mod calendars;
 #[macro_use]
 pub mod objects;
+pub mod configuration;
 mod enhancers;
+#[cfg(not(feature = "parser"))]
+pub(crate) mod file_handler;
+#[cfg(feature = "parser")]
+pub mod file_handler;
 pub mod gtfs;
 pub mod model;
 #[cfg(feature = "proj")]
 pub mod netex_france;
 pub mod netex_utils;
 pub mod ntfs;
-pub mod read_utils;
+#[cfg(not(feature = "parser"))]
+pub(crate) mod parser;
+#[cfg(feature = "parser")]
+pub mod parser;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
 pub mod validity_period;
 mod version_utils;
 pub mod vptranslator;
-
 /// Current version of the NTFS format
 pub const NTFS_VERSION: &str = "0.12.1";
 

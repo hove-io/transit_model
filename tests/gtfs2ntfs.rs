@@ -14,9 +14,9 @@
 
 use std::collections::BTreeMap;
 use transit_model::{
+    configuration::read_config,
     gtfs, ntfs,
     objects::{Contributor, Dataset},
-    read_utils::read_config,
     test_utils::*,
     PrefixConfiguration,
 };

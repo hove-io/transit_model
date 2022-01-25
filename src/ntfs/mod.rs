@@ -20,9 +20,9 @@ mod write;
 
 use crate::{
     calendars::{manage_calendars, write_calendar_dates},
+    file_handler::{FileHandler, PathFileHandler, ZipHandler},
     model::{Collections, Model},
     objects::*,
-    read_utils::{self, FileHandler},
     serde_utils::*,
     utils::*,
     Result,
@@ -180,14 +180,14 @@ fn has_fares_v1(collections: &Collections) -> bool {
 /// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 pub fn from_dir<P: AsRef<path::Path>>(p: P) -> Result<Model> {
-    let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
+    let mut file_handle = PathFileHandler::new(p.as_ref().to_path_buf());
     read_file_handler(&mut file_handle)
 }
 /// Imports a `Model` from a zip file containing the
 /// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
 pub fn from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
     let reader = std::fs::File::open(p.as_ref())?;
-    let mut file_handler = read_utils::ZipHandler::new(reader, p)?;
+    let mut file_handler = ZipHandler::new(reader, p)?;
     read_file_handler(&mut file_handler)
 }
 
@@ -195,7 +195,7 @@ pub fn from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
 /// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
 pub fn collections_from_zip<P: AsRef<path::Path>>(p: P) -> Result<Collections> {
     let reader = std::fs::File::open(p.as_ref())?;
-    let mut file_handler = read_utils::ZipHandler::new(reader, p)?;
+    let mut file_handler = ZipHandler::new(reader, p)?;
     read_collections_file_handler(&mut file_handler)
 }
 
@@ -203,7 +203,7 @@ pub fn collections_from_zip<P: AsRef<path::Path>>(p: P) -> Result<Collections> {
 /// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 pub fn collections_from_dir<P: AsRef<path::Path>>(p: P) -> Result<Collections> {
-    let mut file_handle = read_utils::PathFileHandler::new(p.as_ref().to_path_buf());
+    let mut file_handle = PathFileHandler::new(p.as_ref().to_path_buf());
     read_collections_file_handler(&mut file_handle)
 }
 
@@ -226,7 +226,7 @@ pub fn from_zip_reader<R>(reader: R, source_name: &str) -> Result<Model>
 where
     R: std::io::Seek + std::io::Read,
 {
-    let mut file_handler = read_utils::ZipHandler::new(reader, &source_name)?;
+    let mut file_handler = ZipHandler::new(reader, &source_name)?;
     read_file_handler(&mut file_handler)
 }
 
@@ -277,7 +277,7 @@ pub fn read_collections<P: AsRef<path::Path>>(path: P) -> Result<Collections> {
 
 fn read_file_handler<H>(file_handler: &mut H) -> Result<Model>
 where
-    for<'a> &'a mut H: read_utils::FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     let collections = read_collections_file_handler(file_handler)?;
     info!("Indexing");
@@ -288,7 +288,7 @@ where
 
 fn read_collections_file_handler<H>(file_handler: &mut H) -> Result<Collections>
 where
-    for<'a> &'a mut H: read_utils::FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     info!("Loading NTFS from {:?}", file_handler.source_name());
     let mut collections = Collections {
@@ -434,7 +434,7 @@ mod tests {
     use super::{read, write};
     use crate::calendars::{manage_calendars, write_calendar_dates};
     use crate::objects;
-    use crate::{read_utils::PathFileHandler, test_utils::*};
+    use crate::{file_handler::PathFileHandler, test_utils::*};
     use geo::line_string;
     use pretty_assertions::assert_eq;
     use std::{

@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use crate::read_utils::{read_objects, FileHandler};
+use crate::{file_handler::FileHandler, parser::read_objects};
 use anyhow::Context;
 use skip_error::skip_error_and_warn;
 use std::{

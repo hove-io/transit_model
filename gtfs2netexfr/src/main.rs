@@ -23,7 +23,7 @@ use tracing_subscriber::{
     layer::SubscriberExt as _,
     util::SubscriberInitExt as _,
 };
-use transit_model::{read_utils, Result};
+use transit_model::{configuration, Result};
 
 lazy_static::lazy_static! {
     pub static ref GIT_VERSION: String = transit_model::binary_full_version(env!("CARGO_PKG_VERSION"));
@@ -106,7 +106,7 @@ fn init_logger() {
 fn run(opt: Opt) -> Result<()> {
     info!("Launching gtfs2netexfr...");
 
-    let (contributor, dataset, feed_infos) = read_utils::read_config(opt.config)?;
+    let (contributor, dataset, feed_infos) = configuration::read_config(opt.config)?;
     let configuration = transit_model::gtfs::Configuration {
         contributor,
         dataset,

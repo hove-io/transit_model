@@ -19,10 +19,10 @@ mod write;
 
 use crate::{
     calendars::{manage_calendars, write_calendar_dates},
-    gtfs::read::EquipmentList,
+    file_handler::{FileHandler, PathFileHandler, ZipHandler},
     model::{Collections, Model},
     objects::{self, Availability, Contributor, Dataset, StopType, Time},
-    read_utils,
+    parser::read_opt_collection,
     serde_utils::*,
     utils::*,
     validity_period, AddPrefix, PrefixConfiguration, Result,
@@ -32,8 +32,15 @@ use chrono_tz::Tz;
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fmt, path::Path};
+
 use tracing::info;
 use typed_index_collection::CollectionWithId;
+
+#[cfg(all(feature = "gtfs", feature = "parser"))]
+pub use read::{
+    manage_frequencies, manage_pathways, manage_shapes, manage_stop_times, read_agency,
+    read_routes, read_stops, read_transfers, EquipmentList,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct Agency {
@@ -277,7 +284,7 @@ pub struct Configuration {
 
 fn read_file_handler<H>(file_handler: &mut H, configuration: Configuration) -> Result<Model>
 where
-    for<'a> &'a mut H: read_utils::FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     let collections = read_file_handler_to_collections(file_handler, configuration)?;
     Model::new(collections)
@@ -288,10 +295,10 @@ fn read_file_handler_to_collections<H>(
     configuration: Configuration,
 ) -> Result<Collections>
 where
-    for<'a> &'a mut H: read_utils::FileHandler,
+    for<'a> &'a mut H: FileHandler,
 {
     let mut collections = Collections::default();
-    let mut equipments = EquipmentList::default();
+    let mut equipments = read::EquipmentList::default();
 
     let Configuration {
         contributor,
@@ -332,7 +339,7 @@ where
     )?;
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
-    collections.levels = read_utils::read_opt_collection(file_handler, "levels.txt")?;
+    collections.levels = read_opt_collection(file_handler, "levels.txt")?;
 
     //add prefixes
     if let Some(prefix_conf) = prefix_conf {
@@ -465,7 +472,7 @@ impl Reader {
     /// Imports `Collections` from the [GTFS](https://gtfs.org/reference/static)
     /// files in the `path` directory.
     fn parse_dir_collections(self, path: impl AsRef<Path>) -> Result<Collections> {
-        let mut file_handler = read_utils::PathFileHandler::new(path.as_ref().to_path_buf());
+        let mut file_handler = PathFileHandler::new(path.as_ref().to_path_buf());
         read_file_handler_to_collections(&mut file_handler, self.configuration)
     }
 
@@ -473,7 +480,7 @@ impl Reader {
     /// [GTFS](https://gtfs.org/reference/static).
     fn parse_zip_collections(self, path: impl AsRef<Path>) -> Result<Collections> {
         let reader = std::fs::File::open(path.as_ref())?;
-        let mut file_handler = read_utils::ZipHandler::new(reader, path)?;
+        let mut file_handler = ZipHandler::new(reader, path)?;
         read_file_handler_to_collections(&mut file_handler, self.configuration)
     }
 
@@ -496,7 +503,7 @@ impl Reader {
     where
         R: std::io::Seek + std::io::Read,
     {
-        let mut file_handler = read_utils::ZipHandler::new(reader, source_name)?;
+        let mut file_handler = ZipHandler::new(reader, source_name)?;
         read_file_handler(&mut file_handler, self.configuration)
     }
 }

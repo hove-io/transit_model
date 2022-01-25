@@ -17,9 +17,10 @@
 //! - calendar.txt and calendar_dates.txt format are identical between the GTFS
 //!   and NTFS
 
+use crate::file_handler::FileHandler;
 use crate::model::Collections;
 use crate::objects::{self, Date, ExceptionType};
-use crate::read_utils::{read_objects, FileHandler};
+use crate::parser::read_objects;
 use crate::serde_utils::*;
 use crate::vptranslator::translate;
 use crate::Result;
@@ -166,7 +167,10 @@ where
     Ok(())
 }
 
-pub(crate) fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+pub(crate) fn _manage_calendars<H>(
+    file_handler: &mut H,
+    collections: &mut Collections,
+) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
@@ -186,6 +190,22 @@ where
     manage_calendar_dates(&mut collections.calendars, file_handler, calendar_exists)?;
 
     Ok(())
+}
+
+#[cfg(not(feature = "parser"))]
+pub(crate) fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    _manage_calendars(file_handler, collections)
+}
+#[cfg(feature = "parser")]
+/// Read calendar_dates.txt and calendar.txt files
+pub fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    _manage_calendars(file_handler, collections)
 }
 
 /// Write the calendar_dates.txt file into a Path from a list of Calendar
