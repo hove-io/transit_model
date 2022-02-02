@@ -20,7 +20,7 @@ fn run() -> Result<()> {
     let objects = gtfs::read(".")?;
     // output internal model as JSON
     let json_objs = json!(objects);
-    println!("{}", json_objs.to_string());
+    println!("{}", json_objs);
     Ok(())
 }
 
