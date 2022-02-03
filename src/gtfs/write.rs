@@ -16,6 +16,7 @@ use super::{
     Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
     Trip,
 };
+use crate::gtfs::ExtendedRoute;
 use crate::model::{GetCorresponding, Model};
 use crate::objects;
 use crate::objects::Transfer as NtfsTransfer;
@@ -344,10 +345,13 @@ impl<'a> From<&'a objects::PhysicalMode> for RouteType {
             "RailShuttle" | "Tramway" => RouteType::Tramway,
             "Metro" => RouteType::Metro,
             "LocalTrain" | "LongDistanceTrain" | "RapidTransit" | "Train" => RouteType::Train,
-            "Bus" | "BusRapidTransit" | "Coach" => RouteType::Bus,
+            "Bus" | "BusRapidTransit" => RouteType::Bus,
+            "Coach" => RouteType::Coach,
             "Boat" | "Ferry" => RouteType::Ferry,
             "Funicular" | "Shuttle" => RouteType::Funicular,
             "SuspendedCableCar" => RouteType::SuspendedCableCar,
+            "Air" => RouteType::Air,
+            "Taxi" => RouteType::Taxi,
             _ => RouteType::UnknownMode,
         }
     }
@@ -378,7 +382,9 @@ fn get_physical_mode_order(pm: &objects::PhysicalMode) -> u8 {
         "Funicular" => 13,
         "Shuttle" => 14,
         "SuspendedCableCar" => 15,
-        _ => 16,
+        "Air" => 16,
+        "Taxi" => 17,
+        _ => 18,
     }
 }
 
@@ -405,6 +411,25 @@ pub fn write_routes(path: &path::Path, model: &Model) -> Result<()> {
     for (from, l) in &model.lines {
         for pm in &get_line_physical_modes(from, &model.physical_modes, model) {
             wtr.serialize(make_gtfs_route_from_ntfs_line(l, pm))
+                .with_context(|| format!("Error reading {:?}", path))?;
+        }
+    }
+
+    wtr.flush()
+        .with_context(|| format!("Error reading {:?}", path))?;
+
+    Ok(())
+}
+
+pub fn write_extended_routes(path: &path::Path, model: &Model) -> Result<()> {
+    info!("Writing routes.txt");
+    let path = path.join("routes.txt");
+    let mut wtr =
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+    for (from, l) in &model.lines {
+        for pm in &get_line_physical_modes(from, &model.physical_modes, model) {
+            let route = make_gtfs_route_from_ntfs_line(l, pm);
+            wtr.serialize(ExtendedRoute::from(route))
                 .with_context(|| format!("Error reading {:?}", path))?;
         }
     }

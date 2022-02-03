@@ -47,6 +47,14 @@ struct Opt {
     /// Add the commercial mode at the beginning of the route short name.
     #[structopt(short, long)]
     mode_in_route_short_name: bool,
+
+    #[structopt(
+        long,
+        help = "Support a more rich set of route types. \
+                For more information, see \
+                https://developers.google.com/transit/gtfs/reference/extended-route-types"
+    )]
+    extend_route_type: bool,
 }
 
 fn init_logger() {
@@ -81,10 +89,10 @@ fn run(opt: Opt) -> Result<()> {
 
     match opt.output.extension() {
         Some(ext) if ext == "zip" => {
-            transit_model::gtfs::write_to_zip(model, opt.output)?;
+            transit_model::gtfs::write_to_zip(model, opt.output, opt.extend_route_type)?;
         }
         _ => {
-            transit_model::gtfs::write(model, opt.output)?;
+            transit_model::gtfs::write(model, opt.output, opt.extend_route_type)?;
         }
     };
     Ok(())
