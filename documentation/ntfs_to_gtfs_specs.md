@@ -52,26 +52,28 @@ Each line of this file corresponds to a transit line modeled in the NTFS feed. I
 
 **Mapping of `route_type` with physical modes**
 
-| physical_mode_id in the NTFS | route_type in the GTFS | Priority w.r.t. NeTex | Absolute order |
-| ---------------------------- | ---------------------- | --------------------- | -------------- |
-| Tramway                      | 0                      | 5                     | 1              |
-| RailShuttle                  | 0                      | 3                     | 2              |
-| Metro                        | 1                      | 4                     | 3              |
-| LocalTrain                   | 2                      | 3                     | 4              |
-| LongDistanceTrain            | 2                      | 3                     | 5              |
-| RapidTransit                 | 2                      | 3                     | 6              |
-| Train                        | 2                      | 3                     | 7              |
-| BusRapidTransit              | 3                      | 7                     | 8              |
-| Bus                          | 3                      | 7                     | 9              |
-| Coach                        | 3                      | 7                     | 10             |
-| Boat                         | 4                      | 2                     | 11             |
-| Ferry                        | 4                      | 2                     | 12             |
-| Funicular                    | 7                      | 6                     | 13             |
-| Shuttle                      | 7                      | 6                     | 14             |
-| SuspendedCableCar            | 6                      | 7                     | 15             |
+| physical_mode_id in the NTFS | route_type in the GTFS | extended GTFS route_type | Priority w.r.t. NeTex | Absolute order |
+| ---------------------------- | ---------------------- | ------------------------ | --------------------- | -------------- |
+| Tramway                      | 0                      | 900                      | 5                     | 1              |
+| RailShuttle                  | 0                      | 900                      | 3                     | 2              |
+| Metro                        | 1                      | 400                      | 4                     | 3              |
+| LocalTrain                   | 2                      | 100                      | 3                     | 4              |
+| LongDistanceTrain            | 2                      | 100                      | 3                     | 5              |
+| RapidTransit                 | 2                      | 100                      | 3                     | 6              |
+| Train                        | 2                      | 100                      | 3                     | 7              |
+| BusRapidTransit              | 3                      | 700                      | 7                     | 8              |
+| Bus                          | 3                      | 700                      | 7                     | 9              |
+| Coach                        | 3                      | 200                      | 7                     | 10             |
+| Boat                         | 4                      | 1200                     | 2                     | 11             |
+| Ferry                        | 4                      | 1200                     | 2                     | 12             |
+| Funicular                    | 7                      | 1400                     | 6                     | 13             |
+| Shuttle                      | 7                      | 1400                     | 6                     | 14             |
+| SuspendedCableCar            | 6                      | 1300                     | 7                     | 15             |
+| Air                          | 3                      | 1100                     | 1                     | 16             |
+| Taxi                         | 3                      | 1500                     | 7                     | 17             |
 
-The physical_modes Air and Taxi are not available in standard GTFS `route_type`s and should be considered as unknown for the GTFS (see below).
-If the physical_mode is unknown, trips should be considered as Bus (route_type = 3) and with a priority of 16 .
+The physical_modes Air and Taxi are not available in standard GTFS `route_type`s (this is not valid for extended route_type) and should be considered as unknown for the GTFS (see below).
+If the physical_mode is unknown, trips should be considered as Bus (route_type = 3) and with a priority of 18 .
 
 **Export of NTFS lines containing trips with different modes**
 A GTFS `route` can only contains trips with one mode (ie. `route_type`).
