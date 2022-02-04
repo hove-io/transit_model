@@ -1,0 +1,24 @@
+line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+MIPL:Bus,1,Line 1,,,,,,MIPL:PadamMobility,Bus,,05:30:00,20:42:00
+MIPL:Air,2,Line 2,,,,,,MIPL:PadamMobility,Bus,,06:00:00,09:06:00
+MIPL:Bike,3,Line 3,,,,,,MIPL:PadamMobility,Bus,,06:00:00,09:06:00
+MIPL:BikeSharingService,4,Line 4,,,,,,MIPL:PadamMobility,Bus,,07:00:00,09:40:00
+MIPL:Car,5,Line 5,,,,,,MIPL:PadamMobility,Bus,,06:00:00,08:37:00
+MIPL:Tramway,6,Line 6,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:RailShuttle,7,Line 7,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:Metro,8,Line 8,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:LocalTrain,9,Line 9,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:LongDistanceTrain,10,Line 10,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:RapidTransit,11,Line 11,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:Train,12,Line 12,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:BusRapidTransit,13,Line 13,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:Coach,14,Line 14,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:Boat,15,Line 15,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:Ferry,16,Line 16,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:Funicular,17,Line 17,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:Shuttle,18,Line 18,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:SuspendedCableCar,19,Line 19,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:Taxi,20,Line 20,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:Bob,21,Line 21,,,,,,MIPL:PadamMobility,Bus,,06:00:00,14:35:00
+MIPL:Bus-Coach,22,Line 22,,,,,,MIPL:PadamMobility,Bus,,05:30:00,20:42:00
+MIPL:Bus-Taxi,22,Line 22,,,,,,MIPL:PadamMobility,Bus,,05:30:00,20:42:00
