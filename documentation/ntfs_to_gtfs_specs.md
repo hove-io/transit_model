@@ -72,7 +72,8 @@ Each line of this file corresponds to a transit line modeled in the NTFS feed. I
 | Air                          | 3                      | 1100                     | 1                     | 16             |
 | Taxi                         | 3                      | 1500                     | 7                     | 17             |
 
-The physical_modes Air and Taxi are not available in standard GTFS `route_type`s (this is not valid for extended route_type) and should be considered as unknown for the GTFS (see below).
+The `physical_modes` Air and Taxi are not available in standard GTFS `route_type`s and should be considered as unknown for the GTFS (see below).
+However, these `physical_modes` are available in extended mode.
 If the physical_mode is unknown, trips should be considered as Bus (route_type = 3) and with a priority of 18 .
 
 **Export of NTFS lines containing trips with different modes**
