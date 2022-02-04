@@ -652,11 +652,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> 
         &model.equipments,
     )?;
     write::write_trips(path, &model)?;
-    if extend_route_type {
-        write::write_extended_routes(path, &model)?;
-    } else {
-        write::write_routes(path, &model)?;
-    }
+    write::write_routes(path, &model, extend_route_type)?;
     write::write_stop_extensions(path, &model.stop_points, &model.stop_areas)?;
     write::write_stop_times(
         path,

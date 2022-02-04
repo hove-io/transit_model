@@ -403,25 +403,7 @@ fn make_gtfs_route_from_ntfs_line(line: &objects::Line, pm: &PhysicalModeWithOrd
     }
 }
 
-pub fn write_routes(path: &path::Path, model: &Model) -> Result<()> {
-    info!("Writing routes.txt");
-    let path = path.join("routes.txt");
-    let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
-    for (from, l) in &model.lines {
-        for pm in &get_line_physical_modes(from, &model.physical_modes, model) {
-            wtr.serialize(make_gtfs_route_from_ntfs_line(l, pm))
-                .with_context(|| format!("Error reading {:?}", path))?;
-        }
-    }
-
-    wtr.flush()
-        .with_context(|| format!("Error reading {:?}", path))?;
-
-    Ok(())
-}
-
-pub fn write_extended_routes(path: &path::Path, model: &Model) -> Result<()> {
+pub fn write_routes(path: &path::Path, model: &Model, extend_route_type: bool) -> Result<()> {
     info!("Writing routes.txt");
     let path = path.join("routes.txt");
     let mut wtr =
@@ -429,8 +411,13 @@ pub fn write_extended_routes(path: &path::Path, model: &Model) -> Result<()> {
     for (from, l) in &model.lines {
         for pm in &get_line_physical_modes(from, &model.physical_modes, model) {
             let route = make_gtfs_route_from_ntfs_line(l, pm);
-            wtr.serialize(ExtendedRoute::from(route))
-                .with_context(|| format!("Error reading {:?}", path))?;
+            if extend_route_type {
+                wtr.serialize(ExtendedRoute::from(route))
+                    .with_context(|| format!("Error reading {:?}", path))?;
+            } else {
+                wtr.serialize(route)
+                    .with_context(|| format!("Error reading {:?}", path))?;
+            }
         }
     }
 
