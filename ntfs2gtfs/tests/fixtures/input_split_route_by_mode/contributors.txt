@@ -1,0 +1,2 @@
+contributor_id,contributor_name,contributor_license,contributor_website
+MIPL:default_contributor,Default contributor,Unknown license,
