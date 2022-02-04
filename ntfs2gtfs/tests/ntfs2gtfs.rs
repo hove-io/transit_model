@@ -157,3 +157,22 @@ fn test_ntfs2gtfs_split_route_by_mode() {
         "./tests/fixtures/output_split_route_by_mode",
     );
 }
+
+#[test]
+fn test_ntfs2gtfs_split_route_by_mode_extended() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::cargo_bin("ntfs2gtfs")
+        .expect("Failed to find binary 'ntfs2gtfs'")
+        .arg("--input")
+        .arg("tests/fixtures/input_split_route_by_mode")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .arg("--extend-route-type")
+        .assert()
+        .success();
+    compare_output_dir_with_expected(
+        &output_dir,
+        Some(vec!["routes.txt"]),
+        "./tests/fixtures/output_split_route_by_mode_extended",
+    );
+}
