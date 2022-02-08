@@ -276,7 +276,7 @@ impl Collections {
         let mut stop_area_ids_used: HashSet<String> = HashSet::new();
         let mut equipments_used: HashSet<String> = HashSet::new();
 
-        let stop_locations = self
+        let mut stop_locations = self
             .stop_locations
             .take()
             .into_iter()
@@ -330,7 +330,7 @@ impl Collections {
             .collect::<Vec<_>>();
         self.pathways = CollectionWithId::new(pathways)?;
 
-        let stop_points = self
+        let mut stop_points = self
             .stop_points
             .take()
             .into_iter()
@@ -395,7 +395,7 @@ impl Collections {
                 })
                 .collect(),
         )?;
-        let stop_areas = self
+        let mut stop_areas = self
             .stop_areas
             .take()
             .into_iter()
@@ -415,6 +415,33 @@ impl Collections {
                 }
             })
             .collect::<Vec<_>>();
+
+        for sa in stop_areas.iter_mut().filter(|sa| !sa.coord.is_valid()) {
+            debug!(
+                "stop area {} geographic coordinates are not valid and set to (0, 0)",
+                sa.id
+            );
+            sa.coord = Coord::default();
+        }
+
+        for sp in stop_points.iter_mut().filter(|sp| !sp.coord.is_valid()) {
+            debug!(
+                "stop point {} geographic coordinates are not valid and set to (0, 0)",
+                sp.id
+            );
+            sp.coord = Coord::default();
+        }
+
+        for sl in stop_locations
+            .iter_mut()
+            .filter(|sl| sl.stop_type == StopType::StopEntrance && !sl.coord.is_valid())
+        {
+            debug!(
+                "stop access {} geographic coordinates are not valid and set to (0, 0)",
+                sl.id
+            );
+            sl.coord = Coord::default();
+        }
 
         comments_used.extend(self.stop_time_comments.iter().filter_map(
             |((vj_id, _), comment_id)| {
@@ -2220,5 +2247,36 @@ mod tests {
                 .expect("Failed to find vehicle journey vj1");
             assert_eq!(2, vj.stop_times.len());
         }
+    }
+
+    mod check_coord_integrity {
+        use crate::objects::Coord;
+
+        #[test]
+        fn check_valid_coord() {
+            let coord = Coord {
+                lon: 2.372987,
+                lat: 48.844746,
+            };
+            assert!(coord.is_valid());
+        }
+    }
+
+    #[test]
+    fn check_unvalid_lon() {
+        let coord = Coord {
+            lon: -182.,
+            lat: 48.844746,
+        };
+        assert!(!coord.is_valid());
+    }
+
+    #[test]
+    fn check_unvalid_lat() {
+        let coord = Coord {
+            lon: 2.372987,
+            lat: 91.,
+        };
+        assert!(!coord.is_valid());
     }
 }

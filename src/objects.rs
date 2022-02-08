@@ -980,6 +980,10 @@ impl Coord {
         2. * EARTH_RADIUS * f64::asin(f64::sqrt(x + y))
     }
 
+    pub fn is_valid(&self) -> bool {
+        (self.lon >= -180. && self.lon <= 180.) && (self.lat >= -90. && self.lat <= 90.)
+    }
+
     /// Returns a proxy object allowing to compute approximate
     /// distances for cheap computation.
     ///
