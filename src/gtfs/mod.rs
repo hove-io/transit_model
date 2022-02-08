@@ -559,10 +559,83 @@ struct Route {
     sort_order: Option<u32>,
 }
 
+/// Use to serialize extended route type
+/// For more information, see \
+/// https://developers.google.com/transit/gtfs/reference/extended-route-types"
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+struct ExtendedRoute {
+    #[serde(rename = "route_id")]
+    id: String,
+    agency_id: Option<String>,
+    #[serde(rename = "route_short_name")]
+    short_name: String,
+    #[serde(rename = "route_long_name")]
+    long_name: String,
+    #[serde(rename = "route_desc")]
+    desc: Option<String>,
+    #[serde(serialize_with = "ser_from_route_type_extended")]
+    route_type: RouteType,
+    #[serde(rename = "route_url")]
+    url: Option<String>,
+    #[serde(
+        rename = "route_color",
+        default,
+        deserialize_with = "de_with_empty_or_invalid_default"
+    )]
+    color: Option<objects::Rgb>,
+    #[serde(
+        rename = "route_text_color",
+        default,
+        deserialize_with = "de_with_empty_or_invalid_default"
+    )]
+    text_color: Option<objects::Rgb>,
+    #[serde(rename = "route_sort_order")]
+    sort_order: Option<u32>,
+}
+
+impl From<Route> for ExtendedRoute {
+    fn from(route: Route) -> Self {
+        Self {
+            id: route.id,
+            agency_id: route.agency_id,
+            short_name: route.short_name,
+            long_name: route.long_name,
+            desc: route.desc,
+            route_type: route.route_type,
+            url: route.url,
+            color: route.color,
+            text_color: route.text_color,
+            sort_order: route.sort_order,
+        }
+    }
+}
+
+fn to_gtfs_extended_value(route_type: &RouteType) -> String {
+    match *route_type {
+        RouteType::Tramway => "900".to_string(),
+        RouteType::Metro => "400".to_string(),
+        RouteType::Train => "100".to_string(),
+        RouteType::Bus | RouteType::UnknownMode => "700".to_string(),
+        RouteType::Ferry => "1200".to_string(),
+        RouteType::Funicular => "1400".to_string(),
+        RouteType::CableCar | RouteType::SuspendedCableCar => "1300".to_string(),
+        RouteType::Coach => "200".to_string(),
+        RouteType::Air => "1100".to_string(),
+        RouteType::Taxi => "1500".to_string(),
+    }
+}
+
+fn ser_from_route_type_extended<S>(r: &RouteType, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(&to_gtfs_extended_value(r))
+}
+
 /// Exports a `Model` to [GTFS](https://gtfs.org/reference/static) files
 /// in the given directory.
 /// see [NTFS to GTFS conversion](https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
-pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
+pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> Result<()> {
     let path = path.as_ref();
     std::fs::create_dir_all(path)?;
     info!("Writing GTFS to {:?}", path);
@@ -579,7 +652,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
         &model.equipments,
     )?;
     write::write_trips(path, &model)?;
-    write::write_routes(path, &model)?;
+    write::write_routes(path, &model, extend_route_type)?;
     write::write_stop_extensions(path, &model.stop_points, &model.stop_areas)?;
     write::write_stop_times(
         path,
@@ -597,11 +670,15 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P) -> Result<()> {
 /// Exports a `Model` to [GTFS](https://gtfs.org/reference/static) files
 /// in the given ZIP archive.
 /// see [NTFS to GTFS conversion](https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
-pub fn write_to_zip<P: AsRef<std::path::Path>>(model: Model, path: P) -> Result<()> {
+pub fn write_to_zip<P: AsRef<std::path::Path>>(
+    model: Model,
+    path: P,
+    extend_route_type: bool,
+) -> Result<()> {
     let path = path.as_ref();
     info!("Writing GTFS to ZIP File {:?}", path);
     let input_tmp_dir = tempfile::tempdir()?;
-    write(model, input_tmp_dir.path())?;
+    write(model, input_tmp_dir.path(), extend_route_type)?;
     zip_to(input_tmp_dir.path(), path)?;
     input_tmp_dir.close()?;
     Ok(())

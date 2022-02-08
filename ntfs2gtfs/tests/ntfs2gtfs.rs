@@ -26,7 +26,7 @@ fn test_stop_zones_not_exported_and_cleaned() {
         collections.remove_stop_zones();
         collections.remove_route_points();
         let model = Model::new(collections).unwrap();
-        transit_model::gtfs::write(model, path).unwrap();
+        transit_model::gtfs::write(model, path, false).unwrap();
         compare_output_dir_with_expected(&path, None, "./tests/fixtures/output");
     });
 }
@@ -37,7 +37,7 @@ fn test_mode_in_route_shortname() {
         let input = "./tests/fixtures/input";
         let model = transit_model::ntfs::read(input).unwrap();
         let model = add_mode_to_line_code(model).unwrap();
-        transit_model::gtfs::write(model, path).unwrap();
+        transit_model::gtfs::write(model, path, false).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["routes.txt"]),
@@ -51,7 +51,7 @@ fn test_platforms_preserving() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/platforms/input";
         let model = transit_model::ntfs::read(input).unwrap();
-        transit_model::gtfs::write(model, path).unwrap();
+        transit_model::gtfs::write(model, path, false).unwrap();
         compare_output_dir_with_expected(
             &path,
             Some(vec!["stops.txt"]),
@@ -122,6 +122,25 @@ fn test_ntfs2gtfs_create_foobar() {
 }
 
 #[test]
+fn test_ntfs2gtfs_extended() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::cargo_bin("ntfs2gtfs")
+        .expect("Failed to find binary 'ntfs2gtfs'")
+        .arg("--input")
+        .arg("tests/fixtures/input/")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .arg("--extend-route-type")
+        .assert()
+        .success();
+    compare_output_dir_with_expected(
+        &output_dir,
+        Some(vec!["routes.txt"]),
+        "./tests/fixtures/output_extended_route",
+    );
+}
+
+#[test]
 fn test_ntfs2gtfs_split_route_by_mode() {
     let output_dir = TempDir::new().expect("create temp dir failed");
     Command::cargo_bin("ntfs2gtfs")
@@ -136,5 +155,24 @@ fn test_ntfs2gtfs_split_route_by_mode() {
         &output_dir,
         Some(vec!["routes.txt"]),
         "./tests/fixtures/output_split_route_by_mode",
+    );
+}
+
+#[test]
+fn test_ntfs2gtfs_split_route_by_mode_extended() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::cargo_bin("ntfs2gtfs")
+        .expect("Failed to find binary 'ntfs2gtfs'")
+        .arg("--input")
+        .arg("tests/fixtures/input_split_route_by_mode")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .arg("--extend-route-type")
+        .assert()
+        .success();
+    compare_output_dir_with_expected(
+        &output_dir,
+        Some(vec!["routes.txt"]),
+        "./tests/fixtures/output_split_route_by_mode_extended",
     );
 }
