@@ -301,6 +301,9 @@ impl Collections {
                 if let Some(level_id) = &sl.level_id {
                     level_id_used.insert(level_id.clone());
                 }
+                if let Some(equipment_id) = &sl.equipment_id {
+                    equipments_used.insert(equipment_id.clone());
+                }
                 comments_used.extend(&mut sl.comment_links.iter().map(|cl| cl.to_string()));
                 true
             })
@@ -406,6 +409,9 @@ impl Collections {
                     }
                     if let Some(level_id) = &sa.level_id {
                         level_id_used.insert(level_id.clone());
+                    }
+                    if let Some(equipment_id) = &sa.equipment_id {
+                        equipments_used.insert(equipment_id.clone());
                     }
                     comments_used.extend(&mut sa.comment_links.iter().map(|cl| cl.to_string()));
                     true
