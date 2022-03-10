@@ -150,6 +150,7 @@ where
     D: serde::Deserializer<'de>,
 {
     use serde::Deserialize;
+    use std::str::FromStr;
     let s = String::deserialize(deserializer)?;
     let wkt = wkt::Wkt::from_str(&s).map_err(serde::de::Error::custom)?;
     use std::convert::TryInto;
@@ -275,7 +276,7 @@ where
     S: serde::Serializer,
 {
     let wkt = geometry.to_wkt();
-    serializer.serialize_str(&format!("{}", wkt.items[0]))
+    serializer.serialize_str(&format!("{}", wkt.item))
 }
 
 /// deserialyse optional String
