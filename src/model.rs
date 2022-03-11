@@ -121,12 +121,10 @@ pub struct Collections {
 impl Collections {
     /// Remove associated schedules with route points
     pub fn remove_route_points(&mut self) {
-        let vj_idxs: Vec<Idx<VehicleJourney>> =
-            self.vehicle_journeys.iter().map(|(idx, _)| idx).collect();
         let is_route_point = |stop_time: &StopTime| -> bool {
             stop_time.pickup_type == 3 || stop_time.drop_off_type == 3
         };
-        for vj_idx in vj_idxs {
+        for vj_idx in self.vehicle_journeys.indexes() {
             let mut vj = self.vehicle_journeys.index_mut(vj_idx);
             vj.stop_times.retain(|stop_time| !is_route_point(stop_time));
             vj.stop_times.shrink_to_fit();
@@ -755,9 +753,7 @@ impl Collections {
     /// If the vehicle didn't stop (point of route) on pickup,
     /// it must not stop on drop off and conversely
     pub fn pickup_drop_off_harmonisation(&mut self) {
-        let vj_idxs: Vec<Idx<VehicleJourney>> =
-            self.vehicle_journeys.iter().map(|(idx, _)| idx).collect();
-        for vj_idx in vj_idxs {
+        for vj_idx in self.vehicle_journeys.indexes() {
             let mut vj = self.vehicle_journeys.index_mut(vj_idx);
             for stop_time in vj
                 .stop_times
