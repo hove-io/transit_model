@@ -18,8 +18,7 @@ use transit_model::{Model, Result};
 
 pub fn add_mode_to_line_code(model: Model) -> Result<Model> {
     let mut collections = model.into_collections();
-    let indexes: Vec<_> = collections.lines.iter().map(|(idx, _)| idx).collect();
-    for idx in indexes {
+    for idx in collections.lines.indexes() {
         let mut line = collections.lines.index_mut(idx);
         let mode = collections.commercial_modes.get(&line.commercial_mode_id);
         let code = match (line.code.clone(), mode) {

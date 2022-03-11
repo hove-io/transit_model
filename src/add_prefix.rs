@@ -134,8 +134,7 @@ where
     T: Id<T> + AddPrefix,
 {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
-        let indexes: Vec<_> = self.iter().map(|(idx, _)| idx).collect();
-        for index in indexes {
+        for index in self.indexes() {
             self.index_mut(index).prefix(prefix_conf);
         }
     }

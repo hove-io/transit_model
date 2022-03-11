@@ -136,14 +136,9 @@ pub fn enhance_pickup_dropoff(collections: &mut Collections) {
         other_block_id_vj.push((vj_idx, vj));
     }
 
-    let vj_idxs: Vec<Idx<VehicleJourney>> = collections
-        .vehicle_journeys
-        .iter()
-        .map(|(idx, _)| idx)
-        .collect();
     let is_route_point =
         |stop_time: &StopTime| stop_time.pickup_type == 3 || stop_time.drop_off_type == 3;
-    for vj_idx in vj_idxs {
+    for vj_idx in collections.vehicle_journeys.indexes() {
         let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
 
         if !allowed_first_drop_off_vj.contains(&vj_idx) {
