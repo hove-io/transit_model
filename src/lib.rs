@@ -80,6 +80,11 @@ pub mod transfers;
 pub mod validity_period;
 mod version_utils;
 pub mod vptranslator;
+
+// Good average size for initialization of the `StopTime` collection in `VehicleJourney`
+// Note: they are shrinked down in `Model::new()` to fit the real size
+pub(crate) const STOP_TIMES_INIT_CAPACITY: usize = 50;
+
 /// Current version of the NTFS format
 pub const NTFS_VERSION: &str = "0.12.1";
 

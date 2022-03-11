@@ -326,7 +326,7 @@ impl Trip {
             company_id: get_agency_id(route, networks)?,
             trip_property_id: trip_property_id.clone(),
             geometry_id: self.shape_id.clone(),
-            stop_times: vec![],
+            stop_times: Vec::with_capacity(crate::STOP_TIMES_INIT_CAPACITY),
             journey_pattern_id: None,
         })
     }

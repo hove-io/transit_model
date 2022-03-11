@@ -624,7 +624,7 @@ impl Default for VehicleJourney {
             company_id: "default_company".to_string(),
             trip_property_id: None,
             geometry_id: None,
-            stop_times: vec![],
+            stop_times: Vec::with_capacity(crate::STOP_TIMES_INIT_CAPACITY),
             journey_pattern_id: None,
         }
     }
