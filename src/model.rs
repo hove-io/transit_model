@@ -129,6 +129,7 @@ impl Collections {
         for vj_idx in vj_idxs {
             let mut vj = self.vehicle_journeys.index_mut(vj_idx);
             vj.stop_times.retain(|stop_time| !is_route_point(stop_time));
+            vj.stop_times.shrink_to_fit();
         }
     }
 
@@ -1360,6 +1361,7 @@ impl Model {
         c.enhance_line_opening_time();
         c.pickup_drop_off_harmonisation();
         enhancers::enhance_pickup_dropoff(&mut c);
+        enhancers::memory_shrink(&mut c);
 
         Ok(Model {
             routes_to_stop_points,
