@@ -267,7 +267,7 @@ fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<Pric
         .round_dp(0)
         .to_u32()
         .ok_or_else(|| anyhow!("Cannot convert price {:?} into a u32", cents_price))?;
-    let comment = ticket.comment.clone().unwrap_or_else(String::new);
+    let comment = ticket.comment.clone().unwrap_or_default();
     let price_v1 = PriceV1 {
         id: id.to_string(),
         start_date: price.ticket_validity_start,
