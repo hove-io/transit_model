@@ -130,7 +130,7 @@ where
 {
     use serde::Deserialize;
     let option = Option::<String>::deserialize(de)?;
-    Ok(option.map(|s| s.replace("/", "")))
+    Ok(option.map(|s| s.replace('/', "")))
 }
 
 /// deserialize type
@@ -150,6 +150,7 @@ where
     D: serde::Deserializer<'de>,
 {
     use serde::Deserialize;
+    use std::str::FromStr;
     let s = String::deserialize(deserializer)?;
     let wkt = wkt::Wkt::from_str(&s).map_err(serde::de::Error::custom)?;
     use std::convert::TryInto;
@@ -266,7 +267,7 @@ where
     use serde::ser::Error;
     let currency_code = iso4217::alpha3(currency_code)
         .ok_or_else(|| S::Error::custom("The String is not a valid currency code (ISO-4217)"))?;
-    serializer.serialize_str(&currency_code.alpha3.to_string())
+    serializer.serialize_str(currency_code.alpha3)
 }
 
 /// serialize geometry to wkt
@@ -275,7 +276,7 @@ where
     S: serde::Serializer,
 {
     let wkt = geometry.to_wkt();
-    serializer.serialize_str(&format!("{}", wkt.items[0]))
+    serializer.serialize_str(&format!("{}", wkt.item))
 }
 
 /// deserialyse optional String

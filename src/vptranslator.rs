@@ -324,7 +324,7 @@ mod tests {
     fn empty_vp() {
         let res = translate(&get_dates_from_bitset(
             Date::from_ymd(2012, 7, 16),
-            &"0000000".to_string(),
+            "0000000",
         ));
 
         assert_eq!(0b000_0000, get_week_from_weekday(res.operating_days));

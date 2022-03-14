@@ -796,7 +796,7 @@ impl FromStr for Time {
         };
         let hours: u32 = hours.parse()?;
         let minutes: u32 = minutes.parse()?;
-        let last_second_number = seconds.find('.').unwrap_or_else(|| seconds.len());
+        let last_second_number = seconds.find('.').unwrap_or(seconds.len());
         let seconds: u32 = seconds[..last_second_number].parse()?;
         if minutes > 59 || seconds > 59 {
             return Err(TimeError::WrongValue);

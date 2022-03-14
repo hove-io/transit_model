@@ -1,7 +1,7 @@
 [package]
 authors = ["Kisio Digital <team.coretools@kisio.com>", "Guillaume Pinot <texitoi@texitoi.eu>"]
 name = "transit_model"
-version = "0.48.1"
+version = "0.49.0"
 license = "AGPL-3.0-only"
 description = "Transit data management"
 repository = "https://github.com/CanalTP/transit_model"
@@ -43,7 +43,7 @@ chrono = { version = "0.4", default-features = false, features = ["std", "clock"
 chrono-tz = { version = "0.6", features = ["serde"] }
 csv = "1"
 derivative = "2"
-geo = "0.18"
+geo = "0.19"
 iso4217 = "0.3"
 lazy_static = "1"
 md5 = "0.7"
@@ -54,7 +54,7 @@ minidom_ext = "1"
 minidom_writer = "1"
 num-traits = "0.2"
 pretty_assertions = "1"
-proj = { version = "0.24", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
+proj = { version = "0.25", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
 quick-xml = "0.22"
 relational_types = "2"
 rust_decimal = "1"
@@ -66,7 +66,7 @@ thiserror = "1"
 tracing = { version = "0.1", features = ["log", "release_max_level_info"] }
 typed_index_collection = "2"
 walkdir = "2"
-wkt = "0.9"
+wkt = "0.10"
 zip = { version = "0.5", default-features = false, features = ["deflate"] }
 git-version = "0.3"
 

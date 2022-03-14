@@ -295,7 +295,7 @@ where
             |v| v != 0,
         );
 
-        let precision = stop_time.precision.or_else(|| {
+        let precision = stop_time.precision.or({
             if datetime_estimated {
                 Some(StopTimePrecision::Estimated)
             } else {
