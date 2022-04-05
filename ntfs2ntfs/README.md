@@ -2,14 +2,14 @@
 
 Command-Line Interface to check and clean a [NTFS] dataset.
 
-[NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
+[NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
 
 ## Installation
 
 As `ntfs2ntfs` is not pushed to crates.io yet, you can install it by cloning `transit_model`.
 
 ```bash
-git clone https://github.com/CanalTP/transit_model
+git clone https://github.com/hove-io/transit_model
 cd transit_model
 cargo install --path ntfs2ntfs
 ```

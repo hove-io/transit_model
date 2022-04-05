@@ -13,7 +13,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 // This module is an implementation of the algorithm described in
-// https://github.com/CanalTP/navitia/blob/dev/documentation/rfc/sorting_vehicles_route_schedules.md
+// https://github.com/hove-io/navitia/blob/dev/documentation/rfc/sorting_vehicles_route_schedules.md
 
 use crate::objects::{StopPoint, VehicleJourney};
 use typed_index_collection::Idx;

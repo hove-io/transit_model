@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-//! [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
+//! [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 //! format management.
 
 mod read;
@@ -162,7 +162,7 @@ fn default_visible() -> bool {
 }
 
 /// Checks if minimum FaresV2 collections are defined and not empty (ticket_use_restrictions and ticket_prices are optional)
-/// See https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fare_extension.md
+/// See https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fare_extension.md
 fn has_fares_v2(collections: &Collections) -> bool {
     !collections.tickets.is_empty()
         && !collections.ticket_uses.is_empty()
@@ -171,20 +171,20 @@ fn has_fares_v2(collections: &Collections) -> bool {
 
 /// Checks if minimum FaresV1 collections are defined and not empty (fares_v1 is optional)
 /// `prices.csv` and `od_fares.csv` are mandatory but od_fares.csv can be empty.
-/// See https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fare_extension_fr_deprecated.md
+/// See https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fare_extension_fr_deprecated.md
 fn has_fares_v1(collections: &Collections) -> bool {
     !collections.prices_v1.is_empty()
 }
 
 /// Imports a `Model` from the
-/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
+/// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 pub fn from_dir<P: AsRef<path::Path>>(p: P) -> Result<Model> {
     let mut file_handle = PathFileHandler::new(p.as_ref().to_path_buf());
     read_file_handler(&mut file_handle)
 }
 /// Imports a `Model` from a zip file containing the
-/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
+/// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md).
 pub fn from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
     let reader = std::fs::File::open(p.as_ref())?;
     let mut file_handler = ZipHandler::new(reader, p)?;
@@ -192,7 +192,7 @@ pub fn from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
 }
 
 /// Imports `Collections` from a zip file containing the
-/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
+/// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md).
 pub fn collections_from_zip<P: AsRef<path::Path>>(p: P) -> Result<Collections> {
     let reader = std::fs::File::open(p.as_ref())?;
     let mut file_handler = ZipHandler::new(reader, p)?;
@@ -200,7 +200,7 @@ pub fn collections_from_zip<P: AsRef<path::Path>>(p: P) -> Result<Collections> {
 }
 
 /// Imports `Collections` from the
-/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
+/// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 pub fn collections_from_dir<P: AsRef<path::Path>>(p: P) -> Result<Collections> {
     let mut file_handle = PathFileHandler::new(p.as_ref().to_path_buf());
@@ -208,7 +208,7 @@ pub fn collections_from_dir<P: AsRef<path::Path>>(p: P) -> Result<Collections> {
 }
 
 /// Imports a `Model` from an object implementing `Read` and `Seek` and containing a zip file with a
-/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
+/// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md).
 ///
 /// This method makes it possible to read from a variety of sources like read a NTFS
 /// from the network.
@@ -231,7 +231,7 @@ where
 }
 
 /// Imports a `Model` from the
-/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
+/// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 /// This method will try to detect if the input is a zipped archive or not.
 /// If the default file type mechanism is not enough, you can use
@@ -253,7 +253,7 @@ pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
 }
 
 /// Imports `Collections` from the
-/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
+/// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 /// This method will try to detect if the input is a zipped archive or not.
 /// If the default file type mechanism is not enough, you can use
@@ -334,7 +334,7 @@ where
 }
 
 /// Exports a `Model` to the
-/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
+/// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 pub fn write<P: AsRef<path::Path>>(
     model: &Model,
@@ -411,7 +411,7 @@ pub fn write<P: AsRef<path::Path>>(
 }
 
 /// Exports a `Model` to a
-/// [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md)
+/// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// ZIP archive at the given full path.
 pub fn write_to_zip<P: AsRef<path::Path>>(
     model: &Model,

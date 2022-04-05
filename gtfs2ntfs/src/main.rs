@@ -47,7 +47,7 @@ struct Opt {
     /// JSON file containing additional configuration.
     ///
     /// For more information, see
-    /// https://github.com/CanalTP/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
+    /// https://github.com/hove-io/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
     #[structopt(short, long, parse(from_os_str))]
     config: Option<PathBuf>,
 

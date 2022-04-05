@@ -17,7 +17,7 @@ See [PROJ installation instructions].
 As `gtfs2netexfr` is not pushed to crates.io yet, you can install it by cloning `transit_model`.
 
 ```bash
-git clone https://github.com/CanalTP/transit_model
+git clone https://github.com/hove-io/transit_model
 cd transit_model
 cargo install --path gtfs2netexfr
 ```
@@ -25,7 +25,7 @@ cargo install --path gtfs2netexfr
 ## Usage
 
 ```bash
-gtfs2netexfr --input /path/to/gtfs/folder/ --output /path/to/netexfr/ --participant CanalTP
+gtfs2netexfr --input /path/to/gtfs/folder/ --output /path/to/netexfr/ --participant hove-io
 ```
 
 * `--input` is the path to a folder containing GTFS data format

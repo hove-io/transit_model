@@ -1,6 +1,6 @@
 # Reading deprecated NTFS fares
 ## Introduction
-This document describes how [NTFS fares](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fare_extension_fr_deprecated.md) are loaded in Navitia Transit Model.
+This document describes how [NTFS fares](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fare_extension_fr_deprecated.md) are loaded in Navitia Transit Model.
 
 In this initial version:
 * only tickets on origin-destination stops are taken into account

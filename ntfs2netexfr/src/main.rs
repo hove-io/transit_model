@@ -47,14 +47,14 @@ struct Opt {
     /// Name for the participant.
     ///
     /// For more information, see
-    /// https://github.com/CanalTP/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
+    /// https://github.com/hove-io/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
     #[structopt(short, long)]
     participant: String,
 
     /// Code for the provider of stops.
     ///
     /// For more information, see
-    /// https://github.com/CanalTP/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
+    /// https://github.com/hove-io/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
     #[structopt(short, long)]
     stop_provider: Option<String>,
 

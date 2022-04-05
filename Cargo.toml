@@ -4,7 +4,7 @@ name = "transit_model"
 version = "0.49.0"
 license = "AGPL-3.0-only"
 description = "Transit data management"
-repository = "https://github.com/CanalTP/transit_model"
+repository = "https://github.com/hove-io/transit_model"
 keywords = ["ntfs", "gtfs", "netex", "navitia", "transit"]
 categories = ["data-structures", "encoding", "parser-implementations"]
 edition = "2018"
@@ -48,7 +48,7 @@ iso4217 = "0.3"
 lazy_static = "1"
 md5 = "0.7"
 # do not upgrade to 'minidom:0.13.0' (too strict on namespaces and no XML comment support)
-# https://github.com/CanalTP/transit_model/pull/746
+# https://github.com/hove-io/transit_model/pull/746
 minidom = "0.12"
 minidom_ext = "1"
 minidom_writer = "1"
