@@ -36,7 +36,7 @@ which version and how to do it.
 
 ### Internal work management tool
 
-At Kisio Digital (ex. hove-io) we track tasks and bugs using a private tool.
+At Hove (ex. Kisio Digital, ex. CanalTP) we track tasks and bugs using a private tool.
 This tool is private but we sometimes refer to it when submitting
 PRs (those `Ref. ND-123`), to help later work.
 Feel free to ask for more details if the description is too narrow,
