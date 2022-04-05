@@ -17,7 +17,7 @@ The resulting ZIP archive is composed of:
 	routes, and service journeys (keep only alphanumerical characters for
 	`line_code`)
 
-[NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
+[NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
 
 ## Schema Validation
 To validate the produced XML document, you can use `xmllint` tool.  On a
@@ -140,7 +140,7 @@ As a stop_point can be associated to several physical_modes, all the
 physical_modes need to be mapped to the Netex list (see [NeTEx Transport
 Modes](#netex-transport-modes)).
 If more than one Netex mode is associated, use the mode of __highest priority__ (see [NTFS
-specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis)).
+specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis)).
 
 
 #### AccessibilityAssessment
@@ -224,7 +224,7 @@ The `StopPlace/StopPlaceType` is defined from its `StopPlace/TransportMode`.
 | StopPlace/Name              | stops.txt | stop_name             |                                                                                                                                                                  |
 | StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                      |
 | StopPlace/entrances[]       |           |                       | Link to the station entrances/exits, if present. See [StopPlaceEntrance](#stopplaceentrance).                                                                    |
-| StopPlace/TransportMode     |           |                       | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis)) |
+| StopPlace/TransportMode     |           |                       | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis)) |
 | StopPlace/StopPlaceType     |           |                       | see the section [StopPlaceType mapping](#stopplacetype-mapping)                                                                                                  |
 
 #### StopPlaceEntrance
@@ -327,7 +327,7 @@ Example:
 | Line/@id           | lines.txt | line_id    | see [id formatting](#id-of-objects)                                                                                                                                                                                                                              |
 | Line/@version      |           |            | fixed value `any`                                                                                                                                                                                                                                                |
 | Line/Name          | lines.txt | line_name  |                                                                                                                                                                                                                                                                  |
-| Line/TransportMode |           |            | Refers to the mode with __highest priority__  of the trips associated to the line, see [NeTEx Transport Modes](#netex-transport-modes) and [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis) |
+| Line/TransportMode |           |            | Refers to the mode with __highest priority__  of the trips associated to the line, see [NeTEx Transport Modes](#netex-transport-modes) and [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis) |
 | Line/PublicCode    | lines.txt | line_code  | If the code line_code is empty, this node is not created.                                                                                                                                                                                                        |
 
 ### Operator

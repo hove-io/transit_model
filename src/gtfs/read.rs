@@ -510,7 +510,7 @@ struct StopTimesValues {
 
 // in the GTFS some stoptime can have undefined departure/arrival (all stop_times but the first and the last)
 // when it's the case, we apply a simple distribution of those stops, and we mark them as `estimated`
-// cf. https://github.com/CanalTP/navitia_model/blob/master/src/documentation/gtfs_read.md#reading-stop_timestxt
+// cf. https://github.com/hove-io/navitia_model/blob/master/src/documentation/gtfs_read.md#reading-stop_timestxt
 fn interpolate_undefined_stop_times(
     vj_id: &str,
     stop_times: &[StopTime],

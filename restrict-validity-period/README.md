@@ -2,14 +2,14 @@
 
 Command-Line Interface to restrict the validity period of a [NTFS] dataset and purge out-of-date data.
 
-[NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
+[NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
 
 ## Installation
 
 As `restrict-validity-period` is not pushed to crates.io yet, you can install it by cloning `transit_model`.
 
 ```bash
-git clone https://github.com/CanalTP/transit_model
+git clone https://github.com/hove-io/transit_model
 cd transit_model
 cargo install --path restrict-validity-period
 ```

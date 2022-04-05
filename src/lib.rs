@@ -15,7 +15,7 @@
 //! The `transit_model` crate proposes a model to manage transit data.
 //! It can import and export data from
 //! [GTFS](https://gtfs.org/reference/static) and
-//! [NTFS](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md).
+//! [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md).
 //!
 //! # Features
 //! `transit_model` has 2 possible features: `proj` and `xmllint`.
@@ -44,9 +44,9 @@
 //!
 //! ## `parser`
 //! Some utilities to turn csv files into vector of objects or CollectionWithId (See
-//! https://github.com/CanalTP/typed_index_collection/)
+//! https://github.com/hove-io/typed_index_collection/)
 //!
-//! [`CONTRIBUTING.md`]: https://github.com/CanalTP/transit_model/blob/master/CONTRIBUTING.md
+//! [`CONTRIBUTING.md`]: https://github.com/hove-io/transit_model/blob/master/CONTRIBUTING.md
 
 #![deny(missing_docs)]
 

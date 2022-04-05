@@ -1,11 +1,11 @@
 # transit_model
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/CanalTP/transit_model?color=4baea0&style=flat-square&logo=github)](https://github.com/CanalTP/transit_model/releases)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/hove-io/transit_model?color=4baea0&style=flat-square&logo=github)](https://github.com/hove-io/transit_model/releases)
 [![Crates.io](https://img.shields.io/crates/v/transit_model?color=f1935c&logo=rust&style=flat-square)](https://crates.io/crates/transit_model)
 [![API documentation](https://img.shields.io/badge/docs.rs-transit_model-66c2a5?style=flat-square&color=769ECB&logo=data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDUxMiA1MTIiPjxwYXRoIGZpbGw9IiNmNWY1ZjUiIGQ9Ik00ODguNiAyNTAuMkwzOTIgMjE0VjEwNS41YzAtMTUtOS4zLTI4LjQtMjMuNC0zMy43bC0xMDAtMzcuNWMtOC4xLTMuMS0xNy4xLTMuMS0yNS4zIDBsLTEwMCAzNy41Yy0xNC4xIDUuMy0yMy40IDE4LjctMjMuNCAzMy43VjIxNGwtOTYuNiAzNi4yQzkuMyAyNTUuNSAwIDI2OC45IDAgMjgzLjlWMzk0YzAgMTMuNiA3LjcgMjYuMSAxOS45IDMyLjJsMTAwIDUwYzEwLjEgNS4xIDIyLjEgNS4xIDMyLjIgMGwxMDMuOS01MiAxMDMuOSA1MmMxMC4xIDUuMSAyMi4xIDUuMSAzMi4yIDBsMTAwLTUwYzEyLjItNi4xIDE5LjktMTguNiAxOS45LTMyLjJWMjgzLjljMC0xNS05LjMtMjguNC0yMy40LTMzLjd6TTM1OCAyMTQuOGwtODUgMzEuOXYtNjguMmw4NS0zN3Y3My4zek0xNTQgMTA0LjFsMTAyLTM4LjIgMTAyIDM4LjJ2LjZsLTEwMiA0MS40LTEwMi00MS40di0uNnptODQgMjkxLjFsLTg1IDQyLjV2LTc5LjFsODUtMzguOHY3NS40em0wLTExMmwtMTAyIDQxLjQtMTAyLTQxLjR2LS42bDEwMi0zOC4yIDEwMiAzOC4ydi42em0yNDAgMTEybC04NSA0Mi41di03OS4xbDg1LTM4Ljh2NzUuNHptMC0xMTJsLTEwMiA0MS40LTEwMi00MS40di0uNmwxMDItMzguMiAxMDIgMzguMnYuNnoiPjwvcGF0aD48L3N2Zz4K)](https://docs.rs/transit_model)
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/CanalTP/transit_model/Continuous%20Integration?logo=github&style=flat-square)](https://github.com/CanalTP/transit_model/actions?query=workflow%3A%22Continuous+Integration%22)
-[![Codecov Code Coverage](https://img.shields.io/codecov/c/github/CanalTP/transit_model?color=f01f7a&style=flat-square&logo=codecov)](https://codecov.io/gh/CanalTP/transit_model)
-[![License: AGPL v3.0](https://img.shields.io/github/license/CanalTP/transit_model?color=9873b9&style=flat-square)](./LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/hove-io/transit_model/Continuous%20Integration?logo=github&style=flat-square)](https://github.com/hove-io/transit_model/actions?query=workflow%3A%22Continuous+Integration%22)
+[![Codecov Code Coverage](https://img.shields.io/codecov/c/github/hove-io/transit_model?color=f01f7a&style=flat-square&logo=codecov)](https://codecov.io/gh/hove-io/transit_model)
+[![License: AGPL v3.0](https://img.shields.io/github/license/hove-io/transit_model?color=9873b9&style=flat-square)](./LICENSE)
 
 **`transit_model`** is a Rust crate to manage, convert and enrich transit
 data.\
@@ -119,10 +119,10 @@ to test, contribute, report issues.
 Licensed under [GNU Affero General Public License v3.0](LICENSE)
 
 [GTFS]: https://gtfs.org/reference/static
-[navitia]: https://github.com/CanalTP/navitia
+[navitia]: https://github.com/hove-io/navitia
 [NeTEx]: http://netex-cen.eu
-[NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
-[NTFS changelog in French]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_changelog_fr.md
+[NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
+[NTFS changelog in French]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_changelog_fr.md
 [PROJ]: https://proj.org
 [`proj` crate]: https://crates.io/crates/proj
 [`navitia/transit_model`]: https://hub.docker.com/r/navitia/transit_model

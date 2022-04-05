@@ -634,7 +634,7 @@ where
 
 /// Exports a `Model` to [GTFS](https://gtfs.org/reference/static) files
 /// in the given directory.
-/// see [NTFS to GTFS conversion](https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
+/// see [NTFS to GTFS conversion](https://github.com/hove-io/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
 pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> Result<()> {
     let path = path.as_ref();
     std::fs::create_dir_all(path)?;
@@ -669,7 +669,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> 
 
 /// Exports a `Model` to [GTFS](https://gtfs.org/reference/static) files
 /// in the given ZIP archive.
-/// see [NTFS to GTFS conversion](https://github.com/CanalTP/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
+/// see [NTFS to GTFS conversion](https://github.com/hove-io/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
 pub fn write_to_zip<P: AsRef<std::path::Path>>(
     model: Model,
     path: P,

@@ -2,7 +2,7 @@
 This document explains the shared parts among all the converters when converting a
 data set from a given format into a [NTFS] dataset.
 
-[NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
+[NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
 
 ## Data prefix
 The construction of NTFS objects IDs requires, for uniqueness purpose, that a unique
@@ -11,7 +11,7 @@ needs to be included in every object's id.
 
 Prepending all the identifiers with a unique prefix ensures that the NTFS identifiers are unique accross all the NTFS datasets. With this assumption, merging two NTFS datasets can be done without worrying about conflicting identifiers.
 
-This prefix should be applied to all NTFS identifiers except for the physical mode identifiers that are standardized and fixed values. Fixed values are described in the [NTFS specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md#physical_modestxt-requis)
+This prefix should be applied to all NTFS identifiers except for the physical mode identifiers that are standardized and fixed values. Fixed values are described in the [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md#physical_modestxt-requis)
 
 To reinforce the uniqueness some objects might have a sub-prefix in addition to their prefix.\
 The pattern is the following **\<prefix>:<sub_prefix>:<object\_id>**.

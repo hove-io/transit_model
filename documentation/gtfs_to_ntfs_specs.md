@@ -381,5 +381,5 @@ A complementary `object_code` is added to each new trip with the following prope
 * `object_code` : the unmodified initial GTFS value of `trip_id`
 
 [GTFS]: https://gtfs.org/reference/static
-[NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
+[NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
 [common NTFS rules]: common_ntfs_rules.md

@@ -20,7 +20,7 @@ The following additional files are generated only if the corresponding objects a
 * [stop_extensions](#stop_extensionstxt): additional information providing the complementary stop codes used in external systems.
 
 [GTFS]: https://gtfs.org/reference/static
-[NTFS]: https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_fr.md
+[NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
 
 ## Mapping between NTFS and GTFS objects
 

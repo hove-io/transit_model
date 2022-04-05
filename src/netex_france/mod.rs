@@ -41,8 +41,8 @@ use chrono::{DateTime, FixedOffset, TimeZone};
 
 /// Configuration options for exporting a NeTEx France.
 /// 3 options can be configured:
-/// - participant (required): see [specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details
-/// - stop_provider (optional): see [specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details. Default to no stop provider.
+/// - participant (required): see [specifications](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details
+/// - stop_provider (optional): see [specifications](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details. Default to no stop provider.
 /// - current_datetime (optional): date of the export. Default to the current date of execution in UTC.
 pub struct WriteConfiguration {
     participant: String,
@@ -60,7 +60,7 @@ impl WriteConfiguration {
                 .from_utc_datetime(&chrono::Utc::now().naive_utc()),
         }
     }
-    /// Setup the Stop Provider (see [specifications](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details)
+    /// Setup the Stop Provider (see [specifications](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details)
     pub fn stop_provider<S: Into<String>>(self, stop_provider: S) -> Self {
         WriteConfiguration {
             stop_provider: Some(stop_provider.into()),
@@ -77,7 +77,7 @@ impl WriteConfiguration {
 }
 
 /// Exports a `Model` to the
-/// [NeTEx France](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md)
+/// [NeTEx France](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md)
 /// files in the given directory.
 pub fn write<P: AsRef<std::path::Path>>(
     model: &Model,
@@ -95,7 +95,7 @@ pub fn write<P: AsRef<std::path::Path>>(
 }
 
 /// Exports a `Model` to a
-/// [NeTEx France](https://github.com/CanalTP/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md)
+/// [NeTEx France](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md)
 /// ZIP archive at the given full path.
 pub fn write_to_zip<P: AsRef<std::path::Path>>(
     model: &Model,
