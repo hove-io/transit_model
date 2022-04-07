@@ -14,9 +14,9 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+use clap::Parser;
 use ntfs2gtfs::add_mode_to_line_code;
 use std::path::PathBuf;
-use structopt::StructOpt;
 use tracing::info;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
@@ -33,22 +33,22 @@ fn get_version() -> &'static str {
     &GIT_VERSION
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "ntfs2gtfs", about = "Convert an NTFS to a GTFS.", version = get_version())]
+#[derive(Debug, Parser)]
+#[clap(name = "ntfs2gtfs", about = "Convert an NTFS to a GTFS.", version = get_version())]
 struct Opt {
     /// Input directory.
-    #[structopt(short, long, parse(from_os_str), default_value = ".")]
+    #[clap(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
     /// Output directory.
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     output: PathBuf,
 
     /// Add the commercial mode at the beginning of the route short name.
-    #[structopt(short, long)]
+    #[clap(short, long)]
     mode_in_route_short_name: bool,
 
-    #[structopt(
+    #[clap(
         long,
         help = "Support a more rich set of route types. \
                 For more information, see \
@@ -100,7 +100,7 @@ fn run(opt: Opt) -> Result<()> {
 
 fn main() {
     init_logger();
-    if let Err(err) = run(Opt::from_args()) {
+    if let Err(err) = run(Opt::parse()) {
         for cause in err.chain() {
             eprintln!("{}", cause);
         }

@@ -15,8 +15,8 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::{DateTime, FixedOffset};
+use clap::Parser;
 use std::path::PathBuf;
-use structopt::StructOpt;
 use tracing::info;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
@@ -33,50 +33,50 @@ fn get_version() -> &'static str {
     &GIT_VERSION
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.", version = get_version())]
+#[derive(Debug, Parser)]
+#[clap(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.", version = get_version())]
 struct Opt {
     /// Input directory.
-    #[structopt(short, long, parse(from_os_str), default_value = ".")]
+    #[clap(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
     /// Output directory.
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     output: PathBuf,
 
     /// JSON file containing additional configuration.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     config: Option<PathBuf>,
 
     /// Prefix added to all the identifiers (`123` turned into `prefix:123`).
-    #[structopt(short, long)]
+    #[clap(short, long)]
     prefix: Option<String>,
 
     /// Schedule subprefix added after the prefix on all scheduled objects (`123` turned into `prefix::schedule_subprefix::123`).
-    #[structopt(long)]
+    #[clap(long)]
     schedule_subprefix: Option<String>,
 
     /// Indicates if the input GTFS contains On-Demand Transport (ODT)
     /// information.
-    #[structopt(long)]
+    #[clap(long)]
     odt: bool,
 
     /// On-Demand Transport GTFS comment.
-    #[structopt(long = "odt-comment")]
+    #[clap(long = "odt-comment")]
     odt_comment: Option<String>,
 
     /// If true, each GTFS `Route` will generate a different `Line`.
     /// Else we group the routes by `agency_id` and `route_short_name`
     /// (or `route_long_name` if the short name is empty) and create a `Line` for each group.
-    #[structopt(long = "read-as-line")]
+    #[clap(long = "read-as-line")]
     read_as_line: bool,
 
     /// Current datetime.
-    #[structopt(
-        short = "x",
+    #[clap(
+        short = 'x',
         long,
         parse(try_from_str),
         default_value = &transit_model::CURRENT_DATETIME
@@ -84,16 +84,16 @@ struct Opt {
     current_datetime: DateTime<FixedOffset>,
 
     /// The maximum distance in meters to compute the tranfer.
-    #[structopt(long, short = "d", default_value = transit_model::TRANSFER_MAX_DISTANCE)]
+    #[clap(long, short = 'd', default_value = transit_model::TRANSFER_MAX_DISTANCE)]
     max_distance: f64,
 
     /// The walking speed in meters per second. You may want to divide your
     /// initial speed by sqrt(2) to simulate Manhattan distances.
-    #[structopt(long, short = "s", default_value = transit_model::TRANSFER_WALKING_SPEED)]
+    #[clap(long, short = 's', default_value = transit_model::TRANSFER_WALKING_SPEED)]
     walking_speed: f64,
 
     /// Waiting time at stop in seconds.
-    #[structopt(long, short = "t", default_value = transit_model::TRANSFER_WAITING_TIME)]
+    #[clap(long, short = 't', default_value = transit_model::TRANSFER_WAITING_TIME)]
     waiting_time: u32,
 }
 
@@ -160,7 +160,7 @@ fn init_logger() {
 
 fn main() {
     init_logger();
-    if let Err(err) = run(Opt::from_args()) {
+    if let Err(err) = run(Opt::parse()) {
         for cause in err.chain() {
             eprintln!("{}", cause);
         }

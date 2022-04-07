@@ -15,8 +15,8 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::{DateTime, FixedOffset};
+use clap::Parser;
 use std::path::PathBuf;
-use structopt::StructOpt;
 use tracing::info;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
@@ -33,50 +33,50 @@ fn get_version() -> &'static str {
     &GIT_VERSION
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "gtfs2netexfr", about = "Convert a GTFS to NeTEx France.", version = get_version())]
+#[derive(Debug, Parser)]
+#[clap(name = "gtfs2netexfr", about = "Convert a GTFS to NeTEx France.", version = get_version())]
 struct Opt {
     /// Input directory.
-    #[structopt(short, long, parse(from_os_str), default_value = ".")]
+    #[clap(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
     /// Output directory.
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     output: PathBuf,
 
     /// JSON file containing additional configuration.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     config: Option<PathBuf>,
 
     /// Indicates if the input GTFS contains On-Demand Transport (ODT)
     /// information.
-    #[structopt(short = "t", long = "on-demand-transport")]
+    #[clap(short = 't', long = "on-demand-transport")]
     odt: bool,
 
     /// On-Demand Transport GTFS comment
-    #[structopt(long = "odt-comment")]
+    #[clap(long = "odt-comment")]
     odt_comment: Option<String>,
 
     /// Name for the participant.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
-    #[structopt(short, long)]
+    #[clap(short, long)]
     participant: String,
 
     /// Code for the provider of stops.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
-    #[structopt(short, long)]
+    #[clap(short, long)]
     stop_provider: Option<String>,
 
     /// Current datetime.
-    #[structopt(
-        short = "x",
+    #[clap(
+        short = 'x',
         long,
         parse(try_from_str),
         default_value = &transit_model::CURRENT_DATETIME
@@ -137,7 +137,7 @@ fn run(opt: Opt) -> Result<()> {
 
 fn main() {
     init_logger();
-    if let Err(err) = run(Opt::from_args()) {
+    if let Err(err) = run(Opt::parse()) {
         for cause in err.chain() {
             eprintln!("{}", cause);
         }
