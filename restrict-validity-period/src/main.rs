@@ -15,8 +15,8 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::{DateTime, FixedOffset, NaiveDate};
+use clap::Parser;
 use std::path::PathBuf;
-use structopt::StructOpt;
 use tracing::info;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
@@ -25,32 +25,32 @@ use tracing_subscriber::{
 };
 use transit_model::{Model, Result};
 
-#[derive(Debug, StructOpt)]
-#[structopt(
+#[derive(Debug, Parser)]
+#[clap(
     name = "restrict-validity-period",
     about = "Restrict the validity period of a NTFS and purge out-of-date data.",
     rename_all = "kebab-case"
 )]
 struct Opt {
     /// input directory.
-    #[structopt(short, long, parse(from_os_str), default_value = ".")]
+    #[clap(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
     /// start of the desired validity period [included], e.g. 2019-01-01
-    #[structopt(short, long)]
+    #[clap(short, long)]
     start_validity_date: NaiveDate,
 
     /// end of the desired validity period [included], e.g. 2019-01-01
-    #[structopt(short, long)]
+    #[clap(short, long)]
     end_validity_date: NaiveDate,
 
     /// output directory
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     output: PathBuf,
 
     /// current datetime
-    #[structopt(
-        short = "x",
+    #[clap(
+        short = 'x',
         long,
         parse(try_from_str),
         default_value = &transit_model::CURRENT_DATETIME
@@ -90,7 +90,7 @@ fn run(opt: Opt) -> Result<()> {
 
 fn main() {
     init_logger();
-    if let Err(err) = run(Opt::from_args()) {
+    if let Err(err) = run(Opt::parse()) {
         for cause in err.chain() {
             eprintln!("{}", cause);
         }

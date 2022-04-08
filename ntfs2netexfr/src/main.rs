@@ -15,8 +15,8 @@
 // <http://www.gnu.org/licenses/>.
 
 use chrono::{DateTime, FixedOffset};
+use clap::Parser;
 use std::path::PathBuf;
-use structopt::StructOpt;
 use tracing::info;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
@@ -33,34 +33,34 @@ fn get_version() -> &'static str {
     &GIT_VERSION
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "ntfs2netexfr", about = "Convert a NTFS to NeTEx France.", version = get_version())]
+#[derive(Debug, Parser)]
+#[clap(name = "ntfs2netexfr", about = "Convert a NTFS to NeTEx France.", version = get_version())]
 struct Opt {
     /// Input directory.
-    #[structopt(short, long, parse(from_os_str), default_value = ".")]
+    #[clap(short, long, parse(from_os_str), default_value = ".")]
     input: PathBuf,
 
     /// Output directory
-    #[structopt(short, long, parse(from_os_str))]
+    #[clap(short, long, parse(from_os_str))]
     output: PathBuf,
 
     /// Name for the participant.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
-    #[structopt(short, long)]
+    #[clap(short, long)]
     participant: String,
 
     /// Code for the provider of stops.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
-    #[structopt(short, long)]
+    #[clap(short, long)]
     stop_provider: Option<String>,
 
     /// Current datetime.
-    #[structopt(
-        short = "x",
+    #[clap(
+        short = 'x',
         long,
         parse(try_from_str),
         default_value = &transit_model::CURRENT_DATETIME
@@ -112,7 +112,7 @@ fn run(opt: Opt) -> Result<()> {
 
 fn main() {
     init_logger();
-    if let Err(err) = run(Opt::from_args()) {
+    if let Err(err) = run(Opt::parse()) {
         for cause in err.chain() {
             eprintln!("{}", cause);
         }
