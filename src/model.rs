@@ -551,6 +551,8 @@ impl Collections {
         self.calendars.retain(|c| calendars_used.contains(&c.id));
         self.addresses
             .retain(|address| addresses_used.contains(&address.id));
+        self.admin_stations
+            .retain(|admin_station| stop_area_ids_used.contains(&admin_station.stop_id));
 
         self.frequencies = dedup_collection(&mut self.frequencies);
         self.transfers = dedup_collection(&mut self.transfers);
