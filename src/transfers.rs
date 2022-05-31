@@ -20,7 +20,7 @@ use crate::{
     Result,
 };
 use std::collections::HashMap;
-use tracing::{info, warn};
+use tracing::info;
 use typed_index_collection::{Collection, CollectionWithId, Idx};
 
 type TransferMap = HashMap<(Idx<StopPoint>, Idx<StopPoint>), Transfer>;
@@ -59,13 +59,11 @@ fn generate_transfers_from_sp(
     let sq_max_distance = max_distance * max_distance;
     for (idx1, sp1) in model.stop_points.iter() {
         if sp1.coord == Coord::default() {
-            warn!("Stop Point {} geolocation is (0, 0), no transfer from this StopPoint will be generated.", sp1.id);
             continue;
         }
         let approx = sp1.coord.approx();
         for (idx2, sp2) in model.stop_points.iter() {
             if sp2.coord == Coord::default() {
-                warn!("Stop Point {} geolocation is (0, 0), no transfer to this StopPoint will be generated.", sp2.id);
                 continue;
             }
             if transfers_map.contains_key(&(idx1, idx2)) {
