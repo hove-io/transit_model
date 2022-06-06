@@ -11,4 +11,4 @@ Metro,Metro,3.0
 SuspendedCableCar,SuspendedCableCar,
 Taxi,Taxi,184.0
 Train,Train,11.9
-Tramway,Tramway,4.0
+Tramway,Tramway,3.29
