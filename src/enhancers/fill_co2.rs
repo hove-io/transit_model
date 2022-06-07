@@ -18,10 +18,10 @@ lazy_static::lazy_static! {
         modes_map.insert(model::COACH_PHYSICAL_MODE, 171f32);
         modes_map.insert(model::FERRY_PHYSICAL_MODE, 279f32);
         modes_map.insert(model::FUNICULAR_PHYSICAL_MODE, 3f32);
-        modes_map.insert(model::LOCAL_TRAIN_PHYSICAL_MODE, 30.7f32);
-        modes_map.insert(model::LONG_DISTANCE_TRAIN_PHYSICAL_MODE, 3.4f32);
+        modes_map.insert(model::LOCAL_TRAIN_PHYSICAL_MODE, 29.6f32);
+        modes_map.insert(model::LONG_DISTANCE_TRAIN_PHYSICAL_MODE, 2.36f32);
         modes_map.insert(model::METRO_PHYSICAL_MODE, 3f32);
-        modes_map.insert(model::RAPID_TRANSIT_PHYSICAL_MODE, 6.2f32);
+        modes_map.insert(model::RAPID_TRANSIT_PHYSICAL_MODE, 7.28f32);
         // Unknown value
         // modes_map.insert(model::RailShuttle, 0.0f32);
         // Unknown value
@@ -30,7 +30,7 @@ lazy_static::lazy_static! {
         // modes_map.insert(model::SuspendedCableCar, 0.0f32);
         modes_map.insert(model::TAXI_PHYSICAL_MODE, 184f32);
         modes_map.insert(model::TRAIN_PHYSICAL_MODE, 11.9f32);
-        modes_map.insert(model::TRAMWAY_PHYSICAL_MODE, 4f32);
+        modes_map.insert(model::TRAMWAY_PHYSICAL_MODE, 3.29f32);
         modes_map
     };
 }
