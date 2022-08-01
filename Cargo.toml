@@ -63,7 +63,7 @@ serde_json = "1"
 skip_error = { version = "3.1", features = ["tracing"] }
 tempfile = "3"
 thiserror = "1"
-tracing = { version = "0.1", features = ["log", "release_max_level_info"] }
+tracing = { version = "0.1", features = ["log"] }
 typed_index_collection = "2"
 walkdir = "2"
 wkt = "0.10"
