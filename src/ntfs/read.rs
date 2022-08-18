@@ -787,7 +787,7 @@ mod tests {
     #[test]
     fn ntfs_stop_times_precision() {
         test_in_tmp_dir(|path| {
-            let _ = generate_minimal_ntfs(path);
+            generate_minimal_ntfs(path);
             let collections = make_collection(path);
 
             assert_eq!(
@@ -860,7 +860,7 @@ mod tests {
     #[test]
     fn company_object_codes() {
         test_in_tmp_dir(|path| {
-            let _ = generate_minimal_ntfs(path);
+            generate_minimal_ntfs(path);
             let object_codes_content = "object_type,object_id,object_system,object_code\n\
             company,company_1,source,source_code";
             create_file_with_content(path, "object_codes.txt", object_codes_content);

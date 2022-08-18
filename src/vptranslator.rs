@@ -21,7 +21,7 @@ use std::collections::BTreeSet;
 use std::vec::Vec;
 
 ///Indicates whether service is available on the date specified.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct ExceptionDate {
     ///Date of exception
     pub date: Date,

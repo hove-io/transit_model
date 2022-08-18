@@ -147,7 +147,7 @@ macro_rules! impl_comment_links {
     };
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Contributor {
     #[serde(rename = "contributor_id")]
     pub id: String,
@@ -179,7 +179,7 @@ impl Default for Contributor {
 impl_with_id!(Contributor);
 impl_id!(Contributor);
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub enum DatasetType {
     #[serde(rename = "0")]
     Theorical,
@@ -210,7 +210,7 @@ impl Default for ValidityPeriod {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Dataset {
     #[serde(rename = "dataset_id")]
     pub id: String,
@@ -292,7 +292,7 @@ impl WithId for Dataset {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Derivative, Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[derivative(Default)]
 pub struct CommercialMode {
     #[derivative(Default(value = "\"default_commercial_mode\".into()"))]
@@ -348,7 +348,7 @@ impl Eq for PhysicalMode {}
 
 impl_with_id!(PhysicalMode);
 
-#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 #[derivative(Default)]
 pub struct Network {
     #[derivative(Default(value = "\"default_network\".into()"))]
@@ -456,7 +456,7 @@ impl<'de> ::serde::Deserialize<'de> for Rgb {
         Rgb::from_str(&color_hex).map_err(Error::custom)
     }
 }
-#[derive(Derivative, Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Derivative, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 #[derivative(Default)]
 pub struct Line {
     #[serde(rename = "line_id")]
@@ -527,7 +527,7 @@ impl GetObjectType for Line {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Derivative, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Derivative, Clone)]
 #[derivative(Default)]
 pub struct Route {
     #[serde(rename = "route_id")]
@@ -577,7 +577,7 @@ impl GetObjectType for Route {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct VehicleJourney {
     #[serde(rename = "trip_id")]
     pub id: String,
@@ -1110,7 +1110,7 @@ impl GetObjectType for StopArea {
         ObjectType::StopArea
     }
 }
-#[derive(Derivative, Debug, PartialEq, Clone)]
+#[derive(Derivative, Debug, Eq, PartialEq, Clone)]
 #[derivative(Default)]
 pub enum StopType {
     #[derivative(Default)]
@@ -1297,7 +1297,7 @@ impl_id!(Level);
 
 pub type Date = chrono::NaiveDate;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 pub enum ExceptionType {
     #[serde(rename = "1")]
     Add,
@@ -1305,7 +1305,7 @@ pub enum ExceptionType {
     Remove,
 }
 
-#[derive(Serialize, Deserialize, Default, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Default, Debug, Eq, PartialEq, Clone)]
 pub struct Calendar {
     pub id: String,
     #[serde(skip)]
@@ -1342,7 +1342,7 @@ impl WithId for Calendar {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Company {
     #[serde(rename = "company_id")]
     pub id: String,
@@ -1391,7 +1391,7 @@ impl_with_id!(Company);
 
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum CommentType {
     #[derivative(Default)]
@@ -1399,7 +1399,7 @@ pub enum CommentType {
     OnDemandTransport,
 }
 
-#[derive(Default, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Comment {
     #[serde(rename = "comment_id")]
     pub id: String,
@@ -1518,7 +1518,7 @@ impl Hash for Transfer {
 
 impl Eq for Transfer {}
 
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Derivative, Eq, PartialEq, Clone)]
 #[derivative(Default)]
 pub enum TransportType {
     #[derivative(Default)]
@@ -1530,7 +1530,7 @@ pub enum TransportType {
     RegularAndSchool,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Default, Clone)]
 pub struct TripProperty {
     #[serde(rename = "trip_property_id")]
     pub id: String,
@@ -1682,7 +1682,7 @@ impl AddPrefix for FareV1 {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Ticket {
     #[serde(rename = "ticket_id")]
     pub id: String,
@@ -1734,7 +1734,7 @@ impl AddPrefix for TicketPrice {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct TicketUse {
     #[serde(rename = "ticket_use_id")]
     pub id: String,
@@ -1884,7 +1884,7 @@ impl AddPrefix for GridRelCalendarLine {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Default)]
 pub struct Address {
     #[serde(rename = "address_id")]
     pub id: String,

@@ -49,7 +49,7 @@ pub struct CalendarDate {
 }
 
 /// Structure to serialize/deserialize the file calendar.txt
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Calendar {
     /// Identifiers of the Service
     #[serde(rename = "service_id")]
