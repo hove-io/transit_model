@@ -52,7 +52,7 @@ pub struct VehicleJourneyBuilder<'a> {
     vj_idx: Idx<VehicleJourney>,
 }
 
-impl<'a> ModelBuilder {
+impl ModelBuilder {
     /// Add a new VehicleJourney to the model
     ///
     /// ```
