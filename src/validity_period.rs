@@ -76,7 +76,7 @@ mod tests {
     mod set_validity_period {
         use super::super::*;
         use crate::objects::{Dataset, Date, ValidityPeriod};
-        use chrono::naive::{MAX_DATE, MIN_DATE};
+        use chrono::NaiveDate;
         use pretty_assertions::assert_eq;
 
         #[test]
@@ -86,8 +86,8 @@ mod tests {
             let mut dataset = Dataset {
                 id: String::from("dataset_id"),
                 contributor_id: String::from("contributor_id"),
-                start_date: MAX_DATE,
-                end_date: MIN_DATE,
+                start_date: NaiveDate::MAX,
+                end_date: NaiveDate::MIN,
                 ..Default::default()
             };
             let service_validity_period = ValidityPeriod {
