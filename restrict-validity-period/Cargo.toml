@@ -15,6 +15,5 @@ keywords = ["ntfs", "transit"]
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 clap = { version = "3", features = ["derive"] }
 tracing = { version = "0.1", features = ["log", "release_max_level_info"] }
-tracing-log = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 transit_model = { path = "../" }

@@ -55,7 +55,6 @@ minidom_writer = "1"
 num-traits = "0.2"
 pretty_assertions = "1"
 proj = { version = "0.25", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
-quick-xml = "0.22"
 relational_types = "2"
 rust_decimal = "1"
 serde = { version = "1", features = ["derive"] }
