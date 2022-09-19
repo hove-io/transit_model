@@ -77,14 +77,17 @@ impl From<Agency> for objects::Network {
 }
 impl From<Agency> for objects::Company {
     fn from(agency: Agency) -> objects::Company {
+        let id = agency.id.unwrap_or_else(default_agency_id);
+        let mut codes = KeysValues::default();
+        codes.insert(("source".to_string(), id.clone()));
         objects::Company {
-            id: agency.id.unwrap_or_else(default_agency_id),
+            id,
             name: agency.name,
             address: None,
             url: Some(agency.url),
             mail: agency.email,
             phone: agency.phone,
-            codes: BTreeSet::new(),
+            codes,
         }
     }
 }
