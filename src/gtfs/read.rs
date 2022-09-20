@@ -77,14 +77,17 @@ impl From<Agency> for objects::Network {
 }
 impl From<Agency> for objects::Company {
     fn from(agency: Agency) -> objects::Company {
+        let id = agency.id.unwrap_or_else(default_agency_id);
+        let mut codes = KeysValues::default();
+        codes.insert(("source".to_string(), id.clone()));
         objects::Company {
-            id: agency.id.unwrap_or_else(default_agency_id),
+            id,
             name: agency.name,
             address: None,
             url: Some(agency.url),
             mail: agency.email,
             phone: agency.phone,
-            codes: BTreeSet::new(),
+            codes,
         }
     }
 }
@@ -1003,11 +1006,12 @@ fn make_lines(
 
     for routes in map_line_routes.values() {
         let r = get_route_with_smallest_name(routes);
-
+        let mut codes = KeysValues::default();
+        codes.insert(("source".to_string(), r.id.clone()));
         lines.push(objects::Line {
             id: r.id.clone(),
             code: line_code(r),
-            codes: KeysValues::default(),
+            codes,
             object_properties: PropertiesMap::default(),
             comment_links: CommentLinksT::default(),
             name: r.long_name.to_string(),
@@ -1045,6 +1049,8 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<
 
             let has_one_direction = route_directions.len() <= 1;
             for d in route_directions {
+                let mut codes = KeysValues::default();
+                codes.insert(("source".to_string(), r.id.clone()));
                 routes.push(objects::Route {
                     id: r.get_id_by_direction(d),
                     // When only one direction, keep the route name. When
@@ -1061,7 +1067,7 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<
                         String::new()
                     },
                     direction_type: Some(get_direction_name(d)),
-                    codes: KeysValues::default(),
+                    codes,
                     object_properties: PropertiesMap::default(),
                     comment_links: CommentLinksT::default(),
                     line_id: sr.id.clone(),
