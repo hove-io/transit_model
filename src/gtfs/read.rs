@@ -1006,11 +1006,12 @@ fn make_lines(
 
     for routes in map_line_routes.values() {
         let r = get_route_with_smallest_name(routes);
-
+        let mut codes = KeysValues::default();
+        codes.insert(("source".to_string(), r.id.clone()));
         lines.push(objects::Line {
             id: r.id.clone(),
             code: line_code(r),
-            codes: KeysValues::default(),
+            codes,
             object_properties: PropertiesMap::default(),
             comment_links: CommentLinksT::default(),
             name: r.long_name.to_string(),

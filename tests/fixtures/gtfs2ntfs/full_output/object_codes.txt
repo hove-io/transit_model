@@ -25,3 +25,5 @@ company,ME:1,source,1
 company,ME:2,source,2
 route,ME:route:2,source,route:2
 route,ME:route:3,source,route:3
+line,ME:route:2,source,route:2
+line,ME:route:3,source,route:3
