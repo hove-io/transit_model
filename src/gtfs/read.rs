@@ -1048,6 +1048,8 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<
 
             let has_one_direction = route_directions.len() <= 1;
             for d in route_directions {
+                let mut codes = KeysValues::default();
+                codes.insert(("source".to_string(), r.id.clone()));
                 routes.push(objects::Route {
                     id: r.get_id_by_direction(d),
                     // When only one direction, keep the route name. When
@@ -1064,7 +1066,7 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<
                         String::new()
                     },
                     direction_type: Some(get_direction_name(d)),
-                    codes: KeysValues::default(),
+                    codes,
                     object_properties: PropertiesMap::default(),
                     comment_links: CommentLinksT::default(),
                     line_id: sr.id.clone(),

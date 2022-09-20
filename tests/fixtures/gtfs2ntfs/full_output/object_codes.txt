@@ -23,3 +23,5 @@ trip,ME:WINTER:trip:5-2,source,trip:5
 trip,ME:WINTER:trip:6,source,trip:6
 company,ME:1,source,1
 company,ME:2,source,2
+route,ME:route:2,source,route:2
+route,ME:route:3,source,route:3
