@@ -90,6 +90,16 @@ immediately with an error.
 | companies.txt | company_url   | Optional   | agency.txt | agency_lang  |                                                          |
 | companies.txt | company_phone | Optional   | agency.txt | agency_phone |                                                          |
 
+**_"Source" complementary code :_**
+
+A complementary `object_code` is added to each company with the following properties:
+
+* `object_type` : the fixed value `company`
+* `object_id` : the value of the `company_id` field
+* `object_system` : the fixed value `source`
+* `object_code` : the unmodified value of `agency_id` (or `1` if the value is not provided as stated above)
+
+
 ### Reading stops.txt
 
 Like the GTFS, the NTFS group stop_points and stop_areas in on file : stops.txt.
@@ -144,9 +154,9 @@ Be careful to only create necessary equipments and avoid duplicates.
 A complementary `object_code` is added to each stop with the following properties:
 
 * `object_type` : the fixed value `stop_point` or `stop_area` (depending on the object)
-* `object_id` : the value of the `stop_id` field
+* `object_id` : the NTFS value of the `stop_id` field
 * `object_system` : the fixed value `source`
-* `object_code` : the unmodified value of `agency_id` (or `1` if the value is not provided as stated above)
+* `object_code` : the unmodified GTFS value of `stop_id`
 
 ### Reading routes.txt
 
@@ -202,6 +212,15 @@ for generating the `route_name`.
 * `comment_id` : specify an identifier with the pattern **\<prefix>:route:<route_id of GTFS>**
 * `comment_type` : specify the fixed value "Information"
 
+**_"Source" complementary code :_**
+
+A complementary `object_code` is added to each route with the following properties:
+
+* `object_type` : the fixed value `route`
+* `object_id` : the NTFS value of the `route_id` field
+* `object_system` : the fixed value `source`
+* `object_code` : the unmodified GTFS value of `route_id`
+
 #### Loading Lines
 
 A Navitia Line is created to group one or several Navitia Routes when they are
@@ -227,6 +246,14 @@ specified, the conversion should stop immediately with an error.
 
 * `comment_id` : specify an identifier with the pattern **\<prefix>:line:<route_id of GTFS>**
 * `comment_type` : specify the fixed value "Information"
+
+A complementary `object_code` is added to each line with the following properties:
+
+* `object_type` : the fixed value `line`
+* `object_id` : the NTFS value of the `line_id` field
+* `object_system` : the fixed value `source`
+* `object_code` : the unmodified GTFS value of `route_id`
+
 
 ### Reading calendars.txt and calendar_dates.txt
 
