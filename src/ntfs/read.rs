@@ -140,7 +140,7 @@ impl TryFrom<Stop> for StopLocation {
             name: stop.name,
             code: stop.code,
             comment_links: CommentLinksT::default(),
-            visible: false,
+            visible: false, // disable for autocomplete
             coord,
             parent_id: stop.parent_station,
             timezone: stop.timezone,
