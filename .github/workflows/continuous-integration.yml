@@ -104,6 +104,9 @@ jobs:
     runs-on: [self-hosted, dataeng, sandbox]
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          clean: false
       - name: Build image
         run: |
           docker build . --file Dockerfile --tag $IMAGE_ID
@@ -135,6 +138,9 @@ jobs:
     container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        clean: false
     - name: Cargo login
       uses: actions-rs/cargo@v1
       with:
