@@ -100,8 +100,7 @@ jobs:
     if: ((github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'push' && github.ref == 'refs/heads/master')) &&
         (needs.rustfmt.result == 'skipped' || needs.rustfmt.result == 'success') &&
         (needs.clippy.result == 'skipped' || needs.clippy.result == 'success') &&
-        (needs.audit.result == 'skipped' || needs.audit.result == 'success') &&
-        (needs.tests.result == 'skipped' || needs.rustfmt.tests == 'success')
+        (needs.tests.result == 'skipped' || needs.tests.result == 'success')
     runs-on: [self-hosted, dataeng, sandbox]
     steps:
       - uses: actions/checkout@v3
