@@ -1,0 +1,157 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  release:
+    types: [published]
+
+env:
+  IMAGE_ID: "navitia/transit_model"
+  DOCKER_REGISTRY_URL: docker.io
+
+jobs:
+  rustfmt:
+    name: Rust fmt check
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    runs-on: [self-hosted, dataeng, sandbox]
+    container: kisiodigital/rust-ci:latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Format
+        run: make format
+      - name: Failure Slack notif
+        if: failure()
+        run: |
+          curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+        env:
+          SLACK_TEXT: '{"attachments":[{
+          "pretext": "`transit_model CI` requires your attention",
+          "text":" :warning: Rust fmt check failed","color":"#D00000",
+          "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
+  clippy:
+    name: Clippy check
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    runs-on: [self-hosted, dataeng, sandbox]
+    container: kisiodigital/rust-ci:latest-proj8.1.0
+    steps:
+      - uses: actions/checkout@v3
+      - name: Lint
+        run: make lint
+      - name: Failure Slack notif
+        if: failure()
+        run: |
+          curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+        env:
+          SLACK_TEXT: '{"attachments":[{
+          "pretext": "`transit_model CI` requires your attention",
+          "text":" :warning: Clippy check failed","color":"#D00000",
+          "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
+  audit:
+    name: Security audit
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    runs-on: [self-hosted, dataeng, sandbox]
+    container: kisiodigital/rust-ci:latest-proj8.1.0
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v3
+      - name: Audit
+        uses: actions-rs/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Failure Slack notif
+        if: failure()
+        run: |
+          curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+        env:
+          SLACK_TEXT: '{"attachments":[{
+          "pretext": "`transit_model CI` requires your attention",
+          "text":" :warning: Security audit failed","color":"#D00000",
+          "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
+  tests:
+    name: Tests
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    runs-on: [self-hosted, dataeng, sandbox]
+    container: kisiodigital/rust-ci:latest-proj8.1.0
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive # for tests/NeTEx
+    - name: Install xmllint
+      run: apt update && apt install --yes libxml2-utils
+    - name: Run tests with and without features
+      run: make test
+    - name: Failure Slack notif
+      if: failure()
+      run: |
+        curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+      env:
+        SLACK_TEXT: '{"attachments":[{
+        "pretext": "`transit_model CI` requires your attention",
+        "text":" :warning: Tests failed","color":"#D00000",
+        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
+  dockerhub:
+    name: Dockerhub publication
+    needs: [rustfmt, clippy, audit, tests]
+    # If merge master => test jobs are mandatory performed and must be success
+    # If release => test jobs are skipped to speed up (because already done at merge master)
+    if: ((github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'push' && github.ref == 'refs/heads/master')) &&
+        (needs.rustfmt.result == 'skipped' || needs.rustfmt.result == 'success') &&
+        (needs.clippy.result == 'skipped' || needs.clippy.result == 'success') &&
+        (needs.audit.result == 'skipped' || needs.audit.result == 'success') &&
+        (needs.tests.result == 'skipped' || needs.rustfmt.tests == 'success')
+    runs-on: [self-hosted, dataeng, sandbox]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build image
+        run: |
+          docker build . --file Dockerfile --tag $IMAGE_ID
+      - name: Tag image
+        if: github.event_name == 'release'
+        run: |
+          VERSION="v$( grep "^version =" Cargo.toml | tr -cd '[:digit:].' )"
+          docker tag $IMAGE_ID $IMAGE_ID:$VERSION
+      - name: Log into registry
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login $DOCKER_REGISTRY_URL --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: Push image
+        run: |
+          docker image push --all-tags $IMAGE_ID
+      - name: Failure Slack notif
+        if: failure()
+        run: |
+          curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+        env:
+          SLACK_TEXT: '{"attachments":[{
+          "pretext": "`transit_model Publish` requires your attention",
+          "text":" :warning: Publish failed","color":"#D00000",
+          "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
+  cratesio:
+    name: Crates.io publication
+    if: github.event_name == 'release' && github.event.action == 'published'
+    needs: [dockerhub]
+    runs-on: [self-hosted, dataeng, sandbox]
+    container: kisiodigital/rust-ci:latest-proj8.1.0
+    steps:
+    - uses: actions/checkout@v3
+    - name: Cargo login
+      uses: actions-rs/cargo@v1
+      with:
+        command: login
+        args: -- ${{ secrets.CARGO_TOKEN }}
+    - name: Publish
+      uses: actions-rs/cargo@v1
+      with:
+        command: publish
+        args: --all-features
+    - name: Failure Slack notif
+      if: failure()
+      run: |
+        curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+      env:
+        SLACK_TEXT: '{"attachments":[{
+        "pretext": "`transit_model Publish` requires your attention",
+        "text":" :warning: Publish failed","color":"#D00000",
+        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
