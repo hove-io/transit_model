@@ -103,8 +103,11 @@ jobs:
         (needs.tests.result == 'skipped' || needs.tests.result == 'success')
     runs-on: [self-hosted, dataeng, sandbox]
     steps:
-      - uses: AutoModality/action-clean@v1
-      - uses: actions/checkout@v3
+      - name: Clean workspace
+        run: |
+        rm -rf ${{ runner.workspace }}
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Build image
         run: |
           docker build . --file Dockerfile --tag $IMAGE_ID
@@ -135,7 +138,6 @@ jobs:
     runs-on: [self-hosted, dataeng, sandbox]
     container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
-    - uses: AutoModality/action-clean@v1
     - uses: actions/checkout@v3
     - name: Cargo login
       uses: actions-rs/cargo@v1
