@@ -15,7 +15,7 @@ jobs:
   rustfmt:
     name: Rust fmt check
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
-    runs-on: [self-hosted, dataeng, sandbox]
+    runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest
     steps:
       - uses: actions/checkout@v3
@@ -33,7 +33,7 @@ jobs:
   clippy:
     name: Clippy check
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
-    runs-on: [self-hosted, dataeng, sandbox]
+    runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
       - uses: actions/checkout@v3
@@ -51,7 +51,7 @@ jobs:
   audit:
     name: Security audit
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
-    runs-on: [self-hosted, dataeng, sandbox]
+    runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj8.1.0
     continue-on-error: true
     steps:
@@ -72,7 +72,7 @@ jobs:
   tests:
     name: Tests
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
-    runs-on: [self-hosted, dataeng, sandbox]
+    runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
     - name: Checkout repository and submodules
@@ -101,7 +101,7 @@ jobs:
         (needs.rustfmt.result == 'skipped' || needs.rustfmt.result == 'success') &&
         (needs.clippy.result == 'skipped' || needs.clippy.result == 'success') &&
         (needs.tests.result == 'skipped' || needs.tests.result == 'success')
-    runs-on: [self-hosted, dataeng, sandbox]
+    runs-on: ubuntu-latest
     steps:
       - uses: AutoModality/action-clean@v1
       - uses: actions/checkout@v3
@@ -132,7 +132,7 @@ jobs:
     name: Crates.io publication
     if: github.event_name == 'release' && github.event.action == 'published'
     needs: [dockerhub]
-    runs-on: [self-hosted, dataeng, sandbox]
+    runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
     - uses: AutoModality/action-clean@v1
