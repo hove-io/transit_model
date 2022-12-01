@@ -105,7 +105,8 @@ impl<'a> CalendarExporter<'a> {
     }
 
     fn generate_from_date(date: Date) -> Element {
-        let date_string = DateTime::<Utc>::from_utc(date.and_hms(0, 0, 0), Utc).to_rfc3339();
+        let date_string =
+            DateTime::<Utc>::from_utc(date.and_hms_opt(0, 0, 0).unwrap(), Utc).to_rfc3339();
         Element::builder("FromDate")
             .append(Node::Text(date_string))
             .build()
@@ -176,7 +177,9 @@ mod tests {
 
         #[test]
         fn only_one_date() {
-            let dates = vec![NaiveDate::from_ymd(2020, 1, 1)].into_iter().collect();
+            let dates = vec![NaiveDate::from_ymd_opt(2020, 1, 1).unwrap()]
+                .into_iter()
+                .collect();
             let valid_day_bits_element = CalendarExporter::generate_valid_day_bits(&dates);
             assert_eq!("1", get_valid_day_bits(valid_day_bits_element));
         }
@@ -184,8 +187,8 @@ mod tests {
         #[test]
         fn successive_dates() {
             let dates = vec![
-                NaiveDate::from_ymd(2020, 1, 1),
-                NaiveDate::from_ymd(2020, 1, 2),
+                NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+                NaiveDate::from_ymd_opt(2020, 1, 2).unwrap(),
             ]
             .into_iter()
             .collect();
@@ -196,8 +199,8 @@ mod tests {
         #[test]
         fn not_successive_dates() {
             let dates = vec![
-                NaiveDate::from_ymd(2020, 1, 1),
-                NaiveDate::from_ymd(2020, 1, 3),
+                NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+                NaiveDate::from_ymd_opt(2020, 1, 3).unwrap(),
             ]
             .into_iter()
             .collect();

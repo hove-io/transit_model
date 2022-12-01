@@ -226,7 +226,7 @@ pub fn from_zip_reader<R>(reader: R, source_name: &str) -> Result<Model>
 where
     R: std::io::Seek + std::io::Read,
 {
-    let mut file_handler = ZipHandler::new(reader, &source_name)?;
+    let mut file_handler = ZipHandler::new(reader, source_name)?;
     read_file_handler(&mut file_handler)
 }
 
@@ -484,8 +484,8 @@ mod tests {
         let dataset = Dataset {
             id: "Foo:0".to_string(),
             contributor_id: "Foo".to_string(),
-            start_date: chrono::NaiveDate::from_ymd(2018, 1, 30),
-            end_date: chrono::NaiveDate::from_ymd(2018, 1, 31),
+            start_date: chrono::NaiveDate::from_ymd_opt(2018, 1, 30).unwrap(),
+            end_date: chrono::NaiveDate::from_ymd_opt(2018, 1, 31).unwrap(),
             dataset_type: Some(DatasetType::Theorical),
             extrapolation: false,
             desc: Some("description".to_string()),
@@ -846,8 +846,8 @@ mod tests {
             Dataset {
                 id: "Foo:0".to_string(),
                 contributor_id: "Foo".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2018, 1, 30),
-                end_date: chrono::NaiveDate::from_ymd(2018, 1, 31),
+                start_date: chrono::NaiveDate::from_ymd_opt(2018, 1, 30).unwrap(),
+                end_date: chrono::NaiveDate::from_ymd_opt(2018, 1, 31).unwrap(),
                 dataset_type: Some(DatasetType::Theorical),
                 extrapolation: false,
                 desc: Some("description".to_string()),
@@ -856,8 +856,8 @@ mod tests {
             Dataset {
                 id: "Bar:0".to_string(),
                 contributor_id: "Bar".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2018, 1, 30),
-                end_date: chrono::NaiveDate::from_ymd(2018, 1, 31),
+                start_date: chrono::NaiveDate::from_ymd_opt(2018, 1, 30).unwrap(),
+                end_date: chrono::NaiveDate::from_ymd_opt(2018, 1, 31).unwrap(),
                 dataset_type: None,
                 extrapolation: false,
                 desc: None,
@@ -930,11 +930,11 @@ mod tests {
     #[test]
     fn calendar_serialization_deserialization() {
         let mut dates1 = ::std::collections::BTreeSet::new();
-        dates1.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
-        dates1.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+        dates1.insert(chrono::NaiveDate::from_ymd_opt(2018, 5, 5).unwrap());
+        dates1.insert(chrono::NaiveDate::from_ymd_opt(2018, 5, 6).unwrap());
 
         let mut dates2 = ::std::collections::BTreeSet::new();
-        dates2.insert(chrono::NaiveDate::from_ymd(2018, 6, 1));
+        dates2.insert(chrono::NaiveDate::from_ymd_opt(2018, 6, 1).unwrap());
 
         let calendars = CollectionWithId::new(vec![
             Calendar {
@@ -1475,8 +1475,8 @@ mod tests {
         test_serialize_deserialize_collection(vec![
             PriceV1 {
                 id: "PV1-01".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2019, 1, 1),
-                end_date: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                start_date: chrono::NaiveDate::from_ymd_opt(2019, 1, 1).unwrap(),
+                end_date: chrono::NaiveDate::from_ymd_opt(2019, 12, 31).unwrap(),
                 price: 190,
                 name: "Ticket PV1-01".to_string(),
                 ignored: "".to_string(),
@@ -1485,8 +1485,8 @@ mod tests {
             },
             PriceV1 {
                 id: "PV1-02".to_string(),
-                start_date: chrono::NaiveDate::from_ymd(2019, 1, 1),
-                end_date: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                start_date: chrono::NaiveDate::from_ymd_opt(2019, 1, 1).unwrap(),
+                end_date: chrono::NaiveDate::from_ymd_opt(2019, 12, 31).unwrap(),
                 price: 280,
                 name: "Ticket PV1-02".to_string(),
                 ignored: "".to_string(),
@@ -1586,15 +1586,15 @@ mod tests {
                 ticket_id: "PF1:Ticket1".to_string(),
                 price: dec!(150.0),
                 currency: "EUR".to_string(),
-                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 1, 1),
-                ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                ticket_validity_start: chrono::NaiveDate::from_ymd_opt(2019, 1, 1).unwrap(),
+                ticket_validity_end: chrono::NaiveDate::from_ymd_opt(2019, 12, 31).unwrap(),
             },
             TicketPrice {
                 ticket_id: "PF2:Ticket2".to_string(),
                 price: dec!(900.0),
                 currency: "GHS".to_string(),
-                ticket_validity_start: chrono::NaiveDate::from_ymd(2019, 1, 1),
-                ticket_validity_end: chrono::NaiveDate::from_ymd(2019, 12, 31),
+                ticket_validity_start: chrono::NaiveDate::from_ymd_opt(2019, 1, 1).unwrap(),
+                ticket_validity_end: chrono::NaiveDate::from_ymd_opt(2019, 12, 31).unwrap(),
             },
         ]);
     }

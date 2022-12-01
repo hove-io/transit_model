@@ -37,7 +37,7 @@ mod transfers;
 use transfers::TransferExporter;
 
 use crate::{model::Model, Result};
-use chrono::{DateTime, FixedOffset, TimeZone};
+use chrono::{DateTime, FixedOffset};
 
 /// Configuration options for exporting a NeTEx France.
 /// 3 options can be configured:
@@ -56,8 +56,7 @@ impl WriteConfiguration {
         WriteConfiguration {
             participant: participant.into(),
             stop_provider: None,
-            current_datetime: chrono::FixedOffset::east(0)
-                .from_utc_datetime(&chrono::Utc::now().naive_utc()),
+            current_datetime: chrono::Utc::now().with_timezone(&FixedOffset::east_opt(0).unwrap()),
         }
     }
     /// Setup the Stop Provider (see [specifications](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md) for more details)

@@ -142,7 +142,7 @@ pub fn enhance_pickup_dropoff(collections: &mut Collections) {
         let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
 
         if !allowed_first_drop_off_vj.contains(&vj_idx) {
-            if let Some(st) = vj.stop_times.iter_mut().find(|st| !is_route_point(*st)) {
+            if let Some(st) = vj.stop_times.iter_mut().find(|st| !is_route_point(st)) {
                 st.drop_off_type = 1;
             }
         }
@@ -151,7 +151,7 @@ pub fn enhance_pickup_dropoff(collections: &mut Collections) {
                 .stop_times
                 .iter_mut()
                 .rev()
-                .find(|st| !is_route_point(*st))
+                .find(|st| !is_route_point(st))
             {
                 st.pickup_type = 1;
             }
@@ -313,7 +313,7 @@ mod tests {
         );
         collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_ymd_opt(2020, 1, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,
@@ -354,7 +354,7 @@ mod tests {
         );
         collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_ymd_opt(2020, 1, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,
@@ -395,7 +395,7 @@ mod tests {
         );
         collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_ymd_opt(2020, 1, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,
@@ -459,7 +459,7 @@ mod tests {
         });
         drop(vj_mut);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_ymd_opt(2020, 1, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,

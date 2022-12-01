@@ -789,7 +789,9 @@ mod tests {
         });
         collections.calendars = CollectionWithId::from(Calendar {
             id: String::from("service_id"),
-            dates: vec![Date::from_ymd(2020, 1, 1)].into_iter().collect(),
+            dates: vec![Date::from_ymd_opt(2020, 1, 1).unwrap()]
+                .into_iter()
+                .collect(),
         });
         collections.vehicle_journeys = CollectionWithId::from(VehicleJourney {
             id: String::from("vj_id_1"),

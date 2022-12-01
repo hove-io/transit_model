@@ -199,13 +199,13 @@ impl Default for ValidityPeriod {
     fn default() -> ValidityPeriod {
         use chrono::{Duration, Utc};
         let duration = Duration::days(15);
-        let today = Utc::today();
+        let today = Utc::now().date_naive();
         let start_date = today - duration;
         let end_date = today + duration;
 
         ValidityPeriod {
-            start_date: start_date.naive_utc(),
-            end_date: end_date.naive_utc(),
+            start_date,
+            end_date,
         }
     }
 }
@@ -1974,7 +1974,7 @@ mod tests {
 
     #[test]
     fn time_serialization() {
-        let ser = |h, m, s| serde_json::to_value(&Time::new(h, m, s)).unwrap();
+        let ser = |h, m, s| serde_json::to_value(Time::new(h, m, s)).unwrap();
 
         assert_eq!("13:37:00", ser(13, 37, 0));
         assert_eq!("00:00:00", ser(0, 0, 0));

@@ -1607,23 +1607,45 @@ mod tests {
             let mut collections = Collections::default();
 
             let mut service_1 = Calendar::new(String::from("service_1"));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 1));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 2));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 3));
-            service_1.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            service_1
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 1).unwrap());
+            service_1
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 2).unwrap());
+            service_1
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 3).unwrap());
+            service_1
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 10).unwrap());
             collections.calendars.push(service_1).unwrap();
 
             let mut service_2 = Calendar::new(String::from("service_2"));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 1));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 2));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 3));
-            service_2.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            service_2
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 1).unwrap());
+            service_2
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 2).unwrap());
+            service_2
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 3).unwrap());
+            service_2
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 10).unwrap());
             collections.calendars.push(service_2).unwrap();
 
             let mut service_3 = Calendar::new(String::from("service_3"));
-            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 1));
-            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 3));
-            service_3.dates.insert(NaiveDate::from_ymd(2019, 10, 10));
+            service_3
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 1).unwrap());
+            service_3
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 3).unwrap());
+            service_3
+                .dates
+                .insert(NaiveDate::from_ymd_opt(2019, 10, 10).unwrap());
             collections.calendars.push(service_3).unwrap();
 
             collections

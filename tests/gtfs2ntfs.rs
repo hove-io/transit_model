@@ -43,7 +43,7 @@ fn test_gtfs() {
             .parse(input_dir)
             .unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/full_output");
+        compare_output_dir_with_expected(path, None, "./tests/fixtures/gtfs2ntfs/full_output");
     });
 }
 
@@ -53,7 +53,7 @@ fn test_minimal_gtfs() {
         let input_dir = "./tests/fixtures/gtfs2ntfs/minimal/input";
         let model = transit_model::gtfs::read(input_dir).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
+        compare_output_dir_with_expected(path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
 }
 
@@ -64,7 +64,7 @@ fn test_gtfs_physical_modes() {
         let model = transit_model::gtfs::read(input_dir).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             Some(vec![
                 "commercial_modes.txt",
                 "lines.txt",
@@ -83,7 +83,7 @@ fn test_gtfs_remove_vjs_with_no_traffic() {
         let model = transit_model::gtfs::read(input_dir).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             Some(vec![
                 "trips.txt",
                 "calendar.txt",
@@ -103,7 +103,7 @@ fn test_minimal_zipped_gtfs() {
         let input = "./tests/fixtures/zipped_gtfs/gtfs.zip";
         let model = transit_model::gtfs::read(input).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
+        compare_output_dir_with_expected(path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
 }
 
@@ -113,7 +113,7 @@ fn test_minimal_zipped_sub_dir_gtfs() {
         let input = "./tests/fixtures/zipped_gtfs/sub_dir_gtfs.zip";
         let model = transit_model::gtfs::read(input).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
+        compare_output_dir_with_expected(path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
 }
 
@@ -123,7 +123,7 @@ fn test_minimal_zipped_sub_dir_gtfs_with_hidden_files() {
         let input = "./tests/fixtures/zipped_gtfs/sub_dir_gtfs_with_hidden_files.zip";
         let model = transit_model::gtfs::read(input).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
-        compare_output_dir_with_expected(&path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
+        compare_output_dir_with_expected(path, None, "./tests/fixtures/gtfs2ntfs/minimal/output");
     });
 }
 
@@ -149,7 +149,7 @@ fn test_minimal_gtfs_with_odt_comment() {
             .unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             Some(vec!["comment_links.txt", "comments.txt", "stop_times.txt"]),
             "./tests/fixtures/gtfs2ntfs/odt_comment/output_without_frequencies",
         );
@@ -179,7 +179,7 @@ fn test_minimal_gtfs_frequencies_with_odt_comment() {
             .unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             Some(vec!["comment_links.txt", "comments.txt", "stop_times.txt"]),
             "./tests/fixtures/gtfs2ntfs/odt_comment/output_with_frequencies",
         );
@@ -193,7 +193,7 @@ fn test_minimal_gtfs_with_routes_comments() {
         let model = transit_model::gtfs::read(input_dir).unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             None,
             "./tests/fixtures/gtfs2ntfs/routes_comments/output",
         );
@@ -213,7 +213,7 @@ fn test_minimal_gtfs_with_routes_as_lines_comments() {
             .unwrap();
         ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             None,
             "./tests/fixtures/gtfs2ntfs/routes_comments/output_as_lines",
         );

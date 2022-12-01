@@ -140,7 +140,7 @@ fn ntfs_stops_output() {
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &output_dir,
+            output_dir,
             Some(vec!["stops.txt", "stop_times.txt", "addresses.txt"]),
             "tests/fixtures/ntfs2ntfs/stops",
         );
@@ -153,7 +153,7 @@ fn test_minimal_fares_stay_same() {
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &output_dir,
+            output_dir,
             Some(vec!["stops.txt", "fares.csv", "od_fares.csv", "prices.csv"]),
             "tests/fixtures/ntfs2ntfs/fares",
         );
@@ -166,7 +166,7 @@ fn test_minimal_platforms_stay_same() {
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &output_dir,
+            output_dir,
             Some(vec!["stops.txt"]),
             "tests/fixtures/ntfs2ntfs/platforms",
         );
@@ -179,7 +179,7 @@ fn test_minimal_fares_stay_same_with_empty_of_fares() {
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &output_dir,
+            output_dir,
             Some(vec!["fares.csv", "od_fares.csv", "prices.csv"]),
             "tests/fixtures/ntfs2ntfs/empty_od_fares",
         );
@@ -268,7 +268,7 @@ fn preserve_frequencies() {
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &output_dir,
+            output_dir,
             Some(vec!["frequencies.txt", "stop_times.txt", "trips.txt"]),
             "tests/fixtures/ntfs2ntfs/frequencies",
         );
@@ -281,7 +281,7 @@ fn preserve_grid() {
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &output_dir,
+            output_dir,
             Some(vec![
                 "grid_calendars.txt",
                 "grid_exception_dates.txt",
@@ -299,7 +299,7 @@ fn enhance_lines_opening_time() {
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &output_dir,
+            output_dir,
             Some(vec!["lines.txt"]),
             "tests/fixtures/ntfs2ntfs/lines-opening/output",
         );
@@ -336,13 +336,13 @@ fn sanitize_grid() {
     };
     let grid_exception_date = GridExceptionDate {
         grid_calendar_id: String::from("grid_calendar_id"),
-        date: Date::from_ymd(2019, 1, 1),
+        date: Date::from_ymd_opt(2019, 1, 1).unwrap(),
         r#type: true,
     };
     let grid_period = GridPeriod {
         grid_calendar_id: String::from("grid_calendar_id"),
-        start_date: Date::from_ymd(2019, 1, 1),
-        end_date: Date::from_ymd(2019, 12, 31),
+        start_date: Date::from_ymd_opt(2019, 1, 1).unwrap(),
+        end_date: Date::from_ymd_opt(2019, 12, 31).unwrap(),
     };
     let grid_rel_calendar_line = GridRelCalendarLine {
         grid_calendar_id: String::from("grid_calendar_id"),
