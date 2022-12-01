@@ -14,7 +14,6 @@ env:
 jobs:
   rustfmt:
     name: Rust fmt check
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest
     steps:
@@ -32,7 +31,6 @@ jobs:
           "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
   clippy:
     name: Clippy check
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
@@ -50,7 +48,6 @@ jobs:
           "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
   audit:
     name: Security audit
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj8.1.0
     continue-on-error: true
@@ -70,7 +67,6 @@ jobs:
           "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
   tests:
     name: Tests
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
@@ -94,13 +90,7 @@ jobs:
   dockerhub:
     name: Dockerhub publication
     needs: [rustfmt, clippy, audit, tests]
-    # If merge master => test jobs are mandatory performed and must be success
-    # If release => test jobs are skipped to speed up (because already done at merge master)
-    if: always() &&
-        (github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/master')) &&
-        (needs.rustfmt.result == 'skipped' || needs.rustfmt.result == 'success') &&
-        (needs.clippy.result == 'skipped' || needs.clippy.result == 'success') &&
-        (needs.tests.result == 'skipped' || needs.tests.result == 'success')
+    if: github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
     steps:
       - uses: AutoModality/action-clean@v1
@@ -130,8 +120,8 @@ jobs:
           "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
   cratesio:
     name: Crates.io publication
-    if: github.event_name == 'release'
     needs: [dockerhub]
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
