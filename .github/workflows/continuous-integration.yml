@@ -130,8 +130,8 @@ jobs:
           "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
   cratesio:
     name: Crates.io publication
-    if: github.event_name == 'release'
     needs: [dockerhub]
+    if: always() && github.event_name == 'release' && needs.dockerhub.result == 'success'
     runs-on: ubuntu-latest
     container: kisiodigital/rust-ci:latest-proj8.1.0
     steps:
