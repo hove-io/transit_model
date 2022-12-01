@@ -96,7 +96,8 @@ jobs:
     needs: [rustfmt, clippy, audit, tests]
     # If merge master => test jobs are mandatory performed and must be success
     # If release => test jobs are skipped to speed up (because already done at merge master)
-    if: (github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/master')) &&
+    if: always() &&
+        (github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/master')) &&
         (needs.rustfmt.result == 'skipped' || needs.rustfmt.result == 'success') &&
         (needs.clippy.result == 'skipped' || needs.clippy.result == 'success') &&
         (needs.tests.result == 'skipped' || needs.tests.result == 'success')
