@@ -1974,7 +1974,7 @@ mod tests {
 
     #[test]
     fn time_serialization() {
-        let ser = |h, m, s| serde_json::to_value(&Time::new(h, m, s)).unwrap();
+        let ser = |h, m, s| serde_json::to_value(Time::new(h, m, s)).unwrap();
 
         assert_eq!("13:37:00", ser(13, 37, 0));
         assert_eq!("00:00:00", ser(0, 0, 0));

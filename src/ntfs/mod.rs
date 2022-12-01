@@ -226,7 +226,7 @@ pub fn from_zip_reader<R>(reader: R, source_name: &str) -> Result<Model>
 where
     R: std::io::Seek + std::io::Read,
 {
-    let mut file_handler = ZipHandler::new(reader, &source_name)?;
+    let mut file_handler = ZipHandler::new(reader, source_name)?;
     read_file_handler(&mut file_handler)
 }
 

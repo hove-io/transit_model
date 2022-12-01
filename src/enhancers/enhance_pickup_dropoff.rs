@@ -142,7 +142,7 @@ pub fn enhance_pickup_dropoff(collections: &mut Collections) {
         let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
 
         if !allowed_first_drop_off_vj.contains(&vj_idx) {
-            if let Some(st) = vj.stop_times.iter_mut().find(|st| !is_route_point(*st)) {
+            if let Some(st) = vj.stop_times.iter_mut().find(|st| !is_route_point(st)) {
                 st.drop_off_type = 1;
             }
         }
@@ -151,7 +151,7 @@ pub fn enhance_pickup_dropoff(collections: &mut Collections) {
                 .stop_times
                 .iter_mut()
                 .rev()
-                .find(|st| !is_route_point(*st))
+                .find(|st| !is_route_point(st))
             {
                 st.pickup_type = 1;
             }

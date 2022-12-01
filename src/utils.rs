@@ -45,7 +45,7 @@ where
                 let mut f = fs::File::open(path)?;
 
                 f.read_to_end(&mut buffer)?;
-                zip.write_all(&*buffer)?;
+                zip.write_all(&buffer)?;
                 buffer.clear();
             }
         }

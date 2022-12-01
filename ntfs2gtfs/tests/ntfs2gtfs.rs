@@ -27,7 +27,7 @@ fn test_stop_zones_not_exported_and_cleaned() {
         collections.remove_route_points();
         let model = Model::new(collections).unwrap();
         transit_model::gtfs::write(model, path, false).unwrap();
-        compare_output_dir_with_expected(&path, None, "./tests/fixtures/output");
+        compare_output_dir_with_expected(path, None, "./tests/fixtures/output");
     });
 }
 
@@ -39,7 +39,7 @@ fn test_mode_in_route_shortname() {
         let model = add_mode_to_line_code(model).unwrap();
         transit_model::gtfs::write(model, path, false).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             Some(vec!["routes.txt"]),
             "./tests/fixtures/output_route_shortname_with_mode",
         );
@@ -53,7 +53,7 @@ fn test_platforms_preserving() {
         let model = transit_model::ntfs::read(input).unwrap();
         transit_model::gtfs::write(model, path, false).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             Some(vec!["stops.txt"]),
             "./tests/fixtures/platforms/output",
         );
@@ -134,7 +134,7 @@ fn test_ntfs2gtfs_extended() {
         .assert()
         .success();
     compare_output_dir_with_expected(
-        &output_dir,
+        output_dir,
         Some(vec!["routes.txt"]),
         "./tests/fixtures/output_extended_route",
     );
@@ -152,7 +152,7 @@ fn test_ntfs2gtfs_split_route_by_mode() {
         .assert()
         .success();
     compare_output_dir_with_expected(
-        &output_dir,
+        output_dir,
         Some(vec!["routes.txt"]),
         "./tests/fixtures/output_split_route_by_mode",
     );
@@ -171,7 +171,7 @@ fn test_ntfs2gtfs_split_route_by_mode_extended() {
         .assert()
         .success();
     compare_output_dir_with_expected(
-        &output_dir,
+        output_dir,
         Some(vec!["routes.txt"]),
         "./tests/fixtures/output_split_route_by_mode_extended",
     );

@@ -31,7 +31,7 @@ fn test_generates_transfers() {
         let model = transfers::generates_transfers(model, 100.0, 0.785, 120, None).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             Some(vec!["transfers.txt"]),
             "./tests/fixtures/transfers/mono_contributor/output",
         );
@@ -46,7 +46,7 @@ fn test_generates_all_multi_contributors_transfers() {
         let model = transfers::generates_transfers(model, 100.0, 0.785, 120, None).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             Some(vec!["transfers.txt"]),
             "./tests/fixtures/transfers/multi_contributors/output",
         );
@@ -84,7 +84,7 @@ fn test_generates_transfers_with_closure_inter_contributors() {
                 .unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             Some(vec!["transfers.txt"]),
             "./tests/fixtures/transfers/multi_contributors/output_closure_inter_contributor",
         );

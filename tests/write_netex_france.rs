@@ -22,9 +22,9 @@ fn test_write_netex_france(model: Model) {
         let config = netex_france::WriteConfiguration::new("Participant")
             .stop_provider("ProviderCode")
             .current_datetime(get_test_datetime());
-        netex_france::write(&model, &output_dir, config).unwrap();
+        netex_france::write(&model, output_dir, config).unwrap();
         compare_output_dir_with_expected_content(
-            &output_dir,
+            output_dir,
             None,
             "tests/fixtures/netex_france/output",
         );
@@ -77,7 +77,7 @@ fn validate_xml_schemas() {
                 .arg("--noout")
                 .arg("--nonet")
                 .arg("--huge")
-                .args(&["--schema", "tests/NeTEx/xsd/NeTEx_publication.xsd"])
+                .args(["--schema", "tests/NeTEx/xsd/NeTEx_publication.xsd"])
                 .arg(path)
                 .status()
                 .unwrap();

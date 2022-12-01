@@ -392,7 +392,7 @@ fn make_gtfs_route_from_ntfs_line(line: &objects::Line, pm: &PhysicalModeWithOrd
     Route {
         id: get_gtfs_route_id_from_ntfs_line_id(&line.id, pm),
         agency_id: Some(line.network_id.clone()),
-        short_name: line.code.clone().unwrap_or_else(|| "".to_string()),
+        short_name: line.code.clone().unwrap_or_default(),
         long_name: line.name.clone(),
         desc: None,
         route_type: RouteType::from(pm.inner),

@@ -60,7 +60,7 @@ pub fn write_feed_infos(
 
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
-    wtr.write_record(&["feed_info_param", "feed_info_value"])
+    wtr.write_record(["feed_info_param", "feed_info_value"])
         .with_context(|| format!("Error reading {:?}", path))?;
     for feed_info in feed_infos {
         wtr.serialize(feed_info)
@@ -168,7 +168,7 @@ fn do_write_fares_v1(
     }
     // Write file header if collection is empty (normally done by serialize)
     if od_fares_v1.is_empty() {
-        od_fares_wtr.write_record(&[
+        od_fares_wtr.write_record([
             "Origin ID",
             "Origin name",
             "Origin mode",

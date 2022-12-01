@@ -33,7 +33,7 @@ fn test_restrict_global() {
         let new_model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
-            &path,
+            path,
             None,
             "./tests/fixtures/restrict-validity-period/output/",
         );
