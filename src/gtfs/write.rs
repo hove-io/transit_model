@@ -851,7 +851,7 @@ mod tests {
             })
             .unwrap();
         let mut dates = BTreeSet::new();
-        dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+        dates.insert(chrono::NaiveDate::from_ymd_opt(2018, 5, 6).unwrap());
         collections
             .calendars
             .push(objects::Calendar {
@@ -1130,9 +1130,9 @@ mod tests {
     fn write_calendar_file_from_calendar() {
         let mut dates = BTreeSet::new();
         //saturday
-        dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
+        dates.insert(chrono::NaiveDate::from_ymd_opt(2018, 5, 5).unwrap());
         //sunday
-        dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+        dates.insert(chrono::NaiveDate::from_ymd_opt(2018, 5, 6).unwrap());
         let calendar = CollectionWithId::new(vec![
             Calendar {
                 id: "1".to_string(),

@@ -336,13 +336,13 @@ fn sanitize_grid() {
     };
     let grid_exception_date = GridExceptionDate {
         grid_calendar_id: String::from("grid_calendar_id"),
-        date: Date::from_ymd(2019, 1, 1),
+        date: Date::from_ymd_opt(2019, 1, 1).unwrap(),
         r#type: true,
     };
     let grid_period = GridPeriod {
         grid_calendar_id: String::from("grid_calendar_id"),
-        start_date: Date::from_ymd(2019, 1, 1),
-        end_date: Date::from_ymd(2019, 12, 31),
+        start_date: Date::from_ymd_opt(2019, 1, 1).unwrap(),
+        end_date: Date::from_ymd_opt(2019, 12, 31).unwrap(),
     };
     let grid_rel_calendar_line = GridRelCalendarLine {
         grid_calendar_id: String::from("grid_calendar_id"),

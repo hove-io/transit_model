@@ -2831,8 +2831,8 @@ mod tests {
             calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
-            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 5));
-            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
+            dates.insert(chrono::NaiveDate::from_ymd_opt(2018, 5, 5).unwrap());
+            dates.insert(chrono::NaiveDate::from_ymd_opt(2018, 5, 6).unwrap());
             assert_eq!(
                 vec![Calendar {
                     id: "1".to_string(),
@@ -2858,7 +2858,7 @@ mod tests {
             calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
-            dates.insert(chrono::NaiveDate::from_ymd(2018, 2, 12));
+            dates.insert(chrono::NaiveDate::from_ymd_opt(2018, 2, 12).unwrap());
             assert_eq!(
                 vec![Calendar {
                     id: "1".to_string(),
@@ -2890,8 +2890,8 @@ mod tests {
             calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
             let mut dates = BTreeSet::new();
-            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 6));
-            dates.insert(chrono::NaiveDate::from_ymd(2018, 5, 7));
+            dates.insert(chrono::NaiveDate::from_ymd_opt(2018, 5, 6).unwrap());
+            dates.insert(chrono::NaiveDate::from_ymd_opt(2018, 5, 7).unwrap());
             assert_eq!(
                 vec![
                     Calendar {

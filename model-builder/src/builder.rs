@@ -207,7 +207,7 @@ impl ModelBuilder {
             let default_calendar = self.collections.calendars.get_mut(DEFAULT_CALENDAR_ID);
             if let Some(mut cal) = default_calendar {
                 if cal.dates.is_empty() {
-                    cal.dates.insert(Date::from_ymd(2020, 1, 1));
+                    cal.dates.insert(Date::from_ymd_opt(2020, 1, 1).unwrap());
                 }
             }
         }
@@ -472,7 +472,7 @@ mod test {
                 .collect()
         );
         let default_calendar = model.calendars.get("default_service").unwrap();
-        let dates = [transit_model::objects::Date::from_ymd(2020, 1, 1)]
+        let dates = [transit_model::objects::Date::from_ymd_opt(2020, 1, 1).unwrap()]
             .iter()
             .copied()
             .collect::<std::collections::BTreeSet<_>>();

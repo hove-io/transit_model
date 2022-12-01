@@ -313,7 +313,7 @@ mod tests {
         );
         collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_ymd_opt(2020, 1, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,
@@ -354,7 +354,7 @@ mod tests {
         );
         collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_ymd_opt(2020, 1, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,
@@ -395,7 +395,7 @@ mod tests {
         );
         collections.vehicle_journeys = build_vehicle_journeys(prev_vj_config, next_vj_config);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_ymd_opt(2020, 1, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,
@@ -459,7 +459,7 @@ mod tests {
         });
         drop(vj_mut);
         let mut dates = BTreeSet::new();
-        dates.insert(Date::from_ymd(2020, 1, 1));
+        dates.insert(Date::from_ymd_opt(2020, 1, 1).unwrap());
         collections.calendars = CollectionWithId::new(vec![Calendar {
             id: "default_service".to_owned(),
             dates,

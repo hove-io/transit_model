@@ -26,8 +26,8 @@ fn test_restrict_global() {
         let mut collections = objects.into_collections();
         collections
             .restrict_period(
-                NaiveDate::from_ymd(2018, 5, 1),
-                NaiveDate::from_ymd(2018, 8, 5),
+                NaiveDate::from_ymd_opt(2018, 5, 1).unwrap(),
+                NaiveDate::from_ymd_opt(2018, 8, 5).unwrap(),
             )
             .unwrap();
         let new_model = Model::new(collections).unwrap();
@@ -49,8 +49,8 @@ fn test_restrict_no_panic() {
         let mut collections = objects.into_collections();
         collections
             .restrict_period(
-                NaiveDate::from_ymd(2018, 8, 2),
-                NaiveDate::from_ymd(2019, 7, 31),
+                NaiveDate::from_ymd_opt(2018, 8, 2).unwrap(),
+                NaiveDate::from_ymd_opt(2019, 7, 31).unwrap(),
             )
             .unwrap();
         let new_model = Model::new(collections).unwrap();

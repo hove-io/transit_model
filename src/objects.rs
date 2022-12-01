@@ -199,13 +199,13 @@ impl Default for ValidityPeriod {
     fn default() -> ValidityPeriod {
         use chrono::{Duration, Utc};
         let duration = Duration::days(15);
-        let today = Utc::today();
+        let today = Utc::now().date_naive();
         let start_date = today - duration;
         let end_date = today + duration;
 
         ValidityPeriod {
-            start_date: start_date.naive_utc(),
-            end_date: end_date.naive_utc(),
+            start_date,
+            end_date,
         }
     }
 }
