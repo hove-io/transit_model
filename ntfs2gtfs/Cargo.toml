@@ -12,7 +12,7 @@ categories = ["command-line-utilities", "data-structures", "encoding", "parser-i
 keywords = ["gtfs", "ntfs", "transit"]
 
 [dependencies]
-clap = { version = "3", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 tracing = { version = "0.1", features = ["log", "release_max_level_info"] }
 tracing-subscriber = "0.3"
 transit_model = { path = "../" }
