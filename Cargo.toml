@@ -49,7 +49,7 @@ lazy_static = "1"
 md5 = "0.7"
 # do not upgrade to 'minidom:0.13.0' (too strict on namespaces and no XML comment support)
 # https://github.com/hove-io/transit_model/pull/746
-minidom = "0.12"
+minidom = "0.15"
 minidom_ext = "1"
 minidom_writer = "1"
 num-traits = "0.2"
