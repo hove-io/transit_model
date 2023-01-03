@@ -1189,11 +1189,9 @@ impl Collections {
             .map(|dataset| dataset.start_date)
             .min();
         let end_date = self.datasets.values().map(|dataset| dataset.end_date).max();
-        if let (Some(start_date), Some(end_date)) = (start_date, end_date) {
-            Ok((start_date, end_date))
-        } else {
-            bail!("Cannot calculate validity period because there is no dataset")
-        }
+        start_date
+            .zip(end_date)
+            .ok_or_else(|| anyhow!("Cannot calculate validity period because there is no dataset"))
     }
 }
 
