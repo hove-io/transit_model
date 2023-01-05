@@ -33,11 +33,6 @@
 //! this case, take a look at the [`CONTRIBUTING.md`] for more information on
 //! this feature.
 //!
-//! ## `mutable-model`
-//! This is an experimental feature that allows you to get some abilities to
-//! mutate a `Model`. It might not be completely stable at the moment so use
-//! with care (or not at all!).
-//!
 //! ## `gtfs`
 //! This is an experimental feature that exposes some gtfs functions for use
 //! in external projects
