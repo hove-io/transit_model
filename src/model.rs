@@ -562,6 +562,20 @@ impl Collections {
                 );
                 return false;
             }
+            if !stop_area_ids_used.contains(&occupancy.from_stop_area) {
+                debug!(
+                    "Occupancy with 'from_stop_area={}' has been removed because stop area is not used",
+                    occupancy.from_stop_area
+                );
+                return false;
+            }
+            if !stop_area_ids_used.contains(&occupancy.to_stop_area){
+                debug!(
+                    "Occupancy with 'to_stop_area={}' has been removed because stop area is not used",
+                    occupancy.to_stop_area
+                );
+                return false;
+            }
             true
         });
 
