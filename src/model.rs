@@ -554,6 +554,16 @@ impl Collections {
             .retain(|address| addresses_used.contains(&address.id));
         self.admin_stations
             .retain(|admin_station| stop_area_ids_used.contains(&admin_station.stop_id));
+        self.occupancies.retain(|occupancy| {
+            if !line_ids_used.contains(&occupancy.line_id) {
+                debug!(
+                    "Occupancy with 'line_id={}' has been removed because stop area is not used",
+                    occupancy.line_id
+                );
+                return false;
+            }
+            true
+        });
 
         self.frequencies = dedup_collection(&mut self.frequencies);
         self.transfers = dedup_collection(&mut self.transfers);
