@@ -668,6 +668,19 @@ where
     Ok(())
 }
 
+pub(crate) fn manage_occupancies<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let file = "occupancies.txt";
+    let occupancies = read_objects_loose::<_, Occupancy>(file_handler, file, false)?;
+    collections.occupancies = Collection::new(occupancies);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

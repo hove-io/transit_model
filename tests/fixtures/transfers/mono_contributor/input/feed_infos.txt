@@ -1,5 +1,5 @@
 feed_info_param,feed_info_value
-ntfs_version,0.3
+ntfs_version,0.13.0
 feed_start_date,20170607
 feed_end_date,20170702
 feed_creation_date,20170618

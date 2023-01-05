@@ -116,6 +116,7 @@ pub struct Collections {
     pub grid_periods: Collection<GridPeriod>,
     pub grid_rel_calendar_line: Collection<GridRelCalendarLine>,
     pub addresses: CollectionWithId<Address>,
+    pub occupancies: Collection<Occupancy>,
 }
 
 impl Collections {
