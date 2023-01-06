@@ -128,7 +128,7 @@ pub fn compare_output_dir_with_expected_content<P: AsRef<Path>, Q: AsRef<Path>>(
 
 pub fn create_file_with_content(path: &path::Path, file_name: &str, content: &str) {
     let file_path = path.join(file_name);
-    let mut f = File::create(&file_path).unwrap();
+    let mut f = File::create(file_path).unwrap();
     f.write_all(content.as_bytes()).unwrap();
 }
 

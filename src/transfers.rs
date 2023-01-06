@@ -137,7 +137,7 @@ pub fn generates_transfers(
         need_transfer,
     );
 
-    let mut new_transfers: Vec<_> = transfers_map.into_iter().map(|(_, v)| v).collect();
+    let mut new_transfers: Vec<_> = transfers_map.into_values().collect();
     new_transfers.sort_unstable_by(|t1, t2| {
         (&t1.from_stop_id, &t1.to_stop_id).cmp(&(&t2.from_stop_id, &t2.to_stop_id))
     });

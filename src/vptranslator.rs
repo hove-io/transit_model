@@ -59,7 +59,7 @@ fn dists(w: u8, weeks: &[u8]) -> u32 {
     weeks
         .iter()
         .filter(|n| **n != 0u8)
-        .map(|n| (*n as u8 ^ w).count_ones())
+        .map(|n| (*n ^ w).count_ones())
         .sum()
 }
 
