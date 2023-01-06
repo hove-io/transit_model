@@ -39,7 +39,7 @@ fn test_write_netex_france(model: Model) {
                 "tests/fixtures/netex_france/output/{}",
                 folder_name.to_str().unwrap()
             );
-            compare_output_dir_with_expected_content(&network_folder, None, &expected_folder);
+            compare_output_dir_with_expected_content(&network_folder, None, expected_folder);
         }
     });
 }
