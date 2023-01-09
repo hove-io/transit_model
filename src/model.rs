@@ -557,7 +557,7 @@ impl Collections {
         self.occupancies.retain(|occupancy| {
             if !line_ids_used.contains(&occupancy.line_id) {
                 debug!(
-                    "Occupancy with 'line_id={}' has been removed because stop area is not used",
+                    "Occupancy with 'line_id={}' has been removed because line is not used",
                     occupancy.line_id
                 );
                 return false;
