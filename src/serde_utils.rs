@@ -40,6 +40,28 @@ where
     }
 }
 
+/// deserialize optional u8 as Option<bool>
+/// returns an error if non boolean value
+pub fn de_opt_bool_from_str<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::{
+        de::{Error, Unexpected::Other},
+        Deserialize,
+    };
+    let s = <String as Deserialize<'de>>::deserialize(deserializer)?;
+    match s.trim() {
+        "0" => Ok(Some(false)),
+        "1" => Ok(Some(true)),
+        "" => Ok(None),
+        _ => Err(D::Error::invalid_value(
+            Other(&format!("'{}' non boolean value", s)),
+            &"boolean",
+        )),
+    }
+}
+
 /// deserialize u8 as bool
 /// returns true if non boolean value
 pub fn de_from_u8_with_true_default<'de, D>(deserializer: D) -> Result<bool, D::Error>
@@ -60,6 +82,19 @@ where
     S: serde::Serializer,
 {
     serializer.serialize_u8(*v as u8)
+}
+
+/// serialize Option<bool> as u8
+// The signature of the function must pass by reference for 'serde' to be able to use the function
+pub fn ser_from_opt_bool<S>(v: &Option<bool>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    serializer.serialize_str(match v {
+        None => "",
+        Some(false) => "0",
+        Some(true) => "1",
+    })
 }
 
 /// deserialize date from String

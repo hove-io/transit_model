@@ -1,0 +1,10 @@
+line_id,from_stop_area,to_stop_area,from_date,to_date,from_time,to_time,monday,tuesday,wednesday,thursday,friday,saturday,sunday,occupancy
+RERA,NAT,GDL,20180501,20180531,07:00:00,09:00:00,1,1,1,1,1,0,0,STANDING_ROOM_ONLY
+RERA,GDL,DEF,20180501,20180531,07:00:00,09:00:00,1,1,1,1,1,,,CRUSHED_STANDING_ROOM_ONLY
+# The Occupancy is not a valid enum variant
+RERA,GDL,DEF,20180501,20180531,07:00:00,09:00:00,0,0,0,0,0,0,0,UNKNOWN_OCCUPANCY_STATUS
+# Unknown Line ID
+UnkownLine,GDL,DEF,20180501,20180531,07:00:00,09:00:00,0,0,0,0,0,0,0,EMPTY
+# Unknown Stop Area ID
+RERA,UnknownStopArea,DEF,20180501,20180531,07:00:00,09:00:00,0,0,0,0,0,0,0,CRUSHED_STANDING_ROOM_ONLY
+RERA,GDL,UnknownStopArea,20180501,20180531,07:00:00,09:00:00,0,0,0,0,0,0,0,CRUSHED_STANDING_ROOM_ONLY

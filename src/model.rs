@@ -116,6 +116,7 @@ pub struct Collections {
     pub grid_periods: Collection<GridPeriod>,
     pub grid_rel_calendar_line: Collection<GridRelCalendarLine>,
     pub addresses: CollectionWithId<Address>,
+    pub occupancies: Collection<Occupancy>,
 }
 
 impl Collections {
@@ -553,6 +554,30 @@ impl Collections {
             .retain(|address| addresses_used.contains(&address.id));
         self.admin_stations
             .retain(|admin_station| stop_area_ids_used.contains(&admin_station.stop_id));
+        self.occupancies.retain(|occupancy| {
+            if !line_ids_used.contains(&occupancy.line_id) {
+                debug!(
+                    "Occupancy with 'line_id={}' has been removed because line is not used",
+                    occupancy.line_id
+                );
+                return false;
+            }
+            if !stop_area_ids_used.contains(&occupancy.from_stop_area) {
+                debug!(
+                    "Occupancy with 'from_stop_area={}' has been removed because stop area is not used",
+                    occupancy.from_stop_area
+                );
+                return false;
+            }
+            if !stop_area_ids_used.contains(&occupancy.to_stop_area){
+                debug!(
+                    "Occupancy with 'to_stop_area={}' has been removed because stop area is not used",
+                    occupancy.to_stop_area
+                );
+                return false;
+            }
+            true
+        });
 
         self.frequencies = dedup_collection(&mut self.frequencies);
         self.transfers = dedup_collection(&mut self.transfers);

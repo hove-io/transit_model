@@ -1900,6 +1900,85 @@ impl AddPrefix for Address {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum OccupancyStatus {
+    Empty,
+    ManySeatsAvailable,
+    FewSeatsAvailable,
+    StandingRoomOnly,
+    CrushedStandingRoomOnly,
+    Full,
+    NotAcceptingPassengers,
+    #[default]
+    NoDataAvailable,
+    NotBoardable,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Occupancy {
+    pub line_id: String,
+    pub from_stop_area: String,
+    pub to_stop_area: String,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub from_date: Date,
+    #[serde(
+        deserialize_with = "de_from_date_string",
+        serialize_with = "ser_from_naive_date"
+    )]
+    pub to_date: Date,
+    pub from_time: Time,
+    pub to_time: Time,
+    #[serde(
+        deserialize_with = "de_opt_bool_from_str",
+        serialize_with = "ser_from_opt_bool"
+    )]
+    pub monday: Option<bool>,
+    #[serde(
+        deserialize_with = "de_opt_bool_from_str",
+        serialize_with = "ser_from_opt_bool"
+    )]
+    pub tuesday: Option<bool>,
+    #[serde(
+        deserialize_with = "de_opt_bool_from_str",
+        serialize_with = "ser_from_opt_bool"
+    )]
+    pub wednesday: Option<bool>,
+    #[serde(
+        deserialize_with = "de_opt_bool_from_str",
+        serialize_with = "ser_from_opt_bool"
+    )]
+    pub thursday: Option<bool>,
+    #[serde(
+        deserialize_with = "de_opt_bool_from_str",
+        serialize_with = "ser_from_opt_bool"
+    )]
+    pub friday: Option<bool>,
+    #[serde(
+        deserialize_with = "de_opt_bool_from_str",
+        serialize_with = "ser_from_opt_bool"
+    )]
+    pub saturday: Option<bool>,
+    #[serde(
+        deserialize_with = "de_opt_bool_from_str",
+        serialize_with = "ser_from_opt_bool"
+    )]
+    pub sunday: Option<bool>,
+    pub occupancy: OccupancyStatus,
+}
+impl_id!(Occupancy, Line, line_id);
+
+impl AddPrefix for Occupancy {
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.line_id = prefix_conf.referential_prefix(self.line_id.as_str());
+        self.from_stop_area = prefix_conf.referential_prefix(self.from_stop_area.as_str());
+        self.to_stop_area = prefix_conf.referential_prefix(self.to_stop_area.as_str());
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

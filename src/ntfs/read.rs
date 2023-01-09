@@ -668,6 +668,53 @@ where
     Ok(())
 }
 
+pub(crate) fn manage_occupancies<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let file = "occupancies.txt";
+    let ntfs_occupancies = read_objects_loose::<_, Occupancy>(file_handler, file, false)?;
+    let mut occupancies = Collection::default();
+    for occupancy in ntfs_occupancies {
+        if collections.lines.get(&occupancy.line_id).is_none() {
+            warn!(
+                "Problem reading 'occupancies.txt': line_id={} not found",
+                &occupancy.line_id
+            );
+            continue;
+        }
+        if collections
+            .stop_areas
+            .get(&occupancy.from_stop_area)
+            .is_none()
+        {
+            warn!(
+                "Problem reading 'occupancies.txt': from_stop_area={} not found",
+                &occupancy.from_stop_area
+            );
+            continue;
+        }
+        if collections
+            .stop_areas
+            .get(&occupancy.to_stop_area)
+            .is_none()
+        {
+            warn!(
+                "Problem reading 'occupancies.txt': to_stop_area={} not found",
+                &occupancy.to_stop_area
+            );
+            continue;
+        }
+        occupancies.push(occupancy);
+    }
+
+    collections.occupancies = occupancies;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
