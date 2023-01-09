@@ -204,6 +204,7 @@ impl AddPrefix for Collections {
         self.grid_exception_dates.prefix(prefix_conf);
         self.grid_periods.prefix(prefix_conf);
         self.grid_rel_calendar_line.prefix(prefix_conf);
+        self.occupancies.prefix(prefix_conf);
         self.stop_time_headsigns =
             add_prefix_on_vehicle_journey_ids(&self.stop_time_headsigns, prefix_conf);
         self.stop_time_ids =

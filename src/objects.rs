@@ -1971,6 +1971,14 @@ pub struct Occupancy {
 }
 impl_id!(Occupancy, Line, line_id);
 
+impl AddPrefix for Occupancy {
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.line_id = prefix_conf.referential_prefix(self.line_id.as_str());
+        self.from_stop_area = prefix_conf.referential_prefix(self.from_stop_area.as_str());
+        self.to_stop_area = prefix_conf.referential_prefix(self.to_stop_area.as_str());
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
