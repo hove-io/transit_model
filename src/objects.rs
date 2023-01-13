@@ -1915,7 +1915,7 @@ pub enum OccupancyStatus {
     NotBoardable,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Occupancy {
     pub line_id: String,
     pub from_stop_area: String,
