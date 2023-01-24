@@ -26,34 +26,33 @@ use tracing_subscriber::{
 use transit_model::{Model, Result};
 
 #[derive(Debug, Parser)]
-#[clap(
+#[command(
     name = "restrict-validity-period",
     about = "Restrict the validity period of a NTFS and purge out-of-date data.",
     rename_all = "kebab-case"
 )]
 struct Opt {
     /// input directory.
-    #[clap(short, long, parse(from_os_str), default_value = ".")]
+    #[arg(short, long, default_value = ".")]
     input: PathBuf,
 
     /// start of the desired validity period [included], e.g. 2019-01-01
-    #[clap(short, long)]
+    #[arg(short, long)]
     start_validity_date: NaiveDate,
 
     /// end of the desired validity period [included], e.g. 2019-01-01
-    #[clap(short, long)]
+    #[arg(short, long)]
     end_validity_date: NaiveDate,
 
     /// output directory
-    #[clap(short, long, parse(from_os_str))]
+    #[arg(short, long)]
     output: PathBuf,
 
     /// current datetime
-    #[clap(
+    #[arg(
         short = 'x',
         long,
-        parse(try_from_str),
-        default_value = &transit_model::CURRENT_DATETIME
+        default_value = &**transit_model::CURRENT_DATETIME
     )]
     current_datetime: DateTime<FixedOffset>,
 }

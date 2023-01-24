@@ -34,52 +34,51 @@ fn get_version() -> &'static str {
 }
 
 #[derive(Debug, Parser)]
-#[clap(name = "gtfs2netexfr", about = "Convert a GTFS to NeTEx France.", version = get_version())]
+#[command(name = "gtfs2netexfr", about = "Convert a GTFS to NeTEx France.", version = get_version())]
 struct Opt {
     /// Input directory.
-    #[clap(short, long, parse(from_os_str), default_value = ".")]
+    #[arg(short, long, default_value = ".")]
     input: PathBuf,
 
     /// Output directory.
-    #[clap(short, long, parse(from_os_str))]
+    #[arg(short, long)]
     output: PathBuf,
 
     /// JSON file containing additional configuration.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
-    #[clap(short, long, parse(from_os_str))]
+    #[arg(short, long)]
     config: Option<PathBuf>,
 
     /// Indicates if the input GTFS contains On-Demand Transport (ODT)
     /// information.
-    #[clap(short = 't', long = "on-demand-transport")]
+    #[arg(short = 't', long = "on-demand-transport")]
     odt: bool,
 
     /// On-Demand Transport GTFS comment
-    #[clap(long = "odt-comment")]
+    #[arg(long = "odt-comment")]
     odt_comment: Option<String>,
 
     /// Name for the participant.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
-    #[clap(short, long)]
+    #[arg(short, long)]
     participant: String,
 
     /// Code for the provider of stops.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
-    #[clap(short, long)]
+    #[arg(short, long)]
     stop_provider: Option<String>,
 
     /// Current datetime.
-    #[clap(
+    #[arg(
         short = 'x',
         long,
-        parse(try_from_str),
-        default_value = &transit_model::CURRENT_DATETIME
+        default_value = &**transit_model::CURRENT_DATETIME
     )]
     current_datetime: DateTime<FixedOffset>,
 }

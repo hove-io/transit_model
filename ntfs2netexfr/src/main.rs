@@ -34,36 +34,35 @@ fn get_version() -> &'static str {
 }
 
 #[derive(Debug, Parser)]
-#[clap(name = "ntfs2netexfr", about = "Convert a NTFS to NeTEx France.", version = get_version())]
+#[command(name = "ntfs2netexfr", about = "Convert a NTFS to NeTEx France.", version = get_version())]
 struct Opt {
     /// Input directory.
-    #[clap(short, long, parse(from_os_str), default_value = ".")]
+    #[arg(short, long, default_value = ".")]
     input: PathBuf,
 
     /// Output directory
-    #[clap(short, long, parse(from_os_str))]
+    #[arg(short, long)]
     output: PathBuf,
 
     /// Name for the participant.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
-    #[clap(short, long)]
+    #[arg(short, long)]
     participant: String,
 
     /// Code for the provider of stops.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/ntfs_to_netex_france_specs.md#input-parameters
-    #[clap(short, long)]
+    #[arg(short, long)]
     stop_provider: Option<String>,
 
     /// Current datetime.
-    #[clap(
+    #[arg(
         short = 'x',
         long,
-        parse(try_from_str),
-        default_value = &transit_model::CURRENT_DATETIME
+        default_value = &**transit_model::CURRENT_DATETIME
     )]
     current_datetime: DateTime<FixedOffset>,
 }

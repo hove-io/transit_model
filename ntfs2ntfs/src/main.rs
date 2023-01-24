@@ -34,36 +34,35 @@ fn get_version() -> &'static str {
 }
 
 #[derive(Debug, Parser)]
-#[clap(name = "ntfs2ntfs", about = "Convert an NTFS to an NTFS.", version = get_version())]
+#[command(name = "ntfs2ntfs", about = "Convert an NTFS to an NTFS.", version = get_version())]
 struct Opt {
     /// Input directory.
-    #[clap(short = 'i', long = "input", parse(from_os_str), default_value = ".")]
+    #[arg(short = 'i', long = "input", default_value = ".")]
     input: PathBuf,
 
     /// Output directory.
-    #[clap(short = 'o', long = "output", parse(from_os_str))]
+    #[arg(short = 'o', long = "output")]
     output: Option<PathBuf>,
 
     /// Current datetime.
-    #[clap(
+    #[arg(
         short = 'x',
         long,
-        parse(try_from_str),
-        default_value = &transit_model::CURRENT_DATETIME
+        default_value = &**transit_model::CURRENT_DATETIME
     )]
     current_datetime: DateTime<FixedOffset>,
 
     /// The maximum distance in meters to compute the tranfer.
-    #[clap(long, short = 'd', default_value = transit_model::TRANSFER_MAX_DISTANCE)]
+    #[arg(long, short = 'd', default_value = transit_model::TRANSFER_MAX_DISTANCE)]
     max_distance: f64,
 
     /// The walking speed in meters per second. You may want to divide your
     /// initial speed by sqrt(2) to simulate Manhattan distances.
-    #[clap(long, short = 's', default_value = transit_model::TRANSFER_WALKING_SPEED)]
+    #[arg(long, short = 's', default_value = transit_model::TRANSFER_WALKING_SPEED)]
     walking_speed: f64,
 
     /// Waiting time at stop in seconds.
-    #[clap(long, short = 't', default_value = transit_model::TRANSFER_WAITING_TIME)]
+    #[arg(long, short = 't', default_value = transit_model::TRANSFER_WAITING_TIME)]
     waiting_time: u32,
 }
 

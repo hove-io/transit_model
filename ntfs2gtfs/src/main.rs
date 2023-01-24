@@ -34,21 +34,21 @@ fn get_version() -> &'static str {
 }
 
 #[derive(Debug, Parser)]
-#[clap(name = "ntfs2gtfs", about = "Convert an NTFS to a GTFS.", version = get_version())]
+#[command(name = "ntfs2gtfs", about = "Convert an NTFS to a GTFS.", version = get_version())]
 struct Opt {
     /// Input directory.
-    #[clap(short, long, parse(from_os_str), default_value = ".")]
+    #[arg(short, long, default_value = ".")]
     input: PathBuf,
 
     /// Output directory.
-    #[clap(short, long, parse(from_os_str))]
+    #[arg(short, long)]
     output: PathBuf,
 
     /// Add the commercial mode at the beginning of the route short name.
-    #[clap(short, long)]
+    #[arg(short, long)]
     mode_in_route_short_name: bool,
 
-    #[clap(
+    #[arg(
         long,
         help = "Support a more rich set of route types. \
                 For more information, see \
