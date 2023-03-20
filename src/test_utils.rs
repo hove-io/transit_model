@@ -40,7 +40,6 @@ pub fn get_lines_content<P: AsRef<Path>>(path: P) -> Vec<String> {
     let reader = BufReader::new(file);
     let mut lines_vec: Vec<String> = reader
         .lines()
-        .into_iter()
         .map(|result_line| {
             result_line.unwrap_or_else(|_| panic!("Cannot parse as a line in file {:?}", path))
         })

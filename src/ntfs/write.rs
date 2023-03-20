@@ -218,8 +218,8 @@ struct Perimeter<'p> {
     excluded_lines: Vec<&'p str>,
 }
 
-fn extract_perimeter_for_ticket_use<'id, 'p>(
-    ticket_use_id: &'id str,
+fn extract_perimeter_for_ticket_use<'p>(
+    ticket_use_id: &str,
     ticket_use_perimeters: &'p Collection<TicketUsePerimeter>,
 ) -> Result<Perimeter<'p>> {
     let mut included_networks = Vec::new();
