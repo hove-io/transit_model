@@ -619,8 +619,8 @@ fn generate_stop_comment(stop: &Stop) -> Option<objects::Comment> {
     })
 }
 
-fn insert_comment<'c, T: typed_index_collection::Id<T> + objects::CommentLinks>(
-    collection: &'c mut CollectionWithId<T>,
+fn insert_comment<T: typed_index_collection::Id<T> + objects::CommentLinks>(
+    collection: &mut CollectionWithId<T>,
     comments: &mut CollectionWithId<objects::Comment>,
     prefix: &str,
     gtfs_route: &Route,
