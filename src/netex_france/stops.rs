@@ -501,7 +501,7 @@ impl<'a> StopExporter<'a> {
             Funicular => "railStation",
             Cableway => "liftStation",
             Coach => "coachStation",
-            Bus => "busStation",
+            Bus => "onstreetBus",
         };
         Element::builder("StopPlaceType")
             .append(Node::Text(stop_place_type.to_owned()))
