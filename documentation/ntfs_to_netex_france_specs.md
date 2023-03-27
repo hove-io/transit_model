@@ -193,7 +193,7 @@ The `StopPlace/StopPlaceType` is defined from its `StopPlace/TransportMode`.
 | NeTEx Mode | StopPlaceType |
 | ---------- | ------------- |
 | air        | Airport       |
-| bus        | busStation    |
+| bus        | onstreetBus   |
 | cableway   | liftStation   |
 | coach      | coachStation  |
 | funicular  | railStation   |

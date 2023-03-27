@@ -203,7 +203,7 @@
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
-					<StopPlaceType>busStation</StopPlaceType>
+					<StopPlaceType>onstreetBus</StopPlaceType>
 					<quays>
 						<QuayRef ref="FR:Quay:GDLB:">
 						</QuayRef>
@@ -285,7 +285,7 @@
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
-					<StopPlaceType>busStation</StopPlaceType>
+					<StopPlaceType>onstreetBus</StopPlaceType>
 					<quays>
 						<QuayRef ref="FR:Quay:NATR:">
 						</QuayRef>
@@ -343,7 +343,7 @@
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
-					<StopPlaceType>busStation</StopPlaceType>
+					<StopPlaceType>onstreetBus</StopPlaceType>
 					<quays>
 						<QuayRef ref="FR:Quay:CDGR:">
 						</QuayRef>
@@ -397,7 +397,7 @@
 					<ParentSiteRef ref="FR:StopPlace:DEF:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
-					<StopPlaceType>busStation</StopPlaceType>
+					<StopPlaceType>onstreetBus</StopPlaceType>
 					<quays>
 						<QuayRef ref="FR:Quay:DEFR:">
 						</QuayRef>
@@ -449,7 +449,7 @@
 					<ParentSiteRef ref="FR:StopPlace:MTP:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
-					<StopPlaceType>busStation</StopPlaceType>
+					<StopPlaceType>onstreetBus</StopPlaceType>
 					<quays>
 						<QuayRef ref="FR:Quay:MTPB:">
 						</QuayRef>
@@ -463,7 +463,7 @@
 						</Location>
 					</Centroid>
 					<TransportMode>bus</TransportMode>
-					<StopPlaceType>busStation</StopPlaceType>
+					<StopPlaceType>onstreetBus</StopPlaceType>
 				</StopPlace>
 			</members>
 		</GeneralFrame>
