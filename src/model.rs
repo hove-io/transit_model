@@ -203,6 +203,17 @@ impl Collections {
             Collection::new(collection)
         }
 
+        fn clear_partial_eq<T: PartialEq + Clone>(source: &mut Collection<T>) {
+            let mut already_seen = Vec::new();
+            source.retain(|item| match already_seen.contains(item) {
+                true => false,
+                _ => {
+                    already_seen.push(item.clone());
+                    true
+                }
+            })
+        }
+
         self.calendars
             .retain(log_predicate("Calendar", |cal: &Calendar| {
                 !cal.dates.is_empty()
@@ -591,7 +602,7 @@ impl Collections {
         self.grid_exception_dates = dedup_collection(&mut self.grid_exception_dates);
         self.grid_periods = dedup_collection(&mut self.grid_periods);
         self.grid_rel_calendar_line = dedup_collection(&mut self.grid_rel_calendar_line);
-        self.occupancies = dedup_collection(&mut self.occupancies);
+        clear_partial_eq(&mut self.occupancies);
 
         Ok(())
     }

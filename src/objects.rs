@@ -1915,8 +1915,7 @@ pub enum OccupancyStatus {
     NotBoardable,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone, Derivative)]
-#[derivative(PartialEq)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Occupancy {
     pub line_id: String,
     pub from_stop_area: String,
@@ -1968,7 +1967,6 @@ pub struct Occupancy {
         serialize_with = "ser_from_opt_bool"
     )]
     pub sunday: Option<bool>,
-    #[derivative(PartialEq = "ignore")]
     pub occupancy: OccupancyStatus,
 }
 impl_id!(Occupancy, Line, line_id);
@@ -1981,32 +1979,23 @@ impl AddPrefix for Occupancy {
     }
 }
 
-impl Hash for Occupancy {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        (
-            &self.line_id,
-            &self.from_stop_area,
-            &self.to_stop_area,
-            &self.from_date,
-            &self.to_date,
-            &self.from_time,
-            &self.to_time,
-            (
-                &self.monday,
-                &self.tuesday,
-                &self.wednesday,
-                &self.thursday,
-                &self.friday,
-                &self.saturday,
-                &self.sunday,
-            )
-                .hash(state),
-        )
-            .hash(state);
+impl PartialEq for Occupancy {
+    fn eq(&self, other: &Occupancy) -> bool {
+        self.line_id == other.line_id
+            && self.from_stop_area == other.from_stop_area
+            && self.to_stop_area == other.to_stop_area
+            && self.to_date == other.to_date
+            && self.from_time == other.from_time
+            && self.to_time == other.to_time
+            && self.monday == other.monday
+            && self.tuesday == other.tuesday
+            && self.wednesday == other.wednesday
+            && self.thursday == other.thursday
+            && self.friday == other.friday
+            && self.saturday == other.saturday
+            && self.sunday == other.sunday
     }
 }
-
-impl Eq for Occupancy {}
 
 #[cfg(test)]
 mod tests {
