@@ -591,6 +591,7 @@ impl Collections {
         self.grid_exception_dates = dedup_collection(&mut self.grid_exception_dates);
         self.grid_periods = dedup_collection(&mut self.grid_periods);
         self.grid_rel_calendar_line = dedup_collection(&mut self.grid_rel_calendar_line);
+        self.occupancies = dedup_collection(&mut self.occupancies);
 
         Ok(())
     }
