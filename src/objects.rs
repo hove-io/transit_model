@@ -1900,7 +1900,7 @@ impl AddPrefix for Address {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq, Hash)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum OccupancyStatus {
     Empty,
@@ -1915,7 +1915,7 @@ pub enum OccupancyStatus {
     NotBoardable,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct Occupancy {
     pub line_id: String,
     pub from_stop_area: String,
