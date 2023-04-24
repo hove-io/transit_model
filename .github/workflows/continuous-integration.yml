@@ -75,7 +75,7 @@ jobs:
       with:
         submodules: recursive # for tests/NeTEx
     - name: Install xmllint
-      run: apt update && apt install --yes libxml2-utils
+      run: apt update && apt install --yes libxml2-utils/stretch-backports
     - name: Run tests with and without features
       run: make test
     - name: Failure Slack notif
