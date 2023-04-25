@@ -1992,21 +1992,21 @@ mod tests {
             green: 255,
             blue: 255,
         };
-        assert_eq!("FFFFFF", serde_json::to_value(&white).unwrap());
+        assert_eq!("FFFFFF", serde_json::to_value(white).unwrap());
 
         let black = Rgb {
             red: 0,
             green: 0,
             blue: 0,
         };
-        assert_eq!("000000", serde_json::to_value(&black).unwrap());
+        assert_eq!("000000", serde_json::to_value(black).unwrap());
 
         let blue = Rgb {
             red: 0,
             green: 125,
             blue: 255,
         };
-        assert_eq!("007DFF", serde_json::to_value(&blue).unwrap());
+        assert_eq!("007DFF", serde_json::to_value(blue).unwrap());
     }
 
     #[test]
