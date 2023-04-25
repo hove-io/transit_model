@@ -1900,7 +1900,7 @@ impl AddPrefix for Address {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq, Hash)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum OccupancyStatus {
     Empty,
@@ -1915,7 +1915,7 @@ pub enum OccupancyStatus {
     NotBoardable,
 }
 
-#[derive(Debug, Default, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct Occupancy {
     pub line_id: String,
     pub from_stop_area: String,
@@ -1992,21 +1992,21 @@ mod tests {
             green: 255,
             blue: 255,
         };
-        assert_eq!("FFFFFF", serde_json::to_value(&white).unwrap());
+        assert_eq!("FFFFFF", serde_json::to_value(white).unwrap());
 
         let black = Rgb {
             red: 0,
             green: 0,
             blue: 0,
         };
-        assert_eq!("000000", serde_json::to_value(&black).unwrap());
+        assert_eq!("000000", serde_json::to_value(black).unwrap());
 
         let blue = Rgb {
             red: 0,
             green: 125,
             blue: 255,
         };
-        assert_eq!("007DFF", serde_json::to_value(&blue).unwrap());
+        assert_eq!("007DFF", serde_json::to_value(blue).unwrap());
     }
 
     #[test]
