@@ -221,6 +221,10 @@ impl Collections {
         let mut vjs_used = HashSet::<String>::new();
         let mut addresses_used = HashSet::<String>::new();
 
+        for &fallback_mode in enhancers::FALLBACK_PHYSICAL_MODES.iter() {
+            physical_modes_used.insert(fallback_mode.to_string());
+        }
+
         let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
 
         let mut vjs: Vec<VehicleJourney> = self.vehicle_journeys.take();
