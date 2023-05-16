@@ -35,6 +35,16 @@ lazy_static::lazy_static! {
     };
 }
 
+lazy_static::lazy_static! {
+    pub static ref FALLBACK_PHYSICAL_MODES: Vec<&'static str> = {
+        vec![
+            model::BIKE_PHYSICAL_MODE,
+            model::BIKE_SHARING_SERVICE_PHYSICAL_MODE,
+            model::CAR_PHYSICAL_MODE
+        ]
+    };
+}
+
 /// Physical mode should contains CO2 emissions. If the values are not present
 /// in the NTFS, some default values will be used.
 pub fn fill_co2(collections: &mut Collections) {
@@ -46,11 +56,8 @@ pub fn fill_co2(collections: &mut Collections) {
     }
     collections.physical_modes = CollectionWithId::new(physical_modes).unwrap();
     // Add fallback modes
-    for &fallback_mode in &[
-        model::BIKE_PHYSICAL_MODE,
-        model::BIKE_SHARING_SERVICE_PHYSICAL_MODE,
-        model::CAR_PHYSICAL_MODE,
-    ] {
+
+    for &fallback_mode in FALLBACK_PHYSICAL_MODES.iter() {
         if !collections.physical_modes.contains_id(fallback_mode) {
             // Can unwrap because we first check that the ID doesn't exist
             collections
