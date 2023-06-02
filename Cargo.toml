@@ -11,11 +11,13 @@ edition = "2018"
 readme = "README.md"
 exclude = [
 	".gitignore",
-	".mergify.yml",
+	".gitmodules",
 	"CONTRIBUTING.md",
+	"Dockerfile",
+	"Makefile",
 	"README.md",
 	"examples/",
-	"src/documentation/",
+	"documentation/",
 	"tests/",
 ]
 
