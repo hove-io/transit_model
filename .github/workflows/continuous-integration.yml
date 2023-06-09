@@ -10,6 +10,10 @@ on:
 env:
   IMAGE_ID: "navitia/transit_model"
   DOCKER_REGISTRY_URL: docker.io
+  SBX_ECR_REGISTRY: "769000229800.dkr.ecr.eu-west-1.amazonaws.com"
+  PRD_ECR_REGISTRY: "162230498103.dkr.ecr.eu-west-1.amazonaws.com"
+  REGION: eu-west-1
+  ECR_IMAGE: datahub-common-transit_model
 
 jobs:
   rustfmt:
@@ -87,9 +91,43 @@ jobs:
         "pretext": "`transit_model CI` requires your attention",
         "text":" :warning: Tests failed","color":"#D00000",
         "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
+  build-n-push:
+    needs: [rustfmt, clippy, audit, tests]
+    if: github.event_name == 'push'
+    runs-on: [self-hosted, dataeng, sandbox]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          clean: false
+      - name: Build and Push to SBX ECR
+        if:  success()
+        run: |
+          docker build -t ${SBX_ECR_REGISTRY}/${ECR_IMAGE}:latest .
+          aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin  $SBX_ECR_REGISTRY
+          docker push ${SBX_ECR_REGISTRY}/${ECR_IMAGE}:latest
+          docker logout $SBX_ECR_REGISTRY
+      - name: Push release to Prod ECR
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG=${GITHUB_REF_NAME}
+          docker tag ${SBX_ECR_REGISTRY}/${ECR_IMAGE}:latest ${PRD_ECR_REGISTRY}/${ECR_IMAGE}:${TAG}
+          aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin  $PRD_ECR_REGISTRY
+          docker push ${PRD_ECR_REGISTRY}/${ECR_IMAGE}:${TAG}
+          docker logout $PRD_ECR_REGISTRY
+      - name: Failure Slack notif
+        if: failure()
+        run: |
+          curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
+        env:
+          SLACK_TEXT: '{"attachments":[{
+          "pretext": "`transit_model Publish` requires your attention",
+          "text":" :warning: Publish on AWS failed","color":"#D00000",
+          "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
+
   dockerhub:
     name: Dockerhub publication
-    needs: [rustfmt, clippy, audit, tests]
+    needs: [build-n-push]
     if: github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
     steps:
