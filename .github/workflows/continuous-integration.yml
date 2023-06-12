@@ -3,13 +3,11 @@ name: Continuous Integration
 on:
   push:
     branches: [master]
+    tags:
+      - '*'
   pull_request:
-  release:
-    types: [published]
 
 env:
-  IMAGE_ID: "navitia/transit_model"
-  DOCKER_REGISTRY_URL: docker.io
   SBX_ECR_REGISTRY: "769000229800.dkr.ecr.eu-west-1.amazonaws.com"
   PRD_ECR_REGISTRY: "162230498103.dkr.ecr.eu-west-1.amazonaws.com"
   REGION: eu-west-1
@@ -51,8 +49,13 @@ jobs:
           "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
   clippy:
     name: Clippy check
-    runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj8.1.0
+    needs: aws_creds
+    runs-on: [self-hosted, dataeng, sandbox]
+    container: 
+      image: 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj8.1.0
+      credentials:
+        username: AWS
+        password: ${{ needs.aws_creds.outputs.token }}
     steps:
       - uses: actions/checkout@v3
       - name: Lint
@@ -68,8 +71,13 @@ jobs:
           "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
   audit:
     name: Security audit
-    runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj8.1.0
+    needs: aws_creds
+    runs-on: [self-hosted, dataeng, sandbox]
+    container: 
+      image: 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj8.1.0
+      credentials:
+        username: AWS
+        password: ${{ needs.aws_creds.outputs.token }}
     continue-on-error: true
     steps:
       - uses: actions/checkout@v3
@@ -87,8 +95,13 @@ jobs:
           "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
   tests:
     name: Tests
-    runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj8.1.0
+    needs: aws_creds
+    runs-on: [self-hosted, dataeng, sandbox]
+    container: 
+      image: 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj8.1.0
+      credentials:
+        username: AWS
+        password: ${{ needs.aws_creds.outputs.token }}
     steps:
     - name: Checkout repository and submodules
       uses: actions/checkout@v3
@@ -140,63 +153,3 @@ jobs:
           "pretext": "`transit_model Publish` requires your attention",
           "text":" :warning: Publish on AWS failed","color":"#D00000",
           "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
-
-  dockerhub:
-    name: Dockerhub publication
-    needs: [build-n-push]
-    if: github.event_name == 'release' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: AutoModality/action-clean@v1
-      - uses: actions/checkout@v3
-      - name: Build image
-        run: |
-          docker build . --file Dockerfile --tag $IMAGE_ID
-      - name: Tag image
-        if: github.event_name == 'release'
-        run: |
-          VERSION="v$( grep "^version =" Cargo.toml | tr -cd '[:digit:].' )"
-          docker tag $IMAGE_ID $IMAGE_ID:$VERSION
-      - name: Log into registry
-        run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login $DOCKER_REGISTRY_URL --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-      - name: Push image
-        run: |
-          docker image push --all-tags $IMAGE_ID
-      - name: Failure Slack notif
-        if: failure()
-        run: |
-          curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
-        env:
-          SLACK_TEXT: '{"attachments":[{
-          "pretext": "`transit_model Publish` requires your attention",
-          "text":" :warning: Publish failed","color":"#D00000",
-          "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
-  cratesio:
-    name: Crates.io publication
-    needs: [dockerhub]
-    if: github.event_name == 'release'
-    runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest-proj8.1.0
-    steps:
-    - uses: AutoModality/action-clean@v1
-    - uses: actions/checkout@v3
-    - name: Cargo login
-      uses: actions-rs/cargo@v1
-      with:
-        command: login
-        args: -- ${{ secrets.CARGO_TOKEN }}
-    - name: Publish
-      uses: actions-rs/cargo@v1
-      with:
-        command: publish
-        args: --all-features
-    - name: Failure Slack notif
-      if: failure()
-      run: |
-        curl -s -X POST -H "Content-Type: application/json" -d '${{ env.SLACK_TEXT }}' ${{ secrets.SLACK_CORE_TOOLS_TEAM_URL }}
-      env:
-        SLACK_TEXT: '{"attachments":[{
-        "pretext": "`transit_model Publish` requires your attention",
-        "text":" :warning: Publish failed","color":"#D00000",
-        "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
