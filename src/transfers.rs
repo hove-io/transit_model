@@ -75,7 +75,7 @@ fn generate_transfers_from_sp(
                 }
             }
             let sq_distance = approx.sq_distance_to(&sp2.coord);
-            if sq_distance > sq_max_distance {
+            if sq_max_distance == 0. ||  sq_distance > sq_max_distance {
                 continue;
             }
             let transfer_time = (sq_distance.sqrt() / walking_speed) as u32;
