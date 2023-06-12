@@ -16,10 +16,26 @@ env:
   ECR_IMAGE: datahub-common-transit_model
 
 jobs:
+  aws_creds:
+    name: Get ECR Access
+    runs-on: [self-hosted, dataeng, sandbox]
+    outputs:
+      token: ${{ steps.ecr_token.outputs.token }}
+    steps:
+      - id: ecr_token
+        name: Get ECR Token
+        run: |
+          echo token=$(aws ecr get-login-password --region $REGION) >> $GITHUB_OUTPUT 
+
   rustfmt:
     name: Rust fmt check
-    runs-on: ubuntu-latest
-    container: kisiodigital/rust-ci:latest
+    needs: aws_creds
+    runs-on: [self-hosted, dataeng, sandbox]
+    container: 
+      image: 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest
+      credentials:
+        username: AWS
+        password: ${{ needs.aws_creds.outputs.token }}
     steps:
       - uses: actions/checkout@v3
       - name: Format
