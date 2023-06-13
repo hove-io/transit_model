@@ -122,12 +122,12 @@ jobs:
         "fields":[{"title":"Action URL","value": "https://github.com${{ github.action_path }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}]}]}'
   build-n-push:
     needs: [rustfmt, clippy, audit, tests]
-    if: github.event_name == 'push'
+    # if: github.event_name == 'push'
     runs-on: [self-hosted, dataeng, sandbox]
     steps:
       - name: CleanUp
         run: |
-          sudo chown -R $USER transit_model 
+          sudo chown -R $USER /opt/actions-runner/_work/transit_model 
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
