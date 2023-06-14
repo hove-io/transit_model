@@ -1,4 +1,4 @@
-FROM 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-proj-ci:latest-proj8.1.0 as builder
+FROM 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj8.1.0 as builder
 WORKDIR /usr/src/app
 COPY . ./
 RUN git describe --tags --always && git status
