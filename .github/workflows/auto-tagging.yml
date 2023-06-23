@@ -1,0 +1,30 @@
+name: Auto-tagging major/minor version
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  tag-major-minor:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fetch existing tags
+        run: git fetch --tags
+      - name: Generate tag
+        run: |
+          export MAJOR_VERSION=$( echo "${GITHUB_REF_NAME}" | cut --delimiter '.' --fields=1 )
+          export MINOR_VERSION=$( echo "${GITHUB_REF_NAME}" | cut --delimiter '.' --fields=2 )
+
+          export MAJOR_TAG="${MAJOR_VERSION}"
+          echo "Creating tag '${MAJOR_TAG}' from '${GITHUB_REF_NAME}'"
+          git tag --force ${MAJOR_TAG} ${GITHUB_REF_NAME}
+          echo "Pushing new tag '${MAJOR_TAG}'"
+
+          export MINOR_TAG="${MAJOR_VERSION}.${MINOR_VERSION}"
+          echo "Creating tag '${MINOR_TAG}' from '${GITHUB_REF_NAME}'"
+          git tag --force ${MINOR_TAG} ${GITHUB_REF_NAME}
+          echo "Pushing new tag '${MINOR_TAG}'"
+
+          git push origin --force ${MAJOR_TAG} ${MINOR_TAG}
