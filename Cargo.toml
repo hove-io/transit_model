@@ -1,7 +1,7 @@
 [package]
 authors = ["Hove <core@hove.com>", "Guillaume Pinot <texitoi@texitoi.eu>"]
 name = "transit_model"
-version = "0.56.1"
+version = "0.57.0"
 license = "AGPL-3.0-only"
 description = "Transit data management"
 repository = "https://github.com/hove-io/transit_model"
@@ -50,20 +50,20 @@ md5 = "0.7"
 # do not upgrade to 'minidom:0.13.0' (too strict on namespaces and no XML comment support)
 # https://github.com/hove-io/transit_model/pull/746
 minidom = "0.12"
-minidom_ext = "1"
-minidom_writer = "1"
+minidom_ext = { git = "https://github.com/hove-io/minidom_ext", tag="v1"}
+minidom_writer = { git = "https://github.com/hove-io/minidom_writer", tag = "v1"}
 num-traits = "0.2"
 pretty_assertions = "1"
 proj = { version = "0.25", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
-relational_types = "2"
+relational_types = { git = "https://github.com/hove-io/relational_types", tag = "v2"}
 rust_decimal = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-skip_error = { version = "3.1", features = ["tracing"] }
+skip_error = { git = "https://github.com/hove-io/skip_error", tag = "v3", features = ["tracing"]}
 tempfile = "3"
 thiserror = "1"
 tracing = { version = "0.1", features = ["log"] }
-typed_index_collection = "2"
+typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2"}
 walkdir = "2"
 wkt = "0.10"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
