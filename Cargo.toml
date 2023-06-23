@@ -51,7 +51,7 @@ md5 = "0.7"
 # https://github.com/hove-io/transit_model/pull/746
 minidom = "0.12"
 minidom_ext = { git = "https://github.com/hove-io/minidom_ext", tag="v1"}
-minidom_writer = { git = "https://github.com/hove-io/minidom_writer", tag = "v1"}
+minidom_writer = { git = "https://github.com/hove-io/minidom_writer", tag = "v1.1"}
 num-traits = "0.2"
 pretty_assertions = "1"
 proj = { version = "0.25", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
