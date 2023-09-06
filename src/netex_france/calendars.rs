@@ -106,7 +106,8 @@ impl<'a> CalendarExporter<'a> {
 
     fn generate_from_date(date: Date) -> Element {
         let date_string =
-            DateTime::<Utc>::from_utc(date.and_hms_opt(0, 0, 0).unwrap(), Utc).to_rfc3339();
+            DateTime::<Utc>::from_naive_utc_and_offset(date.and_hms_opt(0, 0, 0).unwrap(), Utc)
+                .to_rfc3339();
         Element::builder("FromDate")
             .append(Node::Text(date_string))
             .build()

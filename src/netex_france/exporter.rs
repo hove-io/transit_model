@@ -374,8 +374,11 @@ impl Exporter<'_> {
 
     fn create_valid_between(&self) -> Result<Element> {
         let format_date = |date: Date, hour, minute, second| -> String {
-            DateTime::<Utc>::from_utc(date.and_hms_opt(hour, minute, second).unwrap(), Utc)
-                .to_rfc3339()
+            DateTime::<Utc>::from_naive_utc_and_offset(
+                date.and_hms_opt(hour, minute, second).unwrap(),
+                Utc,
+            )
+            .to_rfc3339()
         };
         let (start_date, end_date) = self.model.calculate_validity_period()?;
         let from_date = Element::builder("FromDate")
