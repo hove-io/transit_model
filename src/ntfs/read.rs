@@ -438,7 +438,6 @@ where
             "comment.txt: comment_id={} not found",
             comment_link.comment_id
         );
-    } else {
     }
     collection
         .index_mut(idx)
