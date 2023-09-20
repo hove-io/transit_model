@@ -22,7 +22,7 @@ use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
-use skip_error::skip_error_and_warn;
+use skip_error::{skip_error_and_warn, SkipError as _};
 use std::{
     cmp::{self, Ordering, Reverse},
     collections::{hash_map::DefaultHasher, BTreeMap, HashMap, HashSet},
@@ -631,6 +631,55 @@ impl Collections {
                 })
         }
 
+        // Create a map to store all arrival and departure times per frequency vehicle.
+        // This kind of vehicle has several departure and arrival times;
+        // for its multiple possible frequencies (ex 08:00->12:00 and 14:00->19:00)
+        // and for each of them, at each iteration (ex for a 40mn trip, 08:00->08:40, 08:10->08:50,...)
+        fn get_departures_arrivals_by_frequenced_vj(
+            c: &Collections,
+        ) -> HashMap<Idx<VehicleJourney>, Vec<(Time, Time)>> {
+            c.frequencies
+                .values()
+                .filter_map(|frequency| {
+                    if let Some(vj_idx) = c.vehicle_journeys.get_idx(&frequency.vehicle_journey_id)
+                    {
+                        return Some((vj_idx, frequency));
+                    }
+                    None
+                })
+                .filter_map(|(vj_idx, frequency)| {
+                    if let (Some(first_departure), Some(last_arrival)) = (
+                        c.vehicle_journeys[vj_idx]
+                            .stop_times
+                            .first()
+                            .map(|st| st.departure_time),
+                        c.vehicle_journeys[vj_idx]
+                            .stop_times
+                            .last()
+                            .map(|st| st.arrival_time),
+                    ) {
+                        let trip_duration = last_arrival - first_departure;
+                        return Some((vj_idx, frequency, trip_duration));
+                    }
+                    None
+                })
+                .fold(
+                    HashMap::new(),
+                    |mut departures_arrivals, (vj_idx, frequency, trip_duration)| {
+                        let mut start_time = frequency.start_time;
+                        while start_time <= frequency.end_time {
+                            let end_time = start_time + trip_duration;
+                            departures_arrivals
+                                .entry(vj_idx)
+                                .or_insert_with(Vec::new)
+                                .push((start_time % SECONDS_PER_DAY, end_time % SECONDS_PER_DAY));
+                            start_time = start_time + Time::new(0, 0, frequency.headway_secs);
+                        }
+                        departures_arrivals
+                    },
+                )
+        }
+
         // Creates a map of (maximum) 24 elements, with possible indexes ranging from 0 to 23.
         // 2 timetables are created, one to store departures and the other for arrivals.
         // Indeed, for a line/vehicle journey, the distance between two consecutive stops can take more than an hour.
@@ -643,22 +692,11 @@ impl Collections {
         // opening_timetable will be so {8: Time(29400), 9: Time(33000), 10: Time(36600)}.
         // Departures 8:40am, 9:40am and 10:40am are omitted (because superior in their respective slots).
         fn fill_timetables(
-            vj: &VehicleJourney,
             opening_timetable: &mut TimeTable,
             closing_timetable: &mut TimeTable,
+            vj_departure_time: Time,
+            vj_arrival_time: Time,
         ) -> Result<()> {
-            let vj_departure_time = vj
-                .stop_times
-                .first()
-                .map(|st| st.departure_time)
-                .map(|departure_time| departure_time % SECONDS_PER_DAY)
-                .ok_or_else(|| anyhow!("undefined departure time for vj {}", vj.id))?;
-            let vj_arrival_time = vj
-                .stop_times
-                .last()
-                .map(|st| st.arrival_time)
-                .map(|arrival_time| arrival_time % SECONDS_PER_DAY)
-                .ok_or_else(|| anyhow!("undefined arrival time for vj {}", vj.id))?;
             let departure_hour = u8::try_from(vj_departure_time.hours())?;
             let arrival_hour = u8::try_from(vj_arrival_time.hours())?;
             opening_timetable
@@ -730,6 +768,22 @@ impl Collections {
             })
         }
 
+        fn get_vj_departure_arrival(vj: &VehicleJourney) -> Result<(Time, Time)> {
+            let vj_departure_time = vj
+                .stop_times
+                .first()
+                .map(|st| st.departure_time)
+                .map(|departure_time| departure_time % SECONDS_PER_DAY)
+                .ok_or_else(|| anyhow!("undefined departure time for vj {}", vj.id))?;
+            let vj_arrival_time = vj
+                .stop_times
+                .last()
+                .map(|st| st.arrival_time)
+                .map(|arrival_time| arrival_time % SECONDS_PER_DAY)
+                .ok_or_else(|| anyhow!("undefined arrival time for vj {}", vj.id))?;
+            Ok((vj_departure_time, vj_arrival_time))
+        }
+
         // Check if there is a need to calculate the opening/closing times.
         // Generally it should be all or nothing (absent from a Gtfs, normally present if it's a recent Ntfs)
         // In all cases a 2nd check is made below
@@ -739,6 +793,8 @@ impl Collections {
 
         if required_operation {
             let vjs_by_line = get_vjs_by_line(self);
+            let departures_arrivals_by_frequenced_vj =
+                get_departures_arrivals_by_frequenced_vj(self);
             let mut lines = self.lines.take();
             for line in &mut lines {
                 // 2nd check (see above) to avoid overwriting line opening/closing
@@ -747,11 +803,27 @@ impl Collections {
                     let mut closing_timetable = TimeTable::new();
                     if let Some(vjs_idx) = vjs_by_line.get(&line.id) {
                         for vj_idx in vjs_idx {
-                            skip_error_and_warn!(fill_timetables(
-                                &self.vehicle_journeys[*vj_idx],
-                                &mut opening_timetable,
-                                &mut closing_timetable,
-                            ));
+                            let mut departures_arrivals = skip_error_and_warn!(
+                                get_vj_departure_arrival(&self.vehicle_journeys[*vj_idx])
+                                    .map(|(departure, arrival)| vec![(departure, arrival)])
+                            );
+                            if let Some(frequency_departures_arrivals) =
+                                departures_arrivals_by_frequenced_vj.get(vj_idx)
+                            {
+                                departures_arrivals = frequency_departures_arrivals.clone();
+                            }
+                            departures_arrivals
+                                .iter()
+                                .map(|(vj_departure_time, vj_arrival_time)| {
+                                    fill_timetables(
+                                        &mut opening_timetable,
+                                        &mut closing_timetable,
+                                        *vj_departure_time,
+                                        *vj_arrival_time,
+                                    )
+                                })
+                                .skip_error_and_warn()
+                                .for_each(|_| {});
                         }
                     }
                     line.opening_time = find_main_hole_boundaries(&opening_timetable)
