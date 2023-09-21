@@ -2318,4 +2318,181 @@ mod tests {
         };
         assert!(!coord.is_valid());
     }
+
+    mod update_opening_closing {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn collections() -> Collections {
+            Collections {
+                lines: CollectionWithId::new(vec![Line {
+                    id: String::from("L14"),
+                    ..Default::default()
+                }])
+                .unwrap(),
+                routes: CollectionWithId::new(vec![Route {
+                    id: String::from("R14"),
+                    line_id: String::from("L14"),
+                    ..Default::default()
+                }])
+                .unwrap(),
+                stop_areas: CollectionWithId::new(vec![
+                    StopArea {
+                        id: String::from("SA1"),
+                        ..Default::default()
+                    },
+                    StopArea {
+                        id: String::from("SA2"),
+                        ..Default::default()
+                    },
+                ])
+                .unwrap(),
+                stop_points: CollectionWithId::new(vec![
+                    StopPoint {
+                        id: String::from("SP1"),
+                        stop_area_id: String::from("SA1"),
+                        ..Default::default()
+                    },
+                    StopPoint {
+                        id: String::from("SP2"),
+                        stop_area_id: String::from("SA2"),
+                        ..Default::default()
+                    },
+                ])
+                .unwrap(),
+                ..Default::default()
+            }
+        }
+
+        fn stoptime(
+            stop_points: &CollectionWithId<StopPoint>,
+            stop_point_id: &str,
+            arrival_time: Time,
+            departure_time: Time,
+        ) -> StopTime {
+            StopTime {
+                stop_point_idx: stop_points.get_idx(stop_point_id).unwrap(),
+                sequence: 1,
+                arrival_time,
+                departure_time,
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 0,
+                local_zone_id: None,
+                precision: None,
+            }
+        }
+
+        #[test]
+        fn multiple_vehicles() {
+            let mut collections = collections();
+            let sp = &collections.stop_points;
+            collections.vehicle_journeys = CollectionWithId::new(vec![
+                VehicleJourney {
+                    id: String::from("VJ14-01"),
+                    route_id: String::from("R14"),
+                    stop_times: vec![
+                        stoptime(sp, "SP1", Time::new(8, 0, 0), Time::new(8, 5, 0)),
+                        stoptime(sp, "SP2", Time::new(9, 5, 0), Time::new(9, 10, 0)),
+                    ],
+                    ..Default::default()
+                },
+                VehicleJourney {
+                    id: String::from("VJ14-02"),
+                    route_id: String::from("R14"),
+                    stop_times: vec![
+                        stoptime(sp, "SP1", Time::new(19, 0, 0), Time::new(19, 5, 0)),
+                        stoptime(sp, "SP2", Time::new(20, 5, 0), Time::new(20, 10, 0)),
+                    ],
+                    ..Default::default()
+                },
+            ])
+            .unwrap();
+            collections.enhance_line_opening_time();
+            let line = collections.lines.get("L14").unwrap();
+            assert_eq!(Some(Time::new(8, 5, 0)), line.opening_time);
+            assert_eq!(Some(Time::new(20, 5, 0)), line.closing_time);
+        }
+
+        #[test]
+        fn midnight_passing() {
+            let mut collections = collections();
+            let sp = &collections.stop_points;
+            collections.vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+                id: String::from("VJ14-01"),
+                route_id: String::from("R14"),
+                stop_times: vec![
+                    stoptime(sp, "SP1", Time::new(23, 40, 0), Time::new(23, 45, 0)),
+                    stoptime(sp, "SP2", Time::new(25, 30, 0), Time::new(25, 35, 0)),
+                ],
+                ..Default::default()
+            }])
+            .unwrap();
+            collections.enhance_line_opening_time();
+            let line = collections.lines.get("L14").unwrap();
+            assert_eq!(Some(Time::new(23, 45, 0)), line.opening_time);
+            assert_eq!(Some(Time::new(25, 30, 0)), line.closing_time);
+        }
+
+        #[test]
+        fn multiple_frequencies_on_vehicle() {
+            let mut collections = collections();
+            let sp = &collections.stop_points;
+            collections.vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+                id: String::from("VJ14-01"),
+                route_id: String::from("R14"),
+                stop_times: vec![
+                    stoptime(sp, "SP1", Time::new(0, 0, 0), Time::new(0, 5, 0)),
+                    stoptime(sp, "SP2", Time::new(1, 5, 0), Time::new(1, 10, 0)),
+                ],
+                ..Default::default()
+            }])
+            .unwrap();
+            collections.frequencies = Collection::new(vec![
+                Frequency {
+                    vehicle_journey_id: String::from("VJ14-01"),
+                    start_time: Time::new(8, 15, 0),
+                    end_time: Time::new(12, 30, 0),
+                    headway_secs: 900,
+                },
+                Frequency {
+                    vehicle_journey_id: String::from("VJ14-01"),
+                    start_time: Time::new(14, 15, 0),
+                    end_time: Time::new(19, 30, 0),
+                    headway_secs: 900,
+                },
+            ]);
+            collections.enhance_line_opening_time();
+            let line = collections.lines.get("L14").unwrap();
+            assert_eq!(Some(Time::new(8, 15, 0)), line.opening_time);
+            assert_eq!(Some(Time::new(20, 30, 0)), line.closing_time); // 19:30 + 1h trip duration
+        }
+
+        #[test]
+        fn midnight_passing_frequency() {
+            let mut collections = collections();
+            let sp = &collections.stop_points;
+            collections.vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+                id: String::from("VJ14-01"),
+                route_id: String::from("R14"),
+                stop_times: vec![
+                    stoptime(sp, "SP1", Time::new(0, 0, 0), Time::new(0, 5, 0)),
+                    stoptime(sp, "SP2", Time::new(1, 5, 0), Time::new(1, 10, 0)),
+                ],
+                ..Default::default()
+            }])
+            .unwrap();
+            collections.frequencies = Collection::new(vec![Frequency {
+                vehicle_journey_id: String::from("VJ14-01"),
+                start_time: Time::new(8, 15, 0),
+                end_time: Time::new(25, 30, 0),
+                headway_secs: 900,
+            }]);
+            collections.enhance_line_opening_time();
+            let line = collections.lines.get("L14").unwrap();
+            assert_eq!(Some(Time::new(8, 15, 0)), line.opening_time);
+            assert_eq!(Some(Time::new(26, 30, 0)), line.closing_time); // 25:30 + 1h trip duration
+        }
+    }
 }
