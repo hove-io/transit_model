@@ -641,21 +641,17 @@ impl Collections {
             c.frequencies
                 .values()
                 .filter_map(|frequency| {
-                    if let Some(vj_idx) = c.vehicle_journeys.get_idx(&frequency.vehicle_journey_id)
-                    {
-                        return Some((vj_idx, frequency));
-                    }
-                    None
+                    c.vehicle_journeys
+                        .get_idx(&frequency.vehicle_journey_id)
+                        .map(|vj_idx| (vj_idx, frequency))
                 })
                 .filter_map(|(vj_idx, frequency)| {
-                    if let (Some(first_departure), Some(last_arrival)) = (
-                        c.vehicle_journeys[vj_idx].departure_time(),
-                        c.vehicle_journeys[vj_idx].arrival_time(),
-                    ) {
-                        let trip_duration = last_arrival - first_departure;
-                        return Some((vj_idx, frequency, trip_duration));
-                    }
-                    None
+                    c.vehicle_journeys[vj_idx]
+                        .departure_time()
+                        .zip(c.vehicle_journeys[vj_idx].arrival_time())
+                        .map(|(first_departure, last_arrival)| {
+                            (vj_idx, frequency, last_arrival - first_departure)
+                        })
                 })
                 .fold(
                     HashMap::new(),
@@ -792,29 +788,37 @@ impl Collections {
                     let mut opening_timetable = TimeTable::new();
                     let mut closing_timetable = TimeTable::new();
                     if let Some(vjs_idx) = vjs_by_line.get(&line.id) {
-                        for vj_idx in vjs_idx {
-                            let mut departures_arrivals = skip_error_and_warn!(
-                                get_vj_departure_arrival(&self.vehicle_journeys[*vj_idx])
-                                    .map(|(departure, arrival)| vec![(departure, arrival)])
-                            );
-                            if let Some(frequency_departures_arrivals) =
-                                departures_arrivals_by_frequenced_vj.get(vj_idx)
-                            {
-                                departures_arrivals = frequency_departures_arrivals.clone();
-                            }
-                            departures_arrivals
-                                .iter()
-                                .map(|(vj_departure_time, vj_arrival_time)| {
-                                    fill_timetables(
-                                        &mut opening_timetable,
-                                        &mut closing_timetable,
-                                        *vj_departure_time,
-                                        *vj_arrival_time,
-                                    )
-                                })
-                                .skip_error_and_warn()
-                                .for_each(|_| {});
-                        }
+                        vjs_idx
+                            .into_iter()
+                            .flat_map(|vj_idx| {
+                                departures_arrivals_by_frequenced_vj
+                                    .get(vj_idx)
+                                    .cloned()
+                                    .or_else(|| {
+                                        get_vj_departure_arrival(&self.vehicle_journeys[*vj_idx])
+                                            .map_or_else(
+                                                |e| {
+                                                    warn!("{e}");
+                                                    None
+                                                },
+                                                |(departure, arrival)| {
+                                                    Some(vec![(departure, arrival)])
+                                                },
+                                            )
+                                    })
+                            })
+                            .flatten()
+                            .for_each(|(vj_departure_time, vj_arrival_time)| {
+                                let result = fill_timetables(
+                                    &mut opening_timetable,
+                                    &mut closing_timetable,
+                                    vj_departure_time,
+                                    vj_arrival_time,
+                                );
+                                if let Err(e) = result {
+                                    warn!("{e}");
+                                }
+                            });
                     }
                     line.opening_time = find_main_hole_boundaries(&opening_timetable)
                         .map(|mhb| mhb.1) // gets the last index of the main hole
