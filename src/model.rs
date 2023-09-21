@@ -22,7 +22,7 @@ use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
-use skip_error::{skip_error_and_warn, SkipError as _};
+use skip_error::skip_error_and_warn;
 use std::{
     cmp::{self, Ordering, Reverse},
     collections::{hash_map::DefaultHasher, BTreeMap, HashMap, HashSet},
