@@ -674,10 +674,10 @@ impl GetObjectType for VehicleJourney {
 }
 
 impl VehicleJourney {
-    pub fn departure_time(&self) -> Option<Time> {
+    pub fn first_departure_time(&self) -> Option<Time> {
         self.stop_times.first().map(|st| st.departure_time)
     }
-    pub fn arrival_time(&self) -> Option<Time> {
+    pub fn last_arrival_time(&self) -> Option<Time> {
         self.stop_times.last().map(|st| st.arrival_time)
     }
 }
