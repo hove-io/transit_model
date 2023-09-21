@@ -649,14 +649,8 @@ impl Collections {
                 })
                 .filter_map(|(vj_idx, frequency)| {
                     if let (Some(first_departure), Some(last_arrival)) = (
-                        c.vehicle_journeys[vj_idx]
-                            .stop_times
-                            .first()
-                            .map(|st| st.departure_time),
-                        c.vehicle_journeys[vj_idx]
-                            .stop_times
-                            .last()
-                            .map(|st| st.arrival_time),
+                        c.vehicle_journeys[vj_idx].departure_time(),
+                        c.vehicle_journeys[vj_idx].arrival_time(),
                     ) {
                         let trip_duration = last_arrival - first_departure;
                         return Some((vj_idx, frequency, trip_duration));
@@ -770,15 +764,11 @@ impl Collections {
 
         fn get_vj_departure_arrival(vj: &VehicleJourney) -> Result<(Time, Time)> {
             let vj_departure_time = vj
-                .stop_times
-                .first()
-                .map(|st| st.departure_time)
+                .departure_time()
                 .map(|departure_time| departure_time % SECONDS_PER_DAY)
                 .ok_or_else(|| anyhow!("undefined departure time for vj {}", vj.id))?;
             let vj_arrival_time = vj
-                .stop_times
-                .last()
-                .map(|st| st.arrival_time)
+                .arrival_time()
                 .map(|arrival_time| arrival_time % SECONDS_PER_DAY)
                 .ok_or_else(|| anyhow!("undefined arrival time for vj {}", vj.id))?;
             Ok((vj_departure_time, vj_arrival_time))

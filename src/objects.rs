@@ -673,6 +673,15 @@ impl GetObjectType for VehicleJourney {
     }
 }
 
+impl VehicleJourney {
+    pub fn departure_time(&self) -> Option<Time> {
+        self.stop_times.first().map(|st| st.departure_time)
+    }
+    pub fn arrival_time(&self) -> Option<Time> {
+        self.stop_times.last().map(|st| st.arrival_time)
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum StopTimeError {
     #[error("duplicate stop_sequence '{duplicated_sequence}' for the trip '{vj_id}'")]
