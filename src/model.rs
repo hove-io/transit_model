@@ -788,37 +788,34 @@ impl Collections {
                     let mut opening_timetable = TimeTable::new();
                     let mut closing_timetable = TimeTable::new();
                     if let Some(vjs_idx) = vjs_by_line.get(&line.id) {
-                        vjs_idx
-                            .into_iter()
-                            .flat_map(|vj_idx| {
-                                departures_arrivals_by_frequenced_vj
-                                    .get(vj_idx)
-                                    .cloned()
-                                    .or_else(|| {
-                                        get_vj_departure_arrival(&self.vehicle_journeys[*vj_idx])
-                                            .map_or_else(
-                                                |e| {
-                                                    warn!("{e}");
-                                                    None
-                                                },
-                                                |(departure, arrival)| {
-                                                    Some(vec![(departure, arrival)])
-                                                },
-                                            )
-                                    })
-                            })
-                            .flatten()
-                            .for_each(|(vj_departure_time, vj_arrival_time)| {
-                                let result = fill_timetables(
-                                    &mut opening_timetable,
-                                    &mut closing_timetable,
-                                    vj_departure_time,
-                                    vj_arrival_time,
-                                );
-                                if let Err(e) = result {
-                                    warn!("{e}");
-                                }
-                            });
+                        for vj_idx in vjs_idx {
+                            departures_arrivals_by_frequenced_vj
+                                .get(vj_idx)
+                                .cloned()
+                                .or_else(|| {
+                                    get_vj_departure_arrival(&self.vehicle_journeys[*vj_idx])
+                                        .map_or_else(
+                                            |e| {
+                                                warn!("{e}");
+                                                None
+                                            },
+                                            |(departure, arrival)| Some(vec![(departure, arrival)]),
+                                        )
+                                })
+                                .into_iter()
+                                .flatten()
+                                .for_each(|(vj_departure_time, vj_arrival_time)| {
+                                    let result = fill_timetables(
+                                        &mut opening_timetable,
+                                        &mut closing_timetable,
+                                        vj_departure_time,
+                                        vj_arrival_time,
+                                    );
+                                    if let Err(e) = result {
+                                        warn!("{e}");
+                                    }
+                                });
+                        }
                     }
                     line.opening_time = find_main_hole_boundaries(&opening_timetable)
                         .map(|mhb| mhb.1) // gets the last index of the main hole
