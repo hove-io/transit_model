@@ -631,6 +631,45 @@ impl Collections {
                 })
         }
 
+        // Create a map to store all arrival and departure times per frequency vehicle.
+        // This kind of vehicle has several departure and arrival times;
+        // for its multiple possible frequencies (ex 08:00->12:00 and 14:00->19:00)
+        // and for each of them, at each iteration (ex for a 40mn trip, 08:00->08:40, 08:10->08:50,...)
+        fn get_departures_arrivals_by_frequenced_vj(
+            c: &Collections,
+        ) -> HashMap<Idx<VehicleJourney>, Vec<(Time, Time)>> {
+            c.frequencies
+                .values()
+                .filter_map(|frequency| {
+                    c.vehicle_journeys
+                        .get_idx(&frequency.vehicle_journey_id)
+                        .map(|vj_idx| (vj_idx, frequency))
+                })
+                .filter_map(|(vj_idx, frequency)| {
+                    c.vehicle_journeys[vj_idx]
+                        .first_departure_time()
+                        .zip(c.vehicle_journeys[vj_idx].last_arrival_time())
+                        .map(|(first_departure, last_arrival)| {
+                            (vj_idx, frequency, last_arrival - first_departure)
+                        })
+                })
+                .fold(
+                    HashMap::new(),
+                    |mut departures_arrivals, (vj_idx, frequency, trip_duration)| {
+                        let mut start_time = frequency.start_time;
+                        while start_time <= frequency.end_time {
+                            let end_time = start_time + trip_duration;
+                            departures_arrivals
+                                .entry(vj_idx)
+                                .or_insert_with(Vec::new)
+                                .push((start_time % SECONDS_PER_DAY, end_time % SECONDS_PER_DAY));
+                            start_time = start_time + Time::new(0, 0, frequency.headway_secs);
+                        }
+                        departures_arrivals
+                    },
+                )
+        }
+
         // Creates a map of (maximum) 24 elements, with possible indexes ranging from 0 to 23.
         // 2 timetables are created, one to store departures and the other for arrivals.
         // Indeed, for a line/vehicle journey, the distance between two consecutive stops can take more than an hour.
@@ -643,22 +682,11 @@ impl Collections {
         // opening_timetable will be so {8: Time(29400), 9: Time(33000), 10: Time(36600)}.
         // Departures 8:40am, 9:40am and 10:40am are omitted (because superior in their respective slots).
         fn fill_timetables(
-            vj: &VehicleJourney,
             opening_timetable: &mut TimeTable,
             closing_timetable: &mut TimeTable,
+            vj_departure_time: Time,
+            vj_arrival_time: Time,
         ) -> Result<()> {
-            let vj_departure_time = vj
-                .stop_times
-                .first()
-                .map(|st| st.departure_time)
-                .map(|departure_time| departure_time % SECONDS_PER_DAY)
-                .ok_or_else(|| anyhow!("undefined departure time for vj {}", vj.id))?;
-            let vj_arrival_time = vj
-                .stop_times
-                .last()
-                .map(|st| st.arrival_time)
-                .map(|arrival_time| arrival_time % SECONDS_PER_DAY)
-                .ok_or_else(|| anyhow!("undefined arrival time for vj {}", vj.id))?;
             let departure_hour = u8::try_from(vj_departure_time.hours())?;
             let arrival_hour = u8::try_from(vj_arrival_time.hours())?;
             opening_timetable
@@ -730,6 +758,18 @@ impl Collections {
             })
         }
 
+        fn get_vj_departure_arrival(vj: &VehicleJourney) -> Result<(Time, Time)> {
+            let vj_departure_time = vj
+                .first_departure_time()
+                .map(|departure_time| departure_time % SECONDS_PER_DAY)
+                .ok_or_else(|| anyhow!("undefined departure time for vj {}", vj.id))?;
+            let vj_arrival_time = vj
+                .last_arrival_time()
+                .map(|arrival_time| arrival_time % SECONDS_PER_DAY)
+                .ok_or_else(|| anyhow!("undefined arrival time for vj {}", vj.id))?;
+            Ok((vj_departure_time, vj_arrival_time))
+        }
+
         // Check if there is a need to calculate the opening/closing times.
         // Generally it should be all or nothing (absent from a Gtfs, normally present if it's a recent Ntfs)
         // In all cases a 2nd check is made below
@@ -739,6 +779,8 @@ impl Collections {
 
         if required_operation {
             let vjs_by_line = get_vjs_by_line(self);
+            let departures_arrivals_by_frequenced_vj =
+                get_departures_arrivals_by_frequenced_vj(self);
             let mut lines = self.lines.take();
             for line in &mut lines {
                 // 2nd check (see above) to avoid overwriting line opening/closing
@@ -747,11 +789,32 @@ impl Collections {
                     let mut closing_timetable = TimeTable::new();
                     if let Some(vjs_idx) = vjs_by_line.get(&line.id) {
                         for vj_idx in vjs_idx {
-                            skip_error_and_warn!(fill_timetables(
-                                &self.vehicle_journeys[*vj_idx],
-                                &mut opening_timetable,
-                                &mut closing_timetable,
-                            ));
+                            departures_arrivals_by_frequenced_vj
+                                .get(vj_idx)
+                                .cloned()
+                                .or_else(|| {
+                                    get_vj_departure_arrival(&self.vehicle_journeys[*vj_idx])
+                                        .map_or_else(
+                                            |e| {
+                                                warn!("{e}");
+                                                None
+                                            },
+                                            |(departure, arrival)| Some(vec![(departure, arrival)]),
+                                        )
+                                })
+                                .into_iter()
+                                .flatten()
+                                .for_each(|(vj_departure_time, vj_arrival_time)| {
+                                    let result = fill_timetables(
+                                        &mut opening_timetable,
+                                        &mut closing_timetable,
+                                        vj_departure_time,
+                                        vj_arrival_time,
+                                    );
+                                    if let Err(e) = result {
+                                        warn!("{e}");
+                                    }
+                                });
                         }
                     }
                     line.opening_time = find_main_hole_boundaries(&opening_timetable)
@@ -2254,5 +2317,182 @@ mod tests {
             lat: 91.,
         };
         assert!(!coord.is_valid());
+    }
+
+    mod update_opening_closing {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn collections() -> Collections {
+            Collections {
+                lines: CollectionWithId::new(vec![Line {
+                    id: String::from("L14"),
+                    ..Default::default()
+                }])
+                .unwrap(),
+                routes: CollectionWithId::new(vec![Route {
+                    id: String::from("R14"),
+                    line_id: String::from("L14"),
+                    ..Default::default()
+                }])
+                .unwrap(),
+                stop_areas: CollectionWithId::new(vec![
+                    StopArea {
+                        id: String::from("SA1"),
+                        ..Default::default()
+                    },
+                    StopArea {
+                        id: String::from("SA2"),
+                        ..Default::default()
+                    },
+                ])
+                .unwrap(),
+                stop_points: CollectionWithId::new(vec![
+                    StopPoint {
+                        id: String::from("SP1"),
+                        stop_area_id: String::from("SA1"),
+                        ..Default::default()
+                    },
+                    StopPoint {
+                        id: String::from("SP2"),
+                        stop_area_id: String::from("SA2"),
+                        ..Default::default()
+                    },
+                ])
+                .unwrap(),
+                ..Default::default()
+            }
+        }
+
+        fn stoptime(
+            stop_points: &CollectionWithId<StopPoint>,
+            stop_point_id: &str,
+            arrival_time: Time,
+            departure_time: Time,
+        ) -> StopTime {
+            StopTime {
+                stop_point_idx: stop_points.get_idx(stop_point_id).unwrap(),
+                sequence: 1,
+                arrival_time,
+                departure_time,
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 0,
+                local_zone_id: None,
+                precision: None,
+            }
+        }
+
+        #[test]
+        fn multiple_vehicles() {
+            let mut collections = collections();
+            let sp = &collections.stop_points;
+            collections.vehicle_journeys = CollectionWithId::new(vec![
+                VehicleJourney {
+                    id: String::from("VJ14-01"),
+                    route_id: String::from("R14"),
+                    stop_times: vec![
+                        stoptime(sp, "SP1", Time::new(8, 0, 0), Time::new(8, 5, 0)),
+                        stoptime(sp, "SP2", Time::new(9, 5, 0), Time::new(9, 10, 0)),
+                    ],
+                    ..Default::default()
+                },
+                VehicleJourney {
+                    id: String::from("VJ14-02"),
+                    route_id: String::from("R14"),
+                    stop_times: vec![
+                        stoptime(sp, "SP1", Time::new(19, 0, 0), Time::new(19, 5, 0)),
+                        stoptime(sp, "SP2", Time::new(20, 5, 0), Time::new(20, 10, 0)),
+                    ],
+                    ..Default::default()
+                },
+            ])
+            .unwrap();
+            collections.enhance_line_opening_time();
+            let line = collections.lines.get("L14").unwrap();
+            assert_eq!(Some(Time::new(8, 5, 0)), line.opening_time);
+            assert_eq!(Some(Time::new(20, 5, 0)), line.closing_time);
+        }
+
+        #[test]
+        fn midnight_passing() {
+            let mut collections = collections();
+            let sp = &collections.stop_points;
+            collections.vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+                id: String::from("VJ14-01"),
+                route_id: String::from("R14"),
+                stop_times: vec![
+                    stoptime(sp, "SP1", Time::new(23, 40, 0), Time::new(23, 45, 0)),
+                    stoptime(sp, "SP2", Time::new(25, 30, 0), Time::new(25, 35, 0)),
+                ],
+                ..Default::default()
+            }])
+            .unwrap();
+            collections.enhance_line_opening_time();
+            let line = collections.lines.get("L14").unwrap();
+            assert_eq!(Some(Time::new(23, 45, 0)), line.opening_time);
+            assert_eq!(Some(Time::new(25, 30, 0)), line.closing_time);
+        }
+
+        #[test]
+        fn multiple_frequencies_on_vehicle() {
+            let mut collections = collections();
+            let sp = &collections.stop_points;
+            collections.vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+                id: String::from("VJ14-01"),
+                route_id: String::from("R14"),
+                stop_times: vec![
+                    stoptime(sp, "SP1", Time::new(0, 0, 0), Time::new(0, 5, 0)),
+                    stoptime(sp, "SP2", Time::new(1, 5, 0), Time::new(1, 10, 0)),
+                ],
+                ..Default::default()
+            }])
+            .unwrap();
+            collections.frequencies = Collection::new(vec![
+                Frequency {
+                    vehicle_journey_id: String::from("VJ14-01"),
+                    start_time: Time::new(8, 15, 0),
+                    end_time: Time::new(12, 30, 0),
+                    headway_secs: 900,
+                },
+                Frequency {
+                    vehicle_journey_id: String::from("VJ14-01"),
+                    start_time: Time::new(14, 15, 0),
+                    end_time: Time::new(19, 30, 0),
+                    headway_secs: 900,
+                },
+            ]);
+            collections.enhance_line_opening_time();
+            let line = collections.lines.get("L14").unwrap();
+            assert_eq!(Some(Time::new(8, 15, 0)), line.opening_time);
+            assert_eq!(Some(Time::new(20, 30, 0)), line.closing_time); // 19:30 + 1h trip duration
+        }
+
+        #[test]
+        fn midnight_passing_frequency() {
+            let mut collections = collections();
+            let sp = &collections.stop_points;
+            collections.vehicle_journeys = CollectionWithId::new(vec![VehicleJourney {
+                id: String::from("VJ14-01"),
+                route_id: String::from("R14"),
+                stop_times: vec![
+                    stoptime(sp, "SP1", Time::new(0, 0, 0), Time::new(0, 5, 0)),
+                    stoptime(sp, "SP2", Time::new(1, 5, 0), Time::new(1, 10, 0)),
+                ],
+                ..Default::default()
+            }])
+            .unwrap();
+            collections.frequencies = Collection::new(vec![Frequency {
+                vehicle_journey_id: String::from("VJ14-01"),
+                start_time: Time::new(8, 15, 0),
+                end_time: Time::new(25, 30, 0),
+                headway_secs: 900,
+            }]);
+            collections.enhance_line_opening_time();
+            let line = collections.lines.get("L14").unwrap();
+            assert_eq!(Some(Time::new(8, 15, 0)), line.opening_time);
+            assert_eq!(Some(Time::new(26, 30, 0)), line.closing_time); // 25:30 + 1h trip duration
+        }
     }
 }
