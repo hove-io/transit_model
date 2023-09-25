@@ -76,6 +76,31 @@ pub mod validity_period;
 mod version_utils;
 pub mod vptranslator;
 
+// Re-export sub-types that are part of `transit_model` API
+// Useful because user won't need to depend on a third party dependency
+// and find the correct version to make it work.
+pub use relational_types::{IdxSet, Relation};
+pub use typed_index_collection::{
+    Collection, CollectionWithId, Id, Idx, Iter as TypedIndexCollectionIter, WithId,
+};
+/// Re-export `chrono` types that are part of `transit_model` API
+pub mod chrono {
+    pub use chrono::{DateTime, FixedOffset};
+    pub(crate) use chrono::{SecondsFormat, Utc};
+}
+/// Re-export `geo` types that are part of `transit_model` API
+pub mod geo {
+    pub use geo::geometry::Geometry;
+}
+/// Re-export `minidom` types that are part of `transit_model` API
+pub mod minidom {
+    pub use minidom::Element;
+}
+/// Re-export `rust_decimal` types that are part of `transit_model` API
+pub mod rust_decimal {
+    pub use rust_decimal::Decimal;
+}
+
 // Good average size for initialization of the `StopTime` collection in `VehicleJourney`
 // Note: they are shrinked down in `Model::new()` to fit the real size
 pub(crate) const STOP_TIMES_INIT_CAPACITY: usize = 50;
