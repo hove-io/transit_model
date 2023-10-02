@@ -15,4 +15,4 @@ keywords = ["transit"]
 # Swap the next two lines when publishing
 # transit_model = "0.6"
 transit_model = { path = "../" }
-typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2"}
+typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2.3"}

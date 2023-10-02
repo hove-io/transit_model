@@ -63,7 +63,7 @@ skip_error = { git = "https://github.com/hove-io/skip_error", tag = "v3", featur
 tempfile = "3"
 thiserror = "1"
 tracing = { version = "0.1", features = ["log"] }
-typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2"}
+typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2.3"}
 walkdir = "2"
 wkt = "0.10"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
