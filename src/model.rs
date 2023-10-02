@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_warn;
 use std::{
     cmp::{self, Ordering, Reverse},
-    collections::{hash_map::DefaultHasher, BTreeMap, HashMap, HashSet},
+    collections::{hash_map::DefaultHasher, BTreeMap, BTreeSet, HashMap, HashSet},
     convert::TryFrom,
     hash::{Hash, Hasher},
     ops,
@@ -1285,6 +1285,153 @@ impl Collections {
         start_date
             .zip(end_date)
             .ok_or_else(|| anyhow!("Cannot calculate validity period because there is no dataset"))
+    }
+
+    /// Convert given frequencies to stoptimes
+    /// by creating new duplicated vehicle_journeys, calendars and comments if necessary
+    pub fn convert_frequencies_to_stoptimes(&mut self, frequencies: Vec<Frequency>) -> Result<()> {
+        let mut trip_id_sequence: HashMap<String, u32> = HashMap::new();
+        let mut new_vehicle_journeys: Vec<VehicleJourney> = vec![];
+
+        for frequency in &frequencies {
+            if frequency.start_time == frequency.end_time {
+                warn!(
+                    "frequency for trip {:?} has same start and end time",
+                    frequency.vehicle_journey_id
+                );
+                continue;
+            }
+            let corresponding_vj = skip_error_and_warn!(self
+                .vehicle_journeys
+                .get(&frequency.vehicle_journey_id)
+                .cloned()
+                .ok_or_else(|| anyhow!(
+                    "frequency mapped to an unexisting trip {:?}",
+                    frequency.vehicle_journey_id
+                )));
+            let mut start_time = frequency.start_time;
+
+            let Some(st) = corresponding_vj.stop_times.iter().min() else {
+                warn!(
+                    "frequency mapped to trip {:?} with no stop_times",
+                    frequency.vehicle_journey_id
+                );
+                continue;
+            };
+            let mut arrival_time_delta = st.arrival_time;
+
+            while start_time < frequency.end_time {
+                trip_id_sequence
+                    .entry(frequency.vehicle_journey_id.clone())
+                    .and_modify(|counter| *counter += 1)
+                    .or_insert(0);
+                let generated_trip_id = format!(
+                    "{}-{}",
+                    frequency.vehicle_journey_id, trip_id_sequence[&frequency.vehicle_journey_id]
+                );
+                // the following handles generated trip starting after midnight, we need to generate a
+                // new service in case the next day is not covered
+                let service_id = if start_time.hours() >= 24 {
+                    let nb_days = start_time.hours() / 24;
+                    let service = self
+                        .calendars
+                        .get(&corresponding_vj.service_id)
+                        .cloned()
+                        .unwrap();
+                    let new_service_id = format!("{}:+{}days", service.id, nb_days);
+                    if !self.calendars.contains_id(&new_service_id) {
+                        arrival_time_delta = arrival_time_delta + Time::new(24, 0, 0);
+                        let new_dates: BTreeSet<_> = service
+                            .dates
+                            .iter()
+                            .map(|d| *d + chrono::Duration::days(i64::from(nb_days)))
+                            .collect();
+
+                        let new_service = Calendar {
+                            id: new_service_id.clone(),
+                            dates: new_dates,
+                        };
+                        self.calendars.push(new_service)?;
+                    }
+                    new_service_id
+                } else {
+                    corresponding_vj.service_id.clone()
+                };
+                let stop_times: Vec<StopTime> = corresponding_vj
+                    .stop_times
+                    .iter()
+                    .map(|stop_time| StopTime {
+                        stop_point_idx: stop_time.stop_point_idx,
+                        sequence: stop_time.sequence,
+                        arrival_time: stop_time.arrival_time + start_time - arrival_time_delta,
+                        departure_time: stop_time.departure_time + start_time - arrival_time_delta,
+                        boarding_duration: stop_time.boarding_duration,
+                        alighting_duration: stop_time.alighting_duration,
+                        pickup_type: stop_time.pickup_type,
+                        drop_off_type: stop_time.drop_off_type,
+                        local_zone_id: stop_time.local_zone_id,
+                        precision: stop_time.precision.clone(),
+                    })
+                    .collect();
+                start_time = start_time + Time::new(0, 0, frequency.headway_secs);
+                let generated_vj = VehicleJourney {
+                    id: generated_trip_id.clone(),
+                    service_id,
+                    stop_times,
+                    ..corresponding_vj.clone()
+                };
+                new_vehicle_journeys.push(generated_vj);
+                let stop_time_comments: HashMap<(String, u32), String> = corresponding_vj
+                    .stop_times
+                    .iter()
+                    .filter(|stop_time| stop_time.pickup_type == 2 || stop_time.drop_off_type == 2)
+                    .filter_map(|stop_time| {
+                        self.stop_time_comments
+                            .get(&(frequency.vehicle_journey_id.clone(), stop_time.sequence))
+                            .map(|comment_id| {
+                                (
+                                    (generated_trip_id.clone(), stop_time.sequence),
+                                    comment_id.to_string(),
+                                )
+                            })
+                    })
+                    .collect();
+                let stop_time_ids: HashMap<(String, u32), String> = stop_time_comments
+                    .keys()
+                    .map(|(trip_id, sequence)| {
+                        (
+                            (trip_id.to_string(), *sequence),
+                            format!("{}-{}", trip_id, sequence),
+                        )
+                    })
+                    .collect();
+                self.stop_time_comments.extend(stop_time_comments);
+                self.stop_time_ids.extend(stop_time_ids);
+            }
+        }
+        let mut vehicle_journeys = self.vehicle_journeys.take();
+
+        let trip_ids_to_remove: Vec<_> =
+            frequencies.iter().map(|f| &f.vehicle_journey_id).collect();
+
+        vehicle_journeys.retain(|vj| !trip_ids_to_remove.contains(&&vj.id));
+        self.stop_time_ids
+            .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&vj_id));
+        self.stop_time_comments
+            .retain(|(vj_id, _), _| !trip_ids_to_remove.contains(&vj_id));
+
+        vehicle_journeys.append(&mut new_vehicle_journeys);
+        self.vehicle_journeys = CollectionWithId::new(vehicle_journeys)?;
+
+        Ok(())
+    }
+
+    /// Convert all frequencies to stoptimes
+    /// by creating new duplicated vehicle_journeys, calendars and comments if necessary
+    /// and remove all frequencies from Collections
+    pub fn convert_all_frequencies_to_stoptimes(&mut self) -> Result<()> {
+        let frequencies = self.frequencies.take();
+        self.convert_frequencies_to_stoptimes(frequencies)
     }
 }
 
