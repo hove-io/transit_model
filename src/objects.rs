@@ -1070,6 +1070,7 @@ pub struct StopArea {
     pub geometry_id: Option<String>,
     pub equipment_id: Option<String>,
     pub level_id: Option<String>,
+    pub address_id: Option<String>,
 }
 impl_id!(StopArea);
 
@@ -1087,6 +1088,7 @@ impl From<StopPoint> for StopArea {
             geometry_id: None,
             equipment_id: None,
             level_id: None,
+            address_id: None,
         }
     }
 }
@@ -1208,6 +1210,7 @@ pub struct StopLocation {
     pub level_id: Option<String>,
     #[serde(skip)]
     pub stop_type: StopType,
+    pub address_id: Option<String>,
 }
 impl_id!(StopLocation);
 impl_comment_links!(StopLocation);
@@ -1899,9 +1902,34 @@ pub struct Address {
     pub id: String,
     pub street_name: String,
     pub house_number: Option<String>,
+    pub admin_level_8_id: Option<String>,
+    pub admin_level_9_id: Option<String>,
+    pub admin_level_10_id: Option<String>,
 }
 
 impl_id!(Address);
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AdministrativeRegion {
+    #[serde(rename = "admin_id")]
+    pub id: String,
+    #[serde(rename = "admin_insee")]
+    pub insee: Option<String>,
+    #[serde(rename = "admin_level")]
+    pub level: Option<u32>,
+    #[serde(rename = "admin_name")]
+    pub name: Option<String>,
+    #[serde(rename = "admin_label")]
+    pub label: Option<String>,
+    #[serde(rename = "admin_zip_codes")]
+    pub zip_codes: Option<String>,
+    #[serde(rename = "admin_lon")]
+    pub lon: Option<f64>,
+    #[serde(rename = "admin_lat")]
+    pub lat: Option<f64>,
+}
+
+impl_id!(AdministrativeRegion);
 
 impl AddPrefix for Address {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {

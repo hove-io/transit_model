@@ -761,6 +761,7 @@ mod tests {
             geometry_id: None,
             equipment_id: Some("1".to_string()),
             level_id: None,
+            address_id: None,
         };
 
         let expected = Stop {
@@ -1020,6 +1021,7 @@ mod tests {
             geometry_id: None,
             level_id: Some("level0".to_string()),
             equipment_id: None,
+            address_id: None,
         });
         let mut sp_codes: BTreeSet<(String, String)> = BTreeSet::new();
         sp_codes.insert(("sp name 1".to_string(), "sp_code_1".to_string()));

@@ -119,6 +119,7 @@ impl TryFrom<Stop> for objects::StopArea {
             geometry_id: None,
             level_id: stop.level_id,
             equipment_id: None,
+            address_id: None,
         };
         Ok(stop_area)
     }
@@ -214,6 +215,7 @@ impl TryFrom<Stop> for objects::StopLocation {
             equipment_id: None,
             level_id: stop.level_id,
             stop_type: stop.location_type.into(),
+            address_id: None,
         };
         Ok(stop_location)
     }

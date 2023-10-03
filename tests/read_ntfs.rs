@@ -141,7 +141,12 @@ fn ntfs_stops_output() {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             output_dir,
-            Some(vec!["stops.txt", "stop_times.txt", "addresses.txt"]),
+            Some(vec![
+                "stops.txt",
+                "stop_times.txt",
+                "addresses.txt",
+                "administrative_regions.txt",
+            ]),
             "tests/fixtures/ntfs2ntfs/stops",
         );
     });

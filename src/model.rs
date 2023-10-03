@@ -116,6 +116,7 @@ pub struct Collections {
     pub grid_periods: Collection<GridPeriod>,
     pub grid_rel_calendar_line: Collection<GridRelCalendarLine>,
     pub addresses: CollectionWithId<Address>,
+    pub administrative_regions: CollectionWithId<AdministrativeRegion>,
     pub occupancies: Collection<Occupancy>,
 }
 
@@ -309,6 +310,9 @@ impl Collections {
                     equipments_used.insert(equipment_id.clone());
                 }
                 comments_used.extend(&mut sl.comment_links.iter().map(|cl| cl.to_string()));
+                if let Some(address_id) = &sl.address_id {
+                    addresses_used.insert(address_id.clone());
+                }
                 true
             })
             .collect::<Vec<_>>();
@@ -418,6 +422,9 @@ impl Collections {
                         equipments_used.insert(equipment_id.clone());
                     }
                     comments_used.extend(&mut sa.comment_links.iter().map(|cl| cl.to_string()));
+                    if let Some(address_id) = &sa.address_id {
+                        addresses_used.insert(address_id.clone());
+                    }
                     true
                 } else {
                     log_object_removed("Stop Area", &sa.id);
@@ -556,6 +563,26 @@ impl Collections {
         self.calendars.retain(|c| calendars_used.contains(&c.id));
         self.addresses
             .retain(|address| addresses_used.contains(&address.id));
+
+        let admin_regions_used: HashSet<&str> =
+            self.addresses
+                .values()
+                .fold(HashSet::new(), |mut acc, address| {
+                    if let Some(admin_level_8_id) = address.admin_level_8_id.as_ref() {
+                        acc.insert(admin_level_8_id);
+                    }
+                    if let Some(admin_level_9_id) = address.admin_level_9_id.as_ref() {
+                        acc.insert(admin_level_9_id);
+                    }
+                    if let Some(admin_level_10_id) = address.admin_level_10_id.as_ref() {
+                        acc.insert(admin_level_10_id);
+                    }
+
+                    acc
+                });
+
+        self.administrative_regions
+            .retain(|admin| admin_regions_used.contains(admin.id.as_str()));
         self.admin_stations
             .retain(|admin_station| stop_area_ids_used.contains(&admin_station.stop_id));
         self.occupancies.retain(|occupancy| {

@@ -317,6 +317,10 @@ where
         grid_periods: make_opt_collection(file_handler, "grid_periods.txt")?,
         grid_rel_calendar_line: make_opt_collection(file_handler, "grid_rel_calendar_line.txt")?,
         addresses: make_opt_collection_with_id(file_handler, "addresses.txt")?,
+        administrative_regions: make_opt_collection_with_id(
+            file_handler,
+            "administrative_regions.txt",
+        )?,
         ..Default::default()
     };
     manage_calendars(file_handler, &mut collections)?;
@@ -407,6 +411,11 @@ pub fn write<P: AsRef<path::Path>>(
     write_collection_with_id(path, "pathways.txt", &model.pathways)?;
     write_collection_with_id(path, "levels.txt", &model.levels)?;
     write_collection_with_id(path, "addresses.txt", &model.addresses)?;
+    write_collection_with_id(
+        path,
+        "administrative_regions.txt",
+        &model.administrative_regions,
+    )?;
     write_collection(path, "occupancies.txt", &model.occupancies)?;
 
     Ok(())
@@ -515,7 +524,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.13.0".to_string()),
+                    ("ntfs_version".to_string(), "0.14.0".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -1012,6 +1021,7 @@ mod tests {
                 geometry_id: None,
                 equipment_id: None,
                 level_id: None,
+                address_id: None,
             },
             StopArea {
                 id: "sa_1".to_string(),
@@ -1028,6 +1038,7 @@ mod tests {
                 geometry_id: Some("geometry_3".to_string()),
                 equipment_id: Some("equipment_1".to_string()),
                 level_id: Some("level2".to_string()),
+                address_id: None,
             },
         ])
         .unwrap();
@@ -1117,6 +1128,7 @@ mod tests {
             geometry_id: None,
             equipment_id: None,
             level_id: Some("level1".to_string()),
+            address_id: None,
         });
 
         let stop_locations: CollectionWithId<StopLocation> = CollectionWithId::default();
