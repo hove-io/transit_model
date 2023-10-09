@@ -54,6 +54,7 @@ impl TryFrom<Stop> for StopArea {
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
             level_id: stop.level_id,
+            address_id: stop.address_id,
         };
         Ok(stop_area)
     }
@@ -148,6 +149,7 @@ impl TryFrom<Stop> for StopLocation {
             equipment_id: stop.equipment_id,
             stop_type: stop.location_type.clone().into(),
             level_id: stop.level_id,
+            address_id: stop.address_id,
         };
         Ok(stop_location)
     }
