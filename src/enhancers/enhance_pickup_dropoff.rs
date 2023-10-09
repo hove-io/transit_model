@@ -118,7 +118,7 @@ pub fn enhance_pickup_dropoff(collections: &mut Collections) {
         .iter()
         .filter_map(|(vj_idx, vj)| vj.block_id.clone().map(|b| (b, (vj_idx, vj))))
     {
-        let other_block_id_vj = vj_by_blocks.entry(b).or_insert_with(Vec::new);
+        let other_block_id_vj = vj_by_blocks.entry(b).or_default();
 
         // for every vj we check if it can really be a stay-in and if the last stop
         // is not in both vj (example 1)

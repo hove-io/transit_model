@@ -62,10 +62,7 @@ impl<'a> LineExporter<'a> {
                     })
             })
             .fold(HashMap::new(), |mut line_modes, (line_id, netex_mode)| {
-                line_modes
-                    .entry(line_id)
-                    .or_insert_with(BTreeSet::new)
-                    .insert(netex_mode);
+                line_modes.entry(line_id).or_default().insert(netex_mode);
                 line_modes
             })
     }

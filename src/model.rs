@@ -623,10 +623,7 @@ impl Collections {
                     None
                 })
                 .fold(HashMap::new(), |mut lines, (line_id, vj_idx)| {
-                    lines
-                        .entry(line_id)
-                        .or_insert_with(IdxSet::new)
-                        .insert(vj_idx);
+                    lines.entry(line_id).or_default().insert(vj_idx);
                     lines
                 })
         }
@@ -661,7 +658,7 @@ impl Collections {
                             let end_time = start_time + trip_duration;
                             departures_arrivals
                                 .entry(vj_idx)
-                                .or_insert_with(Vec::new)
+                                .or_default()
                                 .push((start_time % SECONDS_PER_DAY, end_time % SECONDS_PER_DAY));
                             start_time = start_time + Time::new(0, 0, frequency.headway_secs);
                         }
@@ -775,7 +772,7 @@ impl Collections {
         // In all cases a 2nd check is made below
         let check_time_empty =
             |line: &Line| line.opening_time.is_none() || line.closing_time.is_none();
-        let required_operation = self.lines.values().any(|line| check_time_empty(line));
+        let required_operation = self.lines.values().any(check_time_empty);
 
         if required_operation {
             let vjs_by_line = get_vjs_by_line(self);

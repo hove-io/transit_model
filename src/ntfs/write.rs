@@ -404,7 +404,7 @@ fn construct_fare_v1_from_v2(fares: &Fares) -> Result<(BTreeSet<PriceV1>, BTreeS
 
             let transfer_allowed = match ticket_use.max_transfers {
                 None => true,
-                Some(i) if i == 0 => false,
+                Some(0) => false,
                 Some(_) => true,
             };
 

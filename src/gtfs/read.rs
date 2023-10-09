@@ -358,7 +358,7 @@ where
     let mut map: HashMap<String, Vec<Point<f64>>> = HashMap::new();
     for s in &shapes {
         map.entry(s.id.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push((s.lon, s.lat).into())
     }
 
@@ -1109,7 +1109,7 @@ fn make_ntfs_vehicle_journeys(
     for t in gtfs_trips {
         map_tps_trips
             .entry((t.wheelchair_accessible, t.bikes_allowed))
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(t);
     }
 
