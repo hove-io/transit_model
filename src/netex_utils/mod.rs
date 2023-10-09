@@ -74,13 +74,14 @@ impl FromStr for FrameType {
 /// The input parameter must be an `Element` (XML element) that contains frames.
 /// Usually, it will be an element call `<frames>` in NeTEx standard.
 pub fn parse_frames_by_type(frames: &Element) -> Result<Frames<'_>> {
-    frames
-        .children()
-        .try_fold(HashMap::new(), |mut map, frame| {
+    frames.children().try_fold(
+        HashMap::new(),
+        |mut map: HashMap<FrameType, Vec<_>>, frame| {
             let frame_type: FrameType = frame.name().parse()?;
-            map.entry(frame_type).or_insert_with(Vec::new).push(frame);
+            map.entry(frame_type).or_default().push(frame);
             Ok(map)
-        })
+        },
+    )
 }
 
 /// Extract a frame of type `frame_type` from the map of `frames`.  This

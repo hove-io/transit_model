@@ -141,7 +141,7 @@ impl<'a> StopExporter<'a> {
                 |mut stop_point_modes, (stop_point_id, netex_mode)| {
                     stop_point_modes
                         .entry(stop_point_id)
-                        .or_insert_with(BTreeSet::new)
+                        .or_default()
                         .insert(netex_mode);
                     stop_point_modes
                 },
@@ -155,7 +155,7 @@ impl<'a> StopExporter<'a> {
             .fold(HashMap::new(), |mut stop_area_stop_points, stop_point| {
                 stop_area_stop_points
                     .entry(&stop_point.stop_area_id)
-                    .or_insert_with(BTreeSet::new)
+                    .or_default()
                     .insert(&stop_point.id);
                 stop_area_stop_points
             })
@@ -170,7 +170,7 @@ impl<'a> StopExporter<'a> {
                 if let Some(stop_area_id) = stop_location.parent_id.as_ref() {
                     stop_area_entrances
                         .entry(stop_area_id)
-                        .or_insert_with(BTreeSet::new)
+                        .or_default()
                         .insert(&stop_location.id);
                 };
                 stop_area_entrances
