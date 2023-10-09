@@ -135,11 +135,11 @@ jobs:
       - name: Login to Amazon ECR sandbox
         env:
           AWS_REGION: eu-west-1
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
       - name: Login to Amazon ECR shared
         env:
           AWS_REGION: eu-west-1
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
         with:
           registries: 162230498103
       - name: Build and Push to SBX ECR
