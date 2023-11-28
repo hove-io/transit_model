@@ -1,5 +1,5 @@
 # Version required by `proj` crate used in cargo.toml
-PROJ_VERSION = 8.1.0
+PROJ_VERSION = 9.3.0
 
 install_proj_deps: ## Install dependencies the proj crate needs in order to build libproj from source
 	sudo apt update
@@ -14,9 +14,12 @@ install_proj: install_proj_deps ## Install PROJ on system (avoid PROJ recompilin
 
 	wget https://github.com/OSGeo/proj.4/releases/download/$(PROJ_VERSION)/proj-$(PROJ_VERSION).tar.gz
 	tar -xzvf proj-$(PROJ_VERSION).tar.gz
-	cd proj-$(PROJ_VERSION) && ./configure --prefix=/usr
-	make -C proj-$(PROJ_VERSION)
-	sudo make install -C proj-$(PROJ_VERSION)
+	cd proj-$(PROJ_VERSION) \
+	&& mkdir build \
+	&& cd build \
+	&& cmake .. \
+	&& cmake --build . -j11 \
+    && sudo cmake --build . --target install
 	rm -rf proj-$(PROJ_VERSION) proj-$(PROJ_VERSION).tar.gz
 
 fmt: format ## Check formatting of the code (alias for 'format')

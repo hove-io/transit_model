@@ -34,66 +34,65 @@ fn get_version() -> &'static str {
 }
 
 #[derive(Debug, Parser)]
-#[clap(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.", version = get_version())]
+#[command(name = "gtfs2ntfs", about = "Convert a GTFS to an NTFS.", version = get_version())]
 struct Opt {
     /// Input directory.
-    #[clap(short, long, parse(from_os_str), default_value = ".")]
+    #[arg(short, long, default_value = ".")]
     input: PathBuf,
 
     /// Output directory.
-    #[clap(short, long, parse(from_os_str))]
+    #[arg(short, long)]
     output: PathBuf,
 
     /// JSON file containing additional configuration.
     ///
     /// For more information, see
     /// https://github.com/hove-io/transit_model/blob/master/documentation/common_ntfs_rules.md#configuration-of-each-converter
-    #[clap(short, long, parse(from_os_str))]
+    #[arg(short, long)]
     config: Option<PathBuf>,
 
     /// Prefix added to all the identifiers (`123` turned into `prefix:123`).
-    #[clap(short, long)]
+    #[arg(short, long)]
     prefix: Option<String>,
 
     /// Schedule subprefix added after the prefix on all scheduled objects (`123` turned into `prefix::schedule_subprefix::123`).
-    #[clap(long)]
+    #[arg(long)]
     schedule_subprefix: Option<String>,
 
     /// Indicates if the input GTFS contains On-Demand Transport (ODT)
     /// information.
-    #[clap(long)]
+    #[arg(long)]
     odt: bool,
 
     /// On-Demand Transport GTFS comment.
-    #[clap(long = "odt-comment")]
+    #[arg(long = "odt-comment")]
     odt_comment: Option<String>,
 
     /// If true, each GTFS `Route` will generate a different `Line`.
     /// Else we group the routes by `agency_id` and `route_short_name`
     /// (or `route_long_name` if the short name is empty) and create a `Line` for each group.
-    #[clap(long = "read-as-line")]
+    #[arg(long = "read-as-line")]
     read_as_line: bool,
 
     /// Current datetime.
-    #[clap(
+    #[arg(
         short = 'x',
         long,
-        parse(try_from_str),
-        default_value = &transit_model::CURRENT_DATETIME
+        default_value = &**transit_model::CURRENT_DATETIME
     )]
     current_datetime: DateTime<FixedOffset>,
 
     /// The maximum distance in meters to compute the tranfer.
-    #[clap(long, short = 'd', default_value = transit_model::TRANSFER_MAX_DISTANCE)]
+    #[arg(long, short = 'd', default_value = transit_model::TRANSFER_MAX_DISTANCE)]
     max_distance: f64,
 
     /// The walking speed in meters per second. You may want to divide your
     /// initial speed by sqrt(2) to simulate Manhattan distances.
-    #[clap(long, short = 's', default_value = transit_model::TRANSFER_WALKING_SPEED)]
+    #[arg(long, short = 's', default_value = transit_model::TRANSFER_WALKING_SPEED)]
     walking_speed: f64,
 
     /// Waiting time at stop in seconds.
-    #[clap(long, short = 't', default_value = transit_model::TRANSFER_WAITING_TIME)]
+    #[arg(long, short = 't', default_value = transit_model::TRANSFER_WAITING_TIME)]
     waiting_time: u32,
 }
 
