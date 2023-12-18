@@ -12,9 +12,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use transit_model::{model, objects};
+//! This module contains the builder for the transit model.
 
 mod builder;
 
-pub use crate::builder::ModelBuilder;
-pub use transit_model::objects::*;
+pub use builder::ModelBuilder;

@@ -2395,11 +2395,12 @@ mod tests {
     }
 
     mod pickup_dropoff_harmonisation {
+        use crate::ModelBuilder;
         use pretty_assertions::assert_eq;
 
         #[test]
         fn update_pickup_drop_off_type() {
-            let model = transit_model_builder::ModelBuilder::default()
+            let model = ModelBuilder::default()
                 .vj("vj1", |vj| {
                     vj.st_mut("SP1", "10:00:00", "10:01:00", |st| {
                         st.pickup_type = 0;
@@ -2428,7 +2429,7 @@ mod tests {
 
         #[test]
         fn remove_pickup_drop_off_type_3() {
-            let model = transit_model_builder::ModelBuilder::default()
+            let model = ModelBuilder::default()
                 .vj("vj1", |vj| {
                     vj.st_mut("SP1", "10:00:00", "10:01:00", |st| {
                         st.pickup_type = 0;

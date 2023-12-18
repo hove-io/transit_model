@@ -16,7 +16,7 @@
 //!
 //! ```
 //! # fn main() {
-//!  let model = transit_model_builder::ModelBuilder::default()
+//!  let model = transit_model::ModelBuilder::default()
 //!      .vj("toto", |vj| {
 //!          vj.route("1")
 //!            .st("A", "10:00:00", "10:01:00")
@@ -57,7 +57,7 @@ impl ModelBuilder {
     ///
     /// ```
     /// # fn main() {
-    /// let model = transit_model_builder::ModelBuilder::default()
+    /// let model = transit_model::ModelBuilder::default()
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder
     ///                .st("A", "10:00:00", "10:01:00")
@@ -97,7 +97,7 @@ impl ModelBuilder {
     ///
     /// ```
     /// # fn main() {
-    /// let model = transit_model_builder::ModelBuilder::default()
+    /// let model = transit_model::ModelBuilder::default()
     ///      .route("l1", |r| {
     ///             r.name = "ligne 1".to_owned();
     ///         })
@@ -129,7 +129,7 @@ impl ModelBuilder {
     /// # use transit_model::objects::Date;
     ///
     /// # fn main() {
-    /// let model = transit_model_builder::ModelBuilder::default()
+    /// let model = transit_model::ModelBuilder::default()
     ///      .calendar("c1", &["2020-01-01", "2020-01-02"])
     ///      .calendar("default_service", &[Date::from_ymd(2019, 2, 6)])
     ///      .vj("toto", |vj| {
@@ -158,7 +158,7 @@ impl ModelBuilder {
     /// # use transit_model::objects::Date;
     ///
     /// # fn main() {
-    /// let model = transit_model_builder::ModelBuilder::default()
+    /// let model = transit_model::ModelBuilder::default()
     ///      .default_calendar(&["2020-01-01"])
     ///      .vj("toto", |vj| {
     ///          vj
@@ -177,9 +177,9 @@ impl ModelBuilder {
     /// # use transit_model::objects::Date;
     ///
     /// # fn main() {
-    /// let model = transit_model_builder::ModelBuilder::default()
+    /// let model = transit_model::ModelBuilder::default()
     ///      .calendar_mut("c1", |c| {
-    ///             c.dates.insert(Date::from_ymd(2019, 2, 6));
+    ///             c.dates.insert(Date::from_ymd_opt(2019, 2, 6).unwrap());
     ///         })
     ///      .vj("toto", |vj| {
     ///          vj.calendar("c1")
@@ -294,7 +294,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///
     /// ```
     /// # fn main() {
-    /// let model = transit_model_builder::ModelBuilder::default()
+    /// let model = transit_model::ModelBuilder::default()
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder
     ///                .st("A", "10:00:00", "10:01:00")
@@ -349,7 +349,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///
     /// ```
     /// # fn main() {
-    /// let model = transit_model_builder::ModelBuilder::default()
+    /// let model = transit_model::ModelBuilder::default()
     ///        .route("1", |r| {
     ///            r.name = "bob".into();
     ///        })
@@ -378,7 +378,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// # use transit_model::objects::Date;
     ///
     /// # fn main() {
-    /// let model = transit_model_builder::ModelBuilder::default()
+    /// let model = transit_model::ModelBuilder::default()
     ///        .calendar("c1", &["2021-01-07"])
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder.calendar("c1");
@@ -472,7 +472,7 @@ mod test {
                 .collect()
         );
         let default_calendar = model.calendars.get("default_service").unwrap();
-        let dates = [transit_model::objects::Date::from_ymd_opt(2020, 1, 1).unwrap()]
+        let dates = [crate::objects::Date::from_ymd_opt(2020, 1, 1).unwrap()]
             .iter()
             .copied()
             .collect::<std::collections::BTreeSet<_>>();
