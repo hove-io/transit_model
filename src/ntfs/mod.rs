@@ -58,6 +58,7 @@ struct StopTime {
     stop_time_id: Option<String>,
     #[serde(rename = "stop_time_precision")]
     precision: Option<StopTimePrecision>,
+    geometry_id: Option<String>,
 }
 
 #[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -760,6 +761,7 @@ mod tests {
                         drop_off_type: 1,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                     objects::StopTime {
                         stop_point_idx: stop_points.get_idx("OIF:SP:36:2127").unwrap(),
@@ -772,6 +774,7 @@ mod tests {
                         drop_off_type: 0,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                 ],
                 journey_pattern_id: Some(String::from("OIF:JP:1")),
@@ -1207,6 +1210,7 @@ mod tests {
                 drop_off_type: 2,
                 local_zone_id: None,
                 precision: None,
+                geometry_id: None,
             }],
             journey_pattern_id: None,
         });

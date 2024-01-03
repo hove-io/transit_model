@@ -248,6 +248,9 @@ impl Collections {
                 route_ids_used.insert(vj.route_id.clone());
                 for stop_time in &vj.stop_times {
                     stop_points_used.insert(self.stop_points[stop_time.stop_point_idx].id.clone());
+                    if let Some(geo_id) = &stop_time.geometry_id {
+                        geometries_used.insert(geo_id.clone());
+                    }
                 }
                 data_sets_used.insert(vj.dataset_id.clone());
                 physical_modes_used.insert(vj.physical_mode_id.clone());
@@ -1395,6 +1398,7 @@ impl Collections {
                         drop_off_type: stop_time.drop_off_type,
                         local_zone_id: stop_time.local_zone_id,
                         precision: stop_time.precision.clone(),
+                        geometry_id: stop_time.geometry_id.clone(),
                     })
                     .collect();
                 start_time = start_time + Time::new(0, 0, frequency.headway_secs);
@@ -1726,6 +1730,7 @@ mod tests {
                 drop_off_type: 0,
                 local_zone_id: Some(0),
                 precision: None,
+                geometry_id: None,
             };
             collections
                 .vehicle_journeys
@@ -2066,6 +2071,7 @@ mod tests {
                 drop_off_type: 0,
                 local_zone_id: None,
                 precision: None,
+                geometry_id: None,
             };
             let stop_times: Vec<_> = stop_point_ids.into_iter().map(stop_time_at).collect();
             VehicleJourney {
@@ -2552,6 +2558,7 @@ mod tests {
                 drop_off_type: 0,
                 local_zone_id: None,
                 precision: None,
+                geometry_id: None,
             }
         }
 

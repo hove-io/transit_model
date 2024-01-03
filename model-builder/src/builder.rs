@@ -336,6 +336,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
                 drop_off_type: 0u8,
                 local_zone_id: None,
                 precision: None,
+                geometry_id: None,
             };
             st_muter(&mut stop_time);
 

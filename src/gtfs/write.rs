@@ -919,6 +919,7 @@ mod tests {
                     drop_off_type: 1,
                     local_zone_id: None,
                     precision: None,
+                    geometry_id: None,
                 },
                 objects::StopTime {
                     stop_point_idx: collections.stop_points.get_idx("OIF:SP:36:2127").unwrap(),
@@ -931,6 +932,7 @@ mod tests {
                     drop_off_type: 0,
                     local_zone_id: None,
                     precision: None,
+                    geometry_id: None,
                 },
             ],
             journey_pattern_id: Some(String::from("OIF:JP:1")),
@@ -962,6 +964,7 @@ mod tests {
                     drop_off_type: 1,
                     local_zone_id: None,
                     precision: None,
+                    geometry_id: None,
                 },
                 objects::StopTime {
                     stop_point_idx: collections.stop_points.get_idx("OIF:SP:36:2127").unwrap(),
@@ -974,6 +977,7 @@ mod tests {
                     drop_off_type: 0,
                     local_zone_id: None,
                     precision: None,
+                    geometry_id: None,
                 },
             ],
             journey_pattern_id: Some(String::from("OIF:JP:1")),
@@ -1190,6 +1194,7 @@ mod tests {
                 drop_off_type: 0,
                 local_zone_id: None,
                 precision: None,
+                geometry_id: None,
             },
             StopTime {
                 stop_point_idx: stop_points.get_idx("sp:01").unwrap(),
@@ -1202,6 +1207,7 @@ mod tests {
                 drop_off_type: 1,
                 local_zone_id: Some(3),
                 precision: Some(StopTimePrecision::Estimated),
+                geometry_id: None,
             },
         ];
         let vehicle_journeys = CollectionWithId::from(VehicleJourney {

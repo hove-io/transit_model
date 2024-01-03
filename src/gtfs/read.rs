@@ -483,6 +483,7 @@ where
                         drop_off_type,
                         local_zone_id: stop_time.local_zone_id,
                         precision,
+                        geometry_id: None,
                     });
             } else {
                 warn!(
@@ -2408,6 +2409,7 @@ mod tests {
                         drop_off_type: 0,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Approximate),
+                        geometry_id: None,
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
@@ -2420,6 +2422,7 @@ mod tests {
                         drop_off_type: 1,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
@@ -2432,6 +2435,7 @@ mod tests {
                         drop_off_type: 1,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                 ],
                 collections.vehicle_journeys.into_vec()[0].stop_times
@@ -2500,6 +2504,7 @@ mod tests {
                         drop_off_type: 0,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
@@ -2512,6 +2517,7 @@ mod tests {
                         drop_off_type: 0,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
@@ -2524,6 +2530,7 @@ mod tests {
                         drop_off_type: 0,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                 ],
                 collections.vehicle_journeys.into_vec()[0].stop_times
@@ -2583,6 +2590,7 @@ mod tests {
                         drop_off_type: 0,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
@@ -2595,6 +2603,7 @@ mod tests {
                         drop_off_type: 1,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                 ],
                 collections.vehicle_journeys.into_vec()[0].stop_times
@@ -3206,6 +3215,7 @@ mod tests {
                         drop_off_type: 0,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Estimated),
+                        geometry_id: None,
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
@@ -3218,6 +3228,7 @@ mod tests {
                         drop_off_type: 1,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
@@ -3230,6 +3241,7 @@ mod tests {
                         drop_off_type: 1,
                         local_zone_id: None,
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                 ],
                 collections.vehicle_journeys.into_vec()[0].stop_times

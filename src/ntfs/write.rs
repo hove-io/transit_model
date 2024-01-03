@@ -112,6 +112,7 @@ pub fn write_vehicle_journeys_and_stop_times(
                         .get(&(vehicle_journeys[vj_idx].id.clone(), st.sequence))
                         .cloned(),
                     precision,
+                    geometry_id: st.geometry_id.clone(),
                 })
                 .with_context(|| format!("Error reading {:?}", st_wtr))?;
         }

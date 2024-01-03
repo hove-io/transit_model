@@ -812,6 +812,7 @@ mod tests {
                     drop_off_type: 0,
                     local_zone_id: Some(1),
                     precision: Some(StopTimePrecision::Exact),
+                    geometry_id: None,
                 },
                 StopTime {
                     stop_point_idx: collections.stop_points.get_idx("sp_id_2").unwrap(),
@@ -824,6 +825,7 @@ mod tests {
                     drop_off_type: 1,
                     local_zone_id: Some(1),
                     precision: Some(StopTimePrecision::Exact),
+                    geometry_id: None,
                 },
             ],
             ..Default::default()
@@ -855,6 +857,7 @@ mod tests {
                         drop_off_type: 0,
                         local_zone_id: Some(1),
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp_id_2").unwrap(),
@@ -867,6 +870,7 @@ mod tests {
                         drop_off_type: 1,
                         local_zone_id: Some(1),
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                 ],
                 ..Default::default()
@@ -909,6 +913,7 @@ mod tests {
                     drop_off_type: 0,
                     local_zone_id: Some(1),
                     precision: Some(StopTimePrecision::Exact),
+                    geometry_id: None,
                 }],
                 ..Default::default()
             })
@@ -957,6 +962,7 @@ mod tests {
                         drop_off_type: 0,
                         local_zone_id: Some(1),
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp_id_2").unwrap(),
@@ -969,6 +975,7 @@ mod tests {
                         drop_off_type: 1,
                         local_zone_id: Some(1),
                         precision: Some(StopTimePrecision::Exact),
+                        geometry_id: None,
                     },
                 ],
                 ..Default::default()

@@ -206,6 +206,7 @@ mod tests {
             drop_off_type: 0,
             local_zone_id: None,
             precision: None,
+            geometry_id: None,
         };
         // First vehicle journey, second stop time
         let stop_time_2 = StopTime {
@@ -219,6 +220,7 @@ mod tests {
             drop_off_type: 0,
             local_zone_id: None,
             precision: None,
+            geometry_id: None,
         };
         // Second vehicle journey, first stop time
         let next_vj_config_time_1 = StopTime {
@@ -232,6 +234,7 @@ mod tests {
             drop_off_type: 0,
             local_zone_id: None,
             precision: None,
+            geometry_id: None,
         };
         // Second vehicle journey, second stop time
         let next_vj_config_time_2 = StopTime {
@@ -245,6 +248,7 @@ mod tests {
             drop_off_type: 0,
             local_zone_id: None,
             precision: None,
+            geometry_id: None,
         };
 
         let vj1 = VehicleJourney {
@@ -456,6 +460,7 @@ mod tests {
             drop_off_type: 3,
             local_zone_id: None,
             precision: None,
+            geometry_id: None,
         });
         drop(vj_mut);
         let mut dates = BTreeSet::new();

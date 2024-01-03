@@ -871,6 +871,7 @@ pub struct StopTime {
     pub drop_off_type: u8,
     pub local_zone_id: Option<u16>,
     pub precision: Option<StopTimePrecision>,
+    pub geometry_id: Option<String>,
 }
 
 impl Ord for StopTime {
@@ -2172,6 +2173,7 @@ mod tests {
                     drop_off_type: 0,
                     local_zone_id: None,
                     precision: None,
+                    geometry_id: None,
                 })
                 .collect()
         }

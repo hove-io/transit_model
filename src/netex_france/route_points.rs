@@ -118,6 +118,7 @@ mod tests {
                 drop_off_type: 0,
                 local_zone_id: None,
                 precision: None,
+                geometry_id: None,
             }
         }
 
