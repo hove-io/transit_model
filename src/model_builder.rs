@@ -216,7 +216,9 @@ impl ModelBuilder {
     }
 }
 
+/// Trait used to convert a type into a `Time`
 pub trait IntoTime {
+    /// convert the type into a `Time`
     fn into_time(self) -> Time;
 }
 
@@ -239,7 +241,9 @@ impl IntoTime for &str {
     }
 }
 
+/// Trait used to convert a type into a `Date`
 pub trait AsDate {
+    /// convert the type into a `Date`
     fn as_date(&self) -> Date;
 }
 
@@ -307,6 +311,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
         self.st_mut(name, arrival, departure, |_st| {})
     }
 
+    /// add a StopTime to the vehicle journey and modify it
     pub fn st_mut<F>(
         mut self,
         name: &str,
@@ -399,6 +404,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
         self
     }
 
+    /// Set the block_id of the vj
     pub fn block_id(self, block_id: &str) -> Self {
         {
             let vj = &mut self
