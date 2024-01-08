@@ -118,6 +118,8 @@ pub struct Collections {
     pub addresses: CollectionWithId<Address>,
     pub administrative_regions: CollectionWithId<AdministrativeRegion>,
     pub occupancies: Collection<Occupancy>,
+    // HashMap<(vj_id, from_sequence, to_sequence+1), geometry_id>
+    pub stop_time_geometries: HashMap<(String, u32, u32), String>,
 }
 
 impl Collections {
@@ -432,6 +434,10 @@ impl Collections {
                 }
             })
             .collect::<Vec<_>>();
+
+        for geometry_id in self.stop_time_geometries.values() {
+            geometries_used.insert(geometry_id.clone());
+        }
 
         for sa in stop_areas.iter_mut().filter(|sa| !sa.coord.is_valid()) {
             debug!(

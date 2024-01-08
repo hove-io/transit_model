@@ -157,6 +157,14 @@ struct ObjectProperty {
     object_property_value: String,
 }
 
+#[derive(Serialize, Deserialize)]
+struct StopTimeGeometry {
+    trip_id: String,
+    sequence_from: u32,
+    sequence_to: u32,
+    geometry_id: String,
+}
+
 fn default_visible() -> bool {
     true
 }
@@ -321,6 +329,7 @@ where
             file_handler,
             "administrative_regions.txt",
         )?,
+        stop_time_geometries: read::manage_stop_time_geometries(file_handler)?,
         ..Default::default()
     };
     manage_calendars(file_handler, &mut collections)?;
@@ -417,6 +426,7 @@ pub fn write<P: AsRef<path::Path>>(
         &model.administrative_regions,
     )?;
     write_collection(path, "occupancies.txt", &model.occupancies)?;
+    write::write_stop_time_geometries(path, &model.stop_time_geometries)?;
 
     Ok(())
 }
@@ -524,7 +534,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.14.0".to_string()),
+                    ("ntfs_version".to_string(), "0.15.0".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -1646,5 +1656,24 @@ mod tests {
                 use_destination: "PF2:ZO2".to_string(),
             },
         ]);
+    }
+
+    #[test]
+    fn stop_time_geometries_serialization_deserialization() {
+        let expected_st_geometries = {
+            let mut map = HashMap::new();
+            map.insert(("VJ:1".to_string(), 0, 1), "geo1".to_string());
+            map.insert(("VJ:1".to_string(), 1, 2), "geo2".to_string());
+            map
+        };
+
+        test_in_tmp_dir(|path| {
+            write::write_stop_time_geometries(path, &expected_st_geometries).unwrap();
+
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+            let st_geometries = read::manage_stop_time_geometries(&mut handler).unwrap();
+
+            assert_eq!(expected_st_geometries, st_geometries);
+        });
     }
 }

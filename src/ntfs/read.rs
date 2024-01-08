@@ -12,7 +12,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime};
+use super::{
+    Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime, StopTimeGeometry,
+};
 use crate::file_handler::FileHandler;
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
@@ -599,6 +601,25 @@ where
     }
     collections.geometries = geometries;
     Ok(())
+}
+
+pub(crate) fn manage_stop_time_geometries<H>(
+    file_handler: &mut H,
+) -> crate::Result<HashMap<(String, u32, u32), String>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    Ok(
+        read_objects::<_, StopTimeGeometry>(file_handler, "stop_time_geometries.txt", false)?
+            .into_iter()
+            .fold(HashMap::new(), |mut acc, item| {
+                acc.insert(
+                    (item.trip_id, item.sequence_from, item.sequence_to),
+                    item.geometry_id,
+                );
+                acc
+            }),
+    )
 }
 
 pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {

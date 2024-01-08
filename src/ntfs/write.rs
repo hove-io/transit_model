@@ -12,7 +12,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopLocationType, StopTime};
+use super::{
+    Code, CommentLink, ObjectProperty, Result, Stop, StopLocationType, StopTime, StopTimeGeometry,
+};
 use crate::model::Collections;
 use crate::ntfs::{has_fares_v1, has_fares_v2};
 use crate::objects::*;
@@ -833,6 +835,32 @@ pub fn write_object_properties(path: &path::Path, collections: &Collections) -> 
 
     wtr.flush()
         .with_context(|| format!("Error reading {:?}", path))?;
+
+    Ok(())
+}
+
+pub fn write_stop_time_geometries(
+    path: &path::Path,
+    stop_time_geometries: &HashMap<(String, u32, u32), String>,
+) -> Result<()> {
+    if stop_time_geometries.is_empty() {
+        return Ok(());
+    }
+    let file = "stop_time_geometries.txt";
+    info!("Writing {}", file);
+
+    let path = path.join(file);
+    let mut wtr =
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+    for (key, geometry_id) in stop_time_geometries {
+        wtr.serialize(StopTimeGeometry {
+            trip_id: key.0.clone(),
+            sequence_from: key.1,
+            sequence_to: key.2,
+            geometry_id: geometry_id.clone(),
+        })
+        .with_context(|| format!("Error reading {:?}", path))?;
+    }
 
     Ok(())
 }
