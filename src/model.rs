@@ -751,7 +751,7 @@ impl Collections {
                     // [0,1] and [22,23] will become [22,23,0,1]
                     if i == HOURS_PER_DAY - 1
                         && holes.len() > 1
-                        && holes.get(0).filter(|h0| h0.contains(&0)).is_some()
+                        && holes.first().filter(|h0| h0.contains(&0)).is_some()
                     {
                         let hole0 = holes[0].clone();
                         if let Some(last) = holes.last_mut() {
@@ -1142,7 +1142,7 @@ impl Collections {
                 mut stop_areas: Vec<&StopArea>,
             ) -> Option<&StopArea> {
                 stop_areas.sort_by_key(|stop_area| &stop_area.name);
-                stop_areas.get(0).cloned()
+                stop_areas.first().cloned()
             }
             fn find_best_stop_area_for<'a, F>(
                 collections: &'a Collections,
