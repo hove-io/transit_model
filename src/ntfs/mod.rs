@@ -530,7 +530,6 @@ mod tests {
                 collections
                     .feed_infos
                     .into_iter()
-                    .map(|(k, v)| (k, v))
                     .collect::<Vec<(String, String)>>()
             );
         });
