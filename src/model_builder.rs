@@ -19,29 +19,43 @@
 //!  let model = transit_model::ModelBuilder::default()
 //!      .vj("toto", |vj| {
 //!          vj.route("1")
-//!            .st("A", "10:00:00", "10:01:00")
-//!            .st("B", "11:00:00", "11:01:00");
+//!            .st("A", "10:00:00")
+//!            .st("B", "11:00:00");
 //!      })
 //!      .vj("tata", |vj| {
-//!          vj.st("A", "10:00:00", "10:01:00")
-//!            .st("D", "11:00:00", "11:01:00");
+//!          vj.st("A", "10:00:00")
+//!            .st("D", "11:00:00");
 //!      })
 //!      .build();
 //! # }
 //! ```
 
 use crate::model::{Collections, Model};
-use crate::objects::{Calendar, Date, Route, StopPoint, StopTime, Time, VehicleJourney};
+use crate::objects::{
+    Calendar, CommercialMode, Date, Equipment, Geometry, Line, Network, Occupancy, OccupancyStatus,
+    PhysicalMode, Route, StopArea, StopPoint, StopTime, Time, Transfer, TripProperty,
+    ValidityPeriod, VehicleJourney,
+};
+use chrono::NaiveDateTime;
+use chrono_tz;
 use typed_index_collection::Idx;
 
 const DEFAULT_CALENDAR_ID: &str = "default_service";
+const DEFAULT_ROUTE_ID: &str = "default_route";
+const DEFAULT_LINE_ID: &str = "default_line";
+const DEFAULT_NETWORK_ID: &str = "default_network";
+const DEFAULT_COMMERCIAL_MODE_ID: &str = "default_commercial_mode";
+const DEFAULT_PHYSICAL_MODE_ID: &str = "default_physical_mode";
+
+/// The default timezone used in the model
+pub const DEFAULT_TIMEZONE: chrono_tz::Tz = chrono_tz::UTC;
 
 /// Builder used to easily create a `Model`
 /// Note: if not explicitly set all the vehicule journeys
 /// will be attached to a default calendar starting 2020-01-01
-#[derive(Default)]
 pub struct ModelBuilder {
     collections: Collections,
+    validity_period: ValidityPeriod,
 }
 
 /// Builder used to create and modify a new VehicleJourney
@@ -50,9 +64,57 @@ pub struct ModelBuilder {
 pub struct VehicleJourneyBuilder<'a> {
     model: &'a mut ModelBuilder,
     vj_idx: Idx<VehicleJourney>,
+    info: VehicleJourneyInfo,
+}
+
+#[derive(PartialEq, Eq)]
+/// Information about what is linked to a VehicleJourney
+pub enum VehicleJourneyInfo {
+    /// Route of the vehicle journey
+    Route(String),
+    /// Line of the vehicle journey
+    Line(String),
+    /// Network of the vehicle journey
+    Network(String),
+    /// Commercial mode of the vehicle journey
+    CommercialMode(String),
+    /// Physical mode of the vehicle journey
+    PhysicalMode(String),
+    /// Timezone of the network of the vehicle journey
+    Timezone(chrono_tz::Tz),
+    /// Orphan VehicleJourney
+    None,
+}
+
+impl Default for ModelBuilder {
+    fn default() -> Self {
+        let date = "2020-01-01";
+        Self::new(date, date)
+    }
 }
 
 impl ModelBuilder {
+    /// Create a new ModelBuilder
+    pub fn new(start_validity_period: impl AsDate, end_validity_period: impl AsDate) -> Self {
+        let start_date = start_validity_period.as_date();
+        let end_date = end_validity_period.as_date();
+        let model_builder = Self {
+            validity_period: ValidityPeriod {
+                start_date,
+                end_date,
+            },
+            collections: Collections::default(),
+        };
+
+        assert!(start_date <= end_date);
+        let dates: Vec<_> = start_date
+            .iter_days()
+            .take_while(|date| *date <= end_date)
+            .collect();
+
+        model_builder.default_calendar(&dates)
+    }
+
     /// Add a new VehicleJourney to the model
     ///
     /// ```
@@ -60,13 +122,13 @@ impl ModelBuilder {
     /// let model = transit_model::ModelBuilder::default()
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder
-    ///                .st("A", "10:00:00", "10:01:00")
-    ///                .st("B", "11:00:00", "11:01:00");
+    ///                .st("A", "10:00:00")
+    ///                .st("B", "11:00:00");
     ///        })
     ///        .vj("tata", |vj_builder| {
     ///            vj_builder
-    ///                .st("C", "08:00:00", "08:01:00")
-    ///                .st("B", "09:00:00", "09:01:00");
+    ///                .st("C", "08:00:00")
+    ///                .st("B", "09:00:00");
     ///        })
     ///        .build();
     /// # }
@@ -84,9 +146,19 @@ impl ModelBuilder {
             .vehicle_journeys
             .push(new_vj)
             .unwrap_or_else(|_| panic!("vj {} already exists", name));
+
+        let vj = &self.collections.vehicle_journeys[vj_idx];
+
+        {
+            let mut dataset = self.collections.datasets.get_or_create(&vj.dataset_id);
+            dataset.start_date = self.validity_period.start_date;
+            dataset.end_date = self.validity_period.end_date;
+        }
+
         let vj_builder = VehicleJourneyBuilder {
             model: &mut self,
             vj_idx,
+            info: VehicleJourneyInfo::None,
         };
 
         vj_initer(vj_builder);
@@ -98,13 +170,13 @@ impl ModelBuilder {
     /// ```
     /// # fn main() {
     /// let model = transit_model::ModelBuilder::default()
-    ///      .route("l1", |r| {
-    ///             r.name = "ligne 1".to_owned();
+    ///      .route("route1", |r| {
+    ///             r.name = "route 1".to_owned();
     ///         })
     ///      .vj("toto", |vj| {
-    ///          vj.route("l1")
-    ///            .st("A", "10:00:00", "10:01:00")
-    ///            .st("B", "11:00:00", "11:01:00");
+    ///          vj.route("route1")
+    ///            .st("A", "10:00:00")
+    ///            .st("B", "11:00:00");
     ///      })
     ///      .build();
     /// # }
@@ -117,6 +189,120 @@ impl ModelBuilder {
             let mut r = Route::default();
             route_initer(&mut r);
             r
+        });
+        self
+    }
+
+    /// Add a new network to the model
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///      .network("n1", |n| {
+    ///             n.name = "network 1".to_owned();
+    ///         })
+    ///      .vj("my_vj", |vj| {
+    ///          vj.network("n1")
+    ///            .st("A", "10:00:00")
+    ///            .st("B", "11:00:00");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn network<F>(mut self, id: &str, mut network_initer: F) -> Self
+    where
+        F: FnMut(&mut Network),
+    {
+        self.collections.networks.get_or_create_with(id, || {
+            let mut n = Network::default();
+            network_initer(&mut n);
+            n
+        });
+        self
+    }
+
+    /// Add a new line to the model
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///      .line("l1", |l| {
+    ///             l.name = "line 1".to_owned();
+    ///         })
+    ///      .vj("my_vj", |vj| {
+    ///          vj.line("l1")
+    ///            .st("A", "10:00:00")
+    ///            .st("B", "11:00:00");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn line<F>(mut self, id: &str, mut line_initer: F) -> Self
+    where
+        F: FnMut(&mut Line),
+    {
+        self.collections.lines.get_or_create_with(id, || {
+            let mut l = Line::default();
+            line_initer(&mut l);
+            l
+        });
+        self
+    }
+
+    /// Add a new commercial mode to the model
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///      .commercial_mode("cm1", |cm| {
+    ///             cm.name = "cm 1".to_owned();
+    ///         })
+    ///      .vj("my_vj", |vj| {
+    ///          vj.commercial_mode("cm1")
+    ///            .st("A", "10:00:00")
+    ///            .st("B", "11:00:00");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn commercial_mode<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut CommercialMode),
+    {
+        self.collections
+            .commercial_modes
+            .get_or_create_with(id, || {
+                let mut c = CommercialMode::default();
+                initer(&mut c);
+                c
+            });
+        self
+    }
+
+    /// Add a new physical mode to the model
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///      .physical_mode("pm1", |pm| {
+    ///             pm.name = "pm 1".to_owned();
+    ///         })
+    ///      .vj("my_vj", |vj| {
+    ///          vj.physical_mode("pm1")
+    ///            .st("A", "10:00:00")
+    ///            .st("B", "11:00:00");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn physical_mode<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut PhysicalMode),
+    {
+        self.collections.physical_modes.get_or_create_with(id, || {
+            let mut p = PhysicalMode::default();
+            initer(&mut p);
+            p
         });
         self
     }
@@ -134,8 +320,8 @@ impl ModelBuilder {
     ///      .calendar("default_service", &[Date::from_ymd(2019, 2, 6)])
     ///      .vj("toto", |vj| {
     ///          vj.calendar("c1")
-    ///            .st("A", "10:00:00", "10:01:00")
-    ///            .st("B", "11:00:00", "11:01:00");
+    ///            .st("A", "10:00:00")
+    ///            .st("B", "11:00:00");
     ///      })
     ///      .build();
     /// # }
@@ -162,8 +348,8 @@ impl ModelBuilder {
     ///      .default_calendar(&["2020-01-01"])
     ///      .vj("toto", |vj| {
     ///          vj
-    ///            .st("A", "10:00:00", "10:01:00")
-    ///            .st("B", "11:00:00", "11:01:00");
+    ///            .st("A", "10:00:00")
+    ///            .st("B", "11:00:00");
     ///      })
     ///      .build();
     /// # }
@@ -183,8 +369,8 @@ impl ModelBuilder {
     ///         })
     ///      .vj("toto", |vj| {
     ///          vj.calendar("c1")
-    ///            .st("A", "10:00:00", "10:01:00")
-    ///            .st("B", "11:00:00", "11:01:00");
+    ///            .st("A", "10:00:00")
+    ///            .st("B", "11:00:00");
     ///      })
     ///      .build();
     /// # }
@@ -198,6 +384,138 @@ impl ModelBuilder {
             calendar_initer(&mut c);
             c
         });
+        self
+    }
+
+    /// Add a new transfer to the model
+    pub fn add_transfer(
+        mut self,
+        from_stop_id: &str,
+        to_stop_id: &str,
+        transfer_duration: impl IntoTime,
+    ) -> Self {
+        let duration = transfer_duration.into_time().total_seconds();
+        self.collections.transfers.push(Transfer {
+            from_stop_id: from_stop_id.to_string(),
+            to_stop_id: to_stop_id.to_string(),
+            min_transfer_time: Some(duration),
+            real_min_transfer_time: Some(duration),
+            equipment_id: None,
+        });
+        self
+    }
+
+    /// Add a new stop area to the model
+    pub fn stop_area<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut StopArea),
+    {
+        self.collections.stop_areas.get_or_create_with(id, || {
+            let mut sa = StopArea {
+                id: id.to_owned(),
+                name: id.to_owned(),
+                ..Default::default()
+            };
+            initer(&mut sa);
+            sa
+        });
+        self
+    }
+
+    /// Add a new equipment to the model
+    pub fn equipment<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut Equipment),
+    {
+        self.collections.equipments.get_or_create_with(id, || {
+            let mut eq = Equipment {
+                id: id.to_owned(),
+                ..Default::default()
+            };
+            initer(&mut eq);
+            eq
+        });
+        self
+    }
+
+    /// Add a new trip property to the model
+    pub fn trip_property<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut TripProperty),
+    {
+        self.collections.trip_properties.get_or_create_with(id, || {
+            let mut trip_property = TripProperty {
+                id: id.to_owned(),
+                ..Default::default()
+            };
+            initer(&mut trip_property);
+            trip_property
+        });
+        self
+    }
+
+    /// Add a new stop point to the model
+    pub fn stop_point<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut StopPoint),
+    {
+        self.collections.stop_points.get_or_create_with(id, || {
+            let mut sp = StopPoint {
+                id: id.to_owned(),
+                name: id.to_owned(),
+                stop_area_id: format!("sa:{}", id),
+                ..Default::default()
+            };
+            initer(&mut sp);
+            sp
+        });
+        self
+    }
+
+    /// Sdd a new geometry to the model
+    pub fn geometry(mut self, id: &str, wkt_str: &str) -> Self {
+        use std::convert::TryInto;
+        use std::str::FromStr;
+        use wkt::Wkt;
+
+        let wkt_geometry: Wkt<f64> = Wkt::from_str(wkt_str).unwrap();
+        let geo_geometry: geo::Geometry<f64> = wkt_geometry.try_into().ok().unwrap();
+
+        self.collections
+            .geometries
+            .get_or_create_with(id, || Geometry {
+                id: id.to_owned(),
+                geometry: geo_geometry.clone(),
+            });
+        self
+    }
+
+    /// Add a new occupancy to the model
+    pub fn occupancy<F>(
+        mut self,
+        line_id: &str,
+        from_stop_point: &str,
+        to_stop_point: &str,
+        occupancy_status: OccupancyStatus,
+        mut occupancy_initer: F,
+    ) -> Self
+    where
+        F: FnMut(&mut Occupancy),
+    {
+        // by default, apply to all dates and times
+        let mut occupancy = Occupancy {
+            line_id: line_id.to_string(),
+            from_stop_area: format!("sa:{from_stop_point}"),
+            to_stop_area: format!("sa:{to_stop_point}"),
+            from_date: Date::MIN,
+            to_date: Date::MAX,
+            from_time: Time::new(0, 0, 0),
+            to_time: Time::new(0, 0, u32::MAX),
+            occupancy: occupancy_status,
+            ..Default::default()
+        };
+        occupancy_initer(&mut occupancy);
+        self.collections.occupancies.push(occupancy);
         self
     }
 
@@ -219,24 +537,24 @@ impl ModelBuilder {
 /// Trait used to convert a type into a `Time`
 pub trait IntoTime {
     /// convert the type into a `Time`
-    fn into_time(self) -> Time;
+    fn into_time(&self) -> Time;
 }
 
 impl IntoTime for Time {
-    fn into_time(self) -> Time {
-        self
+    fn into_time(&self) -> Time {
+        *self
     }
 }
 
 impl IntoTime for &Time {
-    fn into_time(self) -> Time {
-        *self
+    fn into_time(&self) -> Time {
+        **self
     }
 }
 
 impl IntoTime for &str {
     // Note: if the string is not in the right format, this conversion will fail
-    fn into_time(self) -> Time {
+    fn into_time(&self) -> Time {
         self.parse().expect("invalid time format")
     }
 }
@@ -266,6 +584,30 @@ impl AsDate for &str {
     }
 }
 
+/// Trait used to convert a type into a `NaiveDateTime`
+pub trait AsDateTime {
+    /// convert the type into a `NaiveDateTime`
+    fn as_datetime(&self) -> NaiveDateTime;
+}
+
+impl AsDateTime for &str {
+    fn as_datetime(&self) -> NaiveDateTime {
+        self.parse().expect("invalid datetime format")
+    }
+}
+
+impl AsDateTime for NaiveDateTime {
+    fn as_datetime(&self) -> NaiveDateTime {
+        *self
+    }
+}
+
+impl AsDateTime for &NaiveDateTime {
+    fn as_datetime(&self) -> NaiveDateTime {
+        **self
+    }
+}
+
 impl<'a> VehicleJourneyBuilder<'a> {
     fn find_or_create_sp(&mut self, sp: &str) -> Idx<StopPoint> {
         self.model
@@ -291,24 +633,82 @@ impl<'a> VehicleJourneyBuilder<'a> {
             })
     }
 
-    /// add a StopTime to the vehicle journey
+    /// add a basic StopTime to the vehicle journey
     ///
     /// Note: if the arrival/departure are given in string
     /// not in the right format, this conversion will fail
     ///
     /// ```
+    ///
+    /// # use transit_model::ModelBuilder;
+    ///
     /// # fn main() {
-    /// let model = transit_model::ModelBuilder::default()
+    /// let model = ModelBuilder::default()
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder
-    ///                .st("A", "10:00:00", "10:01:00")
-    ///                .st("B", "11:00:00", "11:01:00");
+    ///                .st("A", "10:00:00")
+    ///                .st("B", "11:00:00");
     ///        })
     ///        .build();
     /// # }
     /// ```
-    pub fn st(self, name: &str, arrival: impl IntoTime, departure: impl IntoTime) -> Self {
-        self.st_mut(name, arrival, departure, |_st| {})
+    pub fn st(self, name: &str, arrival: impl IntoTime) -> Self {
+        self.st_mut(
+            name,
+            arrival.into_time(),
+            arrival.into_time(),
+            0u8,
+            0u8,
+            None,
+            |_st| {},
+        )
+    }
+
+    /// Add a StopTime of type ODT to the vehicle journey
+    pub fn st_odt(self, name: &str, arrival: impl IntoTime) -> Self {
+        self.st_mut(
+            name,
+            arrival.into_time(),
+            arrival.into_time(),
+            2u8,
+            2u8,
+            None,
+            |_st| {},
+        )
+    }
+
+    /// Add a StopTime where the vehicle does not stop
+    pub fn st_skip(self, name: &str, arrival: impl IntoTime) -> Self {
+        self.st_mut(
+            name,
+            arrival.into_time(),
+            arrival.into_time(),
+            3u8,
+            3u8,
+            None,
+            |_st| {},
+        )
+    }
+
+    /// Add a StopTime to the vehicle journey
+    pub fn st_detailed(
+        self,
+        name: &str,
+        arrival: impl IntoTime,
+        depart: impl IntoTime,
+        pickup_type: u8,
+        drop_off_type: u8,
+        local_zone_id: Option<u16>,
+    ) -> Self {
+        self.st_mut(
+            name,
+            arrival.into_time(),
+            depart.into_time(),
+            pickup_type,
+            drop_off_type,
+            local_zone_id,
+            |_st| {},
+        )
     }
 
     /// add a StopTime to the vehicle journey and modify it
@@ -317,6 +717,9 @@ impl<'a> VehicleJourneyBuilder<'a> {
         name: &str,
         arrival: impl IntoTime,
         departure: impl IntoTime,
+        pickup_type: u8,
+        drop_off_type: u8,
+        local_zone_id: Option<u16>,
         st_muter: F,
     ) -> Self
     where
@@ -337,9 +740,9 @@ impl<'a> VehicleJourneyBuilder<'a> {
                 departure_time: departure.into_time(),
                 boarding_duration: 0u16,
                 alighting_duration: 0u16,
-                pickup_type: 0u8,
-                drop_off_type: 0u8,
-                local_zone_id: None,
+                pickup_type,
+                drop_off_type,
+                local_zone_id,
                 precision: None,
             };
             st_muter(&mut stop_time);
@@ -350,7 +753,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
         self
     }
 
-    /// Set the route of the vj
+    /// Set the route id of the vj
     ///
     /// ```
     /// # fn main() {
@@ -364,14 +767,142 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ///        .build();
     /// # }
     /// ```
-    pub fn route(self, id: &str) -> Self {
+    pub fn route(mut self, id: &str) -> Self {
+        assert!(
+            self.info == VehicleJourneyInfo::None,
+            "You cannot specify two different info for a vehicle journey"
+        );
+        self.info = VehicleJourneyInfo::Route(id.to_string());
+
+        self
+    }
+
+    /// Set the line id of the vj
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///      .line("l1", |l| {
+    ///             l.name = "line 1".to_owned();
+    ///         })
+    ///      .vj("my_vj", |vj| {
+    ///          vj.line("l1");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn line(mut self, id: &str) -> Self {
+        assert!(
+            self.info == VehicleJourneyInfo::None,
+            "You cannot specify two different info for a vehicle journey"
+        );
+        self.info = VehicleJourneyInfo::Line(id.to_string());
+
+        self
+    }
+
+    /// Set the line id of the vj
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///      .network("n1", |n| {
+    ///             n.name = "network 1".to_owned();
+    ///         })
+    ///      .vj("my_vj", |vj| {
+    ///          vj.network("l1")
+    ///            .st("A", "10:00:00")
+    ///            .st("B", "11:00:00");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn network(mut self, id: &str) -> Self {
         {
-            let vj = &mut self
-                .model
-                .collections
-                .vehicle_journeys
-                .index_mut(self.vj_idx);
-            vj.route_id = id.to_owned();
+            assert!(
+                self.info == VehicleJourneyInfo::None,
+                "You cannot specify two different info for a vehicle journey"
+            );
+            self.info = VehicleJourneyInfo::Network(id.to_string());
+        }
+
+        self
+    }
+
+    /// Set the timezone id of the vj
+    ///
+    /// ```
+    /// # fn main() {
+    /// let timezone = chrono_tz::Europe::Paris;
+    /// let model = transit_model::ModelBuilder::default()
+    ///      .network("n1", |n| {
+    ///             n.name = "network 1".to_owned();
+    ///         })
+    ///      .vj("my_vj", |vj| {
+    ///          vj.timezone(timezone);
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn timezone(mut self, timezone: chrono_tz::Tz) -> Self {
+        {
+            assert!(
+                self.info == VehicleJourneyInfo::None,
+                "You cannot specify two different info for a vehicle journey"
+            );
+            self.info = VehicleJourneyInfo::Timezone(timezone);
+        }
+
+        self
+    }
+
+    /// Set the commercial mode id of the vj
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///      .commercial_mode("cm1", |n| {
+    ///             n.name = "network 1".to_owned();
+    ///         })
+    ///      .vj("my_vj", |vj| {
+    ///          vj.commercial_mode("cm2");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn commercial_mode(mut self, id: &str) -> Self {
+        {
+            assert!(
+                self.info == VehicleJourneyInfo::None,
+                "You cannot specify two different info for a vehicle journey"
+            );
+            self.info = VehicleJourneyInfo::CommercialMode(id.to_string());
+        }
+
+        self
+    }
+
+    /// Set the physical mode id of the vj
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///      .physical_mode("pm1", |pm| {
+    ///             pm.name = "pm 1".to_owned();
+    ///         })
+    ///      .vj("my_vj", |vj| {
+    ///          vj.physical_mode("pm1");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn physical_mode(mut self, id: &str) -> Self {
+        {
+            assert!(
+                self.info == VehicleJourneyInfo::None,
+                "You cannot specify two different info for a vehicle journey"
+            );
+            self.info = VehicleJourneyInfo::PhysicalMode(id.to_string());
         }
 
         self
@@ -404,6 +935,33 @@ impl<'a> VehicleJourneyBuilder<'a> {
         self
     }
 
+    /// Set the trip property id of the vj
+    ///
+    /// ```
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///      .route("1", |route| {
+    ///             route.name = "route 1".to_owned();
+    ///         })
+    ///      .vj("my_vj", |vj| {
+    ///          vj.trip_property("tp1");
+    ///      })
+    ///      .build();
+    /// # }
+    /// ```
+    pub fn trip_property(self, id: &str) -> Self {
+        {
+            let vj = &mut self
+                .model
+                .collections
+                .vehicle_journeys
+                .index_mut(self.vj_idx);
+            vj.trip_property_id = Some(id.to_string());
+        }
+
+        self
+    }
+
     /// Set the block_id of the vj
     pub fn block_id(self, block_id: &str) -> Self {
         {
@@ -420,9 +978,10 @@ impl<'a> VehicleJourneyBuilder<'a> {
 
 impl<'a> Drop for VehicleJourneyBuilder<'a> {
     fn drop(&mut self) {
+        use std::ops::DerefMut;
         let collections = &mut self.model.collections;
         // add the missing objects to the model (routes, lines, ...)
-        let new_vj = &collections.vehicle_journeys[self.vj_idx];
+        let mut new_vj = collections.vehicle_journeys.index_mut(self.vj_idx);
         let dataset = collections.datasets.get_or_create(&new_vj.dataset_id);
         collections
             .contributors
@@ -431,16 +990,65 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
         collections.companies.get_or_create(&new_vj.company_id);
         collections.calendars.get_or_create(&new_vj.service_id);
 
+        let route_id = match &self.info {
+            VehicleJourneyInfo::Route(id) => id.clone(),
+            VehicleJourneyInfo::Line(_)
+            | VehicleJourneyInfo::Network(_)
+            | VehicleJourneyInfo::Timezone(_) => format!("route_{}", new_vj.id),
+            _ => DEFAULT_ROUTE_ID.to_string(),
+        };
+
+        new_vj.deref_mut().route_id = route_id;
+
+        let mut route = collections.routes.get_or_create(&new_vj.route_id);
+        let line_id = match &self.info {
+            VehicleJourneyInfo::Line(id) => id.clone(),
+            VehicleJourneyInfo::Network(_)
+            | VehicleJourneyInfo::Timezone(_)
+            | VehicleJourneyInfo::CommercialMode(_) => {
+                format!("line_{}", new_vj.id)
+            }
+            _ => DEFAULT_LINE_ID.to_string(),
+        };
+        route.deref_mut().line_id = line_id.clone();
+        let mut line = collections.lines.get_or_create(&line_id);
+        collections
+            .commercial_modes
+            .get_or_create(&line.commercial_mode_id);
+
+        let network_id = match &self.info {
+            VehicleJourneyInfo::Network(id) => id.clone(),
+            VehicleJourneyInfo::Timezone(_) => format!("network_{}", new_vj.id),
+            _ => DEFAULT_NETWORK_ID.to_string(),
+        };
+        line.deref_mut().network_id = network_id.clone();
+
+        let commercial_mode_id = match &self.info {
+            VehicleJourneyInfo::CommercialMode(id) => id.clone(),
+            _ => DEFAULT_COMMERCIAL_MODE_ID.to_string(),
+        };
+        line.deref_mut().commercial_mode_id = commercial_mode_id;
+
+        let physical_mode_id = match &self.info {
+            VehicleJourneyInfo::PhysicalMode(id) => id.clone(),
+            _ => DEFAULT_PHYSICAL_MODE_ID.to_string(),
+        };
+        new_vj.deref_mut().physical_mode_id = physical_mode_id;
+
         collections
             .physical_modes
             .get_or_create(&new_vj.physical_mode_id);
 
-        let route = collections.routes.get_or_create(&new_vj.route_id);
-        let line = collections.lines.get_or_create(&route.line_id);
-        collections
-            .commercial_modes
-            .get_or_create(&line.commercial_mode_id);
-        collections.networks.get_or_create(&line.network_id);
+        let timezone = match &self.info {
+            VehicleJourneyInfo::Timezone(timezone) => Some(*timezone),
+            _ => Some(DEFAULT_TIMEZONE),
+        };
+        collections.networks.get_or_create_with(&network_id, || {
+            use typed_index_collection::WithId;
+            let mut network = Network::with_id(&network_id);
+            network.timezone = timezone;
+            network
+        });
     }
 }
 
@@ -452,14 +1060,10 @@ mod test {
     fn simple_model_creation() {
         let model = ModelBuilder::default()
             .vj("toto", |vj_builder| {
-                vj_builder
-                    .st("A", "10:00:00", "10:01:00")
-                    .st("B", "11:00:00", "11:01:00");
+                vj_builder.st("A", "10:00:00").st("B", "11:00:00");
             })
             .vj("tata", |vj_builder| {
-                vj_builder
-                    .st("C", "10:00:00", "10:01:00")
-                    .st("D", "11:00:00", "11:01:00");
+                vj_builder.st("C", "10:00:00").st("D", "11:00:00");
             })
             .build();
 
@@ -489,12 +1093,10 @@ mod test {
     fn same_sp_model_creation() {
         let model = ModelBuilder::default()
             .vj("toto", |vj| {
-                vj.st("A", "10:00:00", "10:01:00")
-                    .st("B", "11:00:00", "11:01:00");
+                vj.st("A", "10:00:00").st("B", "11:00:00");
             })
             .vj("tata", |vj| {
-                vj.st("A", "10:00:00", "10:01:00")
-                    .st("D", "11:00:00", "11:01:00");
+                vj.st("A", "10:00:00").st("D", "11:00:00");
             })
             .build();
 
@@ -526,19 +1128,17 @@ mod test {
             .vj("toto", |vj_builder| {
                 vj_builder
                     .route("1")
-                    .st("A", "10:00:00", "10:01:00")
-                    .st("B", "11:00:00", "11:01:00");
+                    .st("A", "10:00:00")
+                    .st("B", "11:00:00");
             })
             .vj("tata", |vj_builder| {
                 vj_builder
                     .route("2")
-                    .st("C", "10:00:00", "10:01:00")
-                    .st("D", "11:00:00", "11:01:00");
+                    .st("C", "10:00:00")
+                    .st("D", "11:00:00");
             })
             .vj("tutu", |vj_builder| {
-                vj_builder
-                    .st("C", "10:00:00", "10:01:00")
-                    .st("E", "11:00:00", "11:01:00");
+                vj_builder.st("C", "10:00:00").st("E", "11:00:00");
             })
             .build();
 
