@@ -67,23 +67,21 @@ pub struct VehicleJourneyBuilder<'a> {
     info: VehicleJourneyInfo,
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Default)]
 /// Information about what is linked to a VehicleJourney
-pub enum VehicleJourneyInfo {
+pub struct VehicleJourneyInfo {
     /// Route of the vehicle journey
-    Route(String),
+    route_id: Option<String>,
     /// Line of the vehicle journey
-    Line(String),
+    line_id: Option<String>,
     /// Network of the vehicle journey
-    Network(String),
+    network_id: Option<String>,
     /// Commercial mode of the vehicle journey
-    CommercialMode(String),
+    commercial_mode_id: Option<String>,
     /// Physical mode of the vehicle journey
-    PhysicalMode(String),
+    physical_mode_id: Option<String>,
     /// Timezone of the network of the vehicle journey
-    Timezone(chrono_tz::Tz),
-    /// Orphan VehicleJourney
-    None,
+    timezone: Option<chrono_tz::Tz>,
 }
 
 impl Default for ModelBuilder {
@@ -158,7 +156,7 @@ impl ModelBuilder {
         let vj_builder = VehicleJourneyBuilder {
             model: &mut self,
             vj_idx,
-            info: VehicleJourneyInfo::None,
+            info: VehicleJourneyInfo::default(),
         };
 
         vj_initer(vj_builder);
@@ -758,9 +756,6 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// ```
     /// # fn main() {
     /// let model = transit_model::ModelBuilder::default()
-    ///        .route("1", |r| {
-    ///            r.name = "bob".into();
-    ///        })
     ///        .vj("toto", |vj_builder| {
     ///            vj_builder.route("1");
     ///        })
@@ -768,11 +763,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// # }
     /// ```
     pub fn route(mut self, id: &str) -> Self {
-        assert!(
-            self.info == VehicleJourneyInfo::None,
-            "You cannot specify two different info for a vehicle journey"
-        );
-        self.info = VehicleJourneyInfo::Route(id.to_string());
+        self.info.route_id = Some(id.to_string());
 
         self
     }
@@ -782,9 +773,6 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// ```
     /// # fn main() {
     /// let model = transit_model::ModelBuilder::default()
-    ///      .line("l1", |l| {
-    ///             l.name = "line 1".to_owned();
-    ///         })
     ///      .vj("my_vj", |vj| {
     ///          vj.line("l1");
     ///      })
@@ -792,11 +780,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// # }
     /// ```
     pub fn line(mut self, id: &str) -> Self {
-        assert!(
-            self.info == VehicleJourneyInfo::None,
-            "You cannot specify two different info for a vehicle journey"
-        );
-        self.info = VehicleJourneyInfo::Line(id.to_string());
+        self.info.line_id = Some(id.to_string());
 
         self
     }
@@ -806,11 +790,8 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// ```
     /// # fn main() {
     /// let model = transit_model::ModelBuilder::default()
-    ///      .network("n1", |n| {
-    ///             n.name = "network 1".to_owned();
-    ///         })
     ///      .vj("my_vj", |vj| {
-    ///          vj.network("l1")
+    ///          vj.network("n1")
     ///            .st("A", "10:00:00")
     ///            .st("B", "11:00:00");
     ///      })
@@ -819,11 +800,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// ```
     pub fn network(mut self, id: &str) -> Self {
         {
-            assert!(
-                self.info == VehicleJourneyInfo::None,
-                "You cannot specify two different info for a vehicle journey"
-            );
-            self.info = VehicleJourneyInfo::Network(id.to_string());
+            self.info.network_id = Some(id.to_string());
         }
 
         self
@@ -835,22 +812,15 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// # fn main() {
     /// let timezone = chrono_tz::Europe::Paris;
     /// let model = transit_model::ModelBuilder::default()
-    ///      .network("n1", |n| {
-    ///             n.name = "network 1".to_owned();
-    ///         })
     ///      .vj("my_vj", |vj| {
-    ///          vj.timezone(timezone);
+    ///          vj.network("n1").timezone(timezone);
     ///      })
     ///      .build();
     /// # }
     /// ```
     pub fn timezone(mut self, timezone: chrono_tz::Tz) -> Self {
         {
-            assert!(
-                self.info == VehicleJourneyInfo::None,
-                "You cannot specify two different info for a vehicle journey"
-            );
-            self.info = VehicleJourneyInfo::Timezone(timezone);
+            self.info.timezone = Some(timezone);
         }
 
         self
@@ -861,22 +831,15 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// ```
     /// # fn main() {
     /// let model = transit_model::ModelBuilder::default()
-    ///      .commercial_mode("cm1", |n| {
-    ///             n.name = "network 1".to_owned();
-    ///         })
     ///      .vj("my_vj", |vj| {
-    ///          vj.commercial_mode("cm2");
+    ///          vj.commercial_mode("cm1");
     ///      })
     ///      .build();
     /// # }
     /// ```
     pub fn commercial_mode(mut self, id: &str) -> Self {
         {
-            assert!(
-                self.info == VehicleJourneyInfo::None,
-                "You cannot specify two different info for a vehicle journey"
-            );
-            self.info = VehicleJourneyInfo::CommercialMode(id.to_string());
+            self.info.commercial_mode_id = Some(id.to_string());
         }
 
         self
@@ -887,9 +850,6 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// ```
     /// # fn main() {
     /// let model = transit_model::ModelBuilder::default()
-    ///      .physical_mode("pm1", |pm| {
-    ///             pm.name = "pm 1".to_owned();
-    ///         })
     ///      .vj("my_vj", |vj| {
     ///          vj.physical_mode("pm1");
     ///      })
@@ -898,11 +858,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     /// ```
     pub fn physical_mode(mut self, id: &str) -> Self {
         {
-            assert!(
-                self.info == VehicleJourneyInfo::None,
-                "You cannot specify two different info for a vehicle journey"
-            );
-            self.info = VehicleJourneyInfo::PhysicalMode(id.to_string());
+            self.info.physical_mode_id = Some(id.to_string());
         }
 
         self
@@ -990,59 +946,54 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
         collections.companies.get_or_create(&new_vj.company_id);
         collections.calendars.get_or_create(&new_vj.service_id);
 
-        let route_id = match &self.info {
-            VehicleJourneyInfo::Route(id) => id.clone(),
-            VehicleJourneyInfo::Line(_)
-            | VehicleJourneyInfo::Network(_)
-            | VehicleJourneyInfo::Timezone(_) => format!("route_{}", new_vj.id),
-            _ => DEFAULT_ROUTE_ID.to_string(),
-        };
+        let route_id = self
+            .info
+            .route_id
+            .clone()
+            .unwrap_or(DEFAULT_ROUTE_ID.to_string());
 
         new_vj.deref_mut().route_id = route_id;
 
         let mut route = collections.routes.get_or_create(&new_vj.route_id);
-        let line_id = match &self.info {
-            VehicleJourneyInfo::Line(id) => id.clone(),
-            VehicleJourneyInfo::Network(_)
-            | VehicleJourneyInfo::Timezone(_)
-            | VehicleJourneyInfo::CommercialMode(_) => {
-                format!("line_{}", new_vj.id)
-            }
-            _ => DEFAULT_LINE_ID.to_string(),
-        };
+
+        let line_id = self
+            .info
+            .line_id
+            .clone()
+            .unwrap_or(DEFAULT_LINE_ID.to_string());
+
         route.deref_mut().line_id = line_id.clone();
         let mut line = collections.lines.get_or_create(&line_id);
         collections
             .commercial_modes
             .get_or_create(&line.commercial_mode_id);
 
-        let network_id = match &self.info {
-            VehicleJourneyInfo::Network(id) => id.clone(),
-            VehicleJourneyInfo::Timezone(_) => format!("network_{}", new_vj.id),
-            _ => DEFAULT_NETWORK_ID.to_string(),
-        };
+        let network_id = self
+            .info
+            .network_id
+            .clone()
+            .unwrap_or(DEFAULT_NETWORK_ID.to_string());
         line.deref_mut().network_id = network_id.clone();
 
-        let commercial_mode_id = match &self.info {
-            VehicleJourneyInfo::CommercialMode(id) => id.clone(),
-            _ => DEFAULT_COMMERCIAL_MODE_ID.to_string(),
-        };
+        let commercial_mode_id = self
+            .info
+            .commercial_mode_id
+            .clone()
+            .unwrap_or(DEFAULT_COMMERCIAL_MODE_ID.to_string());
         line.deref_mut().commercial_mode_id = commercial_mode_id;
 
-        let physical_mode_id = match &self.info {
-            VehicleJourneyInfo::PhysicalMode(id) => id.clone(),
-            _ => DEFAULT_PHYSICAL_MODE_ID.to_string(),
-        };
+        let physical_mode_id = self
+            .info
+            .physical_mode_id
+            .clone()
+            .unwrap_or(DEFAULT_PHYSICAL_MODE_ID.to_string());
         new_vj.deref_mut().physical_mode_id = physical_mode_id;
 
         collections
             .physical_modes
             .get_or_create(&new_vj.physical_mode_id);
 
-        let timezone = match &self.info {
-            VehicleJourneyInfo::Timezone(timezone) => Some(*timezone),
-            _ => Some(DEFAULT_TIMEZONE),
-        };
+        let timezone = self.info.timezone.or(Some(DEFAULT_TIMEZONE));
         collections.networks.get_or_create_with(&network_id, || {
             use typed_index_collection::WithId;
             let mut network = Network::with_id(&network_id);
