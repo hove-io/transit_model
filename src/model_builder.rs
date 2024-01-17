@@ -392,7 +392,7 @@ impl ModelBuilder {
         to_stop_id: &str,
         transfer_duration: impl IntoTime,
     ) -> Self {
-        let duration = transfer_duration.into_time().total_seconds();
+        let duration = transfer_duration.as_time().total_seconds();
         self.collections.transfers.push(Transfer {
             from_stop_id: from_stop_id.to_string(),
             to_stop_id: to_stop_id.to_string(),
@@ -535,24 +535,24 @@ impl ModelBuilder {
 /// Trait used to convert a type into a `Time`
 pub trait IntoTime {
     /// convert the type into a `Time`
-    fn into_time(&self) -> Time;
+    fn as_time(&self) -> Time;
 }
 
 impl IntoTime for Time {
-    fn into_time(&self) -> Time {
+    fn as_time(&self) -> Time {
         *self
     }
 }
 
 impl IntoTime for &Time {
-    fn into_time(&self) -> Time {
+    fn as_time(&self) -> Time {
         **self
     }
 }
 
 impl IntoTime for &str {
     // Note: if the string is not in the right format, this conversion will fail
-    fn into_time(&self) -> Time {
+    fn as_time(&self) -> Time {
         self.parse().expect("invalid time format")
     }
 }
@@ -653,8 +653,8 @@ impl<'a> VehicleJourneyBuilder<'a> {
     pub fn st(self, name: &str, arrival: impl IntoTime) -> Self {
         self.st_mut(
             name,
-            arrival.into_time(),
-            arrival.into_time(),
+            arrival.as_time(),
+            arrival.as_time(),
             0u8,
             0u8,
             None,
@@ -666,8 +666,8 @@ impl<'a> VehicleJourneyBuilder<'a> {
     pub fn st_odt(self, name: &str, arrival: impl IntoTime) -> Self {
         self.st_mut(
             name,
-            arrival.into_time(),
-            arrival.into_time(),
+            arrival.as_time(),
+            arrival.as_time(),
             2u8,
             2u8,
             None,
@@ -679,8 +679,8 @@ impl<'a> VehicleJourneyBuilder<'a> {
     pub fn st_skip(self, name: &str, arrival: impl IntoTime) -> Self {
         self.st_mut(
             name,
-            arrival.into_time(),
-            arrival.into_time(),
+            arrival.as_time(),
+            arrival.as_time(),
             3u8,
             3u8,
             None,
@@ -700,8 +700,8 @@ impl<'a> VehicleJourneyBuilder<'a> {
     ) -> Self {
         self.st_mut(
             name,
-            arrival.into_time(),
-            depart.into_time(),
+            arrival.as_time(),
+            depart.as_time(),
             pickup_type,
             drop_off_type,
             local_zone_id,
@@ -710,6 +710,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     }
 
     /// add a StopTime to the vehicle journey and modify it
+    #[allow(clippy::too_many_arguments)]
     pub fn st_mut<F>(
         mut self,
         name: &str,
@@ -734,8 +735,8 @@ impl<'a> VehicleJourneyBuilder<'a> {
             let mut stop_time = StopTime {
                 stop_point_idx,
                 sequence,
-                arrival_time: arrival.into_time(),
-                departure_time: departure.into_time(),
+                arrival_time: arrival.as_time(),
+                departure_time: departure.as_time(),
                 boarding_duration: 0u16,
                 alighting_duration: 0u16,
                 pickup_type,
