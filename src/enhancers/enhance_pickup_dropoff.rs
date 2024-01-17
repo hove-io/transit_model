@@ -162,7 +162,10 @@ pub fn enhance_pickup_dropoff(collections: &mut Collections) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::objects::{Calendar, Date, StopPoint, Time};
+    use crate::{
+        objects::{Calendar, Date, StopPoint, Time},
+        ModelBuilder,
+    };
     use pretty_assertions::assert_eq;
     use std::collections::BTreeSet;
     use typed_index_collection::CollectionWithId;
@@ -488,21 +491,16 @@ mod tests {
     #[test]
     fn forbidden_drop_off_should_be_kept() {
         // if restriction are explicitly set they should not be overriden
-        let model = transit_model_builder::ModelBuilder::default()
+        let model = ModelBuilder::default()
             .vj("vj1", |vj| {
                 vj.block_id("block_1")
-                    .st("SP1", "10:00:00", "10:01:00")
-                    .st_mut("SP2", "11:00:00", "11:01:00", |st| {
-                        st.pickup_type = 1;
-                        st.drop_off_type = 1;
-                    });
+                    .st("SP1", "10:00:00")
+                    .st_detailed("SP2", "11:00:00", "11:01:00", 1, 1, None);
             })
             .vj("vj2", |vj| {
                 vj.block_id("block_1")
-                    .st_mut("SP3", "12:00:00", "12:01:00", |st| {
-                        st.drop_off_type = 2; // for fun this has a 'must call' type, we should also keep it
-                    })
-                    .st("SP4", "13:00:00", "13:01:00");
+                    .st_detailed("SP3", "12:00:00", "12:01:00", 0, 2, None)
+                    .st("SP4", "13:00:00");
             })
             .build();
         let vj1 = model.vehicle_journeys.get("vj1").unwrap();
@@ -536,27 +534,27 @@ mod tests {
         //
         // VJ:3 can sometimes be taken after VJ:1 so we also don't want to forbid
         // pick-up at last stop / drop-off at 1st stop
-        let model = transit_model_builder::ModelBuilder::default()
+        let model = ModelBuilder::default()
             .calendar("c1", &["2020-01-01", "2020-01-02", "2020-01-03"])
             .calendar("c2", &["2020-01-01", "2020-01-02"])
             .calendar("c3", &["2020-01-03", "2020-01-04"])
             .vj("VJ:1", |vj| {
                 vj.block_id("block_1")
                     .calendar("c1")
-                    .st("SP1", "10:00:00", "10:01:00")
-                    .st("SP2", "11:00:00", "11:01:00");
+                    .st("SP1", "10:00:00")
+                    .st("SP2", "11:00:00");
             })
             .vj("VJ:2", |vj| {
                 vj.block_id("block_1")
                     .calendar("c2")
-                    .st("SP3", "12:00:00", "12:01:00")
-                    .st("SP4", "13:00:00", "13:01:00");
+                    .st("SP3", "12:00:00")
+                    .st("SP4", "13:00:00");
             })
             .vj("VJ:3", |vj| {
                 vj.block_id("block_1")
                     .calendar("c3")
-                    .st("SP3", "12:30:00", "12:31:00")
-                    .st("SP4", "13:30:00", "13:31:00");
+                    .st("SP3", "12:30:00")
+                    .st("SP4", "13:30:00");
             })
             .build();
 
@@ -592,7 +590,7 @@ mod tests {
         // VJ:2   X  X  X
         // VJ:3            X
         // VJ:1 has a forbidden pick up at the 2nd stop-time that should be kept
-        let model = transit_model_builder::ModelBuilder::default()
+        let model = ModelBuilder::default()
             .calendar(
                 "c1",
                 &["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04"],
@@ -602,22 +600,22 @@ mod tests {
             .vj("VJ:1", |vj| {
                 vj.block_id("block_1")
                     .calendar("c1")
-                    .st("SP1", "10:00:00", "10:01:00")
-                    .st_mut("SP2", "11:00:00", "11:01:00", |st| {
-                        st.pickup_type = 1;
-                    }); // forbidden
+                    .st("SP1", "10:00:00")
+                    .st_detailed("SP2", "11:00:00", "11:01:00", 1, 0, None);
+
+                // forbidden
             })
             .vj("VJ:2", |vj| {
                 vj.block_id("block_1")
                     .calendar("c2")
-                    .st("SP3", "12:00:00", "12:01:00")
-                    .st("SP4", "13:00:00", "13:01:00");
+                    .st("SP3", "12:00:00")
+                    .st("SP4", "13:00:00");
             })
             .vj("VJ:3", |vj| {
                 vj.block_id("block_1")
                     .calendar("c3")
-                    .st("SP3", "12:30:00", "12:31:00")
-                    .st("SP4", "13:30:00", "13:31:00");
+                    .st("SP3", "12:30:00")
+                    .st("SP4", "13:30:00");
             })
             .build();
 
@@ -652,20 +650,20 @@ mod tests {
         // VJ:1   X  X
         // VJ:2         X
         // The pick-up (resp drop-off) at first (resp last) stop should be forbidden
-        let model = transit_model_builder::ModelBuilder::default()
+        let model = ModelBuilder::default()
             .calendar("c1", &["2020-01-01", "2020-01-02"])
             .calendar("c2", &["2020-01-03"])
             .vj("VJ:1", |vj| {
                 vj.block_id("block_1")
                     .calendar("c1")
-                    .st("SP1", "10:00:00", "10:01:00")
-                    .st("SP2", "11:00:00", "11:01:00");
+                    .st("SP1", "10:00:00")
+                    .st("SP2", "11:00:00");
             })
             .vj("VJ:2", |vj| {
                 vj.block_id("block_1")
                     .calendar("c2")
-                    .st("SP3", "12:00:00", "12:01:00")
-                    .st("SP4", "13:00:00", "13:01:00");
+                    .st("SP3", "12:00:00")
+                    .st("SP4", "13:00:00");
             })
             .build();
 
@@ -704,27 +702,27 @@ mod tests {
         // on VJ:1 at SP2 even if we would have wanted to forbid it for the stay-in
         // VJ:1 - VJ:3
         // we can however forbid the drop-off on VJ:3 at SP:2
-        let model = transit_model_builder::ModelBuilder::default()
+        let model = ModelBuilder::default()
             .calendar("c1", &["2020-01-01", "2020-01-02"])
             .calendar("c2", &["2020-01-01"])
             .calendar("c3", &["2020-01-02"])
             .vj("VJ:1", |vj| {
                 vj.block_id("block_1")
                     .calendar("c1")
-                    .st("SP1", "10:00:00", "10:01:00")
-                    .st("SP2", "11:00:00", "11:01:00");
+                    .st("SP1", "10:00:00")
+                    .st("SP2", "11:00:00");
             })
             .vj("VJ:2", |vj| {
                 vj.block_id("block_1")
                     .calendar("c2")
-                    .st("SP3", "12:00:00", "12:01:00")
-                    .st("SP4", "13:00:00", "13:01:00");
+                    .st("SP3", "12:00:00")
+                    .st("SP4", "13:00:00");
             })
             .vj("VJ:3", |vj| {
                 vj.block_id("block_1")
                     .calendar("c3")
-                    .st("SP2", "12:00:00", "12:01:00")
-                    .st("SP3", "13:00:00", "13:01:00");
+                    .st("SP2", "12:00:00")
+                    .st("SP3", "13:00:00");
             })
             .build();
 
@@ -753,18 +751,12 @@ mod tests {
 
     #[test]
     fn ignore_route_points() {
-        let model = transit_model_builder::ModelBuilder::default()
+        let model = ModelBuilder::default()
             .vj("VJ1:1", |vj| {
-                vj.st_mut("SP1", "10:00:00", "10:01:00", |st| {
-                    st.pickup_type = 3;
-                    st.drop_off_type = 3;
-                })
-                .st("SP2", "10:30:00", "10:31:00")
-                .st("SP3", "11:00:00", "11:01:00")
-                .st_mut("SP4", "11:30:00", "11:31:00", |st| {
-                    st.pickup_type = 3;
-                    st.drop_off_type = 3;
-                });
+                vj.st_detailed("SP1", "10:00:00", "10:01:00", 3, 3, None)
+                    .st("SP2", "10:30:00")
+                    .st("SP3", "11:00:00")
+                    .st_detailed("SP4", "11:30:00", "11:31:00", 3, 3, None);
             })
             .build();
         let vj1 = model.vehicle_journeys.get("VJ1:1").unwrap();

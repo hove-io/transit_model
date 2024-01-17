@@ -2395,20 +2395,15 @@ mod tests {
     }
 
     mod pickup_dropoff_harmonisation {
+        use crate::ModelBuilder;
         use pretty_assertions::assert_eq;
 
         #[test]
         fn update_pickup_drop_off_type() {
-            let model = transit_model_builder::ModelBuilder::default()
+            let model = ModelBuilder::default()
                 .vj("vj1", |vj| {
-                    vj.st_mut("SP1", "10:00:00", "10:01:00", |st| {
-                        st.pickup_type = 0;
-                        st.drop_off_type = 3;
-                    })
-                    .st_mut("SP2", "11:00:00", "11:01:00", |st| {
-                        st.pickup_type = 3;
-                        st.drop_off_type = 2;
-                    });
+                    vj.st_detailed("SP1", "10:00:00", "10:01:00", 0, 3, None)
+                        .st_detailed("SP2", "11:00:00", "11:01:00", 3, 2, None);
                 })
                 .build();
 
@@ -2428,24 +2423,12 @@ mod tests {
 
         #[test]
         fn remove_pickup_drop_off_type_3() {
-            let model = transit_model_builder::ModelBuilder::default()
+            let model = ModelBuilder::default()
                 .vj("vj1", |vj| {
-                    vj.st_mut("SP1", "10:00:00", "10:01:00", |st| {
-                        st.pickup_type = 0;
-                        st.drop_off_type = 1;
-                    })
-                    .st_mut("SP2", "11:00:00", "11:01:00", |st| {
-                        st.pickup_type = 3;
-                        st.drop_off_type = 2;
-                    })
-                    .st_mut("SP3", "12:00:00", "12:01:00", |st| {
-                        st.pickup_type = 3;
-                        st.drop_off_type = 2;
-                    })
-                    .st_mut("SP4", "13:00:00", "13:01:00", |st| {
-                        st.pickup_type = 1;
-                        st.drop_off_type = 0;
-                    });
+                    vj.st_detailed("SP1", "10:00:00", "10:01:00", 0, 1, None)
+                        .st_detailed("SP2", "11:00:00", "11:01:00", 3, 2, None)
+                        .st_detailed("SP3", "12:00:00", "12:01:00", 3, 2, None)
+                        .st_detailed("SP4", "13:00:00", "13:01:00", 1, 0, None);
                 })
                 .build();
 
