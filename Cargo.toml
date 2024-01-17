@@ -35,6 +35,7 @@ members = [
 xmllint = ["proj"]
 gtfs = []
 parser = []
+typed-index-collection-expose-inner = ["typed_index_collection/expose-inner"]
 
 [dependencies]
 anyhow = "1"
