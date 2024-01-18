@@ -23,13 +23,15 @@ use std::collections::HashMap;
 use tracing::info;
 use typed_index_collection::{Collection, CollectionWithId, Idx};
 
-type TransferMap = HashMap<(Idx<StopPoint>, Idx<StopPoint>), Transfer>;
+///structure for indexing transfers
+pub type TransferMap = HashMap<(Idx<StopPoint>, Idx<StopPoint>), Transfer>;
 
 /// The closure that will determine whether a connection should be created between 2 stops.
 /// See [generates_transfers](./fn.generates_transfers.html).
 pub type NeedTransfer<'a> = Box<dyn 'a + Fn(&Model, Idx<StopPoint>, Idx<StopPoint>) -> bool>;
 
-fn make_transfers_map(
+/// Build a map from existing transfers
+pub fn get_available_transfers(
     transfers: Collection<Transfer>,
     sp: &CollectionWithId<StopPoint>,
 ) -> TransferMap {
@@ -47,15 +49,17 @@ fn make_transfers_map(
         .collect()
 }
 
-fn generate_transfers_from_sp(
-    transfers_map: &mut TransferMap,
+/// Generate missing transfers from stop points within the required distance
+pub fn generate_missing_transfers_from_sp(
+    transfers_map: &TransferMap,
     model: &Model,
     max_distance: f64,
     walking_speed: f64,
     waiting_time: u32,
     need_transfer: Option<NeedTransfer>,
-) {
+) -> TransferMap {
     info!("Adding missing transfers from stop points.");
+    let mut new_transfers_map = TransferMap::new();
     let sq_max_distance = max_distance * max_distance;
     for (idx1, sp1) in model.stop_points.iter() {
         if sp1.coord == Coord::default() {
@@ -79,7 +83,7 @@ fn generate_transfers_from_sp(
                 continue;
             }
             let transfer_time = (sq_distance.sqrt() / walking_speed) as u32;
-            transfers_map.insert(
+            new_transfers_map.insert(
                 (idx1, idx2),
                 Transfer {
                     from_stop_id: sp1.id.clone(),
@@ -91,6 +95,7 @@ fn generate_transfers_from_sp(
             );
         }
     }
+    new_transfers_map
 }
 
 /// Generates missing transfers
@@ -127,9 +132,9 @@ pub fn generates_transfers(
     need_transfer: Option<NeedTransfer>,
 ) -> Result<Model> {
     info!("Generating transfers...");
-    let mut transfers_map = make_transfers_map(model.transfers.clone(), &model.stop_points);
-    generate_transfers_from_sp(
-        &mut transfers_map,
+    let mut transfers_map = get_available_transfers(model.transfers.clone(), &model.stop_points);
+    let new_transfers_map = generate_missing_transfers_from_sp(
+        &transfers_map,
         &model,
         max_distance,
         walking_speed,
@@ -137,6 +142,7 @@ pub fn generates_transfers(
         need_transfer,
     );
 
+    transfers_map.extend(new_transfers_map);
     let mut new_transfers: Vec<_> = transfers_map.into_values().collect();
     new_transfers.sort_unstable_by(|t1, t2| {
         (&t1.from_stop_id, &t1.to_stop_id).cmp(&(&t2.from_stop_id, &t2.to_stop_id))
@@ -145,4 +151,294 @@ pub fn generates_transfers(
     let mut collections = model.into_collections();
     collections.transfers = Collection::new(new_transfers);
     Model::new(collections)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        generate_missing_transfers_from_sp, generates_transfers, get_available_transfers,
+        TransferMap,
+    };
+    use crate::{
+        model::Model,
+        objects::{Coord, Time, Transfer},
+        ModelBuilder,
+    };
+    use typed_index_collection::Collection;
+
+    // A - B    92
+    // A - C    158
+    // B - C    66
+    fn base_model() -> Model {
+        let model_builder = ModelBuilder::default();
+        let transit_model = model_builder
+            .vj("vj1", |vj_builder| {
+                vj_builder
+                    .route("route1")
+                    .st("A", "10:00:00")
+                    .st("B", "11:00:00")
+                    .st("C", "12:00:00");
+            })
+            .add_transfer("A", "B", Time::new(0, 10, 0))
+            .build();
+
+        let mut collections = transit_model.into_collections();
+        collections.stop_points.get_mut("A").unwrap().coord =
+            Coord::from(("2.38951".to_string(), "48.852245".to_string()));
+        collections.stop_points.get_mut("B").unwrap().coord =
+            Coord::from(("2.390403".to_string(), "48.85165".to_string()));
+        collections.stop_points.get_mut("C").unwrap().coord =
+            Coord::from(("2.390403".to_string(), "48.85165".to_string()));
+
+        Model::new(collections).unwrap()
+    }
+
+    #[test]
+    fn test_get_available_transfers() {
+        let model = base_model();
+        let transfers_map = get_available_transfers(model.transfers.clone(), &model.stop_points);
+
+        let expected = {
+            let mut map = TransferMap::new();
+            let transfer_a_b = Transfer {
+                from_stop_id: "A".to_string(),
+                to_stop_id: "B".to_string(),
+                min_transfer_time: Some(8),
+                real_min_transfer_time: Some(10),
+                equipment_id: None,
+            };
+            map.insert(
+                (
+                    model.stop_points.get_idx("A").unwrap(),
+                    model.stop_points.get_idx("B").unwrap(),
+                ),
+                transfer_a_b,
+            );
+            map
+        };
+        assert_eq!(transfers_map, expected);
+    }
+
+    #[test]
+    fn test_generate_missing_transfers_from_sp() {
+        let model = base_model();
+        let new_transfers_map =
+            generate_missing_transfers_from_sp(&TransferMap::new(), &model, 100.0, 0.7, 2, None);
+
+        let expected = {
+            let mut map = TransferMap::new();
+            let transfer_a_b = Transfer {
+                from_stop_id: "A".to_string(),
+                to_stop_id: "B".to_string(),
+                min_transfer_time: Some(132),
+                real_min_transfer_time: Some(134),
+                equipment_id: None,
+            };
+            map.insert(
+                (
+                    model.stop_points.get_idx("A").unwrap(),
+                    model.stop_points.get_idx("B").unwrap(),
+                ),
+                transfer_a_b,
+            );
+            let transfer_a_a = Transfer {
+                from_stop_id: "A".to_string(),
+                to_stop_id: "A".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(2),
+                equipment_id: None,
+            };
+            map.insert(
+                (
+                    model.stop_points.get_idx("A").unwrap(),
+                    model.stop_points.get_idx("A").unwrap(),
+                ),
+                transfer_a_a,
+            );
+            let transfer_b_c = Transfer {
+                from_stop_id: "B".to_string(),
+                to_stop_id: "C".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(2),
+                equipment_id: None,
+            };
+            map.insert(
+                (
+                    model.stop_points.get_idx("B").unwrap(),
+                    model.stop_points.get_idx("C").unwrap(),
+                ),
+                transfer_b_c,
+            );
+            let transfer_c_a = Transfer {
+                from_stop_id: "C".to_string(),
+                to_stop_id: "A".to_string(),
+                min_transfer_time: Some(132),
+                real_min_transfer_time: Some(134),
+                equipment_id: None,
+            };
+            map.insert(
+                (
+                    model.stop_points.get_idx("C").unwrap(),
+                    model.stop_points.get_idx("A").unwrap(),
+                ),
+                transfer_c_a,
+            );
+            let transfer_b_a = Transfer {
+                from_stop_id: "B".to_string(),
+                to_stop_id: "A".to_string(),
+                min_transfer_time: Some(132),
+                real_min_transfer_time: Some(134),
+                equipment_id: None,
+            };
+            map.insert(
+                (
+                    model.stop_points.get_idx("B").unwrap(),
+                    model.stop_points.get_idx("A").unwrap(),
+                ),
+                transfer_b_a,
+            );
+            let transfer_b_b = Transfer {
+                from_stop_id: "B".to_string(),
+                to_stop_id: "B".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(2),
+                equipment_id: None,
+            };
+            map.insert(
+                (
+                    model.stop_points.get_idx("B").unwrap(),
+                    model.stop_points.get_idx("B").unwrap(),
+                ),
+                transfer_b_b,
+            );
+            let transfer_a_c = Transfer {
+                from_stop_id: "A".to_string(),
+                to_stop_id: "C".to_string(),
+                min_transfer_time: Some(132),
+                real_min_transfer_time: Some(134),
+                equipment_id: None,
+            };
+            map.insert(
+                (
+                    model.stop_points.get_idx("A").unwrap(),
+                    model.stop_points.get_idx("C").unwrap(),
+                ),
+                transfer_a_c,
+            );
+            let transfer_c_b = Transfer {
+                from_stop_id: "C".to_string(),
+                to_stop_id: "B".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(2),
+                equipment_id: None,
+            };
+            map.insert(
+                (
+                    model.stop_points.get_idx("C").unwrap(),
+                    model.stop_points.get_idx("B").unwrap(),
+                ),
+                transfer_c_b,
+            );
+            let transfer_c_c = Transfer {
+                from_stop_id: "C".to_string(),
+                to_stop_id: "C".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(2),
+                equipment_id: None,
+            };
+            map.insert(
+                (
+                    model.stop_points.get_idx("C").unwrap(),
+                    model.stop_points.get_idx("C").unwrap(),
+                ),
+                transfer_c_c,
+            );
+            map
+        };
+
+        assert_eq!(new_transfers_map, expected);
+    }
+    #[test]
+    fn test_generates_transfers() {
+        let model = base_model();
+        let new_model = generates_transfers(model, 100.0, 0.7, 2, None).expect("an error occured");
+        let mut collections = new_model.into_collections();
+
+        let mut transfers = Collection::new(vec![
+            Transfer {
+                from_stop_id: "A".to_string(),
+                to_stop_id: "B".to_string(),
+                min_transfer_time: Some(8),
+                real_min_transfer_time: Some(10),
+                equipment_id: None,
+            },
+            Transfer {
+                from_stop_id: "A".to_string(),
+                to_stop_id: "A".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(2),
+                equipment_id: None,
+            },
+            Transfer {
+                from_stop_id: "B".to_string(),
+                to_stop_id: "C".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(2),
+                equipment_id: None,
+            },
+            Transfer {
+                from_stop_id: "C".to_string(),
+                to_stop_id: "A".to_string(),
+                min_transfer_time: Some(132),
+                real_min_transfer_time: Some(134),
+                equipment_id: None,
+            },
+            Transfer {
+                from_stop_id: "B".to_string(),
+                to_stop_id: "A".to_string(),
+                min_transfer_time: Some(132),
+                real_min_transfer_time: Some(134),
+                equipment_id: None,
+            },
+            Transfer {
+                from_stop_id: "B".to_string(),
+                to_stop_id: "B".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(2),
+                equipment_id: None,
+            },
+            Transfer {
+                from_stop_id: "A".to_string(),
+                to_stop_id: "C".to_string(),
+                min_transfer_time: Some(132),
+                real_min_transfer_time: Some(134),
+                equipment_id: None,
+            },
+            Transfer {
+                from_stop_id: "C".to_string(),
+                to_stop_id: "B".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(2),
+                equipment_id: None,
+            },
+            Transfer {
+                from_stop_id: "C".to_string(),
+                to_stop_id: "C".to_string(),
+                min_transfer_time: Some(0),
+                real_min_transfer_time: Some(2),
+                equipment_id: None,
+            },
+        ]);
+        let mut transfers_expected = transfers.take();
+        transfers_expected.sort_unstable_by(|t1, t2| {
+            (&t1.from_stop_id, &t1.to_stop_id).cmp(&(&t2.from_stop_id, &t2.to_stop_id))
+        });
+
+        let mut transfers = collections.transfers.take();
+        transfers.sort_unstable_by(|t1, t2| {
+            (&t1.from_stop_id, &t1.to_stop_id).cmp(&(&t2.from_stop_id, &t2.to_stop_id))
+        });
+
+        assert_eq!(transfers, transfers_expected);
+    }
 }
