@@ -67,6 +67,7 @@ immediately with an error.
 | networks.txt | network_timezone | Optional   | agency.txt | agency_timezone |                              |
 | networks.txt | network_lang     | Optional   | agency.txt | agency_lang     |                              |
 | networks.txt | network_phone    | Optional   | agency.txt | agency_phone    |                              |
+| networks.txt | network_fare_url | Optional   | agency.txt | agency_fare_url |                              |
 
 **_"Source" complementary code :_**
 
