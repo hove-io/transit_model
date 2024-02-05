@@ -370,6 +370,8 @@ pub struct Network {
     pub phone: Option<String>,
     #[serde(rename = "network_address")]
     pub address: Option<String>,
+    #[serde(rename = "network_fare_url")]
+    pub fare_url: Option<String>,
     #[serde(rename = "network_sort_order")]
     pub sort_order: Option<u32>,
 }

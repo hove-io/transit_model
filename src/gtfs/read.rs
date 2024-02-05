@@ -70,6 +70,7 @@ impl From<Agency> for objects::Network {
             lang: agency.lang,
             phone: agency.phone,
             address: None,
+            fare_url: agency.fare_url,
             sort_order: None,
         }
     }
@@ -1306,7 +1307,19 @@ mod tests {
             let (networks, companies) = super::read_agency(&mut handler).unwrap();
             assert_eq!(1, networks.len());
             let network = networks.iter().next().unwrap().1;
-            assert_eq!("id_1", network.id);
+            let expected_netword = Network {
+                id: "id_1".to_string(),
+                name: "My agency".to_string(),
+                url: Some("http://my-agency_url.com".to_string()),
+                codes: BTreeSet::from([("source".to_string(), "id_1".to_string())]),
+                timezone: Some(chrono_tz::Europe::London),
+                lang: Some("EN".to_string()),
+                phone: Some("0123456789".to_string()),
+                address: None,
+                fare_url: Some("http://my-agency_fare_url.com".to_string()),
+                sort_order: None,
+            };
+            assert_eq!(&expected_netword, network);
             assert_eq!(1, companies.len());
         });
     }
