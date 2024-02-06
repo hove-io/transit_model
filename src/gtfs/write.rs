@@ -526,11 +526,12 @@ mod tests {
         let agency = Agency::from(&objects::Network {
             id: "OIF:101".to_string(),
             name: "SAVAC".to_string(),
-            url: Some("http://www.vianavigo.com,Europe/Paris".to_string()),
+            url: Some("http://www.vianavigo.com".to_string()),
             timezone: Some(chrono_tz::Europe::Madrid),
             lang: Some("fr".to_string()),
             phone: Some("0123456789".to_string()),
             address: Some("somewhere".to_string()),
+            fare_url: Some("http://www.vianavigo.com/tickets".to_string()),
             sort_order: Some(1),
             codes: Default::default(),
         });
@@ -538,11 +539,12 @@ mod tests {
         let expected_agency = Agency {
             id: Some("OIF:101".to_string()),
             name: "SAVAC".to_string(),
-            url: "http://www.vianavigo.com,Europe/Paris".to_string(),
+            url: "http://www.vianavigo.com".to_string(),
             timezone: chrono_tz::Europe::Madrid,
             lang: Some("fr".to_string()),
             phone: Some("0123456789".to_string()),
             email: None,
+            fare_url: Some("http://www.vianavigo.com/tickets".to_string()),
         };
 
         assert_eq!(expected_agency, agency);
@@ -558,6 +560,7 @@ mod tests {
             lang: None,
             phone: None,
             address: None,
+            fare_url: None,
             sort_order: None,
             codes: Default::default(),
         });
@@ -570,6 +573,7 @@ mod tests {
             lang: None,
             phone: None,
             email: None,
+            fare_url: None,
         };
 
         assert_eq!(expected_agency, agency);

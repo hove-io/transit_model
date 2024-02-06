@@ -58,6 +58,8 @@ struct Agency {
     phone: Option<String>,
     #[serde(rename = "agency_email")]
     email: Option<String>,
+    #[serde(rename = "agency_fare_url")]
+    fare_url: Option<String>,
 }
 
 impl<'a> From<&'a objects::Network> for Agency {
@@ -73,6 +75,7 @@ impl<'a> From<&'a objects::Network> for Agency {
             lang: obj.lang.clone(),
             phone: obj.phone.clone(),
             email: None,
+            fare_url: obj.fare_url.clone(),
         }
     }
 }

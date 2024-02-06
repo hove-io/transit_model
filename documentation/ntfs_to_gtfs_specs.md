@@ -34,6 +34,7 @@ The following additional files are generated only if the corresponding objects a
 | agency_timezone | yes      | networks.txt | network_timezone | `Europe/Paris` if the value is not provided.           |
 | agency_lang     | no       | networks.txt | network_lang     |                                                        |
 | agency_phone    | no       | networks.txt | network_phone    |                                                        |
+| agency_fare_url | no       | networks.txt | network_fare_url |                                                        |
 
 ### routes.txt
 

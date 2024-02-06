@@ -524,7 +524,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.14.0".to_string()),
+                    ("ntfs_version".to_string(), "0.15.0".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -541,11 +541,12 @@ mod tests {
             Network {
                 id: "OIF:101".to_string(),
                 name: "SAVAC".to_string(),
-                url: Some("http://www.vianavigo.com,Europe/Paris".to_string()),
+                url: Some("http://www.vianavigo.com".to_string()),
                 timezone: Some(chrono_tz::Europe::Paris),
                 lang: Some("fr".to_string()),
                 phone: Some("0123456789".to_string()),
                 address: Some("somewhere".to_string()),
+                fare_url: Some("http://www.vianavigo.com/tickets".to_string()),
                 sort_order: Some(1),
                 codes: KeysValues::default(),
             },
@@ -557,6 +558,7 @@ mod tests {
                 lang: None,
                 phone: None,
                 address: None,
+                fare_url: None,
                 sort_order: None,
                 codes: KeysValues::default(),
             },
@@ -1219,6 +1221,7 @@ mod tests {
             lang: None,
             phone: None,
             address: None,
+            fare_url: None,
             sort_order: None,
             codes: KeysValues::default(),
         });

@@ -1,2 +1,2 @@
-agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_email
-network:kept,The Great Network,http://www.navitia.io/,Europe/Paris,,,
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_email,agency_fare_url
+network:kept,The Great Network,https://hove.com,Europe/Paris,,,,https://hove.com/tickets
