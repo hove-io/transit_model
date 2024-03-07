@@ -1413,6 +1413,20 @@ pub enum CommentType {
     OnDemandTransport,
 }
 
+/// ```
+/// # use transit_model::objects::CommentType;
+/// assert_eq!(format!("{}", CommentType::Information), "information");
+/// assert_eq!(format!("{}", CommentType::OnDemandTransport), "on_demand_transport");
+/// ```
+impl std::fmt::Display for CommentType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            CommentType::Information => write!(f, "information"),
+            CommentType::OnDemandTransport => write!(f, "on_demand_transport"),
+        }
+    }
+}
+
 #[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Comment {
     #[serde(rename = "comment_id")]
