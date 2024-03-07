@@ -15,10 +15,9 @@
 //! See function translate
 
 use crate::objects::{Date, ExceptionType, ValidityPeriod};
-use chrono::{Datelike, Duration, Weekday};
+use chrono::{Datelike, Days, Weekday};
 use num_traits::cast::FromPrimitive;
 use std::collections::BTreeSet;
-use std::vec::Vec;
 
 ///Indicates whether service is available on the date specified.
 #[derive(Debug, Eq, PartialEq)]
@@ -41,7 +40,7 @@ pub struct BlockPattern {
 }
 
 fn get_prev_monday(date: Date) -> Date {
-    date - Duration::days(i64::from(date.weekday().num_days_from_monday()))
+    date - Days::new(u64::from(date.weekday().num_days_from_monday()))
 }
 
 fn compute_validity_pattern(start_date: Date, end_date: Date, dates: &BTreeSet<Date>) -> Vec<u8> {
@@ -84,9 +83,13 @@ fn fill_exceptions(
     exception_type: ExceptionType,
     exception_list: &mut Vec<ExceptionDate>,
 ) {
-    for i in 0..7 {
+    for i in 0_u64..7_u64 {
         if exception & (1 << i) == (1 << i) {
-            let date = start_date + Duration::days(i64::from(6 - i));
+            let date = if i == 7 {
+                start_date - Days::new(1)
+            } else {
+                start_date + Days::new(6 - i)
+            };
             exception_list.push(ExceptionDate {
                 date,
                 exception_type: exception_type.clone(),
@@ -142,7 +145,7 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
                 &mut exceptions_list,
             );
         }
-        monday_ref += Duration::days(7);
+        monday_ref = monday_ref + Days::new(7);
     }
     clean_extra_dates(start_date, end_date, &mut exceptions_list);
     BlockPattern {
@@ -167,7 +170,9 @@ pub fn translate(dates: &BTreeSet<Date>) -> BlockPattern {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::Days;
     use pretty_assertions::assert_eq;
+    use std::convert::TryFrom;
 
     fn compute_between(start_date: Date, end_date: Date) -> Vec<u8> {
         let mut dates = BTreeSet::new();
@@ -276,7 +281,7 @@ mod tests {
         let mut res = BTreeSet::new();
         for (i, c) in vpattern.chars().enumerate() {
             if c == '1' {
-                res.insert(start_date + Duration::days(i as i64));
+                res.insert(start_date + Days::new(u64::try_from(i).unwrap()));
             }
         }
         res

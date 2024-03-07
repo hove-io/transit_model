@@ -17,7 +17,7 @@
 #![allow(missing_docs)]
 
 use crate::{serde_utils::*, AddPrefix, PrefixConfiguration};
-use chrono::NaiveDate;
+use chrono::{Days, NaiveDate};
 use chrono_tz::Tz;
 use derivative::Derivative;
 use geo::{Geometry as GeoGeometry, Point as GeoPoint};
@@ -197,8 +197,8 @@ pub struct ValidityPeriod {
 
 impl Default for ValidityPeriod {
     fn default() -> ValidityPeriod {
-        use chrono::{Duration, Utc};
-        let duration = Duration::days(15);
+        use chrono::Utc;
+        let duration = Days::new(15);
         let today = Utc::now().date_naive();
         let start_date = today - duration;
         let end_date = today + duration;

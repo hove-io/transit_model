@@ -18,7 +18,7 @@ use crate::ntfs::{has_fares_v1, has_fares_v2};
 use crate::objects::*;
 use crate::NTFS_VERSION;
 use anyhow::{anyhow, bail, Context};
-use chrono::{DateTime, Duration, FixedOffset};
+use chrono::{DateTime, Days, FixedOffset};
 use csv::Writer;
 use rust_decimal::{prelude::ToPrimitive, Decimal};
 use std::collections::{BTreeSet, HashMap};
@@ -271,7 +271,7 @@ fn build_price_v1(id: &str, ticket: &Ticket, price: &TicketPrice) -> Result<Pric
     let price_v1 = PriceV1 {
         id: id.to_string(),
         start_date: price.ticket_validity_start,
-        end_date: price.ticket_validity_end + Duration::days(1), //in fare v1 end_date is excluded, whereas in fare v2 ticket_validity_end is included
+        end_date: price.ticket_validity_end + Days::new(1), //in fare v1 end_date is excluded, whereas in fare v2 ticket_validity_end is included
         price: cents_price,
         name: ticket.name.clone(),
         ignored: String::new(),
