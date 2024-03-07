@@ -25,11 +25,10 @@ use crate::serde_utils::*;
 use crate::vptranslator::translate;
 use crate::Result;
 use anyhow::{anyhow, bail, Context};
-use chrono::{self, Datelike, Weekday};
+use chrono::{self, Datelike, Days, Weekday};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_warn;
-use std::collections::BTreeSet;
-use std::path;
+use std::{collections::BTreeSet, convert::TryFrom, path};
 use tracing::info;
 use typed_index_collection::*;
 
@@ -121,7 +120,11 @@ impl Calendar {
         let valid_days = self.get_valid_days();
         let duration = self.end_date - self.start_date;
         (0..=duration.num_days())
-            .map(|i| self.start_date + chrono::Duration::days(i))
+            .filter_map(|i| {
+                u64::try_from(i)
+                    .ok()
+                    .map(|i| self.start_date + Days::new(i))
+            })
             .filter(|d| valid_days.contains(&d.weekday()))
             .collect()
     }

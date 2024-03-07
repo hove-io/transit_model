@@ -1356,7 +1356,7 @@ impl Collections {
                 // the following handles generated trip starting after midnight, we need to generate a
                 // new service in case the next day is not covered
                 let service_id = if start_time.hours() >= 24 {
-                    let nb_days = start_time.hours() / 24;
+                    let nb_days = u64::from(start_time.hours() / 24);
                     let service = self
                         .calendars
                         .get(&corresponding_vj.service_id)
@@ -1368,7 +1368,7 @@ impl Collections {
                         let new_dates: BTreeSet<_> = service
                             .dates
                             .iter()
-                            .map(|d| *d + chrono::Duration::days(i64::from(nb_days)))
+                            .map(|d| *d + chrono::Days::new(nb_days))
                             .collect();
 
                         let new_service = Calendar {
