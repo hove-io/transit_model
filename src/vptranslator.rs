@@ -85,11 +85,7 @@ fn fill_exceptions(
 ) {
     for i in 0_u64..7_u64 {
         if exception & (1 << i) == (1 << i) {
-            let date = if i == 7 {
-                start_date - Days::new(1)
-            } else {
-                start_date + Days::new(6 - i)
-            };
+            let date = start_date + Days::new(6 - i);
             exception_list.push(ExceptionDate {
                 date,
                 exception_type: exception_type.clone(),
