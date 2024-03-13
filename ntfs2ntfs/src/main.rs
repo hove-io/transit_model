@@ -64,6 +64,10 @@ struct Opt {
     /// Waiting time at stop in seconds.
     #[arg(long, short = 't', default_value = transit_model::TRANSFER_WAITING_TIME)]
     waiting_time: u32,
+
+    /// Don't compute transfers even the transfers of the stop point to itself (max_distance = 0.0)
+    #[arg(long)]
+    ignore_transfers: bool,
 }
 
 fn init_logger() {
@@ -89,13 +93,17 @@ fn run(opt: Opt) -> Result<()> {
     info!("Launching ntfs2ntfs...");
 
     let model = transit_model::ntfs::read(opt.input)?;
-    let model = generates_transfers(
-        model,
-        opt.max_distance,
-        opt.walking_speed,
-        opt.waiting_time,
-        None,
-    )?;
+    let model = if opt.ignore_transfers {
+        model
+    } else {
+        generates_transfers(
+            model,
+            opt.max_distance,
+            opt.walking_speed,
+            opt.waiting_time,
+            None,
+        )?
+    };
 
     if let Some(output) = opt.output {
         match output.extension() {
