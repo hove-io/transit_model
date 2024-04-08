@@ -39,7 +39,7 @@ parser = []
 [dependencies]
 anyhow = "1"
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
-chrono-tz = { version = "0.8", features = ["serde"] }
+chrono-tz = { version = "0.9", features = ["serde"] }
 csv = "1"
 derivative = "2"
 geo = "0.27"
