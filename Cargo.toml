@@ -65,7 +65,7 @@ tracing = { version = "0.1", features = ["log"] }
 typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2"}
 walkdir = "2"
 wkt = "0.10"
-zip = { version = "0.6", default-features = false, features = ["deflate"] }
+zip = { version = "1.1", default-features = false, features = ["deflate"] }
 git-version = "0.3"
 
 [[test]]
