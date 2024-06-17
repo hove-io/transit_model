@@ -886,7 +886,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
                 .collections
                 .vehicle_journeys
                 .index_mut(self.vj_idx);
-            vj.service_id = id.to_owned();
+            id.clone_into(&mut vj.service_id);
         }
 
         self
@@ -963,7 +963,7 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
             .clone()
             .unwrap_or(DEFAULT_LINE_ID.to_string());
 
-        route.deref_mut().line_id = line_id.clone();
+        route.deref_mut().line_id.clone_from(&line_id);
         let mut line = collections.lines.get_or_create(&line_id);
         collections
             .commercial_modes
@@ -974,7 +974,7 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
             .network_id
             .clone()
             .unwrap_or(DEFAULT_NETWORK_ID.to_string());
-        line.deref_mut().network_id = network_id.clone();
+        line.deref_mut().network_id.clone_from(&network_id);
 
         let commercial_mode_id = self
             .info
