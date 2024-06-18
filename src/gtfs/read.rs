@@ -789,7 +789,7 @@ where
                     skip_error_and_warn!(objects::StopPoint::try_from(stop.clone()));
                 if stop.parent_station.is_none() {
                     let stop_area = objects::StopArea::from(stop_point.clone());
-                    stop_point.stop_area_id = stop_area.id.clone();
+                    stop_point.stop_area_id.clone_from(&stop_area.id);
                     stop_areas.push(stop_area);
                 };
                 stop_point.comment_links = comment_links;

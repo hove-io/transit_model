@@ -915,7 +915,7 @@ impl Collections {
                 if let Some(dup_calendar) =
                     calendars_used.iter().find(|c| c.dates == calendar.dates)
                 {
-                    vehicle_journey.service_id = dup_calendar.id.clone();
+                    vehicle_journey.service_id.clone_from(&dup_calendar.id);
                 } else {
                     calendars_used.push(calendar.clone());
                 }
@@ -1949,25 +1949,25 @@ mod tests {
             collections.clean_comments();
             let line = collections.lines.get("line_id").unwrap();
             assert_eq!(1, line.comment_links.len());
-            assert!(line.comment_links.get("comment_id").is_some());
+            assert!(line.comment_links.contains("comment_id"));
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!(1, route.comment_links.len());
-            assert!(route.comment_links.get("comment_id").is_some());
+            assert!(route.comment_links.contains("comment_id"));
             let vehicle_journey = collections
                 .vehicle_journeys
                 .get("vehicle_journey_id")
                 .unwrap();
             assert_eq!(1, vehicle_journey.comment_links.len());
-            assert!(vehicle_journey.comment_links.get("comment_id").is_some());
+            assert!(vehicle_journey.comment_links.contains("comment_id"));
             let stop_point = collections.stop_points.get("stop_point_id").unwrap();
             assert_eq!(1, stop_point.comment_links.len());
-            assert!(stop_point.comment_links.get("comment_id").is_some());
+            assert!(stop_point.comment_links.contains("comment_id"));
             let stop_area = collections.stop_areas.get("stop_area_id").unwrap();
             assert_eq!(1, stop_area.comment_links.len());
-            assert!(stop_area.comment_links.get("comment_id").is_some());
+            assert!(stop_area.comment_links.contains("comment_id"));
             let stop_location = collections.stop_locations.get("stop_location_id").unwrap();
             assert_eq!(1, stop_location.comment_links.len());
-            assert!(stop_location.comment_links.get("comment_id").is_some());
+            assert!(stop_location.comment_links.contains("comment_id"));
         }
     }
 

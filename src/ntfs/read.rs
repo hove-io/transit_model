@@ -169,7 +169,7 @@ where
                 let mut stop_point = skip_error_and_warn!(StopPoint::try_from(stop.clone()));
                 if stop.parent_station.is_none() {
                     let mut stop_area = StopArea::from(stop_point.clone());
-                    stop_point.stop_area_id = stop_area.id.clone();
+                    stop_point.stop_area_id.clone_from(&stop_area.id);
                     stop_area.visible = stop.location_type == StopLocationType::StopPoint;
                     skip_error_and_warn!(stop_areas.push(stop_area));
                 };

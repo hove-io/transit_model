@@ -119,10 +119,10 @@ where
 }
 
 /// deserialize type T or returns its default value
-pub fn de_with_empty_default<'de, T: Default, D>(de: D) -> Result<T, D::Error>
+pub fn de_with_empty_default<'de, T, D>(de: D) -> Result<T, D::Error>
 where
     D: serde::Deserializer<'de>,
-    T: serde::Deserialize<'de>,
+    T: serde::Deserialize<'de> + Default,
 {
     use serde::Deserialize;
     Option::<T>::deserialize(de).map(|opt| opt.unwrap_or_default())

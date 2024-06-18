@@ -929,12 +929,12 @@ impl From<(String, String)> for Coord {
 impl From<Coord> for (String, String) {
     fn from(coord: Coord) -> Self {
         (
-            if (coord.lon - <f64>::default()).abs() < std::f64::EPSILON {
+            if (coord.lon - <f64>::default()).abs() < f64::EPSILON {
                 "".to_string()
             } else {
                 coord.lon.to_string()
             },
-            if (coord.lat - <f64>::default()).abs() < std::f64::EPSILON {
+            if (coord.lat - <f64>::default()).abs() < f64::EPSILON {
                 "".to_string()
             } else {
                 coord.lat.to_string()

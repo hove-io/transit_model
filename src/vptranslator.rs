@@ -64,7 +64,7 @@ fn dists(w: u8, weeks: &[u8]) -> u32 {
 
 fn get_min_week_pattern(weeks: &[u8]) -> u8 {
     let mut best: u8 = 0;
-    let mut best_score = std::u32::MAX;
+    let mut best_score = u32::MAX;
     for i in 0..128 {
         let score = dists(i, weeks);
         if (score < best_score)
