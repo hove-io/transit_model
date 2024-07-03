@@ -1,0 +1,2 @@
+ticketing_deep_link_id,web_url,android_intent_uri,ios_universal_link_url
+ticketing_deep_link:1,https://hove.com/tickets,https://hove.com/tickets,https://hove.com/tickets
