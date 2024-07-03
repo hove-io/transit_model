@@ -32,7 +32,7 @@ use chrono_tz::Tz;
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap},
     fmt,
     path::Path,
 };
@@ -650,7 +650,7 @@ fn get_ticketing_deep_links(networks: &CollectionWithId<Network>) -> TicketingDe
     networks
         .values()
         .filter_map(|n| n.fare_url.clone())
-        .collect::<HashSet<_>>()
+        .collect::<BTreeSet<_>>()
         .iter()
         .enumerate()
         .map(|(i, fare_url)| {

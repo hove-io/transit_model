@@ -176,3 +176,21 @@ fn test_ntfs2gtfs_split_route_by_mode_extended() {
         "./tests/fixtures/output_split_route_by_mode_extended",
     );
 }
+
+#[test]
+fn test_ntfs2gtfs_with_fare_urls_and_deeplinks() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::cargo_bin("ntfs2gtfs")
+        .expect("Failed to find binary 'ntfs2gtfs'")
+        .arg("--input")
+        .arg("tests/fixtures/input_ntfs_with_fare_urls")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .assert()
+        .success();
+    compare_output_dir_with_expected(
+        output_dir,
+        Some(vec!["agency.txt", "ticketing_deep_links.txt"]),
+        "./tests/fixtures/output_gtfs_with_fare_url_deeplinks",
+    );
+}
