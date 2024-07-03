@@ -21,7 +21,7 @@ use crate::{
     calendars::{manage_calendars, write_calendar_dates},
     file_handler::{FileHandler, PathFileHandler, ZipHandler},
     model::{Collections, Model},
-    objects::{self, Availability, Contributor, Dataset, StopType, Time},
+    objects::{self, Availability, Contributor, Dataset, Network, StopType, Time},
     parser::read_opt_collection,
     serde_utils::*,
     utils::*,
@@ -31,7 +31,11 @@ use anyhow::{anyhow, Context};
 use chrono_tz::Tz;
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, fmt, path::Path};
+use std::{
+    collections::{BTreeMap, HashMap, HashSet},
+    fmt,
+    path::Path,
+};
 
 use tracing::info;
 use typed_index_collection::CollectionWithId;
@@ -60,6 +64,8 @@ struct Agency {
     email: Option<String>,
     #[serde(rename = "agency_fare_url")]
     fare_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ticketing_deep_link_id: Option<String>,
 }
 
 impl<'a> From<&'a objects::Network> for Agency {
@@ -76,6 +82,7 @@ impl<'a> From<&'a objects::Network> for Agency {
             phone: obj.phone.clone(),
             email: None,
             fare_url: obj.fare_url.clone(),
+            ticketing_deep_link_id: None,
         }
     }
 }
@@ -263,6 +270,17 @@ struct Shape {
     #[serde(rename = "shape_pt_sequence")]
     sequence: u32,
 }
+
+#[derive(Serialize, Debug)]
+struct TicketingDeepLink {
+    #[serde(rename = "ticketing_deep_link_id")]
+    id: String,
+    web_url: Option<String>,
+    android_intent_uri: Option<String>,
+    ios_universal_link_url: Option<String>,
+}
+
+type TicketingDeepLinks = HashMap<String, TicketingDeepLink>;
 
 ///parameters consolidation
 #[derive(Default)]
@@ -628,6 +646,27 @@ fn to_gtfs_extended_value(route_type: &RouteType) -> String {
     }
 }
 
+fn get_ticketing_deep_links(networks: &CollectionWithId<Network>) -> TicketingDeepLinks {
+    networks
+        .values()
+        .filter_map(|n| n.fare_url.clone())
+        .collect::<HashSet<_>>()
+        .iter()
+        .enumerate()
+        .map(|(i, fare_url)| {
+            (
+                fare_url.clone(),
+                TicketingDeepLink {
+                    id: format!("ticketing_deep_link:{}", i + 1),
+                    web_url: Some(fare_url.clone()),
+                    android_intent_uri: Some(fare_url.clone()),
+                    ios_universal_link_url: Some(fare_url.clone()),
+                },
+            )
+        })
+        .collect::<TicketingDeepLinks>()
+}
+
 fn ser_from_route_type_extended<S>(r: &RouteType, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
@@ -643,8 +682,10 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> 
     std::fs::create_dir_all(path)?;
     info!("Writing GTFS to {:?}", path);
 
+    let ticketing_deep_links = get_ticketing_deep_links(&model.networks);
     write::write_transfers(path, &model.transfers)?;
-    write::write_agencies(path, &model.networks)?;
+    write::write_ticketing_deep_links(path, &ticketing_deep_links)?;
+    write::write_agencies(path, &model.networks, &ticketing_deep_links)?;
     write_calendar_dates(path, &model.calendars)?;
     write::write_stops(
         path,
