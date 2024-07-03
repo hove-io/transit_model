@@ -72,7 +72,7 @@ pub fn write_agencies(
                         .get(fare_url)
                         .map(|ticketing_deep_link| ticketing_deep_link.id.clone())
                 })
-                .or(Some("".to_string()));
+                .or_else(|| Some(String::new()));
         }
         wtr.serialize(agency)
             .with_context(|| format!("Error reading {:?}", path))?;
