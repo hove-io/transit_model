@@ -32,8 +32,8 @@ where
     let source_path = source_path.as_ref();
     let file = fs::File::create(zip_file.as_ref())?;
     let mut zip = zip::ZipWriter::new(file);
-    let options: zip::write::FileOptions<zip::write::ExtendedFileOptions> =
-        zip::write::FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
     let mut buffer = Vec::new();
     for entry in WalkDir::new(source_path) {
         let path = entry?.path().to_owned();
@@ -41,7 +41,7 @@ where
             let name = path.strip_prefix(path::Path::new(source_path))?.to_owned();
             if let Some(name) = name.to_str() {
                 debug!("adding {:?} as {:?} ...", path, name);
-                zip.start_file(name, options.clone())?;
+                zip.start_file(name, options)?;
                 let mut f = fs::File::open(path)?;
 
                 f.read_to_end(&mut buffer)?;
