@@ -73,6 +73,9 @@ pub fn write_agencies(
                         .map(|ticketing_deep_link| ticketing_deep_link.id.clone())
                 })
                 .or_else(|| Some(String::new()));
+            // If there is at least one ticketing_deep_link_id then the other csv columns cannot be set to None.
+            // See struct Agency -> skip_serializing_if on ticketing_deep_link_id
+            // Since the number of serialized columns must be the same, agencies without ticketing_deep_link_id must be set to empty string
         }
         wtr.serialize(agency)
             .with_context(|| format!("Error reading {:?}", path))?;

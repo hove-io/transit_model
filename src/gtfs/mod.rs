@@ -64,6 +64,7 @@ struct Agency {
     email: Option<String>,
     #[serde(rename = "agency_fare_url")]
     fare_url: Option<String>,
+    // Will not export attribute (and therefore csv column) if all values ​​are None
     #[serde(skip_serializing_if = "Option::is_none")]
     ticketing_deep_link_id: Option<String>,
 }
