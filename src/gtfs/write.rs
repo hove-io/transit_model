@@ -13,8 +13,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{
-    Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
-    Trip,
+    Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime,
+    TicketingDeepLinks, Transfer, Trip,
 };
 use crate::gtfs::ExtendedRoute;
 use crate::model::{GetCorresponding, Model};
@@ -55,19 +55,55 @@ pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) 
 pub fn write_agencies(
     path: &path::Path,
     networks: &CollectionWithId<objects::Network>,
+    ticketing_deep_links: &TicketingDeepLinks,
 ) -> Result<()> {
     info!("Writing agency.txt");
     let path = path.join("agency.txt");
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
-    for n in networks.values() {
-        wtr.serialize(Agency::from(n))
+    for network in networks.values() {
+        let mut agency = Agency::from(network);
+        if !ticketing_deep_links.is_empty() {
+            agency.ticketing_deep_link_id = network
+                .fare_url
+                .as_ref()
+                .and_then(|fare_url| {
+                    ticketing_deep_links
+                        .get(fare_url)
+                        .map(|ticketing_deep_link| ticketing_deep_link.id.clone())
+                })
+                .or_else(|| Some(String::new()));
+            // If there is at least one ticketing_deep_link_id then the other csv columns cannot be set to None.
+            // See struct Agency -> skip_serializing_if on ticketing_deep_link_id
+            // Since the number of serialized columns must be the same, agencies without ticketing_deep_link_id must be set to empty string
+        }
+        wtr.serialize(agency)
             .with_context(|| format!("Error reading {:?}", path))?;
     }
 
     wtr.flush()
         .with_context(|| format!("Error reading {:?}", path))?;
 
+    Ok(())
+}
+
+pub fn write_ticketing_deep_links(
+    path: &path::Path,
+    ticketing_deep_links: &TicketingDeepLinks,
+) -> Result<()> {
+    if !ticketing_deep_links.is_empty() {
+        let file_name = "ticketing_deep_links.txt";
+        info!("Writing {}", file_name);
+        let path = path.join(file_name);
+        let mut wtr =
+            csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+        for tdl in ticketing_deep_links.values() {
+            wtr.serialize(tdl)
+                .with_context(|| format!("Error serializing {:?}", path))?;
+        }
+        wtr.flush()
+            .with_context(|| format!("Error reading {:?}", path))?;
+    }
     Ok(())
 }
 
@@ -545,6 +581,7 @@ mod tests {
             phone: Some("0123456789".to_string()),
             email: None,
             fare_url: Some("http://www.vianavigo.com/tickets".to_string()),
+            ticketing_deep_link_id: None,
         };
 
         assert_eq!(expected_agency, agency);
@@ -574,6 +611,7 @@ mod tests {
             phone: None,
             email: None,
             fare_url: None,
+            ticketing_deep_link_id: None,
         };
 
         assert_eq!(expected_agency, agency);

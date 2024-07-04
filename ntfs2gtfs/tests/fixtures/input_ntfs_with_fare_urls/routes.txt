@@ -1,0 +1,7 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+M1F,Nation - Charles de Gaulle,forward,M1,,CDG
+M1B,Charles de Gaulle - Nation,forward,M1,,NAT
+B42F,Gare de Lyon - Montparnasse,forward,B42,,MTP
+B42B,Montparnasse - Gare de Lyon,forward,B42,,GDL
+RERAF,Nation - La Défense,forward,RERA,,DEF
+RERAB,La Défense - Nation,forward,RERA,,Navitia:MTPZ

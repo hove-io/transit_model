@@ -1,0 +1,3 @@
+ticketing_deep_link_id,web_url,android_intent_uri,ios_universal_link_url
+ticketing_deep_link:1,http://www.network2.com,http://www.network2.com,http://www.network2.com
+ticketing_deep_link:2,http://www.network3.com,http://www.network3.com,http://www.network3.com

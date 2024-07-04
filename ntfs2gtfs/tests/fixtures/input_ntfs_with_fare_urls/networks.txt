@@ -1,0 +1,4 @@
+network_id,network_name,network_url,network_timezone,network_lang,network_phone,network_address,network_fare_url,network_sort_order
+N1,Network 1,,,,,,,
+N2,Network 2,,,,,,http://www.network2.com,
+N3,Network 3,,,,,,http://www.network3.com,

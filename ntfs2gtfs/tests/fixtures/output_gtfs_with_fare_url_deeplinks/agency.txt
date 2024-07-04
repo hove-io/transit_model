@@ -1,0 +1,4 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_email,agency_fare_url,ticketing_deep_link_id
+N1,Network 1,http://www.navitia.io/,Europe/Paris,,,,,
+N2,Network 2,http://www.navitia.io/,Europe/Paris,,,,http://www.network2.com,ticketing_deep_link:1
+N3,Network 3,http://www.navitia.io/,Europe/Paris,,,,http://www.network3.com,ticketing_deep_link:2
