@@ -218,6 +218,7 @@ impl Collections {
         let mut data_sets_used = HashSet::<String>::new();
         let mut physical_modes_used = HashSet::<String>::new();
         let mut comments_used = HashSet::<String>::new();
+        let mut odt_reservations_used = HashSet::<String>::new();
         let mut level_id_used = HashSet::<String>::new();
         let mut calendars_used = HashSet::<String>::new();
         let mut vjs_used = HashSet::<String>::new();
@@ -253,6 +254,8 @@ impl Collections {
                 data_sets_used.insert(vj.dataset_id.clone());
                 physical_modes_used.insert(vj.physical_mode_id.clone());
                 comments_used.extend(&mut vj.comment_links.iter().map(|cl| cl.to_string()));
+                odt_reservations_used
+                    .extend(&mut vj.odt_reservation_links.iter().map(|id| id.to_string()));
                 vjs_used.insert(vj.id.clone());
                 true
             } else {
@@ -384,6 +387,8 @@ impl Collections {
                     networks_used.insert(l.network_id.clone());
                     commercial_modes_used.insert(l.commercial_mode_id.clone());
                     comments_used.extend(&mut l.comment_links.iter().map(|cl| cl.to_string()));
+                    odt_reservations_used
+                        .extend(&mut l.odt_reservation_links.iter().map(|id| id.to_string()));
                     true
                 } else {
                     log_object_removed("Line", &l.id);
@@ -475,6 +480,11 @@ impl Collections {
             .retain(log_predicate("Comment", |comment: &Comment| {
                 comments_used.contains(&comment.id)
             }));
+
+        self.odt_reservations.retain(log_predicate(
+            "ODTReservation",
+            |odt_reservation: &ODTReservation| odt_reservations_used.contains(&odt_reservation.id),
+        ));
 
         self.lines = CollectionWithId::new(lines)?;
         self.stop_points = CollectionWithId::new(stop_points)?;
