@@ -185,6 +185,7 @@ impl AddPrefix for Collections {
         self.calendars.prefix(prefix_conf);
         self.companies.prefix(prefix_conf);
         self.comments.prefix(prefix_conf);
+        self.odt_reservations.prefix(prefix_conf);
         self.equipments.prefix(prefix_conf);
         self.transfers.prefix(prefix_conf);
         self.trip_properties.prefix(prefix_conf);

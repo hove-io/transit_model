@@ -127,6 +127,7 @@ mod tests {
                 codes: KeysValues::default(),
                 object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
+                odt_reservation_links: CommentLinksT::default(),
                 route_id: String::from("route_id"),
                 physical_mode_id: String::from("Bus"),
                 dataset_id: String::from("dataset_id"),

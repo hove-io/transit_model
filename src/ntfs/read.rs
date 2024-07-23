@@ -12,7 +12,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime};
+use super::{
+    Code, CommentLink, ODTReservationLink, ObjectProperty, Stop, StopLocationType, StopTime,
+};
 use crate::file_handler::FileHandler;
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
@@ -473,6 +475,38 @@ fn insert_stop_time_comment_link(
     Ok(())
 }
 
+fn insert_odt_reservation_link<T>(
+    collection: &mut CollectionWithId<T>,
+    odt_reservations: &CollectionWithId<ODTReservation>,
+    link: &ODTReservationLink,
+) -> Result<()>
+where
+    T: ODTReservationLinks + Id<T>,
+{
+    let idx = match collection.get_idx(&link.object_id) {
+        Some(idx) => idx,
+        None => {
+            error!(
+                "odt_reservation_links.txt: object_type={} object_id={} not found",
+                link.object_type.as_str(),
+                link.object_id
+            );
+            return Ok(());
+        }
+    };
+    if !odt_reservations.contains_id(&link.odt_reservation_id) {
+        bail!(
+            "odt_reservations.txt: odt_reservation_id={} not found",
+            link.odt_reservation_id
+        );
+    }
+    collection
+        .index_mut(idx)
+        .odt_reservation_links_mut()
+        .insert(link.odt_reservation_id.clone());
+    Ok(())
+}
+
 pub(crate) fn manage_comments<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -485,7 +519,7 @@ where
     }
     let comment_links = read_objects::<_, CommentLink>(file_handler, "comment_links.txt", false)?;
 
-    // invert the stop_time_ids map to search a stop_time by it's id
+    // invert the stop_time_ids map to search a stop_time by its id
     let stop_time_ids = collections
         .stop_time_ids
         .iter()
@@ -531,6 +565,46 @@ where
             _ => warn!(
                 "comment does not support {}",
                 comment_link.object_type.as_str()
+            ),
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn manage_odt_reservations<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    collections.odt_reservations =
+        make_opt_collection_with_id(file_handler, "odt_reservations.txt")?;
+
+    if collections.odt_reservations.is_empty() {
+        return Ok(());
+    }
+    let odt_reservations_links =
+        read_objects::<_, ODTReservationLink>(file_handler, "odt_reservation_links.txt", false)?;
+
+    info!("Reading odt_reservations_links.txt");
+    for link in odt_reservations_links {
+        match link.object_type {
+            ObjectType::Line => {
+                skip_error_and_warn!(insert_odt_reservation_link(
+                    &mut collections.lines,
+                    &collections.odt_reservations,
+                    &link
+                ))
+            }
+            ObjectType::VehicleJourney => skip_error_and_warn!(insert_odt_reservation_link(
+                &mut collections.vehicle_journeys,
+                &collections.odt_reservations,
+                &link,
+            )),
+            _ => warn!(
+                "odt_reservation does not support {}",
+                link.object_type.as_str()
             ),
         }
     }

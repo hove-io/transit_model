@@ -142,6 +142,13 @@ struct CommentLink {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+struct ODTReservationLink {
+    object_id: String,
+    object_type: ObjectType,
+    odt_reservation_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct Code {
     object_type: ObjectType,
     object_id: String,
@@ -331,6 +338,7 @@ where
     read::manage_stop_times(&mut collections, file_handler)?;
     read::manage_codes(&mut collections, file_handler)?;
     read::manage_comments(&mut collections, file_handler)?;
+    read::manage_odt_reservations(&mut collections, file_handler)?;
     read::manage_object_properties(&mut collections, file_handler)?;
     read::manage_fares_v1(&mut collections, file_handler)?;
     read::manage_companies_on_vj(&mut collections)?;
@@ -405,6 +413,7 @@ pub fn write<P: AsRef<path::Path>>(
         &model.stop_locations,
     )?;
     write::write_comments(path, model)?;
+    write::write_odt_reservations(path, model)?;
     write::write_codes(path, model)?;
     write::write_object_properties(path, model)?;
     write::write_fares_v1(path, model)?;
@@ -613,6 +622,7 @@ mod tests {
                 codes: KeysValues::default(),
                 object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
+                odt_reservation_links: CommentLinksT::default(),
                 forward_name: Some("Hôtels - Hôtels".to_string()),
                 backward_name: Some("Hôtels - Hôtels".to_string()),
                 color: Some(Rgb {
@@ -639,6 +649,7 @@ mod tests {
                 codes: KeysValues::default(),
                 object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
+                odt_reservation_links: CommentLinksT::default(),
                 forward_name: None,
                 backward_name: None,
                 color: None,
@@ -740,6 +751,7 @@ mod tests {
                 codes: KeysValues::default(),
                 object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
+                odt_reservation_links: CommentLinksT::default(),
                 route_id: "OIF:078078001:1".to_string(),
                 physical_mode_id: "Bus".to_string(),
                 dataset_id: "OIF:0".to_string(),
@@ -783,6 +795,7 @@ mod tests {
                 codes: KeysValues::default(),
                 object_properties: PropertiesMap::default(),
                 comment_links: CommentLinksT::default(),
+                odt_reservation_links: CommentLinksT::default(),
                 route_id: "OIF:800:TER".to_string(),
                 physical_mode_id: "Bus".to_string(),
                 dataset_id: "OIF:0".to_string(),
@@ -1086,6 +1099,34 @@ mod tests {
         ])
         .unwrap();
 
+        let odt_reservations = CollectionWithId::new(vec![
+            ODTReservation {
+                id: "odt:1".to_string(),
+                name: "name:1".to_string(),
+                url: Some("https://reservation1".to_string()),
+                phone: Some("01 02 03 04 01".to_string()),
+                conditions: Some("lundi au vendredi de 9h à 18h".to_string()),
+                deeplink: Some("https://deeplink1".to_string()),
+            },
+            ODTReservation {
+                id: "odt:2".to_string(),
+                name: "name:2".to_string(),
+                url: Some("https://reservation2".to_string()),
+                phone: Some("01 02 03 04 02".to_string()),
+                conditions: Some("lundi au samedi de 8h à 15h".to_string()),
+                deeplink: Some("https://deeplink2".to_string()),
+            },
+            ODTReservation {
+                id: "odt:3".to_string(),
+                name: "name:3".to_string(),
+                url: Some("https://reservation3".to_string()),
+                phone: Some("01 02 03 04 03".to_string()),
+                conditions: Some("lundi au mardi de 9h à 10h".to_string()),
+                deeplink: Some("https://deeplink3".to_string()),
+            },
+        ])
+        .unwrap();
+
         let stop_points = CollectionWithId::from(StopPoint {
             id: "sp_1".to_string(),
             name: "sp_name_1".to_string(),
@@ -1146,7 +1187,8 @@ mod tests {
                 "prop_name:3".to_string(),
                 "prop_value:3".to_string()
             )],
-            comment_links: btree_set_from_vec(vec!["c:1".to_string(), "c:2".to_string()]),
+            comment_links: btree_set_from_vec(vec!["c:1".to_string()]),
+            odt_reservation_links: btree_set_from_vec(vec!["odt:1".to_string()]),
             forward_name: None,
             backward_name: None,
             color: None,
@@ -1188,6 +1230,7 @@ mod tests {
                 "prop_value:6".to_string()
             )],
             comment_links: CommentLinksT::default(),
+            odt_reservation_links: btree_set_from_vec(vec!["odt:2".to_string()]),
             route_id: "OIF:800:TER".to_string(),
             physical_mode_id: "Bus".to_string(),
             dataset_id: "OIF:0".to_string(),
@@ -1232,6 +1275,7 @@ mod tests {
         stop_time_comments.insert(("VJ:1".to_string(), 0), "c:2".to_string());
 
         ser_collections.comments = comments;
+        ser_collections.odt_reservations = odt_reservations;
         ser_collections.stop_areas = stop_areas;
         ser_collections.stop_points = stop_points;
         ser_collections.stop_locations = stop_locations;
@@ -1262,6 +1306,7 @@ mod tests {
             )
             .unwrap();
             write::write_comments(path, &ser_collections).unwrap();
+            write::write_odt_reservations(path, &ser_collections).unwrap();
             write::write_codes(path, &ser_collections).unwrap();
             write::write_object_properties(path, &ser_collections).unwrap();
             let mut handler = PathFileHandler::new(path.to_path_buf());
@@ -1276,10 +1321,15 @@ mod tests {
             read::manage_stops(&mut des_collections, &mut handler).unwrap();
             read::manage_stop_times(&mut des_collections, &mut handler).unwrap();
             read::manage_comments(&mut des_collections, &mut handler).unwrap();
+            read::manage_odt_reservations(&mut des_collections, &mut handler).unwrap();
             read::manage_codes(&mut des_collections, &mut handler).unwrap();
             read::manage_object_properties(&mut des_collections, &mut handler).unwrap();
 
             assert_eq!(ser_collections.comments, des_collections.comments);
+            assert_eq!(
+                ser_collections.odt_reservations,
+                des_collections.odt_reservations
+            );
 
             // test comment links
             assert_eq!(
@@ -1363,6 +1413,33 @@ mod tests {
             assert_eq!(
                 ser_collections.stop_time_comments,
                 des_collections.stop_time_comments
+            );
+
+            // test odt reservation links
+            assert_eq!(
+                ser_collections
+                    .lines
+                    .get("OIF:002002003:3OIF829")
+                    .unwrap()
+                    .odt_reservation_links,
+                des_collections
+                    .lines
+                    .get("OIF:002002003:3OIF829")
+                    .unwrap()
+                    .odt_reservation_links
+            );
+
+            assert_eq!(
+                ser_collections
+                    .vehicle_journeys
+                    .get("VJ:1")
+                    .unwrap()
+                    .odt_reservation_links,
+                des_collections
+                    .vehicle_journeys
+                    .get("VJ:1")
+                    .unwrap()
+                    .odt_reservation_links
             );
 
             // test codes

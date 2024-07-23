@@ -147,6 +147,24 @@ macro_rules! impl_comment_links {
     };
 }
 
+pub trait ODTReservationLinks {
+    fn odt_reservation_links(&self) -> &CommentLinksT;
+    fn odt_reservation_links_mut(&mut self) -> &mut CommentLinksT;
+}
+
+macro_rules! impl_odt_reservation_links {
+    ($ty:ty) => {
+        impl ODTReservationLinks for $ty {
+            fn odt_reservation_links(&self) -> &CommentLinksT {
+                &self.odt_reservation_links
+            }
+            fn odt_reservation_links_mut(&mut self) -> &mut CommentLinksT {
+                &mut self.odt_reservation_links
+            }
+        }
+    };
+}
+
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Contributor {
     #[serde(rename = "contributor_id")]
@@ -472,6 +490,8 @@ pub struct Line {
     pub object_properties: PropertiesMap,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
+    #[serde(skip)]
+    pub odt_reservation_links: CommentLinksT,
     #[serde(rename = "line_name")]
     pub name: String,
     #[serde(rename = "forward_line_name")]
@@ -515,6 +535,7 @@ impl AddPrefix for Line {
             .take()
             .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.comment_links.prefix(prefix_conf);
+        self.odt_reservation_links.prefix(prefix_conf);
     }
 }
 
@@ -522,6 +543,7 @@ impl_codes!(Line);
 impl_properties!(Line);
 impl_comment_links!(Line);
 impl_with_id!(Line);
+impl_odt_reservation_links!(Line);
 
 impl GetObjectType for Line {
     fn get_object_type() -> ObjectType {
@@ -589,6 +611,8 @@ pub struct VehicleJourney {
     pub object_properties: PropertiesMap,
     #[serde(skip)]
     pub comment_links: CommentLinksT,
+    #[serde(skip)]
+    pub odt_reservation_links: CommentLinksT,
     pub route_id: String,
     pub physical_mode_id: String,
     pub dataset_id: String,
@@ -616,6 +640,7 @@ impl Default for VehicleJourney {
             codes: KeysValues::default(),
             object_properties: PropertiesMap::default(),
             comment_links: CommentLinksT::default(),
+            odt_reservation_links: CommentLinksT::default(),
             route_id: "default_route".to_string(),
             physical_mode_id: "default_physical_mode".to_string(),
             dataset_id: "default_dataset".to_string(),
@@ -654,11 +679,13 @@ impl AddPrefix for VehicleJourney {
             .take()
             .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.comment_links.prefix(prefix_conf);
+        self.odt_reservation_links.prefix(prefix_conf);
     }
 }
 impl_codes!(VehicleJourney);
 impl_properties!(VehicleJourney);
 impl_comment_links!(VehicleJourney);
+impl_odt_reservation_links!(VehicleJourney);
 
 impl WithId for VehicleJourney {
     fn with_id(id: &str) -> Self {
@@ -1444,6 +1471,30 @@ pub struct Comment {
 impl_id!(Comment);
 
 impl AddPrefix for Comment {
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.schedule_prefix(self.id.as_str());
+    }
+}
+
+#[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq)]
+pub struct ODTReservation {
+    #[serde(rename = "odt_reservation_id")]
+    pub id: String,
+    #[serde(rename = "odt_reservation_name")]
+    pub name: String,
+    #[serde(rename = "odt_reservation_url")]
+    pub url: Option<String>,
+    #[serde(rename = "odt_reservation_phone")]
+    pub phone: Option<String>,
+    #[serde(rename = "odt_reservation_conditions")]
+    pub conditions: Option<String>,
+    #[serde(rename = "odt_reservation_deeplink")]
+    pub deeplink: Option<String>,
+}
+
+impl_id!(ODTReservation);
+
+impl AddPrefix for ODTReservation {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
         self.id = prefix_conf.schedule_prefix(self.id.as_str());
     }
