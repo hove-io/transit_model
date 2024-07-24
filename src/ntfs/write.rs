@@ -615,11 +615,11 @@ fn write_comment_links_from_collection_with_id<W, T>(
     path: &path::Path,
 ) -> Result<()>
 where
-    T: Id<T> + CommentLinks + GetObjectType,
+    T: Id<T> + Links<Comment> + GetObjectType,
     W: ::std::io::Write,
 {
     for obj in collection.values() {
-        for comment_id in obj.comment_links().iter() {
+        for comment_id in obj.links().iter() {
             wtr.serialize(CommentLink {
                 object_id: obj.id().to_string(),
                 object_type: T::get_object_type(),
@@ -638,11 +638,11 @@ fn write_odt_reservation_links_from_collection_with_id<W, T>(
     path: &path::Path,
 ) -> Result<()>
 where
-    T: Id<T> + ODTReservationLinks + GetObjectType,
+    T: Id<T> + Links<ODTReservation> + GetObjectType,
     W: ::std::io::Write,
 {
     for obj in collection.values() {
-        for id in obj.odt_reservation_links().iter() {
+        for id in obj.links().iter() {
             wtr.serialize(ODTReservationLink {
                 object_id: obj.id().to_string(),
                 object_type: T::get_object_type(),

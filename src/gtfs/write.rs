@@ -108,11 +108,11 @@ pub fn write_ticketing_deep_links(
 }
 
 /// get the first comment ordered by name
-fn get_first_comment_name<T: objects::CommentLinks>(
+fn get_first_comment_name<T: objects::Links<Comment>>(
     obj: &T,
     comments: &CollectionWithId<objects::Comment>,
 ) -> Option<String> {
-    obj.comment_links()
+    obj.links()
         .iter()
         .filter_map(|comment_id| comments.get(comment_id))
         .map(|cmt| &cmt.name)

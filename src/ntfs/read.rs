@@ -424,7 +424,7 @@ fn insert_comment_link<T>(
     comment_link: &CommentLink,
 ) -> Result<()>
 where
-    T: CommentLinks + Id<T>,
+    T: Links<Comment> + Id<T>,
 {
     let idx = match collection.get_idx(&comment_link.object_id) {
         Some(idx) => idx,
@@ -445,7 +445,7 @@ where
     }
     collection
         .index_mut(idx)
-        .comment_links_mut()
+        .links_mut()
         .insert(comment_link.comment_id.clone());
     Ok(())
 }
@@ -481,7 +481,7 @@ fn insert_odt_reservation_link<T>(
     link: &ODTReservationLink,
 ) -> Result<()>
 where
-    T: ODTReservationLinks + Id<T>,
+    T: Links<ODTReservation> + Id<T>,
 {
     let idx = match collection.get_idx(&link.object_id) {
         Some(idx) => idx,
@@ -502,7 +502,7 @@ where
     }
     collection
         .index_mut(idx)
-        .odt_reservation_links_mut()
+        .links_mut()
         .insert(link.odt_reservation_id.clone());
     Ok(())
 }

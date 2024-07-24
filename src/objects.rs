@@ -130,37 +130,19 @@ impl AddPrefix for LinksT {
     }
 }
 
-pub trait CommentLinks {
-    fn comment_links(&self) -> &LinksT;
-    fn comment_links_mut(&mut self) -> &mut LinksT;
+pub trait Links<T> {
+    fn links(&self) -> &LinksT;
+    fn links_mut(&mut self) -> &mut LinksT;
 }
 
-macro_rules! impl_comment_links {
-    ($ty:ty) => {
-        impl CommentLinks for $ty {
-            fn comment_links(&self) -> &LinksT {
-                &self.comment_links
+macro_rules! impl_links {
+    ($ty:ty, $gen:ty, $field: ident) => {
+        impl Links<$gen> for $ty {
+            fn links(&self) -> &LinksT {
+                &self.$field
             }
-            fn comment_links_mut(&mut self) -> &mut LinksT {
-                &mut self.comment_links
-            }
-        }
-    };
-}
-
-pub trait ODTReservationLinks {
-    fn odt_reservation_links(&self) -> &LinksT;
-    fn odt_reservation_links_mut(&mut self) -> &mut LinksT;
-}
-
-macro_rules! impl_odt_reservation_links {
-    ($ty:ty) => {
-        impl ODTReservationLinks for $ty {
-            fn odt_reservation_links(&self) -> &LinksT {
-                &self.odt_reservation_links
-            }
-            fn odt_reservation_links_mut(&mut self) -> &mut LinksT {
-                &mut self.odt_reservation_links
+            fn links_mut(&mut self) -> &mut LinksT {
+                &mut self.$field
             }
         }
     };
@@ -542,9 +524,9 @@ impl AddPrefix for Line {
 
 impl_codes!(Line);
 impl_properties!(Line);
-impl_comment_links!(Line);
+impl_links!(Line, Comment, comment_links);
+impl_links!(Line, ODTReservation, odt_reservation_links);
 impl_with_id!(Line);
-impl_odt_reservation_links!(Line);
 
 impl GetObjectType for Line {
     fn get_object_type() -> ObjectType {
@@ -593,7 +575,7 @@ impl AddPrefix for Route {
 }
 impl_codes!(Route);
 impl_properties!(Route);
-impl_comment_links!(Route);
+impl_links!(Route, Comment, comment_links);
 impl_with_id!(Route);
 
 impl GetObjectType for Route {
@@ -685,8 +667,8 @@ impl AddPrefix for VehicleJourney {
 }
 impl_codes!(VehicleJourney);
 impl_properties!(VehicleJourney);
-impl_comment_links!(VehicleJourney);
-impl_odt_reservation_links!(VehicleJourney);
+impl_links!(VehicleJourney, Comment, comment_links);
+impl_links!(VehicleJourney, ODTReservation, odt_reservation_links);
 
 impl WithId for VehicleJourney {
     fn with_id(id: &str) -> Self {
@@ -1143,7 +1125,7 @@ impl AddPrefix for StopArea {
 }
 impl_codes!(StopArea);
 impl_properties!(StopArea);
-impl_comment_links!(StopArea);
+impl_links!(StopArea, Comment, comment_links);
 impl_with_id!(StopArea);
 
 impl GetObjectType for StopArea {
@@ -1215,7 +1197,7 @@ impl AddPrefix for StopPoint {
 }
 impl_codes!(StopPoint);
 impl_properties!(StopPoint);
-impl_comment_links!(StopPoint);
+impl_links!(StopPoint, Comment, comment_links);
 impl_with_id!(StopPoint);
 
 impl GetObjectType for StopPoint {
@@ -1243,7 +1225,7 @@ pub struct StopLocation {
     pub address_id: Option<String>,
 }
 impl_id!(StopLocation);
-impl_comment_links!(StopLocation);
+impl_links!(StopLocation, Comment, comment_links);
 
 impl AddPrefix for StopLocation {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {

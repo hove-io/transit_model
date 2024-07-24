@@ -954,13 +954,13 @@ impl Collections {
             collection: &mut CollectionWithId<T>,
             duplicate2ref: &BTreeMap<String, String>,
         ) where
-            T: Id<T> + CommentLinks,
+            T: Id<T> + Links<Comment>,
         {
             let map_pt_object_duplicates: BTreeMap<Idx<T>, Vec<&str>> = collection
                 .iter()
                 .filter_map(|(idx, pt_object)| {
                     let intersection: Vec<&str> = pt_object
-                        .comment_links()
+                        .links()
                         .iter()
                         .filter_map(|comment_id| {
                             duplicate2ref
@@ -979,10 +979,8 @@ impl Collections {
             for (idx, intersection) in map_pt_object_duplicates {
                 for i in intersection {
                     let mut pt_object = collection.index_mut(idx);
-                    pt_object.comment_links_mut().remove(i);
-                    pt_object
-                        .comment_links_mut()
-                        .insert(duplicate2ref[i].clone());
+                    pt_object.links_mut().remove(i);
+                    pt_object.links_mut().insert(duplicate2ref[i].clone());
                 }
             }
         }
@@ -990,14 +988,14 @@ impl Collections {
 
     /// Remove comments with empty message from the model
     pub fn clean_comments(&mut self) {
-        fn remove_comment<T: Id<T> + CommentLinks>(
+        fn remove_comment<T: Id<T> + Links<Comment>>(
             collection: &mut CollectionWithId<T>,
             comment_id: &str,
         ) {
             let object_idxs: Vec<Idx<T>> = collection
                 .iter()
                 .filter_map(|(idx, object)| {
-                    if object.comment_links().contains(comment_id) {
+                    if object.links().contains(comment_id) {
                         Some(idx)
                     } else {
                         None
@@ -1007,7 +1005,7 @@ impl Collections {
             for object_idx in object_idxs {
                 collection
                     .index_mut(object_idx)
-                    .comment_links_mut()
+                    .links_mut()
                     .remove(comment_id);
             }
         }

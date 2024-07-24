@@ -20,8 +20,8 @@ use crate::{
     file_handler::FileHandler,
     model::Collections,
     objects::{
-        self, Availability, Coord, KeysValues, LinksT, Pathway, PropertiesMap, StopLocation,
-        StopPoint, StopTimePrecision, StopType, Time, TransportType,
+        self, Availability, Comment, Coord, KeysValues, LinksT, Pathway, PropertiesMap,
+        StopLocation, StopPoint, StopTimePrecision, StopType, Time, TransportType,
     },
     parser::{read_collection, read_objects, read_objects_loose},
     serde_utils::de_with_empty_default,
@@ -635,7 +635,7 @@ fn generate_stop_comment(stop: &Stop) -> Option<objects::Comment> {
     })
 }
 
-fn insert_comment<T: typed_index_collection::Id<T> + objects::CommentLinks>(
+fn insert_comment<T: typed_index_collection::Id<T> + objects::Links<Comment>>(
     collection: &mut CollectionWithId<T>,
     comments: &mut CollectionWithId<objects::Comment>,
     prefix: &str,
@@ -651,7 +651,7 @@ fn insert_comment<T: typed_index_collection::Id<T> + objects::CommentLinks>(
 
     if let Some(comment) = opt_comment {
         if let Some(mut object) = collection.get_mut(&gtfs_route.id) {
-            object.comment_links_mut().insert(comment.id.to_string());
+            object.links_mut().insert(comment.id.to_string());
             comments
                 .push(comment)
                 .expect("Duplicated comment id that shouldn’t be possible");
