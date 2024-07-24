@@ -20,7 +20,7 @@ use crate::{
     file_handler::FileHandler,
     model::Collections,
     objects::{
-        self, Availability, CommentLinksT, Coord, KeysValues, Pathway, PropertiesMap, StopLocation,
+        self, Availability, Coord, KeysValues, LinksT, Pathway, PropertiesMap, StopLocation,
         StopPoint, StopTimePrecision, StopType, Time, TransportType,
     },
     parser::{read_collection, read_objects, read_objects_loose},
@@ -113,7 +113,7 @@ impl TryFrom<Stop> for objects::StopArea {
             name: stop.name,
             codes,
             object_properties: PropertiesMap::default(),
-            comment_links: objects::CommentLinksT::default(),
+            comment_links: objects::LinksT::default(),
             coord,
             timezone: stop.timezone,
             visible: true,
@@ -207,7 +207,7 @@ impl TryFrom<Stop> for objects::StopLocation {
             id: stop.id,
             name: stop.name,
             code: stop.code,
-            comment_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
             visible: false, // disable for autocomplete
             coord,
             parent_id: stop.parent_station,
@@ -333,8 +333,8 @@ impl Trip {
             id: self.id.clone(),
             codes,
             object_properties: PropertiesMap::default(),
-            comment_links: CommentLinksT::default(),
-            odt_reservation_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
+            odt_reservation_links: LinksT::default(),
             route_id: route.get_id_by_direction(self.direction),
             physical_mode_id: physical_mode.id,
             dataset_id: dataset.id.clone(),
@@ -776,7 +776,7 @@ where
     let mut stop_points = vec![];
     let mut stop_locations = vec![];
     for stop in gtfs_stops {
-        let mut comment_links = CommentLinksT::default();
+        let mut comment_links = LinksT::default();
         if let Some(comment) = generate_stop_comment(&stop) {
             comment_links.insert(comment.id.to_string());
             comments
@@ -1029,8 +1029,8 @@ fn make_lines(
             code: line_code(r),
             codes,
             object_properties: PropertiesMap::default(),
-            comment_links: CommentLinksT::default(),
-            odt_reservation_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
+            odt_reservation_links: LinksT::default(),
             name: r.long_name.to_string(),
             forward_name: None,
             backward_name: None,
@@ -1086,7 +1086,7 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<
                     direction_type: Some(get_direction_name(d)),
                     codes,
                     object_properties: PropertiesMap::default(),
-                    comment_links: CommentLinksT::default(),
+                    comment_links: LinksT::default(),
                     line_id: sr.id.clone(),
                     geometry_id: None,
                     destination_id: None,

@@ -550,7 +550,7 @@ mod tests {
         calendars::write_calendar_dates,
         gtfs::{Route, RouteType, StopLocationType, Transfer, TransferType},
         model::Collections,
-        objects::{Calendar, CommentLinksT, Coord, StopPoint, StopTime, Transfer as NtfsTransfer},
+        objects::{Calendar, Coord, LinksT, StopPoint, StopTime, Transfer as NtfsTransfer},
     };
     use geo::{line_string, point};
     use pretty_assertions::assert_eq;
@@ -1053,7 +1053,7 @@ mod tests {
             name: "sa:01".to_string(),
             codes: sa_codes,
             object_properties: PropertiesMap::default(),
-            comment_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
             visible: true,
             coord: Coord {
                 lon: 2.073,
@@ -1250,8 +1250,8 @@ mod tests {
             id: "vj:01".to_string(),
             codes: BTreeSet::new(),
             object_properties: PropertiesMap::default(),
-            comment_links: CommentLinksT::default(),
-            odt_reservation_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
+            odt_reservation_links: LinksT::default(),
             route_id: "r:01".to_string(),
             physical_mode_id: "pm:01".to_string(),
             dataset_id: "ds:01".to_string(),
@@ -1325,8 +1325,8 @@ mod tests {
             code: None,
             codes: BTreeSet::default(),
             object_properties: PropertiesMap::default(),
-            comment_links: CommentLinksT::default(),
-            odt_reservation_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
+            odt_reservation_links: LinksT::default(),
             forward_name: None,
             backward_name: None,
             color: None,
@@ -1372,8 +1372,8 @@ mod tests {
             code: Some("DEF".to_string()),
             codes: BTreeSet::default(),
             object_properties: PropertiesMap::default(),
-            comment_links: CommentLinksT::default(),
-            odt_reservation_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
+            odt_reservation_links: LinksT::default(),
             forward_name: Some("Hôtels - Hôtels".to_string()),
             backward_name: Some("Hôtels - Hôtels".to_string()),
             color: Some(objects::Rgb {

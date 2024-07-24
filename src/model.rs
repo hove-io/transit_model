@@ -1904,7 +1904,7 @@ mod tests {
                 name: String::new(),
                 ..Default::default()
             };
-            let mut comment_links = CommentLinksT::default();
+            let mut comment_links = LinksT::default();
             comment_links.insert(comment.id.clone());
             comment_links.insert(empty_comment.id.clone());
             collections.comments.push(comment).unwrap();
@@ -2083,8 +2083,8 @@ mod tests {
                 id: String::from(trip_id),
                 codes: KeysValues::default(),
                 object_properties: PropertiesMap::default(),
-                comment_links: CommentLinksT::default(),
-                odt_reservation_links: CommentLinksT::default(),
+                comment_links: LinksT::default(),
+                odt_reservation_links: LinksT::default(),
                 route_id: String::from("route_id"),
                 physical_mode_id: String::new(),
                 dataset_id: String::new(),

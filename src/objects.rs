@@ -117,30 +117,31 @@ macro_rules! impl_properties {
     };
 }
 
-pub type CommentLinksT = BTreeSet<String>;
+/// Contains ids (comment or odt_reservation) linked with objects
+pub type LinksT = BTreeSet<String>;
 
-impl AddPrefix for CommentLinksT {
+impl AddPrefix for LinksT {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
         let updated_ids = std::mem::take(self);
         *self = updated_ids
             .into_iter()
-            .map(|comment_id| prefix_conf.schedule_prefix(comment_id.as_str()))
+            .map(|id| prefix_conf.schedule_prefix(id.as_str()))
             .collect();
     }
 }
 
 pub trait CommentLinks {
-    fn comment_links(&self) -> &CommentLinksT;
-    fn comment_links_mut(&mut self) -> &mut CommentLinksT;
+    fn comment_links(&self) -> &LinksT;
+    fn comment_links_mut(&mut self) -> &mut LinksT;
 }
 
 macro_rules! impl_comment_links {
     ($ty:ty) => {
         impl CommentLinks for $ty {
-            fn comment_links(&self) -> &CommentLinksT {
+            fn comment_links(&self) -> &LinksT {
                 &self.comment_links
             }
-            fn comment_links_mut(&mut self) -> &mut CommentLinksT {
+            fn comment_links_mut(&mut self) -> &mut LinksT {
                 &mut self.comment_links
             }
         }
@@ -148,17 +149,17 @@ macro_rules! impl_comment_links {
 }
 
 pub trait ODTReservationLinks {
-    fn odt_reservation_links(&self) -> &CommentLinksT;
-    fn odt_reservation_links_mut(&mut self) -> &mut CommentLinksT;
+    fn odt_reservation_links(&self) -> &LinksT;
+    fn odt_reservation_links_mut(&mut self) -> &mut LinksT;
 }
 
 macro_rules! impl_odt_reservation_links {
     ($ty:ty) => {
         impl ODTReservationLinks for $ty {
-            fn odt_reservation_links(&self) -> &CommentLinksT {
+            fn odt_reservation_links(&self) -> &LinksT {
                 &self.odt_reservation_links
             }
-            fn odt_reservation_links_mut(&mut self) -> &mut CommentLinksT {
+            fn odt_reservation_links_mut(&mut self) -> &mut LinksT {
                 &mut self.odt_reservation_links
             }
         }
@@ -489,9 +490,9 @@ pub struct Line {
     #[serde(skip)]
     pub object_properties: PropertiesMap,
     #[serde(skip)]
-    pub comment_links: CommentLinksT,
+    pub comment_links: LinksT,
     #[serde(skip)]
-    pub odt_reservation_links: CommentLinksT,
+    pub odt_reservation_links: LinksT,
     #[serde(rename = "line_name")]
     pub name: String,
     #[serde(rename = "forward_line_name")]
@@ -566,7 +567,7 @@ pub struct Route {
     #[serde(skip)]
     pub object_properties: PropertiesMap,
     #[serde(skip)]
-    pub comment_links: CommentLinksT,
+    pub comment_links: LinksT,
     #[derivative(Default(value = "\"default_line\".into()"))]
     pub line_id: String,
     pub geometry_id: Option<String>,
@@ -610,9 +611,9 @@ pub struct VehicleJourney {
     #[serde(skip)]
     pub object_properties: PropertiesMap,
     #[serde(skip)]
-    pub comment_links: CommentLinksT,
+    pub comment_links: LinksT,
     #[serde(skip)]
-    pub odt_reservation_links: CommentLinksT,
+    pub odt_reservation_links: LinksT,
     pub route_id: String,
     pub physical_mode_id: String,
     pub dataset_id: String,
@@ -639,8 +640,8 @@ impl Default for VehicleJourney {
             id: "default_vehiclejourney".to_string(),
             codes: KeysValues::default(),
             object_properties: PropertiesMap::default(),
-            comment_links: CommentLinksT::default(),
-            odt_reservation_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
+            odt_reservation_links: LinksT::default(),
             route_id: "default_route".to_string(),
             physical_mode_id: "default_physical_mode".to_string(),
             dataset_id: "default_dataset".to_string(),
@@ -1092,7 +1093,7 @@ pub struct StopArea {
     #[serde(skip)]
     pub object_properties: PropertiesMap,
     #[serde(skip)]
-    pub comment_links: CommentLinksT,
+    pub comment_links: LinksT,
     pub visible: bool,
     pub coord: Coord,
     pub timezone: Option<Tz>,
@@ -1110,7 +1111,7 @@ impl From<StopPoint> for StopArea {
             name: stop_point.name,
             codes: KeysValues::default(),
             object_properties: PropertiesMap::default(),
-            comment_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
             visible: stop_point.visible,
             coord: stop_point.coord,
             timezone: stop_point.timezone,
@@ -1171,7 +1172,7 @@ pub struct StopPoint {
     #[serde(skip)]
     pub object_properties: PropertiesMap,
     #[serde(skip)]
-    pub comment_links: CommentLinksT,
+    pub comment_links: LinksT,
     pub visible: bool,
     pub coord: Coord,
     pub stop_area_id: String,
@@ -1229,7 +1230,7 @@ pub struct StopLocation {
     pub name: String,
     pub code: Option<String>,
     #[serde(skip)]
-    pub comment_links: CommentLinksT,
+    pub comment_links: LinksT,
     pub visible: bool,
     pub coord: Coord,
     pub parent_id: Option<String>,

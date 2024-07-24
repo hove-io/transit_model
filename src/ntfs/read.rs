@@ -49,7 +49,7 @@ impl TryFrom<Stop> for StopArea {
             name: stop.name,
             codes: KeysValues::default(),
             object_properties: PropertiesMap::default(),
-            comment_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
             visible: stop.visible,
             coord,
             timezone: stop.timezone,
@@ -142,7 +142,7 @@ impl TryFrom<Stop> for StopLocation {
             id: stop.id,
             name: stop.name,
             code: stop.code,
-            comment_links: CommentLinksT::default(),
+            comment_links: LinksT::default(),
             visible: false, // disable for autocomplete
             coord,
             parent_id: stop.parent_station,
