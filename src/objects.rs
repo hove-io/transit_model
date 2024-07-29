@@ -1475,6 +1475,15 @@ pub struct ODTReservation {
     pub deeplink: Option<String>,
 }
 
+impl ODTReservation {
+    pub fn is_similar(&self, other: &Self) -> bool {
+        self.url == other.url
+            && self.phone == other.phone
+            && self.conditions == other.conditions
+            && self.deeplink == other.deeplink
+    }
+}
+
 impl_id!(ODTReservation);
 
 impl AddPrefix for ODTReservation {
