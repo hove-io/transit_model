@@ -14,7 +14,7 @@
 
 use pretty_assertions::assert_eq;
 use relational_types::IdxSet;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use transit_model::model::{Collections, GetCorresponding, Model};
 use transit_model::objects::*;
 use transit_model::test_utils::*;
@@ -242,6 +242,78 @@ fn ntfs() {
     stop_time_comments.insert(("RERAB1".to_string(), 5), "RERACOM1".to_string());
 
     assert_eq!(stop_time_comments, pt_objects.stop_time_comments);
+
+    // ODT reservations
+    fn odt_reservations<'a>(
+        odt_res_ids: &'a BTreeSet<String>,
+        odt_reservations: &'a CollectionWithId<ODTReservation>,
+    ) -> impl Iterator<Item = &'a ODTReservation> {
+        odt_res_ids
+            .iter()
+            .filter_map(move |id| odt_reservations.get(id))
+    }
+    assert_eq!(3, pt_objects.odt_reservations.len());
+
+    // Line RERA
+    let ids = &pt_objects.lines.get("RERA").unwrap().odt_reservation_links;
+    assert_eq!(1, ids.len());
+
+    let mut iter = odt_reservations(ids, &pt_objects.odt_reservations);
+    assert_eq!(
+        iter.next().unwrap(),
+        &ODTReservation {
+            id: String::from("odtres3"),
+            name: Some(String::from("odtres3")),
+            url: Some(String::from("https://odtreservation3.com")),
+            phone: Some(String::from("01 02 03 04 03")),
+            conditions: None,
+            deeplink: None,
+        }
+    );
+
+    // Trip M1F1
+    let ids = &pt_objects
+        .vehicle_journeys
+        .get("M1F1")
+        .unwrap()
+        .odt_reservation_links;
+    assert_eq!(1, ids.len());
+
+    let mut iter = odt_reservations(ids, &pt_objects.odt_reservations);
+    assert_eq!(
+        iter.next().unwrap(),
+        &ODTReservation {
+            id: String::from("odtres1"),
+            name: Some(String::from("odtres1")),
+            url: None,
+            phone: Some(String::from("01 02 03 04 99")),
+            conditions: Some(String::from("lundi au samedi de 12h à 18h")),
+            deeplink: Some(String::from(
+                "https://deeplink1/search?departure-address={from_name}"
+            )),
+        }
+    );
+
+    // Trip RERAB1
+    let ids = &pt_objects
+        .vehicle_journeys
+        .get("RERAB1")
+        .unwrap()
+        .odt_reservation_links;
+    assert_eq!(1, ids.len());
+
+    let mut iter = odt_reservations(ids, &pt_objects.odt_reservations);
+    assert_eq!(
+        iter.next().unwrap(),
+        &ODTReservation {
+            id: String::from("odtres2"),
+            name: None,
+            url: Some(String::from("https://odtreservation2.com")),
+            phone: None,
+            conditions: None,
+            deeplink: None,
+        }
+    );
 }
 
 #[test]
