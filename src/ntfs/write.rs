@@ -12,7 +12,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{Code, CommentLink, ObjectProperty, Result, Stop, StopLocationType, StopTime};
+use super::{
+    Code, CommentLink, ODTReservationLink, ObjectProperty, Result, Stop, StopLocationType, StopTime,
+};
 use crate::model::Collections;
 use crate::ntfs::{has_fares_v1, has_fares_v2};
 use crate::objects::*;
@@ -613,15 +615,38 @@ fn write_comment_links_from_collection_with_id<W, T>(
     path: &path::Path,
 ) -> Result<()>
 where
-    T: Id<T> + CommentLinks + GetObjectType,
+    T: Id<T> + Links<Comment> + GetObjectType,
     W: ::std::io::Write,
 {
     for obj in collection.values() {
-        for comment_id in obj.comment_links().iter() {
+        for comment_id in obj.links().iter() {
             wtr.serialize(CommentLink {
                 object_id: obj.id().to_string(),
                 object_type: T::get_object_type(),
                 comment_id: comment_id.to_string(),
+            })
+            .with_context(|| format!("Error reading {:?}", path))?;
+        }
+    }
+
+    Ok(())
+}
+
+fn write_odt_reservation_links_from_collection_with_id<W, T>(
+    wtr: &mut csv::Writer<W>,
+    collection: &CollectionWithId<T>,
+    path: &path::Path,
+) -> Result<()>
+where
+    T: Id<T> + Links<ODTReservation> + GetObjectType,
+    W: ::std::io::Write,
+{
+    for obj in collection.values() {
+        for id in obj.links().iter() {
+            wtr.serialize(ODTReservationLink {
+                object_id: obj.id().to_string(),
+                object_type: T::get_object_type(),
+                odt_reservation_id: id.to_string(),
             })
             .with_context(|| format!("Error reading {:?}", path))?;
         }
@@ -713,6 +738,46 @@ pub fn write_comments(path: &path::Path, collections: &Collections) -> Result<()
     c_wtr
         .flush()
         .with_context(|| format!("Error reading {:?}", comments_path))?;
+
+    Ok(())
+}
+
+pub fn write_odt_reservations(path: &path::Path, collections: &Collections) -> Result<()> {
+    if collections.odt_reservations.is_empty() {
+        return Ok(());
+    }
+    info!("Writing odt_reservations.txt and odt_reservation_links.txt");
+
+    let odt_reservations_path = path.join("odt_reservations.txt");
+    let odt_reservations_links_path = path.join("odt_reservation_links.txt");
+
+    let mut c_wtr = csv::Writer::from_path(&odt_reservations_path)
+        .with_context(|| format!("Error reading {:?}", odt_reservations_path))?;
+    let mut cl_wtr = csv::Writer::from_path(&odt_reservations_links_path)
+        .with_context(|| format!("Error reading {:?}", odt_reservations_links_path))?;
+    for c in collections.odt_reservations.values() {
+        c_wtr
+            .serialize(c)
+            .with_context(|| format!("Error reading {:?}", odt_reservations_path))?;
+    }
+
+    write_odt_reservation_links_from_collection_with_id(
+        &mut cl_wtr,
+        &collections.lines,
+        &odt_reservations_links_path,
+    )?;
+    write_odt_reservation_links_from_collection_with_id(
+        &mut cl_wtr,
+        &collections.vehicle_journeys,
+        &odt_reservations_links_path,
+    )?;
+
+    cl_wtr
+        .flush()
+        .with_context(|| format!("Error reading {:?}", odt_reservations_links_path))?;
+    c_wtr
+        .flush()
+        .with_context(|| format!("Error reading {:?}", odt_reservations_path))?;
 
     Ok(())
 }

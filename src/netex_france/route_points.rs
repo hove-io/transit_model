@@ -99,7 +99,7 @@ mod tests {
 
     mod build_route_points {
         use super::*;
-        use crate::objects::{CommentLinksT, KeysValues, PropertiesMap, StopTime, Time};
+        use crate::objects::{KeysValues, LinksT, PropertiesMap, StopTime, Time};
         use pretty_assertions::assert_eq;
 
         fn stop_time(
@@ -126,7 +126,8 @@ mod tests {
                 id,
                 codes: KeysValues::default(),
                 object_properties: PropertiesMap::default(),
-                comment_links: CommentLinksT::default(),
+                comment_links: LinksT::default(),
+                odt_reservation_links: LinksT::default(),
                 route_id: String::from("route_id"),
                 physical_mode_id: String::from("Bus"),
                 dataset_id: String::from("dataset_id"),

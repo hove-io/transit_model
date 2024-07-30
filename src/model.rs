@@ -87,6 +87,7 @@ pub struct Collections {
     pub calendars: CollectionWithId<Calendar>,
     pub companies: CollectionWithId<Company>,
     pub comments: CollectionWithId<Comment>,
+    pub odt_reservations: CollectionWithId<ODTReservation>,
     pub equipments: CollectionWithId<Equipment>,
     pub transfers: Collection<Transfer>,
     pub trip_properties: CollectionWithId<TripProperty>,
@@ -217,6 +218,7 @@ impl Collections {
         let mut data_sets_used = HashSet::<String>::new();
         let mut physical_modes_used = HashSet::<String>::new();
         let mut comments_used = HashSet::<String>::new();
+        let mut odt_reservations_used = HashSet::<String>::new();
         let mut level_id_used = HashSet::<String>::new();
         let mut calendars_used = HashSet::<String>::new();
         let mut vjs_used = HashSet::<String>::new();
@@ -252,6 +254,8 @@ impl Collections {
                 data_sets_used.insert(vj.dataset_id.clone());
                 physical_modes_used.insert(vj.physical_mode_id.clone());
                 comments_used.extend(&mut vj.comment_links.iter().map(|cl| cl.to_string()));
+                odt_reservations_used
+                    .extend(&mut vj.odt_reservation_links.iter().map(|id| id.to_string()));
                 vjs_used.insert(vj.id.clone());
                 true
             } else {
@@ -383,6 +387,8 @@ impl Collections {
                     networks_used.insert(l.network_id.clone());
                     commercial_modes_used.insert(l.commercial_mode_id.clone());
                     comments_used.extend(&mut l.comment_links.iter().map(|cl| cl.to_string()));
+                    odt_reservations_used
+                        .extend(&mut l.odt_reservation_links.iter().map(|id| id.to_string()));
                     true
                 } else {
                     log_object_removed("Line", &l.id);
@@ -474,6 +480,11 @@ impl Collections {
             .retain(log_predicate("Comment", |comment: &Comment| {
                 comments_used.contains(&comment.id)
             }));
+
+        self.odt_reservations.retain(log_predicate(
+            "ODTReservation",
+            |odt_reservation: &ODTReservation| odt_reservations_used.contains(&odt_reservation.id),
+        ));
 
         self.lines = CollectionWithId::new(lines)?;
         self.stop_points = CollectionWithId::new(stop_points)?;
@@ -943,13 +954,13 @@ impl Collections {
             collection: &mut CollectionWithId<T>,
             duplicate2ref: &BTreeMap<String, String>,
         ) where
-            T: Id<T> + CommentLinks,
+            T: Id<T> + Links<Comment>,
         {
             let map_pt_object_duplicates: BTreeMap<Idx<T>, Vec<&str>> = collection
                 .iter()
                 .filter_map(|(idx, pt_object)| {
                     let intersection: Vec<&str> = pt_object
-                        .comment_links()
+                        .links()
                         .iter()
                         .filter_map(|comment_id| {
                             duplicate2ref
@@ -968,10 +979,8 @@ impl Collections {
             for (idx, intersection) in map_pt_object_duplicates {
                 for i in intersection {
                     let mut pt_object = collection.index_mut(idx);
-                    pt_object.comment_links_mut().remove(i);
-                    pt_object
-                        .comment_links_mut()
-                        .insert(duplicate2ref[i].clone());
+                    pt_object.links_mut().remove(i);
+                    pt_object.links_mut().insert(duplicate2ref[i].clone());
                 }
             }
         }
@@ -979,14 +988,14 @@ impl Collections {
 
     /// Remove comments with empty message from the model
     pub fn clean_comments(&mut self) {
-        fn remove_comment<T: Id<T> + CommentLinks>(
+        fn remove_comment<T: Id<T> + Links<Comment>>(
             collection: &mut CollectionWithId<T>,
             comment_id: &str,
         ) {
             let object_idxs: Vec<Idx<T>> = collection
                 .iter()
                 .filter_map(|(idx, object)| {
-                    if object.comment_links().contains(comment_id) {
+                    if object.links().contains(comment_id) {
                         Some(idx)
                     } else {
                         None
@@ -996,7 +1005,7 @@ impl Collections {
             for object_idx in object_idxs {
                 collection
                     .index_mut(object_idx)
-                    .comment_links_mut()
+                    .links_mut()
                     .remove(comment_id);
             }
         }
@@ -1893,7 +1902,7 @@ mod tests {
                 name: String::new(),
                 ..Default::default()
             };
-            let mut comment_links = CommentLinksT::default();
+            let mut comment_links = LinksT::default();
             comment_links.insert(comment.id.clone());
             comment_links.insert(empty_comment.id.clone());
             collections.comments.push(comment).unwrap();
@@ -2072,7 +2081,8 @@ mod tests {
                 id: String::from(trip_id),
                 codes: KeysValues::default(),
                 object_properties: PropertiesMap::default(),
-                comment_links: CommentLinksT::default(),
+                comment_links: LinksT::default(),
+                odt_reservation_links: LinksT::default(),
                 route_id: String::from("route_id"),
                 physical_mode_id: String::new(),
                 dataset_id: String::new(),

@@ -19,6 +19,7 @@ where
     /// Return a file if exist
     fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)>;
 
+    #[allow(dead_code)]
     /// Return a file or an error if not exist
     fn get_file(self, name: &str) -> Result<(Self::Reader, PathBuf)> {
         let (reader, path) = self.get_file_if_exists(name)?;
