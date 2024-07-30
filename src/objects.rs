@@ -1464,7 +1464,7 @@ pub struct ODTReservation {
     #[serde(rename = "odt_reservation_id")]
     pub id: String,
     #[serde(rename = "odt_reservation_name")]
-    pub name: String,
+    pub name: Option<String>,
     #[serde(rename = "odt_reservation_url")]
     pub url: Option<String>,
     #[serde(rename = "odt_reservation_phone")]

@@ -1,0 +1,4 @@
+object_id,object_type,odt_reservation_id
+M1F1,trip,odtres1
+RERAB1,trip,odtres2
+RERA,line,odtres3
