@@ -1477,7 +1477,8 @@ pub struct ODTReservation {
 
 impl ODTReservation {
     pub fn is_similar(&self, other: &Self) -> bool {
-        self.url == other.url
+        self.name == other.name
+            && self.url == other.url
             && self.phone == other.phone
             && self.conditions == other.conditions
             && self.deeplink == other.deeplink
