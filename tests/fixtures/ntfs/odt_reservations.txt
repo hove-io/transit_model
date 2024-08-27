@@ -1,4 +1,4 @@
-odt_reservation_id,odt_reservation_name,odt_reservation_url,odt_reservation_phone,odt_reservation_conditions,odt_reservation_deeplink
+odt_reservation_id,odt_reservation_name,odt_reservation_url,odt_reservation_phone,odt_reservation_condition,odt_reservation_deeplink
 odtres1,odtres1,,01 02 03 04 99,lundi au samedi de 12h à 18h,https://deeplink1/search?departure-address={from_name}
 odtres2,,https://odtreservation2.com,,,
 odtres3,odtres3,https://odtreservation3.com,01 02 03 04 03,,
