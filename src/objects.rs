@@ -1469,8 +1469,8 @@ pub struct ODTReservation {
     pub url: Option<String>,
     #[serde(rename = "odt_reservation_phone")]
     pub phone: Option<String>,
-    #[serde(rename = "odt_reservation_conditions")]
-    pub conditions: Option<String>,
+    #[serde(rename = "odt_reservation_condition")]
+    pub condition: Option<String>,
     #[serde(rename = "odt_reservation_deeplink")]
     pub deeplink: Option<String>,
 }
@@ -1480,7 +1480,7 @@ impl ODTReservation {
         self.name == other.name
             && self.url == other.url
             && self.phone == other.phone
-            && self.conditions == other.conditions
+            && self.condition == other.condition
             && self.deeplink == other.deeplink
     }
 }

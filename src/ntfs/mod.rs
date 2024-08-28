@@ -533,7 +533,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.16.0".to_string()),
+                    ("ntfs_version".to_string(), "0.16.1".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -1105,7 +1105,7 @@ mod tests {
                 name: Some("name:1".to_string()),
                 url: Some("https://reservation1".to_string()),
                 phone: Some("01 02 03 04 01".to_string()),
-                conditions: Some("lundi au vendredi de 9h à 18h".to_string()),
+                condition: Some("lundi au vendredi de 9h à 18h".to_string()),
                 deeplink: Some("https://deeplink1".to_string()),
             },
             ODTReservation {
@@ -1113,7 +1113,7 @@ mod tests {
                 name: None,
                 url: Some("https://reservation2".to_string()),
                 phone: Some("01 02 03 04 02".to_string()),
-                conditions: Some("lundi au samedi de 8h à 15h".to_string()),
+                condition: Some("lundi au samedi de 8h à 15h".to_string()),
                 deeplink: Some("https://deeplink2".to_string()),
             },
             ODTReservation {
@@ -1121,7 +1121,7 @@ mod tests {
                 name: Some("name:3".to_string()),
                 url: Some("https://reservation3".to_string()),
                 phone: Some("01 02 03 04 03".to_string()),
-                conditions: Some("lundi au mardi de 9h à 10h".to_string()),
+                condition: Some("lundi au mardi de 9h à 10h".to_string()),
                 deeplink: Some("https://deeplink3".to_string()),
             },
         ])

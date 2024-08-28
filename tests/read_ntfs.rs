@@ -266,7 +266,7 @@ fn ntfs() {
             name: Some(String::from("odtres3")),
             url: Some(String::from("https://odtreservation3.com")),
             phone: Some(String::from("01 02 03 04 03")),
-            conditions: None,
+            condition: None,
             deeplink: None,
         }
     );
@@ -287,7 +287,7 @@ fn ntfs() {
             name: Some(String::from("odtres1")),
             url: None,
             phone: Some(String::from("01 02 03 04 99")),
-            conditions: Some(String::from("lundi au samedi de 12h à 18h")),
+            condition: Some(String::from("lundi au samedi de 12h à 18h")),
             deeplink: Some(String::from(
                 "https://deeplink1/search?departure-address={from_name}"
             )),
@@ -310,7 +310,7 @@ fn ntfs() {
             name: None,
             url: Some(String::from("https://odtreservation2.com")),
             phone: None,
-            conditions: None,
+            condition: None,
             deeplink: None,
         }
     );
