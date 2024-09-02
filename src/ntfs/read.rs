@@ -12,9 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use super::{
-    Code, CommentLink, ODTReservationLink, ObjectProperty, Stop, StopLocationType, StopTime,
-};
+use super::{BookingRuleLink, Code, CommentLink, ObjectProperty, Stop, StopLocationType, StopTime};
 use crate::file_handler::FileHandler;
 use crate::model::Collections;
 use crate::ntfs::has_fares_v2;
@@ -475,35 +473,35 @@ fn insert_stop_time_comment_link(
     Ok(())
 }
 
-fn insert_odt_reservation_link<T>(
+fn insert_booking_rule_link<T>(
     collection: &mut CollectionWithId<T>,
-    odt_reservations: &CollectionWithId<ODTReservation>,
-    link: &ODTReservationLink,
+    booking_rules: &CollectionWithId<BookingRule>,
+    link: &BookingRuleLink,
 ) -> Result<()>
 where
-    T: Links<ODTReservation> + Id<T>,
+    T: Links<BookingRule> + Id<T>,
 {
     let idx = match collection.get_idx(&link.object_id) {
         Some(idx) => idx,
         None => {
             error!(
-                "odt_reservation_links.txt: object_type={} object_id={} not found",
+                "booking_rule_links.txt: object_type={} object_id={} not found",
                 link.object_type.as_str(),
                 link.object_id
             );
             return Ok(());
         }
     };
-    if !odt_reservations.contains_id(&link.odt_reservation_id) {
+    if !booking_rules.contains_id(&link.booking_rule_id) {
         bail!(
-            "odt_reservations.txt: odt_reservation_id={} not found",
-            link.odt_reservation_id
+            "booking_rules.txt: booking_rule_id={} not found",
+            link.booking_rule_id
         );
     }
     collection
         .index_mut(idx)
         .links_mut()
-        .insert(link.odt_reservation_id.clone());
+        .insert(link.booking_rule_id.clone());
     Ok(())
 }
 
@@ -571,39 +569,38 @@ where
     Ok(())
 }
 
-pub(crate) fn manage_odt_reservations<H>(
+pub(crate) fn manage_booking_rules<H>(
     collections: &mut Collections,
     file_handler: &mut H,
 ) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
 {
-    collections.odt_reservations =
-        make_opt_collection_with_id(file_handler, "odt_reservations.txt")?;
+    collections.booking_rules = make_opt_collection_with_id(file_handler, "booking_rules.txt")?;
 
-    if collections.odt_reservations.is_empty() {
+    if collections.booking_rules.is_empty() {
         return Ok(());
     }
-    let odt_reservations_links =
-        read_objects::<_, ODTReservationLink>(file_handler, "odt_reservation_links.txt", false)?;
+    let booking_rule_links =
+        read_objects::<_, BookingRuleLink>(file_handler, "booking_rule_links.txt", false)?;
 
-    info!("Reading odt_reservations_links.txt");
-    for link in odt_reservations_links {
+    info!("Reading booking_rule_links.txt");
+    for link in booking_rule_links {
         match link.object_type {
             ObjectType::Line => {
-                skip_error_and_warn!(insert_odt_reservation_link(
+                skip_error_and_warn!(insert_booking_rule_link(
                     &mut collections.lines,
-                    &collections.odt_reservations,
+                    &collections.booking_rules,
                     &link
                 ))
             }
-            ObjectType::VehicleJourney => skip_error_and_warn!(insert_odt_reservation_link(
+            ObjectType::VehicleJourney => skip_error_and_warn!(insert_booking_rule_link(
                 &mut collections.vehicle_journeys,
-                &collections.odt_reservations,
+                &collections.booking_rules,
                 &link,
             )),
             _ => warn!(
-                "odt_reservation does not support {}",
+                "booking_rule does not support {}",
                 link.object_type.as_str()
             ),
         }

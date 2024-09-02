@@ -243,31 +243,30 @@ fn ntfs() {
 
     assert_eq!(stop_time_comments, pt_objects.stop_time_comments);
 
-    // ODT reservations
-    fn odt_reservations<'a>(
-        odt_res_ids: &'a BTreeSet<String>,
-        odt_reservations: &'a CollectionWithId<ODTReservation>,
-    ) -> impl Iterator<Item = &'a ODTReservation> {
-        odt_res_ids
+    fn booking_rules<'a>(
+        booking_rule_ids: &'a BTreeSet<String>,
+        booking_rules: &'a CollectionWithId<BookingRule>,
+    ) -> impl Iterator<Item = &'a BookingRule> {
+        booking_rule_ids
             .iter()
-            .filter_map(move |id| odt_reservations.get(id))
+            .filter_map(move |id| booking_rules.get(id))
     }
-    assert_eq!(3, pt_objects.odt_reservations.len());
+    assert_eq!(3, pt_objects.booking_rules.len());
 
     // Line RERA
-    let ids = &pt_objects.lines.get("RERA").unwrap().odt_reservation_links;
+    let ids = &pt_objects.lines.get("RERA").unwrap().booking_rule_links;
     assert_eq!(1, ids.len());
 
-    let mut iter = odt_reservations(ids, &pt_objects.odt_reservations);
+    let mut iter = booking_rules(ids, &pt_objects.booking_rules);
     assert_eq!(
         iter.next().unwrap(),
-        &ODTReservation {
+        &BookingRule {
             id: String::from("odtres3"),
             name: Some(String::from("odtres3")),
-            url: Some(String::from("https://odtreservation3.com")),
+            info_url: Some(String::from("https://odtreservation3.com")),
             phone: Some(String::from("01 02 03 04 03")),
-            condition: None,
-            deeplink: None,
+            message: None,
+            booking_url: None,
         }
     );
 
@@ -276,19 +275,19 @@ fn ntfs() {
         .vehicle_journeys
         .get("M1F1")
         .unwrap()
-        .odt_reservation_links;
+        .booking_rule_links;
     assert_eq!(1, ids.len());
 
-    let mut iter = odt_reservations(ids, &pt_objects.odt_reservations);
+    let mut iter = booking_rules(ids, &pt_objects.booking_rules);
     assert_eq!(
         iter.next().unwrap(),
-        &ODTReservation {
+        &BookingRule {
             id: String::from("odtres1"),
             name: Some(String::from("odtres1")),
-            url: None,
+            info_url: None,
             phone: Some(String::from("01 02 03 04 99")),
-            condition: Some(String::from("lundi au samedi de 12h à 18h")),
-            deeplink: Some(String::from(
+            message: Some(String::from("lundi au samedi de 12h à 18h")),
+            booking_url: Some(String::from(
                 "https://deeplink1/search?departure-address={from_name}"
             )),
         }
@@ -299,19 +298,19 @@ fn ntfs() {
         .vehicle_journeys
         .get("RERAB1")
         .unwrap()
-        .odt_reservation_links;
+        .booking_rule_links;
     assert_eq!(1, ids.len());
 
-    let mut iter = odt_reservations(ids, &pt_objects.odt_reservations);
+    let mut iter = booking_rules(ids, &pt_objects.booking_rules);
     assert_eq!(
         iter.next().unwrap(),
-        &ODTReservation {
+        &BookingRule {
             id: String::from("odtres2"),
             name: None,
-            url: Some(String::from("https://odtreservation2.com")),
+            info_url: Some(String::from("https://odtreservation2.com")),
             phone: None,
-            condition: None,
-            deeplink: None,
+            message: None,
+            booking_url: None,
         }
     );
 }
