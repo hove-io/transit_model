@@ -117,7 +117,7 @@ macro_rules! impl_properties {
     };
 }
 
-/// Contains ids (comment or odt_reservation) linked with objects
+/// Contains ids (comment or booking_rule) linked with objects
 pub type LinksT = BTreeSet<String>;
 
 impl AddPrefix for LinksT {
@@ -474,7 +474,7 @@ pub struct Line {
     #[serde(skip)]
     pub comment_links: LinksT,
     #[serde(skip)]
-    pub odt_reservation_links: LinksT,
+    pub booking_rule_links: LinksT,
     #[serde(rename = "line_name")]
     pub name: String,
     #[serde(rename = "forward_line_name")]
@@ -518,14 +518,14 @@ impl AddPrefix for Line {
             .take()
             .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.comment_links.prefix(prefix_conf);
-        self.odt_reservation_links.prefix(prefix_conf);
+        self.booking_rule_links.prefix(prefix_conf);
     }
 }
 
 impl_codes!(Line);
 impl_properties!(Line);
 impl_links!(Line, Comment, comment_links);
-impl_links!(Line, ODTReservation, odt_reservation_links);
+impl_links!(Line, BookingRule, booking_rule_links);
 impl_with_id!(Line);
 
 impl GetObjectType for Line {
@@ -595,7 +595,7 @@ pub struct VehicleJourney {
     #[serde(skip)]
     pub comment_links: LinksT,
     #[serde(skip)]
-    pub odt_reservation_links: LinksT,
+    pub booking_rule_links: LinksT,
     pub route_id: String,
     pub physical_mode_id: String,
     pub dataset_id: String,
@@ -623,7 +623,7 @@ impl Default for VehicleJourney {
             codes: KeysValues::default(),
             object_properties: PropertiesMap::default(),
             comment_links: LinksT::default(),
-            odt_reservation_links: LinksT::default(),
+            booking_rule_links: LinksT::default(),
             route_id: "default_route".to_string(),
             physical_mode_id: "default_physical_mode".to_string(),
             dataset_id: "default_dataset".to_string(),
@@ -662,13 +662,13 @@ impl AddPrefix for VehicleJourney {
             .take()
             .map(|id| prefix_conf.schedule_prefix(id.as_str()));
         self.comment_links.prefix(prefix_conf);
-        self.odt_reservation_links.prefix(prefix_conf);
+        self.booking_rule_links.prefix(prefix_conf);
     }
 }
 impl_codes!(VehicleJourney);
 impl_properties!(VehicleJourney);
 impl_links!(VehicleJourney, Comment, comment_links);
-impl_links!(VehicleJourney, ODTReservation, odt_reservation_links);
+impl_links!(VehicleJourney, BookingRule, booking_rule_links);
 
 impl WithId for VehicleJourney {
     fn with_id(id: &str) -> Self {
@@ -1460,34 +1460,34 @@ impl AddPrefix for Comment {
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq)]
-pub struct ODTReservation {
-    #[serde(rename = "odt_reservation_id")]
+pub struct BookingRule {
+    #[serde(rename = "booking_rule_id")]
     pub id: String,
-    #[serde(rename = "odt_reservation_name")]
+    #[serde(rename = "name")]
     pub name: Option<String>,
-    #[serde(rename = "odt_reservation_url")]
-    pub url: Option<String>,
-    #[serde(rename = "odt_reservation_phone")]
+    #[serde(rename = "info_url")]
+    pub info_url: Option<String>,
+    #[serde(rename = "phone_number")]
     pub phone: Option<String>,
-    #[serde(rename = "odt_reservation_condition")]
-    pub condition: Option<String>,
-    #[serde(rename = "odt_reservation_deeplink")]
-    pub deeplink: Option<String>,
+    #[serde(rename = "message")]
+    pub message: Option<String>,
+    #[serde(rename = "booking_url")]
+    pub booking_url: Option<String>,
 }
 
-impl ODTReservation {
+impl BookingRule {
     pub fn is_similar(&self, other: &Self) -> bool {
         self.name == other.name
-            && self.url == other.url
+            && self.info_url == other.info_url
             && self.phone == other.phone
-            && self.condition == other.condition
-            && self.deeplink == other.deeplink
+            && self.message == other.message
+            && self.booking_url == other.booking_url
     }
 }
 
-impl_id!(ODTReservation);
+impl_id!(BookingRule);
 
-impl AddPrefix for ODTReservation {
+impl AddPrefix for BookingRule {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
         self.id = prefix_conf.schedule_prefix(self.id.as_str());
     }

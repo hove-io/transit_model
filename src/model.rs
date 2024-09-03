@@ -87,7 +87,7 @@ pub struct Collections {
     pub calendars: CollectionWithId<Calendar>,
     pub companies: CollectionWithId<Company>,
     pub comments: CollectionWithId<Comment>,
-    pub odt_reservations: CollectionWithId<ODTReservation>,
+    pub booking_rules: CollectionWithId<BookingRule>,
     pub equipments: CollectionWithId<Equipment>,
     pub transfers: Collection<Transfer>,
     pub trip_properties: CollectionWithId<TripProperty>,
@@ -218,7 +218,7 @@ impl Collections {
         let mut data_sets_used = HashSet::<String>::new();
         let mut physical_modes_used = HashSet::<String>::new();
         let mut comments_used = HashSet::<String>::new();
-        let mut odt_reservations_used = HashSet::<String>::new();
+        let mut booking_rules_used = HashSet::<String>::new();
         let mut level_id_used = HashSet::<String>::new();
         let mut calendars_used = HashSet::<String>::new();
         let mut vjs_used = HashSet::<String>::new();
@@ -254,8 +254,8 @@ impl Collections {
                 data_sets_used.insert(vj.dataset_id.clone());
                 physical_modes_used.insert(vj.physical_mode_id.clone());
                 comments_used.extend(&mut vj.comment_links.iter().map(|cl| cl.to_string()));
-                odt_reservations_used
-                    .extend(&mut vj.odt_reservation_links.iter().map(|id| id.to_string()));
+                booking_rules_used
+                    .extend(&mut vj.booking_rule_links.iter().map(|id| id.to_string()));
                 vjs_used.insert(vj.id.clone());
                 true
             } else {
@@ -387,8 +387,8 @@ impl Collections {
                     networks_used.insert(l.network_id.clone());
                     commercial_modes_used.insert(l.commercial_mode_id.clone());
                     comments_used.extend(&mut l.comment_links.iter().map(|cl| cl.to_string()));
-                    odt_reservations_used
-                        .extend(&mut l.odt_reservation_links.iter().map(|id| id.to_string()));
+                    booking_rules_used
+                        .extend(&mut l.booking_rule_links.iter().map(|id| id.to_string()));
                     true
                 } else {
                     log_object_removed("Line", &l.id);
@@ -481,9 +481,9 @@ impl Collections {
                 comments_used.contains(&comment.id)
             }));
 
-        self.odt_reservations.retain(log_predicate(
-            "ODTReservation",
-            |odt_reservation: &ODTReservation| odt_reservations_used.contains(&odt_reservation.id),
+        self.booking_rules.retain(log_predicate(
+            "BookingRule",
+            |booking_rule: &BookingRule| booking_rules_used.contains(&booking_rule.id),
         ));
 
         self.lines = CollectionWithId::new(lines)?;
@@ -2082,7 +2082,7 @@ mod tests {
                 codes: KeysValues::default(),
                 object_properties: PropertiesMap::default(),
                 comment_links: LinksT::default(),
-                odt_reservation_links: LinksT::default(),
+                booking_rule_links: LinksT::default(),
                 route_id: String::from("route_id"),
                 physical_mode_id: String::new(),
                 dataset_id: String::new(),
