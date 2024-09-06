@@ -735,8 +735,10 @@ impl<'a> VehicleJourneyBuilder<'a> {
             let mut stop_time = StopTime {
                 stop_point_idx,
                 sequence,
-                arrival_time: arrival.as_time(),
-                departure_time: departure.as_time(),
+                arrival_time: Some(arrival.as_time()),
+                departure_time: Some(departure.as_time()),
+                start_pickup_drop_off_window: None,
+                end_pickup_drop_off_window: None,
                 boarding_duration: 0u16,
                 alighting_duration: 0u16,
                 pickup_type,

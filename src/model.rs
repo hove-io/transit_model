@@ -1351,7 +1351,20 @@ impl Collections {
                 );
                 continue;
             };
-            let mut arrival_time_delta = st.arrival_time;
+
+            if corresponding_vj.stop_times.iter().any(|st| {
+                st.start_pickup_drop_off_window.is_some() || st.end_pickup_drop_off_window.is_some()
+            }) {
+                warn!(
+                    "frequency mapped to trip {:?} with drop_off_window stop_times not supported",
+                    frequency.vehicle_journey_id
+                );
+                continue;
+            }
+
+            let mut arrival_time_delta = st
+                .arrival_time
+                .expect("`stop_time.arrival_time` should not be empty");
 
             while start_time < frequency.end_time {
                 trip_id_sequence
@@ -1393,17 +1406,27 @@ impl Collections {
                 let stop_times: Vec<StopTime> = corresponding_vj
                     .stop_times
                     .iter()
-                    .map(|stop_time| StopTime {
-                        stop_point_idx: stop_time.stop_point_idx,
-                        sequence: stop_time.sequence,
-                        arrival_time: stop_time.arrival_time + start_time - arrival_time_delta,
-                        departure_time: stop_time.departure_time + start_time - arrival_time_delta,
-                        boarding_duration: stop_time.boarding_duration,
-                        alighting_duration: stop_time.alighting_duration,
-                        pickup_type: stop_time.pickup_type,
-                        drop_off_type: stop_time.drop_off_type,
-                        local_zone_id: stop_time.local_zone_id,
-                        precision: stop_time.precision.clone(),
+                    .map(|stop_time| {
+                        let arrival_time = stop_time
+                            .arrival_time
+                            .map(|at| at + start_time - arrival_time_delta);
+                        let departure_time = stop_time
+                            .departure_time
+                            .map(|dt| dt + start_time - arrival_time_delta);
+                        StopTime {
+                            stop_point_idx: stop_time.stop_point_idx,
+                            sequence: stop_time.sequence,
+                            arrival_time,
+                            departure_time,
+                            start_pickup_drop_off_window: None,
+                            end_pickup_drop_off_window: None,
+                            boarding_duration: stop_time.boarding_duration,
+                            alighting_duration: stop_time.alighting_duration,
+                            pickup_type: stop_time.pickup_type,
+                            drop_off_type: stop_time.drop_off_type,
+                            local_zone_id: stop_time.local_zone_id,
+                            precision: stop_time.precision.clone(),
+                        }
                     })
                     .collect();
                 start_time = start_time + Time::new(0, 0, frequency.headway_secs);
@@ -1727,8 +1750,10 @@ mod tests {
             let stop_time = StopTime {
                 stop_point_idx: collections.stop_points.get_idx("stop_point_id").unwrap(),
                 sequence: 0,
-                arrival_time: Time::new(0, 0, 0),
-                departure_time: Time::new(0, 0, 0),
+                arrival_time: Some(Time::new(0, 0, 0)),
+                departure_time: Some(Time::new(0, 0, 0)),
+                start_pickup_drop_off_window: None,
+                end_pickup_drop_off_window: None,
                 boarding_duration: 0,
                 alighting_duration: 0,
                 pickup_type: 0,
@@ -2067,8 +2092,10 @@ mod tests {
             let stop_time_at = |stop_point_id: &str| StopTime {
                 stop_point_idx: collections.stop_points.get_idx(stop_point_id).unwrap(),
                 sequence: 0,
-                arrival_time: Time::new(0, 0, 0),
-                departure_time: Time::new(0, 0, 0),
+                arrival_time: Some(Time::new(0, 0, 0)),
+                departure_time: Some(Time::new(0, 0, 0)),
+                start_pickup_drop_off_window: None,
+                end_pickup_drop_off_window: None,
                 boarding_duration: 0,
                 alighting_duration: 0,
                 pickup_type: 0,
@@ -2537,8 +2564,10 @@ mod tests {
             StopTime {
                 stop_point_idx: stop_points.get_idx(stop_point_id).unwrap(),
                 sequence: 1,
-                arrival_time,
-                departure_time,
+                arrival_time: Some(arrival_time),
+                departure_time: Some(departure_time),
+                start_pickup_drop_off_window: None,
+                end_pickup_drop_off_window: None,
                 boarding_duration: 0,
                 alighting_duration: 0,
                 pickup_type: 0,

@@ -687,10 +687,10 @@ impl GetObjectType for VehicleJourney {
 
 impl VehicleJourney {
     pub fn first_departure_time(&self) -> Option<Time> {
-        self.stop_times.first().map(|st| st.departure_time)
+        self.stop_times.first().and_then(|st| st.departure_time)
     }
     pub fn last_arrival_time(&self) -> Option<Time> {
-        self.stop_times.last().map(|st| st.arrival_time)
+        self.stop_times.last().and_then(|st| st.arrival_time)
     }
 }
 
@@ -722,14 +722,16 @@ impl VehicleJourney {
                 });
             }
             #[allow(clippy::suspicious_operation_groupings)]
-            if (curr_st.arrival_time > curr_st.departure_time)
-                || (curr_st.departure_time > next_st.arrival_time)
-            {
-                return Err(StopTimeError::IncoherentStopTimes {
-                    first_incorrect_sequence: curr_st.sequence,
-                    first_incorrect_time: curr_st.departure_time,
-                    vj_id: self.id.clone(),
-                });
+            if let Some(dt) = curr_st.departure_time {
+                if (curr_st.arrival_time > curr_st.departure_time)
+                    || (curr_st.departure_time > next_st.arrival_time)
+                {
+                    return Err(StopTimeError::IncoherentStopTimes {
+                        first_incorrect_sequence: curr_st.sequence,
+                        first_incorrect_time: dt,
+                        vj_id: self.id.clone(),
+                    });
+                }
             }
         }
         Ok(())
@@ -875,8 +877,10 @@ impl std::fmt::Display for Time {
 pub struct StopTime {
     pub stop_point_idx: Idx<StopPoint>,
     pub sequence: u32,
-    pub arrival_time: Time,
-    pub departure_time: Time,
+    pub arrival_time: Option<Time>,
+    pub departure_time: Option<Time>,
+    pub start_pickup_drop_off_window: Option<Time>,
+    pub end_pickup_drop_off_window: Option<Time>,
     pub boarding_duration: u16,
     pub alighting_duration: u16,
     pub pickup_type: u8,
@@ -2224,8 +2228,10 @@ mod tests {
                 .map(|(sequence, arrival, departure)| StopTime {
                     stop_point_idx,
                     sequence,
-                    arrival_time: Time::from_str(arrival).unwrap(),
-                    departure_time: Time::from_str(departure).unwrap(),
+                    arrival_time: Some(Time::from_str(arrival).unwrap()),
+                    departure_time: Some(Time::from_str(departure).unwrap()),
+                    start_pickup_drop_off_window: None,
+                    end_pickup_drop_off_window: None,
                     boarding_duration: 0,
                     alighting_duration: 0,
                     pickup_type: 0,

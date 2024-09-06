@@ -477,8 +477,10 @@ where
                     .push(objects::StopTime {
                         stop_point_idx,
                         sequence: stop_time.stop_sequence,
-                        arrival_time: st_values.arrival_time,
-                        departure_time: st_values.departure_time,
+                        arrival_time: Some(st_values.arrival_time),
+                        departure_time: Some(st_values.departure_time),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type,
@@ -1065,6 +1067,7 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<
             }
 
             let has_one_direction = route_directions.len() <= 1;
+
             for d in route_directions {
                 let mut codes = KeysValues::default();
                 codes.insert(("source".to_string(), r.id.clone()));
@@ -2415,8 +2418,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:01").unwrap(),
                         sequence: 1,
-                        arrival_time: Time::new(6, 0, 0),
-                        departure_time: Time::new(6, 0, 0),
+                        arrival_time: Some(Time::new(6, 0, 0)),
+                        departure_time: Some(Time::new(6, 0, 0)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 0,
@@ -2427,8 +2432,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
                         sequence: 2,
-                        arrival_time: Time::new(6, 6, 27),
-                        departure_time: Time::new(6, 6, 27),
+                        arrival_time: Some(Time::new(6, 6, 27)),
+                        departure_time: Some(Time::new(6, 6, 27)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 2,
@@ -2439,8 +2446,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
                         sequence: 3,
-                        arrival_time: Time::new(6, 6, 27),
-                        departure_time: Time::new(6, 6, 27),
+                        arrival_time: Some(Time::new(6, 6, 27)),
+                        departure_time: Some(Time::new(6, 6, 27)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 2,
@@ -2507,8 +2516,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:01").unwrap(),
                         sequence: 1,
-                        arrival_time: Time::new(6, 0, 0),
-                        departure_time: Time::new(6, 0, 0),
+                        arrival_time: Some(Time::new(6, 0, 0)),
+                        departure_time: Some(Time::new(6, 0, 0)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 0,
@@ -2519,8 +2530,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
                         sequence: 2,
-                        arrival_time: Time::new(6, 11, 0),
-                        departure_time: Time::new(6, 11, 0),
+                        arrival_time: Some(Time::new(6, 11, 0)),
+                        departure_time: Some(Time::new(6, 11, 0)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 0,
@@ -2531,8 +2544,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
                         sequence: 3,
-                        arrival_time: Time::new(6, 22, 0),
-                        departure_time: Time::new(6, 22, 0),
+                        arrival_time: Some(Time::new(6, 22, 0)),
+                        departure_time: Some(Time::new(6, 22, 0)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 0,
@@ -2590,8 +2605,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:01").unwrap(),
                         sequence: 1,
-                        arrival_time: Time::new(6, 0, 0),
-                        departure_time: Time::new(6, 0, 0),
+                        arrival_time: Some(Time::new(6, 0, 0)),
+                        departure_time: Some(Time::new(6, 0, 0)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 0,
@@ -2602,8 +2619,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
                         sequence: 2,
-                        arrival_time: Time::new(6, 6, 27),
-                        departure_time: Time::new(6, 6, 27),
+                        arrival_time: Some(Time::new(6, 6, 27)),
+                        departure_time: Some(Time::new(6, 6, 27)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 2,
@@ -3021,7 +3040,7 @@ mod tests {
                 collections.vehicle_journeys.into_vec()[0]
                     .stop_times
                     .iter()
-                    .map(|st| (st.arrival_time, st.departure_time))
+                    .map(|st| (st.arrival_time.unwrap(), st.departure_time.unwrap()))
                     .collect::<Vec<_>>()
             );
         });
@@ -3213,8 +3232,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:01").unwrap(),
                         sequence: 1,
-                        arrival_time: Time::new(6, 0, 0),
-                        departure_time: Time::new(6, 0, 0),
+                        arrival_time: Some(Time::new(6, 0, 0)),
+                        departure_time: Some(Time::new(6, 0, 0)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 0,
@@ -3225,8 +3246,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:02").unwrap(),
                         sequence: 2,
-                        arrival_time: Time::new(6, 6, 27),
-                        departure_time: Time::new(6, 6, 27),
+                        arrival_time: Some(Time::new(6, 6, 27)),
+                        departure_time: Some(Time::new(6, 6, 27)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 2,
@@ -3237,8 +3260,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp:03").unwrap(),
                         sequence: 3,
-                        arrival_time: Time::new(6, 6, 27),
-                        departure_time: Time::new(6, 6, 27),
+                        arrival_time: Some(Time::new(6, 6, 27)),
+                        departure_time: Some(Time::new(6, 6, 27)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 2,

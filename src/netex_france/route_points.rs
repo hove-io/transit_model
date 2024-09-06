@@ -110,8 +110,10 @@ mod tests {
             StopTime {
                 stop_point_idx,
                 sequence,
-                arrival_time: Time::new(0, 0, 0),
-                departure_time,
+                arrival_time: Some(Time::new(0, 0, 0)),
+                departure_time: Some(departure_time),
+                start_pickup_drop_off_window: None,
+                end_pickup_drop_off_window: None,
                 boarding_duration: 0,
                 alighting_duration: 0,
                 pickup_type: 0,

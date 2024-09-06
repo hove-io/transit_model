@@ -415,17 +415,23 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn export_timetabled_passing_time(stop_time: &'a StopTime) -> Element {
-        let arrival_day_offset = stop_time.arrival_time.hours() / 24;
+        let arrival_time = stop_time
+            .arrival_time
+            .expect("`stop_time.arrival_time` should not be empty");
+        let departure_time = stop_time
+            .departure_time
+            .expect("`stop_time.departure_time` should not be empty");
+        let arrival_day_offset = arrival_time.hours() / 24;
         let arrival_time = Time::new(
-            stop_time.arrival_time.hours() % 24,
-            stop_time.arrival_time.minutes(),
-            stop_time.arrival_time.seconds(),
+            arrival_time.hours() % 24,
+            arrival_time.minutes(),
+            arrival_time.seconds(),
         );
-        let departure_day_offset = stop_time.departure_time.hours() / 24;
+        let departure_day_offset = departure_time.hours() / 24;
         let departure_time = Time::new(
-            stop_time.departure_time.hours() % 24,
-            stop_time.departure_time.minutes(),
-            stop_time.departure_time.seconds(),
+            departure_time.hours() % 24,
+            departure_time.minutes(),
+            departure_time.seconds(),
         );
         Element::builder(ObjectType::TimetabledPassingTime.to_string())
             .append(Self::generate_arrival_time(arrival_time))
@@ -804,8 +810,10 @@ mod tests {
                 StopTime {
                     stop_point_idx: collections.stop_points.get_idx("sp_id_1").unwrap(),
                     sequence: 0,
-                    arrival_time: Time::new(0, 0, 0),
-                    departure_time: Time::new(0, 0, 0),
+                    arrival_time: Some(Time::new(0, 0, 0)),
+                    departure_time: Some(Time::new(0, 0, 0)),
+                    start_pickup_drop_off_window: None,
+                    end_pickup_drop_off_window: None,
                     boarding_duration: 0,
                     alighting_duration: 0,
                     pickup_type: 0,
@@ -816,8 +824,10 @@ mod tests {
                 StopTime {
                     stop_point_idx: collections.stop_points.get_idx("sp_id_2").unwrap(),
                     sequence: 1,
-                    arrival_time: Time::new(0, 0, 0),
-                    departure_time: Time::new(0, 0, 0),
+                    arrival_time: Some(Time::new(0, 0, 0)),
+                    departure_time: Some(Time::new(0, 0, 0)),
+                    start_pickup_drop_off_window: None,
+                    end_pickup_drop_off_window: None,
                     boarding_duration: 0,
                     alighting_duration: 0,
                     pickup_type: 1,
@@ -847,8 +857,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp_id_1").unwrap(),
                         sequence: 0,
-                        arrival_time: Time::new(0, 0, 0),
-                        departure_time: Time::new(0, 0, 0),
+                        arrival_time: Some(Time::new(0, 0, 0)),
+                        departure_time: Some(Time::new(0, 0, 0)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 0,
@@ -859,8 +871,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp_id_2").unwrap(),
                         sequence: 1,
-                        arrival_time: Time::new(0, 0, 0),
-                        departure_time: Time::new(0, 0, 0),
+                        arrival_time: Some(Time::new(0, 0, 0)),
+                        departure_time: Some(Time::new(0, 0, 0)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 1,
@@ -901,8 +915,10 @@ mod tests {
                 stop_times: vec![StopTime {
                     stop_point_idx: collections.stop_points.get_idx("sp_id_1").unwrap(),
                     sequence: 0,
-                    arrival_time: Time::new(0, 0, 0),
-                    departure_time: Time::new(0, 0, 0),
+                    arrival_time: Some(Time::new(0, 0, 0)),
+                    departure_time: Some(Time::new(0, 0, 0)),
+                    start_pickup_drop_off_window: None,
+                    end_pickup_drop_off_window: None,
                     boarding_duration: 0,
                     alighting_duration: 0,
                     pickup_type: 0,
@@ -948,8 +964,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp_id_1").unwrap(),
                         sequence: 0,
-                        arrival_time: Time::new(0, 0, 0),
-                        departure_time: Time::new(0, 0, 0),
+                        arrival_time: Some(Time::new(0, 0, 0)),
+                        departure_time: Some(Time::new(0, 0, 0)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         // This pickup type is different from 'vj_id_1'
@@ -961,8 +979,10 @@ mod tests {
                     StopTime {
                         stop_point_idx: collections.stop_points.get_idx("sp_id_2").unwrap(),
                         sequence: 1,
-                        arrival_time: Time::new(0, 0, 0),
-                        departure_time: Time::new(0, 0, 0),
+                        arrival_time: Some(Time::new(0, 0, 0)),
+                        departure_time: Some(Time::new(0, 0, 0)),
+                        start_pickup_drop_off_window: None,
+                        end_pickup_drop_off_window: None,
                         boarding_duration: 0,
                         alighting_duration: 0,
                         pickup_type: 1,

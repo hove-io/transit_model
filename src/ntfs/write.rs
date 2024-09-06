@@ -101,6 +101,8 @@ pub fn write_vehicle_journeys_and_stop_times(
                     stop_sequence: st.sequence,
                     arrival_time: st.arrival_time,
                     departure_time: st.departure_time,
+                    start_pickup_drop_off_window: st.start_pickup_drop_off_window,
+                    end_pickup_drop_off_window: st.end_pickup_drop_off_window,
                     boarding_duration: st.boarding_duration,
                     alighting_duration: st.alighting_duration,
                     pickup_type: st.pickup_type,
