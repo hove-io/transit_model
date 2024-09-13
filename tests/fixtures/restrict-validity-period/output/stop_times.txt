@@ -1,13 +1,13 @@
-stop_id,trip_id,stop_sequence,arrival_time,departure_time,boarding_duration,alighting_duration,pickup_type,drop_off_type,local_zone_id,stop_headsign,stop_time_id,stop_time_precision
-CDGM,M1B1,6,10:40:00,10:40:00,0,0,0,1,,,stoptime:8,0
-CHAM,M1B1,7,10:50:00,10:50:00,0,0,0,0,,,stoptime:7,0
-GDLM,M1B1,8,11:00:00,11:00:00,0,0,0,0,,,stoptime:6,0
-NATM,M1B1,9,11:10:00,11:10:00,0,0,1,0,,headsign kept,stoptime:5,2
-GDLB,B42F1,10,10:10:00,10:10:00,0,0,0,1,,,stoptime:9,0
-MTPB,B42F1,20,10:20:00,10:20:00,0,0,1,0,,,stoptime:10,0
-MTPB,B42B1,20,07:00:00,07:00:00,0,0,0,1,,,stoptime:12,0
-GDLB,B42B1,30,07:10:00,07:10:00,0,0,1,0,,,stoptime:11,0
-GDLM,B42B1_R,0,20:34:00,20:35:00,0,0,1,1,,,stoptime:27,2
-GDLM,B42F1_R,0,20:34:00,20:35:00,0,0,1,1,,,stoptime:26,2
-GDLM,M1B1_R,0,20:34:00,20:35:00,0,0,1,1,,,stoptime:24,2
-GDLM,M1F1-2,0,20:34:00,20:35:00,0,0,1,1,,,stoptime:25,2
+stop_id,trip_id,stop_sequence,arrival_time,departure_time,start_pickup_drop_off_window,end_pickup_drop_off_window,boarding_duration,alighting_duration,pickup_type,drop_off_type,local_zone_id,stop_headsign,stop_time_id,stop_time_precision
+CDGM,M1B1,6,10:40:00,10:40:00,,,0,0,0,1,,,stoptime:8,0
+CHAM,M1B1,7,10:50:00,10:50:00,,,0,0,0,0,,,stoptime:7,0
+GDLM,M1B1,8,11:00:00,11:00:00,,,0,0,0,0,,,stoptime:6,0
+NATM,M1B1,9,11:10:00,11:10:00,,,0,0,1,0,,headsign kept,stoptime:5,2
+GDLB,B42F1,10,10:10:00,10:10:00,,,0,0,0,1,,,stoptime:9,0
+MTPB,B42F1,20,10:20:00,10:20:00,,,0,0,1,0,,,stoptime:10,0
+MTPB,B42B1,20,07:00:00,07:00:00,,,0,0,0,1,,,stoptime:12,0
+GDLB,B42B1,30,07:10:00,07:10:00,,,0,0,1,0,,,stoptime:11,0
+GDLM,B42B1_R,0,20:34:00,20:35:00,,,0,0,1,1,,,stoptime:27,2
+GDLM,B42F1_R,0,20:34:00,20:35:00,,,0,0,1,1,,,stoptime:26,2
+GDLM,M1B1_R,0,20:34:00,20:35:00,,,0,0,1,1,,,stoptime:24,2
+GDLM,M1F1-2,0,20:34:00,20:35:00,,,0,0,1,1,,,stoptime:25,2
