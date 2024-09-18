@@ -687,10 +687,14 @@ impl GetObjectType for VehicleJourney {
 
 impl VehicleJourney {
     pub fn first_departure_time(&self) -> Option<Time> {
-        self.stop_times.first().and_then(|st| st.departure_time)
+        self.stop_times
+            .first()
+            .and_then(|st| st.departure_time.or(st.start_pickup_drop_off_window))
     }
     pub fn last_arrival_time(&self) -> Option<Time> {
-        self.stop_times.last().and_then(|st| st.arrival_time)
+        self.stop_times
+            .last()
+            .and_then(|st| st.arrival_time.or(st.end_pickup_drop_off_window))
     }
 }
 
@@ -715,23 +719,50 @@ impl VehicleJourney {
         for window in self.stop_times.windows(2) {
             let curr_st = &window[0];
             let next_st = &window[1];
+
             if curr_st.sequence == next_st.sequence {
                 return Err(StopTimeError::DuplicateStopSequence {
                     duplicated_sequence: curr_st.sequence,
                     vj_id: self.id.clone(),
                 });
             }
-            #[allow(clippy::suspicious_operation_groupings)]
-            if let Some(dt) = curr_st.departure_time {
-                if (curr_st.arrival_time > curr_st.departure_time)
-                    || (curr_st.departure_time > next_st.arrival_time)
-                {
+
+            let dt = curr_st
+                .departure_time
+                .or(curr_st.start_pickup_drop_off_window)
+                .unwrap_or_default();
+
+            // Only 2 valid possibilities:
+            // - arrival_time and departure_time are filled, but not start_pickup_drop_off_window and end_pickup_drop_off_window
+            // - start_pickup_drop_off_window and end_pickup_drop_off_window are filled, but not arrival_time and departure_time
+            match (
+                curr_st.arrival_time,
+                curr_st.departure_time,
+                curr_st.start_pickup_drop_off_window,
+                curr_st.end_pickup_drop_off_window,
+            ) {
+                (Some(_), Some(_), None, None) => (),
+                (None, None, Some(_), Some(_)) => (),
+                _ => {
                     return Err(StopTimeError::IncoherentStopTimes {
                         first_incorrect_sequence: curr_st.sequence,
                         first_incorrect_time: dt,
                         vj_id: self.id.clone(),
-                    });
+                    })
                 }
+            };
+
+            if (curr_st.arrival_time > curr_st.departure_time)
+                || (curr_st.start_pickup_drop_off_window > curr_st.end_pickup_drop_off_window)
+                || (curr_st.departure_time.is_some()
+                    && next_st.arrival_time.is_some()
+                    && curr_st.departure_time > next_st.arrival_time)
+            {
+                return Err(StopTimeError::IncoherentStopTimes {
+                    first_incorrect_sequence: curr_st.sequence,
+                    first_incorrect_time: dt,
+                    vj_id: self.id.clone(),
+                });
             }
         }
         Ok(())
