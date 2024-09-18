@@ -1,0 +1,5 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+MFDI:RATP:107494-C01376-ITI_IDFM_C01376_A_-1009412783,Charles de Gaulle - Etoile,outbound,MFDI:C01376,,MFDI:71347
+MFDI:KVVB:C02513-SOIR-A,Porte Jaune,outbound,MFDI:C02513,,MFDI:63534
+MFDI:BOUCLE_DE_LYS:82336-C02491-4740-ALLER,Gare de St-Germain-en-Laye - Gare Routière,inbound,MFDI:C02491,,MFDI:64589
+MFDI:stif:local-153359-C02060-3417,Gare de Roissypole Aéroport CDG 1,outbound,MFDI:C02060,,MFDI:73596
