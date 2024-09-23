@@ -1,0 +1,5 @@
+network_id,network_name,network_url,network_timezone,network_lang,network_phone,network_address,network_fare_url,network_sort_order
+MFDI:1061,Vélizy Vallées,https://www.iledefrance-mobilites.fr,Europe/Paris,,,,https://applidium.page.link/default,
+MFDI:1071,Roissy Ouest,https://www.iledefrance-mobilites.fr,Europe/Paris,,,,https://applidium.page.link/default,
+MFDI:1062,Saint Germain Boucles de Seine,https://www.iledefrance-mobilites.fr,Europe/Paris,,,,https://applidium.page.link/default,
+MFDI:Operator_100,RATP,https://www.iledefrance-mobilites.fr,Europe/Paris,,,,https://applidium.page.link/default,

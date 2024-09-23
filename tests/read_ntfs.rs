@@ -556,3 +556,16 @@ fn ntfs_with_duplicated_objects_without_id() {
     assert_eq!(1, model.grid_periods.len());
     assert_eq!(2, model.grid_rel_calendar_line.len());
 }
+
+#[test]
+fn preserve_stoptimes_windows_and_enhance_line_opening_time() {
+    let ntm = transit_model::ntfs::read("tests/fixtures/ntfs_with_windows/input/").unwrap();
+    test_in_tmp_dir(|output_dir| {
+        transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            output_dir,
+            Some(vec!["lines.txt", "stop_times.txt"]),
+            "tests/fixtures/ntfs_with_windows/output",
+        );
+    });
+}
