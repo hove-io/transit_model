@@ -1,0 +1,5 @@
+route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,shape_id,wheelchair_accessible,bikes_allowed
+MFDI:C02513,MFDI:1000,MFDI:KVVB:158023-C02513-1638-260,Porte Jaune,,1,,,0,0
+MFDI:C02491,MFDI:1,MFDI:BOUCLE_DE_LYS:149996-C02491-18777678,Gare de St-Germain-en-Laye - Gare Routière,,0,,,0,0
+MFDI:C02060,MFDI:1000,MFDI:KRO6:153358-C02060-680-260,Gare de Roissypole Aéroport CDG 1,,1,,,0,0
+MFDI:C01376,MFDI:1,MFDI:RATP:153912-C01376-COU_RATP_5086613_2991428_116,Charles de Gaulle-Etoile,,1,,,2,0

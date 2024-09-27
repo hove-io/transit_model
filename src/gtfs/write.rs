@@ -482,6 +482,8 @@ pub fn write_stop_times(
                     stop_sequence: st.sequence,
                     arrival_time: st.arrival_time,
                     departure_time: st.departure_time,
+                    start_pickup_drop_off_window: st.start_pickup_drop_off_window,
+                    end_pickup_drop_off_window: st.end_pickup_drop_off_window,
                     pickup_type: st.pickup_type,
                     drop_off_type: st.drop_off_type,
                     local_zone_id: st.local_zone_id,
@@ -1293,9 +1295,9 @@ mod tests {
         let mut output_contents = String::new();
         output_file.read_to_string(&mut output_contents).unwrap();
         assert_eq!(
-            "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id,stop_headsign,timepoint\n\
-            vj:01,06:00:00,06:00:00,sp:01,1,0,0,,somewhere,1\n\
-            vj:01,06:06:27,06:06:27,sp:01,2,2,1,3,,0\n",
+            "trip_id,arrival_time,departure_time,start_pickup_drop_off_window,end_pickup_drop_off_window,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id,stop_headsign,timepoint\n\
+            vj:01,06:00:00,06:00:00,,,sp:01,1,0,0,,somewhere,1\n\
+            vj:01,06:06:27,06:06:27,,,sp:01,2,2,1,3,,0\n",
             output_contents
         );
         tmp_dir.close().expect("delete temp dir");

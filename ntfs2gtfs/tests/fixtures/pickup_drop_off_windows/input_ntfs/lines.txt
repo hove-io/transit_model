@@ -1,0 +1,5 @@
+line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+MFDI:C01376,6,6,,,6ECA97,000000,,MFDI:Operator_100,Metro,,,
+MFDI:C02060,Filéo RS,Filéo Roissy Sud - Villeparisis et Mitry (sur réservation),,,4890CD,FFFFFF,,MFDI:1071,Bus,,,
+MFDI:C02491,Soir,Soir Saint-Germain-en-Laye,,,652C8F,FFFFFF,,MFDI:1062,Bus,,,
+MFDI:C02513,Soir,Soir Versailles-Chantiers,,,640082,FFFFFF,,MFDI:1061,Bus,,,

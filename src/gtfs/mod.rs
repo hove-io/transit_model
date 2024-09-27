@@ -207,6 +207,8 @@ struct StopTime {
     trip_id: String,
     arrival_time: Option<Time>,
     departure_time: Option<Time>,
+    start_pickup_drop_off_window: Option<Time>,
+    end_pickup_drop_off_window: Option<Time>,
     #[serde(deserialize_with = "de_without_slashes")]
     stop_id: String,
     stop_sequence: u32,
