@@ -33,8 +33,8 @@
 use crate::model::{Collections, Model};
 use crate::objects::{
     Calendar, CommercialMode, Date, Equipment, Geometry, Line, Network, Occupancy, OccupancyStatus,
-    PhysicalMode, Route, StopArea, StopPoint, StopTime, Time, Transfer, TripProperty,
-    ValidityPeriod, VehicleJourney,
+    PhysicalMode, Route, StopArea, StopPoint, StopTime, StopTimePrecision, Time, Transfer,
+    TripProperty, ValidityPeriod, VehicleJourney,
 };
 use chrono::NaiveDateTime;
 use chrono_tz;
@@ -754,6 +754,110 @@ impl<'a> VehicleJourneyBuilder<'a> {
         self
     }
 
+    /// add a window stoptime to the vehicle journey
+    /// with (by default) pickup_type/drop_off_type and stop_time_precision at value 2
+    ///
+    /// ```
+    /// # use transit_model::ModelBuilder;
+    ///
+    /// # fn main() {
+    /// let model = ModelBuilder::default()
+    ///        .vj("vj1", |vj_builder| {
+    ///            vj_builder
+    ///                .stw("A", "08:00:00", "19:00:00")
+    ///                .stw("B", "08:00:00", "19:00:00");
+    ///        })
+    ///        .build();
+    /// # }
+    /// ```
+    pub fn stw(
+        self,
+        stop_point_id: &str,
+        start_pickup_drop_off_window: impl IntoTime,
+        end_pickup_drop_off_window: impl IntoTime,
+    ) -> Self {
+        self.stw_mut(
+            stop_point_id,
+            start_pickup_drop_off_window.as_time(),
+            end_pickup_drop_off_window.as_time(),
+            2u8,
+            2u8,
+            Some(StopTimePrecision::Estimated),
+            None,
+            |_st| {},
+        )
+    }
+
+    ///  add a more detailed window stoptime to the vehicle journey
+    #[allow(clippy::too_many_arguments)]
+    pub fn stw_detailed(
+        self,
+        stop_point_id: &str,
+        start_pickup_drop_off_window: impl IntoTime,
+        end_pickup_drop_off_window: impl IntoTime,
+        pickup_type: u8,
+        drop_off_type: u8,
+        precision: Option<StopTimePrecision>,
+        local_zone_id: Option<u16>,
+    ) -> Self {
+        self.stw_mut(
+            stop_point_id,
+            start_pickup_drop_off_window.as_time(),
+            end_pickup_drop_off_window.as_time(),
+            pickup_type,
+            drop_off_type,
+            precision,
+            local_zone_id,
+            |_st| {},
+        )
+    }
+
+    /// add a window stopTime to the vehicle journey and modify it
+    #[allow(clippy::too_many_arguments)]
+    fn stw_mut<F>(
+        mut self,
+        stop_point_id: &str,
+        start_pickup_drop_off_window: impl IntoTime,
+        end_pickup_drop_off_window: impl IntoTime,
+        pickup_type: u8,
+        drop_off_type: u8,
+        precision: Option<StopTimePrecision>,
+        local_zone_id: Option<u16>,
+        st_muter: F,
+    ) -> Self
+    where
+        F: FnOnce(&mut StopTime),
+    {
+        {
+            let stop_point_idx = self.find_or_create_sp(stop_point_id);
+            let vj = &mut self
+                .model
+                .collections
+                .vehicle_journeys
+                .index_mut(self.vj_idx);
+            let sequence = vj.stop_times.len() as u32;
+            let mut stop_time = StopTime {
+                stop_point_idx,
+                sequence,
+                arrival_time: None,
+                departure_time: None,
+                start_pickup_drop_off_window: Some(start_pickup_drop_off_window.as_time()),
+                end_pickup_drop_off_window: Some(end_pickup_drop_off_window.as_time()),
+                boarding_duration: 0u16,
+                alighting_duration: 0u16,
+                pickup_type,
+                drop_off_type,
+                local_zone_id,
+                precision,
+            };
+            st_muter(&mut stop_time);
+
+            vj.stop_times.push(stop_time);
+        }
+
+        self
+    }
+
     /// Set the route id of the vj
     ///
     /// ```
@@ -1009,6 +1113,7 @@ impl<'a> Drop for VehicleJourneyBuilder<'a> {
 #[cfg(test)]
 mod test {
     use super::ModelBuilder;
+    use super::{StopTimePrecision, Time};
 
     #[test]
     fn simple_model_creation() {
@@ -1134,5 +1239,91 @@ mod test {
                 .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
                 .collect()
         );
+    }
+
+    #[test]
+    fn test_vj_with_window_stoptimes() {
+        let model = ModelBuilder::default()
+            .vj("vj1", |vj| {
+                vj.stw("sp1", "10:00:00", "20:00:00")
+                    .stw("sp2", "10:10:00", "20:10:00");
+            })
+            .build();
+
+        let vj = model.vehicle_journeys.get("vj1").unwrap();
+        let mut st_iter = vj.stop_times.iter();
+
+        let st1 = st_iter.next().unwrap();
+        assert_eq!(st1.start_pickup_drop_off_window, Some(Time::new(10, 0, 0)));
+        assert_eq!(st1.end_pickup_drop_off_window, Some(Time::new(20, 0, 0)));
+        assert!(st1.departure_time.is_none());
+        assert!(st1.arrival_time.is_none());
+        assert_eq!(st1.pickup_type, 2u8);
+        assert_eq!(st1.drop_off_type, 1u8); // see enhancers::enhance_pickup_dropoff
+        assert_eq!(st1.precision, Some(StopTimePrecision::Estimated));
+
+        let st2 = st_iter.next().unwrap();
+        assert_eq!(st2.start_pickup_drop_off_window, Some(Time::new(10, 10, 0)));
+        assert_eq!(st2.end_pickup_drop_off_window, Some(Time::new(20, 10, 0)));
+        assert!(st2.departure_time.is_none());
+        assert!(st2.arrival_time.is_none());
+        assert_eq!(st2.pickup_type, 1u8); // see enhancers::enhance_pickup_dropoff
+        assert_eq!(st2.drop_off_type, 2u8);
+        assert_eq!(st2.precision, Some(StopTimePrecision::Estimated));
+
+        assert_eq!(
+            model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("vj1").unwrap()),
+            ["sp1", "sp2"]
+                .iter()
+                .map(|s| model.stop_points.get_idx(s).unwrap())
+                .collect()
+        );
+    }
+
+    #[test]
+    fn test_vj_with_window_detailed_stoptimes() {
+        let model = ModelBuilder::default()
+            .vj("vj1", |vj| {
+                vj.stw_detailed(
+                    "sp1",
+                    "10:00:00",
+                    "20:00:00",
+                    1u8,
+                    1u8,
+                    Some(StopTimePrecision::Exact),
+                    Some(7u16),
+                )
+                .stw_detailed(
+                    "sp2",
+                    "10:10:00",
+                    "20:10:00",
+                    1u8,
+                    1u8,
+                    Some(StopTimePrecision::Exact),
+                    Some(7u16),
+                );
+            })
+            .build();
+
+        let vj = model.vehicle_journeys.get("vj1").unwrap();
+        let mut st_iter = vj.stop_times.iter();
+
+        let st1 = st_iter.next().unwrap();
+        assert_eq!(st1.start_pickup_drop_off_window, Some(Time::new(10, 0, 0)));
+        assert_eq!(st1.end_pickup_drop_off_window, Some(Time::new(20, 0, 0)));
+        assert!(st1.departure_time.is_none());
+        assert!(st1.arrival_time.is_none());
+        assert_eq!(st1.pickup_type, 1u8);
+        assert_eq!(st1.drop_off_type, 1u8);
+        assert_eq!(st1.precision, Some(StopTimePrecision::Exact));
+
+        let st2 = st_iter.next().unwrap();
+        assert_eq!(st2.start_pickup_drop_off_window, Some(Time::new(10, 10, 0)));
+        assert_eq!(st2.end_pickup_drop_off_window, Some(Time::new(20, 10, 0)));
+        assert!(st2.departure_time.is_none());
+        assert!(st2.arrival_time.is_none());
+        assert_eq!(st2.pickup_type, 1u8);
+        assert_eq!(st2.drop_off_type, 1u8);
+        assert_eq!(st2.precision, Some(StopTimePrecision::Exact));
     }
 }
