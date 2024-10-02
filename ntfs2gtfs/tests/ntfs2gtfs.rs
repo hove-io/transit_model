@@ -201,7 +201,7 @@ fn test_ntfs2gtfs_with_pickup_drop_off_windows_stoptimes() {
     Command::cargo_bin("ntfs2gtfs")
         .expect("Failed to find binary 'ntfs2gtfs'")
         .arg("--input")
-        .arg("tests/fixtures/pickup_drop_off_windows/input_ntfs")
+        .arg("../tests/fixtures/pickup_drop_off_windows/input_ntfs")
         .arg("--output")
         .arg(output_dir.path().to_str().unwrap())
         .assert()
@@ -209,6 +209,6 @@ fn test_ntfs2gtfs_with_pickup_drop_off_windows_stoptimes() {
     compare_output_dir_with_expected(
         output_dir,
         None,
-        "./tests/fixtures/pickup_drop_off_windows/output_gtfs",
+        "./tests/fixtures/output_gtfs_pickup_drop_off_windows",
     );
 }

@@ -1,5 +1,0 @@
-company_id,company_name,company_address,company_url,company_mail,company_phone
-MFDI:100,RATP,,,,
-MFDI:1017,Keolis Vélizy Vallée de la Bièvre,,,,
-MFDI:1028,Keolis Roissy Pays de France Ouest,,,,
-MFDI:1021,Transdev Boucle des Lys,,,,
