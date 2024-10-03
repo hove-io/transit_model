@@ -559,7 +559,8 @@ fn ntfs_with_duplicated_objects_without_id() {
 
 #[test]
 fn preserve_stoptimes_windows_and_enhance_line_opening_time() {
-    let ntm = transit_model::ntfs::read("tests/fixtures/pickup_drop_off_windows/input_ntfs/").unwrap();
+    let ntm =
+        transit_model::ntfs::read("tests/fixtures/pickup_drop_off_windows/input_ntfs/").unwrap();
     test_in_tmp_dir(|output_dir| {
         transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(

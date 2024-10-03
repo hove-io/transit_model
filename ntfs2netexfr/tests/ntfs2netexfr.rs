@@ -1,6 +1,7 @@
 use assert_cmd::prelude::*;
 use std::process::Command;
 use tempfile::TempDir;
+use transit_model::test_utils::*;
 
 #[test]
 fn test_ntfs2netexfr() {
@@ -77,4 +78,26 @@ fn test_ntfs2netexfr_create_foobar() {
         .assert()
         .success();
     assert!(netexfr_foobar.join("arrets.xml").is_file());
+}
+
+#[test]
+fn test_ntfs2netexfr_with_pickup_drop_off_windows_stoptimes() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::cargo_bin("ntfs2netexfr")
+        .expect("Failed to find binary 'ntfs2netexfr'")
+        .arg("--input")
+        .arg("../tests/fixtures/pickup_drop_off_windows/input_ntfs")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .arg("--participant")
+        .arg("Participant")
+        .arg("--current-datetime")
+        .arg("2024-04-03T17:19:00Z")
+        .assert()
+        .success();
+    compare_output_dir_with_expected(
+        output_dir,
+        Some(vec!["lignes.xml"]),
+        "../tests/fixtures/netex_france/output_netexfr_pickup_drop_off_windows",
+    );
 }

@@ -696,6 +696,27 @@ impl VehicleJourney {
             .last()
             .and_then(|st| st.arrival_time.or(st.end_pickup_drop_off_window))
     }
+    pub fn get_schedule_type(&self) -> VehicleJourneyScheduleType {
+        let mut have_arrival_and_departure_times = false;
+        let mut have_start_end_pickup_drop_off_windows = false;
+        for st in &self.stop_times {
+            if st.arrival_time.is_some() && st.departure_time.is_some() {
+                have_arrival_and_departure_times = true;
+            }
+            if st.start_pickup_drop_off_window.is_some() && st.end_pickup_drop_off_window.is_some()
+            {
+                have_start_end_pickup_drop_off_windows = true;
+            }
+        }
+        match (
+            have_arrival_and_departure_times,
+            have_start_end_pickup_drop_off_windows,
+        ) {
+            (true, false) => VehicleJourneyScheduleType::ArrivalDepartureTimesOnly,
+            (false, true) => VehicleJourneyScheduleType::PickupDropOffWindowsOnly,
+            _ => VehicleJourneyScheduleType::Mixed,
+        }
+    }
 }
 
 #[derive(Debug, Error)]
@@ -767,6 +788,13 @@ impl VehicleJourney {
         }
         Ok(())
     }
+}
+
+#[derive(Eq, PartialEq)]
+pub enum VehicleJourneyScheduleType {
+    ArrivalDepartureTimesOnly,
+    PickupDropOffWindowsOnly,
+    Mixed, // for vehicle having both arrival/departure times and start/end pickup_drop_off_windows in its stoptimes
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]

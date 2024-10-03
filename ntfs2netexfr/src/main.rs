@@ -23,7 +23,7 @@ use tracing_subscriber::{
     layer::SubscriberExt as _,
     util::SubscriberInitExt as _,
 };
-use transit_model::{Model, Result};
+use transit_model::{objects::VehicleJourneyScheduleType, Model, Result};
 
 lazy_static::lazy_static! {
     pub static ref GIT_VERSION: String = transit_model::binary_full_version(env!("CARGO_PKG_VERSION"));
@@ -91,6 +91,8 @@ fn run(opt: Opt) -> Result<()> {
 
     let mut collections = transit_model::ntfs::read_collections(opt.input)?;
     collections.remove_route_points();
+    collections
+        .filter_by_vj_schedule_types(vec![VehicleJourneyScheduleType::ArrivalDepartureTimesOnly])?;
     let model = Model::new(collections)?;
 
     let mut config = transit_model::netex_france::WriteConfiguration::new(opt.participant)
