@@ -773,11 +773,28 @@ impl VehicleJourney {
                 }
             };
 
-            if (curr_st.arrival_time > curr_st.departure_time)
-                || (curr_st.start_pickup_drop_off_window > curr_st.end_pickup_drop_off_window)
-                || (curr_st.departure_time.is_some()
+            if curr_st.arrival_time > curr_st.departure_time
+                || curr_st.start_pickup_drop_off_window > curr_st.end_pickup_drop_off_window
+                // See test below: sort_and_check_stop_times::growing_departure_to_arrival_time
+                || curr_st.departure_time.is_some()
                     && next_st.arrival_time.is_some()
-                    && curr_st.departure_time > next_st.arrival_time)
+                    && curr_st.departure_time > next_st.arrival_time
+                // See test below: sort_and_check_stop_times::growing_start_pickup_drop_off_windows
+                || curr_st.start_pickup_drop_off_window.is_some()
+                    && next_st.start_pickup_drop_off_window.is_some()
+                    && curr_st.start_pickup_drop_off_window > next_st.start_pickup_drop_off_window
+                // See test below: sort_and_check_stop_times::growing_end_pickup_drop_off_windows
+                || curr_st.end_pickup_drop_off_window.is_some()
+                    && next_st.end_pickup_drop_off_window.is_some()
+                    && curr_st.end_pickup_drop_off_window > next_st.end_pickup_drop_off_window
+                // See test below: sort_and_check_stop_times::growing_departure_to_start_pickup_drop_off_windows
+                || curr_st.departure_time.is_some()
+                    && next_st.start_pickup_drop_off_window.is_some()
+                    && curr_st.departure_time > next_st.start_pickup_drop_off_window
+                // See test below: sort_and_check_stop_times::growing_end_pickup_drop_off_windows_to_arrival
+                || curr_st.end_pickup_drop_off_window.is_some()
+                    && next_st.arrival_time.is_some()
+                    && curr_st.end_pickup_drop_off_window > next_st.arrival_time
             {
                 return Err(StopTimeError::IncoherentStopTimes {
                     first_incorrect_sequence: curr_st.sequence,
@@ -2276,7 +2293,13 @@ mod tests {
     mod sort_and_check_stop_times {
         use super::*;
 
-        fn generate_stop_times(configs: Vec<(u32, &str, &str)>) -> Vec<StopTime> {
+        #[allow(clippy::type_complexity)]
+        fn generate_stop_times(
+            configs: Vec<(u32, Option<&str>, Option<&str>, Option<&str>, Option<&str>)>,
+        ) -> Vec<StopTime> {
+            fn as_time_opt(p: Option<&str>) -> Option<Time> {
+                p.and_then(|t| t.parse::<Time>().ok())
+            }
             let stop_points = typed_index_collection::CollectionWithId::from(StopPoint {
                 id: "sp1".to_string(),
                 ..Default::default()
@@ -2284,13 +2307,13 @@ mod tests {
             let stop_point_idx = stop_points.get_idx("sp1").unwrap();
             configs
                 .into_iter()
-                .map(|(sequence, arrival, departure)| StopTime {
+                .map(|(sequence, arrival, departure, start, end)| StopTime {
                     stop_point_idx,
                     sequence,
-                    arrival_time: Some(Time::from_str(arrival).unwrap()),
-                    departure_time: Some(Time::from_str(departure).unwrap()),
-                    start_pickup_drop_off_window: None,
-                    end_pickup_drop_off_window: None,
+                    arrival_time: as_time_opt(arrival),
+                    departure_time: as_time_opt(departure),
+                    start_pickup_drop_off_window: as_time_opt(start),
+                    end_pickup_drop_off_window: as_time_opt(end),
                     boarding_duration: 0,
                     alighting_duration: 0,
                     pickup_type: 0,
@@ -2302,56 +2325,111 @@ mod tests {
         }
 
         #[test]
-        fn stop_sequence_growing() {
+        #[should_panic(
+            expected = "DuplicateStopSequence { vj_id: \"vj1\", duplicated_sequence: 2 }"
+        )]
+        fn growing_sequences() {
             let stop_times = generate_stop_times(vec![
-                (1, "06:00:00", "06:00:00"),
-                (2, "06:06:27", "06:06:27"),
-                (3, "06:07:27", "06:07:27"),
-                (3, "06:08:27", "06:08:27"),
-                (3, "06:09:27", "06:09:27"),
+                (1, Some("06:00:00"), Some("06:01:00"), None, None),
+                (2, Some("06:02:00"), Some("06:03:00"), None, None),
+                (2, Some("06:04:00"), Some("06:05:00"), None, None),
             ]);
             let mut vehicle_journey = VehicleJourney {
                 id: "vj1".to_string(),
                 stop_times,
                 ..Default::default()
             };
-            let error = vehicle_journey.sort_and_check_stop_times().unwrap_err();
-            let _expected_vj_id = "vj1".to_string();
-            let _expected_duplicated_sequence = 2;
-            assert!(matches!(
-                error,
-                StopTimeError::DuplicateStopSequence {
-                    vj_id: _expected_vj_id,
-                    duplicated_sequence: _expected_duplicated_sequence,
-                }
-            ));
+            vehicle_journey.sort_and_check_stop_times().unwrap();
         }
+
         #[test]
-        fn stop_times_growing() {
+        #[should_panic(
+            expected = "IncoherentStopTimes { vj_id: \"vj1\", first_incorrect_sequence: 2, first_incorrect_time: Time(21960) }"
+        )]
+        fn growing_departure_to_arrival_time() {
             let stop_times = generate_stop_times(vec![
-                (1, "06:00:00", "06:00:00"),
-                (2, "06:06:27", "06:06:27"),
-                (3, "06:06:00", "06:06:27"),
-                (4, "06:06:27", "06:06:27"),
-                (5, "06:06:27", "06:06:27"),
+                (1, Some("06:00:00"), Some("06:01:00"), None, None),
+                (2, Some("06:02:00"), Some("06:06:00"), None, None),
+                (3, Some("06:04:00"), Some("06:05:00"), None, None),
             ]);
             let mut vehicle_journey = VehicleJourney {
                 id: "vj1".to_string(),
                 stop_times,
                 ..Default::default()
             };
-            let error = vehicle_journey.sort_and_check_stop_times().unwrap_err();
-            let _expected_vj_id = "vj1".to_string();
-            let _expected_first_incorrect_sequence = 2;
-            let _expected_first_incorrect_time = Time::new(6, 6, 27);
-            assert!(matches!(
-                error,
-                StopTimeError::IncoherentStopTimes {
-                    vj_id: _expected_vj_id,
-                    first_incorrect_sequence: _expected_first_incorrect_sequence,
-                    first_incorrect_time: _expected_first_incorrect_time,
-                },
-            ));
+            vehicle_journey.sort_and_check_stop_times().unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "IncoherentStopTimes { vj_id: \"vj1\", first_incorrect_sequence: 2, first_incorrect_time: Time(73800) }"
+        )]
+        fn growing_start_pickup_drop_off_windows() {
+            let stop_times = generate_stop_times(vec![
+                (1, None, None, Some("20:30:00"), Some("22:00:00")),
+                (2, None, None, Some("20:30:00"), Some("22:00:00")),
+                (3, None, None, Some("19:30:00"), Some("22:00:00")),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            vehicle_journey.sort_and_check_stop_times().unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "IncoherentStopTimes { vj_id: \"vj1\", first_incorrect_sequence: 2, first_incorrect_time: Time(23400) }"
+        )]
+        fn growing_end_pickup_drop_off_windows() {
+            let stop_times = generate_stop_times(vec![
+                (1, None, None, Some("06:30:00"), Some("08:00:00")),
+                (2, None, None, Some("06:30:00"), Some("08:00:00")),
+                (3, None, None, Some("06:30:00"), Some("07:00:00")),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            vehicle_journey.sort_and_check_stop_times().unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "IncoherentStopTimes { vj_id: \"vj1\", first_incorrect_sequence: 2, first_incorrect_time: Time(21780) }"
+        )]
+        fn growing_departure_to_start_pickup_drop_off_windows() {
+            let stop_times = generate_stop_times(vec![
+                (1, Some("06:00:00"), Some("06:01:00"), None, None),
+                (2, Some("06:02:00"), Some("06:03:00"), None, None),
+                (3, None, None, Some("06:00:00"), Some("07:00:00")),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            vehicle_journey.sort_and_check_stop_times().unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "IncoherentStopTimes { vj_id: \"vj1\", first_incorrect_sequence: 2, first_incorrect_time: Time(21600) }"
+        )]
+        fn growing_end_pickup_drop_off_windows_to_arrival() {
+            let stop_times = generate_stop_times(vec![
+                (1, None, None, Some("06:00:00"), Some("07:00:00")),
+                (2, None, None, Some("06:00:00"), Some("07:00:00")),
+                (3, Some("06:45:00"), Some("06:45:00"), None, None),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            vehicle_journey.sort_and_check_stop_times().unwrap();
         }
     }
 }
