@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PublicationDelivery version="1.09:FR-NETEX_LIGNE-2.1-1.0" xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.netex.org.uk/netex">
+	<PublicationTimestamp>2024-04-03T17:19:00+00:00</PublicationTimestamp>
+	<ParticipantRef>Participant</ParticipantRef>
+	<dataObjects>
+		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE:" version="any">
+			<frames>
+				<ServiceFrame id="FR:ServiceFrame:MFDI:1071:" version="any">
+					<Network id="FR:Network:MFDI_1071:" version="any">
+						<Name>Roissy Ouest</Name>
+						<members>
+							<LineRef ref="FR:Line:MFDI_C02060:">
+							</LineRef>
+						</members>
+					</Network>
+				</ServiceFrame>
+				<ServiceFrame id="FR:ServiceFrame:MFDI:Operator_100:" version="any">
+					<Network id="FR:Network:MFDI_Operator_100:" version="any">
+						<Name>RATP</Name>
+						<members>
+							<LineRef ref="FR:Line:MFDI_C01376:">
+							</LineRef>
+						</members>
+					</Network>
+				</ServiceFrame>
+				<ServiceFrame id="FR:ServiceFrame:lines:" version="any">
+					<lines>
+						<Line id="FR:Line:MFDI_C01376:" version="any">
+							<Name>6</Name>
+							<TransportMode>metro</TransportMode>
+							<PublicCode>6</PublicCode>
+						</Line>
+						<Line id="FR:Line:MFDI_C02060:" version="any">
+							<Name>Filéo Roissy Sud - Villeparisis et Mitry (sur réservation)</Name>
+							<TransportMode>bus</TransportMode>
+							<PublicCode>Filéo RS</PublicCode>
+						</Line>
+					</lines>
+				</ServiceFrame>
+				<ResourceFrame id="FR:ResourceFrame:operators:" version="any">
+					<organisations>
+						<Operator id="FR:Operator:MFDI_100:" version="any">
+							<Name>RATP</Name>
+							<ContactDetails>
+							</ContactDetails>
+							<OrganisationType>other</OrganisationType>
+						</Operator>
+						<Operator id="FR:Operator:MFDI_1028:" version="any">
+							<Name>Keolis Roissy Pays de France Ouest</Name>
+							<ContactDetails>
+							</ContactDetails>
+							<OrganisationType>other</OrganisationType>
+						</Operator>
+					</organisations>
+				</ResourceFrame>
+			</frames>
+		</CompositeFrame>
+	</dataObjects>
+</PublicationDelivery>

@@ -207,6 +207,8 @@ struct StopTime {
     trip_id: String,
     arrival_time: Option<Time>,
     departure_time: Option<Time>,
+    start_pickup_drop_off_window: Option<Time>,
+    end_pickup_drop_off_window: Option<Time>,
     #[serde(deserialize_with = "de_without_slashes")]
     stop_id: String,
     stop_sequence: u32,
@@ -222,6 +224,40 @@ struct StopTime {
         default = "default_true_bool"
     )]
     timepoint: bool,
+    pickup_booking_rule_id: Option<String>,
+    drop_off_booking_rule_id: Option<String>,
+}
+
+#[derive(Derivative, Serialize)]
+#[derivative(Default)]
+enum BookingType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    RealTime,
+}
+
+#[derive(Derivative, Serialize)]
+#[derivative(Default)]
+struct BookingRule {
+    id: String,
+    booking_type: BookingType,
+    message: Option<String>,
+    phone_number: Option<String>,
+    info_url: Option<String>,
+    booking_url: Option<String>,
+}
+
+impl<'a> From<&'a objects::BookingRule> for BookingRule {
+    fn from(obj: &objects::BookingRule) -> BookingRule {
+        BookingRule {
+            id: obj.id.clone(),
+            message: obj.message.clone(),
+            phone_number: obj.phone.clone(),
+            info_url: obj.info_url.clone(),
+            booking_url: obj.booking_url.clone(),
+            ..Default::default()
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Clone)]
@@ -705,6 +741,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> 
         &model.stop_points,
         &model.stop_time_headsigns,
     )?;
+    write::write_booking_rules(path, &model.booking_rules)?;
     write::write_shapes(path, &model.geometries)?;
     write_collection_with_id(path, "pathways.txt", &model.pathways)?;
     write_collection_with_id(path, "levels.txt", &model.levels)?;

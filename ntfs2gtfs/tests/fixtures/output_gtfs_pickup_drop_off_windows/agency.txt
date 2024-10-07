@@ -1,0 +1,5 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_email,agency_fare_url
+MFDI:1061,Vélizy Vallées,http://www.navitia.io/,Europe/Paris,,,,
+MFDI:1071,Roissy Ouest,http://www.navitia.io/,Europe/Paris,,,,
+MFDI:1062,Saint Germain Boucles de Seine,http://www.navitia.io/,Europe/Paris,,,,
+MFDI:Operator_100,RATP,http://www.navitia.io/,Europe/Paris,,,,

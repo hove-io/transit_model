@@ -13,7 +13,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{
-    Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime,
+    Agency, BookingRule, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime,
     TicketingDeepLinks, Transfer, Trip,
 };
 use crate::gtfs::ExtendedRoute;
@@ -475,6 +475,16 @@ pub fn write_stop_times(
         .with_context(|| format!("Error reading {:?}", stop_times_path))?;
     for (vj_idx, vj) in vehicle_journeys {
         for st in &vj.stop_times {
+            // Notes :
+            // 1 - In ntm, a vj can have n booking_rules. In gtfs it's only one. So we take the first one.
+            // 2 - In ntm (for the moment), a booking_rule is on line or trip/vj, not stoptime.
+            // So we apply the same booking_rule on all stoptimes if pickup_type or drop_off_type is =2 (odt).
+            // Not all stoptimes need to have booking_rule, as some may be in regular service (pickup_type/drop_off_type 0).
+            let booking_rule_id_opt = vj
+                .booking_rule_links
+                .first()
+                .filter(|_| st.pickup_type == 2u8 || st.drop_off_type == 2u8)
+                .cloned();
             st_wtr
                 .serialize(StopTime {
                     stop_id: stop_points[st.stop_point_idx].id.clone(),
@@ -482,6 +492,8 @@ pub fn write_stop_times(
                     stop_sequence: st.sequence,
                     arrival_time: st.arrival_time,
                     departure_time: st.departure_time,
+                    start_pickup_drop_off_window: st.start_pickup_drop_off_window,
+                    end_pickup_drop_off_window: st.end_pickup_drop_off_window,
                     pickup_type: st.pickup_type,
                     drop_off_type: st.drop_off_type,
                     local_zone_id: st.local_zone_id,
@@ -489,6 +501,8 @@ pub fn write_stop_times(
                         .get(&(vehicle_journeys[vj_idx].id.clone(), st.sequence))
                         .cloned(),
                     timepoint: matches!(st.precision, None | Some(StopTimePrecision::Exact)),
+                    pickup_booking_rule_id: booking_rule_id_opt.clone(),
+                    drop_off_booking_rule_id: booking_rule_id_opt,
                 })
                 .with_context(|| format!("Error reading {:?}", st_wtr))?;
         }
@@ -496,6 +510,27 @@ pub fn write_stop_times(
     st_wtr
         .flush()
         .with_context(|| format!("Error reading {:?}", stop_times_path))?;
+    Ok(())
+}
+
+pub fn write_booking_rules(
+    path: &path::Path,
+    booking_rules: &CollectionWithId<objects::BookingRule>,
+) -> Result<()> {
+    if booking_rules.is_empty() {
+        return Ok(());
+    }
+    let filename = "booking_rules.txt";
+    info!("Writing {}", filename);
+    let path = path.join(filename);
+    let mut wtr =
+        csv::Writer::from_path(&path).with_context(|| format!("Error opening {:?}", path))?;
+    for br in booking_rules.values() {
+        wtr.serialize(BookingRule::from(br))
+            .with_context(|| format!("Error writing {:?}", path))?;
+    }
+    wtr.flush()
+        .with_context(|| format!("Error writing {:?}", path))?;
     Ok(())
 }
 
@@ -1293,9 +1328,9 @@ mod tests {
         let mut output_contents = String::new();
         output_file.read_to_string(&mut output_contents).unwrap();
         assert_eq!(
-            "trip_id,arrival_time,departure_time,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id,stop_headsign,timepoint\n\
-            vj:01,06:00:00,06:00:00,sp:01,1,0,0,,somewhere,1\n\
-            vj:01,06:06:27,06:06:27,sp:01,2,2,1,3,,0\n",
+            "trip_id,arrival_time,departure_time,start_pickup_drop_off_window,end_pickup_drop_off_window,stop_id,stop_sequence,pickup_type,drop_off_type,local_zone_id,stop_headsign,timepoint,pickup_booking_rule_id,drop_off_booking_rule_id\n\
+            vj:01,06:00:00,06:00:00,,,sp:01,1,0,0,,somewhere,1,,\n\
+            vj:01,06:06:27,06:06:27,,,sp:01,2,2,1,3,,0,,\n",
             output_contents
         );
         tmp_dir.close().expect("delete temp dir");

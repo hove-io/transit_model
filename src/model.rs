@@ -169,6 +169,17 @@ impl Collections {
         Ok(())
     }
 
+    /// Filters vehicle_journeys in collection based on their schedule types
+    /// Multiple choice possible (through Vec<>). See VehicleJourneyScheduleType list.
+    pub fn filter_by_vj_schedule_types(
+        &mut self,
+        types: Vec<VehicleJourneyScheduleType>,
+    ) -> Result<()> {
+        self.vehicle_journeys
+            .retain(|vj| types.contains(&vj.get_schedule_type()));
+        Ok(())
+    }
+
     /// Keep the collections consistent for the new model by purging unreferenced data by
     /// calendars
     pub fn sanitize(&mut self) -> Result<()> {
