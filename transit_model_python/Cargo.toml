@@ -2,6 +2,11 @@
 name = "transit_model_python"
 version = "0.1.0"
 edition = "2021"
+description = "A Python library for communicating with the transit_model Rust library"
+license = "AGPL-3.0-only"
+repository = "https://github.com/hove-io/transit_model/transit_model_python"
+keywords = ["ntfs", "gtfs", "netex", "navitia", "transit"]
+categories = ["data-structures", "encoding", "parser-implementations"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
