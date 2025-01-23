@@ -30,6 +30,7 @@ use std::ops::{Add, Div, Rem, Sub};
 use std::str::FromStr;
 use thiserror::Error;
 use typed_index_collection::{impl_id, impl_with_id, Idx, WithId};
+use pyo3::pyclass;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]
@@ -949,6 +950,7 @@ impl std::fmt::Display for Time {
     }
 }
 
+#[pyclass]
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct StopTime {
     pub stop_point_idx: Idx<StopPoint>,

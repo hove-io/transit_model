@@ -1,0 +1,15 @@
+[package]
+name = "transit_model_python"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "transit_model_python"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = "0.23.3"
+transit_model = { path = "../" }
+typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2" }
+relational_types = { git = "https://github.com/hove-io/relational_types", tag = "v2" }
