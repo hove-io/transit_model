@@ -21,6 +21,7 @@ use chrono::{Days, NaiveDate};
 use chrono_tz::Tz;
 use derivative::Derivative;
 use geo::{Geometry as GeoGeometry, Point as GeoPoint};
+use pyo3::pyclass;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -30,7 +31,6 @@ use std::ops::{Add, Div, Rem, Sub};
 use std::str::FromStr;
 use thiserror::Error;
 use typed_index_collection::{impl_id, impl_with_id, Idx, WithId};
-use pyo3::pyclass;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]

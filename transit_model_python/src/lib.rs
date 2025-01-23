@@ -14,9 +14,9 @@
 
 use pyo3::{exceptions::PyValueError, prelude::*};
 use std::sync::Arc;
+use transit_model as intern_transit_model;
 use transit_model::{model::Model, objects::StopTime};
 use typed_index_collection::Id;
-use transit_model as intern_transit_model;
 
 #[pyclass]
 pub struct PythonTransitModel {
@@ -32,7 +32,7 @@ impl PythonTransitModel {
     ///
     /// # Returns
     /// * A new PythonTransitModel
-    /// 
+    ///
     #[new]
     pub fn new(path: &str) -> Self {
         let transit_objects =
@@ -43,13 +43,13 @@ impl PythonTransitModel {
     }
 
     /// Get the name of the stop
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `idx` - The index of the stop
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * The name of the line
     pub fn get_lines(&self, idx: String) -> PyResult<Vec<String>> {
         Ok(self
@@ -62,13 +62,13 @@ impl PythonTransitModel {
     }
 
     /// Get the contributors providing the data for the stop
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `idx` - The index of the stop
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * The list of contributors providing the data for the stop
     pub fn get_contributors(&self, idx: String) -> PyResult<Vec<String>> {
         Ok(self
@@ -81,13 +81,13 @@ impl PythonTransitModel {
     }
 
     /// Get the networks the stop belongs to
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `idx` - The index of the stop
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * The list of networks the stop belongs to
     pub fn get_networks(&self, idx: String) -> PyResult<Vec<String>> {
         Ok(self
@@ -100,13 +100,13 @@ impl PythonTransitModel {
     }
 
     /// Get the name of the stop
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `idx` - The index of the stop
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * The name of the stop
     pub fn get_stop_area_by_id(&self, idx: String) -> PyResult<String> {
         Ok(self
@@ -119,13 +119,13 @@ impl PythonTransitModel {
     }
 
     /// Get the vehicule journey by id
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `idx` - The index of the vehicule journey
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * The vehicule journey id
     pub fn get_vehicule_journey_by_id(&self, idx: String) -> PyResult<String> {
         Ok(self
@@ -137,15 +137,14 @@ impl PythonTransitModel {
             .collect())
     }
 
-
     /// Get the vehicule journey stop times
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `idx` - The index of the vehicule journey
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * The vehicule journey stop times
     pub fn get_vehicule_journey_stop_times(&self, idx: String) -> PyResult<Vec<StopTime>> {
         Ok(self
@@ -153,27 +152,25 @@ impl PythonTransitModel {
             .vehicle_journeys
             .get_idx(&idx)
             .iter()
-            .flat_map(|idx| {
-                self.model
-                    .vehicle_journeys[*idx]
-                    .stop_times
-                    .iter()
-                    .cloned()
-            })
+            .flat_map(|idx| self.model.vehicle_journeys[*idx].stop_times.iter().cloned())
             .collect())
     }
 
     /// Get the vehicule journey stop times by vehicule journey id and stop id
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `vehicule_id` - The index of the vehicule journey
     /// * `stop_id` - The index of the stop
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * The vehicule journey stop times
-    pub fn get_vehicule_journey_stop_times_by_stop_id(&self, vehicule_id: String, stop_id: String) -> PyResult<Vec<StopTime>> {
+    pub fn get_vehicule_journey_stop_times_by_stop_id(
+        &self,
+        vehicule_id: String,
+        stop_id: String,
+    ) -> PyResult<Vec<StopTime>> {
         let stop_point = match self.model.stop_points.get_idx(&stop_id) {
             Some(idx) => Some(idx),
             None => None,
@@ -187,15 +184,14 @@ impl PythonTransitModel {
             .get_idx(&vehicule_id)
             .iter()
             .flat_map(|idx| {
-                self.model
-                    .vehicle_journeys[*idx]
+                self.model.vehicle_journeys[*idx]
                     .stop_times
                     .iter()
                     .filter(|st| st.stop_point_idx == stop_point.unwrap())
                     .cloned()
             })
             .collect();
-    
+
         if stop_times.is_empty() {
             Err(PyValueError::new_err("StopTime not found"))
         } else {
