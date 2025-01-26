@@ -77,6 +77,10 @@ pub mod validity_period;
 mod version_utils;
 pub mod vptranslator;
 
+/// The `downloadable_model` module is used to manage a transit model that can be downloaded from a remote location.
+// #[cfg(feature = "downloadable")]
+pub mod downloadable_model;
+
 // Good average size for initialization of the `StopTime` collection in `VehicleJourney`
 // Note: they are shrinked down in `Model::new()` to fit the real size
 pub(crate) const STOP_TIMES_INIT_CAPACITY: usize = 50;

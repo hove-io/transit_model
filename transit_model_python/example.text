@@ -1,0 +1,40 @@
+# from transit_model_python import PythonTransitModel, PythonDownloadableModel, NavitiaConfig, ModelConfig, PyDownloader
+
+# print("Hello World! from python_test.py")
+# model = PythonTransitModel("../tests/fixtures/minimal_ntfs/")
+# lines = model.get_lines("B42")
+# print(lines)  # Output: ["Metro 1"]
+
+
+# use downloadable model
+
+# class NTFSDownloader(PyDownloader):
+#     def __new__(cls):
+#         # Create instance by passing the class as 'obj' to parent __new__
+#         return super().__new__(cls, cls)
+
+#     def run_download(self, config, version):
+#         print("Downloading NTFS data")
+#         # Download NTFS with any method you want and return the path to the downloaded file
+#         return "../tests/fixtures/minimal_ntfs/"
+
+
+# config = ModelConfig(
+#     check_interval_secs=3600,
+#     path="./models"
+# )
+
+# navitia_config = NavitiaConfig(
+#     navitia_url="",
+#     navitia_token="",
+#     coverage=""
+# )
+
+# model = PythonDownloadableModel(
+#     navitia_config=navitia_config,
+#     model_config=config,
+#     downloader=NTFSDownloader()
+# )
+
+
+# model.get_line("B42")

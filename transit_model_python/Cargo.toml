@@ -14,7 +14,9 @@ name = "transit_model_python"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = "0.23.3"
-transit_model = { path = "../" }
+pyo3 = { version = "0.23.3", features = ["extension-module"] }
+transit_model = { path = "../", features = ["downloadable"] }
 typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2" }
 relational_types = { git = "https://github.com/hove-io/relational_types", tag = "v2" }
+tokio = { version = "1.0", features = ["full"] }
+

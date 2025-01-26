@@ -375,7 +375,7 @@ where
         .collect()
 }
 
-impl<'a> From<&'a objects::PhysicalMode> for RouteType {
+impl From<&objects::PhysicalMode> for RouteType {
     fn from(obj: &objects::PhysicalMode) -> RouteType {
         match obj.id.as_str() {
             "RailShuttle" | "Tramway" => RouteType::Tramway,
