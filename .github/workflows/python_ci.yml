@@ -146,7 +146,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
-          args: --out dist
+          args: --out dist --manifest-path transit_model_python/Cargo.toml
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
