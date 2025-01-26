@@ -7,6 +7,7 @@ license = "AGPL-3.0-only"
 repository = "https://github.com/hove-io/transit_model/transit_model_python"
 keywords = ["ntfs", "gtfs", "netex", "navitia", "transit"]
 categories = ["data-structures", "encoding", "parser-implementations"]
+readme = "python_README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
