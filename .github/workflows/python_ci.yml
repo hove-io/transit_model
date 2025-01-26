@@ -148,9 +148,6 @@ jobs:
 
   sdist:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: transit_model_python
     steps:
       - uses: actions/checkout@v4
       - name: Install Python dev
@@ -162,7 +159,7 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
-          args: --out dist
+          args: --out dist --manifest-path transit_model_python/Cargo.toml
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
