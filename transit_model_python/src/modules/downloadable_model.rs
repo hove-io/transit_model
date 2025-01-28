@@ -25,35 +25,35 @@ use crate::{PStopTime, PythonModelConfig, PythonNavitiaConfig};
 /// Acts as a bridge between Rust's Downloader trait and Python implementations,
 /// allowing Python classes to provide download functionality to Rust code
 #[pyclass(subclass)]
-pub struct PyDownloader {
+pub struct NTFSDownloader {
     /// The underlying Python object implementing the download logic
     inner: Py<PyAny>,
 }
 
-impl Clone for PyDownloader {
+impl Clone for NTFSDownloader {
     /// Creates a new reference to the same Python downloader object
     ///
     /// Uses Python's GIL to safely clone the Python object reference
     fn clone(&self) -> Self {
-        Python::with_gil(|py| PyDownloader {
+        Python::with_gil(|py| NTFSDownloader {
             inner: self.inner.clone_ref(py),
         })
     }
 }
 
 #[pymethods]
-impl PyDownloader {
-    /// Creates a new PyDownloader wrapping a Python object
+impl NTFSDownloader {
+    /// Creates a new NTFSDownloader wrapping a Python object
     ///
     /// # Arguments
     /// * `obj` - Python object implementing the `run_download` method
     #[new]
     fn new(obj: Py<PyAny>) -> Self {
-        PyDownloader { inner: obj }
+        NTFSDownloader { inner: obj }
     }
 }
 
-impl Downloader for PyDownloader {
+impl Downloader for NTFSDownloader {
     /// Executes the download operation by calling into Python implementation
     ///
     /// # Arguments
@@ -93,7 +93,7 @@ impl Downloader for PyDownloader {
 #[pyclass]
 pub struct PythonDownloadableModel {
     /// The underlying Rust implementation of the downloadable transit model
-    model: DownloadableTransitModel<PyDownloader>,
+    model: DownloadableTransitModel<NTFSDownloader>,
 }
 
 #[pymethods]
@@ -111,7 +111,7 @@ impl PythonDownloadableModel {
     pub fn new(
         navitia_config: PythonNavitiaConfig,
         model_config: PythonModelConfig,
-        downloader: Py<PyDownloader>,
+        downloader: Py<NTFSDownloader>,
     ) -> PyResult<Self> {
         let rt = Runtime::new()
             .map_err(|e| PyValueError::new_err(format!("Failed to create runtime: {}", e)))?;

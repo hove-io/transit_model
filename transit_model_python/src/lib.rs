@@ -19,7 +19,7 @@
 
 pub mod modules;
 
-use modules::downloadable_model::{PyDownloader, PythonDownloadableModel};
+use modules::downloadable_model::{NTFSDownloader, PythonDownloadableModel};
 use modules::python_transit_model::PythonTransitModel;
 use pyo3::prelude::*;
 use transit_model::downloadable_model::{ModelConfig, NavitiaConfig};
@@ -145,7 +145,7 @@ impl PythonNavitiaConfig {
 #[pymodule]
 fn transit_model_python(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PythonTransitModel>()?;
-    m.add_class::<PyDownloader>()?;
+    m.add_class::<NTFSDownloader>()?;
     m.add_class::<PythonDownloadableModel>()?;
     m.add_class::<PythonNavitiaConfig>()?;
     m.add_class::<PythonModelConfig>()?;
