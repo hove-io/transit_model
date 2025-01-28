@@ -606,7 +606,7 @@ impl AsDateTime for &NaiveDateTime {
     }
 }
 
-impl<'a> VehicleJourneyBuilder<'a> {
+impl VehicleJourneyBuilder<'_> {
     fn find_or_create_sp(&mut self, sp: &str) -> Idx<StopPoint> {
         self.model
             .collections
@@ -1039,7 +1039,7 @@ impl<'a> VehicleJourneyBuilder<'a> {
     }
 }
 
-impl<'a> Drop for VehicleJourneyBuilder<'a> {
+impl Drop for VehicleJourneyBuilder<'_> {
     fn drop(&mut self) {
         use std::ops::DerefMut;
         let collections = &mut self.model.collections;

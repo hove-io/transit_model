@@ -1,0 +1,24 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "transit_model_python"
+description = "A Python library for communicating with the transit_model Rust library"
+requires-python = ">=3.8"
+readme = "python_README.md"
+license = {file = "LICENSE_python"}
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+[tool.maturin]
+features = ["pyo3/extension-module"]
+authors = [
+    {name = "Prince Merveil ONDONDA",email = "prince.ondonda@hove.com"}
+]
+maintainers = [
+    {name = "Prince Merveil ONDONDA",email = "prince.ondonda@hove.com"}
+]

@@ -69,7 +69,7 @@ struct Agency {
     ticketing_deep_link_id: Option<String>,
 }
 
-impl<'a> From<&'a objects::Network> for Agency {
+impl From<&objects::Network> for Agency {
     fn from(obj: &objects::Network) -> Agency {
         Agency {
             id: Some(obj.id.clone()),
@@ -247,7 +247,7 @@ struct BookingRule {
     booking_url: Option<String>,
 }
 
-impl<'a> From<&'a objects::BookingRule> for BookingRule {
+impl From<&objects::BookingRule> for BookingRule {
     fn from(obj: &objects::BookingRule) -> BookingRule {
         BookingRule {
             id: obj.id.clone(),
@@ -285,7 +285,7 @@ struct Transfer {
     min_transfer_time: Option<u32>,
 }
 
-impl<'a> From<&'a objects::Transfer> for Transfer {
+impl From<&objects::Transfer> for Transfer {
     fn from(obj: &objects::Transfer) -> Transfer {
         Transfer {
             from_stop_id: obj.from_stop_id.clone(),
