@@ -22,7 +22,6 @@
 //! 5. Pluggable download implementations
 
 use crate::ntfs;
-use pyo3::prelude::*;
 use reqwest::header;
 use serde::Deserialize;
 use std::error::Error;
@@ -35,7 +34,6 @@ use tokio::sync::RwLock;
 
 /// Configuration for model management
 #[derive(Clone, Deserialize)]
-#[pyclass]
 pub struct ModelConfig {
     /// Update check interval in seconds
     pub check_interval_secs: u64,
@@ -43,27 +41,7 @@ pub struct ModelConfig {
     pub path: String,
 }
 
-#[pymethods]
-impl ModelConfig {
-    /// Creates a new model configuration
-    ///
-    /// # Arguments
-    /// * `check_interval_secs` - Update check interval in seconds
-    /// * `path` - Local path for storing downloaded models
-    ///
-    /// # Returns
-    /// A new model configuration
-    #[new]
-    pub fn new(check_interval_secs: u64, path: &str) -> Self {
-        Self {
-            check_interval_secs,
-            path: path.into(),
-        }
-    }
-}
-
 /// Configuration for Navitia API connection
-#[pyclass]
 #[derive(Clone, Deserialize)]
 pub struct NavitiaConfig {
     /// Base URL of Navitia API
@@ -72,27 +50,6 @@ pub struct NavitiaConfig {
     pub coverage: String,
     /// Authentication token for Navitia
     pub navitia_token: String,
-}
-
-#[pymethods]
-impl NavitiaConfig {
-    /// Creates a new Navitia API configuration
-    ///
-    /// # Arguments
-    /// * `navitia_url` - Base URL of Navitia API
-    /// * `coverage` - Coverage area identifier
-    /// * `navitia_token` - Authentication token for Navitia
-    ///
-    /// # Returns
-    /// A new Navitia API configuration
-    #[new]
-    pub fn new(navitia_url: &str, coverage: &str, navitia_token: &str) -> Self {
-        Self {
-            navitia_url: navitia_url.into(),
-            coverage: coverage.into(),
-            navitia_token: navitia_token.into(),
-        }
-    }
 }
 
 type DownloadResult =

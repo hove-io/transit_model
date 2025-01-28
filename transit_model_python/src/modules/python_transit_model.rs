@@ -21,8 +21,10 @@
 use pyo3::{exceptions::PyValueError, prelude::*};
 use std::sync::Arc;
 use transit_model as intern_transit_model;
-use transit_model::{model::Model, objects::StopTime};
+use transit_model::model::Model;
 use typed_index_collection::Id;
+
+use crate::PStopTime;
 
 /// Thread-safe wrapper for transit model data with Python bindings
 ///
@@ -157,13 +159,14 @@ impl PythonTransitModel {
     ///
     /// # Returns
     /// Vector of StopTime objects for the specified journey (empty if not found)
-    pub fn get_vehicule_journey_stop_times(&self, idx: String) -> PyResult<Vec<StopTime>> {
+    pub fn get_vehicule_journey_stop_times(&self, idx: String) -> PyResult<Vec<PStopTime>> {
         Ok(self
             .model
             .vehicle_journeys
             .get_idx(&idx)
             .iter()
             .flat_map(|idx| self.model.vehicle_journeys[*idx].stop_times.iter().cloned())
+            .map(PStopTime)
             .collect())
     }
 
@@ -182,14 +185,14 @@ impl PythonTransitModel {
         &self,
         vehicule_id: String,
         stop_id: String,
-    ) -> PyResult<Vec<StopTime>> {
+    ) -> PyResult<Vec<PStopTime>> {
         let stop_point_idx = self
             .model
             .stop_points
             .get_idx(&stop_id)
             .ok_or_else(|| PyValueError::new_err("StopPoint not found"))?;
 
-        let stop_times: Vec<StopTime> = self
+        let stop_times: Vec<PStopTime> = self
             .model
             .vehicle_journeys
             .get_idx(&vehicule_id)
@@ -197,7 +200,8 @@ impl PythonTransitModel {
             .flat_map(|idx| &self.model.vehicle_journeys[idx].stop_times)
             .filter(|st| st.stop_point_idx == stop_point_idx)
             .cloned()
-            .collect();
+            .map(PStopTime)
+            .collect::<Vec<PStopTime>>();
 
         if stop_times.is_empty() {
             Err(PyValueError::new_err("StopTime not found"))

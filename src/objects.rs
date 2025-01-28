@@ -21,11 +21,11 @@ use chrono::{Days, NaiveDate};
 use chrono_tz::Tz;
 use derivative::Derivative;
 use geo::{Geometry as GeoGeometry, Point as GeoPoint};
-use pyo3::pyclass;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
+use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ops::{Add, Div, Rem, Sub};
 use std::str::FromStr;
@@ -952,7 +952,6 @@ impl std::fmt::Display for Time {
     }
 }
 
-#[pyclass]
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct StopTime {
     pub stop_point_idx: Idx<StopPoint>,
@@ -995,6 +994,16 @@ pub enum StopTimePrecision {
     Approximate,
     #[serde(rename = "2")]
     Estimated,
+}
+
+impl fmt::Display for StopTimePrecision {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            StopTimePrecision::Exact => write!(f, "Exact"),
+            StopTimePrecision::Approximate => write!(f, "Approximate"),
+            StopTimePrecision::Estimated => write!(f, "Estimated"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq, Default)]

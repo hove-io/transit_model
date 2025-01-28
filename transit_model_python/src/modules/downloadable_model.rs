@@ -16,10 +16,9 @@
 use pyo3::{exceptions::PyValueError, prelude::*};
 use std::{error::Error, future::Future, pin::Pin};
 use tokio::runtime::Runtime;
-use transit_model::{
-    downloadable_model::{DownloadableTransitModel, Downloader, ModelConfig, NavitiaConfig},
-    objects::StopTime,
-};
+use transit_model::downloadable_model::{DownloadableTransitModel, Downloader, ModelConfig};
+
+use crate::{PStopTime, PythonModelConfig, PythonNavitiaConfig};
 
 /// Python wrapper for a downloader component implementing the Downloader trait
 ///
@@ -76,7 +75,7 @@ impl Downloader for PyDownloader {
             Python::with_gil(|py| {
                 model
                     .bind(py)
-                    .call_method("run_download", (config, version), None)
+                    .call_method("run_download", (PythonModelConfig(config), version), None)
                     .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
                     .and_then(|result| {
                         result
@@ -110,8 +109,8 @@ impl PythonDownloadableModel {
     /// Returns `PyValueError` if initialization fails at any stage
     #[new]
     pub fn new(
-        navitia_config: NavitiaConfig,
-        model_config: ModelConfig,
+        navitia_config: PythonNavitiaConfig,
+        model_config: PythonModelConfig,
         downloader: Py<PyDownloader>,
     ) -> PyResult<Self> {
         let rt = Runtime::new()
@@ -127,7 +126,12 @@ impl PythonDownloadableModel {
                     ))),
                 })?;
 
-                DownloadableTransitModel::new(navitia_config, model_config, rust_downloader).await
+                DownloadableTransitModel::new(
+                    navitia_config.into(),
+                    model_config.into(),
+                    rust_downloader,
+                )
+                .await
             })
             .map_err(|e| PyValueError::new_err(format!("Failed to create model: {}", e)))?;
 
@@ -271,7 +275,7 @@ impl PythonDownloadableModel {
     ///
     /// # Returns
     /// List of stop times associated with the specified vehicle journey
-    pub fn get_vehicle_journey_stop_times(&self, idx: String) -> PyResult<Vec<StopTime>> {
+    pub fn get_vehicle_journey_stop_times(&self, idx: String) -> PyResult<Vec<PStopTime>> {
         let rt = Runtime::new()
             .map_err(|e| PyValueError::new_err(format!("Failed to create runtime: {}", e)))?;
 
@@ -284,7 +288,8 @@ impl PythonDownloadableModel {
                 .get_idx(&idx)
                 .iter()
                 .flat_map(|index| guard.vehicle_journeys[*index].stop_times.iter().cloned())
-                .collect::<Vec<StopTime>>()
+                .map(PStopTime)
+                .collect::<Vec<PStopTime>>()
         });
 
         Ok(vehicle_journey_stop_times)

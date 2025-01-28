@@ -16,7 +16,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 transit_model = { path = "../", features = ["downloadable"] }
-typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2" }
+typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2", features=["expose-inner"] }
 relational_types = { git = "https://github.com/hove-io/relational_types", tag = "v2" }
 tokio = { version = "1.43.0", features = ["full"] }
 
