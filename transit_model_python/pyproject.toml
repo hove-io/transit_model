@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "transit_model_python"
 description = "A Python library for communicating with the transit_model Rust library"
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 readme = "python_README.md"
 license = {file = "LICENSE_python"}
 classifiers = [
