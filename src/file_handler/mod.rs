@@ -45,7 +45,7 @@ impl<P: AsRef<Path>> PathFileHandler<P> {
     }
 }
 
-impl<'a, P: AsRef<Path>> FileHandler for &'a mut PathFileHandler<P> {
+impl<P: AsRef<Path>> FileHandler for &mut PathFileHandler<P> {
     type Reader = File;
     fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
         let f = self.base_path.as_ref().join(name);
