@@ -923,7 +923,7 @@ impl<'de> ::serde::Deserialize<'de> for Time {
 
         // using the visitor pattern to avoid a string allocation
         struct TimeVisitor;
-        impl<'de> Visitor<'de> for TimeVisitor {
+        impl Visitor<'_> for TimeVisitor {
             type Value = Time;
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a time in the format HH:MM:SS")
