@@ -239,6 +239,7 @@ enum BookingType {
 #[derive(Derivative, Serialize)]
 #[derivative(Default)]
 struct BookingRule {
+    #[serde(rename = "booking_rule_id")]
     id: String,
     booking_type: BookingType,
     message: Option<String>,
