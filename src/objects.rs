@@ -243,7 +243,7 @@ pub struct Dataset {
 }
 
 impl Dataset {
-    pub fn new(dataset_id: String, contributor_id: String) -> Dataset {
+    pub fn new(dataset_id: String, contributor_id: String, desc: Option<String>) -> Dataset {
         let validity_period = ValidityPeriod::default();
 
         Dataset {
@@ -253,7 +253,7 @@ impl Dataset {
             end_date: validity_period.end_date,
             dataset_type: None,
             extrapolation: false,
-            desc: None,
+            desc,
             system: None,
         }
     }
