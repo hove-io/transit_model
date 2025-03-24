@@ -1,13 +1,13 @@
 [package]
 authors = ["Hove <core@hove.com>", "Guillaume Pinot <texitoi@texitoi.eu>"]
 name = "transit_model"
-version = "0.68.1"
+version = "0.68.2"
 license = "AGPL-3.0-only"
 description = "Transit data management"
 repository = "https://github.com/hove-io/transit_model"
 keywords = ["ntfs", "gtfs", "netex", "navitia", "transit"]
 categories = ["data-structures", "encoding", "parser-implementations"]
-edition = "2018"
+edition = "2021"
 readme = "README.md"
 exclude = [
 	".gitignore",
@@ -42,29 +42,29 @@ chrono = { version = "0.4", default-features = false, features = ["std", "clock"
 chrono-tz = { version = "0.10", features = ["serde"] }
 csv = "1"
 derivative = "2"
-geo = "0.28"
+geo = "0.29"
 iso4217 = "0.3"
 lazy_static = "1"
 md5 = "0.7"
 # do not upgrade to 'minidom:0.13.0' (too strict on namespaces and no XML comment support)
 # https://github.com/hove-io/transit_model/pull/746
 minidom = "0.12"
-minidom_ext = { git = "https://github.com/hove-io/minidom_ext", tag="v1"}
-minidom_writer = { git = "https://github.com/hove-io/minidom_writer", tag = "v1"}
+minidom_ext = { git = "https://github.com/hove-io/minidom_ext", tag="v1.1.1"}
+minidom_writer = { git = "https://github.com/hove-io/minidom_writer", tag = "v1.0.0"}
 num-traits = "0.2"
 pretty_assertions = "1"
-proj = { version = "0.27", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
-relational_types = { git = "https://github.com/hove-io/relational_types", tag = "v2"}
+proj = { version = "0.29", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
+relational_types = { git = "https://github.com/hove-io/relational_types", tag = "v2.1.1"}
 rust_decimal = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-skip_error = { git = "https://github.com/hove-io/skip_error", tag = "v3", features = ["tracing"]}
+skip_error = { git = "https://github.com/hove-io/skip_error", tag = "v3.1.1", features = ["tracing"]}
 tempfile = "3"
-thiserror = "1"
+thiserror = "2.0"
 tracing = { version = "0.1", features = ["log"] }
-typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2"}
+typed_index_collection = { git = "https://github.com/hove-io/typed_index_collection", tag = "v2.3.0"}
 walkdir = "2"
-wkt = "0.10"
+wkt = "0.12"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 git-version = "0.3"
 
