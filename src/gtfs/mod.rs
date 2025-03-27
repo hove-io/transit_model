@@ -34,6 +34,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
     fmt,
+    hash::{Hash, Hasher},
     path::Path,
 };
 
@@ -42,8 +43,8 @@ use typed_index_collection::CollectionWithId;
 
 #[cfg(all(feature = "gtfs", feature = "parser"))]
 pub use read::{
-    manage_frequencies, manage_pathways, manage_shapes, manage_stop_times, read_agency,
-    read_routes, read_stops, read_transfers, EquipmentList,
+    apply_attribution_rules, manage_frequencies, manage_pathways, manage_shapes, manage_stop_times,
+    read_agency, read_attributions, read_routes, read_stops, read_transfers, EquipmentList,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -341,6 +342,28 @@ pub struct Configuration {
     pub read_as_line: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct Attribution {
+    attribution_id: Option<String>,
+    route_id: Option<String>,
+    trip_id: Option<String>,
+    #[serde(deserialize_with = "de_opt_bool_from_str")]
+    is_operator: Option<bool>,
+    organization_name: String,
+    attribution_url: Option<String>,
+    attribution_email: Option<String>,
+    attribution_phone: Option<String>,
+}
+
+impl Hash for Attribution {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.organization_name.hash(state);
+        self.attribution_url.hash(state);
+        self.attribution_email.hash(state);
+        self.attribution_phone.hash(state);
+    }
+}
+
 fn read_file_handler<H>(file_handler: &mut H, configuration: Configuration) -> Result<Model>
 where
     for<'a> &'a mut H: FileHandler,
@@ -399,6 +422,8 @@ where
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
     collections.levels = read_opt_collection(file_handler, "levels.txt")?;
+    let attribution_rules = read::read_attributions(file_handler, "attributions.txt")?;
+    read::apply_attribution_rules(&mut collections, &attribution_rules)?;
 
     //add prefixes
     if let Some(prefix_conf) = prefix_conf {

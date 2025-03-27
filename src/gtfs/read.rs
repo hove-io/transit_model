@@ -13,15 +13,16 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{
-    Agency, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime, Transfer,
-    TransferType, Trip,
+    Agency, Attribution, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime,
+    Transfer, TransferType, Trip,
 };
 use crate::{
     file_handler::FileHandler,
     model::Collections,
     objects::{
-        self, Availability, Comment, Coord, KeysValues, LinksT, Pathway, PropertiesMap,
-        StopLocation, StopPoint, StopTimePrecision, StopType, Time, TransportType,
+        self, Availability, Comment, Company, Coord, KeysValues, LinksT, ObjectType, Pathway,
+        PropertiesMap, StopLocation, StopPoint, StopTimePrecision, StopType, Time, TransportType,
+        VehicleJourney,
     },
     parser::{read_collection, read_objects, read_objects_loose},
     serde_utils::de_with_empty_default,
@@ -36,6 +37,7 @@ use std::convert::TryFrom;
 use std::{
     cmp,
     collections::{BTreeMap, BTreeSet, HashMap},
+    hash::{DefaultHasher, Hash, Hasher},
 };
 use tracing::{info, warn};
 use typed_index_collection::{impl_id, Collection, CollectionWithId, Idx};
@@ -771,8 +773,8 @@ pub fn read_stops<H>(
 where
     for<'a> &'a mut H: FileHandler,
 {
-    info!("Reading stops.txt");
     let file = "stops.txt";
+    info!(file_name = %file, "Reading file");
     let gtfs_stops = read_objects::<_, Stop>(file_handler, file, true)?;
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
@@ -1160,8 +1162,9 @@ pub fn read_routes<H>(
 where
     for<'a> &'a mut H: FileHandler,
 {
-    info!("Reading routes.txt");
-    let gtfs_routes_collection = read_collection(file_handler, "routes.txt")?;
+    let file = "routes.txt";
+    info!(file_name = %file, "Reading file");
+    let gtfs_routes_collection = read_collection(file_handler, file)?;
     let (commercial_modes, physical_modes) = get_modes_from_gtfs(&gtfs_routes_collection);
     collections.commercial_modes = CollectionWithId::new(commercial_modes)?;
     collections.physical_modes = CollectionWithId::new(physical_modes)?;
@@ -1237,6 +1240,184 @@ where
         .collect();
 
     collections.convert_frequencies_to_stoptimes(frequencies)
+}
+
+/// attributions applied to the dataset.
+#[derive(Eq, Hash, PartialEq)]
+pub struct AttributionRule {
+    id: String,
+    /// Type of public transport object to which the allocation applies
+    /// only line or VehicleJourney objects are accepted
+    object_type: ObjectType,
+    /// Object identifier
+    object_id: String,
+    /// Name of the organization that the dataset is attributed to.
+    organization_name: String,
+    /// URL of the organization that the dataset is attributed to.
+    attribution_url: Option<String>,
+    /// Email of the organization that the dataset is attributed to.
+    attribution_email: Option<String>,
+    /// Phone number of the organization.
+    attribution_phone: Option<String>,
+}
+
+fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
+
+impl TryFrom<&Attribution> for AttributionRule {
+    type Error = Error;
+    fn try_from(attribution: &Attribution) -> Result<Self> {
+        let (object_type, object_id) = match (
+            attribution.route_id.is_some(),
+            attribution.trip_id.is_some(),
+        ) {
+            (true, false) => (Some(ObjectType::Route), attribution.route_id.clone()),
+            (false, true) => (
+                Some(ObjectType::VehicleJourney),
+                attribution.trip_id.clone(),
+            ),
+            _ => (None, None),
+        };
+
+        if object_type.is_none() {
+            let message = if let Some(attribution_id) = &attribution.attribution_id {
+                format!(
+                    "Attribution {} must have either route_id or trip_id",
+                    attribution_id
+                )
+            } else {
+                format!(
+                    "Attribution {:?} must have either route_id or trip_id",
+                    attribution
+                )
+            };
+            bail!(message);
+        }
+
+        let attribution_rule = AttributionRule {
+            id: calculate_hash(&attribution).to_string(),
+            object_type: object_type.expect("an error occured"),
+            object_id: object_id.expect("an error occured"),
+            organization_name: attribution.organization_name.clone(),
+            attribution_url: attribution.attribution_url.clone(),
+            attribution_email: attribution.attribution_email.clone(),
+            attribution_phone: attribution.attribution_phone.clone(),
+        };
+        Ok(attribution_rule)
+    }
+}
+
+impl AttributionRule {
+    fn get_or_create_company(
+        &self,
+        companies: &mut CollectionWithId<objects::Company>,
+    ) -> Result<String> {
+        if !companies.contains_id(&self.id) {
+            let company = Company {
+                id: self.id.to_string(),
+                name: self.organization_name.clone(),
+                url: self.attribution_url.clone(),
+                mail: self.attribution_email.clone(),
+                phone: self.attribution_phone.clone(),
+                ..Default::default()
+            };
+            companies.push(company)?;
+        }
+        Ok(self.id.to_string())
+    }
+}
+
+/// Read attributions rules applied to the trip.
+pub fn read_attributions<H>(file_handler: &mut H, file_name: &str) -> Result<Vec<AttributionRule>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let (reader, path) = file_handler.get_file_if_exists(file_name)?;
+    let file_name = path.file_name();
+    let basename = file_name.map_or(path.to_string_lossy(), |b| b.to_string_lossy());
+    let mut attribution_rules = Vec::new();
+    if let Some(reader) = reader {
+        info!(file_name = %basename, "Reading file");
+        let mut rdr = csv::ReaderBuilder::new()
+            .flexible(true)
+            .trim(csv::Trim::All)
+            .from_reader(reader);
+
+        for result in rdr.deserialize() {
+            let attribution: Attribution = result?;
+            if let Some(true) = attribution.is_operator {
+                let attribution_rule =
+                    skip_error_and_warn!(AttributionRule::try_from(&attribution));
+                attribution_rules.push(attribution_rule);
+            }
+        }
+    };
+
+    Ok(attribution_rules)
+}
+/// Apply attributions rules on trips.
+pub fn apply_attribution_rules(
+    collections: &mut Collections,
+    attribution_rules: &[AttributionRule],
+) -> Result<()> {
+    let vjs_idx_by_company: HashMap<&AttributionRule, Vec<Idx<VehicleJourney>>> = attribution_rules
+        .iter()
+        .filter_map(|attribution_rule| {
+            if attribution_rule.object_type == ObjectType::VehicleJourney {
+                if let Some(vj_idx) = collections
+                    .vehicle_journeys
+                    .get_idx(&attribution_rule.object_id)
+                {
+                    Some((attribution_rule, vec![vj_idx]))
+                } else {
+                    warn!(
+                        "VehicleJourney {} not found for attribution",
+                        attribution_rule.object_id
+                    );
+                    None
+                }
+            } else if !collections.routes.contains_id(&attribution_rule.object_id) {
+                warn!(
+                    "Route {} not found for attribution",
+                    attribution_rule.object_id
+                );
+                None
+            } else {
+                let vjs_idx = collections
+                    .vehicle_journeys
+                    .iter()
+                    .filter(|(_, vj)| vj.route_id == attribution_rule.object_id)
+                    .map(|(vj_idx, _)| vj_idx)
+                    .collect();
+                Some((attribution_rule, vjs_idx))
+            }
+        })
+        .fold(
+            HashMap::new(),
+            |mut vjs_idx_by_company, (attribution_rule, vjs_idx)| {
+                vjs_idx_by_company
+                    .entry(attribution_rule)
+                    .or_default()
+                    .extend(vjs_idx);
+                vjs_idx_by_company
+            },
+        );
+
+    for (attribution_rule, vjs_idx) in vjs_idx_by_company.iter() {
+        let company_id = attribution_rule.get_or_create_company(&mut collections.companies)?;
+        for vj_idx in vjs_idx {
+            collections
+                .vehicle_journeys
+                .index_mut(*vj_idx)
+                .company_id
+                .clone_from(&company_id);
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

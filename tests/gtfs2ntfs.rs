@@ -219,3 +219,17 @@ fn test_minimal_gtfs_with_routes_as_lines_comments() {
         );
     });
 }
+
+#[test]
+fn test_gtfs_attributions() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./tests/fixtures/gtfs2ntfs/attributions/input";
+        let model = transit_model::gtfs::read(input_dir).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            path,
+            Some(vec!["companies.txt", "networks.txt", "trips.txt"]),
+            "./tests/fixtures/gtfs2ntfs/attributions/output",
+        );
+    });
+}
