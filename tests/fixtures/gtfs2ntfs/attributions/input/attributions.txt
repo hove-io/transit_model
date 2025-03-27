@@ -1,0 +1,7 @@
+attribution_id,agency_id,route_id,trip_id,organization_name,is_producer,is_operator,is_authority,attribution_url,attribution_email,attribution_phone
+unmanaged-1,1,,,hove,0,1,0,http://hove.com,"attribution@hove,com",123456791
+not-valid-1,1,route:4,,hove,0,1,0,http://hove.com,"attribution@hove,com",123456792
+not-valid-2,,route:3,,hove,0,0,0,http://hove.com,"attribution@hove,com",123456793
+not-valid-3,,,trip:7,hove,0,1,0,http://hove.com,"attribution@hove,com",123456793
+valid-1,,route:2,,hove,0,1,,http://hove.com,"attribution@hove,com",123456789
+valid-2,,,trip:5,hove,,1,0,http://hove.com,"attribution@hove,com",987654321

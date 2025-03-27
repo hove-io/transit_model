@@ -21,24 +21,31 @@ use crate::{
     calendars::{manage_calendars, write_calendar_dates},
     file_handler::{FileHandler, PathFileHandler, ZipHandler},
     model::{Collections, Model},
-    objects::{self, Availability, Contributor, Dataset, Network, StopType, Time},
+    objects::{
+        self, Availability, Company, Contributor, Dataset, Network, ObjectType, StopType, Time,
+        VehicleJourney,
+    },
     parser::read_opt_collection,
     serde_utils::*,
     utils::*,
     validity_period, AddPrefix, PrefixConfiguration, Result,
 };
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail, Context, Error};
 use chrono_tz::Tz;
 use derivative::Derivative;
 use serde::{Deserialize, Serialize};
+use skip_error::skip_error_and_warn;
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
+    convert::TryFrom,
     fmt,
+    hash::{DefaultHasher, Hash, Hasher},
     path::Path,
+    vec,
 };
 
-use tracing::info;
-use typed_index_collection::CollectionWithId;
+use tracing::{info, warn};
+use typed_index_collection::{CollectionWithId, Idx};
 
 #[cfg(all(feature = "gtfs", feature = "parser"))]
 pub use read::{
@@ -341,6 +348,201 @@ pub struct Configuration {
     pub read_as_line: bool,
 }
 
+#[derive(Debug, Deserialize)]
+struct Attribution {
+    attribution_id: Option<String>,
+    route_id: Option<String>,
+    trip_id: Option<String>,
+    #[serde(deserialize_with = "de_opt_bool_from_str")]
+    is_operator: Option<bool>,
+    organization_name: String,
+    attribution_url: Option<String>,
+    attribution_email: Option<String>,
+    attribution_phone: Option<String>,
+}
+
+impl Hash for Attribution {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.organization_name.hash(state);
+        self.attribution_url.hash(state);
+        self.attribution_email.hash(state);
+        self.attribution_phone.hash(state);
+    }
+}
+
+#[derive(Eq, Hash, PartialEq)]
+struct AttributionRule {
+    id: String,
+    object_type: ObjectType,
+    object_id: String,
+    organization_name: String,
+    attribution_url: Option<String>,
+    attribution_email: Option<String>,
+    attribution_phone: Option<String>,
+}
+
+impl TryFrom<&Attribution> for AttributionRule {
+    type Error = Error;
+    fn try_from(attribution: &Attribution) -> Result<Self> {
+        let (object_type, object_id) = match (
+            attribution.route_id.is_some(),
+            attribution.trip_id.is_some(),
+        ) {
+            (true, false) => (Some(ObjectType::Route), attribution.route_id.clone()),
+            (false, true) => (
+                Some(ObjectType::VehicleJourney),
+                attribution.trip_id.clone(),
+            ),
+            _ => (None, None),
+        };
+
+        if object_type.is_none() {
+            let message = if let Some(attribution_id) = &attribution.attribution_id {
+                format!(
+                    "Attribution {} must have either route_id or trip_id",
+                    attribution_id
+                )
+            } else {
+                format!(
+                    "Attribution {:?} must have either route_id or trip_id",
+                    attribution
+                )
+            };
+            bail!(message);
+        }
+
+        let attribution_rule = AttributionRule {
+            id: calculate_hash(&attribution).to_string(),
+            object_type: object_type.expect("an error occured"),
+            object_id: object_id.expect("an error occured"),
+            organization_name: attribution.organization_name.clone(),
+            attribution_url: attribution.attribution_url.clone(),
+            attribution_email: attribution.attribution_email.clone(),
+            attribution_phone: attribution.attribution_phone.clone(),
+        };
+        Ok(attribution_rule)
+    }
+}
+
+fn read_attributions<H>(file_handler: &mut H, file_name: &str) -> Result<Vec<AttributionRule>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let (reader, path) = file_handler.get_file_if_exists(file_name)?;
+    let file_name = path.file_name();
+    let basename = file_name.map_or(path.to_string_lossy(), |b| b.to_string_lossy());
+    let mut attribution_rules = Vec::new();
+    if let Some(reader) = reader {
+        info!("Reading {}", basename);
+        let mut rdr = csv::ReaderBuilder::new()
+            .flexible(true)
+            .trim(csv::Trim::All)
+            .from_reader(reader);
+
+        for result in rdr.deserialize() {
+            let attribution: Attribution = result?;
+            if let Some(is_operator) = attribution.is_operator {
+                if is_operator {
+                    let attribution_rule =
+                        skip_error_and_warn!(AttributionRule::try_from(&attribution));
+                    attribution_rules.push(attribution_rule);
+                }
+            }
+        }
+    };
+
+    Ok(attribution_rules)
+}
+
+fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
+
+fn get_or_create_company(
+    companies: &mut CollectionWithId<objects::Company>,
+    attribution_rule: &AttributionRule,
+) -> Result<String> {
+    if companies.get(&attribution_rule.id).is_none() {
+        let company = Company {
+            id: attribution_rule.id.to_string(),
+            name: attribution_rule.organization_name.clone(),
+            url: attribution_rule.attribution_url.clone(),
+            mail: attribution_rule.attribution_email.clone(),
+            phone: attribution_rule.attribution_phone.clone(),
+            ..Default::default()
+        };
+        companies.push(company)?;
+    }
+    Ok(attribution_rule.id.to_string())
+}
+
+fn apply_attribution_rules(
+    collections: &mut Collections,
+    attribution_rules: &[AttributionRule],
+) -> Result<()> {
+    let vjs_idx_by_company: HashMap<&AttributionRule, Vec<Idx<VehicleJourney>>> = attribution_rules
+        .iter()
+        .filter_map(|attribution_rule| {
+            if attribution_rule.object_type == ObjectType::VehicleJourney {
+                if let Some(vj_idx) = collections
+                    .vehicle_journeys
+                    .get_idx(&attribution_rule.object_id)
+                {
+                    Some((attribution_rule, vec![vj_idx]))
+                } else {
+                    warn!(
+                        "VehicleJourney {} not found for attribution",
+                        attribution_rule.object_id
+                    );
+                    None
+                }
+            } else if collections
+                .routes
+                .get_idx(&attribution_rule.object_id)
+                .is_none()
+            {
+                warn!(
+                    "Route {} not found for attribution",
+                    attribution_rule.object_id
+                );
+                None
+            } else {
+                let vjs_idx = collections
+                    .vehicle_journeys
+                    .iter()
+                    .filter(|(_, vj)| vj.route_id == attribution_rule.object_id)
+                    .map(|(vj_idx, _)| vj_idx)
+                    .collect();
+                Some((attribution_rule, vjs_idx))
+            }
+        })
+        .fold(
+            HashMap::new(),
+            |mut vjs_idx_by_company, (attribution_rule, vjs_idx)| {
+                vjs_idx_by_company
+                    .entry(attribution_rule)
+                    .or_default()
+                    .extend(vjs_idx);
+                vjs_idx_by_company
+            },
+        );
+
+    for (attribution_rule, vjs_idx) in vjs_idx_by_company.iter() {
+        let company_id = get_or_create_company(&mut collections.companies, attribution_rule)?;
+        for vj_idx in vjs_idx {
+            collections
+                .vehicle_journeys
+                .index_mut(*vj_idx)
+                .company_id
+                .clone_from(&company_id);
+        }
+    }
+
+    Ok(())
+}
+
 fn read_file_handler<H>(file_handler: &mut H, configuration: Configuration) -> Result<Model>
 where
     for<'a> &'a mut H: FileHandler,
@@ -399,6 +601,8 @@ where
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
     collections.levels = read_opt_collection(file_handler, "levels.txt")?;
+    let attribution_rules = read_attributions(file_handler, "attributions.txt")?;
+    apply_attribution_rules(&mut collections, &attribution_rules)?;
 
     //add prefixes
     if let Some(prefix_conf) = prefix_conf {
