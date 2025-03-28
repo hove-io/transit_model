@@ -774,7 +774,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "stops.txt";
-    info!(file_name = %file, "Reading file");
+    info!(file_name = %file, "Reading");
     let gtfs_stops = read_objects::<_, Stop>(file_handler, file, true)?;
     let mut stop_areas = vec![];
     let mut stop_points = vec![];
@@ -1163,7 +1163,7 @@ where
     for<'a> &'a mut H: FileHandler,
 {
     let file = "routes.txt";
-    info!(file_name = %file, "Reading file");
+    info!(file_name = %file, "Reading");
     let gtfs_routes_collection = read_collection(file_handler, file)?;
     let (commercial_modes, physical_modes) = get_modes_from_gtfs(&gtfs_routes_collection);
     collections.commercial_modes = CollectionWithId::new(commercial_modes)?;
@@ -1340,7 +1340,7 @@ where
     let basename = file_name.map_or(path.to_string_lossy(), |b| b.to_string_lossy());
     let mut attribution_rules = Vec::new();
     if let Some(reader) = reader {
-        info!(file_name = %basename, "Reading file");
+        info!(file_name = %basename, "Reading");
         let mut rdr = csv::ReaderBuilder::new()
             .flexible(true)
             .trim(csv::Trim::All)

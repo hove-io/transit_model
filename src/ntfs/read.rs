@@ -205,7 +205,7 @@ where
 
     match reader {
         None => {
-            info!("Skipping {}", basename);
+            info!(file_name = %basename, "Skipping");
             Ok(Collection::default())
         }
         Some(reader) => {

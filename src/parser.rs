@@ -35,14 +35,14 @@ where
 
     match (reader, required_file) {
         (None, false) => {
-            info!("Skipping {}", basename);
+            info!(file_name = %basename, "Skipping");
             Ok(vec![])
         }
         (None, true) => {
             bail!("file {:?} not found", path)
         }
         (Some(reader), _) => {
-            info!(file_name = %basename, "Reading file");
+            info!(file_name = %basename, "Reading");
             let mut rdr = csv::ReaderBuilder::new()
                 .flexible(true)
                 .trim(csv::Trim::All)
@@ -71,14 +71,14 @@ where
 
     match (reader, required_file) {
         (None, false) => {
-            info!("Skipping {}", basename);
+            info!(file_name = %basename, "Skipping");
             Ok(vec![])
         }
         (None, true) => {
             bail!("file {:?} not found", path)
         }
         (Some(reader), _) => {
-            info!(file_name = %basename, "Reading file");
+            info!(file_name = %basename, "Reading");
             let mut rdr = csv::ReaderBuilder::new()
                 .flexible(true)
                 .trim(csv::Trim::All)
