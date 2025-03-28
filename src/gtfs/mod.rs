@@ -441,12 +441,10 @@ where
 
         for result in rdr.deserialize() {
             let attribution: Attribution = result?;
-            if let Some(is_operator) = attribution.is_operator {
-                if is_operator {
-                    let attribution_rule =
-                        skip_error_and_warn!(AttributionRule::try_from(&attribution));
-                    attribution_rules.push(attribution_rule);
-                }
+            if let Some(true) = attribution.is_operator {
+                let attribution_rule =
+                    skip_error_and_warn!(AttributionRule::try_from(&attribution));
+                attribution_rules.push(attribution_rule);
             }
         }
     };
@@ -464,7 +462,7 @@ fn get_or_create_company(
     companies: &mut CollectionWithId<objects::Company>,
     attribution_rule: &AttributionRule,
 ) -> Result<String> {
-    if companies.get(&attribution_rule.id).is_none() {
+    if !companies.contains_id(&attribution_rule.id) {
         let company = Company {
             id: attribution_rule.id.to_string(),
             name: attribution_rule.organization_name.clone(),
@@ -498,11 +496,7 @@ fn apply_attribution_rules(
                     );
                     None
                 }
-            } else if collections
-                .routes
-                .get_idx(&attribution_rule.object_id)
-                .is_none()
-            {
+            } else if !collections.routes.contains_id(&attribution_rule.object_id) {
                 warn!(
                     "Route {} not found for attribution",
                     attribution_rule.object_id
