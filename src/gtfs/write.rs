@@ -35,8 +35,9 @@ pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) 
     if transfers.is_empty() {
         return Ok(());
     }
-    info!("Writing transfers.txt");
-    let path = path.join("transfers.txt");
+    let file = "transfers.txt";
+    info!(file_name = %file, "Writing");
+    let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
     for t in transfers.values() {
@@ -57,8 +58,9 @@ pub fn write_agencies(
     networks: &CollectionWithId<objects::Network>,
     ticketing_deep_links: &TicketingDeepLinks,
 ) -> Result<()> {
-    info!("Writing agency.txt");
-    let path = path.join("agency.txt");
+    let file = "agency.txt";
+    info!(file_name = %file, "Writing");
+    let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
     for network in networks.values() {
@@ -92,9 +94,9 @@ pub fn write_ticketing_deep_links(
     ticketing_deep_links: &TicketingDeepLinks,
 ) -> Result<()> {
     if !ticketing_deep_links.is_empty() {
-        let file_name = "ticketing_deep_links.txt";
-        info!("Writing {}", file_name);
-        let path = path.join(file_name);
+        let file = "ticketing_deep_links.txt";
+        info!(file_name = %file, "Writing");
+        let path = path.join(file);
         let mut wtr =
             csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
         for tdl in ticketing_deep_links.values() {
@@ -218,7 +220,7 @@ pub fn write_stops(
     equipments: &CollectionWithId<objects::Equipment>,
 ) -> Result<()> {
     let file = "stops.txt";
-    info!("Writing {}", file);
+    info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
@@ -280,9 +282,10 @@ fn make_gtfs_trip_from_ntfs_vj(vj: &objects::VehicleJourney, model: &Model) -> T
     }
 }
 
-pub fn write_trips(path: &path::Path, model: &Model) -> Result<()> {
-    info!("Writing trips.txt");
-    let path = path.join("trips.txt");
+pub fn write_trips<'a>(path: &'a path::Path, model: &'a Model) -> Result<()> {
+    let file = "trips.txt";
+    info!(file_name = %file, "Writing");
+    let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
     for vj in model.vehicle_journeys.values() {
@@ -332,8 +335,10 @@ pub fn write_stop_extensions(
     if stop_extensions.is_empty() {
         return Ok(());
     }
-    info!("Writing stop_extensions.txt");
-    let path = path.join("stop_extensions.txt");
+    let file = "stop_extensions.txt";
+    info!(file_name = %file, "Writing");
+
+    let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
     for se in stop_extensions {
@@ -440,8 +445,9 @@ fn make_gtfs_route_from_ntfs_line(line: &objects::Line, pm: &PhysicalModeWithOrd
 }
 
 pub fn write_routes(path: &path::Path, model: &Model, extend_route_type: bool) -> Result<()> {
-    info!("Writing routes.txt");
-    let path = path.join("routes.txt");
+    let file = "routes.txt";
+    info!(file_name = %file, "Writing");
+    let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
     for (from, l) in &model.lines {
@@ -469,8 +475,9 @@ pub fn write_stop_times(
     stop_points: &CollectionWithId<StopPoint>,
     stop_times_headsigns: &HashMap<(String, u32), String>,
 ) -> Result<()> {
-    info!("Writing stop_times.txt");
-    let stop_times_path = path.join("stop_times.txt");
+    let file = "stop_times.txt";
+    info!(file_name = %file, "Writing");
+    let stop_times_path = path.join(file);
     let mut st_wtr = csv::Writer::from_path(&stop_times_path)
         .with_context(|| format!("Error reading {:?}", stop_times_path))?;
     for (vj_idx, vj) in vehicle_journeys {
@@ -520,9 +527,9 @@ pub fn write_booking_rules(
     if booking_rules.is_empty() {
         return Ok(());
     }
-    let filename = "booking_rules.txt";
-    info!("Writing {}", filename);
-    let path = path.join(filename);
+    let file = "booking_rules.txt";
+    info!(file_name = %file, "Writing");
+    let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error opening {:?}", path))?;
     for br in booking_rules.values() {
@@ -563,8 +570,9 @@ pub fn write_shapes(
         .flat_map(ntfs_geometry_to_gtfs_shapes)
         .collect();
     if !shapes.is_empty() {
-        info!("Writing shapes.txt");
-        let path = path.join("shapes.txt");
+        let file = "shapes.txt";
+        info!(file_name = %file, "Writing");
+        let path = path.join(file);
         let mut wtr =
             csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
         wtr.flush()

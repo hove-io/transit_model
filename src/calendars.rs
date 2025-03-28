@@ -216,8 +216,9 @@ pub fn write_calendar_dates(
     path: &path::Path,
     calendars: &CollectionWithId<objects::Calendar>,
 ) -> Result<()> {
-    info!("Writing calendar_dates.txt");
-    let calendar_dates_path = path.join("calendar_dates.txt");
+    let file = "calendar_dates.txt";
+    info!(file_name = %file, "Writing");
+    let calendar_dates_path = path.join(file);
     let mut translations: Vec<Calendar> = vec![];
     let mut exceptions: Vec<CalendarDate> = vec![];
     for c in calendars.values() {
@@ -262,12 +263,13 @@ pub fn write_calendar_dates(
 
 /// Write the calendar.txt file into a Path from a list of Calendar
 pub fn write_calendar(path: &path::Path, calendars: &[Calendar]) -> Result<()> {
-    info!("Writing calendar.txt");
+    let file = "calendar.txt";
+    info!(file_name = %file, "Writing");
     if calendars.is_empty() {
         return Ok(());
     }
 
-    let calendar_path = path.join("calendar.txt");
+    let calendar_path = path.join(file);
     let mut wtr = csv::Writer::from_path(&calendar_path)
         .with_context(|| format!("Error reading {:?}", calendar_path))?;
     for calendar in calendars {
