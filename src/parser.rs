@@ -42,7 +42,7 @@ where
             bail!("file {:?} not found", path)
         }
         (Some(reader), _) => {
-            info!("Reading {}", basename);
+            info!(file_name = %basename, "Reading file");
             let mut rdr = csv::ReaderBuilder::new()
                 .flexible(true)
                 .trim(csv::Trim::All)
@@ -78,7 +78,7 @@ where
             bail!("file {:?} not found", path)
         }
         (Some(reader), _) => {
-            info!("Reading {}", basename);
+            info!(file_name = %basename, "Reading file");
             let mut rdr = csv::ReaderBuilder::new()
                 .flexible(true)
                 .trim(csv::Trim::All)
