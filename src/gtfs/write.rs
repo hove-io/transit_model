@@ -16,7 +16,7 @@ use super::{
     Agency, BookingRule, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime,
     TicketingDeepLinks, Transfer, Trip,
 };
-use crate::gtfs::ExtendedRoute;
+use crate::gtfs::{Attribution, ExtendedRoute};
 use crate::model::{GetCorresponding, Model};
 use crate::objects;
 use crate::objects::Transfer as NtfsTransfer;
@@ -26,7 +26,7 @@ use anyhow::Context;
 use geo::Geometry as GeoGeometry;
 use relational_types::IdxSet;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path;
 use tracing::{info, warn};
 use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
@@ -282,22 +282,98 @@ fn make_gtfs_trip_from_ntfs_vj(vj: &objects::VehicleJourney, model: &Model) -> T
     }
 }
 
-pub fn write_trips<'a>(path: &'a path::Path, model: &'a Model) -> Result<()> {
+pub fn write_trips<'a>(
+    path: &'a path::Path,
+    model: &'a Model,
+) -> Result<HashMap<String, Vec<&'a VehicleJourney>>> {
     let file = "trips.txt";
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+    let mut vjs_by_route_gtfs_id: HashMap<String, Vec<&VehicleJourney>> = HashMap::new();
     for vj in model.vehicle_journeys.values() {
-        wtr.serialize(make_gtfs_trip_from_ntfs_vj(vj, model))
+        let trip = make_gtfs_trip_from_ntfs_vj(vj, model);
+        vjs_by_route_gtfs_id
+            .entry(trip.route_id.clone())
+            .or_default()
+            .push(vj);
+
+        wtr.serialize(trip)
             .with_context(|| format!("Error reading {:?}", path))?;
     }
 
     wtr.flush()
         .with_context(|| format!("Error reading {:?}", path))?;
 
+    Ok(vjs_by_route_gtfs_id)
+}
+
+pub fn write_attributions(
+    path: &path::Path,
+    companies: &CollectionWithId<objects::Company>,
+    gtfs_trips: HashMap<String, Vec<&VehicleJourney>>,
+) -> Result<()> {
+    let attributions = gtfs_trips
+        .iter()
+        .filter_map(|(route_id, vjs)| {
+            let company_ids = vjs
+                .iter()
+                .map(|vj| vj.company_id.clone())
+                .collect::<HashSet<_>>();
+            if company_ids.len() == 1 {
+                let company_id = company_ids.iter().next().expect("An error occurred");
+                companies.get(company_id).map(|company| {
+                    vec![Attribution {
+                        route_id: Some(route_id.clone()),
+                        is_operator: Some(true),
+                        organization_name: company.name.clone(),
+                        attribution_url: company.url.clone(),
+                        attribution_email: company.mail.clone(),
+                        attribution_phone: company.phone.clone(),
+                        ..Default::default()
+                    }]
+                })
+            } else {
+                let attributions_from_vjs = vjs
+                    .iter()
+                    .filter_map(|vj| {
+                        companies.get(&vj.company_id).map(|company| Attribution {
+                            trip_id: Some(vj.id.clone()),
+                            is_operator: Some(true),
+                            organization_name: company.name.clone(),
+                            attribution_url: company.url.clone(),
+                            attribution_email: company.mail.clone(),
+                            attribution_phone: company.phone.clone(),
+                            ..Default::default()
+                        })
+                    })
+                    .collect();
+                Some(attributions_from_vjs)
+            }
+        })
+        .fold(Vec::new(), |mut attributions, mut attribution| {
+            attributions.append(&mut attribution);
+            attributions
+        });
+
+    if !attributions.is_empty() {
+        let file = "attributions.txt";
+        info!(file_name = %file, "Writing file");
+        let path = path.join(file);
+        let mut wtr =
+            csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+        for attribution in attributions {
+            wtr.serialize(attribution)
+                .with_context(|| format!("Error reading {:?}", path))?;
+        }
+        wtr.flush()
+            .with_context(|| format!("Error reading {:?}", path))?;
+    }
+
     Ok(())
 }
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct StopExtension {
     #[serde(rename = "object_id")]
