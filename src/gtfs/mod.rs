@@ -342,12 +342,15 @@ pub struct Configuration {
     pub read_as_line: bool,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 struct Attribution {
     attribution_id: Option<String>,
     route_id: Option<String>,
     trip_id: Option<String>,
-    #[serde(deserialize_with = "de_opt_bool_from_str")]
+    #[serde(
+        deserialize_with = "de_opt_bool_from_str",
+        serialize_with = "ser_from_opt_bool"
+    )]
     is_operator: Option<bool>,
     organization_name: String,
     attribution_url: Option<String>,
@@ -758,7 +761,8 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> 
         &model.comments,
         &model.equipments,
     )?;
-    write::write_trips(path, &model)?;
+    let gtfs_trips = write::write_trips(path, &model)?;
+    write::write_attributions(path, &model.companies, gtfs_trips)?;
     write::write_routes(path, &model, extend_route_type)?;
     write::write_stop_extensions(path, &model.stop_points, &model.stop_areas)?;
     write::write_stop_times(
