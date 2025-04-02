@@ -12,6 +12,7 @@ The resulting GTFS feed is composed of the following objects:
 * [trips](#tripstxt)
 * [stop_times](#stop_timestxt)
 * [calendar_dates](#calendar_datestxt): only this file is provided instead of the calendar.txt file.
+* [attributions](#attributionstxt)
 
 The following additional files are generated only if the corresponding objects are present in the NTFS.
 
@@ -165,3 +166,19 @@ If N complementary codes are specified for a stop, there will be N separate line
 | stop_id     | yes      | object_codes.txt | object_id     | `stop_id` of the stop having a complementary code specified (link to the [stops.txt](#stopstxt) file) |
 | system_name | yes      | object_codes.txt | object_system |                                                                                                       |
 | system_code | yes      | object_codes.txt | object_code   |                                                                                                       |
+
+### attributions.txt
+
+If all the trips on a route are operated by the same company, then the allocation applies to the route, otherwise it applies to each trip.
+
+| GTFS field        | Required               | NTFS file     | NTFS field        | Note                                      |
+| ----------------- | ---------------------- | ------------- | ----------------- | ----------------------------------------- |
+| route_id          | conditionally required | routes.txt    | route_id          | (link to the [routes.txt](#routestxt) (1) |
+| trip_id           | conditionally required | trips.txt     | trip_id           | (link to the [trips.txt](#tripstxt) (1)   |
+| is_operator       | yes                    | companies.txt |                   | `1`                                       |
+| organization_name | yes                    | companies.txt | company_name      |                                           |
+| attribution_url   | no                     | companies.txt | company_url       |                                           |
+| attribution_email | no                     | companies.txt | company_mail      |                                           |
+| attribution_phone | no                     | companies.txt | company_phone     |                                           |
+
+(1) If either route_id or trip_id is defined, the other must be empty. 
