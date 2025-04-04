@@ -1,0 +1,2 @@
+attribution_id,route_id,trip_id,is_operator,organization_name,attribution_url,attribution_email,attribution_phone
+,line:1,,1,The Great Company,,,

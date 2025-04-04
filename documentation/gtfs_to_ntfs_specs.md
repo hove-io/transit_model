@@ -35,15 +35,18 @@ A third boolean CLI argument (`--read-as-line`) may affect the reading of the fi
 
 ## Mapping of objects between GTFS and NTFS
 
-| GTFS object | NTFS object(s)                              |
-| ----------- | ------------------------------------------- |
-| agency      | network and company                         |
-| route       | line, route, physical_mode, commercial_mode |
-| trip        | route and trip                              |
-| stop_time   | stop_time                                   |
-| transfer    | transfer                                    |
-| shape       | geometry                                    |
-| frequency   | trip and stop_time                          |
+| GTFS object    | NTFS object(s)                              |
+| -------------- | ------------------------------------------- |
+| agency         | network and company (1)                     |
+| route          | line, route, physical_mode, commercial_mode |
+| trip           | route and trip                              |
+| stop_time      | stop_time                                   |
+| transfer       | transfer                                    |
+| shape          | geometry                                    |
+| frequency      | trip and stop_time                          |
+| attributions   | company (1)                                 |
+
+(1) If the `attributions` file is present, it will override the agency file to feed companies
 
 ## Detailed mapping of objects
 
@@ -90,6 +93,7 @@ immediately with an error.
 | companies.txt | company_name  | Required   | agency.txt | agency_name  |                                                          |
 | companies.txt | company_url   | Optional   | agency.txt | agency_lang  |                                                          |
 | companies.txt | company_phone | Optional   | agency.txt | agency_phone |                                                          |
+| companies.txt | company_mail  | Optional   | agency.txt | agency_email |                                                          |
 
 **_"Source" complementary code :_**
 
@@ -100,6 +104,18 @@ A complementary `object_code` is added to each company with the following proper
 * `object_system` : the fixed value `source`
 * `object_code` : the unmodified value of `agency_id` (or `1` if the value is not provided as stated above)
 
+**_Taking into account the attribution file :_**
+
+Only attribution affecting either a route or a trip are taken into account.
+If an attribution (attribution.txt) is defined, and "is_operator=1", then a company is created and applied to all trips on the route, if a route identifier is provided, otherwise on the trip whose identifier is defined.
+
+| NTFS file     | NTFS field    | Constraint | GTFS file        | GTFS field        | Note                                                     |
+| ------------- | ------------- | ---------- | ---------------- | ----------------- | -------------------------------------------------------- |
+| companies.txt | company_id    | ID         |                  |                   | Auto-generated identifier                                |
+| companies.txt | company_name  | Required   | attributions.txt | organization_name |                                                          |
+| companies.txt | company_url   | Optional   | attributions.txt | attribution_url   |                                                          |
+| companies.txt | company_phone | Optional   | attributions.txt | attribution_phone |                                                          |
+| companies.txt | company_mail  | Optional   | attributions.txt | attribution_email |                                                          |
 
 ### Reading stops.txt
 

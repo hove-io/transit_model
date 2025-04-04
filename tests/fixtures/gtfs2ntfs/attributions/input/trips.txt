@@ -1,0 +1,6 @@
+route_id,service_id,trip_id
+route:2,service:1,trip:3
+route:2,service:1,trip:4
+route:3,service:2,trip:5
+route:3,service:2,trip:6
+route:3,service:2,with_no_stop_times

@@ -107,7 +107,7 @@ where
     if collection.is_empty() {
         return Ok(());
     }
-    info!("Writing {}", file);
+    info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
@@ -132,7 +132,7 @@ where
     if collection.is_empty() {
         return Ok(());
     }
-    info!("Writing {}", file);
+    info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;

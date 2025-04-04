@@ -34,8 +34,9 @@ pub fn write_feed_infos(
     collections: &Collections,
     current_datetime: DateTime<FixedOffset>,
 ) -> Result<()> {
-    info!("Writing feed_infos.txt");
-    let path = path.join("feed_infos.txt");
+    let file = "feed_infos.txt";
+    info!(file_name = %file, "Writing");
+    let path = path.join(file);
     let mut feed_infos = collections.feed_infos.clone();
     feed_infos.insert(
         "feed_creation_date".to_string(),
@@ -80,9 +81,12 @@ pub fn write_vehicle_journeys_and_stop_times(
     stop_time_headsigns: &HashMap<(String, u32), String>,
     stop_time_ids: &HashMap<(String, u32), String>,
 ) -> Result<()> {
-    info!("Writing trips.txt and stop_times.txt");
-    let trip_path = path.join("trips.txt");
-    let stop_times_path = path.join("stop_times.txt");
+    let trip = "trips.txt";
+    let stop_times = "stop_times.txt";
+    info!(file_name = %trip, file_name = %stop_times, "Writing");
+
+    let trip_path = path.join(trip);
+    let stop_times_path = path.join(stop_times);
     let mut vj_wtr = csv::Writer::from_path(&trip_path)
         .with_context(|| format!("Error reading {:?}", trip_path))?;
     let mut st_wtr = csv::Writer::from_path(&stop_times_path)
@@ -144,7 +148,7 @@ fn do_write_fares_v1(
     builder.delimiter(b';');
     builder.has_headers(false);
 
-    info!("Writing {}", file_prices);
+    info!(file_name = %file_prices, "Writing");
     let path = base_path.join(file_prices);
     let mut prices_wtr = builder
         .from_path(&path)
@@ -160,7 +164,7 @@ fn do_write_fares_v1(
 
     builder.has_headers(true);
 
-    info!("Writing {}", file_od_fares);
+    info!(file_name = %file_od_fares, "Writing");
     let path = base_path.join(file_od_fares);
     let mut od_fares_wtr = builder
         .from_path(&path)
@@ -191,7 +195,7 @@ fn do_write_fares_v1(
         return Ok(());
     }
 
-    info!("Writing {}", file_fares);
+    info!(file_name = %file_fares, "Writing");
     let path = base_path.join(file_fares);
     let mut fares_wtr = builder
         .from_path(&path)
@@ -553,7 +557,7 @@ pub fn write_stops(
         Ok(())
     }
     let file = "stops.txt";
-    info!("Writing {}", file);
+    info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
@@ -684,10 +688,12 @@ pub fn write_comments(path: &path::Path, collections: &Collections) -> Result<()
     if collections.comments.is_empty() {
         return Ok(());
     }
-    info!("Writing comments.txt and comment_links.txt");
+    let comments = "comments.txt";
+    let comment_links = "comment_links.txt";
+    info!(file_name = %comments, file_name = %comment_links, "Writing");
 
-    let comments_path = path.join("comments.txt");
-    let comment_links_path = path.join("comment_links.txt");
+    let comments_path = path.join(comments);
+    let comment_links_path = path.join(comment_links);
 
     let mut c_wtr = csv::Writer::from_path(&comments_path)
         .with_context(|| format!("Error reading {:?}", comments_path))?;
@@ -748,10 +754,12 @@ pub fn write_booking_rules(path: &path::Path, collections: &Collections) -> Resu
     if collections.booking_rules.is_empty() {
         return Ok(());
     }
-    info!("Writing booking_rules.txt and booking_rule_links.txt");
+    let booking_rules = "booking_rules.txt";
+    let booking_rule_links = "booking_rule_links.txt";
+    info!(file_name = %booking_rules, file_name = %booking_rule_links, "Writing");
 
-    let booking_rules_path = path.join("booking_rules.txt");
-    let booking_rule_links_path = path.join("booking_rule_links.txt");
+    let booking_rules_path = path.join(booking_rules);
+    let booking_rule_links_path = path.join(booking_rule_links);
 
     let mut c_wtr = csv::Writer::from_path(&booking_rules_path)
         .with_context(|| format!("Error reading {:?}", booking_rules_path))?;
@@ -823,9 +831,10 @@ pub fn write_codes(path: &path::Path, collections: &Collections) -> Result<()> {
         return Ok(());
     }
 
-    info!("Writing object_codes.txt");
+    let file = "object_codes.txt";
+    info!(file_name = %file, "Writing");
 
-    let path = path.join("object_codes.txt");
+    let path = path.join(file);
 
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
@@ -882,9 +891,10 @@ pub fn write_object_properties(path: &path::Path, collections: &Collections) -> 
         return Ok(());
     }
 
-    info!("Writing object_properties.txt");
+    let file = "object_properties.txt";
+    info!(file_name = %file, "Writing");
 
-    let path = path.join("object_properties.txt");
+    let path = path.join(file);
 
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
