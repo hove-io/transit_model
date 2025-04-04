@@ -26,6 +26,7 @@ use tracing::info;
 #[derive(Deserialize, Debug)]
 struct ConfigDataset {
     dataset_id: String,
+    description: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -51,6 +52,7 @@ struct Config {
 ///     },
 ///     "dataset": {
 ///         "dataset_id": "dataset-id"
+///         "description": "datasource_name"
 ///     },
 ///     "feed_infos": {
 ///         "feed_publisher_name": "The Great Data Publisher",
@@ -79,7 +81,11 @@ pub fn read_config<P: AsRef<path::Path>>(
         let config: Config = serde_json::from_reader(json_config_file)?;
 
         contributor = config.contributor;
-        dataset = objects::Dataset::new(config.dataset.dataset_id, contributor.id.clone());
+        dataset = objects::Dataset::new(
+            config.dataset.dataset_id,
+            contributor.id.clone(),
+            config.dataset.description.clone(),
+        );
         if let Some(config_feed_infos) = config.feed_infos {
             feed_infos = config_feed_infos;
         }

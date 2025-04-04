@@ -1,0 +1,6 @@
+from_stop_id,to_stop_id,min_transfer_time,real_min_transfer_time,equipment_id
+ME:stop:11,ME:stop:61,60,60,
+ME:stop:52,ME:stop:52,0,120,
+ME:stop:52,ME:stop:53,0,120,
+ME:stop:53,ME:stop:52,0,120,
+ME:stop:53,ME:stop:53,0,120,

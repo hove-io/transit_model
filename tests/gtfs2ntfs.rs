@@ -48,6 +48,38 @@ fn test_gtfs() {
 }
 
 #[test]
+fn test_gtfs_with_description() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./tests/fixtures/gtfs";
+        let (contributor, dataset, feed_infos) = read_config(Some(
+            "./tests/fixtures/gtfs2ntfs/config_with_description.json",
+        ))
+        .unwrap();
+        let mut prefix_conf = PrefixConfiguration::default();
+        prefix_conf.set_data_prefix("ME");
+        prefix_conf.set_schedule_subprefix("WINTER");
+        let configuration = transit_model::gtfs::Configuration {
+            dataset,
+            contributor,
+            feed_infos,
+            prefix_conf: Some(prefix_conf),
+            on_demand_transport: false,
+            on_demand_transport_comment: None,
+            read_as_line: false,
+        };
+        let model = transit_model::gtfs::Reader::new(configuration)
+            .parse(input_dir)
+            .unwrap();
+        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            path,
+            None,
+            "./tests/fixtures/gtfs2ntfs/full_output_with_description",
+        );
+    });
+}
+
+#[test]
 fn test_minimal_gtfs() {
     test_in_tmp_dir(|path| {
         let input_dir = "./tests/fixtures/gtfs2ntfs/minimal/input";
