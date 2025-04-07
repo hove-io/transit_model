@@ -1,2 +1,2 @@
-company_id,company_name,company_address,company_url,company_mail,company_phone
-company:kept,The Great Company,,,,
+company_id,company_name,company_address,company_url,company_mail,company_phone,role
+company:kept,The Great Company,,,,,authority

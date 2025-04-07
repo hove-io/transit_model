@@ -314,17 +314,18 @@ pub fn write_attributions(
     companies: &CollectionWithId<objects::Company>,
     gtfs_trips: HashMap<String, Vec<&VehicleJourney>>,
 ) -> Result<()> {
-    let attributions = gtfs_trips
-        .iter()
-        .filter_map(|(route_id, vjs)| {
-            let company_ids = vjs
-                .iter()
-                .map(|vj| vj.company_id.clone())
-                .collect::<HashSet<_>>();
-            if company_ids.len() == 1 {
-                let company_id = company_ids.iter().next().expect("An error occurred");
-                companies.get(company_id).map(|company| {
-                    vec![Attribution {
+    let mut attributions: Vec<Attribution> = Vec::new();
+
+    for (route_id, vjs) in gtfs_trips {
+        let company_ids = vjs
+            .iter()
+            .map(|vj| vj.company_id.clone())
+            .collect::<HashSet<_>>();
+        if company_ids.len() == 1 {
+            let company_id = company_ids.iter().next().expect("An error occurred");
+            if let Some(company) = companies.get(company_id) {
+                if company.role == objects::CompanyRole::Operator {
+                    attributions.push(Attribution {
                         route_id: Some(route_id.clone()),
                         is_operator: Some(true),
                         organization_name: company.name.clone(),
@@ -332,13 +333,14 @@ pub fn write_attributions(
                         attribution_email: company.mail.clone(),
                         attribution_phone: company.phone.clone(),
                         ..Default::default()
-                    }]
-                })
-            } else {
-                let attributions_from_vjs = vjs
-                    .iter()
-                    .filter_map(|vj| {
-                        companies.get(&vj.company_id).map(|company| Attribution {
+                    });
+                }
+            }
+        } else {
+            for vj in vjs {
+                if let Some(company) = companies.get(&vj.company_id) {
+                    if company.role == objects::CompanyRole::Operator {
+                        attributions.push(Attribution {
                             trip_id: Some(vj.id.clone()),
                             is_operator: Some(true),
                             organization_name: company.name.clone(),
@@ -346,16 +348,12 @@ pub fn write_attributions(
                             attribution_email: company.mail.clone(),
                             attribution_phone: company.phone.clone(),
                             ..Default::default()
-                        })
-                    })
-                    .collect();
-                Some(attributions_from_vjs)
+                        });
+                    }
+                }
             }
-        })
-        .fold(Vec::new(), |mut attributions, mut attribution| {
-            attributions.append(&mut attribution);
-            attributions
-        });
+        }
+    }
 
     if !attributions.is_empty() {
         let file = "attributions.txt";

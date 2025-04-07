@@ -20,9 +20,9 @@ use crate::{
     file_handler::FileHandler,
     model::Collections,
     objects::{
-        self, Availability, Comment, Company, Coord, KeysValues, LinksT, ObjectType, Pathway,
-        PropertiesMap, StopLocation, StopPoint, StopTimePrecision, StopType, Time, TransportType,
-        VehicleJourney,
+        self, Availability, Comment, Company, CompanyRole, Coord, KeysValues, LinksT, ObjectType,
+        Pathway, PropertiesMap, StopLocation, StopPoint, StopTimePrecision, StopType, Time,
+        TransportType, VehicleJourney,
     },
     parser::{read_collection, read_objects, read_objects_loose},
     serde_utils::de_with_empty_default,
@@ -90,6 +90,7 @@ impl From<Agency> for objects::Company {
             mail: agency.email,
             phone: agency.phone,
             codes,
+            ..Default::default()
         }
     }
 }
@@ -1322,6 +1323,7 @@ impl AttributionRule {
                 url: self.attribution_url.clone(),
                 mail: self.attribution_email.clone(),
                 phone: self.attribution_phone.clone(),
+                role: CompanyRole::Operator,
                 ..Default::default()
             };
             companies.push(company)?;

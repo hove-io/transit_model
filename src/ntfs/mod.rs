@@ -535,7 +535,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.18.0".to_string()),
+                    ("ntfs_version".to_string(), "0.19.0".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections
@@ -601,6 +601,7 @@ mod tests {
                 mail: Some("contact@foo.fr".to_string()),
                 phone: Some("0123456789".to_string()),
                 codes: BTreeSet::new(),
+                ..Default::default()
             },
             Company {
                 id: "OIF:102".to_string(),
@@ -610,6 +611,7 @@ mod tests {
                 mail: None,
                 phone: None,
                 codes: BTreeSet::new(),
+                ..Default::default()
             },
         ]);
     }
