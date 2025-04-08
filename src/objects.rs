@@ -1445,6 +1445,13 @@ impl WithId for Calendar {
         }
     }
 }
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum CompanyRole {
+    #[default]
+    Authority,
+    Operator,
+}
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct Company {
@@ -1462,6 +1469,8 @@ pub struct Company {
     pub phone: Option<String>,
     #[serde(skip)]
     pub codes: KeysValues,
+    #[serde(default)]
+    pub role: CompanyRole,
 }
 
 impl_id!(Company);
@@ -1477,6 +1486,7 @@ impl Default for Company {
             mail: None,
             phone: None,
             codes: BTreeSet::new(),
+            role: CompanyRole::Authority,
         }
     }
 }

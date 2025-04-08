@@ -1,5 +1,0 @@
-attribution_id,route_id,trip_id,is_operator,organization_name,attribution_url,attribution_email,attribution_phone
-,MFDI:C02060,,1,Keolis Roissy Pays de France Ouest,,,
-,MFDI:C02491,,1,Transdev Boucle des Lys,,,
-,MFDI:C02513,,1,Keolis Vélizy Vallée de la Bièvre,,,
-,MFDI:C01376,,1,RATP,,,
