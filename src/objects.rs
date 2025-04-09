@@ -1469,7 +1469,7 @@ pub struct Company {
     pub phone: Option<String>,
     #[serde(skip)]
     pub codes: KeysValues,
-    #[serde(default)]
+    #[serde(default, rename = "company_role")]
     pub role: CompanyRole,
 }
 
