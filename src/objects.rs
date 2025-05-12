@@ -293,7 +293,7 @@ impl WithId for Dataset {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Clone, Derivative, Serialize, Deserialize, Debug, Eq, PartialEq)]
 #[derivative(Default)]
 pub struct CommercialMode {
     #[derivative(Default(value = "\"default_commercial_mode\".into()"))]
