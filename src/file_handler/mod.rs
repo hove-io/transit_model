@@ -111,7 +111,7 @@ impl<'a, R> FileHandler for &'a mut ZipHandler<R>
 where
     R: Seek + Read,
 {
-    type Reader = zip::read::ZipFile<'a>;
+    type Reader = zip::read::ZipFile<'a, R>;
     fn get_file_if_exists(self, name: &str) -> Result<(Option<Self::Reader>, PathBuf)> {
         let p = self.archive_path.join(name);
         match self.index_by_name.get(name) {

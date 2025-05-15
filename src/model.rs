@@ -39,6 +39,8 @@ pub const AIR_PHYSICAL_MODE: &str = "Air";
 pub const BIKE_PHYSICAL_MODE: &str = "Bike";
 /// Physical mode for Bike Sharing Service
 pub const BIKE_SHARING_SERVICE_PHYSICAL_MODE: &str = "BikeSharingService";
+/// Physical mode for Boat
+pub const BOAT_PHYSICAL_MODE: &str = "Boat";
 /// Physical mode for Bus
 pub const BUS_PHYSICAL_MODE: &str = "Bus";
 /// Physical mode for Rapid Bus
@@ -59,6 +61,12 @@ pub const LONG_DISTANCE_TRAIN_PHYSICAL_MODE: &str = "LongDistanceTrain";
 pub const METRO_PHYSICAL_MODE: &str = "Metro";
 /// Physical mode for Rapid Transit
 pub const RAPID_TRANSIT_PHYSICAL_MODE: &str = "RapidTransit";
+/// Physical mode for Rail Shuttle
+pub const RAIL_SHUTTLE_PHYSICAL_MODE: &str = "RailShuttle";
+/// Physical mode for Shuttle
+pub const SHUTTLE_PHYSICAL_MODE: &str = "Shuttle";
+/// Physical mode for Suspended CableCar
+pub const SUSPENDED_CABLE_CAR_PHYSICAL_MODE: &str = "SuspendedCableCar";
 /// Physical mode for Taxi
 pub const TAXI_PHYSICAL_MODE: &str = "Taxi";
 /// Physical mode for Train
