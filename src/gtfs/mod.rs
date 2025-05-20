@@ -44,7 +44,8 @@ use typed_index_collection::CollectionWithId;
 #[cfg(all(feature = "gtfs", feature = "parser"))]
 pub use read::{
     apply_attribution_rules, manage_frequencies, manage_pathways, manage_shapes, manage_stop_times,
-    read_agency, read_attributions, read_routes, read_stops, read_transfers, EquipmentList,
+    read_agency, read_attributions, read_location_groups, read_routes, read_stops, read_transfers,
+    EquipmentList,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -203,15 +204,21 @@ fn default_true_bool() -> bool {
     true
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
     trip_id: String,
     arrival_time: Option<Time>,
     departure_time: Option<Time>,
     start_pickup_drop_off_window: Option<Time>,
     end_pickup_drop_off_window: Option<Time>,
-    #[serde(deserialize_with = "de_without_slashes")]
-    stop_id: String,
+    #[serde(deserialize_with = "de_option_without_slashes")]
+    stop_id: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "de_option_without_slashes",
+        skip_serializing
+    )]
+    location_group_id: Option<String>,
     stop_sequence: u32,
     #[serde(deserialize_with = "de_with_empty_default", default)]
     pickup_type: u8,
@@ -227,6 +234,17 @@ struct StopTime {
     timepoint: bool,
     pickup_booking_rule_id: Option<String>,
     drop_off_booking_rule_id: Option<String>,
+}
+
+impl StopTime {
+    fn is_zonal_on_demand_transport(&self) -> bool {
+        self.location_group_id.is_some()
+            && self.stop_id.is_none()
+            && self.start_pickup_drop_off_window.is_some()
+            && self.end_pickup_drop_off_window.is_some()
+            && [1, 2].contains(&self.pickup_type)
+            && [1, 2].contains(&self.drop_off_type)
+    }
 }
 
 #[derive(Derivative, Serialize)]
@@ -367,6 +385,18 @@ impl Hash for Attribution {
     }
 }
 
+// #[derive(Debug, Deserialize)]
+// struct LocationGroup {
+//     location_group_id: String,
+//     location_group_name: Option<String>,
+// }
+
+#[derive(Debug, Deserialize)]
+struct LocationGroupStop {
+    location_group_id: String,
+    stop_id: String,
+}
+
 fn read_file_handler<H>(file_handler: &mut H, configuration: Configuration) -> Result<Model>
 where
     for<'a> &'a mut H: FileHandler,
@@ -416,11 +446,14 @@ where
 
     read::read_routes(file_handler, &mut collections, read_as_line)?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
+
+    let location_groups = read::read_location_groups(file_handler, &collections.stop_points)?;
     read::manage_stop_times(
         &mut collections,
         file_handler,
         on_demand_transport,
         on_demand_transport_comment,
+        &location_groups,
     )?;
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
