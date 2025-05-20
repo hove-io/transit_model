@@ -62,16 +62,17 @@ fn test_platforms_preserving() {
 
 #[test]
 fn test_ntfs2gtfs() {
-    let output_dir = TempDir::new().expect("create temp dir failed");
-    Command::cargo_bin("ntfs2gtfs")
-        .expect("Failed to find binary 'ntfs2gtfs'")
-        .arg("--input")
-        .arg("tests/fixtures/input/")
-        .arg("--output")
-        .arg(output_dir.path().to_str().unwrap())
-        .assert()
-        .success();
-    assert!(output_dir.path().join("agency.txt").is_file())
+    test_in_tmp_dir(|path| {
+        Command::cargo_bin("ntfs2gtfs")
+            .expect("Failed to find binary 'ntfs2gtfs'")
+            .arg("--input")
+            .arg("tests/fixtures/input/")
+            .arg("--output")
+            .arg(path.to_str().unwrap())
+            .assert()
+            .success();
+        compare_output_dir_with_expected(path, None, "./tests/fixtures/output");
+    });
 }
 
 #[test]

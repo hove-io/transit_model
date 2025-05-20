@@ -772,7 +772,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> 
         &model.stop_time_headsigns,
     )?;
     write::write_booking_rules(path, &model.booking_rules)?;
-    write::write_shapes(path, &model.geometries)?;
+    write::write_shapes(path, &model.geometries, &model.vehicle_journeys)?;
     write_collection_with_id(path, "pathways.txt", &model.pathways)?;
     write_collection_with_id(path, "levels.txt", &model.levels)?;
 
