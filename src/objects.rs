@@ -983,7 +983,7 @@ impl GetObjectType for StopTime {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum StopTimePrecision {
     #[serde(rename = "0")]
     Exact,

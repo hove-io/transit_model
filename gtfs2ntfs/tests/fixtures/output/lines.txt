@@ -1,0 +1,2 @@
+line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+760,,Rabattement 2025,,,,,,Padam Mobility,Bus,,08:35:00,10:37:00
