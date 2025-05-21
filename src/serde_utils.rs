@@ -311,7 +311,7 @@ where
     S: serde::Serializer,
 {
     let wkt = geometry.to_wkt();
-    serializer.serialize_str(&format!("{}", wkt.item))
+    serializer.serialize_str(&format!("{}", wkt))
 }
 
 /// deserialyse optional String
