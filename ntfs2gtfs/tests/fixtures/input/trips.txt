@@ -1,4 +1,4 @@
 route_id,service_id,trip_id,company_id,physical_mode_id,dataset_id,trip_property_id,geometry_id
-route:1,service:1,trip:1,company:kept,Metro,dataset:kept,,
+route:1,service:1,trip:1,company:kept,Metro,dataset:kept,,linestring_for_trip
 route:2,service:1,trip:2,company:removed,Metro,dataset:removed,,
 route:2,service:1,trip:3,company:kept,Metro,dataset:kept,,
