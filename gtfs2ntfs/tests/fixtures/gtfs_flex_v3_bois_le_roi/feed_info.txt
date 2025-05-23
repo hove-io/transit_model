@@ -1,0 +1,2 @@
+feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
+Padam Mobility,https://www.padam-mobility.com,fra,20240506,20240518,2024-05-06 07:19:43+00:00

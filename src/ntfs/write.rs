@@ -97,7 +97,7 @@ pub fn write_vehicle_journeys_and_stop_times(
             .with_context(|| format!("Error reading {:?}", trip_path))?;
 
         for st in &vj.stop_times {
-            let precision = st.precision.clone();
+            let precision = st.precision;
             st_wtr
                 .serialize(StopTime {
                     stop_id: stop_points[st.stop_point_idx].id.clone(),
