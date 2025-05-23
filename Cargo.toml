@@ -53,7 +53,7 @@ minidom_ext = { git = "https://github.com/hove-io/minidom_ext", tag="v1"}
 minidom_writer = { git = "https://github.com/hove-io/minidom_writer", tag = "v1"}
 num-traits = "0.2"
 pretty_assertions = "1"
-proj = { version = "0.27", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
+proj = { version = "0.30", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
 relational_types = { git = "https://github.com/hove-io/relational_types", tag = "v2"}
 rust_decimal = "1"
 serde = { version = "1", features = ["derive"] }
