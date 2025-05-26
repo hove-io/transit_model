@@ -247,15 +247,19 @@ impl StopTime {
     }
 }
 
-#[derive(Derivative, Serialize)]
+#[derive(Derivative, Serialize, Deserialize)]
 #[derivative(Default)]
 enum BookingType {
     #[derivative(Default)]
     #[serde(rename = "0")]
     RealTime,
+    #[serde(rename = "1")]
+    SameDayWithPriorNotice,
+    #[serde(rename = "2")]
+    UpToPreviousDays,
 }
 
-#[derive(Derivative, Serialize)]
+#[derive(Derivative, Serialize, Deserialize)]
 #[derivative(Default)]
 struct BookingRule {
     #[serde(rename = "booking_rule_id")]
@@ -275,6 +279,19 @@ impl From<&objects::BookingRule> for BookingRule {
             phone_number: obj.phone.clone(),
             info_url: obj.info_url.clone(),
             booking_url: obj.booking_url.clone(),
+            ..Default::default()
+        }
+    }
+}
+
+impl From<BookingRule> for objects::BookingRule {
+    fn from(obj: BookingRule) -> objects::BookingRule {
+        objects::BookingRule {
+            id: obj.id,
+            message: obj.message,
+            phone: obj.phone_number,
+            info_url: obj.info_url,
+            booking_url: obj.booking_url,
             ..Default::default()
         }
     }
@@ -385,12 +402,6 @@ impl Hash for Attribution {
     }
 }
 
-// #[derive(Debug, Deserialize)]
-// struct LocationGroup {
-//     location_group_id: String,
-//     location_group_name: Option<String>,
-// }
-
 #[derive(Debug, Deserialize)]
 struct LocationGroupStop {
     location_group_id: String,
@@ -448,6 +459,7 @@ where
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
 
     let location_groups = read::read_location_groups(file_handler, &collections.stop_points)?;
+    collections.booking_rules = read::read_booking_rules(file_handler)?;
     read::manage_stop_times(
         &mut collections,
         file_handler,

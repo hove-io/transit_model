@@ -1,0 +1,10 @@
+object_id,object_type,booking_rule_id
+49947_760_0_0,trip,standard
+49947_760_0_1,trip,standard
+45976_760_0_0,trip,standard
+45976_760_0_1,trip,standard
+51977_760_0_0,trip,standard
+51977_760_0_1,trip,standard
+51977_760_0_2,trip,standard
+51977_760_0_3,trip,standard
+51977_760_0_4,trip,standard

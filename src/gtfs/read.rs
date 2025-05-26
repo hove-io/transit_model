@@ -13,8 +13,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{
-    Agency, Attribution, DirectionType, LocationGroupStop, Route, RouteType, Shape, Stop,
-    StopLocationType, StopTime, Transfer, TransferType, Trip,
+    Agency, Attribution, BookingRule, DirectionType, LocationGroupStop, Route, RouteType, Shape,
+    Stop, StopLocationType, StopTime, Transfer, TransferType, Trip,
 };
 use crate::{
     file_handler::FileHandler,
@@ -435,37 +435,66 @@ where
             .companies
             .get_idx(&collections.vehicle_journeys[vj_idx].company_id);
 
+        let mut booking_rule_found = false;
+
         let mut sequence = stop_times.first().map_or(0, |st| st.stop_sequence);
         for (stop_time, st_values) in stop_times.iter().zip(st_values) {
             if stop_time.is_zonal_on_demand_transport() {
                 // Handle zonal on-demand transport stop times
-                if let Some(location_group_id) = stop_time.location_group_id.as_deref() {
-                    if let Some(stop_point_idxs) = location_groups.get(location_group_id) {
-                        for stop_point_idx in stop_point_idxs {
-                            collections
-                                .vehicle_journeys
-                                .index_mut(vj_idx)
-                                .stop_times
-                                .push(objects::StopTime {
-                                    stop_point_idx: *stop_point_idx,
-                                    sequence,
-                                    arrival_time: st_values.arrival_time,
-                                    departure_time: st_values.departure_time,
-                                    start_pickup_drop_off_window: st_values
-                                        .start_pickup_drop_off_window,
-                                    end_pickup_drop_off_window: st_values
-                                        .end_pickup_drop_off_window,
-                                    boarding_duration: 0,
-                                    alighting_duration: 0,
-                                    pickup_type: stop_time.pickup_type,
-                                    drop_off_type: stop_time.drop_off_type,
-                                    local_zone_id: stop_time.local_zone_id,
-                                    precision: Some(st_values.precision),
-                                });
-                            sequence += 1;
-                        }
-                    }
+                let Some(location_group_id) = stop_time.location_group_id.as_deref() else {
+                    continue;
+                };
+
+                let Some(stop_point_idxs) = location_groups.get(location_group_id) else {
+                    continue;
+                };
+
+                // Try to find the first booking rule associated with the stop time in
+                // pickup_booking_rule_id or drop_off_booking_rule_id
+                let booking_rule_id = if !booking_rule_found {
+                    [
+                        &stop_time.pickup_booking_rule_id,
+                        &stop_time.drop_off_booking_rule_id,
+                    ]
+                    .iter()
+                    .filter_map(|rule_id| rule_id.as_deref())
+                    .find_map(|rule_id| {
+                        collections
+                            .booking_rules
+                            .get(rule_id)
+                            .map(|rule| rule.id.clone())
+                    })
+                } else {
+                    None
+                };
+
+                let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
+
+                if let Some(rule_id) = booking_rule_id {
+                    vj.booking_rule_links.insert(rule_id);
+                    booking_rule_found = true;
                 }
+
+                // Add stop times for each stop point in the location group
+                vj.stop_times
+                    .extend(stop_point_idxs.iter().map(|&stop_point_idx| {
+                        let st = objects::StopTime {
+                            stop_point_idx,
+                            sequence,
+                            arrival_time: st_values.arrival_time,
+                            departure_time: st_values.departure_time,
+                            start_pickup_drop_off_window: st_values.start_pickup_drop_off_window,
+                            end_pickup_drop_off_window: st_values.end_pickup_drop_off_window,
+                            boarding_duration: 0,
+                            alighting_duration: 0,
+                            pickup_type: stop_time.pickup_type,
+                            drop_off_type: stop_time.drop_off_type,
+                            local_zone_id: stop_time.local_zone_id,
+                            precision: Some(st_values.precision),
+                        };
+                        sequence += 1;
+                        st
+                    }));
             }
 
             if let Some(stop_id) = stop_time.stop_id.as_deref() {
@@ -537,6 +566,13 @@ where
                     );
                 }
             }
+        }
+
+        if !booking_rule_found {
+            warn!(
+                "No booking rule found for trip {}",
+                collections.vehicle_journeys[vj_idx].id
+            );
         }
     }
 
@@ -1589,6 +1625,20 @@ where
         group.push(stop_point_idx);
     }
     Ok(location_groups)
+}
+
+pub fn read_booking_rules<H>(file_handler: &mut H) -> Result<CollectionWithId<objects::BookingRule>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let booking_rules: Vec<BookingRule> = read_objects(file_handler, "booking_rules.txt", false)?;
+
+    let ntm_booking_rules: Vec<objects::BookingRule> = booking_rules
+        .into_iter()
+        .map(objects::BookingRule::from)
+        .collect();
+
+    Ok(CollectionWithId::new(ntm_booking_rules)?)
 }
 
 #[cfg(test)]
