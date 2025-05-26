@@ -32,9 +32,9 @@
 
 use crate::model::{Collections, Model};
 use crate::objects::{
-    Calendar, CommercialMode, Date, Equipment, Geometry, Line, Network, Occupancy, OccupancyStatus,
-    PhysicalMode, Route, StopArea, StopPoint, StopTime, StopTimePrecision, Time, Transfer,
-    TripProperty, ValidityPeriod, VehicleJourney,
+    Calendar, CommercialMode, Company, Contributor, Dataset, Date, Equipment, Geometry, Line,
+    Network, Occupancy, OccupancyStatus, PhysicalMode, Route, StopArea, StopPoint, StopTime,
+    StopTimePrecision, Time, Transfer, TripProperty, ValidityPeriod, VehicleJourney,
 };
 use chrono::NaiveDateTime;
 use chrono_tz;
@@ -399,6 +399,54 @@ impl ModelBuilder {
             min_transfer_time: Some(duration),
             real_min_transfer_time: Some(duration),
             equipment_id: None,
+        });
+        self
+    }
+
+    /// Add a new contributor to the model
+    pub fn contributor<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut Contributor),
+    {
+        self.collections.contributors.get_or_create_with(id, || {
+            let mut c = Contributor {
+                id: id.to_owned(),
+                ..Default::default()
+            };
+            initer(&mut c);
+            c
+        });
+        self
+    }
+
+    /// Add a new dataset to the model
+    pub fn dataset<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut Dataset),
+    {
+        self.collections.datasets.get_or_create_with(id, || {
+            let mut ds = Dataset {
+                id: id.to_owned(),
+                ..Default::default()
+            };
+            initer(&mut ds);
+            ds
+        });
+        self
+    }
+
+    /// Add a new company to the model
+    pub fn company<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut Company),
+    {
+        self.collections.companies.get_or_create_with(id, || {
+            let mut c = Company {
+                id: id.to_owned(),
+                ..Default::default()
+            };
+            initer(&mut c);
+            c
         });
         self
     }
@@ -971,6 +1019,62 @@ impl VehicleJourneyBuilder<'_> {
         self
     }
 
+    /// Set the dataset (dataset_id) of the vj
+    ///
+    /// ```
+    /// # use transit_model::objects::Date;
+    ///
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///        .dataset("d1", |dataset| {
+    ///             dataset.id = "d1".to_owned();
+    ///          })
+    ///        .vj("toto", |vj_builder| {
+    ///            vj_builder.dataset("d1");
+    ///        })
+    ///        .build();
+    /// # }
+    /// ```
+    pub fn dataset(self, id: &str) -> Self {
+        {
+            let vj = &mut self
+                .model
+                .collections
+                .vehicle_journeys
+                .index_mut(self.vj_idx);
+            id.clone_into(&mut vj.dataset_id);
+        }
+        self
+    }
+
+    /// Set the company (company_id) of the vj
+    ///
+    /// ```
+    /// # use transit_model::objects::Date;
+    ///
+    /// # fn main() {
+    /// let model = transit_model::ModelBuilder::default()
+    ///        .company("c1", |company| {
+    ///             company.id = "c1".to_owned();
+    ///          })
+    ///        .vj("toto", |vj_builder| {
+    ///            vj_builder.company("d1");
+    ///        })
+    ///        .build();
+    /// # }
+    /// ```
+    pub fn company(self, id: &str) -> Self {
+        {
+            let vj = &mut self
+                .model
+                .collections
+                .vehicle_journeys
+                .index_mut(self.vj_idx);
+            id.clone_into(&mut vj.company_id);
+        }
+        self
+    }
+
     /// Set the calendar (service_id) of the vj
     ///
     /// ```
@@ -1325,5 +1429,112 @@ mod test {
         assert_eq!(st2.pickup_type, 1u8);
         assert_eq!(st2.drop_off_type, 1u8);
         assert_eq!(st2.precision, Some(StopTimePrecision::Exact));
+    }
+
+    #[test]
+    fn dataset_model_creation() {
+        let model = ModelBuilder::default()
+            .dataset("d1", |dataset| {
+                dataset.id = "d1".to_owned();
+            })
+            .vj("toto", |vj| {
+                vj.dataset("d1").st("A", "10:00:00").st("B", "11:00:00");
+            })
+            .build();
+
+        assert_eq!(
+            model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
+            ["d1"]
+                .iter()
+                .map(|s| model.datasets.get_idx(s).unwrap())
+                .collect()
+        );
+        assert_eq!(
+            model.get_corresponding_from_idx(model.datasets.get_idx("d1").unwrap()),
+            ["toto"]
+                .iter()
+                .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
+                .collect()
+        );
+
+        assert_eq!(model.datasets.len(), 1);
+    }
+
+    #[test]
+    fn company_model_creation() {
+        let model = ModelBuilder::default()
+            .company("c1", |dataset| {
+                dataset.id = "c1".to_owned();
+            })
+            .vj("toto", |vj| {
+                vj.company("c1").st("A", "10:00:00").st("B", "11:00:00");
+            })
+            .build();
+
+        assert_eq!(
+            model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
+            ["c1"]
+                .iter()
+                .map(|s| model.companies.get_idx(s).unwrap())
+                .collect()
+        );
+        assert_eq!(
+            model.get_corresponding_from_idx(model.companies.get_idx("c1").unwrap()),
+            ["toto"]
+                .iter()
+                .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
+                .collect()
+        );
+
+        assert_eq!(model.companies.len(), 1);
+    }
+
+    #[test]
+    fn contributor_model_creation() {
+        let model = ModelBuilder::default()
+            .contributor("contrib1", |contrib| {
+                contrib.id = "c1".to_owned();
+            })
+            .dataset("d1", |dataset_initer| {
+                dataset_initer.id = "d1".to_owned();
+                dataset_initer.contributor_id = "contrib1".to_owned();
+            })
+            .vj("toto", |vj| {
+                vj.dataset("d1").st("A", "10:00:00").st("B", "11:00:00");
+            })
+            .build();
+
+        assert_eq!(
+            model.get_corresponding_from_idx(model.vehicle_journeys.get_idx("toto").unwrap()),
+            ["d1"]
+                .iter()
+                .map(|s| model.datasets.get_idx(s).unwrap())
+                .collect()
+        );
+        assert_eq!(
+            model.get_corresponding_from_idx(model.datasets.get_idx("d1").unwrap()),
+            ["toto"]
+                .iter()
+                .map(|s| model.vehicle_journeys.get_idx(s).unwrap())
+                .collect()
+        );
+
+        assert_eq!(
+            model.get_corresponding_from_idx(model.datasets.get_idx("d1").unwrap()),
+            ["contrib1"]
+                .iter()
+                .map(|s| model.contributors.get_idx(s).unwrap())
+                .collect()
+        );
+
+        assert_eq!(
+            model.get_corresponding_from_idx(model.contributors.get_idx("contrib1").unwrap()),
+            ["d1"]
+                .iter()
+                .map(|s| model.datasets.get_idx(s).unwrap())
+                .collect()
+        );
+        assert_eq!(model.datasets.len(), 1);
+        assert_eq!(model.contributors.len(), 1);
     }
 }
