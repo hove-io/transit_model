@@ -620,7 +620,19 @@ enum StopTimeType<'a> {
     ZonalOnDemand(Vec<&'a StopTime>),
 }
 
-/// Groups stop times by type (regular or zonal on-demand)
+/// The group_stop_times_by_type function takes a slice of StopTime objects
+/// and groups them into contiguous segments based on whether each stop time
+/// is a "zonal on-demand transport" (ODT) or not.
+/// The function returns a vector of `StopTimeType` values,
+/// where each element represents a group of consecutive stop times of the same type.
+///
+/// eg: [regular_st1, regular_st2, zonal_odt_st1, zonal_odt_st2, regular_st3]
+/// will be grouped into:
+/// [
+///     StopTimeType::Regular(vec![&regular_st1, &regular_st2]),
+///     StopTimeType::ZonalOnDemand(vec![&zonal_odt_st1, &zonal_odt_st2]),
+///     StopTimeType::Regular(vec![&regular_st3]),
+/// ]
 fn group_stop_times_by_type(stop_times: &[StopTime]) -> Vec<StopTimeType> {
     let mut result = Vec::new();
     let mut current_group: Vec<&StopTime> = Vec::new();
