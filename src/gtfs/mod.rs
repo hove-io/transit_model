@@ -33,6 +33,7 @@ use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
+    convert::TryFrom,
     fmt,
     hash::{Hash, Hasher},
     path::Path,
@@ -211,7 +212,7 @@ struct StopTime {
     departure_time: Option<Time>,
     start_pickup_drop_off_window: Option<Time>,
     end_pickup_drop_off_window: Option<Time>,
-    #[serde(deserialize_with = "de_option_without_slashes")]
+    #[serde(default, deserialize_with = "de_option_without_slashes")]
     stop_id: Option<String>,
     #[serde(
         default,
@@ -284,16 +285,26 @@ impl From<&objects::BookingRule> for BookingRule {
     }
 }
 
-impl From<BookingRule> for objects::BookingRule {
-    fn from(obj: BookingRule) -> objects::BookingRule {
-        objects::BookingRule {
+impl TryFrom<BookingRule> for objects::BookingRule {
+    type Error = anyhow::Error;
+
+    fn try_from(obj: BookingRule) -> Result<objects::BookingRule, Self::Error> {
+        if obj.message.is_none()
+            && obj.phone_number.is_none()
+            && obj.info_url.is_none()
+            && obj.booking_url.is_none()
+        {
+            anyhow::bail!("Booking rule {} must have at least one of message, phone_number, info_url or booking_url set", obj.id)
+        }
+
+        Ok(objects::BookingRule {
             id: obj.id,
             message: obj.message,
             phone: obj.phone_number,
             info_url: obj.info_url,
             booking_url: obj.booking_url,
             ..Default::default()
-        }
+        })
     }
 }
 
@@ -839,4 +850,116 @@ pub fn write_to_zip<P: AsRef<std::path::Path>>(
     zip_to(input_tmp_dir.path(), path)?;
     input_tmp_dir.close()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_booking_rule_try_from_success_with_message() {
+        let booking_rule = BookingRule {
+            id: "br1".to_string(),
+            message: Some("Test message".to_string()),
+            phone_number: None,
+            info_url: None,
+            booking_url: None,
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br1");
+        assert_eq!(obj.message, Some("Test message".to_string()));
+        assert_eq!(obj.phone, None);
+        assert_eq!(obj.info_url, None);
+        assert_eq!(obj.booking_url, None);
+    }
+
+    #[test]
+    fn test_booking_rule_try_from_success_with_phone() {
+        let booking_rule = BookingRule {
+            id: "br2".to_string(),
+            message: None,
+            phone_number: Some("123456789".to_string()),
+            info_url: None,
+            booking_url: None,
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br2");
+        assert_eq!(obj.phone, Some("123456789".to_string()));
+    }
+
+    #[test]
+    fn test_booking_rule_try_from_success_with_info_url() {
+        let booking_rule = BookingRule {
+            id: "br3".to_string(),
+            message: None,
+            phone_number: None,
+            info_url: Some("http://info.url".to_string()),
+            booking_url: None,
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br3");
+        assert_eq!(obj.info_url, Some("http://info.url".to_string()));
+    }
+
+    #[test]
+    fn test_booking_rule_try_from_success_with_booking_url() {
+        let booking_rule = BookingRule {
+            id: "br4".to_string(),
+            message: None,
+            phone_number: None,
+            info_url: None,
+            booking_url: Some("http://booking.url".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br4");
+        assert_eq!(obj.booking_url, Some("http://booking.url".to_string()));
+    }
+
+    #[test]
+    fn test_booking_rule_try_from_success_with_multiple_fields() {
+        let booking_rule = BookingRule {
+            id: "br5".to_string(),
+            message: Some("msg".to_string()),
+            phone_number: Some("987654321".to_string()),
+            info_url: Some("http://info.url".to_string()),
+            booking_url: Some("http://booking.url".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br5");
+        assert_eq!(obj.message, Some("msg".to_string()));
+        assert_eq!(obj.phone, Some("987654321".to_string()));
+        assert_eq!(obj.info_url, Some("http://info.url".to_string()));
+        assert_eq!(obj.booking_url, Some("http://booking.url".to_string()));
+    }
+
+    #[test]
+    fn test_booking_rule_try_from_failure_all_none() {
+        let booking_rule = BookingRule {
+            id: "br6".to_string(),
+            message: None,
+            phone_number: None,
+            info_url: None,
+            booking_url: None,
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("Booking rule br6 must have at least one of message, phone_number, info_url or booking_url set"));
+    }
 }

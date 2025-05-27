@@ -569,7 +569,7 @@ pub fn write_stop_times(
             st_wtr
                 .serialize(StopTime {
                     stop_id: Some(stop_points[st.stop_point_idx].id.clone()),
-                    location_group_id: None,
+                    location_group_id: None, // arbitrary value, this field is not serialized in GTFS yet
                     trip_id: vj.id.clone(),
                     stop_sequence: st.sequence,
                     arrival_time: st.arrival_time,

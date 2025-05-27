@@ -442,10 +442,21 @@ where
             if stop_time.is_zonal_on_demand_transport() {
                 // Handle zonal on-demand transport stop times
                 let Some(location_group_id) = stop_time.location_group_id.as_deref() else {
+                    warn!(
+                        "location_group_id is missing for zonal on-demand stop time (vj = '{}', sequence = '{}'). Skipping this stop_time",
+                        collections.vehicle_journeys[vj_idx].id,
+                        stop_time.stop_sequence
+                    );
                     continue;
                 };
 
                 let Some(stop_point_idxs) = location_groups.get(location_group_id) else {
+                    warn!(
+                        "location_group_id '{}' not found for zonal on-demand stop time (vj = '{}', sequence = '{}'). Skipping this stop_time",
+                        location_group_id,
+                        collections.vehicle_journeys[vj_idx].id,
+                        stop_time.stop_sequence
+                    );
                     continue;
                 };
 
@@ -1635,8 +1646,8 @@ where
 
     let ntm_booking_rules: Vec<objects::BookingRule> = booking_rules
         .into_iter()
-        .map(objects::BookingRule::from)
-        .collect();
+        .map(objects::BookingRule::try_from)
+        .collect::<Result<Vec<_>>>()?;
 
     Ok(CollectionWithId::new(ntm_booking_rules)?)
 }
