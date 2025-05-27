@@ -1,4 +1,2 @@
 service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date,service_name
-49864,0,0,0,0,0,1,0,20250301,20250531,dimanche mars-->mai
-49947,0,0,0,0,0,0,1,20250301,20250531,samedi mars-->mai
 51977,1,1,1,1,1,0,0,20250301,20250531,semaine mars-->mai

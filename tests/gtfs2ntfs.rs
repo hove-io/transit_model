@@ -265,3 +265,17 @@ fn test_gtfs_attributions() {
         );
     });
 }
+
+#[test]
+fn test_gtfs2ntfs_flex_v3() {
+    test_in_tmp_dir(|path| {
+        let input_dir = "./tests/fixtures/gtfs2ntfs/gtfs_flex_v3/input";
+        let model = transit_model::gtfs::read(input_dir).unwrap();
+        ntfs::write(&model, path, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            path,
+            None,
+            "./tests/fixtures/gtfs2ntfs/gtfs_flex_v3/output",
+        );
+    });
+}

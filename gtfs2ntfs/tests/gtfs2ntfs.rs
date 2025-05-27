@@ -3,25 +3,6 @@ use std::process::Command;
 use tempfile::TempDir;
 
 #[test]
-fn test_gtfs2ntfs_flex() {
-    std::env::set_var("NO_COLOR", "true");
-    let output_dir = TempDir::new_in("./tests/fixtures/output").expect("create temp dir failed");
-    Command::cargo_bin("gtfs2ntfs")
-        .expect("Failed to find binary 'gtfs2ntfs'")
-        .arg("--input")
-        .arg("./tests/fixtures/gtfs_flex_v3_bois_le_roi")
-        .arg("--output")
-        .arg(output_dir.path().to_str().unwrap())
-        .arg("--current-datetime")
-        .arg("2019-04-03T17:19:00Z")
-        .assert()
-        .success();
-    assert!(output_dir.path().join("feed_infos.txt").is_file());
-    let collections = transit_model::ntfs::read(output_dir).unwrap();
-    assert_eq!(53, collections.transfers.len());
-}
-
-#[test]
 fn test_gtfs2ntfs() {
     std::env::set_var("RUST_LOG", "debug ");
     let output_dir = TempDir::new().expect("create temp dir failed");
