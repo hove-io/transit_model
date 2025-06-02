@@ -241,8 +241,6 @@ impl StopTime {
     fn is_zonal_on_demand_transport(&self) -> bool {
         self.location_group_id.is_some()
             && self.stop_id.is_none()
-            && self.start_pickup_drop_off_window.is_some()
-            && self.end_pickup_drop_off_window.is_some()
             && [1, 2].contains(&self.pickup_type)
             && [1, 2].contains(&self.drop_off_type)
     }
@@ -469,7 +467,11 @@ where
     read::read_routes(file_handler, &mut collections, read_as_line)?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
 
-    let location_groups = read::read_location_groups(file_handler, &collections.stop_points)?;
+    let location_groups = read::read_location_groups(
+        file_handler,
+        &mut collections.stop_points,
+        &collections.stop_areas,
+    )?;
     collections.booking_rules = read::read_booking_rules(file_handler)?;
     read::manage_stop_times(
         &mut collections,

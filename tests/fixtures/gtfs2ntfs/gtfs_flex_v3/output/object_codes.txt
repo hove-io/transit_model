@@ -13,3 +13,4 @@ route,760,source,760
 trip,45976_760_0_0,source,45976_760_0_0
 trip,45976_760_0_1,source,45976_760_0_1
 company,Padam Mobility,source,Padam Mobility
+stop_area,NODE__690,source,NODE__690

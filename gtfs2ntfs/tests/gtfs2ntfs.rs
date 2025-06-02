@@ -4,7 +4,6 @@ use tempfile::TempDir;
 
 #[test]
 fn test_gtfs2ntfs() {
-    std::env::set_var("RUST_LOG", "debug ");
     let output_dir = TempDir::new().expect("create temp dir failed");
     Command::cargo_bin("gtfs2ntfs")
         .expect("Failed to find binary 'gtfs2ntfs'")

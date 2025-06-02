@@ -415,7 +415,8 @@ where
         }
     }
 
-    for (vj_idx, mut stop_times) in tmp_vjs {
+    'vj: for (vj_idx, mut stop_times) in tmp_vjs {
+        let mut ntfs_stop_times = Vec::new();
         stop_times.sort_unstable_by_key(|st| st.stop_sequence);
         stop_times.dedup_by(|st2, st1| {
             let is_same_seq = st2.stop_sequence == st1.stop_sequence;
@@ -441,23 +442,19 @@ where
         for (stop_time, st_values) in stop_times.iter().zip(st_values) {
             if stop_time.is_zonal_on_demand_transport() {
                 // Handle zonal on-demand transport stop times
-                let Some(location_group_id) = stop_time.location_group_id.as_deref() else {
-                    warn!(
-                        "location_group_id is missing for zonal on-demand stop time (vj = '{}', sequence = '{}'). Skipping this stop_time",
-                        collections.vehicle_journeys[vj_idx].id,
-                        stop_time.stop_sequence
-                    );
-                    continue;
-                };
 
-                let Some(stop_point_idxs) = location_groups.get(location_group_id) else {
+                // safe to unwrap because we already checked that `stop_time.location_group_id` is Some
+                // in `stop_time.is_zonal_on_demand_transport`
+                let location_group_id = &stop_time.location_group_id.as_deref().unwrap();
+
+                let Some(stop_point_idxs) = location_groups.get(*location_group_id) else {
                     warn!(
-                        "location_group_id '{}' not found for zonal on-demand stop time (vj = '{}', sequence = '{}'). Skipping this stop_time",
+                        "location_group_id '{}' not found for zonal on-demand stop time (vj = '{}', sequence = '{}'). Skipping this vehicle journey",
                         location_group_id,
                         collections.vehicle_journeys[vj_idx].id,
                         stop_time.stop_sequence
                     );
-                    continue;
+                    continue 'vj;
                 };
 
                 // Try to find the first booking rule associated with the stop time in
@@ -487,25 +484,24 @@ where
                 }
 
                 // Add stop times for each stop point in the location group
-                vj.stop_times
-                    .extend(stop_point_idxs.iter().map(|&stop_point_idx| {
-                        let st = objects::StopTime {
-                            stop_point_idx,
-                            sequence,
-                            arrival_time: st_values.arrival_time,
-                            departure_time: st_values.departure_time,
-                            start_pickup_drop_off_window: st_values.start_pickup_drop_off_window,
-                            end_pickup_drop_off_window: st_values.end_pickup_drop_off_window,
-                            boarding_duration: 0,
-                            alighting_duration: 0,
-                            pickup_type: stop_time.pickup_type,
-                            drop_off_type: stop_time.drop_off_type,
-                            local_zone_id: stop_time.local_zone_id,
-                            precision: Some(st_values.precision),
-                        };
-                        sequence += 1;
-                        st
-                    }));
+                ntfs_stop_times.extend(stop_point_idxs.iter().map(|&stop_point_idx| {
+                    let st = objects::StopTime {
+                        stop_point_idx,
+                        sequence,
+                        arrival_time: st_values.arrival_time,
+                        departure_time: st_values.departure_time,
+                        start_pickup_drop_off_window: st_values.start_pickup_drop_off_window,
+                        end_pickup_drop_off_window: st_values.end_pickup_drop_off_window,
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type: stop_time.pickup_type,
+                        drop_off_type: stop_time.drop_off_type,
+                        local_zone_id: stop_time.local_zone_id,
+                        precision: Some(st_values.precision),
+                    };
+                    sequence += 1;
+                    st
+                }));
             }
 
             if let Some(stop_id) = stop_time.stop_id.as_deref() {
@@ -519,8 +515,13 @@ where
                     };
 
                     if let Some(headsign) = &stop_time.stop_headsign {
+                        let stop_time_sequence = if has_on_demand_stop_times {
+                            sequence
+                        } else {
+                            stop_time.stop_sequence
+                        };
                         headsigns.insert(
-                            (stop_time.trip_id.clone(), stop_time.stop_sequence),
+                            (stop_time.trip_id.clone(), stop_time_sequence),
                             headsign.clone(),
                         );
                     }
@@ -547,28 +548,24 @@ where
                         } else {
                             (stop_time.pickup_type, stop_time.drop_off_type)
                         };
-                    collections
-                        .vehicle_journeys
-                        .index_mut(vj_idx)
-                        .stop_times
-                        .push(objects::StopTime {
-                            stop_point_idx,
-                            sequence: if has_on_demand_stop_times {
-                                sequence
-                            } else {
-                                stop_time.stop_sequence
-                            },
-                            arrival_time: st_values.arrival_time,
-                            departure_time: st_values.departure_time,
-                            start_pickup_drop_off_window: st_values.start_pickup_drop_off_window,
-                            end_pickup_drop_off_window: st_values.end_pickup_drop_off_window,
-                            boarding_duration: 0,
-                            alighting_duration: 0,
-                            pickup_type,
-                            drop_off_type,
-                            local_zone_id: stop_time.local_zone_id,
-                            precision,
-                        });
+                    ntfs_stop_times.push(objects::StopTime {
+                        stop_point_idx,
+                        sequence: if has_on_demand_stop_times {
+                            sequence
+                        } else {
+                            stop_time.stop_sequence
+                        },
+                        arrival_time: st_values.arrival_time,
+                        departure_time: st_values.departure_time,
+                        start_pickup_drop_off_window: st_values.start_pickup_drop_off_window,
+                        end_pickup_drop_off_window: st_values.end_pickup_drop_off_window,
+                        boarding_duration: 0,
+                        alighting_duration: 0,
+                        pickup_type,
+                        drop_off_type,
+                        local_zone_id: stop_time.local_zone_id,
+                        precision,
+                    });
                     sequence += 1;
                 } else {
                     warn!(
@@ -579,12 +576,7 @@ where
             }
         }
 
-        if !booking_rule_found {
-            warn!(
-                "No booking rule found for trip {}",
-                collections.vehicle_journeys[vj_idx].id
-            );
-        }
+        collections.vehicle_journeys.index_mut(vj_idx).stop_times = ntfs_stop_times;
     }
 
     collections.stop_time_headsigns = headsigns;
@@ -704,9 +696,9 @@ fn process_stop_time<'a>(
     };
 
     if !undefined_stops_bulk.is_empty() {
-        let before_arrival: Time = if let Some(before) = current_st_values
+        let before_departure: Time = if let Some(before) = current_st_values
             .last()
-            .and_then(|s: &StopTimesValues| s.arrival_time)
+            .and_then(|s: &StopTimesValues| s.departure_time)
         {
             before
         } else {
@@ -714,7 +706,7 @@ fn process_stop_time<'a>(
         };
         let values = ventilate_stop_times(
             undefined_stops_bulk,
-            before_arrival,
+            before_departure,
             st_value.arrival_time.unwrap(),
         );
         current_st_values.extend(values);
@@ -1624,28 +1616,51 @@ type LocationGroups = HashMap<String, Vec<Idx<StopPoint>>>;
 /// Reading location groups
 pub fn read_location_groups<H>(
     file_handler: &mut H,
-    stop_points: &CollectionWithId<objects::StopPoint>,
+    stop_points: &mut CollectionWithId<objects::StopPoint>,
+    stop_areas: &CollectionWithId<objects::StopArea>,
 ) -> Result<LocationGroups>
 where
     for<'a> &'a mut H: FileHandler,
 {
-    // let location_groups: Vec<LocationGroup>  = read_objects(file_handler, "location_groups.txt", false)?;
     let location_group_stops: Vec<LocationGroupStop> =
         read_objects(file_handler, "location_group_stops.txt", false)?;
     let mut location_groups: LocationGroups = HashMap::new();
+
     for location_group_stop in location_group_stops {
-        let stop_point_idx = skip_error_and_warn!(stop_points
-            .get_idx(&location_group_stop.stop_id)
-            .ok_or_else(|| {
-                anyhow!(
-                    "Problem reading location_group_stops.txt: stop_id={} not found",
-                    location_group_stop.stop_id
-                )
-            }));
         let group = location_groups
             .entry(location_group_stop.location_group_id.clone())
             .or_default();
-        group.push(stop_point_idx);
+
+        match stop_points.get_idx(&location_group_stop.stop_id) {
+            Some(stop_point_idx) => {
+                group.push(stop_point_idx);
+            }
+            None => {
+                if let Some(stop_area) = stop_areas.get(&location_group_stop.stop_id) {
+                    let stop_point_idxs: Vec<_> = stop_points
+                        .iter()
+                        .filter_map(|(idx, sp)| (sp.stop_area_id == stop_area.id).then_some(idx))
+                        .collect();
+
+                    if stop_point_idxs.is_empty() {
+                        warn!(
+                            "Problem reading location_group_stops.txt: no stop points for stop area with stop_id={} found, creating a new stop point from stop area",
+                            location_group_stop.stop_id
+                        );
+                        let stop_point = StopPoint::from(stop_area);
+                        let stop_point_idx = stop_points.push(stop_point)?;
+                        group.push(stop_point_idx);
+                    } else {
+                        group.extend(stop_point_idxs);
+                    }
+                } else {
+                    warn!(
+                        "Problem reading location_group_stops.txt: stop_id={} not found in stop_point or stop_areas",
+                        location_group_stop.stop_id
+                    );
+                }
+            }
+        }
     }
     Ok(location_groups)
 }
