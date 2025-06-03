@@ -238,11 +238,8 @@ struct StopTime {
 }
 
 impl StopTime {
-    fn is_zonal_on_demand_transport(&self) -> bool {
-        self.location_group_id.is_some()
-            && self.stop_id.is_none()
-            && [1, 2].contains(&self.pickup_type)
-            && [1, 2].contains(&self.drop_off_type)
+    fn has_pickup_drop_off_windows(&self) -> bool {
+        self.start_pickup_drop_off_window.is_some() && self.end_pickup_drop_off_window.is_some()
     }
 }
 

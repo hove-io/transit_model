@@ -415,8 +415,7 @@ where
         }
     }
 
-    'vj: for (vj_idx, mut stop_times) in tmp_vjs {
-        let mut ntfs_stop_times = Vec::new();
+    'vj_loop: for (vj_idx, mut stop_times) in tmp_vjs {
         stop_times.sort_unstable_by_key(|st| st.stop_sequence);
         stop_times.dedup_by(|st2, st1| {
             let is_same_seq = st2.stop_sequence == st1.stop_sequence;
@@ -428,7 +427,7 @@ where
             }
             is_same_seq
         });
-        let (st_values, has_on_demand_stop_times) = interpolate_undefined_stop_times(
+        let (st_values, has_pickup_drop_off_windows) = interpolate_undefined_stop_times(
             &collections.vehicle_journeys[vj_idx].id,
             &stop_times,
         )?;
@@ -437,146 +436,123 @@ where
             .get_idx(&collections.vehicle_journeys[vj_idx].company_id);
 
         let mut booking_rule_found = false;
+        let mut auto_generated_sequence = 0;
 
-        let mut sequence = stop_times.first().map_or(0, |st| st.stop_sequence);
         for (stop_time, st_values) in stop_times.iter().zip(st_values) {
-            if stop_time.is_zonal_on_demand_transport() {
-                // Handle zonal on-demand transport stop times
+            let stop_point_idxs = if let Some(stop_id) = stop_time.stop_id.as_ref() {
+                collections
+                    .stop_points
+                    .get_idx(stop_id)
+                    .map(|idx| vec![idx])
+                    .unwrap_or_default()
+            } else if let Some(location_group_id) = stop_time.location_group_id.as_deref() {
+                location_groups
+                    .get(location_group_id)
+                    .cloned()
+                    .unwrap_or_default()
+            } else {
+                warn!(
+                    "stop_time with trip_id '{}' has no stop_id or location_group_id. Skipping this vehicle journey",
+                    collections.vehicle_journeys[vj_idx].id
+                );
+                continue 'vj_loop;
+            };
 
-                // safe to unwrap because we already checked that `stop_time.location_group_id` is Some
-                // in `stop_time.is_zonal_on_demand_transport`
-                let location_group_id = &stop_time.location_group_id.as_deref().unwrap();
-
-                let Some(stop_point_idxs) = location_groups.get(*location_group_id) else {
-                    warn!(
-                        "location_group_id '{}' not found for zonal on-demand stop time (vj = '{}', sequence = '{}'). Skipping this vehicle journey",
-                        location_group_id,
-                        collections.vehicle_journeys[vj_idx].id,
-                        stop_time.stop_sequence
-                    );
-                    continue 'vj;
-                };
-
-                // Try to find the first booking rule associated with the stop time in
-                // pickup_booking_rule_id or drop_off_booking_rule_id
-                let booking_rule_id = if !booking_rule_found {
-                    [
-                        &stop_time.pickup_booking_rule_id,
-                        &stop_time.drop_off_booking_rule_id,
-                    ]
-                    .iter()
-                    .filter_map(|rule_id| rule_id.as_deref())
-                    .find_map(|rule_id| {
-                        collections
-                            .booking_rules
-                            .get(rule_id)
-                            .map(|rule| rule.id.clone())
-                    })
-                } else {
-                    None
-                };
-
-                let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
-
-                if let Some(rule_id) = booking_rule_id {
-                    vj.booking_rule_links.insert(rule_id);
-                    booking_rule_found = true;
-                }
-
-                // Add stop times for each stop point in the location group
-                ntfs_stop_times.extend(stop_point_idxs.iter().map(|&stop_point_idx| {
-                    let st = objects::StopTime {
-                        stop_point_idx,
-                        sequence,
-                        arrival_time: st_values.arrival_time,
-                        departure_time: st_values.departure_time,
-                        start_pickup_drop_off_window: st_values.start_pickup_drop_off_window,
-                        end_pickup_drop_off_window: st_values.end_pickup_drop_off_window,
-                        boarding_duration: 0,
-                        alighting_duration: 0,
-                        pickup_type: stop_time.pickup_type,
-                        drop_off_type: stop_time.drop_off_type,
-                        local_zone_id: stop_time.local_zone_id,
-                        precision: Some(st_values.precision),
-                    };
-                    sequence += 1;
-                    st
-                }));
+            if stop_point_idxs.is_empty() {
+                println!(
+                    "stop_time with trip_id '{}' has no stop points. Skipping this vehicle journey",
+                    collections.vehicle_journeys[vj_idx].id
+                );
+                continue 'vj_loop;
             }
 
-            if let Some(stop_id) = stop_time.stop_id.as_deref() {
-                if let Some(stop_point_idx) = collections.stop_points.get_idx(stop_id) {
-                    let precision = if on_demand_transport
-                        && st_values.precision == StopTimePrecision::Approximate
-                    {
-                        Some(StopTimePrecision::Estimated)
-                    } else {
-                        Some(st_values.precision)
-                    };
+            let precision =
+                if on_demand_transport && st_values.precision == StopTimePrecision::Approximate {
+                    Some(StopTimePrecision::Estimated)
+                } else {
+                    Some(st_values.precision)
+                };
 
-                    if let Some(headsign) = &stop_time.stop_headsign {
-                        let stop_time_sequence = if has_on_demand_stop_times {
-                            sequence
-                        } else {
-                            stop_time.stop_sequence
-                        };
-                        headsigns.insert(
-                            (stop_time.trip_id.clone(), stop_time_sequence),
-                            headsign.clone(),
+            if let Some(headsign) = &stop_time.stop_headsign {
+                let stop_sequence = if has_pickup_drop_off_windows {
+                    auto_generated_sequence
+                } else {
+                    stop_time.stop_sequence
+                };
+                headsigns.insert((stop_time.trip_id.clone(), stop_sequence), headsign.clone());
+            }
+
+            if let Some(message) = on_demand_transport_comment.as_ref() {
+                if stop_time.pickup_type == 2 || stop_time.drop_off_type == 2 {
+                    if let Some(company_idx) = company_idx {
+                        manage_odt_comment_from_stop_time(
+                            collections,
+                            message,
+                            company_idx,
+                            vj_idx,
+                            stop_time,
                         );
                     }
-
-                    if let Some(message) = on_demand_transport_comment.as_ref() {
-                        if stop_time.pickup_type == 2 || stop_time.drop_off_type == 2 {
-                            if let Some(company_idx) = company_idx {
-                                manage_odt_comment_from_stop_time(
-                                    collections,
-                                    message,
-                                    company_idx,
-                                    vj_idx,
-                                    stop_time,
-                                );
-                            }
-                        }
-                    }
-                    let (pickup_type, drop_off_type) =
-                        if stop_time.pickup_type == 3 || stop_time.drop_off_type == 3 {
-                            (
-                                cmp::min(stop_time.pickup_type, 2),
-                                cmp::min(stop_time.drop_off_type, 2),
-                            )
-                        } else {
-                            (stop_time.pickup_type, stop_time.drop_off_type)
-                        };
-                    ntfs_stop_times.push(objects::StopTime {
-                        stop_point_idx,
-                        sequence: if has_on_demand_stop_times {
-                            sequence
-                        } else {
-                            stop_time.stop_sequence
-                        },
-                        arrival_time: st_values.arrival_time,
-                        departure_time: st_values.departure_time,
-                        start_pickup_drop_off_window: st_values.start_pickup_drop_off_window,
-                        end_pickup_drop_off_window: st_values.end_pickup_drop_off_window,
-                        boarding_duration: 0,
-                        alighting_duration: 0,
-                        pickup_type,
-                        drop_off_type,
-                        local_zone_id: stop_time.local_zone_id,
-                        precision,
-                    });
-                    sequence += 1;
-                } else {
-                    warn!(
-                        "Problem reading {:?}: stop_id={:?} not found. Skipping this stop_time",
-                        file_name, stop_time.stop_id
-                    );
                 }
             }
-        }
+            let (pickup_type, drop_off_type) =
+                if stop_time.pickup_type == 3 || stop_time.drop_off_type == 3 {
+                    (
+                        cmp::min(stop_time.pickup_type, 2),
+                        cmp::min(stop_time.drop_off_type, 2),
+                    )
+                } else {
+                    (stop_time.pickup_type, stop_time.drop_off_type)
+                };
 
-        collections.vehicle_journeys.index_mut(vj_idx).stop_times = ntfs_stop_times;
+            // Try to find the first booking rule associated with the stop time in
+            // pickup_booking_rule_id or drop_off_booking_rule_id
+            let booking_rule_id = if !booking_rule_found {
+                [
+                    &stop_time.pickup_booking_rule_id,
+                    &stop_time.drop_off_booking_rule_id,
+                ]
+                .iter()
+                .filter_map(|rule_id| rule_id.as_deref())
+                .find_map(|rule_id| {
+                    collections
+                        .booking_rules
+                        .get(rule_id)
+                        .map(|rule| rule.id.clone())
+                })
+            } else {
+                None
+            };
+
+            let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
+
+            if let Some(rule_id) = booking_rule_id {
+                vj.booking_rule_links.insert(rule_id);
+                booking_rule_found = true;
+            }
+
+            for stop_point_idx in stop_point_idxs {
+                vj.stop_times.push(objects::StopTime {
+                    stop_point_idx,
+                    sequence: if has_pickup_drop_off_windows {
+                        auto_generated_sequence
+                    } else {
+                        stop_time.stop_sequence
+                    },
+                    arrival_time: st_values.arrival_time,
+                    departure_time: st_values.departure_time,
+                    start_pickup_drop_off_window: stop_time.start_pickup_drop_off_window,
+                    end_pickup_drop_off_window: stop_time.end_pickup_drop_off_window,
+                    boarding_duration: 0,
+                    alighting_duration: 0,
+                    pickup_type,
+                    drop_off_type,
+                    local_zone_id: stop_time.local_zone_id,
+                    precision,
+                });
+                auto_generated_sequence += 1;
+            }
+        }
     }
 
     collections.stop_time_headsigns = headsigns;
@@ -598,8 +574,6 @@ fn ventilate_stop_times(
         res.push(StopTimesValues {
             departure_time: Some(time),
             arrival_time: Some(time),
-            start_pickup_drop_off_window: None,
-            end_pickup_drop_off_window: None,
             precision: StopTimePrecision::Approximate,
         });
     }
@@ -608,53 +582,61 @@ fn ventilate_stop_times(
 
 #[derive(Debug)]
 enum StopTimeType<'a> {
-    Regular(Vec<&'a StopTime>),
-    ZonalOnDemand(Vec<&'a StopTime>),
+    WithPickupDropOffWindow(Vec<&'a StopTime>),
+    NoPickupDropOffWindow(Vec<&'a StopTime>),
 }
 
 /// The group_stop_times_by_type function takes a slice of StopTime objects
 /// and groups them into contiguous segments based on whether each stop time
-/// is a "zonal on-demand transport" (ODT) or not.
+/// has "pickup/dropoff window" or not.
 /// The function returns a vector of `StopTimeType` values,
 /// where each element represents a group of consecutive stop times of the same type.
 ///
-/// eg: [regular_st1, regular_st2, zonal_odt_st1, zonal_odt_st2, regular_st3]
+/// eg: [without_window_st1, without_window_st2, with_window_st1, with_window_st2, without_window_st3]
 /// will be grouped into:
 /// [
-///     StopTimeType::Regular(vec![&regular_st1, &regular_st2]),
-///     StopTimeType::ZonalOnDemand(vec![&zonal_odt_st1, &zonal_odt_st2]),
-///     StopTimeType::Regular(vec![&regular_st3]),
+///     StopTimeType::NoPickupDropOffWindow(vec![&without_window_st1, &without_window_st2]),
+///     StopTimeType::WithPickupDropOffWindow(vec![&with_window_st1, &with_window_st2]),
+///     StopTimeType::NoPickupDropOffWindow(vec![&without_window_st3]),
 /// ]
 fn group_stop_times_by_type(stop_times: &[StopTime]) -> Vec<StopTimeType> {
     let mut result = Vec::new();
     let mut current_group: Vec<&StopTime> = Vec::new();
-    let mut last_is_odt: Option<bool> = None;
+    let mut last_with_pickup_dropoff_window: Option<bool> = None;
 
-    fn make_group(is_odt: bool, group: Vec<&StopTime>) -> StopTimeType {
-        if is_odt {
-            StopTimeType::ZonalOnDemand(group)
+    fn make_group(with_pickup_dropoff_window: bool, group: Vec<&StopTime>) -> StopTimeType {
+        if with_pickup_dropoff_window {
+            StopTimeType::WithPickupDropOffWindow(group)
         } else {
-            StopTimeType::Regular(group)
+            StopTimeType::NoPickupDropOffWindow(group)
         }
     }
 
     for stop_time in stop_times {
-        match last_is_odt {
-            Some(is_odt) if is_odt == stop_time.is_zonal_on_demand_transport() => {
+        match last_with_pickup_dropoff_window {
+            Some(with_pickup_dropoff_window)
+                if with_pickup_dropoff_window == stop_time.has_pickup_drop_off_windows() =>
+            {
                 current_group.push(stop_time);
             }
             Some(_) | None => {
                 if !current_group.is_empty() {
-                    result.push(make_group(last_is_odt.unwrap(), current_group));
+                    result.push(make_group(
+                        last_with_pickup_dropoff_window.unwrap(),
+                        current_group,
+                    ));
                 }
                 current_group = vec![stop_time];
             }
         }
-        last_is_odt = Some(stop_time.is_zonal_on_demand_transport());
+        last_with_pickup_dropoff_window = Some(stop_time.has_pickup_drop_off_windows());
     }
 
     if !current_group.is_empty() {
-        result.push(make_group(last_is_odt.unwrap(), current_group));
+        result.push(make_group(
+            last_with_pickup_dropoff_window.unwrap(),
+            current_group,
+        ));
     }
 
     result
@@ -686,8 +668,6 @@ fn process_stop_time<'a>(
     let st_value = StopTimesValues {
         departure_time: Some(departure_time),
         arrival_time: Some(arrival_time),
-        start_pickup_drop_off_window: st.start_pickup_drop_off_window,
-        end_pickup_drop_off_window: st.end_pickup_drop_off_window,
         precision: if !st.timepoint {
             StopTimePrecision::Approximate
         } else {
@@ -721,8 +701,6 @@ fn process_stop_time<'a>(
 struct StopTimesValues {
     arrival_time: Option<Time>,
     departure_time: Option<Time>,
-    start_pickup_drop_off_window: Option<Time>,
-    end_pickup_drop_off_window: Option<Time>,
     precision: StopTimePrecision,
 }
 
@@ -733,14 +711,14 @@ fn interpolate_undefined_stop_times(
     let grouped = group_stop_times_by_type(stop_times);
 
     let mut res = vec![];
-    let mut has_on_demand = false;
+    let mut has_pickup_dropoff_window = false;
 
     for group in grouped {
         let mut current_st_values = vec![];
         let mut undefined_stops_bulk: Vec<&StopTime> = Vec::with_capacity(0);
         match group {
-            StopTimeType::Regular(stops) => {
-                for st in stops {
+            StopTimeType::NoPickupDropOffWindow(stop_times) => {
+                for st in stop_times {
                     process_stop_time(
                         st,
                         vj_id,
@@ -754,16 +732,14 @@ fn interpolate_undefined_stop_times(
                 }
             }
 
-            StopTimeType::ZonalOnDemand(stops) => {
-                has_on_demand = true;
+            StopTimeType::WithPickupDropOffWindow(stop_times) => {
+                has_pickup_dropoff_window = true;
 
-                // For on-demand stops, just copy the times without ventilation
-                for st in stops {
+                // For stop times with pickup/drop-off windows, just copy the times without ventilation
+                for st in stop_times {
                     let st_value = StopTimesValues {
                         departure_time: st.departure_time,
                         arrival_time: st.arrival_time,
-                        start_pickup_drop_off_window: st.start_pickup_drop_off_window,
-                        end_pickup_drop_off_window: st.end_pickup_drop_off_window,
                         precision: StopTimePrecision::Estimated,
                     };
                     current_st_values.push(st_value);
@@ -774,7 +750,7 @@ fn interpolate_undefined_stop_times(
         res.extend(current_st_values);
     }
 
-    Ok((res, has_on_demand))
+    Ok((res, has_pickup_dropoff_window))
 }
 
 ///Reading transit agencies with service represented in this dataset.
@@ -3944,18 +3920,24 @@ mod tests {
         assert_eq!(result.len(), 3);
 
         match &result[0] {
-            StopTimeType::Regular(stops) => assert_eq!(stops.len(), 2),
-            StopTimeType::ZonalOnDemand(_) => panic!("Expected regular stop times"),
+            StopTimeType::NoPickupDropOffWindow(stops) => assert_eq!(stops.len(), 2),
+            StopTimeType::WithPickupDropOffWindow(_) => {
+                panic!("Expected stop times without pickup/drop-off window")
+            }
         }
 
         match &result[1] {
-            StopTimeType::Regular(_) => panic!("Expected zonal on-demand stop times"),
-            StopTimeType::ZonalOnDemand(stops) => assert_eq!(stops.len(), 2),
+            StopTimeType::NoPickupDropOffWindow(_) => {
+                panic!("Expected stop times with pickup/drop-off window")
+            }
+            StopTimeType::WithPickupDropOffWindow(stops) => assert_eq!(stops.len(), 2),
         }
 
         match &result[2] {
-            StopTimeType::Regular(stops) => assert_eq!(stops.len(), 1),
-            StopTimeType::ZonalOnDemand(_) => panic!("Expected regular stop times"),
+            StopTimeType::NoPickupDropOffWindow(stops) => assert_eq!(stops.len(), 1),
+            StopTimeType::WithPickupDropOffWindow(_) => {
+                panic!("Expected stop times without pickup/drop-off window")
+            }
         }
     }
 }

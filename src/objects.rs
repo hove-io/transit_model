@@ -1299,7 +1299,7 @@ impl From<&StopArea> for StopPoint {
             code: None,
             stop_area_id: stop_area.id.clone(),
             timezone: stop_area.timezone,
-            geometry_id: stop_area.geometry_id.clone(),
+            geometry_id: None,
             equipment_id: stop_area.equipment_id.clone(),
             fare_zone_id: None,
             level_id: stop_area.level_id.clone(),
