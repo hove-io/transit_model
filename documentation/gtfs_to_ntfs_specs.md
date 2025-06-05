@@ -35,16 +35,17 @@ A third boolean CLI argument (`--read-as-line`) may affect the reading of the fi
 
 ## Mapping of objects between GTFS and NTFS
 
-| GTFS object    | NTFS object(s)                              |
-| -------------- | ------------------------------------------- |
-| agency         | network and company (1)                     |
-| route          | line, route, physical_mode, commercial_mode |
-| trip           | route and trip                              |
-| stop_time      | stop_time                                   |
-| transfer       | transfer                                    |
-| shape          | geometry                                    |
-| frequency      | trip and stop_time                          |
-| attributions   | company (1)                                 |
+| GTFS object  | NTFS object(s)                              |
+| ------------ | ------------------------------------------- |
+| agency       | network and company (1)                     |
+| route        | line, route, physical_mode, commercial_mode |
+| trip         | route and trip                              |
+| stop_time    | stop_time                                   |
+| transfer     | transfer                                    |
+| shape        | geometry                                    |
+| frequency    | trip and stop_time                          |
+| attribution  | company (1)                                 |
+| booking_rule | booking_rule                                |
 
 (1) If the `attributions` file is present, it will override the agency file to feed companies
 
@@ -319,17 +320,23 @@ A complementary `object_code` is added to each vehicle journey with the followin
 
 ### Reading stop_times.txt
 
-| NTFS file      | NTFS field          | Constraint | GTFS file      | GTFS field     | Note                                                                                                                          |
-| -------------- | ------------------- | ---------- | -------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| stop_times.txt | trip_id             | Required   | stop_times.txt | trip_id        | All slashes `/` are removed; if the corresponding trip doesn't exist, the conversion should stop immediately with an error    |
-| stop_times.txt | arrival_time        | Optional   | stop_times.txt | arrival_time   | If not specified, see (1)                                                                                                     |
-| stop_times.txt | departure_time      | Optional   | stop_times.txt | departure_time | If not specified, see (1)                                                                                                     |
-| stop_times.txt | stop_id             | Required   | stop_times.txt | stop_id        | If the corresponding stop doesn't exist, the conversion should stop immediately with an error                                 |
-| stop_times.txt | stop_sequence       | Required   | stop_times.txt | stop_sequence  |                                                                                                                               |
-| stop_times.txt | stop_headsign       | Optional   | stop_times.txt | stop_headsign  |                                                                                                                               |
-| stop_times.txt | pickup_type         | Optional   | stop_times.txt | pickup_type    | If invalid unsigned integer, default to `0`. If `2`, see (3) for the generation of comments.                                  |
-| stop_times.txt | drop_off_type       | Optional   | stop_times.txt | drop_off_type  | If invalid unsigned integer, default to `0`. If `2`, see (3) for the generation of comments.                                  |
-| stop_times.txt | stop_time_precision | Optional   | stop_times.txt | timepoint      | GTFS and NTFS values are inverted when no ODT information is considered. See (2). If invalid unsigned integer, default to `1` |
+| NTFS file      | NTFS field                   | NTFS Constraint | GTFS file      | GTFS field                   | GTFS Constraint | Note                                                                                                                          |
+| -------------- | ---------------------------- | --------------- | -------------- | ---------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| stop_times.txt | trip_id                      | Required        | stop_times.txt | trip_id                      | Required        | All slashes `/` are removed; if the corresponding trip doesn't exist, the conversion should stop immediately with an error    |
+| stop_times.txt | arrival_time                 | Optional        | stop_times.txt | arrival_time                 | Optional        | If not specified, see (1)                                                                                                     |
+| stop_times.txt | departure_time               | Optional        | stop_times.txt | departure_time               | Optional        | If not specified, see (1)                                                                                                     |
+| stop_times.txt | stop_id                      | Required        | stop_times.txt | stop_id                      | Optional        | The stop time is skipped and warning message is logged if the corresponding stop doesn't exist                                |
+| stop_times.txt | stop_sequence                | Required        | stop_times.txt | stop_sequence                | Required        |                                                                                                                               |
+| stop_times.txt | stop_headsign                | Optional        | stop_times.txt | stop_headsign                | Optional        |                                                                                                                               |
+| stop_times.txt | pickup_type                  | Optional        | stop_times.txt | pickup_type                  | Optional        | If invalid unsigned integer, default to `0`. If `2`, see (3) for the generation of comments.                                  |
+| stop_times.txt | drop_off_type                | Optional        | stop_times.txt | drop_off_type                | Optional        | If invalid unsigned integer, default to `0`. If `2`, see (3) for the generation of comments.                                  |
+| stop_times.txt | stop_time_precision          | Optional        | stop_times.txt | timepoint                    | Optional        | GTFS and NTFS values are inverted when no ODT information is considered. See (2). If invalid unsigned integer, default to `1` |
+| stop_times.txt | local_zone_id                | Optional        | stop_times.txt | local_zone_id                | Optional        |                                                                                                                               |
+|                |                              |                 | stop_times.txt | location_group_id            | Optional        | If specified, see (4)                                                                                                         |
+| stop_times.txt | start_pickup_drop_off_window | Optional        | stop_times.txt | start_pickup_drop_off_window | Optional        |                                                                                                                               |
+| stop_times.txt | end_pickup_drop_off_window   | Optional        | stop_times.txt | start_pickup_drop_off_window | Optional        |                                                                                                                               |
+| stop_times.txt |                              |                 | stop_times.txt | pickup_booking_rule_id       | Optional        | If specified, see (5)                                                                                                         |
+| stop_times.txt |                              |                 | stop_times.txt | drop_off_booking_rule_id     | Optional        | If specified, see (5)                                                                                                         |
 
 (1) GTFS `arrival_time` and `departure_time` should contain values.
 
@@ -373,6 +380,30 @@ For exemple :
 | comment_links.txt | object_id    | Required   | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that this field is prefixed as explained in [common NTFS rules].                                                            |
 | comment_links.txt | object_type  | Required   | `stop_time`                                                                                                                                                                                                                            |
 | comment_links.txt | comment_id   | Required   | The value of stop_time_id is used as the concatenation of trip_id and stop_sequence separated by `-`. Note that, as this field references the comment in file comments.txt, it should be prefixed as explained in [common NTFS rules]. |
+
+(4) `location_group_id` refers to `location_group_id` in `location_group_stops.txt`, which represents a group of one or more stop points or stop areas.
+If `location_group_id` represents a group of stop points, then a stop time is created for each stop point.
+If `location_group_id` represents a group of stop areas, then a stop time is created for each stop point of each stop area.
+
+(5) A booking rule link for a trip is created with the first `pickup_booking_rule_id` or `drop_off_booking_rule_id` defined among the stop times of this trip.
+
+| NTFS file              | NTFS field      | Constraint | Value/Note                                                                             |
+| ---------------------- | --------------- | ---------- | -------------------------------------------------------------------------------------- |
+| booking_rule_links.txt | object_type     | Required   | `trip`                                                                                 |
+| booking_rule_links.txt | object_id       | Required   | trip ID                                                                                |
+| booking_rule_links.txt | booking_rule_id | Required   | first `pickup_booking_rule_id` or `drop_off_booking_rule_id` in stop times of the trip |
+
+### Reading booking_rules.txt
+
+If `message`, `phone_number`, `info_url`, and `booking_url` are not defined, the booking rule is not created.
+
+| NTFS file         | NTFS field  | Constraint | GTFS file         | GTFS field  |
+| ----------------- | ----------- | ---------- | ----------------- | ----------- |
+| booking_rules.txt | id          | Required   | booking_rules.txt | id          |
+| booking_rules.txt | message     | Optional   | booking_rules.txt | message     |
+| booking_rules.txt | phone       | Optional   | booking_rules.txt | phone       |
+| booking_rules.txt | info_url    | Optional   | booking_rules.txt | info_url    |
+| booking_rules.txt | booking_url | Optional   | booking_rules.txt | booking_url |
 
 ### Reading transfers.txt
 
