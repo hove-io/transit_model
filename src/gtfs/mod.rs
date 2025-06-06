@@ -33,6 +33,7 @@ use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
+    convert::TryFrom,
     fmt,
     hash::{Hash, Hasher},
     path::Path,
@@ -44,7 +45,8 @@ use typed_index_collection::CollectionWithId;
 #[cfg(all(feature = "gtfs", feature = "parser"))]
 pub use read::{
     apply_attribution_rules, manage_frequencies, manage_pathways, manage_shapes, manage_stop_times,
-    read_agency, read_attributions, read_routes, read_stops, read_transfers, EquipmentList,
+    read_agency, read_attributions, read_location_groups, read_routes, read_stops, read_transfers,
+    EquipmentList,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -203,15 +205,21 @@ fn default_true_bool() -> bool {
     true
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 struct StopTime {
     trip_id: String,
     arrival_time: Option<Time>,
     departure_time: Option<Time>,
     start_pickup_drop_off_window: Option<Time>,
     end_pickup_drop_off_window: Option<Time>,
-    #[serde(deserialize_with = "de_without_slashes")]
-    stop_id: String,
+    #[serde(default, deserialize_with = "de_option_without_slashes")]
+    stop_id: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "de_option_without_slashes",
+        skip_serializing
+    )]
+    location_group_id: Option<String>,
     stop_sequence: u32,
     #[serde(deserialize_with = "de_with_empty_default", default)]
     pickup_type: u8,
@@ -229,15 +237,25 @@ struct StopTime {
     drop_off_booking_rule_id: Option<String>,
 }
 
-#[derive(Derivative, Serialize)]
+impl StopTime {
+    fn has_pickup_drop_off_windows(&self) -> bool {
+        self.start_pickup_drop_off_window.is_some() && self.end_pickup_drop_off_window.is_some()
+    }
+}
+
+#[derive(Derivative, Serialize, Deserialize)]
 #[derivative(Default)]
 enum BookingType {
     #[derivative(Default)]
     #[serde(rename = "0")]
     RealTime,
+    #[serde(rename = "1")]
+    SameDayWithPriorNotice,
+    #[serde(rename = "2")]
+    UpToPreviousDays,
 }
 
-#[derive(Derivative, Serialize)]
+#[derive(Derivative, Serialize, Deserialize)]
 #[derivative(Default)]
 struct BookingRule {
     #[serde(rename = "booking_rule_id")]
@@ -259,6 +277,29 @@ impl From<&objects::BookingRule> for BookingRule {
             booking_url: obj.booking_url.clone(),
             ..Default::default()
         }
+    }
+}
+
+impl TryFrom<BookingRule> for objects::BookingRule {
+    type Error = anyhow::Error;
+
+    fn try_from(obj: BookingRule) -> Result<objects::BookingRule, Self::Error> {
+        if obj.message.is_none()
+            && obj.phone_number.is_none()
+            && obj.info_url.is_none()
+            && obj.booking_url.is_none()
+        {
+            anyhow::bail!("Booking rule {} must have at least one of message, phone_number, info_url or booking_url set", obj.id)
+        }
+
+        Ok(objects::BookingRule {
+            id: obj.id,
+            message: obj.message,
+            phone: obj.phone_number,
+            info_url: obj.info_url,
+            booking_url: obj.booking_url,
+            ..Default::default()
+        })
     }
 }
 
@@ -367,6 +408,12 @@ impl Hash for Attribution {
     }
 }
 
+#[derive(Debug, Deserialize)]
+struct LocationGroupStop {
+    location_group_id: String,
+    stop_id: String,
+}
+
 fn read_file_handler<H>(file_handler: &mut H, configuration: Configuration) -> Result<Model>
 where
     for<'a> &'a mut H: FileHandler,
@@ -416,11 +463,19 @@ where
 
     read::read_routes(file_handler, &mut collections, read_as_line)?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
+
+    let location_groups = read::read_location_groups(
+        file_handler,
+        &mut collections.stop_points,
+        &collections.stop_areas,
+    )?;
+    collections.booking_rules = read::read_booking_rules(file_handler)?;
     read::manage_stop_times(
         &mut collections,
         file_handler,
         on_demand_transport,
         on_demand_transport_comment,
+        &location_groups,
     )?;
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
@@ -794,4 +849,116 @@ pub fn write_to_zip<P: AsRef<std::path::Path>>(
     zip_to(input_tmp_dir.path(), path)?;
     input_tmp_dir.close()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_booking_rule_try_from_success_with_message() {
+        let booking_rule = BookingRule {
+            id: "br1".to_string(),
+            message: Some("Test message".to_string()),
+            phone_number: None,
+            info_url: None,
+            booking_url: None,
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br1");
+        assert_eq!(obj.message, Some("Test message".to_string()));
+        assert_eq!(obj.phone, None);
+        assert_eq!(obj.info_url, None);
+        assert_eq!(obj.booking_url, None);
+    }
+
+    #[test]
+    fn test_booking_rule_try_from_success_with_phone() {
+        let booking_rule = BookingRule {
+            id: "br2".to_string(),
+            message: None,
+            phone_number: Some("123456789".to_string()),
+            info_url: None,
+            booking_url: None,
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br2");
+        assert_eq!(obj.phone, Some("123456789".to_string()));
+    }
+
+    #[test]
+    fn test_booking_rule_try_from_success_with_info_url() {
+        let booking_rule = BookingRule {
+            id: "br3".to_string(),
+            message: None,
+            phone_number: None,
+            info_url: Some("http://info.url".to_string()),
+            booking_url: None,
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br3");
+        assert_eq!(obj.info_url, Some("http://info.url".to_string()));
+    }
+
+    #[test]
+    fn test_booking_rule_try_from_success_with_booking_url() {
+        let booking_rule = BookingRule {
+            id: "br4".to_string(),
+            message: None,
+            phone_number: None,
+            info_url: None,
+            booking_url: Some("http://booking.url".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br4");
+        assert_eq!(obj.booking_url, Some("http://booking.url".to_string()));
+    }
+
+    #[test]
+    fn test_booking_rule_try_from_success_with_multiple_fields() {
+        let booking_rule = BookingRule {
+            id: "br5".to_string(),
+            message: Some("msg".to_string()),
+            phone_number: Some("987654321".to_string()),
+            info_url: Some("http://info.url".to_string()),
+            booking_url: Some("http://booking.url".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br5");
+        assert_eq!(obj.message, Some("msg".to_string()));
+        assert_eq!(obj.phone, Some("987654321".to_string()));
+        assert_eq!(obj.info_url, Some("http://info.url".to_string()));
+        assert_eq!(obj.booking_url, Some("http://booking.url".to_string()));
+    }
+
+    #[test]
+    fn test_booking_rule_try_from_failure_all_none() {
+        let booking_rule = BookingRule {
+            id: "br6".to_string(),
+            message: None,
+            phone_number: None,
+            info_url: None,
+            booking_url: None,
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("Booking rule br6 must have at least one of message, phone_number, info_url or booking_url set"));
+    }
 }

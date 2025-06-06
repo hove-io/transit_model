@@ -1444,7 +1444,7 @@ impl Collections {
                             pickup_type: stop_time.pickup_type,
                             drop_off_type: stop_time.drop_off_type,
                             local_zone_id: stop_time.local_zone_id,
-                            precision: stop_time.precision.clone(),
+                            precision: stop_time.precision,
                         }
                     })
                     .collect();

@@ -13,10 +13,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{
-    Agency, BookingRule, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime,
+    Agency, BookingRule, DirectionType, Route, RouteType, Shape, Stop, StopLocationType,
     TicketingDeepLinks, Transfer, Trip,
 };
-use crate::gtfs::{Attribution, ExtendedRoute};
+use crate::gtfs::{Attribution, ExtendedRoute, StopTime};
 use crate::model::{GetCorresponding, Model};
 use crate::objects;
 use crate::objects::Transfer as NtfsTransfer;
@@ -568,7 +568,8 @@ pub fn write_stop_times(
                 .cloned();
             st_wtr
                 .serialize(StopTime {
-                    stop_id: stop_points[st.stop_point_idx].id.clone(),
+                    stop_id: Some(stop_points[st.stop_point_idx].id.clone()),
+                    location_group_id: None, // arbitrary value, this field is not serialized in GTFS yet
                     trip_id: vj.id.clone(),
                     stop_sequence: st.sequence,
                     arrival_time: st.arrival_time,

@@ -1,0 +1,4 @@
+location_group_id,location_group_name
+ZONE__GARE_BOIS-LE-ROI,Gare Bois-le-Roi
+ZONE__POINT_DE_RABATTEMENT_2023,Point de rabattement 2023
+ZONE__ZONE_RABATTEMENT,Zone Rabattement

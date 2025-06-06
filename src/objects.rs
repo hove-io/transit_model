@@ -983,7 +983,7 @@ impl GetObjectType for StopTime {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
 pub enum StopTimePrecision {
     #[serde(rename = "0")]
     Exact,
@@ -1283,6 +1283,30 @@ impl_with_id!(StopPoint);
 impl GetObjectType for StopPoint {
     fn get_object_type() -> ObjectType {
         ObjectType::StopPoint
+    }
+}
+
+impl From<&StopArea> for StopPoint {
+    fn from(stop_area: &StopArea) -> Self {
+        StopPoint {
+            id: format!("VSP:{}", stop_area.id),
+            name: stop_area.name.clone(),
+            visible: stop_area.visible,
+            coord: stop_area.coord,
+            codes: KeysValues::default(),
+            object_properties: PropertiesMap::default(),
+            comment_links: LinksT::default(),
+            code: None,
+            stop_area_id: stop_area.id.clone(),
+            timezone: stop_area.timezone,
+            geometry_id: None,
+            equipment_id: stop_area.equipment_id.clone(),
+            fare_zone_id: None,
+            level_id: stop_area.level_id.clone(),
+            platform_code: None,
+            stop_type: StopType::Point,
+            address_id: stop_area.address_id.clone(),
+        }
     }
 }
 

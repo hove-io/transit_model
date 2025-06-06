@@ -1,0 +1,3 @@
+object_id,object_type,booking_rule_id
+45976_760_0_0,trip,standard
+45976_760_0_1,trip,standard

@@ -13,8 +13,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 use super::{
-    Agency, Attribution, DirectionType, Route, RouteType, Shape, Stop, StopLocationType, StopTime,
-    Transfer, TransferType, Trip,
+    Agency, Attribution, BookingRule, DirectionType, LocationGroupStop, Route, RouteType, Shape,
+    Stop, StopLocationType, StopTime, Transfer, TransferType, Trip,
 };
 use crate::{
     file_handler::FileHandler,
@@ -391,6 +391,7 @@ pub fn manage_stop_times<H>(
     file_handler: &mut H,
     on_demand_transport: bool,
     on_demand_transport_comment: Option<String>,
+    location_groups: &LocationGroups,
 ) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -414,7 +415,7 @@ where
         }
     }
 
-    for (vj_idx, mut stop_times) in tmp_vjs {
+    'vj_loop: for (vj_idx, mut stop_times) in tmp_vjs {
         stop_times.sort_unstable_by_key(|st| st.stop_sequence);
         stop_times.dedup_by(|st2, st1| {
             let is_same_seq = st2.stop_sequence == st1.stop_sequence;
@@ -426,7 +427,7 @@ where
             }
             is_same_seq
         });
-        let st_values = interpolate_undefined_stop_times(
+        let (st_values, has_pickup_drop_off_windows) = interpolate_undefined_stop_times(
             &collections.vehicle_journeys[vj_idx].id,
             &stop_times,
         )?;
@@ -434,68 +435,122 @@ where
             .companies
             .get_idx(&collections.vehicle_journeys[vj_idx].company_id);
 
+        let mut booking_rule_found = false;
+        let mut auto_generated_sequence = 0;
+
         for (stop_time, st_values) in stop_times.iter().zip(st_values) {
-            if let Some(stop_point_idx) = collections.stop_points.get_idx(&stop_time.stop_id) {
-                let precision = if on_demand_transport
-                    && st_values.precision == StopTimePrecision::Approximate
-                {
+            let stop_point_idxs = if let Some(stop_id) = stop_time.stop_id.as_ref() {
+                collections
+                    .stop_points
+                    .get_idx(stop_id)
+                    .map(|idx| vec![idx])
+                    .unwrap_or_default()
+            } else if let Some(location_group_id) = stop_time.location_group_id.as_deref() {
+                location_groups
+                    .get(location_group_id)
+                    .cloned()
+                    .unwrap_or_default()
+            } else {
+                warn!(
+                    "stop_time with trip_id '{}' has no stop_id or location_group_id. Skipping this vehicle journey",
+                    collections.vehicle_journeys[vj_idx].id
+                );
+                continue 'vj_loop;
+            };
+
+            if stop_point_idxs.is_empty() {
+                println!(
+                    "stop_time with trip_id '{}' has no stop points. Skipping this vehicle journey",
+                    collections.vehicle_journeys[vj_idx].id
+                );
+                continue 'vj_loop;
+            }
+
+            let precision =
+                if on_demand_transport && st_values.precision == StopTimePrecision::Approximate {
                     Some(StopTimePrecision::Estimated)
                 } else {
                     Some(st_values.precision)
                 };
 
-                if let Some(headsign) = &stop_time.stop_headsign {
-                    headsigns.insert(
-                        (stop_time.trip_id.clone(), stop_time.stop_sequence),
-                        headsign.clone(),
-                    );
-                }
+            if let Some(headsign) = &stop_time.stop_headsign {
+                let stop_sequence = if has_pickup_drop_off_windows {
+                    auto_generated_sequence
+                } else {
+                    stop_time.stop_sequence
+                };
+                headsigns.insert((stop_time.trip_id.clone(), stop_sequence), headsign.clone());
+            }
 
-                if let Some(message) = on_demand_transport_comment.as_ref() {
-                    if stop_time.pickup_type == 2 || stop_time.drop_off_type == 2 {
-                        if let Some(company_idx) = company_idx {
-                            manage_odt_comment_from_stop_time(
-                                collections,
-                                message,
-                                company_idx,
-                                vj_idx,
-                                stop_time,
-                            );
-                        }
+            if let Some(message) = on_demand_transport_comment.as_ref() {
+                if stop_time.pickup_type == 2 || stop_time.drop_off_type == 2 {
+                    if let Some(company_idx) = company_idx {
+                        manage_odt_comment_from_stop_time(
+                            collections,
+                            message,
+                            company_idx,
+                            vj_idx,
+                            stop_time,
+                        );
                     }
                 }
-                let (pickup_type, drop_off_type) =
-                    if stop_time.pickup_type == 3 || stop_time.drop_off_type == 3 {
-                        (
-                            cmp::min(stop_time.pickup_type, 2),
-                            cmp::min(stop_time.drop_off_type, 2),
-                        )
-                    } else {
-                        (stop_time.pickup_type, stop_time.drop_off_type)
-                    };
-                collections
-                    .vehicle_journeys
-                    .index_mut(vj_idx)
-                    .stop_times
-                    .push(objects::StopTime {
-                        stop_point_idx,
-                        sequence: stop_time.stop_sequence,
-                        arrival_time: Some(st_values.arrival_time),
-                        departure_time: Some(st_values.departure_time),
-                        start_pickup_drop_off_window: None,
-                        end_pickup_drop_off_window: None,
-                        boarding_duration: 0,
-                        alighting_duration: 0,
-                        pickup_type,
-                        drop_off_type,
-                        local_zone_id: stop_time.local_zone_id,
-                        precision,
-                    });
+            }
+            let (pickup_type, drop_off_type) =
+                if stop_time.pickup_type == 3 || stop_time.drop_off_type == 3 {
+                    (
+                        cmp::min(stop_time.pickup_type, 2),
+                        cmp::min(stop_time.drop_off_type, 2),
+                    )
+                } else {
+                    (stop_time.pickup_type, stop_time.drop_off_type)
+                };
+
+            // Try to find the first booking rule associated with the stop time in
+            // pickup_booking_rule_id or drop_off_booking_rule_id
+            let booking_rule_id = if !booking_rule_found {
+                [
+                    &stop_time.pickup_booking_rule_id,
+                    &stop_time.drop_off_booking_rule_id,
+                ]
+                .iter()
+                .filter_map(|rule_id| rule_id.as_deref())
+                .find_map(|rule_id| {
+                    collections
+                        .booking_rules
+                        .get(rule_id)
+                        .map(|rule| rule.id.clone())
+                })
             } else {
-                warn!(
-                    "Problem reading {:?}: stop_id={:?} not found. Skipping this stop_time",
-                    file_name, stop_time.stop_id
-                );
+                None
+            };
+
+            let mut vj = collections.vehicle_journeys.index_mut(vj_idx);
+
+            if let Some(rule_id) = booking_rule_id {
+                vj.booking_rule_links.insert(rule_id);
+                booking_rule_found = true;
+            }
+
+            for stop_point_idx in stop_point_idxs {
+                vj.stop_times.push(objects::StopTime {
+                    stop_point_idx,
+                    sequence: if has_pickup_drop_off_windows {
+                        auto_generated_sequence
+                    } else {
+                        stop_time.stop_sequence
+                    },
+                    arrival_time: st_values.arrival_time,
+                    departure_time: st_values.departure_time,
+                    start_pickup_drop_off_window: stop_time.start_pickup_drop_off_window,
+                    end_pickup_drop_off_window: stop_time.end_pickup_drop_off_window,
+                    boarding_duration: 0,
+                    alighting_duration: 0,
+                    pickup_type,
+                    drop_off_type,
+                    local_zone_id: stop_time.local_zone_id,
+                    precision,
+                });
+                auto_generated_sequence += 1;
             }
         }
     }
@@ -507,85 +562,195 @@ where
 
 fn ventilate_stop_times(
     undefined_stop_times: &[&StopTime],
-    before: &StopTimesValues,
-    after: &StopTimesValues,
+    before_departure_time: Time,
+    after_arrival_time: Time,
 ) -> Vec<StopTimesValues> {
-    let duration = after.arrival_time - before.departure_time;
+    let duration = after_arrival_time - before_departure_time;
     let step = duration / (undefined_stop_times.len() + 1) as u32;
     let mut res = vec![];
     for idx in 0..undefined_stop_times.len() {
         let num = idx as u32 + 1u32;
-        let time = before.departure_time + objects::Time::new(0, 0, num * step.total_seconds());
+        let time = before_departure_time + objects::Time::new(0, 0, num * step.total_seconds());
         res.push(StopTimesValues {
-            departure_time: time,
-            arrival_time: time,
+            departure_time: Some(time),
+            arrival_time: Some(time),
             precision: StopTimePrecision::Approximate,
         });
     }
     res
 }
 
+#[derive(Debug)]
+enum StopTimeType<'a> {
+    WithPickupDropOffWindow(Vec<&'a StopTime>),
+    NoPickupDropOffWindow(Vec<&'a StopTime>),
+}
+
+/// The group_stop_times_by_type function takes a slice of StopTime objects
+/// and groups them into contiguous segments based on whether each stop time
+/// has "pickup/dropoff window" or not.
+/// The function returns a vector of `StopTimeType` values,
+/// where each element represents a group of consecutive stop times of the same type.
+///
+/// eg: [without_window_st1, without_window_st2, with_window_st1, with_window_st2, without_window_st3]
+/// will be grouped into:
+/// [
+///     StopTimeType::NoPickupDropOffWindow(vec![&without_window_st1, &without_window_st2]),
+///     StopTimeType::WithPickupDropOffWindow(vec![&with_window_st1, &with_window_st2]),
+///     StopTimeType::NoPickupDropOffWindow(vec![&without_window_st3]),
+/// ]
+fn group_stop_times_by_type(stop_times: &[StopTime]) -> Vec<StopTimeType> {
+    let mut result = Vec::new();
+    let mut current_group: Vec<&StopTime> = Vec::new();
+    let mut last_with_pickup_dropoff_window: Option<bool> = None;
+
+    fn make_group(with_pickup_dropoff_window: bool, group: Vec<&StopTime>) -> StopTimeType {
+        if with_pickup_dropoff_window {
+            StopTimeType::WithPickupDropOffWindow(group)
+        } else {
+            StopTimeType::NoPickupDropOffWindow(group)
+        }
+    }
+
+    for stop_time in stop_times {
+        match last_with_pickup_dropoff_window {
+            Some(with_pickup_dropoff_window)
+                if with_pickup_dropoff_window == stop_time.has_pickup_drop_off_windows() =>
+            {
+                current_group.push(stop_time);
+            }
+            Some(_) | None => {
+                if !current_group.is_empty() {
+                    result.push(make_group(
+                        last_with_pickup_dropoff_window.unwrap(),
+                        current_group,
+                    ));
+                }
+                current_group = vec![stop_time];
+            }
+        }
+        last_with_pickup_dropoff_window = Some(stop_time.has_pickup_drop_off_windows());
+    }
+
+    if !current_group.is_empty() {
+        result.push(make_group(
+            last_with_pickup_dropoff_window.unwrap(),
+            current_group,
+        ));
+    }
+
+    result
+}
+
+fn process_stop_time<'a>(
+    st: &'a StopTime,
+    vj_id: &str,
+    current_st_values: &mut Vec<StopTimesValues>,
+    undefined_stops_bulk: &mut Vec<&'a StopTime>,
+) -> Result<()> {
+    // if only one in departure/arrival value is defined, we set it to the other value
+    let (departure_time, arrival_time) = match (st.departure_time, st.arrival_time) {
+        (Some(departure_time), None) => {
+            tracing::debug!("for vj '{}', stop time n° {} has no arrival defined, we set it to its departure value", vj_id, st.stop_sequence);
+            (departure_time, departure_time)
+        }
+        (None, Some(arrival_time)) => {
+            tracing::debug!("for vj '{}', stop time n° {} has no departure defined, we set it to its arrival value", vj_id, st.stop_sequence);
+            (arrival_time, arrival_time)
+        }
+        (Some(departure_time), Some(arrival_time)) => (departure_time, arrival_time),
+        (None, None) => {
+            undefined_stops_bulk.push(st);
+            return Ok(());
+        }
+    };
+
+    let st_value = StopTimesValues {
+        departure_time: Some(departure_time),
+        arrival_time: Some(arrival_time),
+        precision: if !st.timepoint {
+            StopTimePrecision::Approximate
+        } else {
+            StopTimePrecision::Exact
+        },
+    };
+
+    if !undefined_stops_bulk.is_empty() {
+        let before_departure: Time = if let Some(before) = current_st_values
+            .last()
+            .and_then(|s: &StopTimesValues| s.departure_time)
+        {
+            before
+        } else {
+            bail!("the first stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id);
+        };
+        let values = ventilate_stop_times(
+            undefined_stops_bulk,
+            before_departure,
+            st_value.arrival_time.unwrap(),
+        );
+        current_st_values.extend(values);
+        undefined_stops_bulk.clear();
+    }
+    current_st_values.push(st_value);
+    Ok(())
+}
+
 // Temporary struct used by the interpolation process
+#[derive(Debug)]
 struct StopTimesValues {
-    arrival_time: Time,
-    departure_time: Time,
+    arrival_time: Option<Time>,
+    departure_time: Option<Time>,
     precision: StopTimePrecision,
 }
 
-// in the GTFS some stoptime can have undefined departure/arrival (all stop_times but the first and the last)
-// when it's the case, we apply a simple distribution of those stops, and we mark them as `estimated`
-// cf. https://github.com/hove-io/navitia_model/blob/master/src/documentation/gtfs_read.md#reading-stop_timestxt
 fn interpolate_undefined_stop_times(
     vj_id: &str,
     stop_times: &[StopTime],
-) -> Result<Vec<StopTimesValues>> {
-    let mut undefined_stops_bulk = Vec::with_capacity(0);
+) -> Result<(Vec<StopTimesValues>, bool)> {
+    let grouped = group_stop_times_by_type(stop_times);
+
     let mut res = vec![];
-    for st in stop_times {
-        // if only one in departure/arrival value is defined, we set it to the other value
-        let (departure_time, arrival_time) = match (st.departure_time, st.arrival_time) {
-            (Some(departure_time), None) => {
-                tracing::debug!("for vj '{}', stop time n° {} has no arrival defined, we set it to its departure value", vj_id, st.stop_sequence);
-                (departure_time, departure_time)
-            }
-            (None, Some(arrival_time)) => {
-                tracing::debug!("for vj '{}', stop time n° {} has no departure defined, we set it to its arrival value", vj_id, st.stop_sequence);
-                (arrival_time, arrival_time)
-            }
-            (Some(departure_time), Some(arrival_time)) => (departure_time, arrival_time),
-            (None, None) => {
-                undefined_stops_bulk.push(st);
-                continue;
-            }
-        };
+    let mut has_pickup_dropoff_window = false;
 
-        let st_value = StopTimesValues {
-            departure_time,
-            arrival_time,
-            precision: if !st.timepoint {
-                StopTimePrecision::Approximate
-            } else {
-                StopTimePrecision::Exact
-            },
-        };
+    for group in grouped {
+        let mut current_st_values = vec![];
+        let mut undefined_stops_bulk: Vec<&StopTime> = Vec::with_capacity(0);
+        match group {
+            StopTimeType::NoPickupDropOffWindow(stop_times) => {
+                for st in stop_times {
+                    process_stop_time(
+                        st,
+                        vj_id,
+                        &mut current_st_values,
+                        &mut undefined_stops_bulk,
+                    )?;
+                }
 
-        if !undefined_stops_bulk.is_empty() {
-            let values = ventilate_stop_times(
-                &undefined_stops_bulk,
-                res.last().ok_or_else(|| anyhow!("the first stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))?,
-                &st_value,
-            );
-            res.extend(values);
-            undefined_stops_bulk.clear();
+                if !undefined_stops_bulk.is_empty() {
+                    bail!("the last stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id);
+                }
+            }
+
+            StopTimeType::WithPickupDropOffWindow(stop_times) => {
+                has_pickup_dropoff_window = true;
+
+                // For stop times with pickup/drop-off windows, just copy the times without ventilation
+                for st in stop_times {
+                    let st_value = StopTimesValues {
+                        departure_time: st.departure_time,
+                        arrival_time: st.arrival_time,
+                        precision: StopTimePrecision::Estimated,
+                    };
+                    current_st_values.push(st_value);
+                }
+            }
         }
-        res.push(st_value);
+
+        res.extend(current_st_values);
     }
 
-    if !undefined_stops_bulk.is_empty() {
-        Err(anyhow!("the last stop time of the vj '{}' has no departure/arrival, the stop_times.txt file is not valid", vj_id))
-    } else {
-        Ok(res)
-    }
+    Ok((res, has_pickup_dropoff_window))
 }
 
 ///Reading transit agencies with service represented in this dataset.
@@ -1422,6 +1587,74 @@ pub fn apply_attribution_rules(
     Ok(())
 }
 
+type LocationGroups = HashMap<String, Vec<Idx<StopPoint>>>;
+
+/// Reading location groups
+pub fn read_location_groups<H>(
+    file_handler: &mut H,
+    stop_points: &mut CollectionWithId<objects::StopPoint>,
+    stop_areas: &CollectionWithId<objects::StopArea>,
+) -> Result<LocationGroups>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let location_group_stops: Vec<LocationGroupStop> =
+        read_objects(file_handler, "location_group_stops.txt", false)?;
+    let mut location_groups: LocationGroups = HashMap::new();
+
+    for location_group_stop in location_group_stops {
+        let group = location_groups
+            .entry(location_group_stop.location_group_id.clone())
+            .or_default();
+
+        match stop_points.get_idx(&location_group_stop.stop_id) {
+            Some(stop_point_idx) => {
+                group.push(stop_point_idx);
+            }
+            None => {
+                if let Some(stop_area) = stop_areas.get(&location_group_stop.stop_id) {
+                    let stop_point_idxs: Vec<_> = stop_points
+                        .iter()
+                        .filter_map(|(idx, sp)| (sp.stop_area_id == stop_area.id).then_some(idx))
+                        .collect();
+
+                    if stop_point_idxs.is_empty() {
+                        warn!(
+                            "Problem reading location_group_stops.txt: no stop points for stop area with stop_id={} found, creating a new stop point from stop area",
+                            location_group_stop.stop_id
+                        );
+                        let stop_point = StopPoint::from(stop_area);
+                        let stop_point_idx = stop_points.push(stop_point)?;
+                        group.push(stop_point_idx);
+                    } else {
+                        group.extend(stop_point_idxs);
+                    }
+                } else {
+                    warn!(
+                        "Problem reading location_group_stops.txt: stop_id={} not found in stop_point or stop_areas",
+                        location_group_stop.stop_id
+                    );
+                }
+            }
+        }
+    }
+    Ok(location_groups)
+}
+
+pub fn read_booking_rules<H>(file_handler: &mut H) -> Result<CollectionWithId<objects::BookingRule>>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let booking_rules: Vec<BookingRule> = read_objects(file_handler, "booking_rules.txt", false)?;
+
+    let ntm_booking_rules: Vec<objects::BookingRule> = booking_rules
+        .into_iter()
+        .map(objects::BookingRule::try_from)
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(CollectionWithId::new(ntm_booking_rules)?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1429,7 +1662,7 @@ mod tests {
         calendars,
         configuration::read_config,
         file_handler::PathFileHandler,
-        gtfs::read::EquipmentList,
+        gtfs::{read::EquipmentList, StopTime as GtfsStopTime},
         model::Collections,
         objects::*,
         objects::{Calendar, Comment, CommentType, Equipment, Geometry, Rgb, StopTime, Transfer},
@@ -2594,7 +2827,15 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections, false).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
+            let location_groups = HashMap::new();
+            super::manage_stop_times(
+                &mut collections,
+                &mut handler,
+                false,
+                None,
+                &location_groups,
+            )
+            .unwrap();
 
             assert_eq!(
                 vec![
@@ -2692,7 +2933,15 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections, false).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
+            let location_groups = HashMap::new();
+            super::manage_stop_times(
+                &mut collections,
+                &mut handler,
+                false,
+                None,
+                &location_groups,
+            )
+            .unwrap();
 
             assert_eq!(
                 vec![
@@ -2781,7 +3030,15 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections, false).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
+            let location_groups = HashMap::new();
+            super::manage_stop_times(
+                &mut collections,
+                &mut handler,
+                false,
+                None,
+                &location_groups,
+            )
+            .unwrap();
 
             assert_eq!(
                 vec![
@@ -3207,7 +3464,15 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections, false).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, false, None).unwrap();
+            let location_groups = HashMap::new();
+            super::manage_stop_times(
+                &mut collections,
+                &mut handler,
+                false,
+                None,
+                &location_groups,
+            )
+            .unwrap();
 
             assert_eq!(
                 vec![
@@ -3278,7 +3543,14 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections, false).unwrap();
-            let val = super::manage_stop_times(&mut collections, &mut handler, false, None);
+            let location_groups = HashMap::new();
+            let val = super::manage_stop_times(
+                &mut collections,
+                &mut handler,
+                false,
+                None,
+                &location_groups,
+            );
 
             // the first stop time of the vj has no departure/arrival, it's an error
             let err = val.unwrap_err();
@@ -3408,7 +3680,9 @@ mod tests {
             collections.stop_points = stop_points;
 
             super::read_routes(&mut handler, &mut collections, false).unwrap();
-            super::manage_stop_times(&mut collections, &mut handler, true, None).unwrap();
+            let location_groups = HashMap::new();
+            super::manage_stop_times(&mut collections, &mut handler, true, None, &location_groups)
+                .unwrap();
 
             assert_eq!(
                 vec![
@@ -3565,6 +3839,105 @@ mod tests {
                     extract(|r| &r.id, &collections.routes)
                 );
             });
+        }
+    }
+
+    #[test]
+    fn test_group_stop_times_by_type() {
+        // Test empty input
+        assert_eq!(group_stop_times_by_type(&[]).len(), 0);
+
+        // regular stop times
+        let stop_time_1 = GtfsStopTime {
+            trip_id: "1".into(),
+            stop_sequence: 1,
+            stop_id: Some("stop1".into()),
+            arrival_time: Some(Time::new(8, 0, 0)),
+            departure_time: Some(Time::new(8, 0, 0)),
+            pickup_type: 0,
+            drop_off_type: 0,
+            timepoint: true,
+            location_group_id: None,
+            ..Default::default()
+        };
+        let stop_time_2 = GtfsStopTime {
+            trip_id: "1".into(),
+            stop_sequence: 1,
+            stop_id: Some("stop1".into()),
+            arrival_time: Some(Time::new(8, 10, 0)),
+            departure_time: Some(Time::new(8, 10, 0)),
+            pickup_type: 0,
+            drop_off_type: 0,
+            timepoint: true,
+            ..Default::default()
+        };
+
+        //  zonal on-demand stop times
+        let stop_time_3 = GtfsStopTime {
+            trip_id: "1".into(),
+            stop_sequence: 1,
+            pickup_type: 2,
+            drop_off_type: 1,
+            timepoint: true,
+            start_pickup_drop_off_window: Some(Time::new(9, 0, 0)),
+            end_pickup_drop_off_window: Some(Time::new(20, 0, 0)),
+            location_group_id: Some("zone1".into()),
+            ..Default::default()
+        };
+        let stop_time_4 = GtfsStopTime {
+            trip_id: "1".into(),
+            stop_sequence: 1,
+            pickup_type: 1,
+            drop_off_type: 2,
+            timepoint: true,
+            start_pickup_drop_off_window: Some(Time::new(9, 0, 0)),
+            end_pickup_drop_off_window: Some(Time::new(20, 0, 0)),
+            location_group_id: Some("zone1".into()),
+            ..Default::default()
+        };
+
+        // regular stop time
+        let stop_time_5 = GtfsStopTime {
+            trip_id: "1".into(),
+            stop_sequence: 1,
+            stop_id: Some("stop1".into()),
+            arrival_time: Some(Time::new(8, 20, 0)),
+            departure_time: Some(Time::new(8, 20, 0)),
+            pickup_type: 0,
+            drop_off_type: 0,
+            timepoint: true,
+            ..Default::default()
+        };
+
+        let stop_times = [
+            stop_time_1,
+            stop_time_2,
+            stop_time_3,
+            stop_time_4,
+            stop_time_5,
+        ];
+        let result = group_stop_times_by_type(&stop_times);
+        assert_eq!(result.len(), 3);
+
+        match &result[0] {
+            StopTimeType::NoPickupDropOffWindow(stops) => assert_eq!(stops.len(), 2),
+            StopTimeType::WithPickupDropOffWindow(_) => {
+                panic!("Expected stop times without pickup/drop-off window")
+            }
+        }
+
+        match &result[1] {
+            StopTimeType::NoPickupDropOffWindow(_) => {
+                panic!("Expected stop times with pickup/drop-off window")
+            }
+            StopTimeType::WithPickupDropOffWindow(stops) => assert_eq!(stops.len(), 2),
+        }
+
+        match &result[2] {
+            StopTimeType::NoPickupDropOffWindow(stops) => assert_eq!(stops.len(), 1),
+            StopTimeType::WithPickupDropOffWindow(_) => {
+                panic!("Expected stop times without pickup/drop-off window")
+            }
         }
     }
 }
