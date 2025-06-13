@@ -148,7 +148,7 @@ macro_rules! impl_links {
     };
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Contributor {
     #[serde(rename = "contributor_id")]
     pub id: String,
@@ -180,7 +180,7 @@ impl Default for Contributor {
 impl_with_id!(Contributor);
 impl_id!(Contributor);
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub enum DatasetType {
     #[serde(rename = "0")]
     Theorical,
@@ -211,7 +211,7 @@ impl Default for ValidityPeriod {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Dataset {
     #[serde(rename = "dataset_id")]
     pub id: String,
@@ -1469,7 +1469,7 @@ impl WithId for Calendar {
         }
     }
 }
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Default)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Default, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum CompanyRole {
     #[default]
@@ -1477,7 +1477,7 @@ pub enum CompanyRole {
     Operator,
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Company {
     #[serde(rename = "company_id")]
     pub id: String,
@@ -1529,7 +1529,7 @@ impl_with_id!(Company);
 
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum CommentType {
     #[derivative(Default)]
@@ -1551,7 +1551,7 @@ impl std::fmt::Display for CommentType {
     }
 }
 
-#[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Comment {
     #[serde(rename = "comment_id")]
     pub id: String,
@@ -1573,7 +1573,7 @@ impl AddPrefix for Comment {
     }
 }
 
-#[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct BookingRule {
     #[serde(rename = "booking_rule_id")]
     pub id: String,
@@ -1759,7 +1759,7 @@ impl TripProperty {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Geometry {
     #[serde(rename = "geometry_id")]
     pub id: String,
@@ -1868,7 +1868,7 @@ impl AddPrefix for FareV1 {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Ticket {
     #[serde(rename = "ticket_id")]
     pub id: String,
@@ -1920,7 +1920,7 @@ impl AddPrefix for TicketPrice {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct TicketUse {
     #[serde(rename = "ticket_use_id")]
     pub id: String,
@@ -1985,7 +1985,7 @@ impl AddPrefix for TicketUseRestriction {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GridCalendar {
     #[serde(rename = "grid_calendar_id")]
     pub id: String,
@@ -2083,7 +2083,7 @@ pub struct Address {
 
 impl_id!(Address);
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AdministrativeRegion {
     #[serde(rename = "admin_id")]
     pub id: String,

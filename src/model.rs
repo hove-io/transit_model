@@ -75,7 +75,7 @@ pub const TRAIN_PHYSICAL_MODE: &str = "Train";
 pub const TRAMWAY_PHYSICAL_MODE: &str = "Tramway";
 
 /// The set of collections representing the model.
-#[derive(Derivative, Serialize, Deserialize, Debug)]
+#[derive(Derivative, Serialize, Deserialize, Debug, Clone)]
 #[derivative(Default)]
 #[allow(missing_docs)]
 pub struct Collections {
