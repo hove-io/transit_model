@@ -1,6 +1,6 @@
-route_id,service_id,trip_id,wheelchair_accessible,block_id
-route:2,service:1,trip:3,1,
-route:2,service:1,trip:4,1
-route:3,service:2,trip:5,2
-route:3,service:2,trip:6,0
-route:3,service:2,with_no_stop_times,0
+route_id,service_id,trip_id,wheelchair_accessible,block_id,trip_headsign,trip_short_name
+route:2,service:1,trip:3,1,,,
+route:2,service:1,trip:4,1,,headsign:4,
+route:3,service:2,trip:5,2,,,trip_short_name:5
+route:3,service:2,trip:6,0,,headsign:6,trip_short_name:6
+route:3,service:2,with_no_stop_times,0,,,
