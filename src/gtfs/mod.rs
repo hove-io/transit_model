@@ -381,6 +381,8 @@ pub struct Configuration {
     /// Else we group the routes by `agency_id` and `route_short_name`
     /// (or `route_long_name` if the short name is empty) and create a `Line` for each group.
     pub read_as_line: bool,
+    /// Read trip_short_name as specified in the GTFS specification.
+    pub read_trip_short_name: bool,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -440,6 +442,7 @@ where
         on_demand_transport,
         on_demand_transport_comment,
         read_as_line,
+        read_trip_short_name,
     } = configuration;
 
     manage_calendars(file_handler, &mut collections)?;
@@ -461,7 +464,12 @@ where
 
     read::manage_shapes(&mut collections, file_handler)?;
 
-    read::read_routes(file_handler, &mut collections, read_as_line)?;
+    read::read_routes(
+        file_handler,
+        &mut collections,
+        read_as_line,
+        read_trip_short_name,
+    )?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
 
     let location_groups = read::read_location_groups(
