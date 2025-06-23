@@ -307,7 +307,7 @@ immediately with an error.
 
 | parameter `--read-trip-short-name` | NTFS `trip_headsign`                                     | NTFS `trip_short_name ` |
 | ---------------------------------- | -------------------------------------------------------- | ----------------------- |
-| `false`                            | GTFS `trip_short_name`, or if empty GTFS `trip_headsign` |                         |
+| `false` (default)                  | GTFS `trip_short_name`, or if empty GTFS `trip_headsign` |                         |
 | `true`                             | GTFS `trip_headsign`                                     | GTFS `trip_short_name`  |
 
 (2) The `trip_property` object is a complex type with additional properties :
