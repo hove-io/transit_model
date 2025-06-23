@@ -98,6 +98,16 @@ struct Opt {
     /// Don't compute transfers even the transfers of the stop point to itself (max_distance = 0.0)
     #[arg(long)]
     ignore_transfers: bool,
+
+    /// Read trip_short_name as specified in the GTFS specification.
+    /// if true
+    ///     NTFS trip headsign = GTFS trip headsign
+    ///     NTFS trip short name = GTFS trip short name
+    /// if false
+    ///     NTFS trip heasign = GTFS trip short name if exists else GTFS headsign
+    ///     NTFS trip short name is always None
+    #[arg(long)]
+    read_trip_short_name: bool,
 }
 
 fn run(opt: Opt) -> Result<()> {
@@ -119,6 +129,7 @@ fn run(opt: Opt) -> Result<()> {
         on_demand_transport: opt.odt,
         on_demand_transport_comment: opt.odt_comment,
         read_as_line: opt.read_as_line,
+        read_trip_short_name: opt.read_trip_short_name,
     };
 
     let model = transit_model::gtfs::Reader::new(configuration).parse(opt.input)?;
