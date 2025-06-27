@@ -1,4 +1,6 @@
 shape_id,shape_pt_lat,shape_pt_lon,shape_pt_sequence
+linestring_for_line,20.2,10.1,0
+linestring_for_line,40.4,30.3,1
 linestring_for_trip,20.2,10.1,0
 linestring_for_trip,40.4,30.3,1
 linestring_for_trip,60.6,50.5,2
