@@ -639,9 +639,14 @@ fn ntfs_geometry_to_gtfs_shapes(g: &objects::Geometry) -> impl Iterator<Item = S
 pub fn write_shapes(
     path: &path::Path,
     geometries: &CollectionWithId<objects::Geometry>,
+    vehicle_journeys: &CollectionWithId<VehicleJourney>,
 ) -> Result<()> {
-    let shapes: Vec<_> = geometries
+    let mut used_geometries = HashSet::new();
+    let shapes: Vec<_> = vehicle_journeys
         .values()
+        .filter_map(|vj| vj.geometry_id.as_ref())
+        .filter(|&geometry_id| used_geometries.insert(geometry_id))
+        .filter_map(|geometry_id| geometries.get(geometry_id))
         .flat_map(ntfs_geometry_to_gtfs_shapes)
         .collect();
     if !shapes.is_empty() {
