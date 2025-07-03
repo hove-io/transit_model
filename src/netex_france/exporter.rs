@@ -168,7 +168,7 @@ impl<'a> Exporter<'a> {
 
     pub(in crate::netex_france) fn generate_id(id: &'a str, object_type: ObjectType) -> String {
         let id = id.replace(':', "_");
-        format!("FR:{}:{}:", object_type, id)
+        format!("FR:{object_type}:{id}:")
     }
 
     pub(in crate::netex_france) fn get_coordinates_converter() -> Result<Proj> {
@@ -197,7 +197,7 @@ impl Exporter<'_> {
             .append(frame)
             .build();
         Element::builder("PublicationDelivery")
-            .attr("version", format!("1.09:FR-NETEX_{}-2.1-1.0", version_type))
+            .attr("version", format!("1.09:FR-NETEX_{version_type}-2.1-1.0"))
             .attr("xmlns:siri", "http://www.siri.org.uk/siri")
             .attr("xmlns:core", "http://www.govtalk.gov.uk/core")
             .attr("xmlns:gml", "http://www.opengis.net/gml/3.2")
@@ -213,7 +213,7 @@ impl Exporter<'_> {
     }
 
     fn generate_frame_id(&self, frame_type: FrameType, id: &str) -> String {
-        format!("FR:{}:{}:", frame_type, id)
+        format!("FR:{frame_type}:{id}:")
     }
 
     fn create_composite_frame<I, T>(id: String, frames: I) -> Element
@@ -460,7 +460,7 @@ impl Exporter<'_> {
             } else {
                 String::new()
             };
-            let file_name = format!("offre_{}{:x}.xml", line_code, line_id_md5);
+            let file_name = format!("offre_{line_code}{line_id_md5:x}.xml");
             let filepath = network_path.as_ref().join(file_name);
             let file = File::create(&filepath)?;
             let offer_frame = self.create_offer_frame(&offer_exporter, line_idx)?;

@@ -509,7 +509,7 @@ impl ModelBuilder {
             let mut sp = StopPoint {
                 id: id.to_owned(),
                 name: id.to_owned(),
-                stop_area_id: format!("sa:{}", id),
+                stop_area_id: format!("sa:{id}"),
                 ..Default::default()
             };
             initer(&mut sp);
@@ -661,7 +661,7 @@ impl VehicleJourneyBuilder<'_> {
             .stop_points
             .get_idx(sp)
             .unwrap_or_else(|| {
-                let sa_id = format!("sa:{}", sp);
+                let sa_id = format!("sa:{sp}");
                 let new_sp = StopPoint {
                     id: sp.to_owned(),
                     name: sp.to_owned(),

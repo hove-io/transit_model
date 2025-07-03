@@ -467,7 +467,7 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn generate_route_point_id(route_id: &str, order: usize) -> String {
-        format!("{}_{}", route_id, order)
+        format!("{route_id}_{order}")
     }
 
     fn generate_point_on_route(&self, route_id: &'a str, order: usize) -> Element {
@@ -613,7 +613,7 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn generate_stop_sequence_id(id: &str, sequence: u32, object_type: ObjectType) -> String {
-        let order_id = format!("{}_{}", id, sequence);
+        let order_id = format!("{id}_{sequence}");
         Exporter::generate_id(&order_id, object_type)
     }
 

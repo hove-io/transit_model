@@ -570,11 +570,11 @@ impl Reader {
             // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
             Ok(self
                 .parse_zip(p)
-                .with_context(|| format!("impossible to read zipped gtfs {:?}", p))?)
+                .with_context(|| format!("impossible to read zipped gtfs {p:?}"))?)
         } else if p.is_dir() {
             Ok(self
                 .parse_dir(p)
-                .with_context(|| format!("impossible to read gtfs directory from {:?}", p))?)
+                .with_context(|| format!("impossible to read gtfs directory from {p:?}"))?)
         } else {
             Err(anyhow!(
                 "file {:?} is neither a file nor a directory, cannot read a gtfs from it",
@@ -592,11 +592,11 @@ impl Reader {
             // if it's a file, we consider it to be a zip (and an error will be returned if it is not)
             Ok(self
                 .parse_zip_collections(p)
-                .with_context(|| format!("impossible to read zipped gtfs {:?}", p))?)
+                .with_context(|| format!("impossible to read zipped gtfs {p:?}"))?)
         } else if p.is_dir() {
             Ok(self
                 .parse_dir_collections(p)
-                .with_context(|| format!("impossible to read gtfs directory from {:?}", p))?)
+                .with_context(|| format!("impossible to read gtfs directory from {p:?}"))?)
         } else {
             Err(anyhow!(
                 "file {:?} is neither a file nor a directory, cannot read a gtfs from it",
@@ -675,7 +675,7 @@ enum RouteType {
 }
 impl fmt::Display for RouteType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 

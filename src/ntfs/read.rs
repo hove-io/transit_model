@@ -219,7 +219,7 @@ where
             let res = rdr
                 .deserialize()
                 .collect::<Result<_, _>>()
-                .with_context(|| format!("Error reading {:?}", path))?;
+                .with_context(|| format!("Error reading {path:?}"))?;
             Ok(Collection::new(res))
         }
     }
