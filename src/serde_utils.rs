@@ -34,7 +34,7 @@ where
         Ok(i != 0)
     } else {
         Err(D::Error::invalid_value(
-            Other(&format!("{} non boolean value", i)),
+            Other(&format!("{i} non boolean value")),
             &"boolean",
         ))
     }
@@ -56,7 +56,7 @@ where
         "1" => Ok(Some(true)),
         "" => Ok(None),
         _ => Err(D::Error::invalid_value(
-            Other(&format!("'{}' non boolean value", s)),
+            Other(&format!("'{s}' non boolean value")),
             &"boolean",
         )),
     }
@@ -311,7 +311,7 @@ where
     S: serde::Serializer,
 {
     let wkt = geometry.to_wkt();
-    serializer.serialize_str(&format!("{}", wkt))
+    serializer.serialize_str(&format!("{wkt}"))
 }
 
 /// deserialyse optional String

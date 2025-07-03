@@ -115,7 +115,7 @@ fn main() {
     init_logger();
     if let Err(err) = run(Opt::parse()) {
         for cause in err.chain() {
-            eprintln!("{}", cause);
+            eprintln!("{cause}");
         }
         std::process::exit(1);
     }

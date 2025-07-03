@@ -191,7 +191,7 @@ mod tests {
         for i in 0..4 {
             let idx = stop_points
                 .push(StopPoint {
-                    id: format!("sp{}", i),
+                    id: format!("sp{i}"),
                     ..Default::default()
                 })
                 .unwrap();

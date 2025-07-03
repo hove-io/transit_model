@@ -21,5 +21,5 @@ pub const GIT_VERSION: &str =
 
 /// get the binary version and the transit_model version
 pub fn binary_full_version(binary_version: &str) -> String {
-    format!("{} (transit_model = {})", binary_version, GIT_VERSION)
+    format!("{binary_version} (transit_model = {GIT_VERSION})")
 }

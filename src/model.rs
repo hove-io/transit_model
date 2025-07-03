@@ -1476,7 +1476,7 @@ impl Collections {
                     .map(|(trip_id, sequence)| {
                         (
                             (trip_id.to_string(), *sequence),
-                            format!("{}-{}", trip_id, sequence),
+                            format!("{trip_id}-{sequence}"),
                         )
                     })
                     .collect();
@@ -2064,8 +2064,8 @@ mod tests {
             CollectionWithId::new(
                 (1..9)
                     .map(|index| StopArea {
-                        id: format!("stop_area:{}", index),
-                        name: format!("Stop Area {}", index),
+                        id: format!("stop_area:{index}"),
+                        name: format!("Stop Area {index}"),
                         ..Default::default()
                     })
                     .collect(),
@@ -2077,8 +2077,8 @@ mod tests {
             CollectionWithId::new(
                 (1..9)
                     .map(|index| StopPoint {
-                        id: format!("stop_point:{}", index),
-                        stop_area_id: format!("stop_area:{}", index),
+                        id: format!("stop_point:{index}"),
+                        stop_area_id: format!("stop_area:{index}"),
                         ..Default::default()
                     })
                     .collect(),
@@ -2419,7 +2419,7 @@ mod tests {
             CollectionWithId::new(
                 (1..=sp_amount)
                     .map(|index| StopPoint {
-                        id: format!("stop_point:{}", index),
+                        id: format!("stop_point:{index}"),
                         stop_area_id: "stop_area:1".into(),
                         coord: Coord {
                             lon: index as f64,

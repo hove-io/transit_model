@@ -110,13 +110,13 @@ where
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
     for obj in collection.values() {
         wtr.serialize(obj)
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
     }
     wtr.flush()
-        .with_context(|| format!("Error reading {:?}", path))?;
+        .with_context(|| format!("Error reading {path:?}"))?;
 
     Ok(())
 }
@@ -135,13 +135,13 @@ where
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
     for obj in collection.values() {
         wtr.serialize(obj)
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
     }
     wtr.flush()
-        .with_context(|| format!("Error reading {:?}", path))?;
+        .with_context(|| format!("Error reading {path:?}"))?;
 
     Ok(())
 }

@@ -250,13 +250,13 @@ pub fn write_calendar_dates(
     }
     if !exceptions.is_empty() {
         let mut wtr = csv::Writer::from_path(&calendar_dates_path)
-            .with_context(|| format!("Error reading {:?}", calendar_dates_path))?;
+            .with_context(|| format!("Error reading {calendar_dates_path:?}"))?;
         for e in exceptions {
             wtr.serialize(&e)
-                .with_context(|| format!("Error reading {:?}", calendar_dates_path))?;
+                .with_context(|| format!("Error reading {calendar_dates_path:?}"))?;
         }
         wtr.flush()
-            .with_context(|| format!("Error reading {:?}", calendar_dates_path))?;
+            .with_context(|| format!("Error reading {calendar_dates_path:?}"))?;
     }
     write_calendar(path, &translations)
 }
@@ -271,12 +271,12 @@ pub fn write_calendar(path: &path::Path, calendars: &[Calendar]) -> Result<()> {
 
     let calendar_path = path.join(file);
     let mut wtr = csv::Writer::from_path(&calendar_path)
-        .with_context(|| format!("Error reading {:?}", calendar_path))?;
+        .with_context(|| format!("Error reading {calendar_path:?}"))?;
     for calendar in calendars {
         wtr.serialize(calendar)
-            .with_context(|| format!("Error reading {:?}", calendar_path))?;
+            .with_context(|| format!("Error reading {calendar_path:?}"))?;
     }
     wtr.flush()
-        .with_context(|| format!("Error reading {:?}", calendar_path))?;
+        .with_context(|| format!("Error reading {calendar_path:?}"))?;
     Ok(())
 }

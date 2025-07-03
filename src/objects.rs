@@ -909,7 +909,7 @@ impl ::serde::Serialize for Time {
     where
         S: ::serde::Serializer,
     {
-        let time = format!("{}", self);
+        let time = format!("{self}");
         serializer.serialize_str(&time)
     }
 }

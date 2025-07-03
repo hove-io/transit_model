@@ -20,14 +20,14 @@ fn run() -> Result<()> {
     let objects = gtfs::read(".")?;
     // output internal model as JSON
     let json_objs = json!(objects);
-    println!("{}", json_objs);
+    println!("{json_objs}");
     Ok(())
 }
 
 fn main() {
     if let Err(err) = run() {
         for cause in err.chain() {
-            eprintln!("{}", cause);
+            eprintln!("{cause}");
         }
         std::process::exit(1);
     }

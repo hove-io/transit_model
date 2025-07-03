@@ -50,7 +50,7 @@ where
             Ok(rdr
                 .deserialize()
                 .collect::<Result<_, _>>()
-                .with_context(|| format!("Error reading {:?}", path))?)
+                .with_context(|| format!("Error reading {path:?}"))?)
         }
     }
 }
@@ -85,7 +85,7 @@ where
                 .from_reader(reader);
             let objects = rdr
                 .deserialize()
-                .map(|object| object.with_context(|| format!("Error reading {:?}", path)))
+                .map(|object| object.with_context(|| format!("Error reading {path:?}")))
                 .skip_error_and_warn()
                 .collect();
             Ok(objects)

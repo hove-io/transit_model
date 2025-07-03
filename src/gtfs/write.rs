@@ -39,16 +39,16 @@ pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) 
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
     for t in transfers.values() {
         if t.from_stop_id != t.to_stop_id {
             wtr.serialize(Transfer::from(t))
-                .with_context(|| format!("Error reading {:?}", path))?;
+                .with_context(|| format!("Error reading {path:?}"))?;
         }
     }
 
     wtr.flush()
-        .with_context(|| format!("Error reading {:?}", path))?;
+        .with_context(|| format!("Error reading {path:?}"))?;
 
     Ok(())
 }
@@ -62,7 +62,7 @@ pub fn write_agencies(
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
     for network in networks.values() {
         let mut agency = Agency::from(network);
         if !ticketing_deep_links.is_empty() {
@@ -80,11 +80,11 @@ pub fn write_agencies(
             // Since the number of serialized columns must be the same, agencies without ticketing_deep_link_id must be set to empty string
         }
         wtr.serialize(agency)
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
     }
 
     wtr.flush()
-        .with_context(|| format!("Error reading {:?}", path))?;
+        .with_context(|| format!("Error reading {path:?}"))?;
 
     Ok(())
 }
@@ -98,13 +98,13 @@ pub fn write_ticketing_deep_links(
         info!(file_name = %file, "Writing");
         let path = path.join(file);
         let mut wtr =
-            csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+            csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
         for tdl in ticketing_deep_links.values() {
             wtr.serialize(tdl)
-                .with_context(|| format!("Error serializing {:?}", path))?;
+                .with_context(|| format!("Error serializing {path:?}"))?;
         }
         wtr.flush()
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
     }
     Ok(())
 }
@@ -223,25 +223,25 @@ pub fn write_stops(
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
     info!("Writing {} from StopPoint", file);
     for sp in stop_points.values() {
         wtr.serialize(ntfs_stop_point_to_gtfs_stop(sp, comments, equipments))
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
     }
     info!("Writing {} from StopArea", file);
     for sa in stop_areas.values() {
         wtr.serialize(ntfs_stop_area_to_gtfs_stop(sa, comments, equipments))
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
     }
     info!("Writing {} from StopLocation", file);
     for sl in stop_locations.values() {
         wtr.serialize(ntfs_stop_location_to_gtfs_stop(sl, comments, equipments))
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
     }
 
     wtr.flush()
-        .with_context(|| format!("Error reading {:?}", path))?;
+        .with_context(|| format!("Error reading {path:?}"))?;
 
     Ok(())
 }
@@ -290,7 +290,7 @@ pub fn write_trips<'a>(
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
     let mut vjs_by_route_gtfs_id: HashMap<String, Vec<&VehicleJourney>> = HashMap::new();
     for vj in model.vehicle_journeys.values() {
         let trip = make_gtfs_trip_from_ntfs_vj(vj, model);
@@ -300,11 +300,11 @@ pub fn write_trips<'a>(
             .push(vj);
 
         wtr.serialize(trip)
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
     }
 
     wtr.flush()
-        .with_context(|| format!("Error reading {:?}", path))?;
+        .with_context(|| format!("Error reading {path:?}"))?;
 
     Ok(vjs_by_route_gtfs_id)
 }
@@ -360,13 +360,13 @@ pub fn write_attributions(
         info!(file_name = %file, "Writing file");
         let path = path.join(file);
         let mut wtr =
-            csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+            csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
         for attribution in attributions {
             wtr.serialize(attribution)
-                .with_context(|| format!("Error reading {:?}", path))?;
+                .with_context(|| format!("Error reading {path:?}"))?;
         }
         wtr.flush()
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
     }
 
     Ok(())
@@ -414,13 +414,13 @@ pub fn write_stop_extensions(
 
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
     for se in stop_extensions {
         wtr.serialize(se)
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
     }
     wtr.flush()
-        .with_context(|| format!("Error reading {:?}", path))?;
+        .with_context(|| format!("Error reading {path:?}"))?;
 
     Ok(())
 }
@@ -523,22 +523,22 @@ pub fn write_routes(path: &path::Path, model: &Model, extend_route_type: bool) -
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
     for (from, l) in &model.lines {
         for pm in &get_line_physical_modes(from, &model.physical_modes, model) {
             let route = make_gtfs_route_from_ntfs_line(l, pm);
             if extend_route_type {
                 wtr.serialize(ExtendedRoute::from(route))
-                    .with_context(|| format!("Error reading {:?}", path))?;
+                    .with_context(|| format!("Error reading {path:?}"))?;
             } else {
                 wtr.serialize(route)
-                    .with_context(|| format!("Error reading {:?}", path))?;
+                    .with_context(|| format!("Error reading {path:?}"))?;
             }
         }
     }
 
     wtr.flush()
-        .with_context(|| format!("Error reading {:?}", path))?;
+        .with_context(|| format!("Error reading {path:?}"))?;
 
     Ok(())
 }
@@ -553,7 +553,7 @@ pub fn write_stop_times(
     info!(file_name = %file, "Writing");
     let stop_times_path = path.join(file);
     let mut st_wtr = csv::Writer::from_path(&stop_times_path)
-        .with_context(|| format!("Error reading {:?}", stop_times_path))?;
+        .with_context(|| format!("Error reading {stop_times_path:?}"))?;
     for (vj_idx, vj) in vehicle_journeys {
         for st in &vj.stop_times {
             // Notes :
@@ -586,12 +586,12 @@ pub fn write_stop_times(
                     pickup_booking_rule_id: booking_rule_id_opt.clone(),
                     drop_off_booking_rule_id: booking_rule_id_opt,
                 })
-                .with_context(|| format!("Error reading {:?}", st_wtr))?;
+                .with_context(|| format!("Error reading {st_wtr:?}"))?;
         }
     }
     st_wtr
         .flush()
-        .with_context(|| format!("Error reading {:?}", stop_times_path))?;
+        .with_context(|| format!("Error reading {stop_times_path:?}"))?;
     Ok(())
 }
 
@@ -606,13 +606,13 @@ pub fn write_booking_rules(
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error opening {:?}", path))?;
+        csv::Writer::from_path(&path).with_context(|| format!("Error opening {path:?}"))?;
     for br in booking_rules.values() {
         wtr.serialize(BookingRule::from(br))
-            .with_context(|| format!("Error writing {:?}", path))?;
+            .with_context(|| format!("Error writing {path:?}"))?;
     }
     wtr.flush()
-        .with_context(|| format!("Error writing {:?}", path))?;
+        .with_context(|| format!("Error writing {path:?}"))?;
     Ok(())
 }
 
@@ -649,12 +649,12 @@ pub fn write_shapes(
         info!(file_name = %file, "Writing");
         let path = path.join(file);
         let mut wtr =
-            csv::Writer::from_path(&path).with_context(|| format!("Error reading {:?}", path))?;
+            csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
         wtr.flush()
-            .with_context(|| format!("Error reading {:?}", path))?;
+            .with_context(|| format!("Error reading {path:?}"))?;
         for shape in shapes {
             wtr.serialize(shape)
-                .with_context(|| format!("Error reading {:?}", path))?;
+                .with_context(|| format!("Error reading {path:?}"))?;
         }
     }
 

@@ -68,7 +68,7 @@ impl<'a> TransferExporter<'a> {
         real_min_transfer_time: Option<u32>,
     ) -> Option<Element> {
         real_min_transfer_time
-            .map(|time| format!("PT{}S", time))
+            .map(|time| format!("PT{time}S"))
             .map(|duration| {
                 Element::builder("DefaultDuration")
                     .append(Node::Text(duration))

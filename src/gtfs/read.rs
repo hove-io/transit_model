@@ -1470,15 +1470,9 @@ impl TryFrom<&Attribution> for AttributionRule {
 
         if object_type.is_none() {
             let message = if let Some(attribution_id) = &attribution.attribution_id {
-                format!(
-                    "Attribution {} must have either route_id or trip_id",
-                    attribution_id
-                )
+                format!("Attribution {attribution_id} must have either route_id or trip_id")
             } else {
-                format!(
-                    "Attribution {:?} must have either route_id or trip_id",
-                    attribution
-                )
+                format!("Attribution {attribution:?} must have either route_id or trip_id")
             };
             bail!(message);
         }

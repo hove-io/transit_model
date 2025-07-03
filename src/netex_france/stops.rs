@@ -104,7 +104,7 @@ impl<'a> StopExporter<'a> {
         netex_mode: NetexMode,
     ) -> String {
         Exporter::generate_id(
-            &format!("{}_{}", stop_area_id, netex_mode),
+            &format!("{stop_area_id}_{netex_mode}"),
             ObjectType::StopPlace,
         )
     }

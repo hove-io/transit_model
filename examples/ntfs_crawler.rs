@@ -62,7 +62,7 @@ fn run() -> Result<()> {
 fn main() {
     if let Err(err) = run() {
         for cause in err.chain() {
-            eprintln!("{}", cause);
+            eprintln!("{cause}");
         }
         std::process::exit(1);
     }
