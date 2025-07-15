@@ -4009,4 +4009,19 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_read_attributions_with_only_required_fields() {
+        let attributions = "organization_name\n
+             Organization A";
+
+        test_in_tmp_dir(|path| {
+            create_file_with_content(path, "attributions.txt", attributions);
+            let mut handler = PathFileHandler::new(path.to_path_buf());
+
+            let attributions: Vec<AttributionRule> =
+                read_attributions(&mut handler, "attributions.txt").unwrap();
+            assert_eq!(0, attributions.len());
+        })
+    }
 }
