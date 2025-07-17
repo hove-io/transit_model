@@ -391,6 +391,7 @@ struct Attribution {
     route_id: Option<String>,
     trip_id: Option<String>,
     #[serde(
+        default,
         deserialize_with = "de_opt_bool_from_str",
         serialize_with = "ser_from_opt_bool"
     )]
