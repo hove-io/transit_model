@@ -1469,7 +1469,7 @@ impl WithId for Calendar {
         }
     }
 }
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Default, Clone)]
+#[derive(Serialize, Derivative, Deserialize, Debug, Eq, PartialEq, Default, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum CompanyRole {
     #[default]
@@ -1477,7 +1477,26 @@ pub enum CompanyRole {
     Operator,
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+impl From<String> for CompanyRole {
+    fn from(val: String) -> Self {
+        match val.as_str() {
+            "authority" => CompanyRole::Authority,
+            "operator" => CompanyRole::Operator,
+            _ => CompanyRole::Authority,
+        }
+    }
+}
+
+impl From<CompanyRole> for Option<String> {
+    fn from(val: CompanyRole) -> Self {
+        match val {
+            CompanyRole::Authority => Some("Authority".to_string()),
+            CompanyRole::Operator => Some("Operator".to_string()),
+        }
+    }
+}
+
+#[derive(Derivative, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Company {
     #[serde(rename = "company_id")]
     pub id: String,
