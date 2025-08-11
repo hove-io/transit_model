@@ -608,12 +608,12 @@ enum StopTimeType<'a> {
 ///     StopTimeType::WithPickupDropOffWindow(vec![&with_window_st1, &with_window_st2]),
 ///     StopTimeType::NoPickupDropOffWindow(vec![&without_window_st3]),
 /// ]
-fn group_stop_times_by_type(stop_times: &[StopTime]) -> Vec<StopTimeType> {
+fn group_stop_times_by_type(stop_times: &[StopTime]) -> Vec<StopTimeType<'_>> {
     let mut result = Vec::new();
     let mut current_group: Vec<&StopTime> = Vec::new();
     let mut last_with_pickup_dropoff_window: Option<bool> = None;
 
-    fn make_group(with_pickup_dropoff_window: bool, group: Vec<&StopTime>) -> StopTimeType {
+    fn make_group(with_pickup_dropoff_window: bool, group: Vec<&StopTime>) -> StopTimeType<'_> {
         if with_pickup_dropoff_window {
             StopTimeType::WithPickupDropOffWindow(group)
         } else {
