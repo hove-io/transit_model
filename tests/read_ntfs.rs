@@ -270,6 +270,18 @@ fn ntfs() {
         }
     );
 
+    assert_eq!(3, pt_objects.object_locks.len());
+    let mut object_locks = pt_objects.object_locks.values();
+    let object_lock_1 = object_locks.next().unwrap();
+    assert_eq!("line", object_lock_1.object_type.as_str());
+    assert_eq!("B42", object_lock_1.object_id);
+    let object_lock_2 = object_locks.next().unwrap();
+    assert_eq!("stop_area", object_lock_2.object_type.as_str());
+    assert_eq!("NAT", object_lock_2.object_id);
+    let object_lock_3 = object_locks.next().unwrap();
+    assert_eq!("stop_point", object_lock_3.object_type.as_str());
+    assert_eq!("GDLR", object_lock_3.object_id);
+
     // Trip M1F1
     let ids = &pt_objects
         .vehicle_journeys
@@ -378,6 +390,19 @@ fn preserve_occupancies() {
             output_dir,
             Some(vec!["occupancies.txt"]),
             "tests/fixtures/ntfs2ntfs/occupancies",
+        );
+    });
+}
+
+#[test]
+fn preserve_object_locks() {
+    let ntm = transit_model::ntfs::read("tests/fixtures/ntfs/").unwrap();
+    test_in_tmp_dir(|output_dir| {
+        transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            output_dir,
+            Some(vec!["object_locks.txt"]),
+            "tests/fixtures/ntfs2ntfs/object_locks",
         );
     });
 }

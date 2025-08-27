@@ -127,6 +127,7 @@ pub struct Collections {
     pub addresses: CollectionWithId<Address>,
     pub administrative_regions: CollectionWithId<AdministrativeRegion>,
     pub occupancies: Collection<Occupancy>,
+    pub object_locks: Collection<ObjectLock>,
 }
 
 impl Collections {
@@ -653,6 +654,7 @@ impl Collections {
         self.grid_periods = dedup_collection(&mut self.grid_periods);
         self.grid_rel_calendar_line = dedup_collection(&mut self.grid_rel_calendar_line);
         self.occupancies = dedup_collection(&mut self.occupancies);
+        self.object_locks = dedup_collection(&mut self.object_locks);
 
         Ok(())
     }

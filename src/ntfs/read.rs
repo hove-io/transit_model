@@ -789,6 +789,57 @@ where
     Ok(())
 }
 
+pub(crate) fn manage_object_locks<H>(
+    collections: &mut Collections,
+    file_handler: &mut H,
+) -> Result<()>
+where
+    for<'a> &'a mut H: FileHandler,
+{
+    let file = "object_locks.txt";
+    let mut object_locks: Collection<ObjectLock> = Collection::default();
+    let ntfs_object_locks = read_objects::<_, ObjectLock>(file_handler, file, false)?;
+
+    for object_lock in ntfs_object_locks {
+        // If there is ever going to be support for a dynamic type (like ObjectType::VehicleJourney)
+        // consider revisiting the implementation of AddPrefix for ObjectLock (to use schedule_prefix)
+        if !matches!(
+            object_lock.object_type,
+            ObjectType::Line | ObjectType::StopArea | ObjectType::StopPoint
+        ) {
+            warn!(
+                "Problem reading '{}': object with type '{}' is not supported",
+                file,
+                object_lock.object_type.as_str()
+            );
+            continue;
+        }
+        let object_exists = match object_lock.object_type {
+            ObjectType::Line => collections.lines.get(&object_lock.object_id).is_some(),
+            ObjectType::StopArea => collections.stop_areas.get(&object_lock.object_id).is_some(),
+            ObjectType::StopPoint => collections
+                .stop_points
+                .get(&object_lock.object_id)
+                .is_some(),
+            _ => false,
+        };
+        if !object_exists {
+            warn!(
+                "Problem reading '{}': object with type '{}' and id '{}' not found",
+                file,
+                object_lock.object_type.as_str(),
+                object_lock.object_id
+            );
+            continue;
+        }
+
+        object_locks.push(object_lock);
+    }
+
+    collections.object_locks = object_locks;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,0 +1,4 @@
+object_type,object_id
+line,B42
+stop_area,NAT
+stop_point,GDLR

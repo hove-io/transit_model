@@ -344,6 +344,7 @@ where
     read::manage_fares_v1(&mut collections, file_handler)?;
     read::manage_companies_on_vj(&mut collections)?;
     read::manage_occupancies(&mut collections, file_handler)?;
+    read::manage_object_locks(&mut collections, file_handler)?;
     Ok(collections)
 }
 
@@ -427,6 +428,7 @@ pub fn write<P: AsRef<path::Path>>(
         &model.administrative_regions,
     )?;
     write_collection(path, "occupancies.txt", &model.occupancies)?;
+    write_collection(path, "object_locks.txt", &model.object_locks)?;
 
     Ok(())
 }
