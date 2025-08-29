@@ -507,6 +507,79 @@ fn sanitize_grid_with_line_external_code() {
 }
 
 #[test]
+fn sanitize_stopareas_locked() {
+    // Create a basic Collection
+    let mut collections = transit_model::ModelBuilder::default()
+        .stop_area("SA:1", |_| {})
+        .stop_area("SA:2", |_| {})
+        .stop_point("SP:A", |stop_point| {
+            stop_point.stop_area_id = "SA:1".to_string();
+        })
+        .stop_point("SP:B", |stop_point| {
+            stop_point.stop_area_id = "SA:2".to_string();
+        })
+        .vj("VJ:1", |vj_builder| {
+            vj_builder
+                .line("L:001")
+                .st("SP:A", "10:00:00")
+                .st("SP:B", "10:10:00");
+        })
+        .build()
+        .into_collections();
+
+    // Add orphaned objects
+    collections
+        .lines
+        .push(Line {
+            id: "L:002".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+    collections
+        .stop_areas
+        .push(StopArea {
+            id: "SA:3".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+    collections
+        .stop_points
+        .push(StopPoint {
+            id: "SP:C".to_string(),
+            stop_area_id: "SA:3".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+
+    // Lock orphaned objects
+    collections.object_locks.push(ObjectLock {
+        object_type: ObjectType::Line,
+        object_id: "L:002".to_string(),
+    });
+    collections.object_locks.push(ObjectLock {
+        object_type: ObjectType::StopArea,
+        object_id: "SA:3".to_string(),
+    });
+    collections.object_locks.push(ObjectLock {
+        object_type: ObjectType::StopPoint,
+        object_id: "SP:C".to_string(),
+    });
+    collections.object_locks.push(ObjectLock {
+        object_type: ObjectType::StopPoint,
+        object_id: "SP:D".to_string(), // non-existing StopPoint
+    });
+
+    collections.sanitize().unwrap();
+    assert_eq!(collections.lines.len(), 2);
+    assert!(collections.lines.get("L:002").is_some());
+    assert_eq!(collections.stop_areas.len(), 3);
+    assert!(collections.stop_areas.get("SA:3").is_some());
+    assert_eq!(collections.stop_points.len(), 3);
+    assert!(collections.stop_points.get("SP:C").is_some());
+    assert_eq!(collections.object_locks.len(), 3);
+}
+
+#[test]
 // Test that possible objects from same collection and with the same id don't cause panic at ntfs::read
 fn ntfs_with_duplicated_ids() {
     testing_logger::setup();

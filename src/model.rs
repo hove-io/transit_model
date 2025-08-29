@@ -225,11 +225,6 @@ impl Collections {
             Collection::new(collection)
         }
 
-        self.calendars
-            .retain(log_predicate("Calendar", |cal: &Calendar| {
-                !cal.dates.is_empty()
-            }));
-
         let mut addresses_ids_used = HashSet::<String>::new();
         let mut booking_rules_ids_used = HashSet::<String>::new();
         let mut calendars_ids_used = HashSet::<String>::new();
@@ -250,11 +245,39 @@ impl Collections {
         let mut trip_properties_ids_used = HashSet::<String>::new();
         let mut vehicle_journeys_ids_used = HashSet::<String>::new();
 
+        let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
+
+        // Use the list of objects locked (=not to be sanitized)
+        lines_ids_used.extend(
+            self.object_locks
+                .values()
+                .filter(|&obj| obj.object_type == ObjectType::Line)
+                .filter(|&obj| self.lines.get(&obj.object_id).is_some())
+                .map(|obj| obj.object_id.clone()),
+        );
+        stop_areas_ids_used.extend(
+            self.object_locks
+                .values()
+                .filter(|&obj| obj.object_type == ObjectType::StopArea)
+                .filter(|&obj| self.stop_areas.get(&obj.object_id).is_some())
+                .map(|obj| obj.object_id.clone()),
+        );
+        stop_points_ids_used.extend(
+            self.object_locks
+                .values()
+                .filter(|&obj| obj.object_type == ObjectType::StopPoint)
+                .filter(|&obj| self.stop_points.get(&obj.object_id).is_some())
+                .map(|obj| obj.object_id.clone()),
+        );
+
         for &fallback_mode in enhancers::FALLBACK_PHYSICAL_MODES.iter() {
             physical_modes_ids_used.insert(fallback_mode.to_string());
         }
 
-        let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
+        self.calendars
+            .retain(log_predicate("Calendar", |cal: &Calendar| {
+                !cal.dates.is_empty()
+            }));
 
         let mut vjs: Vec<VehicleJourney> = self.vehicle_journeys.take();
         vjs.retain(|vj| {
@@ -649,6 +672,14 @@ impl Collections {
             }
             true
         });
+
+        self.object_locks
+            .retain(|object_lock| match object_lock.object_type {
+                ObjectType::Line => lines_ids_used.contains(&object_lock.object_id),
+                ObjectType::StopArea => stop_areas_ids_used.contains(&object_lock.object_id),
+                ObjectType::StopPoint => stop_points_ids_used.contains(&object_lock.object_id),
+                _ => false,
+            });
 
         self.frequencies = dedup_collection(&mut self.frequencies);
         self.transfers = dedup_collection(&mut self.transfers);
