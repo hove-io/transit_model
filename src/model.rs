@@ -230,22 +230,28 @@ impl Collections {
                 !cal.dates.is_empty()
             }));
 
-        let mut geometries_used = HashSet::<String>::new();
-        let mut companies_used = HashSet::<String>::new();
-        let mut trip_properties_used = HashSet::<String>::new();
-        let mut route_ids_used = HashSet::<String>::new();
-        let mut stop_points_used = HashSet::<String>::new();
-        let mut data_sets_used = HashSet::<String>::new();
-        let mut physical_modes_used = HashSet::<String>::new();
-        let mut comments_used = HashSet::<String>::new();
-        let mut booking_rules_used = HashSet::<String>::new();
-        let mut level_id_used = HashSet::<String>::new();
-        let mut calendars_used = HashSet::<String>::new();
-        let mut vjs_used = HashSet::<String>::new();
-        let mut addresses_used = HashSet::<String>::new();
+        let mut addresses_ids_used = HashSet::<String>::new();
+        let mut booking_rules_ids_used = HashSet::<String>::new();
+        let mut calendars_ids_used = HashSet::<String>::new();
+        let mut comments_ids_used = HashSet::<String>::new();
+        let mut commercial_modes_ids_used = HashSet::<String>::new();
+        let mut companies_ids_used = HashSet::<String>::new();
+        let mut contributors_ids_used = HashSet::<String>::new();
+        let mut datasets_ids_used = HashSet::<String>::new();
+        let mut equipments_ids_used = HashSet::<String>::new();
+        let mut geometries_ids_used = HashSet::<String>::new();
+        let mut levels_ids_used = HashSet::<String>::new();
+        let mut lines_ids_used = HashSet::<String>::new();
+        let mut networks_ids_used = HashSet::<String>::new();
+        let mut physical_modes_ids_used = HashSet::<String>::new();
+        let mut routes_ids_used = HashSet::<String>::new();
+        let mut stop_areas_ids_used = HashSet::<String>::new();
+        let mut stop_points_ids_used = HashSet::<String>::new();
+        let mut trip_properties_ids_used = HashSet::<String>::new();
+        let mut vehicle_journeys_ids_used = HashSet::<String>::new();
 
         for &fallback_mode in enhancers::FALLBACK_PHYSICAL_MODES.iter() {
-            physical_modes_used.insert(fallback_mode.to_string());
+            physical_modes_ids_used.insert(fallback_mode.to_string());
         }
 
         let stop_point_id_to_old_idx = self.stop_points.get_id_to_idx().clone();
@@ -259,42 +265,43 @@ impl Collections {
                 warn!("vehicle journey {} only have 1 stop time", vj.id);
             }
             if self.calendars.contains_id(&vj.service_id) {
-                calendars_used.insert(vj.service_id.clone());
+                calendars_ids_used.insert(vj.service_id.clone());
                 if let Some(geo_id) = &vj.geometry_id {
-                    geometries_used.insert(geo_id.clone());
+                    geometries_ids_used.insert(geo_id.clone());
                 }
                 if let Some(prop_id) = &vj.trip_property_id {
-                    trip_properties_used.insert(prop_id.clone());
+                    trip_properties_ids_used.insert(prop_id.clone());
                 }
-                companies_used.insert(vj.company_id.clone());
-                route_ids_used.insert(vj.route_id.clone());
+                companies_ids_used.insert(vj.company_id.clone());
+                routes_ids_used.insert(vj.route_id.clone());
                 for stop_time in &vj.stop_times {
-                    stop_points_used.insert(self.stop_points[stop_time.stop_point_idx].id.clone());
+                    stop_points_ids_used
+                        .insert(self.stop_points[stop_time.stop_point_idx].id.clone());
                 }
-                data_sets_used.insert(vj.dataset_id.clone());
-                physical_modes_used.insert(vj.physical_mode_id.clone());
-                comments_used.extend(&mut vj.comment_links.iter().map(|cl| cl.to_string()));
-                booking_rules_used
+                datasets_ids_used.insert(vj.dataset_id.clone());
+                physical_modes_ids_used.insert(vj.physical_mode_id.clone());
+                comments_ids_used.extend(&mut vj.comment_links.iter().map(|cl| cl.to_string()));
+                booking_rules_ids_used
                     .extend(&mut vj.booking_rule_links.iter().map(|id| id.to_string()));
-                vjs_used.insert(vj.id.clone());
+                vehicle_journeys_ids_used.insert(vj.id.clone());
                 true
             } else {
                 log_object_removed("Vehicle Journey", &vj.id);
                 false
             }
         });
-        let mut line_ids_used: HashSet<String> = HashSet::new();
+
         let routes = self
             .routes
             .take()
             .into_iter()
             .filter(|r| {
-                if route_ids_used.contains(&r.id) {
+                if routes_ids_used.contains(&r.id) {
                     if let Some(geo_id) = &r.geometry_id {
-                        geometries_used.insert(geo_id.clone());
+                        geometries_ids_used.insert(geo_id.clone());
                     }
-                    line_ids_used.insert(r.line_id.clone());
-                    comments_used.extend(&mut r.comment_links.iter().map(|cl| cl.to_string()));
+                    lines_ids_used.insert(r.line_id.clone());
+                    comments_ids_used.extend(&mut r.comment_links.iter().map(|cl| cl.to_string()));
                     true
                 } else {
                     log_object_removed("Route", &r.id);
@@ -302,8 +309,6 @@ impl Collections {
                 }
             })
             .collect::<Vec<_>>();
-        let mut stop_area_ids_used: HashSet<String> = HashSet::new();
-        let mut equipments_used: HashSet<String> = HashSet::new();
 
         let mut stop_locations = self
             .stop_locations
@@ -312,30 +317,30 @@ impl Collections {
             .filter(|sl| {
                 if sl.stop_type == StopType::StopEntrance || sl.stop_type == StopType::GenericNode {
                     if let Some(stop_area_id) = &sl.parent_id {
-                        stop_area_ids_used.insert(stop_area_id.clone());
+                        stop_areas_ids_used.insert(stop_area_id.clone());
                     }
                 }
                 if sl.stop_type == StopType::BoardingArea {
                     if let Some(stop_point_id) = &sl.parent_id {
-                        stop_points_used.insert(stop_point_id.clone());
+                        stop_points_ids_used.insert(stop_point_id.clone());
                         if let Some(stop_area_id) = self
                             .stop_points
                             .get(stop_point_id)
                             .map(|sp| sp.stop_area_id.clone())
                         {
-                            stop_area_ids_used.insert(stop_area_id);
+                            stop_areas_ids_used.insert(stop_area_id);
                         }
                     }
                 }
                 if let Some(level_id) = &sl.level_id {
-                    level_id_used.insert(level_id.clone());
+                    levels_ids_used.insert(level_id.clone());
                 }
                 if let Some(equipment_id) = &sl.equipment_id {
-                    equipments_used.insert(equipment_id.clone());
+                    equipments_ids_used.insert(equipment_id.clone());
                 }
-                comments_used.extend(&mut sl.comment_links.iter().map(|cl| cl.to_string()));
+                comments_ids_used.extend(&mut sl.comment_links.iter().map(|cl| cl.to_string()));
                 if let Some(address_id) = &sl.address_id {
-                    addresses_used.insert(address_id.clone());
+                    addresses_ids_used.insert(address_id.clone());
                 }
                 true
             })
@@ -348,13 +353,13 @@ impl Collections {
             .filter(|pw| {
                 let mut insert_if_used = |stop_type: &StopType, stop_id: &String| {
                     if *stop_type == StopType::BoardingArea || *stop_type == StopType::Point {
-                        stop_points_used.insert(stop_id.clone());
+                        stop_points_ids_used.insert(stop_id.clone());
                         if let Some(stop_area_id) = self
                             .stop_points
                             .get(stop_id)
                             .map(|sp| sp.stop_area_id.clone())
                         {
-                            stop_area_ids_used.insert(stop_area_id);
+                            stop_areas_ids_used.insert(stop_area_id);
                         }
                     }
                 };
@@ -370,20 +375,20 @@ impl Collections {
             .take()
             .into_iter()
             .filter(|sp| {
-                if stop_points_used.contains(&sp.id) {
-                    stop_area_ids_used.insert(sp.stop_area_id.clone());
+                if stop_points_ids_used.contains(&sp.id) {
+                    stop_areas_ids_used.insert(sp.stop_area_id.clone());
                     if let Some(geo_id) = &sp.geometry_id {
-                        geometries_used.insert(geo_id.clone());
+                        geometries_ids_used.insert(geo_id.clone());
                     }
                     if let Some(equipment_id) = &sp.equipment_id {
-                        equipments_used.insert(equipment_id.clone());
+                        equipments_ids_used.insert(equipment_id.clone());
                     }
                     if let Some(level_id) = &sp.level_id {
-                        level_id_used.insert(level_id.clone());
+                        levels_ids_used.insert(level_id.clone());
                     }
-                    comments_used.extend(&mut sp.comment_links.iter().map(|cl| cl.to_string()));
+                    comments_ids_used.extend(&mut sp.comment_links.iter().map(|cl| cl.to_string()));
                     if let Some(address_id) = &sp.address_id {
-                        addresses_used.insert(address_id.clone());
+                        addresses_ids_used.insert(address_id.clone());
                     }
                     true
                 } else {
@@ -393,21 +398,19 @@ impl Collections {
             })
             .collect::<Vec<_>>();
 
-        let mut networks_used: HashSet<String> = HashSet::new();
-        let mut commercial_modes_used: HashSet<String> = HashSet::new();
         let lines = self
             .lines
             .take()
             .into_iter()
             .filter(|l| {
-                if line_ids_used.contains(&l.id) {
+                if lines_ids_used.contains(&l.id) {
                     if let Some(geo_id) = &l.geometry_id {
-                        geometries_used.insert(geo_id.clone());
+                        geometries_ids_used.insert(geo_id.clone());
                     }
-                    networks_used.insert(l.network_id.clone());
-                    commercial_modes_used.insert(l.commercial_mode_id.clone());
-                    comments_used.extend(&mut l.comment_links.iter().map(|cl| cl.to_string()));
-                    booking_rules_used
+                    networks_ids_used.insert(l.network_id.clone());
+                    commercial_modes_ids_used.insert(l.commercial_mode_id.clone());
+                    comments_ids_used.extend(&mut l.comment_links.iter().map(|cl| cl.to_string()));
+                    booking_rules_ids_used
                         .extend(&mut l.booking_rule_links.iter().map(|id| id.to_string()));
                     true
                 } else {
@@ -416,14 +419,14 @@ impl Collections {
                 }
             })
             .collect::<Vec<_>>();
-        let mut contributors_used: HashSet<String> = HashSet::new();
+
         self.datasets = CollectionWithId::new(
             self.datasets
                 .take()
                 .into_iter()
                 .filter(|d| {
-                    if data_sets_used.contains(&d.id) {
-                        contributors_used.insert(d.contributor_id.clone());
+                    if datasets_ids_used.contains(&d.id) {
+                        contributors_ids_used.insert(d.contributor_id.clone());
                         true
                     } else {
                         log_object_removed("Dataset", &d.id);
@@ -437,19 +440,19 @@ impl Collections {
             .take()
             .into_iter()
             .filter(|sa| {
-                if stop_area_ids_used.contains(&sa.id) {
+                if stop_areas_ids_used.contains(&sa.id) {
                     if let Some(geo_id) = &sa.geometry_id {
-                        geometries_used.insert(geo_id.clone());
+                        geometries_ids_used.insert(geo_id.clone());
                     }
                     if let Some(level_id) = &sa.level_id {
-                        level_id_used.insert(level_id.clone());
+                        levels_ids_used.insert(level_id.clone());
                     }
                     if let Some(equipment_id) = &sa.equipment_id {
-                        equipments_used.insert(equipment_id.clone());
+                        equipments_ids_used.insert(equipment_id.clone());
                     }
-                    comments_used.extend(&mut sa.comment_links.iter().map(|cl| cl.to_string()));
+                    comments_ids_used.extend(&mut sa.comment_links.iter().map(|cl| cl.to_string()));
                     if let Some(address_id) = &sa.address_id {
-                        addresses_used.insert(address_id.clone());
+                        addresses_ids_used.insert(address_id.clone());
                     }
                     true
                 } else {
@@ -486,9 +489,9 @@ impl Collections {
             sl.coord = Coord::default();
         }
 
-        comments_used.extend(self.stop_time_comments.iter().filter_map(
+        comments_ids_used.extend(self.stop_time_comments.iter().filter_map(
             |((vj_id, _), comment_id)| {
-                if vjs_used.contains(vj_id.as_str()) {
+                if vehicle_journeys_ids_used.contains(vj_id.as_str()) {
                     Some(comment_id.clone())
                 } else {
                     None
@@ -498,16 +501,17 @@ impl Collections {
 
         self.comments
             .retain(log_predicate("Comment", |comment: &Comment| {
-                comments_used.contains(&comment.id)
+                comments_ids_used.contains(&comment.id)
             }));
 
         self.booking_rules.retain(log_predicate(
             "BookingRule",
-            |booking_rule: &BookingRule| booking_rules_used.contains(&booking_rule.id),
+            |booking_rule: &BookingRule| booking_rules_ids_used.contains(&booking_rule.id),
         ));
 
         self.lines = CollectionWithId::new(lines)?;
         self.stop_points = CollectionWithId::new(stop_points)?;
+
         let stop_point_old_idx_to_new_idx: HashMap<Idx<StopPoint>, Idx<StopPoint>> = self
             .stop_points
             .iter()
@@ -520,19 +524,20 @@ impl Collections {
         }
         self.stop_areas = CollectionWithId::new(stop_areas)?;
         self.routes = CollectionWithId::new(routes)?;
-        let vehicle_journeys_used: HashSet<String> = vjs.iter().map(|vj| vj.id.clone()).collect();
+
         self.vehicle_journeys = CollectionWithId::new(vjs)?;
+
         self.stop_locations = CollectionWithId::new(stop_locations)?;
         self.stop_time_comments.retain(|(vj_id, _), comment_id| {
-            vehicle_journeys_used.contains(vj_id) && comments_used.contains(comment_id)
+            vehicle_journeys_ids_used.contains(vj_id) && comments_ids_used.contains(comment_id)
         });
         self.stop_time_ids
-            .retain(|(vj_id, _), _| vehicle_journeys_used.contains(vj_id));
+            .retain(|(vj_id, _), _| vehicle_journeys_ids_used.contains(vj_id));
         self.stop_time_headsigns
-            .retain(|(vj_id, _), _| vehicle_journeys_used.contains(vj_id));
+            .retain(|(vj_id, _), _| vehicle_journeys_ids_used.contains(vj_id));
         self.grid_rel_calendar_line
             .retain(|grid_rel_calendar_line| {
-                line_ids_used.contains(&grid_rel_calendar_line.line_id)
+                lines_ids_used.contains(&grid_rel_calendar_line.line_id)
                     // If `line_external_code` is used,
                     // it is not possible to sanitize without the exact `line` identifier
                     || (grid_rel_calendar_line.line_id.is_empty() && grid_rel_calendar_line.line_external_code.is_some())
@@ -554,46 +559,50 @@ impl Collections {
 
         self.networks
             .retain(log_predicate("Network", |network: &Network| {
-                networks_used.contains(&network.id)
+                networks_ids_used.contains(&network.id)
             }));
         self.trip_properties.retain(log_predicate(
             "Trip Property",
-            |trip_property: &TripProperty| trip_properties_used.contains(&trip_property.id),
+            |trip_property: &TripProperty| trip_properties_ids_used.contains(&trip_property.id),
         ));
         self.geometries
             .retain(log_predicate("Geometry", |geometry: &Geometry| {
-                geometries_used.contains(&geometry.id)
+                geometries_ids_used.contains(&geometry.id)
             }));
         self.companies
             .retain(log_predicate("Company", |company: &Company| {
-                companies_used.contains(&company.id)
+                companies_ids_used.contains(&company.id)
             }));
         self.equipments
             .retain(log_predicate("Equipment", |equipment: &Equipment| {
-                equipments_used.contains(&equipment.id)
+                equipments_ids_used.contains(&equipment.id)
             }));
         self.contributors
             .retain(log_predicate("Contributor", |contributor: &Contributor| {
-                contributors_used.contains(&contributor.id)
+                contributors_ids_used.contains(&contributor.id)
             }));
         self.commercial_modes.retain(log_predicate(
             "Commercial Mode",
-            |commercial_mode: &CommercialMode| commercial_modes_used.contains(&commercial_mode.id),
+            |commercial_mode: &CommercialMode| {
+                commercial_modes_ids_used.contains(&commercial_mode.id)
+            },
         ));
         self.physical_modes.retain(log_predicate(
             "Physical Mode",
-            |physical_mode: &PhysicalMode| physical_modes_used.contains(&physical_mode.id),
+            |physical_mode: &PhysicalMode| physical_modes_ids_used.contains(&physical_mode.id),
         ));
         self.transfers.retain(|t| {
-            stop_points_used.contains(&t.from_stop_id) && stop_points_used.contains(&t.to_stop_id)
+            stop_points_ids_used.contains(&t.from_stop_id)
+                && stop_points_ids_used.contains(&t.to_stop_id)
         });
         self.frequencies
-            .retain(|frequency| vehicle_journeys_used.contains(&frequency.vehicle_journey_id));
+            .retain(|frequency| vehicle_journeys_ids_used.contains(&frequency.vehicle_journey_id));
         self.levels
-            .retain(|level| level_id_used.contains(&level.id));
-        self.calendars.retain(|c| calendars_used.contains(&c.id));
+            .retain(|level| levels_ids_used.contains(&level.id));
+        self.calendars
+            .retain(|c| calendars_ids_used.contains(&c.id));
         self.addresses
-            .retain(|address| addresses_used.contains(&address.id));
+            .retain(|address| addresses_ids_used.contains(&address.id));
 
         let admin_regions_used: HashSet<&str> =
             self.addresses
@@ -615,23 +624,23 @@ impl Collections {
         self.administrative_regions
             .retain(|admin| admin_regions_used.contains(admin.id.as_str()));
         self.admin_stations
-            .retain(|admin_station| stop_area_ids_used.contains(&admin_station.stop_id));
+            .retain(|admin_station| stop_areas_ids_used.contains(&admin_station.stop_id));
         self.occupancies.retain(|occupancy| {
-            if !line_ids_used.contains(&occupancy.line_id) {
+            if !lines_ids_used.contains(&occupancy.line_id) {
                 debug!(
                     "Occupancy with 'line_id={}' has been removed because line is not used",
                     occupancy.line_id
                 );
                 return false;
             }
-            if !stop_area_ids_used.contains(&occupancy.from_stop_area) {
+            if !stop_areas_ids_used.contains(&occupancy.from_stop_area) {
                 debug!(
                     "Occupancy with 'from_stop_area={}' has been removed because stop area is not used",
                     occupancy.from_stop_area
                 );
                 return false;
             }
-            if !stop_area_ids_used.contains(&occupancy.to_stop_area){
+            if !stop_areas_ids_used.contains(&occupancy.to_stop_area){
                 debug!(
                     "Occupancy with 'to_stop_area={}' has been removed because stop area is not used",
                     occupancy.to_stop_area
