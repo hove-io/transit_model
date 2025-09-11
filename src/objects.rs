@@ -2209,6 +2209,18 @@ impl AddPrefix for Occupancy {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub struct ObjectLock {
+    pub object_type: ObjectType,
+    pub object_id: String,
+}
+
+impl AddPrefix for ObjectLock {
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.object_id = prefix_conf.referential_prefix(self.object_id.as_str());
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -344,6 +344,7 @@ where
     read::manage_fares_v1(&mut collections, file_handler)?;
     read::manage_companies_on_vj(&mut collections)?;
     read::manage_occupancies(&mut collections, file_handler)?;
+    read::manage_object_locks(&mut collections, file_handler)?;
     Ok(collections)
 }
 
@@ -427,6 +428,7 @@ pub fn write<P: AsRef<path::Path>>(
         &model.administrative_regions,
     )?;
     write_collection(path, "occupancies.txt", &model.occupancies)?;
+    write_collection(path, "object_locks.txt", &model.object_locks)?;
 
     Ok(())
 }
@@ -534,7 +536,7 @@ mod tests {
                     ("feed_end_date".to_string(), "20180131".to_string()),
                     ("feed_publisher_name".to_string(), "Nicaragua".to_string()),
                     ("feed_start_date".to_string(), "20180130".to_string()),
-                    ("ntfs_version".to_string(), "0.19.0".to_string()),
+                    ("ntfs_version".to_string(), "0.20.0".to_string()),
                     ("tartare_platform".to_string(), "dev".to_string()),
                 ],
                 collections

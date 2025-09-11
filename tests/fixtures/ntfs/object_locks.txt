@@ -1,0 +1,8 @@
+object_type,object_id
+line,FakeLineId
+line,B42
+trip,B42F1
+stop_area,FakeStopAreaId
+stop_area,NAT
+stop_point,FakeStopPointId
+stop_point,GDLR

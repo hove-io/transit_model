@@ -270,6 +270,18 @@ fn ntfs() {
         }
     );
 
+    assert_eq!(3, pt_objects.object_locks.len());
+    let mut object_locks = pt_objects.object_locks.values();
+    let object_lock_1 = object_locks.next().unwrap();
+    assert_eq!("line", object_lock_1.object_type.as_str());
+    assert_eq!("B42", object_lock_1.object_id);
+    let object_lock_2 = object_locks.next().unwrap();
+    assert_eq!("stop_area", object_lock_2.object_type.as_str());
+    assert_eq!("NAT", object_lock_2.object_id);
+    let object_lock_3 = object_locks.next().unwrap();
+    assert_eq!("stop_point", object_lock_3.object_type.as_str());
+    assert_eq!("GDLR", object_lock_3.object_id);
+
     // Trip M1F1
     let ids = &pt_objects
         .vehicle_journeys
@@ -383,6 +395,19 @@ fn preserve_occupancies() {
 }
 
 #[test]
+fn preserve_object_locks() {
+    let ntm = transit_model::ntfs::read("tests/fixtures/ntfs/").unwrap();
+    test_in_tmp_dir(|output_dir| {
+        transit_model::ntfs::write(&ntm, output_dir, get_test_datetime()).unwrap();
+        compare_output_dir_with_expected(
+            output_dir,
+            Some(vec!["object_locks.txt"]),
+            "tests/fixtures/ntfs2ntfs/object_locks",
+        );
+    });
+}
+
+#[test]
 fn enhance_lines_opening_time() {
     let ntm = transit_model::ntfs::read("tests/fixtures/ntfs2ntfs/lines-opening/input/").unwrap();
     test_in_tmp_dir(|output_dir| {
@@ -479,6 +504,79 @@ fn sanitize_grid_with_line_external_code() {
     collections.sanitize().unwrap();
     assert_eq!(1, collections.grid_calendars.len());
     assert_eq!(1, collections.grid_rel_calendar_line.len());
+}
+
+#[test]
+fn sanitize_stopareas_locked() {
+    // Create a basic Collection
+    let mut collections = transit_model::ModelBuilder::default()
+        .stop_area("SA:1", |_| {})
+        .stop_area("SA:2", |_| {})
+        .stop_point("SP:A", |stop_point| {
+            stop_point.stop_area_id = "SA:1".to_string();
+        })
+        .stop_point("SP:B", |stop_point| {
+            stop_point.stop_area_id = "SA:2".to_string();
+        })
+        .vj("VJ:1", |vj_builder| {
+            vj_builder
+                .line("L:001")
+                .st("SP:A", "10:00:00")
+                .st("SP:B", "10:10:00");
+        })
+        .build()
+        .into_collections();
+
+    // Add orphaned objects
+    collections
+        .lines
+        .push(Line {
+            id: "L:002".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+    collections
+        .stop_areas
+        .push(StopArea {
+            id: "SA:3".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+    collections
+        .stop_points
+        .push(StopPoint {
+            id: "SP:C".to_string(),
+            stop_area_id: "SA:3".to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+
+    // Lock orphaned objects
+    collections.object_locks.push(ObjectLock {
+        object_type: ObjectType::Line,
+        object_id: "L:002".to_string(),
+    });
+    collections.object_locks.push(ObjectLock {
+        object_type: ObjectType::StopArea,
+        object_id: "SA:3".to_string(),
+    });
+    collections.object_locks.push(ObjectLock {
+        object_type: ObjectType::StopPoint,
+        object_id: "SP:C".to_string(),
+    });
+    collections.object_locks.push(ObjectLock {
+        object_type: ObjectType::StopPoint,
+        object_id: "SP:D".to_string(), // non-existing StopPoint
+    });
+
+    collections.sanitize().unwrap();
+    assert_eq!(collections.lines.len(), 2);
+    assert!(collections.lines.get("L:002").is_some());
+    assert_eq!(collections.stop_areas.len(), 3);
+    assert!(collections.stop_areas.get("SA:3").is_some());
+    assert_eq!(collections.stop_points.len(), 3);
+    assert!(collections.stop_points.get("SP:C").is_some());
+    assert_eq!(collections.object_locks.len(), 3);
 }
 
 #[test]

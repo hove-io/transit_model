@@ -212,6 +212,7 @@ impl AddPrefix for Collections {
             add_prefix_on_vehicle_journey_ids_and_values(&self.stop_time_ids, prefix_conf);
         self.stop_time_comments =
             add_prefix_on_vehicle_journey_ids_and_values(&self.stop_time_comments, prefix_conf);
+        self.object_locks.prefix(prefix_conf);
     }
 }
 
