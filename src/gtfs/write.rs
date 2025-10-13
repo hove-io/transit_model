@@ -424,6 +424,114 @@ pub fn write_stop_extensions(
 
     Ok(())
 }
+
+#[derive(Serialize, Debug, Clone, Eq, Hash, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum GTFSObjectType {
+    StopArea,
+    StopPoint,
+    Agency,
+    Route,
+    #[serde(rename = "trip")]
+    VehicleJourney,
+}
+
+#[derive(Serialize, Debug, Clone, Eq, Hash, PartialEq)]
+struct Code {
+    object_type: GTFSObjectType,
+    object_id: String,
+    object_system: String,
+    object_code: String,
+}
+
+pub fn write_codes(path: &path::Path, model: &Model) -> Result<()> {
+    fn collection_has_no_codes<T: Codes>(collection: &CollectionWithId<T>) -> bool {
+        collection.values().all(|c| c.codes().is_empty())
+    }
+    if collection_has_no_codes(&model.stop_areas)
+        && collection_has_no_codes(&model.stop_points)
+        && collection_has_no_codes(&model.networks)
+        && collection_has_no_codes(&model.lines)
+        && collection_has_no_codes(&model.routes)
+        && collection_has_no_codes(&model.vehicle_journeys)
+        && collection_has_no_codes(&model.companies)
+    {
+        return Ok(());
+    }
+
+    let file = "object_codes_extension.txt";
+    info!(file_name = %file, "Writing");
+
+    let path = path.join(file);
+
+    let mut wtr =
+        csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
+
+    for obj in model.stop_areas.values() {
+        for c in obj.codes() {
+            wtr.serialize(Code {
+                object_id: obj.id.to_string(),
+                object_type: GTFSObjectType::StopArea,
+                object_system: c.0.clone(),
+                object_code: c.1.clone(),
+            })
+            .with_context(|| format!("Error reading {path:?}"))?;
+        }
+    }
+    for obj in model.stop_points.values() {
+        for c in obj.codes() {
+            wtr.serialize(Code {
+                object_id: obj.id.to_string(),
+                object_type: GTFSObjectType::StopPoint,
+                object_system: c.0.clone(),
+                object_code: c.1.clone(),
+            })
+            .with_context(|| format!("Error reading {path:?}"))?;
+        }
+    }
+    for obj in model.vehicle_journeys.values() {
+        for c in obj.codes() {
+            wtr.serialize(Code {
+                object_id: obj.id.to_string(),
+                object_type: GTFSObjectType::VehicleJourney,
+                object_system: c.0.clone(),
+                object_code: c.1.clone(),
+            })
+            .with_context(|| format!("Error reading {path:?}"))?;
+        }
+    }
+    for obj in model.networks.values() {
+        for c in obj.codes() {
+            wtr.serialize(Code {
+                object_id: obj.id.to_string(),
+                object_type: GTFSObjectType::Agency,
+                object_system: c.0.clone(),
+                object_code: c.1.clone(),
+            })
+            .with_context(|| format!("Error reading {path:?}"))?;
+        }
+    }
+
+    for (from, l) in &model.lines {
+        for pm in &get_line_physical_modes(from, &model.physical_modes, model) {
+            for c in l.codes() {
+                wtr.serialize(Code {
+                    object_id: get_gtfs_route_id_from_ntfs_line_id(&l.id, pm),
+                    object_type: GTFSObjectType::Route,
+                    object_system: c.0.clone(),
+                    object_code: c.1.clone(),
+                })
+                .with_context(|| format!("Error reading {path:?}"))?;
+            }
+        }
+    }
+
+    wtr.flush()
+        .with_context(|| format!("Error reading {path:?}"))?;
+
+    Ok(())
+}
+
 #[derive(Debug)]
 struct PhysicalModeWithOrder<'a> {
     inner: &'a objects::PhysicalMode,

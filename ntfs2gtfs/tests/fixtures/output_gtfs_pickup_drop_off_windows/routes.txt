@@ -1,5 +1,0 @@
-route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color,route_sort_order
-MFDI:C01376,MFDI:Operator_100,6,6,,1,,6ECA97,000000,
-MFDI:C02060,MFDI:1071,Filéo RS,Filéo Roissy Sud - Villeparisis et Mitry (sur réservation),,3,,4890CD,FFFFFF,
-MFDI:C02491,MFDI:1062,Soir,Soir Saint-Germain-en-Laye,,3,,652C8F,FFFFFF,
-MFDI:C02513,MFDI:1061,Soir,Soir Versailles-Chantiers,,3,,640082,FFFFFF,

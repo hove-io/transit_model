@@ -209,7 +209,30 @@ fn test_ntfs2gtfs_with_pickup_drop_off_windows_stoptimes() {
         .success();
     compare_output_dir_with_expected(
         output_dir,
-        None,
+        Some(vec![
+            "booking_rules.txt",
+            "stop_times.txt",
+            "trips.txt",
+            "stops.txt",
+        ]),
         "./tests/fixtures/output_gtfs_pickup_drop_off_windows",
+    );
+}
+
+#[test]
+fn test_stop_and_object_codes_extension() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::cargo_bin("ntfs2gtfs")
+        .expect("Failed to find binary 'ntfs2gtfs'")
+        .arg("--input")
+        .arg("../tests/fixtures/pickup_drop_off_windows/input_ntfs")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .assert()
+        .success();
+    compare_output_dir_with_expected(
+        output_dir,
+        Some(vec!["stop_extensions.txt", "object_codes_extension.txt"]),
+        "./tests/fixtures/stop_and_object_codes_extension",
     );
 }
