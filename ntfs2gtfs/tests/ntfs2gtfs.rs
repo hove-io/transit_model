@@ -220,7 +220,7 @@ fn test_ntfs2gtfs_with_pickup_drop_off_windows_stoptimes() {
 }
 
 #[test]
-fn test_stop_and_object_codes_extension() {
+fn test_object_codes_extension() {
     let output_dir = TempDir::new().expect("create temp dir failed");
     Command::cargo_bin("ntfs2gtfs")
         .expect("Failed to find binary 'ntfs2gtfs'")
@@ -232,7 +232,7 @@ fn test_stop_and_object_codes_extension() {
         .success();
     compare_output_dir_with_expected(
         output_dir,
-        Some(vec!["stop_extensions.txt", "object_codes_extension.txt"]),
+        Some(vec!["object_codes_extension.txt"]),
         "./tests/fixtures/stop_and_object_codes_extension",
     );
 }
