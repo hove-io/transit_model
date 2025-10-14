@@ -839,6 +839,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> 
     write::write_shapes(path, &model.geometries, &model.vehicle_journeys)?;
     write_collection_with_id(path, "pathways.txt", &model.pathways)?;
     write_collection_with_id(path, "levels.txt", &model.levels)?;
+    write::write_codes(path, &model)?;
 
     Ok(())
 }

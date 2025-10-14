@@ -19,6 +19,7 @@ The following additional files are generated only if the corresponding objects a
 * [transfers](#transferstxt)
 * [shapes](#shapestxt)
 * [stop_extensions](#stop_extensionstxt): additional information providing the complementary stop codes used in external systems.
+* [object_codes_extension](#object_codes_extensiontxt): additional information providing the complementary codes for various objects (stops, networks, lines, routes, trips, companies) used in external systems.
 
 [GTFS]: https://gtfs.org/reference/static
 [NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
@@ -166,6 +167,21 @@ If N complementary codes are specified for a stop, there will be N separate line
 | stop_id     | yes      | object_codes.txt | object_id     | `stop_id` of the stop having a complementary code specified (link to the [stops.txt](#stopstxt) file) |
 | system_name | yes      | object_codes.txt | object_system |                                                                                                       |
 | system_code | yes      | object_codes.txt | object_code   |                                                                                                       |
+
+### object_codes_extension.txt
+
+**Note**: This is a GTFS extension file (not part of the standard GTFS specification).
+
+This file contains the complementary codes for various NTFS objects from the NTFS object_codes.txt file. If no additional codes are specified for any objects, this file is not generated.
+
+If N complementary codes are specified for an object, there will be N separate lines in the file for the different object_id/object_system pairs.
+
+| GTFS field    | Required | NTFS file        | NTFS field    | Note                                                                                                                                                                                    |
+| ------------- | -------- | ---------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| object_type   | yes      | object_codes.txt | object_type   | Type of object in GTFS terms: `stop_area`, `stop_point`, `agency` (for NTFS networks), `route` (for NTFS lines), or `trip`                                                              |
+| object_id     | yes      | object_codes.txt | object_id     | ID of the object having a complementary code specified. The ID corresponds to the GTFS object (links to stops.txt, agency.txt, routes.txt, or trips.txt depending on the `object_type`) |
+| object_system | yes      | object_codes.txt | object_system | System or source identifier for the code                                                                                                                                                |
+| object_code   | yes      | object_codes.txt | object_code   | The actual code value in the specified system                                                                                                                                           |
 
 ### attributions.txt
 
