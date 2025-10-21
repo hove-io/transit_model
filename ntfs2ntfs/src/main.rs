@@ -94,7 +94,7 @@ fn run(opt: Opt) -> Result<()> {
 
     let model = transit_model::ntfs::read(opt.input)?;
     let model = if opt.ignore_transfers {
-        model
+        model.into_collections()
     } else {
         generates_transfers(
             model,
