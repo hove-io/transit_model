@@ -348,11 +348,11 @@ where
     Ok(collections)
 }
 
-/// Exports a `Model` to the
+/// Exports a `Collections` to the
 /// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 pub fn write<P: AsRef<path::Path>>(
-    model: &Model,
+    collections: &Collections,
     path: P,
     current_datetime: DateTime<FixedOffset>,
 ) -> Result<()> {
@@ -360,91 +360,91 @@ pub fn write<P: AsRef<path::Path>>(
     std::fs::create_dir_all(path)?;
     info!("Writing NTFS to {:?}", path);
 
-    write::write_feed_infos(path, model, current_datetime)?;
-    write_collection_with_id(path, "contributors.txt", &model.contributors)?;
-    write_collection_with_id(path, "datasets.txt", &model.datasets)?;
-    write_collection_with_id(path, "networks.txt", &model.networks)?;
-    write_collection_with_id(path, "commercial_modes.txt", &model.commercial_modes)?;
-    write_collection_with_id(path, "companies.txt", &model.companies)?;
-    write_collection_with_id(path, "lines.txt", &model.lines)?;
-    write_collection_with_id(path, "physical_modes.txt", &model.physical_modes)?;
-    write_collection_with_id(path, "equipments.txt", &model.equipments)?;
-    write_collection_with_id(path, "routes.txt", &model.routes)?;
-    write_collection_with_id(path, "trip_properties.txt", &model.trip_properties)?;
-    write_collection_with_id(path, "geometries.txt", &model.geometries)?;
-    write_collection(path, "transfers.txt", &model.transfers)?;
-    write_collection(path, "admin_stations.txt", &model.admin_stations)?;
-    write_collection_with_id(path, "tickets.txt", &model.tickets)?;
-    write_collection_with_id(path, "ticket_uses.txt", &model.ticket_uses)?;
-    write_collection(path, "ticket_prices.txt", &model.ticket_prices)?;
+    write::write_feed_infos(path, collections, current_datetime)?;
+    write_collection_with_id(path, "contributors.txt", &collections.contributors)?;
+    write_collection_with_id(path, "datasets.txt", &collections.datasets)?;
+    write_collection_with_id(path, "networks.txt", &collections.networks)?;
+    write_collection_with_id(path, "commercial_modes.txt", &collections.commercial_modes)?;
+    write_collection_with_id(path, "companies.txt", &collections.companies)?;
+    write_collection_with_id(path, "lines.txt", &collections.lines)?;
+    write_collection_with_id(path, "physical_modes.txt", &collections.physical_modes)?;
+    write_collection_with_id(path, "equipments.txt", &collections.equipments)?;
+    write_collection_with_id(path, "routes.txt", &collections.routes)?;
+    write_collection_with_id(path, "trip_properties.txt", &collections.trip_properties)?;
+    write_collection_with_id(path, "geometries.txt", &collections.geometries)?;
+    write_collection(path, "transfers.txt", &collections.transfers)?;
+    write_collection(path, "admin_stations.txt", &collections.admin_stations)?;
+    write_collection_with_id(path, "tickets.txt", &collections.tickets)?;
+    write_collection_with_id(path, "ticket_uses.txt", &collections.ticket_uses)?;
+    write_collection(path, "ticket_prices.txt", &collections.ticket_prices)?;
     write_collection(
         path,
         "ticket_use_perimeters.txt",
-        &model.ticket_use_perimeters,
+        &collections.ticket_use_perimeters,
     )?;
     write_collection(
         path,
         "ticket_use_restrictions.txt",
-        &model.ticket_use_restrictions,
+        &collections.ticket_use_restrictions,
     )?;
-    write_collection_with_id(path, "grid_calendars.txt", &model.grid_calendars)?;
+    write_collection_with_id(path, "grid_calendars.txt", &collections.grid_calendars)?;
     write_collection(
         path,
         "grid_exception_dates.txt",
-        &model.grid_exception_dates,
+        &collections.grid_exception_dates,
     )?;
-    write_collection(path, "grid_periods.txt", &model.grid_periods)?;
+    write_collection(path, "grid_periods.txt", &collections.grid_periods)?;
     write_collection(
         path,
         "grid_rel_calendar_line.txt",
-        &model.grid_rel_calendar_line,
+        &collections.grid_rel_calendar_line,
     )?;
     write::write_vehicle_journeys_and_stop_times(
         path,
-        &model.vehicle_journeys,
-        &model.stop_points,
-        &model.stop_time_headsigns,
-        &model.stop_time_ids,
+        &collections.vehicle_journeys,
+        &collections.stop_points,
+        &collections.stop_time_headsigns,
+        &collections.stop_time_ids,
     )?;
-    write_collection(path, "frequencies.txt", &model.frequencies)?;
-    write_calendar_dates(path, &model.calendars)?;
+    write_collection(path, "frequencies.txt", &collections.frequencies)?;
+    write_calendar_dates(path, &collections.calendars)?;
     write::write_stops(
         path,
-        &model.stop_points,
-        &model.stop_areas,
-        &model.stop_locations,
+        &collections.stop_points,
+        &collections.stop_areas,
+        &collections.stop_locations,
     )?;
-    write::write_comments(path, model)?;
-    write::write_booking_rules(path, model)?;
-    write::write_codes(path, model)?;
-    write::write_object_properties(path, model)?;
-    write::write_fares_v1(path, model)?;
-    write_collection_with_id(path, "pathways.txt", &model.pathways)?;
-    write_collection_with_id(path, "levels.txt", &model.levels)?;
-    write_collection_with_id(path, "addresses.txt", &model.addresses)?;
+    write::write_comments(path, collections)?;
+    write::write_booking_rules(path, collections)?;
+    write::write_codes(path, collections)?;
+    write::write_object_properties(path, collections)?;
+    write::write_fares_v1(path, collections)?;
+    write_collection_with_id(path, "pathways.txt", &collections.pathways)?;
+    write_collection_with_id(path, "levels.txt", &collections.levels)?;
+    write_collection_with_id(path, "addresses.txt", &collections.addresses)?;
     write_collection_with_id(
         path,
         "administrative_regions.txt",
-        &model.administrative_regions,
+        &collections.administrative_regions,
     )?;
-    write_collection(path, "occupancies.txt", &model.occupancies)?;
-    write_collection(path, "object_locks.txt", &model.object_locks)?;
+    write_collection(path, "occupancies.txt", &collections.occupancies)?;
+    write_collection(path, "object_locks.txt", &collections.object_locks)?;
 
     Ok(())
 }
 
-/// Exports a `Model` to a
+/// Exports a `Collections` to a
 /// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// ZIP archive at the given full path.
 pub fn write_to_zip<P: AsRef<path::Path>>(
-    model: &Model,
+    collections: &Collections,
     path: P,
     current_datetime: DateTime<FixedOffset>,
 ) -> Result<()> {
     let path = path.as_ref();
     info!("Writing NTFS to ZIP File {:?}", path);
     let input_tmp_dir = tempdir()?;
-    write(model, input_tmp_dir.path(), current_datetime)?;
+    write(collections, input_tmp_dir.path(), current_datetime)?;
     zip_to(input_tmp_dir.path(), path)?;
     input_tmp_dir.close()?;
     Ok(())
