@@ -52,40 +52,40 @@ pub struct CalendarDate {
 pub struct Calendar {
     /// Identifiers of the Service
     #[serde(rename = "service_id")]
-    id: String,
+    pub id: String,
     /// True if the Service is active on Mondays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    monday: bool,
+    pub monday: bool,
     /// True if the Service is active on Tuesdays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    tuesday: bool,
+    pub tuesday: bool,
     /// True if the Service is active on Wednesdays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    wednesday: bool,
+    pub wednesday: bool,
     /// True if the Service is active on Thursdays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    thursday: bool,
+    pub thursday: bool,
     /// True if the Service is active on Fridays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    friday: bool,
+    pub friday: bool,
     /// True if the Service is active on Saturdays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    saturday: bool,
+    pub saturday: bool,
     /// True if the Service is active on Sundays
     #[serde(deserialize_with = "de_from_u8", serialize_with = "ser_from_bool")]
-    sunday: bool,
+    pub sunday: bool,
     /// The Service is active starting from this date
     #[serde(
         deserialize_with = "de_from_date_string",
         serialize_with = "ser_from_naive_date"
     )]
-    start_date: Date,
+    pub start_date: Date,
     /// The Service is active until this date
     #[serde(
         deserialize_with = "de_from_date_string",
         serialize_with = "ser_from_naive_date"
     )]
-    end_date: Date,
+    pub end_date: Date,
 }
 
 impl Calendar {
@@ -116,7 +116,8 @@ impl Calendar {
         valid_days
     }
 
-    fn get_valid_dates(&self) -> BTreeSet<Date> {
+    /// Get all the valid dates for this calendar
+    pub fn get_valid_dates(&self) -> BTreeSet<Date> {
         let valid_days = self.get_valid_days();
         let duration = self.end_date - self.start_date;
         (0..=duration.num_days())
