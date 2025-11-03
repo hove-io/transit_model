@@ -1,12 +1,11 @@
-use assert_cmd::prelude::*;
+use assert_cmd::{cargo_bin, prelude::*};
 use std::process::Command;
 use tempfile::TempDir;
 
 #[test]
 fn test_gtfs2ntfs() {
     let output_dir = TempDir::new().expect("create temp dir failed");
-    Command::cargo_bin("gtfs2ntfs")
-        .expect("Failed to find binary 'gtfs2ntfs'")
+    Command::new(cargo_bin!("gtfs2ntfs"))
         .arg("--input")
         .arg("../tests/fixtures/gtfs2ntfs/minimal/input")
         .arg("--output")
@@ -24,8 +23,7 @@ fn test_gtfs2ntfs() {
 fn test_gtfs2ntfs_create_output_directory() {
     let output_dir = TempDir::new().expect("create temp dir failed");
     let unexisting_dir = output_dir.path().join("unexisting-folder");
-    Command::cargo_bin("gtfs2ntfs")
-        .expect("Failed to find binary 'gtfs2ntfs'")
+    Command::new(cargo_bin!("gtfs2ntfs"))
         .arg("--input")
         .arg("../tests/fixtures/gtfs2ntfs/minimal/input")
         .arg("--output")
@@ -42,8 +40,7 @@ fn test_gtfs2ntfs_create_zip() {
     let output_dir = TempDir::new().expect("create temp dir failed");
     let ntfs_zip = output_dir.path().join("ntfs.zip");
     assert!(!ntfs_zip.exists());
-    Command::cargo_bin("gtfs2ntfs")
-        .expect("Failed to find binary 'gtfs2ntfs'")
+    Command::new(cargo_bin!("gtfs2ntfs"))
         .arg("--input")
         .arg("../tests/fixtures/gtfs2ntfs/minimal/input")
         .arg("--output")
@@ -60,8 +57,7 @@ fn test_gtfs2ntfs_create_not_zip_extension() {
     let output_dir = TempDir::new().expect("create temp dir failed");
     let ntfs_foobar = output_dir.path().join("ntfs.foobar");
     assert!(!ntfs_foobar.exists());
-    Command::cargo_bin("gtfs2ntfs")
-        .expect("Failed to find binary 'gtfs2ntfs'")
+    Command::new(cargo_bin!("gtfs2ntfs"))
         .arg("--input")
         .arg("../tests/fixtures/gtfs2ntfs/minimal/input")
         .arg("--output")
@@ -76,8 +72,7 @@ fn test_gtfs2ntfs_create_not_zip_extension() {
 #[test]
 fn test_gtfs2ntfs_without_transfers() {
     let output_dir = TempDir::new().expect("create temp dir failed");
-    Command::cargo_bin("gtfs2ntfs")
-        .expect("Failed to find binary 'gtfs2ntfs'")
+    Command::new(cargo_bin!("gtfs2ntfs"))
         .arg("--input")
         .arg("../tests/fixtures/gtfs2ntfs/minimal/input")
         .arg("--output")
