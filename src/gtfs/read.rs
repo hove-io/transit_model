@@ -1227,7 +1227,21 @@ fn make_lines(
     Ok(lines)
 }
 
-fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<objects::Route> {
+fn get_attribution_by_type_and_id<'a>(
+    attribution_rules: &'a mut [AttributionRule],
+    attr_type: ObjectType,
+    attr_id: &str,
+) -> Option<&'a mut AttributionRule> {
+    attribution_rules
+        .iter_mut()
+        .find(|ar| ar.object_type == attr_type && ar.object_id == attr_id)
+}
+
+fn make_routes(
+    gtfs_trips: &[Trip],
+    map_line_routes: &MapLineRoutes<'_>,
+    attribution_rules: &mut Vec<AttributionRule>,
+) -> Vec<objects::Route> {
     let mut routes = vec![];
 
     let get_direction_name = |d: DirectionType| match d {
@@ -1248,8 +1262,21 @@ fn make_routes(gtfs_trips: &[Trip], map_line_routes: &MapLineRoutes<'_>) -> Vec<
             for d in route_directions {
                 let mut codes = KeysValues::default();
                 codes.insert(("source".to_string(), r.id.clone()));
+                let id_by_direction = r.get_id_by_direction(d);
+                if !attribution_rules.is_empty() && id_by_direction != r.id {
+                    if let Some(attr_rule) =
+                        get_attribution_by_type_and_id(attribution_rules, ObjectType::Route, &r.id)
+                    {
+                        let mut new_attr_rule = attr_rule.clone();
+                        new_attr_rule.object_id = id_by_direction.clone();
+                        new_attr_rule.id = calculate_hash(&new_attr_rule).to_string();
+
+                        attribution_rules.push(new_attr_rule);
+                    }
+                };
+
                 routes.push(objects::Route {
-                    id: r.get_id_by_direction(d),
+                    id: id_by_direction,
                     // When only one direction, keep the route name. When
                     // multiple directions are possible, leave the `route_name`
                     // empty, it'll be auto-generated later in
@@ -1343,6 +1370,7 @@ pub fn read_routes<H>(
     collections: &mut Collections,
     read_as_line: bool,
     read_trip_short_name: bool,
+    attribution_rules: &mut Vec<AttributionRule>,
 ) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -1359,7 +1387,7 @@ where
     let lines = make_lines(&map_line_routes, &collections.networks)?;
     collections.lines = CollectionWithId::new(lines)?;
 
-    let routes = make_routes(&gtfs_trips, &map_line_routes);
+    let routes = make_routes(&gtfs_trips, &map_line_routes, attribution_rules);
     collections.routes = CollectionWithId::new(routes)?;
 
     gtfs_routes_collection.iter().for_each(|(_id, gtfs_route)| {
@@ -1429,7 +1457,7 @@ where
 }
 
 /// attributions applied to the dataset.
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct AttributionRule {
     id: String,
     /// Type of public transport object to which the allocation applies
@@ -1948,7 +1976,7 @@ mod tests {
             let (contributor, dataset, _) = read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             assert_eq!(4, collections.lines.len());
             assert_eq!(
                 vec!["agency_1", "agency_2", "agency_3", "agency_4"],
@@ -2010,7 +2038,7 @@ mod tests {
 
             // NTFS trip heasign = GTFS trip short name if exists else GTFS headsign
             // NTFS trip short name is always None
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
 
             let vjs = &collections.vehicle_journeys;
             assert_eq!(vjs.get("1").unwrap().headsign.as_deref(), None);
@@ -2025,7 +2053,7 @@ mod tests {
 
             // NTFS trip headsign = GTFS trip headsign
             // NTFS trip short name = GTFS trip short name
-            super::read_routes(&mut handler, &mut collections, false, true).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, true, &mut vec![]).unwrap();
 
             let vjs = &collections.vehicle_journeys;
             assert_eq!(vjs.get("1").unwrap().headsign.as_deref(), None);
@@ -2072,7 +2100,7 @@ mod tests {
             let (contributor, dataset, _) = read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             assert_eq!(3, collections.lines.len());
 
             assert_eq!(5, collections.routes.len());
@@ -2115,7 +2143,7 @@ mod tests {
             let (contributor, dataset, _) = read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(
                 vec![
@@ -2187,7 +2215,7 @@ mod tests {
             let (contributor, dataset, _) = read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
         });
     }
 
@@ -2218,7 +2246,7 @@ mod tests {
             let (contributor, dataset, _) = read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
         });
     }
 
@@ -2253,7 +2281,7 @@ mod tests {
             let (contributor, dataset, _) = read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
 
             assert_eq!(3, collections.lines.len());
             assert_eq!(
@@ -2296,7 +2324,7 @@ mod tests {
             let (contributor, dataset, _) = read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
 
             assert_eq!(2, collections.lines.len());
 
@@ -2329,7 +2357,7 @@ mod tests {
             let (contributor, dataset, _) = read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
 
             assert_eq!(2, collections.lines.len());
             assert_eq!(vec!["route_1", "route_3"], extract_ids(&collections.lines));
@@ -2363,7 +2391,7 @@ mod tests {
             let (contributor, dataset, _) = read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             assert_eq!(1, collections.lines.len());
             assert_eq!(1, collections.routes.len());
         });
@@ -2433,7 +2461,7 @@ mod tests {
             collections.networks = networks;
             collections.companies = companies;
             collections.comments = comments;
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             super::manage_shapes(&mut collections, &mut handler).unwrap();
             calendars::manage_calendars(&mut handler, &mut collections).unwrap();
 
@@ -2600,7 +2628,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
@@ -2641,7 +2669,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
             assert_eq!(3, collections.vehicle_journeys.len());
@@ -2674,7 +2702,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             assert_eq!(3, collections.lines.len());
             assert_eq!(3, collections.routes.len());
 
@@ -2708,7 +2736,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             assert_eq!(2, collections.vehicle_journeys.len());
             assert_eq!(0, collections.trip_properties.len());
             for vj in collections.vehicle_journeys.values() {
@@ -2895,7 +2923,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             let location_groups = HashMap::new();
             super::manage_stop_times(
                 &mut collections,
@@ -3001,7 +3029,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             let location_groups = HashMap::new();
             super::manage_stop_times(
                 &mut collections,
@@ -3098,7 +3126,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             let location_groups = HashMap::new();
             super::manage_stop_times(
                 &mut collections,
@@ -3421,7 +3449,7 @@ mod tests {
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             // physical mode file should contain only three modes
             // (5,7 => funicular; 2 => train; 6 => suspended cable car)
             assert_eq!(4, collections.lines.len());
@@ -3532,7 +3560,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             let location_groups = HashMap::new();
             super::manage_stop_times(
                 &mut collections,
@@ -3611,7 +3639,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             let location_groups = HashMap::new();
             let val = super::manage_stop_times(
                 &mut collections,
@@ -3748,7 +3776,7 @@ mod tests {
                 super::read_stops(&mut handler, &mut comments, &mut equipments).unwrap();
             collections.stop_points = stop_points;
 
-            super::read_routes(&mut handler, &mut collections, false, false).unwrap();
+            super::read_routes(&mut handler, &mut collections, false, false, &mut vec![]).unwrap();
             let location_groups = HashMap::new();
             super::manage_stop_times(&mut collections, &mut handler, true, None, &location_groups)
                 .unwrap();
@@ -3838,7 +3866,14 @@ mod tests {
             let (contributor, dataset, _) = read_config(None::<&str>).unwrap();
             collections.contributors = CollectionWithId::new(vec![contributor]).unwrap();
             collections.datasets = CollectionWithId::new(vec![dataset]).unwrap();
-            super::read_routes(&mut handler, &mut collections, read_as_line, false).unwrap();
+            super::read_routes(
+                &mut handler,
+                &mut collections,
+                read_as_line,
+                false,
+                &mut vec![],
+            )
+            .unwrap();
             collections
         }
 

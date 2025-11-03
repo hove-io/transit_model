@@ -465,11 +465,14 @@ where
 
     read::manage_shapes(&mut collections, file_handler)?;
 
+    let mut attribution_rules = read::read_attributions(file_handler, "attributions.txt")?;
+
     read::read_routes(
         file_handler,
         &mut collections,
         read_as_line,
         read_trip_short_name,
+        &mut attribution_rules,
     )?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
 
@@ -489,7 +492,6 @@ where
     read::manage_frequencies(&mut collections, file_handler)?;
     read::manage_pathways(&mut collections, file_handler)?;
     collections.levels = read_opt_collection(file_handler, "levels.txt")?;
-    let attribution_rules = read::read_attributions(file_handler, "attributions.txt")?;
     read::apply_attribution_rules(&mut collections, &attribution_rules)?;
 
     //add prefixes
