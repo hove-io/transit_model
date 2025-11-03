@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
-use assert_cmd::prelude::*;
+use assert_cmd::{cargo_bin, prelude::*};
 use ntfs2gtfs::add_mode_to_line_code;
 use std::process::Command;
 use tempfile::TempDir;
@@ -63,8 +63,7 @@ fn test_platforms_preserving() {
 #[test]
 fn test_ntfs2gtfs() {
     test_in_tmp_dir(|path| {
-        Command::cargo_bin("ntfs2gtfs")
-            .expect("Failed to find binary 'ntfs2gtfs'")
+        Command::new(cargo_bin!("ntfs2gtfs"))
             .arg("--input")
             .arg("tests/fixtures/input/")
             .arg("--output")
@@ -79,8 +78,7 @@ fn test_ntfs2gtfs() {
 fn test_ntfs2gtfs_create_output_directory() {
     let output_dir = TempDir::new().expect("create temp dir failed");
     let unexisting_dir = output_dir.path().join("unexisting-folder");
-    Command::cargo_bin("ntfs2gtfs")
-        .expect("Failed to find binary 'ntfs2gtfs'")
+    Command::new(cargo_bin!("ntfs2gtfs"))
         .arg("--input")
         .arg("tests/fixtures/input/")
         .arg("--output")
@@ -95,8 +93,7 @@ fn test_ntfs2gtfs_create_zip() {
     let output_dir = TempDir::new().expect("create temp dir failed");
     let ntfs_zip = output_dir.path().join("ntfs.zip");
     assert!(!ntfs_zip.is_file());
-    Command::cargo_bin("ntfs2gtfs")
-        .expect("Failed to find binary 'ntfs2gtfs'")
+    Command::new(cargo_bin!("ntfs2gtfs"))
         .arg("--input")
         .arg("tests/fixtures/input/")
         .arg("--output")
@@ -111,8 +108,7 @@ fn test_ntfs2gtfs_create_foobar() {
     let output_dir = TempDir::new().expect("create temp dir failed");
     let ntfs_foobar = output_dir.path().join("ntfs.foobar");
     assert!(!ntfs_foobar.is_file());
-    Command::cargo_bin("ntfs2gtfs")
-        .expect("Failed to find binary 'ntfs2gtfs'")
+    Command::new(cargo_bin!("ntfs2gtfs"))
         .arg("--input")
         .arg("tests/fixtures/input/")
         .arg("--output")
@@ -125,8 +121,7 @@ fn test_ntfs2gtfs_create_foobar() {
 #[test]
 fn test_ntfs2gtfs_extended() {
     let output_dir = TempDir::new().expect("create temp dir failed");
-    Command::cargo_bin("ntfs2gtfs")
-        .expect("Failed to find binary 'ntfs2gtfs'")
+    Command::new(cargo_bin!("ntfs2gtfs"))
         .arg("--input")
         .arg("tests/fixtures/input/")
         .arg("--output")
@@ -144,8 +139,7 @@ fn test_ntfs2gtfs_extended() {
 #[test]
 fn test_ntfs2gtfs_split_route_by_mode() {
     let output_dir = TempDir::new().expect("create temp dir failed");
-    Command::cargo_bin("ntfs2gtfs")
-        .expect("Failed to find binary 'ntfs2gtfs'")
+    Command::new(cargo_bin!("ntfs2gtfs"))
         .arg("--input")
         .arg("tests/fixtures/input_split_route_by_mode")
         .arg("--output")
@@ -162,8 +156,7 @@ fn test_ntfs2gtfs_split_route_by_mode() {
 #[test]
 fn test_ntfs2gtfs_split_route_by_mode_extended() {
     let output_dir = TempDir::new().expect("create temp dir failed");
-    Command::cargo_bin("ntfs2gtfs")
-        .expect("Failed to find binary 'ntfs2gtfs'")
+    Command::new(cargo_bin!("ntfs2gtfs"))
         .arg("--input")
         .arg("tests/fixtures/input_split_route_by_mode")
         .arg("--output")
@@ -181,8 +174,7 @@ fn test_ntfs2gtfs_split_route_by_mode_extended() {
 #[test]
 fn test_ntfs2gtfs_with_fare_urls_and_deeplinks() {
     let output_dir = TempDir::new().expect("create temp dir failed");
-    Command::cargo_bin("ntfs2gtfs")
-        .expect("Failed to find binary 'ntfs2gtfs'")
+    Command::new(cargo_bin!("ntfs2gtfs"))
         .arg("--input")
         .arg("tests/fixtures/input_ntfs_with_fare_urls")
         .arg("--output")
@@ -199,8 +191,7 @@ fn test_ntfs2gtfs_with_fare_urls_and_deeplinks() {
 #[test]
 fn test_ntfs2gtfs_with_pickup_drop_off_windows_stoptimes() {
     let output_dir = TempDir::new().expect("create temp dir failed");
-    Command::cargo_bin("ntfs2gtfs")
-        .expect("Failed to find binary 'ntfs2gtfs'")
+    Command::new(cargo_bin!("ntfs2gtfs"))
         .arg("--input")
         .arg("../tests/fixtures/pickup_drop_off_windows/input_ntfs")
         .arg("--output")
@@ -222,8 +213,7 @@ fn test_ntfs2gtfs_with_pickup_drop_off_windows_stoptimes() {
 #[test]
 fn test_stop_and_object_codes_extension() {
     let output_dir = TempDir::new().expect("create temp dir failed");
-    Command::cargo_bin("ntfs2gtfs")
-        .expect("Failed to find binary 'ntfs2gtfs'")
+    Command::new(cargo_bin!("ntfs2gtfs"))
         .arg("--input")
         .arg("../tests/fixtures/pickup_drop_off_windows/input_ntfs")
         .arg("--output")
