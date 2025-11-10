@@ -19,6 +19,7 @@ use crate::{
     objects::{Coord, StopPoint, Transfer},
     Result,
 };
+use rstar::{RTree, RTreeObject, AABB};
 use std::collections::HashMap;
 use tracing::info;
 use typed_index_collection::{Collection, CollectionWithId, Idx};
@@ -49,72 +50,33 @@ pub fn get_available_transfers(
         .collect()
 }
 
-/// Spatial grid to efficiently find nearby stop points
-struct SpatialGrid {
-    /// Cell size in degrees (approximation)
-    cell_size: f64,
-    /// Map from (cell_x, cell_y) to list of stop_point_idx
-    cells: HashMap<(i32, i32), Vec<Idx<StopPoint>>>,
+/// Wrapper for stop point with its index for use in R-tree
+#[derive(Debug, Clone)]
+struct StopPointLocation {
+    idx: Idx<StopPoint>,
+    coord: Coord,
 }
 
-impl SpatialGrid {
-    /// Create a new spatial grid with cells sized to contain points within max_distance
-    /// We make cells larger (3x max_distance) to reduce the number of cells to check
-    fn new(max_distance: f64) -> Self {
-        // Approximate cell size in degrees (at equator, 1 degree ≈ 111km)
-        // Use 3x max_distance so we only need to check current cell + immediate neighbors
-        let cell_size = (max_distance * 3.0) / 111_000.0; // Convert meters to degrees
-        Self {
-            cell_size,
-            cells: HashMap::new(),
-        }
-    }
+impl RTreeObject for StopPointLocation {
+    type Envelope = AABB<[f64; 2]>;
 
-    /// Get the cell coordinates for a given coordinate
-    #[inline]
-    fn get_cell(&self, coord: &Coord) -> (i32, i32) {
-        (
-            (coord.lon / self.cell_size).floor() as i32,
-            (coord.lat / self.cell_size).floor() as i32,
-        )
-    }
-
-    /// Insert a stop point into the grid
-    fn insert(&mut self, idx: Idx<StopPoint>, coord: &Coord) {
-        let cell = self.get_cell(coord);
-        self.cells.entry(cell).or_default().push(idx);
-    }
-
-    /// Fill the provided vector with stop point indices in the cell and adjacent cells (3x3 grid)
-    /// This reuses the Vec buffer to avoid allocations
-    #[inline]
-    fn get_nearby_indices_into(&self, coord: &Coord, result: &mut Vec<Idx<StopPoint>>) {
-        result.clear();
-        let (cell_x, cell_y) = self.get_cell(coord);
-
-        // Check the 9 cells: current + 8 adjacent
-        // Use saturating_add to avoid overflow with extreme coordinates
-        for dx in -1..=1 {
-            for dy in -1..=1 {
-                let target_x = cell_x.saturating_add(dx);
-                let target_y = cell_y.saturating_add(dy);
-                if let Some(indices) = self.cells.get(&(target_x, target_y)) {
-                    result.extend_from_slice(indices);
-                }
-            }
-        }
+    fn envelope(&self) -> Self::Envelope {
+        AABB::from_point([self.coord.lon, self.coord.lat])
     }
 }
 
+impl StopPointLocation {
+    fn new(idx: Idx<StopPoint>, coord: Coord) -> Self {
+        Self { idx, coord }
+    }
+}
 /// Generate missing transfers from stop points within the required distance
 ///
-/// This function uses a spatial grid optimization to avoid O(n²) complexity.
-/// Instead of comparing every stop point with every other stop point, it:
-/// 1. Divides the geographic space into a grid of cells
-/// 2. For each stop point, only checks points in the same cell and adjacent cells (3x3 grid)
+/// This function uses an R-tree spatial index for efficient proximity queries.
+/// R-trees are optimized for spatial data and provide O(log n) query performance.
 ///
-/// Complexity: O(n × k) where k is the average number of points per cell neighborhood
-/// For uniformly distributed points, this is approximately O(n) instead of O(n²)
+/// Complexity: O(n × log n) for building the tree + O(n × k × log n) for queries
+/// where k is the average number of nearby points within max_distance
 pub fn generate_missing_transfers_from_sp(
     transfers_map: &TransferMap,
     model: &Model,
@@ -127,29 +89,47 @@ pub fn generate_missing_transfers_from_sp(
     let mut new_transfers_map = TransferMap::new();
     let sq_max_distance = max_distance * max_distance;
 
-    // Build spatial grid for efficient proximity queries
-    let mut grid = SpatialGrid::new(max_distance);
-    for (idx, sp) in model.stop_points.iter() {
-        if sp.coord != Coord::default() {
-            grid.insert(idx, &sp.coord);
-        }
-    }
+    // Build R-tree for efficient spatial queries
+    let stop_locations: Vec<StopPointLocation> = model
+        .stop_points
+        .iter()
+        .filter(|(_, sp)| sp.coord != Coord::default())
+        .map(|(idx, sp)| StopPointLocation::new(idx, sp.coord))
+        .collect();
 
-    // Pre-allocate buffer for nearby indices to avoid repeated allocations
-    let mut nearby_indices = Vec::with_capacity(100);
+    let rtree = RTree::bulk_load(stop_locations);
 
-    // For each stop point, only check nearby points from the grid
+    // For each stop point, query nearby points from the R-tree
     for (idx1, sp1) in model.stop_points.iter() {
         if sp1.coord == Coord::default() {
             continue;
         }
+
+        // Pre-calculate the approximation (cosinus of latitude) once for this stop
+        // This optimizes distance calculations for all nearby points
         let approx = sp1.coord.approx();
 
-        // Get nearby point indices (same cell + adjacent cells) - reuses the buffer
-        grid.get_nearby_indices_into(&sp1.coord, &mut nearby_indices);
+        // Query R-tree for points within a bounding box
+        // Note: locate_within_distance cannot be used here because it requires
+        // Euclidean distance, but we need geographic distance calculation with approx()
+        // Convert max_distance from meters to degrees
+        // 1 degree latitude ≈ 111km everywhere
+        // For longitude, it varies with latitude: 1 degree longitude ≈ 111km × cos(lat)
+        // Use latitude conversion for the search box (more conservative)
+        let search_distance_lat = max_distance / 111_000.0;
+        // For longitude, use the pre-calculated approx (cos of latitude) to get the correct degree distance
+        let search_distance_lon = max_distance / (111_000.0 * approx.cos_lat());
+        let min_lon = sp1.coord.lon - search_distance_lon;
+        let max_lon = sp1.coord.lon + search_distance_lon;
+        let min_lat = sp1.coord.lat - search_distance_lat;
+        let max_lat = sp1.coord.lat + search_distance_lat;
 
-        // Only iterate over nearby points
-        for &idx2 in &nearby_indices {
+        let search_box = AABB::from_corners([min_lon, min_lat], [max_lon, max_lat]);
+
+        // Get all points within the bounding box and filter by actual distance
+        for nearby_location in rtree.locate_in_envelope(&search_box) {
+            let idx2 = nearby_location.idx;
+
             if transfers_map.contains_key(&(idx1, idx2)) {
                 continue;
             }
@@ -158,14 +138,14 @@ pub fn generate_missing_transfers_from_sp(
                     continue;
                 }
             }
-            let sp2 = &model.stop_points[idx2];
 
-            let sq_distance = approx.sq_distance_to(&sp2.coord);
+            // Use the pre-calculated approximation for efficient distance calculation
+            let sq_distance = approx.sq_distance_to(&nearby_location.coord);
             if sq_distance > sq_max_distance {
                 continue;
             }
-
             let transfer_time = (sq_distance.sqrt() / walking_speed) as u32;
+            let sp2 = &model.stop_points[idx2];
             new_transfers_map.insert(
                 (idx1, idx2),
                 Transfer {
@@ -216,9 +196,7 @@ pub fn generates_transfers(
     need_transfer: Option<NeedTransfer>,
 ) -> Result<Collections> {
     info!("Generating transfers...");
-
     let mut transfers_map = get_available_transfers(model.transfers.clone(), &model.stop_points);
-
     let new_transfers_map = generate_missing_transfers_from_sp(
         &transfers_map,
         &model,
@@ -230,7 +208,6 @@ pub fn generates_transfers(
 
     transfers_map.extend(new_transfers_map);
     let mut new_transfers: Vec<_> = transfers_map.into_values().collect();
-
     new_transfers.sort_unstable_by(|t1, t2| {
         (&t1.from_stop_id, &t1.to_stop_id).cmp(&(&t2.from_stop_id, &t2.to_stop_id))
     });
@@ -538,8 +515,8 @@ mod tests {
         // Create a grid of stop points (e.g., 100 x 100 = 10,000 points)
         // In a real scenario with 10k points:
         // - O(n²) = 100,000,000 comparisons
-        // - O(n×k) with spatial grid ≈ 10,000 × 9 cells × ~10 points = ~900,000 comparisons
-        // This is roughly 100x faster!
+        // - O(n×log n) with R-tree for spatial queries
+        // This is significantly faster!
 
         let grid_size = 10; // Use 10x10 = 100 points for the test (to keep it fast)
         for i in 0..grid_size {
@@ -575,15 +552,55 @@ mod tests {
         let result = generates_transfers(model, 500.0, 0.7, 2, None);
         assert!(result.is_ok());
 
-        // With spatial grid, this should complete quickly even with 100+ points
+        // With R-tree, this should complete quickly even with 100+ points
         // The number of transfers should be reasonable (not n²)
-        let new_model = result.unwrap();
-        let transfer_count = new_model.transfers.len();
+        let collections = result.unwrap();
+        let transfer_count = collections.transfers.len();
 
         // Each point should have transfers to nearby points (not all points)
         // With 100 points in a 10x10 grid and 500m max distance,
         // each point should connect to roughly 4-9 neighbors
         assert!(transfer_count < grid_size * grid_size * grid_size * grid_size);
         assert!(transfer_count > 0);
+    }
+
+    #[test]
+    fn test_generates_transfers_all_within_distance() {
+        let model_builder = ModelBuilder::default();
+        let model = model_builder
+            .stop_area("sa:1", |stop_area| {
+                stop_area.name = "sa:1".to_string();
+            })
+            .stop_area("sa:2", |stop_area| {
+                stop_area.name = "sa:2".to_string();
+            })
+            .stop_point("A", |stop_point| {
+                stop_point.coord = ("2.37718".to_string(), "48.84680".to_string()).into();
+                stop_point.stop_area_id = "sa:1".to_string();
+            })
+            .stop_point("B", |stop_point| {
+                stop_point.coord = ("2.37146".to_string(), "48.84567".to_string()).into();
+                stop_point.stop_area_id = "sa:1".to_string();
+            })
+            .stop_point("C", |stop_point| {
+                stop_point.coord = ("2.37218".to_string(), "48.84665".to_string()).into();
+                stop_point.stop_area_id = "sa:2".to_string();
+            })
+            .stop_point("D", |stop_point| {
+                stop_point.coord = ("2.37511".to_string(), "48.84702".to_string()).into();
+                stop_point.stop_area_id = "sa:2".to_string();
+            })
+            .vj("vj1", |vj_builder| {
+                vj_builder
+                    .st("A", "10:02:00")
+                    .st("B", "10:04:00")
+                    .st("C", "10:10:00")
+                    .st("D", "10:15:00");
+            })
+            .build();
+
+        let model = generates_transfers(model, 500.0, 1.0, 10, None).unwrap();
+
+        assert_eq!(model.transfers.len(), 16);
     }
 }
