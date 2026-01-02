@@ -42,7 +42,7 @@ chrono = { version = "0.4", default-features = false, features = ["std", "clock"
 chrono-tz = { version = "0.10", features = ["serde"] }
 csv = "1"
 derivative = "2"
-geo = "0.30"
+geo = "0.32"
 iso4217 = "0.3"
 lazy_static = "1"
 md5 = "0.8"
