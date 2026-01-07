@@ -64,7 +64,6 @@ pub mod model;
 pub mod model_builder;
 #[cfg(feature = "proj")]
 pub mod netex_france;
-pub mod netex_utils;
 pub mod ntfs;
 #[cfg(not(feature = "parser"))]
 pub(crate) mod parser;
@@ -76,6 +75,8 @@ pub mod transfers;
 pub mod validity_period;
 mod version_utils;
 pub mod vptranslator;
+#[cfg(feature = "proj")]
+mod xml_builder;
 
 // Good average size for initialization of the `StopTime` collection in `VehicleJourney`
 // Note: they are shrinked down in `Model::new()` to fit the real size

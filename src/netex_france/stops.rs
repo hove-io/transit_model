@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+use crate::xml_builder::{Element, Node};
 use crate::{
     netex_france::{
         exporter::{Exporter, ObjectType},
@@ -21,7 +22,6 @@ use crate::{
     Model, Result,
 };
 use anyhow::anyhow;
-use minidom::{Element, Node};
 use proj::Proj;
 use std::{
     borrow::Borrow,
@@ -433,7 +433,7 @@ impl<'a> StopExporter<'a> {
         let entrances = Element::builder("entrances")
             .append_all(stop_place_entrances)
             .build();
-        if entrances.children().count() == 0 {
+        if entrances.children().is_empty() {
             None
         } else {
             Some(entrances)

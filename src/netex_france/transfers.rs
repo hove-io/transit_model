@@ -12,13 +12,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+use crate::xml_builder::{Element, Node};
 use crate::{
     netex_france::exporter::{Exporter, ObjectType},
     objects::Transfer,
     Model, Result,
 };
 use anyhow::anyhow;
-use minidom::{Element, Node};
 
 pub struct TransferExporter<'a> {
     model: &'a Model,
