@@ -43,7 +43,7 @@ jobs:
     needs: aws_creds
     runs-on: [self-hosted, dataeng, sandbox]
     container:
-      image: 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj9.6.0-deb11
+      image: 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj9.6.2-deb11
       credentials:
         username: AWS
         password: ${{ needs.aws_creds.outputs.token }}
@@ -56,7 +56,7 @@ jobs:
     needs: aws_creds
     runs-on: [self-hosted, dataeng, sandbox]
     container:
-      image: 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj9.6.0-deb11
+      image: 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj9.6.2-deb11
       credentials:
         username: AWS
         password: ${{ needs.aws_creds.outputs.token }}
@@ -71,7 +71,7 @@ jobs:
     needs: aws_creds
     runs-on: [self-hosted, dataeng, sandbox]
     container:
-      image: 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj9.6.0-deb11
+      image: 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj9.6.2-deb11
       credentials:
         username: AWS
         password: ${{ needs.aws_creds.outputs.token }}
