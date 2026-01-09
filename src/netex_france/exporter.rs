@@ -13,20 +13,18 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 //! Exporter for Netex France profile
+use crate::xml_builder::{Element, ElementWriter, Node};
 use crate::{
     model::Model,
     netex_france::{
         CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, OfferExporter,
         StopExporter, TransferExporter,
     },
-    netex_utils::FrameType,
     objects::{Date, Line, Network},
     Result,
 };
 use anyhow::anyhow;
 use chrono::prelude::*;
-use minidom::{Element, Node};
-use minidom_writer::ElementWriter;
 use proj::Proj;
 use relational_types::IdxSet;
 use std::{
@@ -43,6 +41,31 @@ const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
 const NETEX_FRANCE_TRANSFERS_FILENAME: &str = "correspondances.xml";
 const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "arrets.xml";
+
+/// Type of NeTEx frame.
+#[derive(Debug, Eq, Hash, PartialEq)]
+pub(in crate::netex_france) enum FrameType {
+    /// Type of a `<CompositeFrame>`
+    Composite,
+    /// Type of a `<GeneralFrame>`
+    General,
+    /// Type of a `<ResourceFrame>`
+    Resource,
+    /// Type of a `<ServiceFrame>`
+    Service,
+}
+
+impl Display for FrameType {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        use FrameType::*;
+        match self {
+            Composite => write!(f, "CompositeFrame"),
+            General => write!(f, "GeneralFrame"),
+            Resource => write!(f, "ResourceFrame"),
+            Service => write!(f, "ServiceFrame"),
+        }
+    }
+}
 
 pub(in crate::netex_france) enum ObjectType {
     AccessibilityAssessment,
@@ -185,27 +208,22 @@ impl Exporter<'_> {
     // 'PublicationDelivery' and 'dataObjects'
     fn wrap_frame(&self, frame: Element, version_type: VersionType) -> Element {
         let publication_timestamp = Element::builder("PublicationTimestamp")
-            .ns("http://www.netex.org.uk/netex/")
             .append(self.timestamp.to_rfc3339())
             .build();
         let participant_ref = Element::builder("ParticipantRef")
-            .ns("http://www.netex.org.uk/netex/")
             .append(self.participant_ref.as_str())
             .build();
-        let data_objects = Element::builder("dataObjects")
-            .ns("http://www.netex.org.uk/netex/")
-            .append(frame)
-            .build();
+        let data_objects = Element::builder("dataObjects").append(frame).build();
         Element::builder("PublicationDelivery")
             .attr("version", format!("1.09:FR-NETEX_{version_type}-2.1-1.0"))
-            .attr("xmlns:siri", "http://www.siri.org.uk/siri")
+            .attr("xmlns", "http://www.netex.org.uk/netex")
             .attr("xmlns:core", "http://www.govtalk.gov.uk/core")
             .attr("xmlns:gml", "http://www.opengis.net/gml/3.2")
             .attr("xmlns:ifopt", "http://www.ifopt.org.uk/ifopt")
+            .attr("xmlns:siri", "http://www.siri.org.uk/siri")
             .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
-            .attr("xmlns", "http://www.netex.org.uk/netex")
-            .attr("xsi:schemaLocation", "http://www.netex.org.uk/netex")
             .attr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+            .attr("xsi:schemaLocation", "http://www.netex.org.uk/netex")
             .append(publication_timestamp)
             .append(participant_ref)
             .append(data_objects)

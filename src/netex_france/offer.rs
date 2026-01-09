@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+use crate::xml_builder::{Element, Node};
 use crate::{
     netex_france::{
         self,
@@ -22,7 +23,6 @@ use crate::{
     Model, Result,
 };
 use anyhow::anyhow;
-use minidom::{Element, Node};
 use proj::Proj;
 use relational_types::IdxSet;
 use std::collections::BTreeMap;
@@ -256,8 +256,8 @@ impl<'a> OfferExporter<'a> {
                     ObjectType::StopPointInJourneyPattern,
                 ),
             )
+            .attr("order", (stop_time.sequence + 1).to_string())
             .attr("version", "any")
-            .attr("order", stop_time.sequence + 1)
             .append(Self::generate_scheduled_stop_point_ref(
                 vehicle_journey_id,
                 stop_time.sequence,
@@ -330,8 +330,8 @@ impl<'a> OfferExporter<'a> {
                     ObjectType::PassengerStopAssignment,
                 ),
             )
-            .attr("version", "any")
-            .attr("order", stop_time.sequence + 1);
+            .attr("order", (stop_time.sequence + 1).to_string())
+            .attr("version", "any");
         let element_builder = element_builder.append(Self::generate_scheduled_stop_point_ref(
             &vehicle_journey.id,
             stop_time.sequence,
@@ -483,8 +483,8 @@ impl<'a> OfferExporter<'a> {
                 "id",
                 Exporter::generate_id(&route_point_id, ObjectType::PointOnRoute),
             )
+            .attr("order", order.to_string())
             .attr("version", "any")
-            .attr("order", order)
             .append(route_point_ref)
             .build()
     }

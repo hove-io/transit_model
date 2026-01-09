@@ -12,6 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
+use crate::xml_builder::{Element, Node};
 use crate::{
     netex_france::exporter::{Exporter, ObjectType},
     objects::{Calendar, Date},
@@ -19,7 +20,6 @@ use crate::{
 };
 use anyhow::bail;
 use chrono::prelude::*;
-use minidom::{Element, Node};
 use std::collections::BTreeSet;
 
 pub struct CalendarExporter<'a> {
@@ -75,8 +75,8 @@ impl<'a> CalendarExporter<'a> {
                 "id",
                 Exporter::generate_id(&calendar.id, ObjectType::DayTypeAssignment),
             )
-            .attr("version", "any")
             .attr("order", "0")
+            .attr("version", "any")
             .append(self.generate_operating_period_ref(&calendar.id))
             .append(self.generate_day_type_ref(&calendar.id))
             .build()
