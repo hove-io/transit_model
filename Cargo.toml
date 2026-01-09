@@ -53,6 +53,7 @@ proj = { version = "0.31", optional = true } # libproj version used by 'proj' cr
 # quick-xml is used for writing NeTEx files (see xml_builder module in netex_france)
 quick-xml = { version = "0.38", optional = true }
 relational_types = { git = "https://github.com/hove-io/relational_types", tag = "v2"}
+rstar = "0.12"
 rust_decimal = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
