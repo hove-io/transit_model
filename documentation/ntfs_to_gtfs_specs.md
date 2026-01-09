@@ -18,7 +18,6 @@ The following additional files are generated only if the corresponding objects a
 
 * [transfers](#transferstxt)
 * [shapes](#shapestxt)
-* [stop_extensions](#stop_extensionstxt): additional information providing the complementary stop codes used in external systems.
 * [object_codes_extension](#object_codes_extensiontxt): additional information providing the complementary codes for various objects (stops, networks, lines, routes, trips, companies) used in external systems.
 
 [GTFS]: https://gtfs.org/reference/static
@@ -156,17 +155,6 @@ This file is the same as the NTFS calendar_dates.txt file. All dates of service 
 | shape_pt_lat      | yes      | geometries.txt | geometry_wkt | Latitude of the stop in the shape                                                      |
 | shape_pt_lon      | yes      | geometries.txt | geometry_wkt | Longitude of the stop in the shape                                                     |
 | shape_pt_sequence | yes      |                |              | Integer starting at 0 and increase by an increment of one for every point in the shape |
-
-### stop_extensions.txt
-
-This file contains the complementary stop codes from the NTFS object_codes.txt file. If no additional stop code is specified, this file is not generated.
-If N complementary codes are specified for a stop, there will be N separate lines in the file for the different stop_id/system_name pairs.
-
-| GTFS field  | Required | NTFS file        | NTFS field    | Note                                                                                                  |
-| ----------- | -------- | ---------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
-| stop_id     | yes      | object_codes.txt | object_id     | `stop_id` of the stop having a complementary code specified (link to the [stops.txt](#stopstxt) file) |
-| system_name | yes      | object_codes.txt | object_system |                                                                                                       |
-| system_code | yes      | object_codes.txt | object_code   |                                                                                                       |
 
 ### object_codes_extension.txt
 
