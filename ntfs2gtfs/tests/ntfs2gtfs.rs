@@ -226,3 +226,24 @@ fn test_stop_and_object_codes_extension() {
         "./tests/fixtures/stop_and_object_codes_extension",
     );
 }
+
+#[test]
+// Test: locked lines (marked in object_locks.txt due to having no VJs) are exported in GTFS
+// if object_codes.txt contains a code for the line with system="physical_mode"
+// that references an existing physical-mode in the collection
+// (requires active VJs from other lines using that physical-mode).
+fn test_ntfs2gtfs_with_with_lines_locked() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::new(cargo_bin!("ntfs2gtfs"))
+        .arg("--input")
+        .arg("tests/fixtures/input_ntfs_with_lines_locked")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .assert()
+        .success();
+    compare_output_dir_with_expected(
+        output_dir,
+        Some(vec!["routes.txt", "object_codes_extension.txt"]),
+        "./tests/fixtures/output_gtfs_with_lines_locked",
+    );
+}

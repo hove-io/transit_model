@@ -1,0 +1,2 @@
+geometry_id,geometry_wkt
+linestring_for_trip,"LINESTRING(10.1 20.2,30.3 40.4,50.5 60.6)"

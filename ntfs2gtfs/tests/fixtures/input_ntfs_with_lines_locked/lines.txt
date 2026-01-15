@@ -1,0 +1,5 @@
+line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+line:1,1,Metro 1,,,,,,network:kept,Metro,,09:00:00,09:10:00
+line:3,3,Metro 3 (empty),,,,,,network:kept,Metro,,00:00:00,23:59:59
+line:4,A,Bus A,,,,,,network:kept,BusX,,23:00:00,23:10:00
+line:5,B,Bus B (empty),,,,,,network:kept,BusX,,00:00:00,23:59:59

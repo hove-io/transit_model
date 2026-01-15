@@ -1,0 +1,10 @@
+from_stop_id,to_stop_id,min_transfer_time,real_min_transfer_time,equipment_id
+stop:point:1,stop:point:2,0,60,
+stop:point:3,stop:point:3,0,60,
+stop:point:1,stop:point:3,0,60,
+stop:point:3,stop:point:1,0,60,
+stop:point:3,stop:point:2,0,60,
+stop:point:1,stop:point:1,0,60,
+stop:point:2,stop:point:3,0,60,
+stop:point:2,stop:point:2,0,60,
+stop:point:2,stop:point:1,0,60,

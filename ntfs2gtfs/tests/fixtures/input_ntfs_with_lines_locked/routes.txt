@@ -1,0 +1,3 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+route:1,whatever,forward,line:1,,stop:area:1
+route:5,whatever,forward,line:4,,stop:area:1

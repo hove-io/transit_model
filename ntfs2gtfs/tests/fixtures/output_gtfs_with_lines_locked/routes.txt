@@ -1,0 +1,5 @@
+route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color,route_sort_order
+line:1,network:kept,1,Metro 1,,1,,,,
+line:3,network:kept,3,Metro 3 (empty),,1,,,,
+line:4,network:kept,A,Bus A,,3,,,,
+line:5,network:kept,B,Bus B (empty),,3,,,,
