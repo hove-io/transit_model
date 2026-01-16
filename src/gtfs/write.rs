@@ -552,7 +552,19 @@ where
         .map(move |idx| &collection[idx])
         .collect();
     pms.sort_unstable_by_key(|pm| get_physical_mode_order(pm));
-
+    if pms.is_empty() {
+        // Fallback: look for physical_mode in line codes. This succeeds only if
+        // the mode still exists in the collection (i.e., at least one active VJ
+        // uses it; otherwise it was sanitized out).
+        if let Some(physical_mode) = model.lines[idx]
+            .codes
+            .iter()
+            .find(|(system, _)| system == "physical_mode")
+            .and_then(|(_, code)| collection.get(code))
+        {
+            pms.push(physical_mode);
+        }
+    }
     pms.iter()
         .enumerate()
         .map(|(i, pm)| PhysicalModeWithOrder {

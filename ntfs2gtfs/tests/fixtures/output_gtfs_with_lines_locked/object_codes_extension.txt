@@ -1,0 +1,7 @@
+object_type,object_id,object_system,object_code
+route,line:1,source,LineC1X01
+route,line:3,physical_mode,Metro
+route,line:3,source,LineC3X03
+route,line:4,source,LineC4X04
+route,line:5,physical_mode,Bus
+route,line:5,source,LineC5X05

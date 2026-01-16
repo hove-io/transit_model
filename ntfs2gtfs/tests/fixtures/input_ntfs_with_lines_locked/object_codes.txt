@@ -1,0 +1,7 @@
+object_type,object_id,object_system,object_code
+line,line:1,source,LineC1X01
+line,line:3,physical_mode,Metro
+line,line:3,source,LineC3X03
+line,line:4,source,LineC4X04
+line,line:5,physical_mode,Bus
+line,line:5,source,LineC5X05

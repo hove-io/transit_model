@@ -1,0 +1,6 @@
+stop_id,stop_name,stop_code,visible,fare_zone_id,stop_lon,stop_lat,location_type,parent_station,stop_timezone,geometry_id,equipment_id,level_id,platform_code,address_id
+stop:point:1,whatever,point1,1,,2.3,48.8,0,stop:area:1,,,,,,
+stop:point:2,whatever,,1,,2.3,48.8,0,stop:area:1,,,,,,
+stop:point:3,whatever,,1,,2.3,48.8,0,stop:area:1,,,,,,
+stop:area:1,whatever,,1,,2.3,48.8,1,,,,,,,
+stop:entrance:1,whatever,entrance1,0,,2.3,48.8,3,stop:area:1,,,,,,
