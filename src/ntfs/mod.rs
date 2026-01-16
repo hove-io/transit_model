@@ -352,7 +352,7 @@ where
 /// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
 pub fn write<P: AsRef<path::Path>>(
-    model: &Model,
+    model: &Collections,
     path: P,
     current_datetime: DateTime<FixedOffset>,
 ) -> Result<()> {
@@ -437,7 +437,7 @@ pub fn write<P: AsRef<path::Path>>(
 /// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// ZIP archive at the given full path.
 pub fn write_to_zip<P: AsRef<path::Path>>(
-    model: &Model,
+    model: &Collections,
     path: P,
     current_datetime: DateTime<FixedOffset>,
 ) -> Result<()> {
