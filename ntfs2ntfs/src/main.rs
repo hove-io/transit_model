@@ -96,13 +96,14 @@ fn run(opt: Opt) -> Result<()> {
     let model = if opt.ignore_transfers {
         model
     } else {
-        generates_transfers(
+        let collections = generates_transfers(
             model,
             opt.max_distance,
             opt.walking_speed,
             opt.waiting_time,
             None,
-        )?
+        )?;
+        transit_model::Model::new(collections)?
     };
 
     if let Some(output) = opt.output {

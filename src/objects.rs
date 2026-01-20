@@ -1117,6 +1117,15 @@ pub struct Approx {
     lat_rad: f64,
 }
 impl Approx {
+    /// Returns the cosine of the latitude, used for longitude distance calculations.
+    ///
+    /// This value is useful for converting longitude degrees to meters at a given latitude.
+    /// At the equator, 1 degree of longitude ≈ 111km, but this decreases toward the poles
+    /// by a factor of cos(latitude).
+    pub fn cos_lat(&self) -> f64 {
+        self.cos_lat
+    }
+
     /// Returns the squared distance to `coord`.  Squared distance is
     /// returned to skip a `sqrt` call, that is not important for
     /// distance comparison or sorting.
