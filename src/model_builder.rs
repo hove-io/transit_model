@@ -32,9 +32,7 @@
 
 use crate::model::{Collections, Model};
 use crate::objects::{
-    Calendar, CommercialMode, Company, Contributor, Dataset, Date, Equipment, Geometry, Line,
-    Network, Occupancy, OccupancyStatus, PhysicalMode, Route, StopArea, StopPoint, StopTime,
-    StopTimePrecision, Time, Transfer, TripProperty, ValidityPeriod, VehicleJourney,
+    Address, AdministrativeRegion, Calendar, CommercialMode, Company, Contributor, Dataset, Date, Equipment, Geometry, Line, Network, Occupancy, OccupancyStatus, PhysicalMode, Route, StopArea, StopPoint, StopTime, StopTimePrecision, Time, Transfer, TripProperty, ValidityPeriod, VehicleJourney
 };
 use chrono::NaiveDateTime;
 use chrono_tz;
@@ -533,6 +531,44 @@ impl ModelBuilder {
                 id: id.to_owned(),
                 geometry: geo_geometry.clone(),
             });
+        self
+    }
+
+    /// Add a new administrative region to the model
+    pub fn administrative_region<F>(mut self, id: &str, level: u32, mut initer: F) -> Self
+    where
+        F: FnMut(&mut AdministrativeRegion),
+    {
+        self.collections.administrative_regions.get_or_create_with(id, || {
+            let mut ar = AdministrativeRegion {
+                id: id.to_owned(),
+                level: Some(level),
+                insee: None,
+                label: None,
+                lat: None,
+                lon: None,
+                zip_codes: None,
+                name: None,
+            };
+            initer(&mut ar);
+            ar
+        });
+        self
+    }
+
+    /// Add a new address to the model
+    pub fn address<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut Address),
+    {
+        self.collections.addresses.get_or_create_with(id, || {
+            let mut ad = Address {
+                id: id.to_owned(),
+                ..Default::default()
+            };
+            initer(&mut ad);
+            ad
+        });
         self
     }
 
@@ -1536,5 +1572,50 @@ mod test {
         );
         assert_eq!(model.datasets.len(), 1);
         assert_eq!(model.contributors.len(), 1);
+    }
+
+    #[test]
+    fn address_model_creation() {
+        let model = ModelBuilder::default()
+            .administrative_region("admin_8", 8, |admin_builder| {
+                admin_builder.id = "admin_8".to_owned();
+            })
+            .administrative_region("admin_9", 8, |admin_builder| {
+                admin_builder.id = "admin_9".to_owned();
+            })
+            .administrative_region("admin_10", 10, |admin_builder| {
+                admin_builder.id = "admin_10".to_owned();
+            })
+            .address("addr1", |addr_builder| {
+                addr_builder.id = "addr1".to_owned();
+                addr_builder.admin_level_8_id = Some("admin_8".to_owned());
+                addr_builder.admin_level_9_id = Some("admin_9".to_owned());
+                addr_builder.admin_level_10_id = Some("admin_10".to_owned());
+            })
+            .stop_area("A", |sp_builder|{
+                sp_builder.address_id = Some("addr1".to_owned());
+            })
+            .stop_point("A", |sp_builder|{
+                sp_builder.stop_area_id = "A".to_owned();
+                sp_builder.address_id = Some("addr1".to_owned());
+            })
+            .vj("toto", |vj| {
+                vj.st("A", "10:00:00").st("B", "11:00:00");
+            })
+            .build();
+
+        assert_eq!(model.addresses.len(), 1);
+        assert_eq!(model.administrative_regions.len(), 3);
+
+        let stop_area = model.stop_areas.get("A").unwrap();
+        assert_eq!(stop_area.address_id.as_deref(), Some("addr1"));
+
+        let stop_point = model.stop_points.get("A").unwrap();
+        assert_eq!(stop_point.address_id.as_deref(), Some("addr1"));
+
+        let address = model.addresses.get("addr1").unwrap();
+        assert_eq!(address.admin_level_8_id.as_deref(), Some("admin_8"));
+        assert_eq!(address.admin_level_9_id.as_deref(), Some("admin_9"));
+        assert_eq!(address.admin_level_10_id.as_deref(), Some("admin_10"));
     }
 }
