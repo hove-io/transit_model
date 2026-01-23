@@ -1623,5 +1623,12 @@ mod test {
         assert_eq!(address.admin_level_8_id.as_deref(), Some("admin_8"));
         assert_eq!(address.admin_level_9_id.as_deref(), Some("admin_9"));
         assert_eq!(address.admin_level_10_id.as_deref(), Some("admin_10"));
+
+        let admin_8 = model.administrative_regions.get("admin_8").unwrap();
+        assert_eq!(admin_8.level, Some(8));
+        let admin_9 = model.administrative_regions.get("admin_9").unwrap();
+        assert_eq!(admin_9.level, Some(8));
+        let admin_10 = model.administrative_regions.get("admin_10").unwrap();
+        assert_eq!(admin_10.level, Some(10));
     }
 }
