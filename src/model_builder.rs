@@ -32,7 +32,10 @@
 
 use crate::model::{Collections, Model};
 use crate::objects::{
-    Address, AdministrativeRegion, Calendar, CommercialMode, Company, Contributor, Dataset, Date, Equipment, Geometry, Line, Network, Occupancy, OccupancyStatus, PhysicalMode, Route, StopArea, StopPoint, StopTime, StopTimePrecision, Time, Transfer, TripProperty, ValidityPeriod, VehicleJourney
+    Address, AdministrativeRegion, Calendar, CommercialMode, Company, Contributor, Dataset, Date,
+    Equipment, Geometry, Line, Network, Occupancy, OccupancyStatus, PhysicalMode, Route, StopArea,
+    StopPoint, StopTime, StopTimePrecision, Time, Transfer, TripProperty, ValidityPeriod,
+    VehicleJourney,
 };
 use chrono::NaiveDateTime;
 use chrono_tz;
@@ -539,20 +542,23 @@ impl ModelBuilder {
     where
         F: FnMut(&mut AdministrativeRegion),
     {
-        self.collections.administrative_regions.get_or_create_with(id, || {
-            let mut ar = AdministrativeRegion {
-                id: id.to_owned(),
-                level: Some(level),
-                insee: None,
-                label: None,
-                lat: None,
-                lon: None,
-                zip_codes: None,
-                name: None,
-            };
-            initer(&mut ar);
-            ar
-        });
+        self.collections
+            .administrative_regions
+            .get_or_create_with(id, || {
+                let mut ar = AdministrativeRegion {
+                    id: id.to_owned(),
+                    level: Some(level),
+                    insee: None,
+                    label: None,
+                    lat: None,
+                    lon: None,
+                    zip_codes: None,
+                    name: None,
+                };
+                initer(&mut ar);
+                ar
+            });
+
         self
     }
 
@@ -1592,10 +1598,10 @@ mod test {
                 addr_builder.admin_level_9_id = Some("admin_9".to_owned());
                 addr_builder.admin_level_10_id = Some("admin_10".to_owned());
             })
-            .stop_area("A", |sp_builder|{
+            .stop_area("A", |sp_builder| {
                 sp_builder.address_id = Some("addr1".to_owned());
             })
-            .stop_point("A", |sp_builder|{
+            .stop_point("A", |sp_builder| {
                 sp_builder.stop_area_id = "A".to_owned();
                 sp_builder.address_id = Some("addr1".to_owned());
             })
