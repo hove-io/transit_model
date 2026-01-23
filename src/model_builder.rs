@@ -1586,7 +1586,7 @@ mod test {
             .administrative_region("admin_8", 8, |admin_builder| {
                 admin_builder.id = "admin_8".to_owned();
             })
-            .administrative_region("admin_9", 8, |admin_builder| {
+            .administrative_region("admin_9", 9, |admin_builder| {
                 admin_builder.id = "admin_9".to_owned();
             })
             .administrative_region("admin_10", 10, |admin_builder| {
@@ -1627,7 +1627,7 @@ mod test {
         let admin_8 = model.administrative_regions.get("admin_8").unwrap();
         assert_eq!(admin_8.level, Some(8));
         let admin_9 = model.administrative_regions.get("admin_9").unwrap();
-        assert_eq!(admin_9.level, Some(8));
+        assert_eq!(admin_9.level, Some(9));
         let admin_10 = model.administrative_regions.get("admin_10").unwrap();
         assert_eq!(admin_10.level, Some(10));
     }
