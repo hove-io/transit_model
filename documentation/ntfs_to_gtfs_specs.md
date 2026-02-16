@@ -18,7 +18,6 @@ The following additional files are generated only if the corresponding objects a
 
 * [transfers](#transferstxt)
 * [shapes](#shapestxt)
-* [stop_extensions](#stop_extensionstxt): additional information providing the complementary stop codes used in external systems.
 * [object_codes_extension](#object_codes_extensiontxt): additional information providing the complementary codes for various objects (stops, networks, lines, routes, trips, companies) used in external systems.
 
 [GTFS]: https://gtfs.org/reference/static
@@ -85,6 +84,18 @@ If a NTFS `line` contains `trip`s that should be associated with different gtfs 
 
 * The trips using the physical mode with the lowest priority are modeled by a GTFS `route` with the field `route_id` matching the value of the NTFS `line_id`.
 * The trips using other physical modes are modeled by a separate GTFS `route` for each corresponding `route_type`, adding the suffix ":<physical_mode_id>" to the value of `route_id` and assigning the corresponding physical mode to the field `route_type`.
+
+**Determining the physical mode for lines**
+
+The NTFS → GTFS conversion uses the line's physical mode(s) to determine the GTFS `route_type`.
+The physical mode determination follows this cascading logic:
+
+1. **Primary method**: Identification through the line's trips
+   * Physical modes are extracted from the trips associated with the line
+
+2. **Fallback method**: Retrieval through line codes
+   * If no physical mode is found via the primary method (i.e., line without trips), the converter searches for a code with `object_system` = `physical_mode` in the line's codes (from `object_codes.txt`)
+   * If this code exists **and** the corresponding physical mode is present in the `physical_modes` collection, it is used
 
 ### stops.txt
 
@@ -156,17 +167,6 @@ This file is the same as the NTFS calendar_dates.txt file. All dates of service 
 | shape_pt_lat      | yes      | geometries.txt | geometry_wkt | Latitude of the stop in the shape                                                      |
 | shape_pt_lon      | yes      | geometries.txt | geometry_wkt | Longitude of the stop in the shape                                                     |
 | shape_pt_sequence | yes      |                |              | Integer starting at 0 and increase by an increment of one for every point in the shape |
-
-### stop_extensions.txt
-
-This file contains the complementary stop codes from the NTFS object_codes.txt file. If no additional stop code is specified, this file is not generated.
-If N complementary codes are specified for a stop, there will be N separate lines in the file for the different stop_id/system_name pairs.
-
-| GTFS field  | Required | NTFS file        | NTFS field    | Note                                                                                                  |
-| ----------- | -------- | ---------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
-| stop_id     | yes      | object_codes.txt | object_id     | `stop_id` of the stop having a complementary code specified (link to the [stops.txt](#stopstxt) file) |
-| system_name | yes      | object_codes.txt | object_system |                                                                                                       |
-| system_code | yes      | object_codes.txt | object_code   |                                                                                                       |
 
 ### object_codes_extension.txt
 

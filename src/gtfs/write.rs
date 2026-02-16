@@ -25,11 +25,11 @@ use crate::Result;
 use anyhow::Context;
 use geo::Geometry as GeoGeometry;
 use relational_types::IdxSet;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::path;
 use tracing::{info, warn};
-use typed_index_collection::{Collection, CollectionWithId, Id, Idx};
+use typed_index_collection::{Collection, CollectionWithId, Idx};
 
 pub fn write_transfers(path: &path::Path, transfers: &Collection<NtfsTransfer>) -> Result<()> {
     if transfers.is_empty() {
@@ -368,59 +368,6 @@ pub fn write_attributions(
         wtr.flush()
             .with_context(|| format!("Error reading {path:?}"))?;
     }
-
-    Ok(())
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-struct StopExtension {
-    #[serde(rename = "object_id")]
-    id: String,
-    #[serde(rename = "object_system")]
-    name: String,
-    #[serde(rename = "object_code")]
-    code: String,
-}
-
-fn stop_extensions_from_collection_with_id<T>(
-    collections: &CollectionWithId<T>,
-) -> impl Iterator<Item = StopExtension> + '_
-where
-    T: Id<T> + Codes,
-{
-    collections
-        .values()
-        .flat_map(|obj| obj.codes().iter().map(move |c| (obj.id(), c)))
-        .map(|(id, (name, code))| StopExtension {
-            id: id.to_string(),
-            name: name.to_string(),
-            code: code.to_string(),
-        })
-}
-
-pub fn write_stop_extensions(
-    path: &path::Path,
-    stop_points: &CollectionWithId<StopPoint>,
-    stop_areas: &CollectionWithId<StopArea>,
-) -> Result<()> {
-    let mut stop_extensions = Vec::new();
-    stop_extensions.extend(stop_extensions_from_collection_with_id(stop_points));
-    stop_extensions.extend(stop_extensions_from_collection_with_id(stop_areas));
-    if stop_extensions.is_empty() {
-        return Ok(());
-    }
-    let file = "stop_extensions.txt";
-    info!(file_name = %file, "Writing");
-
-    let path = path.join(file);
-    let mut wtr =
-        csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
-    for se in stop_extensions {
-        wtr.serialize(se)
-            .with_context(|| format!("Error reading {path:?}"))?;
-    }
-    wtr.flush()
-        .with_context(|| format!("Error reading {path:?}"))?;
 
     Ok(())
 }
@@ -1292,75 +1239,6 @@ mod tests {
         expected.route_id = "OIF:002002002:BDEOIF829:Coach".to_string();
         expected.id = "OIF:87604986-1_11595-1:Coach".to_string();
         assert_eq!(expected, make_gtfs_trip_from_ntfs_vj(&vj_coach, &model));
-    }
-
-    #[test]
-    fn ntfs_object_code_to_stop_extensions() {
-        let mut sa_codes: BTreeSet<(String, String)> = BTreeSet::new();
-        sa_codes.insert(("sa name 1".to_string(), "sa_code_1".to_string()));
-        sa_codes.insert(("sa name 2".to_string(), "sa_code_2".to_string()));
-        let stop_areas = CollectionWithId::from(StopArea {
-            id: "sa:01".to_string(),
-            name: "sa:01".to_string(),
-            codes: sa_codes,
-            object_properties: PropertiesMap::default(),
-            comment_links: LinksT::default(),
-            visible: true,
-            coord: Coord {
-                lon: 2.073,
-                lat: 48.799,
-            },
-            timezone: None,
-            geometry_id: None,
-            level_id: Some("level0".to_string()),
-            equipment_id: None,
-            address_id: None,
-        });
-        let mut sp_codes: BTreeSet<(String, String)> = BTreeSet::new();
-        sp_codes.insert(("sp name 1".to_string(), "sp_code_1".to_string()));
-        sp_codes.insert(("sp name 2".to_string(), "sp_code_2".to_string()));
-        sp_codes.insert(("sp name 3".to_string(), "sp_code_3".to_string()));
-        let stop_points = CollectionWithId::from(StopPoint {
-            id: "sp:01".to_string(),
-            name: "sp:01".to_string(),
-            codes: sp_codes,
-            visible: true,
-            coord: Coord {
-                lon: 2.073,
-                lat: 48.799,
-            },
-            stop_area_id: "sa:01".to_string(),
-            stop_type: StopType::Point,
-            ..Default::default()
-        });
-        let tmp_dir = tempdir().expect("create temp dir");
-        write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
-        let output_file_path = tmp_dir.path().join("stop_extensions.txt");
-        let mut output_file = File::open(output_file_path.clone())
-            .unwrap_or_else(|_| panic!("file {:?} not found", output_file_path));
-        let mut output_contents = String::new();
-        output_file.read_to_string(&mut output_contents).unwrap();
-        assert_eq!(
-            "object_id,object_system,object_code\n\
-             sp:01,sp name 1,sp_code_1\n\
-             sp:01,sp name 2,sp_code_2\n\
-             sp:01,sp name 3,sp_code_3\n\
-             sa:01,sa name 1,sa_code_1\n\
-             sa:01,sa name 2,sa_code_2\n",
-            output_contents
-        );
-        tmp_dir.close().expect("delete temp dir");
-    }
-
-    #[test]
-    fn ntfs_object_code_to_stop_extensions_nothing_generated() {
-        let stop_areas = CollectionWithId::default();
-        let stop_points = CollectionWithId::default();
-        let tmp_dir = tempdir().expect("create temp dir");
-        write_stop_extensions(tmp_dir.path(), &stop_points, &stop_areas).unwrap();
-        let output_file_path = tmp_dir.path().join("stop_extensions.txt");
-        assert!(!output_file_path.exists());
-        tmp_dir.close().expect("delete temp dir");
     }
 
     #[test]
