@@ -122,17 +122,23 @@ fn get_first_comment_name<T: objects::Links<Comment>>(
         .cloned()
 }
 
+fn get_wheelchair_boarding(
+    equipment_id: &Option<String>,
+    equipments: &CollectionWithId<objects::Equipment>,
+) -> Availability {
+    equipment_id
+        .as_ref()
+        .and_then(|eq_id| equipments.get(eq_id))
+        .map(|eq| eq.wheelchair_boarding)
+        .unwrap_or_default()
+}
+
 fn ntfs_stop_point_to_gtfs_stop(
     sp: &objects::StopPoint,
     comments: &CollectionWithId<objects::Comment>,
     equipments: &CollectionWithId<objects::Equipment>,
+    stop_access: Option<bool>,
 ) -> Stop {
-    let wheelchair = sp
-        .equipment_id
-        .clone()
-        .and_then(|eq_id| equipments.get(&eq_id))
-        .map(|eq| eq.wheelchair_boarding)
-        .unwrap_or_default();
     Stop {
         id: sp.id.clone(),
         name: sp.name.clone(),
@@ -143,11 +149,12 @@ fn ntfs_stop_point_to_gtfs_stop(
         parent_station: Some(sp.stop_area_id.clone()),
         code: sp.code.clone(),
         desc: get_first_comment_name(sp, comments),
-        wheelchair_boarding: wheelchair,
+        wheelchair_boarding: get_wheelchair_boarding(&sp.equipment_id, equipments),
         url: None,
         timezone: sp.timezone,
         level_id: sp.level_id.clone(),
         platform_code: sp.platform_code.clone(),
+        stop_access,
     }
 }
 
@@ -156,12 +163,6 @@ fn ntfs_stop_area_to_gtfs_stop(
     comments: &CollectionWithId<objects::Comment>,
     equipments: &CollectionWithId<objects::Equipment>,
 ) -> Stop {
-    let wheelchair = sa
-        .equipment_id
-        .clone()
-        .and_then(|eq_id| equipments.get(&eq_id))
-        .map(|eq| eq.wheelchair_boarding)
-        .unwrap_or_default();
     Stop {
         id: sa.id.clone(),
         name: sa.name.clone(),
@@ -172,11 +173,12 @@ fn ntfs_stop_area_to_gtfs_stop(
         parent_station: None,
         code: None,
         desc: get_first_comment_name(sa, comments),
-        wheelchair_boarding: wheelchair,
+        wheelchair_boarding: get_wheelchair_boarding(&sa.equipment_id, equipments),
         url: None,
         timezone: sa.timezone,
         level_id: sa.level_id.clone(),
         platform_code: None,
+        stop_access: None,
     }
 }
 
@@ -185,13 +187,6 @@ fn ntfs_stop_location_to_gtfs_stop(
     comments: &CollectionWithId<objects::Comment>,
     equipments: &CollectionWithId<objects::Equipment>,
 ) -> Stop {
-    let wheelchair = sl
-        .equipment_id
-        .clone()
-        .and_then(|eq_id| equipments.get(&eq_id))
-        .map(|eq| eq.wheelchair_boarding)
-        .unwrap_or_default();
-
     let (lon, lat) = sl.coord.into();
     Stop {
         id: sl.id.clone(),
@@ -203,41 +198,65 @@ fn ntfs_stop_location_to_gtfs_stop(
         parent_station: sl.parent_id.clone(),
         code: sl.code.clone(),
         desc: get_first_comment_name(sl, comments),
-        wheelchair_boarding: wheelchair,
+        wheelchair_boarding: get_wheelchair_boarding(&sl.equipment_id, equipments),
         url: None,
         timezone: sl.timezone,
         level_id: sl.level_id.clone(),
         platform_code: None,
+        stop_access: None,
     }
 }
 
-pub fn write_stops(
-    path: &path::Path,
-    stop_points: &CollectionWithId<objects::StopPoint>,
-    stop_areas: &CollectionWithId<objects::StopArea>,
-    stop_locations: &CollectionWithId<objects::StopLocation>,
-    comments: &CollectionWithId<objects::Comment>,
-    equipments: &CollectionWithId<objects::Equipment>,
-) -> Result<()> {
+pub fn write_stops(path: &path::Path, model: &Model) -> Result<()> {
     let file = "stops.txt";
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
     info!("Writing {} from StopPoint", file);
-    for sp in stop_points.values() {
-        wtr.serialize(ntfs_stop_point_to_gtfs_stop(sp, comments, equipments))
-            .with_context(|| format!("Error reading {path:?}"))?;
+    let mut stoppoints_with_pathways_to_stoplocs: HashSet<Idx<objects::StopPoint>> = HashSet::new();
+    let mut insert_if_linked_to_stoploc = |stop_id: &str, other_stop_id: &str| {
+        if let Some(sp_idx) = model.stop_points.get_idx(stop_id) {
+            if model.stop_locations.get(other_stop_id).is_some() {
+                stoppoints_with_pathways_to_stoplocs.insert(sp_idx);
+            }
+        }
+    };
+    for pathway in model.pathways.values() {
+        insert_if_linked_to_stoploc(&pathway.from_stop_id, &pathway.to_stop_id); // SP to SL
+        insert_if_linked_to_stoploc(&pathway.to_stop_id, &pathway.from_stop_id);
+        // SL to SP
+    }
+    for (sp_idx, sp) in model.stop_points.iter() {
+        // According to gtfs spec: value 1 (True) means directions should be generated
+        // for access directly to the stop, independent of any entrances or pathways.
+        // Basic case of roadside stops.
+        let stop_access = (!stoppoints_with_pathways_to_stoplocs.contains(&sp_idx)).then_some(true);
+        wtr.serialize(ntfs_stop_point_to_gtfs_stop(
+            sp,
+            &model.comments,
+            &model.equipments,
+            stop_access,
+        ))
+        .with_context(|| format!("Error reading {path:?}"))?;
     }
     info!("Writing {} from StopArea", file);
-    for sa in stop_areas.values() {
-        wtr.serialize(ntfs_stop_area_to_gtfs_stop(sa, comments, equipments))
-            .with_context(|| format!("Error reading {path:?}"))?;
+    for sa in model.stop_areas.values() {
+        wtr.serialize(ntfs_stop_area_to_gtfs_stop(
+            sa,
+            &model.comments,
+            &model.equipments,
+        ))
+        .with_context(|| format!("Error reading {path:?}"))?;
     }
     info!("Writing {} from StopLocation", file);
-    for sl in stop_locations.values() {
-        wtr.serialize(ntfs_stop_location_to_gtfs_stop(sl, comments, equipments))
-            .with_context(|| format!("Error reading {path:?}"))?;
+    for sl in model.stop_locations.values() {
+        wtr.serialize(ntfs_stop_location_to_gtfs_stop(
+            sl,
+            &model.comments,
+            &model.equipments,
+        ))
+        .with_context(|| format!("Error reading {path:?}"))?;
     }
 
     wtr.flush()
@@ -885,11 +904,12 @@ mod tests {
             timezone: Some(chrono_tz::Europe::Paris),
             level_id: None,
             platform_code: None,
+            stop_access: None,
         };
 
         assert_eq!(
             expected,
-            ntfs_stop_point_to_gtfs_stop(&stop, &comments, &equipments)
+            ntfs_stop_point_to_gtfs_stop(&stop, &comments, &equipments, None)
         );
     }
 
@@ -924,13 +944,14 @@ mod tests {
             timezone: None,
             level_id: Some("level1".to_string()),
             platform_code: None,
+            stop_access: None,
         };
 
         let comments = CollectionWithId::default();
         let equipments = CollectionWithId::default();
         assert_eq!(
             expected,
-            ntfs_stop_point_to_gtfs_stop(&stop, &comments, &equipments)
+            ntfs_stop_point_to_gtfs_stop(&stop, &comments, &equipments, None)
         );
     }
 
@@ -1011,6 +1032,7 @@ mod tests {
             timezone: Some(chrono_tz::Europe::Paris),
             level_id: None,
             platform_code: None,
+            stop_access: None,
         };
 
         assert_eq!(
