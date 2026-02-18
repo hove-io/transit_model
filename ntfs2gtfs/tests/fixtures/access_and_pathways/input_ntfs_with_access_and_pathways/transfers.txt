@@ -1,0 +1,7 @@
+from_stop_id,to_stop_id,min_transfer_time,real_min_transfer_time,equipment_id
+IDFM:39864,IDFM:39864,0,120,
+IDFM:36281,IDFM:monomodalStopPlace:470195,308,488,
+IDFM:monomodalStopPlace:43204,IDFM:monomodalStopPlace:43204,0,300,
+IDFM:36281,IDFM:36281,0,120,
+IDFM:monomodalStopPlace:470195,IDFM:monomodalStopPlace:470195,0,300,
+IDFM:monomodalStopPlace:470195,IDFM:36281,256,436,

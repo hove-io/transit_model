@@ -1,0 +1,3 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+IDFM:stif:local-239072-C01645-491,Gare de Lyon - Diderot,inbound,IDFM:C01645,,IDFM:73626
+IDFM:SNCF:7ce3d332-c9b4-4070-bd5e-7884b536c1fe,Orry-la-Ville - Coye - Corbeil-Essonnes,outbound,IDFM:C01728,,IDFM:60309

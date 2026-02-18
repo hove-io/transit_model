@@ -1,0 +1,5 @@
+pathway_id,from_stop_id,to_stop_id,pathway_mode,is_bidirectional,length,traversal_time,stair_count,max_slope,min_width,signposted_as,reversed_signposted_as
+IDFM:StopPlaceEntrance:50170494:monomodalStopPlace:43204,IDFM:StopPlaceEntrance:50170494,IDFM:monomodalStopPlace:43204,1,1,62.33,79,,,,,
+IDFM:StopPlaceEntrance:50147984:monomodalStopPlace:470195,IDFM:StopPlaceEntrance:50147984,IDFM:monomodalStopPlace:470195,1,1,311.95,397,,,,,
+IDFM:StopPlaceEntrance:50147985:monomodalStopPlace:470195,IDFM:StopPlaceEntrance:50147985,IDFM:monomodalStopPlace:470195,1,1,293.84,374,,,,,
+IDFM:StopPlaceEntrance:50148567:monomodalStopPlace:470195,IDFM:StopPlaceEntrance:50148567,IDFM:monomodalStopPlace:470195,1,1,127.49,162,,,,,

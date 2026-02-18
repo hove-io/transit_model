@@ -1,0 +1,3 @@
+service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+IDFM:365555,1,1,1,1,1,1,1,20260223,20260308
+IDFM:TN:325c4388-d447-36f1-843e-6513948b0e49,1,0,0,0,0,0,0,20260316,20260316

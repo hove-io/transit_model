@@ -232,7 +232,7 @@ fn test_object_codes_extension() {
 // if object_codes.txt contains a code for the line with system="physical_mode"
 // that references an existing physical-mode in the collection
 // (requires active VJs from other lines using that physical-mode).
-fn test_ntfs2gtfs_with_with_lines_locked() {
+fn test_ntfs2gtfs_with_lines_locked() {
     let output_dir = TempDir::new().expect("create temp dir failed");
     Command::new(cargo_bin!("ntfs2gtfs"))
         .arg("--input")
@@ -245,5 +245,23 @@ fn test_ntfs2gtfs_with_with_lines_locked() {
         output_dir,
         Some(vec!["routes.txt", "object_codes_extension.txt"]),
         "./tests/fixtures/output_gtfs_with_lines_locked",
+    );
+}
+
+#[test]
+// Test Gtfs `stop_access` field values
+fn test_ntfs2gtfs_stop_access() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::new(cargo_bin!("ntfs2gtfs"))
+        .arg("--input")
+        .arg("tests/fixtures/access_and_pathways/input_ntfs_with_access_and_pathways")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .assert()
+        .success();
+    compare_output_dir_with_expected(
+        output_dir,
+        Some(vec!["stops.txt"]),
+        "./tests/fixtures/access_and_pathways/output_gtfs_with_access_and_pathways",
     );
 }
