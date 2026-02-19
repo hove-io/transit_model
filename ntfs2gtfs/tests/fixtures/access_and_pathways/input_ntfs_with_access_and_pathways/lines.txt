@@ -1,0 +1,3 @@
+line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+IDFM:C01645,N139,N139,,,00643C,FFFFFF,,IDFM:1080,Bus,,00:10:00,07:14:00
+IDFM:C01728,D,D,,,008B5B,FFFFFF,,IDFM:71,RapidTransit,,04:03:00,25:51:00

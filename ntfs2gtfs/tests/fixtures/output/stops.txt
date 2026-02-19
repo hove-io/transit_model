@@ -1,5 +1,5 @@
-stop_id,stop_code,stop_name,stop_desc,stop_lon,stop_lat,zone_id,stop_url,location_type,parent_station,stop_timezone,level_id,wheelchair_boarding,platform_code
-stop:point:1,point1,whatever,,2.3,48.8,,,0,stop:area:1,,,0,
-stop:point:2,,whatever,,2.3,48.8,,,0,stop:area:1,,,0,
-stop:area:1,,whatever,,2.3,48.8,,,1,,,,0,
-stop:entrance:1,entrance1,whatever,,2.3,48.8,,,2,stop:area:1,,,0,
+stop_id,stop_code,stop_name,stop_desc,stop_lon,stop_lat,zone_id,stop_url,location_type,parent_station,stop_timezone,level_id,wheelchair_boarding,platform_code,stop_access
+stop:point:1,point1,whatever,,2.3,48.8,,,0,stop:area:1,,,0,,1
+stop:point:2,,whatever,,2.3,48.8,,,0,stop:area:1,,,0,,1
+stop:area:1,,whatever,,2.3,48.8,,,1,,,,0,,
+stop:entrance:1,entrance1,whatever,,2.3,48.8,,,2,stop:area:1,,,0,,

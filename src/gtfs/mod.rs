@@ -163,6 +163,8 @@ struct Stop {
     #[serde(deserialize_with = "de_with_empty_default", default)]
     wheelchair_boarding: Availability,
     platform_code: Option<String>,
+    #[serde(default, serialize_with = "ser_from_opt_bool")]
+    stop_access: Option<bool>,
 }
 
 #[derive(Derivative)]
@@ -819,14 +821,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> 
     write::write_ticketing_deep_links(path, &ticketing_deep_links)?;
     write::write_agencies(path, &model.networks, &ticketing_deep_links)?;
     write_calendar_dates(path, &model.calendars)?;
-    write::write_stops(
-        path,
-        &model.stop_points,
-        &model.stop_areas,
-        &model.stop_locations,
-        &model.comments,
-        &model.equipments,
-    )?;
+    write::write_stops(path, &model)?;
     let gtfs_trips = write::write_trips(path, &model)?;
     write::write_attributions(path, &model.companies, gtfs_trips)?;
     write::write_routes(path, &model, extend_route_type)?;

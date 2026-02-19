@@ -1,0 +1,14 @@
+stop_id,stop_code,stop_name,stop_desc,stop_lon,stop_lat,zone_id,stop_url,location_type,parent_station,stop_timezone,level_id,wheelchair_boarding,platform_code,stop_access
+IDFM:39864,,Gare de Corbeil-Essonnes,,2.474108014530197,48.61402399106694,5,,0,IDFM:60309,Europe/Paris,,1,,1
+IDFM:monomodalStopPlace:43204,,Stade de France Saint-Denis,,2.3504430479100207,48.91769737260247,2,,0,IDFM:72206,,,1,,
+IDFM:monomodalStopPlace:470195,,Gare de Lyon,,2.376365660931201,48.84340211646564,1,,0,IDFM:73626,,,1,,
+IDFM:36281,,Gare de Lyon - Diderot,,2.3737132968576127,48.84584800677205,1,,0,IDFM:73626,Europe/Paris,,1,,1
+IDFM:60309,,Corbeil-Essonnes,,2.4728101738713857,48.61357748319818,,,1,,,,0,,
+IDFM:72206,,Stade de France Saint-Denis,,2.3516687910137763,48.91843244555162,,,1,,,,0,,
+IDFM:73626,,Gare de Lyon,,2.3751457799393743,48.84456941572047,,,1,,,,0,,
+IDFM:StopPlaceEntrance:50170720,,pl. Henri Barbusse,,2.4739852029525045,48.614095410961845,,,2,IDFM:60309,,,0,,
+IDFM:StopPlaceEntrance:50171206,,r. Emile Zola,,2.472940756103905,48.61408179756967,,,2,IDFM:60309,,,0,,
+IDFM:StopPlaceEntrance:50170494,,pl. aux Etoiles,,2.3512881035260094,48.91777389527679,,,2,IDFM:72206,,,0,,
+IDFM:StopPlaceEntrance:50147985,11,r. de Chalon,,2.375184000755217,48.8459276453782,,,2,IDFM:73626,,,0,,
+IDFM:StopPlaceEntrance:50147984,10,r. Legraverend,,2.375141182963182,48.8460893061216,,,2,IDFM:73626,,,0,,
+IDFM:StopPlaceEntrance:50148567,9,pl. H. Frenay,,2.376045586915145,48.84452914327235,,,2,IDFM:73626,,,0,,

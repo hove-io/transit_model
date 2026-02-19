@@ -1,0 +1,5 @@
+stop_id,trip_id,stop_sequence,arrival_time,departure_time,start_pickup_drop_off_window,end_pickup_drop_off_window,boarding_duration,alighting_duration,pickup_type,drop_off_type,local_zone_id,stop_headsign,stop_time_id,stop_time_precision
+IDFM:39864,IDFM:TCE:239384-C01645-4159-527,0,25:20:00,25:20:00,,,0,0,0,1,,,,0
+IDFM:36281,IDFM:TCE:239384-C01645-4159-527,18,27:07:00,27:07:00,,,0,0,1,0,,,,0
+IDFM:monomodalStopPlace:43204,IDFM:TN:SNCF:c5ecb3e6-6335-4a82-acc5-725f62cbbc40,13,00:00:00,00:00:00,,,0,0,0,1,,,,0
+IDFM:monomodalStopPlace:470195,IDFM:TN:SNCF:c5ecb3e6-6335-4a82-acc5-725f62cbbc40,16,00:14:00,00:15:40,,,0,0,1,0,,,,0

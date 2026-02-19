@@ -1,0 +1,7 @@
+feed_info_param,feed_info_value
+feed_creation_date,20260218
+feed_creation_datetime,2026-02-18T14:56:28+00:00
+feed_creation_time,14:56:28
+feed_end_date,20260319
+feed_start_date,20260215
+ntfs_version,0.20.0
