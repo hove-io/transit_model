@@ -1101,6 +1101,8 @@ where
                         (transfer.min_transfer_time, transfer.min_transfer_time)
                     }
                     TransferType::NotPossible => (Some(86400), Some(86400)),
+                    TransferType::InSeat => (Some(0), Some(0)),
+                    TransferType::InSeatNotPossible => (Some(0), Some(0)),
                 };
 
                 transfers.push(objects::Transfer {
