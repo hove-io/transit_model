@@ -951,16 +951,16 @@ where
     let file = "stops.txt";
     info!(file_name = %file, "Reading");
     let gtfs_stops = read_objects::<_, Stop>(file_handler, file, true)?;
-    let mut stop_areas = vec![];
-    let mut stop_points = vec![];
-    let mut stop_locations = vec![];
+    let mut stop_areas: CollectionWithId<objects::StopArea> = CollectionWithId::default();
+    let mut stop_points: CollectionWithId<objects::StopPoint> = CollectionWithId::default();
+    let mut stop_locations: CollectionWithId<objects::StopLocation> = CollectionWithId::default();
     for stop in gtfs_stops {
         let mut comment_links = LinksT::default();
         if let Some(comment) = generate_stop_comment(&stop) {
             comment_links.insert(comment.id.to_string());
             comments
                 .push(comment)
-                .expect("Duplicated comment id that shouldn’t be possible");
+                .expect("Duplicated comment id that shouldn't be possible");
         }
         let equipment_id = get_equipment_id_and_populate_equipments(equipments, &stop);
         match stop.location_type {
@@ -970,30 +970,27 @@ where
                 if stop.parent_station.is_none() {
                     let stop_area = objects::StopArea::from(stop_point.clone());
                     stop_point.stop_area_id.clone_from(&stop_area.id);
-                    stop_areas.push(stop_area);
+                    skip_error_and_warn!(stop_areas.push(stop_area));
                 };
                 stop_point.comment_links = comment_links;
                 stop_point.equipment_id = equipment_id;
-                stop_points.push(stop_point);
+                skip_error_and_warn!(stop_points.push(stop_point));
             }
             StopLocationType::StopArea => {
                 let mut stop_area = skip_error_and_warn!(objects::StopArea::try_from(stop));
                 stop_area.comment_links = comment_links;
                 stop_area.equipment_id = equipment_id;
-                stop_areas.push(stop_area);
+                skip_error_and_warn!(stop_areas.push(stop_area));
             }
             _ => {
                 let mut stop_location = skip_error_and_warn!(objects::StopLocation::try_from(stop));
                 stop_location.comment_links = comment_links;
                 stop_location.equipment_id = equipment_id;
-                stop_locations.push(stop_location);
+                skip_error_and_warn!(stop_locations.push(stop_location));
             }
         }
     }
-    let stoppoints = CollectionWithId::new(stop_points)?;
-    let stopareas = CollectionWithId::new(stop_areas)?;
-    let stoplocations = CollectionWithId::new(stop_locations)?;
-    Ok((stopareas, stoppoints, stoplocations))
+    Ok((stop_areas, stop_points, stop_locations))
 }
 
 /// Reading pathways linking together locations within stations.
