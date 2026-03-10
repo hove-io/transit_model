@@ -317,6 +317,10 @@ enum TransferType {
     WithTransferTime,
     #[serde(rename = "3")]
     NotPossible,
+    #[serde(rename = "4")]
+    InSeat,
+    #[serde(rename = "5")]
+    InSeatNotPossible,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
