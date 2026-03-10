@@ -432,11 +432,13 @@ If `message`, `phone_number`, `info_url`, and `booking_url` are not defined, the
 follows. Note that if value is not one of `0`, `1`, `2` or `3`, then set to `0`.
 
 | GTFS `transfer_type` | NTFS `min_transfer_time`   | NTFS `real_min_transfer_time`          | Note                                                                                                                                                          |
-| -------------------- | -------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|:--------------------:|:--------------------------:|:--------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 0                    | time between 2 stop points | time between 2 stop points + 2 minutes | The time is calculated with the distance as the crow flies and a walking speed of 0.785 m/s. Speed value is lowered because effective transit is not straight |
 | 1                    | 0                          | 0                                      |                                                                                                                                                               |
 | 2                    | GTFS `min_transfer_time`   | GTFS `min_transfer_time`               | Log a warning message if the `min_transfer_time` is empty                                                                                                     |
 | 3                    | 86400                      | 86400                                  |                                                                                                                                                               |
+| 4                    | 0                          | 0                                      |                                                                                                                                                               |
+| 5                    | 0                          | 0                                      |                                                                                                                                                               |
 
 ### Reading shapes.txt
 
