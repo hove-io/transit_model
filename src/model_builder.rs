@@ -33,9 +33,9 @@
 use crate::model::{Collections, Model};
 use crate::objects::{
     Address, AdministrativeRegion, Calendar, CommercialMode, Company, Contributor, Dataset, Date,
-    Equipment, Geometry, Line, Network, Occupancy, OccupancyStatus, PhysicalMode, Route, StopArea,
-    StopPoint, StopTime, StopTimePrecision, Time, Transfer, TripProperty, ValidityPeriod,
-    VehicleJourney,
+    Equipment, Geometry, Line, Network, ObjectLock, ObjectType, Occupancy, OccupancyStatus,
+    PhysicalMode, Route, StopArea, StopPoint, StopTime, StopTimePrecision, Time, Transfer,
+    TripProperty, ValidityPeriod, VehicleJourney,
 };
 use chrono::NaiveDateTime;
 use chrono_tz;
@@ -400,6 +400,15 @@ impl ModelBuilder {
             min_transfer_time: Some(duration),
             real_min_transfer_time: Some(duration),
             equipment_id: None,
+        });
+        self
+    }
+
+    /// Add a new object_lock to the model
+    pub fn add_object_lock(mut self, object_type: &ObjectType, object_id: &str) -> Self {
+        self.collections.object_locks.push(ObjectLock {
+            object_id: object_id.to_string(),
+            object_type: object_type.clone(),
         });
         self
     }
@@ -1258,6 +1267,8 @@ impl Drop for VehicleJourneyBuilder<'_> {
 
 #[cfg(test)]
 mod test {
+    use crate::objects::ObjectType;
+
     use super::ModelBuilder;
     use super::{StopTimePrecision, Time};
 
@@ -1630,5 +1641,49 @@ mod test {
         assert_eq!(admin_9.level, Some(9));
         let admin_10 = model.administrative_regions.get("admin_10").unwrap();
         assert_eq!(admin_10.level, Some(10));
+    }
+
+    #[test]
+    fn object_locks_creation() {
+        let model = ModelBuilder::default()
+            .line("L:AA", |_| {})
+            .stop_area("SA:AA", |_| {})
+            .stop_area("A", |_| {})
+            .stop_point("SP:AA", |sp_builder| {
+                sp_builder.stop_area_id = "SA:AA".to_string()
+            })
+            .company("C:AA", |_| {})
+            .stop_point("A", |sp_builder| {
+                sp_builder.stop_area_id = "A".to_owned();
+            })
+            .vj("toto", |vj| {
+                vj.company("C:AA").st("A", "10:00:00").st("B", "11:00:00");
+            })
+            .add_object_lock(&ObjectType::Line, "L:AA")
+            .add_object_lock(&ObjectType::StopArea, "SA:AA")
+            .add_object_lock(&ObjectType::StopPoint, "SP:AA")
+            .add_object_lock(&ObjectType::Company, "C:AA")
+            .build();
+        assert!(model.lines.get("L:AA").is_some());
+        assert!(model.stop_areas.get("SA:AA").is_some());
+        assert!(model.stop_points.get("SP:AA").is_some());
+        assert!(model.companies.get("C:AA").is_some());
+        assert!(model
+            .object_locks
+            .values()
+            .any(|lock| lock.object_type == ObjectType::Line && lock.object_id == "L:AA"));
+        assert!(model
+            .object_locks
+            .values()
+            .any(|lock| lock.object_type == ObjectType::StopArea && lock.object_id == "SA:AA"));
+        assert!(model
+            .object_locks
+            .values()
+            .any(|lock| lock.object_type == ObjectType::StopPoint && lock.object_id == "SP:AA"));
+        // Verify that Company lock was NOT created (not allowed)
+        assert!(!model
+            .object_locks
+            .values()
+            .any(|lock| lock.object_type == ObjectType::Company && lock.object_id == "C:AA"));
     }
 }
