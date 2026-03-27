@@ -25,9 +25,9 @@ use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_warn;
 use std::{
     cmp::{self, Ordering, Reverse},
-    collections::{hash_map::DefaultHasher, BTreeMap, BTreeSet, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     convert::TryFrom,
-    hash::{Hash, Hasher},
+    hash::Hash,
     ops,
 };
 use tracing::{debug, warn};
@@ -211,18 +211,9 @@ impl Collections {
         }
 
         fn dedup_collection<T: Clone + Eq + Hash>(source: &mut Collection<T>) -> Collection<T> {
-            let calculate_hash = |t: &T| -> u64 {
-                let mut s = DefaultHasher::new();
-                t.hash(&mut s);
-                s.finish()
-            };
-            let mut set: BTreeMap<u64, T> = BTreeMap::new();
             let items = source.take();
-            for item in items {
-                set.insert(calculate_hash(&item), item);
-            }
-            let collection: Vec<T> = set.values().cloned().collect();
-            Collection::new(collection)
+            let set: HashSet<T> = items.into_iter().collect();
+            Collection::new(set.into_iter().collect())
         }
 
         let mut addresses_ids_used = HashSet::<String>::new();
@@ -303,9 +294,8 @@ impl Collections {
                 }
                 datasets_ids_used.insert(vj.dataset_id.clone());
                 physical_modes_ids_used.insert(vj.physical_mode_id.clone());
-                comments_ids_used.extend(&mut vj.comment_links.iter().map(|cl| cl.to_string()));
-                booking_rules_ids_used
-                    .extend(&mut vj.booking_rule_links.iter().map(|id| id.to_string()));
+                comments_ids_used.extend(vj.comment_links.iter().cloned());
+                booking_rules_ids_used.extend(vj.booking_rule_links.iter().cloned());
                 vehicle_journeys_ids_used.insert(vj.id.clone());
                 true
             } else {
@@ -324,7 +314,7 @@ impl Collections {
                         geometries_ids_used.insert(geo_id.clone());
                     }
                     lines_ids_used.insert(r.line_id.clone());
-                    comments_ids_used.extend(&mut r.comment_links.iter().map(|cl| cl.to_string()));
+                    comments_ids_used.extend(r.comment_links.iter().cloned());
                     true
                 } else {
                     log_object_removed("Route", &r.id);
@@ -361,7 +351,7 @@ impl Collections {
                 if let Some(equipment_id) = &sl.equipment_id {
                     equipments_ids_used.insert(equipment_id.clone());
                 }
-                comments_ids_used.extend(&mut sl.comment_links.iter().map(|cl| cl.to_string()));
+                comments_ids_used.extend(sl.comment_links.iter().cloned());
                 if let Some(address_id) = &sl.address_id {
                     addresses_ids_used.insert(address_id.clone());
                 }
@@ -409,7 +399,7 @@ impl Collections {
                     if let Some(level_id) = &sp.level_id {
                         levels_ids_used.insert(level_id.clone());
                     }
-                    comments_ids_used.extend(&mut sp.comment_links.iter().map(|cl| cl.to_string()));
+                    comments_ids_used.extend(sp.comment_links.iter().cloned());
                     if let Some(address_id) = &sp.address_id {
                         addresses_ids_used.insert(address_id.clone());
                     }
@@ -432,9 +422,8 @@ impl Collections {
                     }
                     networks_ids_used.insert(l.network_id.clone());
                     commercial_modes_ids_used.insert(l.commercial_mode_id.clone());
-                    comments_ids_used.extend(&mut l.comment_links.iter().map(|cl| cl.to_string()));
-                    booking_rules_ids_used
-                        .extend(&mut l.booking_rule_links.iter().map(|id| id.to_string()));
+                    comments_ids_used.extend(l.comment_links.iter().cloned());
+                    booking_rules_ids_used.extend(l.booking_rule_links.iter().cloned());
                     true
                 } else {
                     log_object_removed("Line", &l.id);
@@ -473,7 +462,7 @@ impl Collections {
                     if let Some(equipment_id) = &sa.equipment_id {
                         equipments_ids_used.insert(equipment_id.clone());
                     }
-                    comments_ids_used.extend(&mut sa.comment_links.iter().map(|cl| cl.to_string()));
+                    comments_ids_used.extend(sa.comment_links.iter().cloned());
                     if let Some(address_id) = &sa.address_id {
                         addresses_ids_used.insert(address_id.clone());
                     }
