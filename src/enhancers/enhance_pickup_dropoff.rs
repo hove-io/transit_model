@@ -76,6 +76,9 @@ use typed_index_collection::Idx;
 ///
 /// Example 4 is a valid use case of stay-in
 /// The pickup/dropoff will be possible between VJ:1 and VJ:2/VJ:3
+
+#[tracing::instrument(name = "enhance_pickup_dropoff", skip(collections))]
+
 pub fn enhance_pickup_dropoff(collections: &mut Collections) {
     let mut allowed_last_pick_up_vj = HashSet::new();
     let mut allowed_first_drop_off_vj = HashSet::new();

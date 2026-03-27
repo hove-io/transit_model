@@ -19,6 +19,18 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 transit_model = { path = "../" }
 lazy_static = "1"
 
+opentelemetry = "0.31.0"
+opentelemetry-appender-tracing = "0.31.1"
+opentelemetry-otlp = { version = "0.31.0", features = [
+    "grpc-tonic",
+    # "tls-roots"
+]}
+opentelemetry-stdout = "0.31.0"
+opentelemetry_sdk = "0.31.0"
+tokio = { version = "1.50.0", features = ["full"] }
+# tonic = { version = "0.14.5", default-features = false, features = ["tls-native-roots"] }
+tracing-opentelemetry = "0.32.1"
+
 [dev-dependencies]
 assert_cmd = "2"
 tempfile = "3"

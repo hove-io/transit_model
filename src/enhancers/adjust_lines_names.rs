@@ -9,6 +9,9 @@ use typed_index_collection::Idx;
 /// If a line name is empty, it's set with the name of its first "forward" route (in alphabetical order)
 /// Note: possible improvement of this functionality; factoring, pooling and using
 /// the same algorithm as for route names enhancing (with traffic analysis)
+
+#[tracing::instrument(name = "adjust_lines_names", skip(collections, lines_to_routes))]
+
 pub fn adjust_lines_names(
     collections: &mut Collections,
     lines_to_routes: &impl Relation<From = Line, To = Route>,

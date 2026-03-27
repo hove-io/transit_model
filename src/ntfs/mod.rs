@@ -245,6 +245,7 @@ where
 /// This method will try to detect if the input is a zipped archive or not.
 /// If the default file type mechanism is not enough, you can use
 /// [from_zip] or [from_dir].
+#[tracing::instrument(name = "read_ntfs", skip(path))]
 pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let p = path.as_ref();
     if p.is_file() {
@@ -283,6 +284,7 @@ pub fn read_collections<P: AsRef<path::Path>>(path: P) -> Result<Collections> {
     }
 }
 
+#[tracing::instrument(name = "read_ntfs_from_file_handler", skip(file_handler))]
 fn read_file_handler<H>(file_handler: &mut H) -> Result<Model>
 where
     for<'a> &'a mut H: FileHandler,
@@ -294,6 +296,7 @@ where
     Ok(res)
 }
 
+#[tracing::instrument(name = "read_ntfs_collections_from_file_handler", skip(file_handler))]
 fn read_collections_file_handler<H>(file_handler: &mut H) -> Result<Collections>
 where
     for<'a> &'a mut H: FileHandler,
@@ -468,7 +471,7 @@ mod tests {
 
     fn test_serialize_deserialize_collection_with_id<T>(objects: Vec<T>)
     where
-        T: Id<T> + PartialEq + Debug + serde::Serialize,
+        T: Id<T> + PartialEq + Debug + serde::Serialize + Send,
         for<'de> T: serde::Deserialize<'de>,
     {
         let collection = CollectionWithId::new(objects).unwrap();
@@ -482,7 +485,7 @@ mod tests {
 
     fn test_serialize_deserialize_collection<T>(objects: Vec<T>)
     where
-        T: PartialEq + Debug + serde::Serialize,
+        T: PartialEq + Debug + serde::Serialize + Send,
         for<'de> T: serde::Deserialize<'de>,
     {
         let collection = Collection::new(objects);

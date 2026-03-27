@@ -2,6 +2,7 @@ use crate::model::Collections;
 use tracing::warn;
 use typed_index_collection::CollectionWithId;
 
+#[tracing::instrument(name = "check_stop_times_order", skip(collections))]
 pub fn check_stop_times_order(collections: &mut Collections) {
     let vehicle_journeys = collections.vehicle_journeys.take();
     let mut filtered_vjs = Vec::new();

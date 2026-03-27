@@ -18,15 +18,21 @@ use chrono::{DateTime, FixedOffset};
 use clap::Parser;
 use std::path::PathBuf;
 use tracing::info;
-use tracing_subscriber::{
-    filter::{EnvFilter, LevelFilter},
-    layer::SubscriberExt as _,
-    util::SubscriberInitExt as _,
-};
+use tracing_subscriber::{filter::EnvFilter, layer::SubscriberExt as _, prelude::*};
 use transit_model::{transfers::generates_transfers, Result};
+
+use opentelemetry::{global, trace::TracerProvider};
+// use opentelemetry::trace::{TracerProvider as _};
+use opentelemetry_sdk::trace::{SdkTracer, SdkTracerProvider};
+// use tonic::transport::ClientTlsConfig;
+
+use opentelemetry_otlp::{SpanExporter as OtlmSpanExporter, WithExportConfig};
 
 lazy_static::lazy_static! {
     pub static ref GIT_VERSION: String = transit_model::binary_full_version(env!("CARGO_PKG_VERSION"));
+
+    static ref OTLP_ENDPOINT: String =
+        std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").expect("OTEL_EXPORTER_OTLP_ENDPOINT not set");
 }
 
 fn get_version() -> &'static str {
@@ -70,22 +76,36 @@ struct Opt {
     ignore_transfers: bool,
 }
 
-fn init_logger() {
-    let default_level = LevelFilter::INFO;
-    let rust_log =
-        std::env::var(EnvFilter::DEFAULT_ENV).unwrap_or_else(|_| default_level.to_string());
-    let env_filter_subscriber = EnvFilter::try_new(rust_log).unwrap_or_else(|e| {
-        eprintln!(
-            "invalid {}, falling back to level '{}' - {}",
-            EnvFilter::DEFAULT_ENV,
-            default_level,
-            e,
-        );
-        EnvFilter::new(default_level.to_string())
-    });
+fn init_tracer_provider() -> SdkTracerProvider {
+    let otlp_endpoint = OTLP_ENDPOINT.clone();
+    let otlp_exporter = OtlmSpanExporter::builder()
+        .with_tonic()
+        .with_protocol(opentelemetry_otlp::Protocol::Grpc)
+        .with_endpoint(otlp_endpoint)
+        // .with_tls_config(ClientTlsConfig::new().with_native_roots())
+        .build()
+        .expect("Failed to create OTLP exporter");
+
+    let provider = SdkTracerProvider::builder()
+        // .with_simple_exporter(opentelemetry_stdout::SpanExporter::default())
+        .with_batch_exporter(otlp_exporter)
+        .build();
+
+    global::set_tracer_provider(provider.clone());
+
+    provider
+}
+
+fn init_tracing_subscriber(tracer: SdkTracer) {
+    let filter = EnvFilter::new(
+        "info,opentelemetry_rust_demo=debug,opentelemetry_sdk=warn,opentelemetry_otlp=warn,opentelemetry_http=warn,reqwest=warn,hyper_util=warn,hyper=warn,h2=warn,tonic=warn",
+    );
+
+    let otel_span_layer = tracing_opentelemetry::layer().with_tracer(tracer);
     tracing_subscriber::registry()
+        .with(filter)
         .with(tracing_subscriber::fmt::layer())
-        .with(env_filter_subscriber)
+        .with(otel_span_layer)
         .init();
 }
 
@@ -119,12 +139,19 @@ fn run(opt: Opt) -> Result<()> {
     Ok(())
 }
 
-fn main() {
-    init_logger();
+#[tokio::main]
+
+async fn main() {
+    let tracer_provider = init_tracer_provider();
+    let tracing_layer_tracer = tracer_provider.tracer("transit-model");
+    init_tracing_subscriber(tracing_layer_tracer);
     if let Err(err) = run(Opt::parse()) {
         for cause in err.chain() {
             eprintln!("{cause}");
         }
         std::process::exit(1);
     }
+    tracer_provider
+        .shutdown()
+        .expect("Failed to shutdown tracer provider");
 }

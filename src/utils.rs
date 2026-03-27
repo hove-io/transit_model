@@ -54,12 +54,13 @@ where
     Ok(())
 }
 
+#[tracing::instrument(name = "make_collection_with_id", skip(file_handler))]
 pub(crate) fn make_collection_with_id<T, H>(
     file_handler: &mut H,
     file: &str,
 ) -> crate::Result<CollectionWithId<T>>
 where
-    for<'de> T: Id<T> + serde::Deserialize<'de>,
+    for<'de> T: Id<T> + serde::Deserialize<'de> + Send,
     for<'a> &'a mut H: FileHandler,
 {
     let mut collection = CollectionWithId::<T>::default();
@@ -69,24 +70,27 @@ where
     Ok(collection)
 }
 
+#[tracing::instrument(name = "make_collection", skip(file_handler))]
 pub(crate) fn make_opt_collection<T, H>(
     file_handler: &mut H,
     file: &str,
 ) -> crate::Result<Collection<T>>
 where
-    for<'de> T: serde::Deserialize<'de>,
+    for<'de> T: serde::Deserialize<'de> + Send,
     for<'a> &'a mut H: FileHandler,
 {
     let vec = read_objects::<_, T>(file_handler, file, false)?;
     Ok(Collection::new(vec))
 }
 
+#[tracing::instrument(name = "read_ntfs_collections_from_file_handler", skip(file_handler))]
+
 pub(crate) fn make_opt_collection_with_id<T, H>(
     file_handler: &mut H,
     file: &str,
 ) -> crate::Result<CollectionWithId<T>>
 where
-    for<'de> T: Id<T> + serde::Deserialize<'de>,
+    for<'de> T: Id<T> + serde::Deserialize<'de> + Send,
     for<'a> &'a mut H: FileHandler,
 {
     let mut collection = CollectionWithId::<T>::default();

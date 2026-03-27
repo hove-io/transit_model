@@ -27,7 +27,7 @@ pub fn read_objects<H, O>(
 ) -> Result<Vec<O>>
 where
     for<'a> &'a mut H: FileHandler,
-    O: for<'de> serde::Deserialize<'de>,
+    O: for<'de> serde::Deserialize<'de> + Send,
 {
     let (reader, path) = file_handler.get_file_if_exists(file_name)?;
     let file_name = path.file_name();
@@ -96,7 +96,7 @@ where
 pub fn read_collection<H, O>(file_handler: &mut H, file_name: &str) -> Result<CollectionWithId<O>>
 where
     for<'a> &'a mut H: FileHandler,
-    O: for<'de> serde::Deserialize<'de> + Id<O>,
+    O: for<'de> serde::Deserialize<'de> + Id<O> + Send,
 {
     let vec = read_objects(file_handler, file_name, true)?;
     CollectionWithId::new(vec).map_err(|e| anyhow!("{}", e))
@@ -109,7 +109,7 @@ pub fn read_opt_collection<H, O>(
 ) -> Result<CollectionWithId<O>>
 where
     for<'a> &'a mut H: FileHandler,
-    O: for<'de> serde::Deserialize<'de> + Id<O>,
+    O: for<'de> serde::Deserialize<'de> + Id<O> + Send,
 {
     let vec = read_objects(file_handler, file_name, false)?;
     CollectionWithId::new(vec).map_err(|e| anyhow!("{}", e))

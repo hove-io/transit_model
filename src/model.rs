@@ -191,6 +191,7 @@ impl Collections {
 
     /// Keep the collections consistent for the new model by purging unreferenced data by
     /// calendars
+    #[tracing::instrument(name = "sanitize_collections", skip(self))]
     pub fn sanitize(&mut self) -> Result<()> {
         fn log_object_removed(object_type: &str, id: &str) {
             debug!("{} with ID {} has been removed", object_type, id);
@@ -700,6 +701,7 @@ impl Collections {
     }
 
     /// Sets the opening and closing times of lines (if they are missing).
+    #[tracing::instrument(name = "enhance_line_opening_time", skip(self))]
     pub fn enhance_line_opening_time(&mut self) {
         type TimeTable = BTreeMap<u8, Time>;
         const HOURS_PER_DAY: u8 = 24;
@@ -943,6 +945,7 @@ impl Collections {
 
     /// If the vehicle didn't stop (point of route) on pickup,
     /// it must not stop on drop off and conversely
+    #[tracing::instrument(name = "pickup_drop_off_harmonisation", skip(self))]
     pub fn pickup_drop_off_harmonisation(&mut self) {
         for vj_idx in self.vehicle_journeys.indexes() {
             let mut vj = self.vehicle_journeys.index_mut(vj_idx);
@@ -959,6 +962,7 @@ impl Collections {
 
     /// Trip headsign can be derived from the name of the stop point of the
     /// last stop time of the associated trip.
+    #[tracing::instrument(name = "enhance_trip_headsign", skip(self))]
     pub fn enhance_trip_headsign(&mut self) {
         let mut vehicle_journeys = self.vehicle_journeys.take();
         for vehicle_journey in &mut vehicle_journeys {
@@ -999,6 +1003,7 @@ impl Collections {
     }
 
     /// Some comments are identical and can be deduplicated
+    #[tracing::instrument(name = "comment_deduplication", skip(self))]
     pub fn comment_deduplication(&mut self) {
         let duplicate2ref = self.get_comment_map_duplicate_to_referent();
         if duplicate2ref.is_empty() {
@@ -1048,6 +1053,7 @@ impl Collections {
     }
 
     /// Remove comments with empty message from the model
+    #[tracing::instrument(name = "clean_comments", skip(self))]
     pub fn clean_comments(&mut self) {
         fn remove_comment<T: Id<T> + Links<Comment>>(
             collection: &mut CollectionWithId<T>,
@@ -1120,6 +1126,7 @@ impl Collections {
     ///
     /// `route.destination_id` is also replaced with the destination stop area
     /// found with the above rules.
+    #[tracing::instrument(name = "enhance_route_names", skip_all)]
     pub fn enhance_route_names(
         &mut self,
         routes_to_vehicle_journeys: &impl Relation<From = Route, To = VehicleJourney>,
@@ -1286,6 +1293,7 @@ impl Collections {
     }
 
     /// If a route direction is empty, it's set by default with the "forward" value
+    #[tracing::instrument(name = "enhance_route_directions", skip(self))]
     pub fn enhance_route_directions(&mut self) {
         let mut direction_types: BTreeMap<Idx<Route>, Option<String>> = BTreeMap::new();
         for (route_idx, _) in self
@@ -1302,6 +1310,7 @@ impl Collections {
 
     /// Compute the coordinates of stop areas according to the centroid of stop points
     /// if the stop area has no coordinates (lon = 0, lat = 0)
+    #[tracing::instrument(name = "update_stop_area_coords", skip(self))]
     fn update_stop_area_coords(&mut self) {
         let mut updated_stop_areas = self.stop_areas.take();
         for stop_area in &mut updated_stop_areas
@@ -1339,6 +1348,7 @@ impl Collections {
     ///
     /// This function checks that all objects points to existing `Geometry` and,
     /// in the case it doesn't, fix the model by removing this pointer.
+    #[tracing::instrument(name = "check_geometries_coherence", skip(self))]
     fn check_geometries_coherence(&mut self) {
         macro_rules! check_and_fix_object_geometries {
             ($collection:expr) => {
@@ -1617,12 +1627,17 @@ impl Model {
     /// });
     /// assert!(Model::new(collections).is_ok());
     /// ```
+    #[tracing::instrument(name = "model_new", skip(c))]
     pub fn new(mut c: Collections) -> Result<Self> {
         enhancers::check_stop_times_order(&mut c);
         c.comment_deduplication();
         c.clean_comments();
         c.sanitize()?;
 
+        use tracing::info_span;
+
+        let span = info_span!("relations");
+        let _guard = span.enter();
         let forward_vj_to_sp = c
             .vehicle_journeys
             .iter()
@@ -1702,6 +1717,8 @@ impl Model {
             &c.vehicle_journeys,
             "calendars_to_vehicle_journeys",
         )?;
+
+        drop(_guard);
 
         c.update_stop_area_coords();
         enhancers::fill_co2(&mut c);

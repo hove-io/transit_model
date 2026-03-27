@@ -1,6 +1,7 @@
 use crate::model::Collections;
 
 /// Optimize memory imprint of the `Model`
+#[tracing::instrument(name = "memory_shrink", skip(collections))]
 pub fn memory_shrink(collections: &mut Collections) {
     collections.stop_time_headsigns.shrink_to_fit();
     collections.stop_time_ids.shrink_to_fit();

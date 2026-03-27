@@ -155,6 +155,7 @@ impl TryFrom<Stop> for StopLocation {
     }
 }
 
+#[tracing::instrument(name = "manage_stops", skip_all)]
 pub(crate) fn manage_stops<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -225,6 +226,7 @@ where
     }
 }
 
+#[tracing::instrument(name = "manage_fares_v1", skip_all)]
 pub(crate) fn manage_fares_v1<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -254,6 +256,7 @@ where
     Ok(())
 }
 
+#[tracing::instrument(name = "manage_stop_times", skip_all)]
 pub(crate) fn manage_stop_times<H>(
     collections: &mut Collections,
     file_handler: &mut H,
@@ -261,30 +264,44 @@ pub(crate) fn manage_stop_times<H>(
 where
     for<'a> &'a mut H: FileHandler,
 {
-    let stop_times = read_objects::<_, StopTime>(file_handler, "stop_times.txt", true)?;
+    let stop_times = {
+        let _span = tracing::info_span!("read_stop_times_file").entered();
+        read_objects::<_, StopTime>(file_handler, "stop_times.txt", true)?
+    };
+
+    tracing::info!("Processing {} stop_times", stop_times.len());
+
     let mut headsigns = HashMap::new();
     let mut stop_time_ids = HashMap::new();
+
+    let _span = tracing::info_span!("process_stop_times_loop").entered();
     for stop_time in stop_times {
-        let stop_point_idx = collections
-            .stop_points
-            .get_idx(&stop_time.stop_id)
-            .ok_or_else(|| {
-                anyhow!(
-                    "Problem reading {:?}: stop_id={:?} not found",
-                    file_handler.source_name(),
-                    stop_time.stop_id
-                )
-            })?;
-        let vj_idx = collections
-            .vehicle_journeys
-            .get_idx(&stop_time.trip_id)
-            .ok_or_else(|| {
-                anyhow!(
-                    "Problem reading {:?}: trip_id={:?} not found",
-                    file_handler.source_name(),
-                    stop_time.trip_id
-                )
-            })?;
+        let stop_point_idx = {
+            let _span = tracing::debug_span!("lookup_stop_point").entered();
+            collections
+                .stop_points
+                .get_idx(&stop_time.stop_id)
+                .ok_or_else(|| {
+                    anyhow!(
+                        "Problem reading {:?}: stop_id={:?} not found",
+                        file_handler.source_name(),
+                        stop_time.stop_id
+                    )
+                })?
+        };
+        let vj_idx = {
+            let _span = tracing::debug_span!("lookup_vehicle_journey").entered();
+            collections
+                .vehicle_journeys
+                .get_idx(&stop_time.trip_id)
+                .ok_or_else(|| {
+                    anyhow!(
+                        "Problem reading {:?}: trip_id={:?} not found",
+                        file_handler.source_name(),
+                        stop_time.trip_id
+                    )
+                })?
+        };
 
         if let Some(headsign) = stop_time.stop_headsign {
             headsigns.insert(
@@ -312,25 +329,31 @@ where
             );
         }
 
-        collections
-            .vehicle_journeys
-            .index_mut(vj_idx)
-            .stop_times
-            .push(crate::objects::StopTime {
-                stop_point_idx,
-                sequence: stop_time.stop_sequence,
-                arrival_time: stop_time.arrival_time,
-                departure_time: stop_time.departure_time,
-                start_pickup_drop_off_window: stop_time.start_pickup_drop_off_window,
-                end_pickup_drop_off_window: stop_time.end_pickup_drop_off_window,
-                boarding_duration: stop_time.boarding_duration,
-                alighting_duration: stop_time.alighting_duration,
-                pickup_type: stop_time.pickup_type,
-                drop_off_type: stop_time.drop_off_type,
-                local_zone_id: stop_time.local_zone_id,
-                precision,
-            });
+        {
+            let _span = tracing::debug_span!("insert_stop_time_to_vj").entered();
+            collections
+                .vehicle_journeys
+                .index_mut(vj_idx)
+                .stop_times
+                .push(crate::objects::StopTime {
+                    stop_point_idx,
+                    sequence: stop_time.stop_sequence,
+                    arrival_time: stop_time.arrival_time,
+                    departure_time: stop_time.departure_time,
+                    start_pickup_drop_off_window: stop_time.start_pickup_drop_off_window,
+                    end_pickup_drop_off_window: stop_time.end_pickup_drop_off_window,
+                    boarding_duration: stop_time.boarding_duration,
+                    alighting_duration: stop_time.alighting_duration,
+                    pickup_type: stop_time.pickup_type,
+                    drop_off_type: stop_time.drop_off_type,
+                    local_zone_id: stop_time.local_zone_id,
+                    precision,
+                });
+        }
     }
+
+    tracing::info!("Finished processing stop_times loop");
+
     collections.stop_time_headsigns = headsigns;
     collections.stop_time_ids = stop_time_ids;
     Ok(())
@@ -363,6 +386,7 @@ where
     insert_code_with_idx(collection, idx, code);
 }
 
+#[tracing::instrument(name = "manage_codes", skip_all)]
 pub(crate) fn manage_codes<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -394,6 +418,8 @@ struct FeedInfo {
     #[serde(rename = "feed_info_value")]
     info_value: String,
 }
+
+#[tracing::instrument(name = "manage_feed_infos", skip_all)]
 
 pub(crate) fn manage_feed_infos<H>(
     collections: &mut Collections,
@@ -507,6 +533,7 @@ where
     Ok(())
 }
 
+#[tracing::instrument(name = "manage_comments", skip_all)]
 pub(crate) fn manage_comments<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,
@@ -571,6 +598,7 @@ where
     Ok(())
 }
 
+#[tracing::instrument(name = "manage_booking_rules", skip_all)]
 pub(crate) fn manage_booking_rules<H>(
     collections: &mut Collections,
     file_handler: &mut H,
@@ -631,6 +659,7 @@ where
     );
 }
 
+#[tracing::instrument(name = "manage_object_properties", skip_all)]
 pub(crate) fn manage_object_properties<H>(
     collections: &mut Collections,
     file_handler: &mut H,
@@ -659,6 +688,7 @@ where
     Ok(())
 }
 
+#[tracing::instrument(name = "manage_geometries", skip_all)]
 pub(crate) fn manage_geometries<H>(
     collections: &mut Collections,
     file_handler: &mut H,
@@ -674,6 +704,7 @@ where
     Ok(())
 }
 
+#[tracing::instrument(name = "manage_companies_on_vj", skip_all)]
 pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {
     let vjs_without_company: Vec<Idx<VehicleJourney>> = collections
         .vehicle_journeys
@@ -696,6 +727,8 @@ pub fn manage_companies_on_vj(collections: &mut Collections) -> Result<()> {
     }
     Ok(())
 }
+
+#[tracing::instrument(name = "manage_pathways", skip_all)]
 
 pub(crate) fn manage_pathways<H>(collections: &mut Collections, file_handler: &mut H) -> Result<()>
 where
@@ -742,6 +775,7 @@ where
     Ok(())
 }
 
+#[tracing::instrument(name = "manage_occupancies", skip_all)]
 pub(crate) fn manage_occupancies<H>(
     collections: &mut Collections,
     file_handler: &mut H,
@@ -788,6 +822,8 @@ where
     collections.occupancies = occupancies;
     Ok(())
 }
+
+#[tracing::instrument(name = "manage_object_locks", skip_all)]
 
 pub(crate) fn manage_object_locks<H>(
     collections: &mut Collections,

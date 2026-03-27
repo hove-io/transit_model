@@ -196,6 +196,7 @@ where
 }
 
 #[cfg(not(feature = "parser"))]
+#[tracing::instrument(name = "manage_calendars", skip_all)]
 pub(crate) fn manage_calendars<H>(file_handler: &mut H, collections: &mut Collections) -> Result<()>
 where
     for<'a> &'a mut H: FileHandler,

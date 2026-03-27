@@ -47,6 +47,7 @@ lazy_static::lazy_static! {
 
 /// Physical mode should contains CO2 emissions. If the values are not present
 /// in the NTFS, some default values will be used.
+#[tracing::instrument(name = "fill_co2", skip(collections))]
 pub fn fill_co2(collections: &mut Collections) {
     let mut physical_modes = collections.physical_modes.take();
     for physical_mode in &mut physical_modes {
