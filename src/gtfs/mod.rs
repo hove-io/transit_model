@@ -163,7 +163,11 @@ struct Stop {
     #[serde(deserialize_with = "de_with_empty_default", default)]
     wheelchair_boarding: Availability,
     platform_code: Option<String>,
-    #[serde(default, serialize_with = "ser_from_opt_bool")]
+    #[serde(
+        default,
+        serialize_with = "ser_from_opt_bool",
+        deserialize_with = "de_opt_bool_from_str"
+    )]
     stop_access: Option<bool>,
 }
 
