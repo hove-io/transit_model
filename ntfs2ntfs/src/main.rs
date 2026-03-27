@@ -102,6 +102,7 @@ fn run(opt: Opt) -> Result<()> {
             opt.walking_speed,
             opt.waiting_time,
             None,
+            None,
         )?;
         transit_model::Model::new(collections)?
     };
