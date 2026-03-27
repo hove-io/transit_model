@@ -340,11 +340,12 @@ struct Transfer {
 
 impl From<&objects::Transfer> for Transfer {
     fn from(obj: &objects::Transfer) -> Transfer {
+        let min_transfer_time = obj.real_min_transfer_time.or(obj.min_transfer_time);
         Transfer {
             from_stop_id: obj.from_stop_id.clone(),
             to_stop_id: obj.to_stop_id.clone(),
             transfer_type: TransferType::WithTransferTime,
-            min_transfer_time: obj.min_transfer_time,
+            min_transfer_time,
         }
     }
 }

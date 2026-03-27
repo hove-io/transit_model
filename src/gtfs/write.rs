@@ -1322,6 +1322,26 @@ mod tests {
     }
 
     #[test]
+    fn ntfs_transfers_real_min_transfer_time_to_gtfs_transfers() {
+        let transfer = Transfer::from(&NtfsTransfer {
+            from_stop_id: "sp:01".to_string(),
+            to_stop_id: "sp:02".to_string(),
+            min_transfer_time: Some(42),
+            real_min_transfer_time: Some(62),
+            equipment_id: None,
+        });
+
+        let expected = Transfer {
+            from_stop_id: "sp:01".to_string(),
+            to_stop_id: "sp:02".to_string(),
+            transfer_type: TransferType::WithTransferTime,
+            min_transfer_time: Some(62),
+        };
+
+        assert_eq!(expected, transfer);
+    }
+
+    #[test]
     fn write_calendar_file_from_calendar() {
         let mut dates = BTreeSet::new();
         //saturday
