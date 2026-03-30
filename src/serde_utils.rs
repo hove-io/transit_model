@@ -150,6 +150,27 @@ where
     })
 }
 
+/// deserialize String as non empty String
+/// returns an error if empty String
+pub fn de_non_empty_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::{
+        de::{Error, Unexpected::Other},
+        Deserialize,
+    };
+    let s = String::deserialize(deserializer)?;
+    if s.is_empty() {
+        Err(D::Error::invalid_value(
+            Other("empty string"),
+            &"non empty string",
+        ))
+    } else {
+        Ok(s)
+    }
+}
+
 /// deserialize String by removing slashes
 pub fn de_without_slashes<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
@@ -442,6 +463,37 @@ mod tests {
             assert_eq!(
                 "invalid value: string \"NotANumber\", expected a Decimal type representing a fixed-point number at line 1 column 21",
                 err_msg
+            );
+        }
+    }
+
+    mod serde_non_empty_string {
+        use super::*;
+        use pretty_assertions::assert_eq;
+        use serde::Deserialize;
+
+        #[derive(Debug, Deserialize)]
+        struct WithNonEmptyString {
+            #[serde(deserialize_with = "de_non_empty_string")]
+            name: String,
+        }
+
+        #[test]
+        fn with_string() {
+            let json = r#"{"name": "baz"}"#;
+            let object: WithNonEmptyString = serde_json::from_str(json).unwrap();
+            assert_eq!(object.name, "baz");
+        }
+
+        #[test]
+        fn with_empty_string() {
+            let json = r#"{"name": ""}"#;
+            let err = serde_json::from_str::<WithNonEmptyString>(json).unwrap_err();
+            let err_str = err.to_string();
+            assert!(
+                err_str.contains("invalid value: empty string, expected non empty string"),
+                "unexpected error message: {err_str}",
+                err_str = err_str
             );
         }
     }
