@@ -16,12 +16,14 @@
 
 use crate::{
     model::{Collections, Model},
-    objects::{Coord, PhysicalMode, StopPoint, Transfer},
+    objects::{Coord, Pathway, PhysicalMode, StopLocation, StopPoint, Transfer},
     physical_modes_utils::build_stop_point_physical_mode_map,
-    Result,
+    Result, TRANSFER_MANHATTAN_FACTOR,
 };
 use rstar::{RTree, RTreeObject, AABB};
+use rust_decimal::prelude::ToPrimitive;
 use std::collections::HashMap;
+use std::time::Instant;
 use tracing::info;
 use typed_index_collection::{Collection, CollectionWithId, Idx};
 
@@ -75,6 +77,227 @@ impl StopPointLocation {
     }
 }
 
+/// Maps each StopPoint to its best pathway (distance, time) to/from each reachable StopLocation.
+/// Distance is in meters, time is in seconds.
+type PathwayMap = HashMap<Idx<StopPoint>, HashMap<Idx<StopLocation>, (f64, f64)>>;
+
+/// Returns the (distance, time) of a pathway.
+/// Distance: `length` if available, otherwise `traversal_time * walking_speed`.
+/// Time: `traversal_time` if available, otherwise `length / walking_speed`.
+/// Returns `None` if neither `length` nor `traversal_time` is populated.
+fn pathway_distance_and_time(pathway: &Pathway, walking_speed: f64) -> Option<(f64, f64)> {
+    // We can consider that pathway length is already in Manhattan distance
+    let distance = pathway
+        .length
+        .as_ref()
+        .and_then(|length| length.to_f64())
+        .or_else(|| {
+            pathway
+                .traversal_time
+                .map(|seconds| seconds as f64 * walking_speed)
+        })?;
+    let time = pathway
+        .traversal_time
+        .map(|seconds| seconds as f64)
+        .unwrap_or_else(|| distance / walking_speed);
+    Some((distance, time))
+}
+
+/// For a given stop-point → stop-location pathway, keeps only the shortest distance
+/// (and its associated time) in the map.
+/// It's rare to have multiple pathways from the same stop-point to the same stop-location, but it's possible.
+fn insert_min_pathway(
+    maps: &mut PathwayMap,
+    stop_point_idx: Idx<StopPoint>,
+    stop_location_idx: Idx<StopLocation>,
+    distance: f64,
+    time: f64,
+) {
+    let stop_location_map = maps.entry(stop_point_idx).or_default();
+    let (current_distance, current_time) = stop_location_map
+        .entry(stop_location_idx)
+        .or_insert((f64::MAX, f64::MAX));
+    if distance < *current_distance {
+        *current_distance = distance;
+        *current_time = time;
+    }
+}
+
+/// Pre-computes, for every stop-point that has pathways, the minimum pathway
+/// (distance, time) to each reachable stop-location, separated by direction (exit / entry).
+/// Pathways whose distance alone exceeds `max_distance` are discarded upfront.
+///
+/// Returns `(exit_maps, entry_maps)` where each is indexed by `Idx<StopPoint>`
+/// and contains a `HashMap<Idx<StopLocation>, (f64, f64)>` of best (distance, time) pairs.
+fn build_pathway_maps(
+    model: &Model,
+    walking_speed: f64,
+    max_distance: f64,
+) -> (PathwayMap, PathwayMap) {
+    let mut exit_maps = PathwayMap::new();
+    let mut entry_maps = PathwayMap::new();
+
+    for pathway in model.pathways.values() {
+        let (distance, time) = match pathway_distance_and_time(pathway, walking_speed) {
+            Some((distance, _)) if distance > max_distance => continue,
+            Some((distance, time)) => (distance, time),
+            None => continue,
+        };
+
+        // Case: from=SP, to=SL
+        if let Some(stop_point_idx) = model.stop_points.get_idx(&pathway.from_stop_id) {
+            if let Some(stop_location_idx) = model.stop_locations.get_idx(&pathway.to_stop_id) {
+                // SP → SL = exit
+                insert_min_pathway(
+                    &mut exit_maps,
+                    stop_point_idx,
+                    stop_location_idx,
+                    distance,
+                    time,
+                );
+                if pathway.is_bidirectional {
+                    // SP ← SL = entry
+                    insert_min_pathway(
+                        &mut entry_maps,
+                        stop_point_idx,
+                        stop_location_idx,
+                        distance,
+                        time,
+                    );
+                }
+            }
+        }
+
+        // Case: from=SL, to=SP
+        if let Some(stop_point_idx) = model.stop_points.get_idx(&pathway.to_stop_id) {
+            if let Some(stop_location_idx) = model.stop_locations.get_idx(&pathway.from_stop_id) {
+                // SL → SP = entry
+                insert_min_pathway(
+                    &mut entry_maps,
+                    stop_point_idx,
+                    stop_location_idx,
+                    distance,
+                    time,
+                );
+                if pathway.is_bidirectional {
+                    // SL ← SP = exit
+                    insert_min_pathway(
+                        &mut exit_maps,
+                        stop_point_idx,
+                        stop_location_idx,
+                        distance,
+                        time,
+                    );
+                }
+            }
+        }
+    }
+
+    (exit_maps, entry_maps)
+}
+
+/// Configuration parameters for transfer time computation.
+struct TransferConfig {
+    walking_speed: f64,
+    max_distance: f64,
+    manhattan_factor: f64,
+}
+
+/// Computes the transfer distance (meters) and time (seconds) between two stop points.
+///
+/// Among all paths whose total distance ≤ max_distance, selects the fastest one.
+/// Crow-fly distances are converted to approximate Manhattan distances.
+/// Time uses actual pathway traversal times for pathway segments and
+/// adjusted crow-fly / walking_speed for open-air segments.
+///
+/// Returns `(distance_in_meters, time_in_seconds)`.
+/// When pathways exist but no valid path is found within max_distance,
+/// returns `(f64::MAX, 0)` to signal that no transfer should be created.
+///
+/// The 4 cases handled:
+/// 1. Same stop_area or no pathways → crow-fly × factor (manhattan)
+/// 2. Both sides have pathways → fastest valid SP1→exit→(manhattan)→entry→SP2
+/// 3. Only SP1 has pathways → SP1→exit→(manhattan)→SP2
+/// 4. Only SP2 has pathways → SP1→(manhattan)→entry→SP2
+fn compute_transfer_time(
+    model: &Model,
+    sp1: &StopPoint,
+    sp2: &StopPoint,
+    sp1_exit_map: &HashMap<Idx<StopLocation>, (f64, f64)>,
+    sp2_entry_map: &HashMap<Idx<StopLocation>, (f64, f64)>,
+    sp1_sp2_distance: f64,
+    config: &TransferConfig,
+) -> (f64, u32) {
+    if sp1.stop_area_id == sp2.stop_area_id || (sp1_exit_map.is_empty() && sp2_entry_map.is_empty())
+    {
+        return (
+            sp1_sp2_distance,
+            (sp1_sp2_distance / config.walking_speed) as u32,
+        );
+    }
+
+    let mut min_distance = f64::MAX;
+    let mut min_time = f64::MAX;
+
+    if !sp1_exit_map.is_empty() && !sp2_entry_map.is_empty() {
+        // Try all (exit, entry) combinations with crow-fly × factor (manhattan) between them.
+        // When exit == entry (shared stop-location), between distance is 0.
+        for (&exit_sl_idx, &(exit_distance, exit_time)) in sp1_exit_map {
+            let exit_coord = &model.stop_locations[exit_sl_idx].coord;
+            for (&entry_sl_idx, &(entry_distance, entry_time)) in sp2_entry_map {
+                let entry_coord = &model.stop_locations[entry_sl_idx].coord;
+                let between_dist = exit_coord.distance_to(entry_coord) * config.manhattan_factor;
+                let total_dist = exit_distance + between_dist + entry_distance;
+                if total_dist > config.max_distance {
+                    continue;
+                }
+                let total_time = exit_time + (between_dist / config.walking_speed) + entry_time;
+                if total_time < min_time {
+                    min_time = total_time;
+                    min_distance = total_dist;
+                }
+            }
+        }
+    } else if !sp1_exit_map.is_empty() {
+        // SP1 has exits, SP2 has no pathways: SP1 → exit → crow-fly × factor (manhattan) → SP2
+        for (&exit_sl_idx, &(exit_distance, exit_time)) in sp1_exit_map {
+            let exit_coord = &model.stop_locations[exit_sl_idx].coord;
+            let between_dist = exit_coord.distance_to(&sp2.coord) * config.manhattan_factor;
+            let total_dist = exit_distance + between_dist;
+            if total_dist > config.max_distance {
+                continue;
+            }
+            let total_time = exit_time + (between_dist / config.walking_speed);
+            if total_time < min_time {
+                min_time = total_time;
+                min_distance = total_dist;
+            }
+        }
+    } else {
+        // SP1 has no pathways, SP2 has entries: SP1 → crow-fly × factor (manhattan) → entry → SP2
+        for (&entry_sl_idx, &(entry_distance, entry_time)) in sp2_entry_map {
+            let entry_coord = &model.stop_locations[entry_sl_idx].coord;
+            let between_dist = sp1.coord.distance_to(entry_coord) * config.manhattan_factor;
+            let total_dist = between_dist + entry_distance;
+            if total_dist > config.max_distance {
+                continue;
+            }
+            let total_time = (between_dist / config.walking_speed) + entry_time;
+            if total_time < min_time {
+                min_time = total_time;
+                min_distance = total_dist;
+            }
+        }
+    }
+
+    if min_time < f64::MAX {
+        (min_distance, min_time as u32)
+    } else {
+        // Pathways exist but no valid path within max_distance: no transfer
+        (f64::MAX, 0)
+    }
+}
+
 /// Generate missing transfers from stop points within the required distance
 ///
 /// This function uses an R-tree spatial index for efficient proximity queries.
@@ -92,6 +315,8 @@ pub fn generate_missing_transfers_from_sp(
     waiting_time_by_modes: Option<WaitingTimesByModes>,
 ) -> TransferMap {
     info!("Adding missing transfers from stop points.");
+    let bench_start = Instant::now();
+
     let mut new_transfers_map = TransferMap::new();
     let sq_max_distance = max_distance * max_distance;
 
@@ -108,6 +333,20 @@ pub fn generate_missing_transfers_from_sp(
     let stop_point_physical_mode_map = waiting_time_by_modes
         .is_some()
         .then(|| build_stop_point_physical_mode_map(model));
+
+    let (sp_exit_maps, sp_entry_maps) = build_pathway_maps(model, walking_speed, max_distance);
+    let empty_pathway_map = HashMap::new();
+    let transfer_config = TransferConfig {
+        walking_speed,
+        max_distance,
+        manhattan_factor: TRANSFER_MANHATTAN_FACTOR,
+    };
+
+    // Debug counters for transfer cases
+    let mut case1_count: u32 = 0; // Same stop_area or no pathways
+    let mut case2_count: u32 = 0; // Both sides have pathways
+    let mut case3_count: u32 = 0; // Only SP1 has pathways
+    let mut case4_count: u32 = 0; // Only SP2 has pathways
 
     // For each stop point, query nearby points from the R-tree
     for (idx1, sp1) in model.stop_points.iter() {
@@ -140,6 +379,8 @@ pub fn generate_missing_transfers_from_sp(
             .as_ref()
             .and_then(|map| map.get(&idx1));
 
+        let sp1_exit_map = sp_exit_maps.get(&idx1).unwrap_or(&empty_pathway_map);
+
         // Get all points within the bounding box and filter by actual distance
         for nearby_location in rtree.locate_in_envelope(&search_box) {
             let idx2 = nearby_location.idx;
@@ -158,8 +399,24 @@ pub fn generate_missing_transfers_from_sp(
             if sq_distance > sq_max_distance {
                 continue;
             }
-            let transfer_time = (sq_distance.sqrt() / walking_speed) as u32;
+
+            let sp1_sp2_manhattan_distance = sq_distance.sqrt() * transfer_config.manhattan_factor;
             let sp2 = &model.stop_points[idx2];
+            let sp2_entry_map = sp_entry_maps.get(&idx2).unwrap_or(&empty_pathway_map);
+
+            let (transfer_manhattan_distance, transfer_time) = compute_transfer_time(
+                model,
+                sp1,
+                sp2,
+                sp1_exit_map,
+                sp2_entry_map,
+                sp1_sp2_manhattan_distance,
+                &transfer_config,
+            );
+
+            if transfer_manhattan_distance > max_distance {
+                continue;
+            }
 
             // Use the specific waiting time for this pair of physical modes, or fall back to the default waiting time if not found
             let specific_waiting_time = sp1_mode_idx
@@ -171,6 +428,19 @@ pub fn generate_missing_transfers_from_sp(
                         .copied()
                 })
                 .unwrap_or(waiting_time);
+
+            // Track which case was used for this transfer
+            if sp1.stop_area_id == sp2.stop_area_id
+                || (sp1_exit_map.is_empty() && sp2_entry_map.is_empty())
+            {
+                case1_count += 1;
+            } else if !sp1_exit_map.is_empty() && !sp2_entry_map.is_empty() {
+                case2_count += 1;
+            } else if !sp1_exit_map.is_empty() {
+                case3_count += 1;
+            } else {
+                case4_count += 1;
+            }
 
             new_transfers_map.insert(
                 (idx1, idx2),
@@ -184,6 +454,20 @@ pub fn generate_missing_transfers_from_sp(
             );
         }
     }
+
+    info!(
+        "Generate missing-transfers completed in {:.2?}: {} transfers | \
+         Case 1 (same area/no pathways): {} | \
+         Case 2 (both have pathways): {} | \
+         Case 3 (only SP1 has exit pathways): {} | \
+         Case 4 (only SP2 has entry pathways): {}",
+        bench_start.elapsed(),
+        new_transfers_map.len(),
+        case1_count,
+        case2_count,
+        case3_count,
+        case4_count,
+    );
 
     new_transfers_map
 }
@@ -320,7 +604,7 @@ mod tests {
         let new_transfers_map = generate_missing_transfers_from_sp(
             &TransferMap::new(),
             &model,
-            100.0,
+            120.0,
             0.7,
             2,
             None,
@@ -464,7 +748,7 @@ mod tests {
     fn test_generates_transfers() {
         let model = base_model();
         let mut collections =
-            generates_transfers(model, 100.0, 0.7, 2, None, None).expect("an error occured");
+            generates_transfers(model, 120.0, 0.7, 2, None, None).expect("an error occured");
 
         let mut transfers = Collection::new(vec![
             Transfer {
@@ -579,7 +863,7 @@ mod tests {
             })
             .build();
 
-        let model = generates_transfers(model, 500.0, 1.0, 10, None, None).unwrap();
+        let model = generates_transfers(model, 530.0, 1.0, 10, None, None).unwrap();
 
         assert_eq!(model.transfers.len(), 16);
     }
