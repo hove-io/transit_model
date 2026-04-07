@@ -69,6 +69,7 @@ pub mod ntfs;
 pub(crate) mod parser;
 #[cfg(feature = "parser")]
 pub mod parser;
+pub mod physical_modes_utils;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
@@ -92,7 +93,7 @@ pub const TRANSFER_MAX_DISTANCE: &str = "300";
 pub const TRANSFER_WALKING_SPEED: &str = "0.785";
 
 /// Waiting time at stop in second
-pub const TRANSFER_WAITING_TIME: &str = "60";
+pub const TRANSFER_WAITING_TIME: &str = "120";
 
 lazy_static::lazy_static! {
     /// Current datetime

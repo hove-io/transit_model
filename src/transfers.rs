@@ -16,7 +16,8 @@
 
 use crate::{
     model::{Collections, Model},
-    objects::{Coord, StopPoint, Transfer},
+    objects::{Coord, PhysicalMode, StopPoint, Transfer},
+    physical_modes_utils::build_stop_point_physical_mode_map,
     Result,
 };
 use rstar::{RTree, RTreeObject, AABB};
@@ -30,6 +31,9 @@ pub type TransferMap = HashMap<(Idx<StopPoint>, Idx<StopPoint>), Transfer>;
 /// The closure that will determine whether a connection should be created between 2 stops.
 /// See [generates_transfers](./fn.generates_transfers.html).
 pub type NeedTransfer<'a> = Box<dyn 'a + Fn(&Model, Idx<StopPoint>, Idx<StopPoint>) -> bool>;
+
+/// Structure to determine the waiting time for a transfer between 2 physical modes.
+pub type WaitingTimesByModes = HashMap<(Idx<PhysicalMode>, Idx<PhysicalMode>), u32>;
 
 /// Build a map from existing transfers
 pub fn get_available_transfers(
@@ -70,6 +74,7 @@ impl StopPointLocation {
         Self { idx, coord }
     }
 }
+
 /// Generate missing transfers from stop points within the required distance
 ///
 /// This function uses an R-tree spatial index for efficient proximity queries.
@@ -84,6 +89,7 @@ pub fn generate_missing_transfers_from_sp(
     walking_speed: f64,
     waiting_time: u32,
     need_transfer: Option<NeedTransfer>,
+    waiting_time_by_modes: Option<WaitingTimesByModes>,
 ) -> TransferMap {
     info!("Adding missing transfers from stop points.");
     let mut new_transfers_map = TransferMap::new();
@@ -98,6 +104,10 @@ pub fn generate_missing_transfers_from_sp(
         .collect();
 
     let rtree = RTree::bulk_load(stop_locations);
+
+    let stop_point_physical_mode_map = waiting_time_by_modes
+        .is_some()
+        .then(|| build_stop_point_physical_mode_map(model));
 
     // For each stop point, query nearby points from the R-tree
     for (idx1, sp1) in model.stop_points.iter() {
@@ -126,6 +136,10 @@ pub fn generate_missing_transfers_from_sp(
 
         let search_box = AABB::from_corners([min_lon, min_lat], [max_lon, max_lat]);
 
+        let sp1_mode_idx = stop_point_physical_mode_map
+            .as_ref()
+            .and_then(|map| map.get(&idx1));
+
         // Get all points within the bounding box and filter by actual distance
         for nearby_location in rtree.locate_in_envelope(&search_box) {
             let idx2 = nearby_location.idx;
@@ -146,13 +160,25 @@ pub fn generate_missing_transfers_from_sp(
             }
             let transfer_time = (sq_distance.sqrt() / walking_speed) as u32;
             let sp2 = &model.stop_points[idx2];
+
+            // Use the specific waiting time for this pair of physical modes, or fall back to the default waiting time if not found
+            let specific_waiting_time = sp1_mode_idx
+                .and_then(|mode_idx1| {
+                    let mode_idx2 = stop_point_physical_mode_map.as_ref()?.get(&idx2)?;
+                    waiting_time_by_modes
+                        .as_ref()?
+                        .get(&(*mode_idx1, *mode_idx2))
+                        .copied()
+                })
+                .unwrap_or(waiting_time);
+
             new_transfers_map.insert(
                 (idx1, idx2),
                 Transfer {
                     from_stop_id: sp1.id.clone(),
                     to_stop_id: sp2.id.clone(),
                     min_transfer_time: Some(transfer_time),
-                    real_min_transfer_time: Some(transfer_time + waiting_time),
+                    real_min_transfer_time: Some(transfer_time + specific_waiting_time),
                     equipment_id: None,
                 },
             );
@@ -194,8 +220,10 @@ pub fn generates_transfers(
     walking_speed: f64,
     waiting_time: u32,
     need_transfer: Option<NeedTransfer>,
+    waiting_time_by_modes: Option<WaitingTimesByModes>,
 ) -> Result<Collections> {
     info!("Generating transfers...");
+
     let mut transfers_map = get_available_transfers(model.transfers.clone(), &model.stop_points);
     let new_transfers_map = generate_missing_transfers_from_sp(
         &transfers_map,
@@ -204,6 +232,7 @@ pub fn generates_transfers(
         walking_speed,
         waiting_time,
         need_transfer,
+        waiting_time_by_modes,
     );
 
     transfers_map.extend(new_transfers_map);
@@ -222,11 +251,12 @@ pub fn generates_transfers(
 mod tests {
     use super::{
         generate_missing_transfers_from_sp, generates_transfers, get_available_transfers,
-        TransferMap,
+        TransferMap, WaitingTimesByModes,
     };
+    use crate::model::{BUS_PHYSICAL_MODE, RAPID_TRANSIT_PHYSICAL_MODE};
     use crate::{
         model::Model,
-        objects::{Coord, Time, Transfer},
+        objects::{Coord, ObjectType, Time, Transfer},
         ModelBuilder,
     };
     use typed_index_collection::Collection;
@@ -287,8 +317,15 @@ mod tests {
     #[test]
     fn test_generate_missing_transfers_from_sp() {
         let model = base_model();
-        let new_transfers_map =
-            generate_missing_transfers_from_sp(&TransferMap::new(), &model, 100.0, 0.7, 2, None);
+        let new_transfers_map = generate_missing_transfers_from_sp(
+            &TransferMap::new(),
+            &model,
+            100.0,
+            0.7,
+            2,
+            None,
+            None,
+        );
 
         let expected = {
             let mut map = TransferMap::new();
@@ -427,7 +464,7 @@ mod tests {
     fn test_generates_transfers() {
         let model = base_model();
         let mut collections =
-            generates_transfers(model, 100.0, 0.7, 2, None).expect("an error occured");
+            generates_transfers(model, 100.0, 0.7, 2, None, None).expect("an error occured");
 
         let mut transfers = Collection::new(vec![
             Transfer {
@@ -542,8 +579,108 @@ mod tests {
             })
             .build();
 
-        let model = generates_transfers(model, 500.0, 1.0, 10, None).unwrap();
+        let model = generates_transfers(model, 500.0, 1.0, 10, None, None).unwrap();
 
         assert_eq!(model.transfers.len(), 16);
+    }
+
+    #[test]
+    fn test_generates_transfers_with_waiting_time_by_modes_matching() {
+        // A, B served by Bus — C, D served by RapidTransit — E has no vehicle journey
+        // B, C and E are very close, so transfers between them will be generated
+        // A and D are too far from any other stop
+        // Bus -> RapidTransit and RapidTransit -> Bus have distinct specific waiting times
+        // Transfers involving E always fall back to default waiting time (no mode in map)
+        let mut collections = ModelBuilder::default()
+            .vj("vj1", |vj| {
+                vj.route("route1")
+                    .physical_mode(BUS_PHYSICAL_MODE)
+                    .st("A", "10:00:00")
+                    .st("B", "10:10:00");
+            })
+            .vj("vj2", |vj| {
+                vj.route("route2")
+                    .physical_mode(RAPID_TRANSIT_PHYSICAL_MODE)
+                    .st("C", "11:00:00")
+                    .st("D", "11:10:00");
+            })
+            .stop_area("SA:E", |_| {})
+            .stop_point("E", |sp_builder| {
+                sp_builder.stop_area_id = "SA:E".to_string()
+            })
+            .add_object_lock(&ObjectType::StopPoint, "E")
+            .build()
+            .into_collections();
+
+        // Note: if geolocation is (0, 0), it's considered incorrect and transfer is not generated
+        collections.stop_points.get_mut("A").unwrap().coord =
+            Coord::from(("2.26723".to_string(), "48.84720".to_string()));
+        collections.stop_points.get_mut("B").unwrap().coord =
+            Coord::from(("2.35156".to_string(), "48.85762".to_string()));
+        collections.stop_points.get_mut("C").unwrap().coord =
+            Coord::from(("2.35180".to_string(), "48.85751".to_string())); // very close to B to ensure transfer is generated
+        collections.stop_points.get_mut("D").unwrap().coord =
+            Coord::from(("2.40242".to_string(), "48.86149".to_string()));
+        collections.stop_points.get_mut("E").unwrap().coord =
+            Coord::from(("2.35109".to_string(), "48.85767".to_string())); // very close to B to ensure transfer is generated
+
+        let model = Model::new(collections).unwrap();
+
+        assert_eq!(model.stop_points.len(), 5);
+
+        let bus_idx = model.physical_modes.get_idx(BUS_PHYSICAL_MODE).unwrap();
+        let rapid_transit_idx = model
+            .physical_modes
+            .get_idx(RAPID_TRANSIT_PHYSICAL_MODE)
+            .unwrap();
+
+        let bus_to_rapid = 180;
+        let rapid_to_bus = 240;
+        let default_waiting_time = 120;
+        let mut waiting_time_by_modes = WaitingTimesByModes::new();
+        waiting_time_by_modes.insert((bus_idx, rapid_transit_idx), bus_to_rapid);
+        waiting_time_by_modes.insert((rapid_transit_idx, bus_idx), rapid_to_bus);
+
+        let collections = generates_transfers(
+            model,
+            500.0,
+            0.785,
+            default_waiting_time,
+            None,
+            Some(waiting_time_by_modes),
+        )
+        .expect("an error occurred");
+
+        // Self-transfers for all stops + B<->C + B<->E + C<->E
+        assert_eq!(collections.transfers.len(), 11);
+
+        let expected_waiting_times = [
+            ("A", "A", default_waiting_time), // Bus -> Bus
+            ("B", "B", default_waiting_time), // Bus -> Bus
+            ("B", "C", bus_to_rapid),         // Bus -> RapidTransit
+            ("B", "E", default_waiting_time), // Bus -> no mode (E not in map)
+            ("C", "B", rapid_to_bus),         // RapidTransit -> Bus
+            ("C", "C", default_waiting_time), // RapidTransit -> RapidTransit
+            ("C", "E", default_waiting_time), // RapidTransit -> no mode (E not in map)
+            ("D", "D", default_waiting_time), // RapidTransit -> RapidTransit
+            ("E", "E", default_waiting_time), // no mode -> no mode
+            ("E", "B", default_waiting_time), // no mode -> Bus (E not in map)
+            ("E", "C", default_waiting_time), // no mode -> RapidTransit (E not in map)
+        ];
+
+        for (from, to, expected_wt) in expected_waiting_times {
+            let transfer = collections
+                .transfers
+                .iter()
+                .find(|(_, t)| t.from_stop_id == from && t.to_stop_id == to)
+                .map(|(_, t)| t)
+                .unwrap_or_else(|| panic!("transfer {from}->{to} not found", from = from, to = to));
+
+            assert_eq!(
+                transfer.real_min_transfer_time,
+                transfer.min_transfer_time.map(|t| t + expected_wt),
+                "transfer {from}->{to}: expected waiting time {expected_wt}"
+            );
+        }
     }
 }
