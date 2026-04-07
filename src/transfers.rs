@@ -162,16 +162,13 @@ pub fn generate_missing_transfers_from_sp(
             let sp2 = &model.stop_points[idx2];
 
             // Use the specific waiting time for this pair of physical modes, or fall back to the default waiting time if not found
-            let specific_waiting_time = stop_point_physical_mode_map
-                .as_ref()
-                .and_then(|map| {
-                    sp1_mode_idx
-                        .zip(map.get(&idx2))
-                        .and_then(|(mode_idx1, mode_idx2)| {
-                            waiting_time_by_modes
-                                .as_ref()
-                                .and_then(|wt| wt.get(&(*mode_idx1, *mode_idx2)).copied())
-                        })
+            let specific_waiting_time = sp1_mode_idx
+                .and_then(|mode_idx1| {
+                    let mode_idx2 = stop_point_physical_mode_map.as_ref()?.get(&idx2)?;
+                    waiting_time_by_modes
+                        .as_ref()?
+                        .get(&(*mode_idx1, *mode_idx2))
+                        .copied()
                 })
                 .unwrap_or(waiting_time);
 
