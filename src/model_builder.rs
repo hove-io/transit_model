@@ -34,8 +34,8 @@ use crate::model::{Collections, Model};
 use crate::objects::{
     Address, AdministrativeRegion, Calendar, CommercialMode, Company, Contributor, Dataset, Date,
     Equipment, Geometry, Line, Network, ObjectLock, ObjectType, Occupancy, OccupancyStatus,
-    PhysicalMode, Route, StopArea, StopPoint, StopTime, StopTimePrecision, Time, Transfer,
-    TripProperty, ValidityPeriod, VehicleJourney,
+    Pathway, PathwayMode, PhysicalMode, Route, StopArea, StopLocation, StopPoint, StopTime,
+    StopTimePrecision, StopType, Time, Transfer, TripProperty, ValidityPeriod, VehicleJourney,
 };
 use chrono::NaiveDateTime;
 use chrono_tz;
@@ -524,6 +524,59 @@ impl ModelBuilder {
             };
             initer(&mut sp);
             sp
+        });
+        self
+    }
+
+    /// Add a new stop location to the model
+    pub fn stop_location<F>(mut self, id: &str, mut initer: F) -> Self
+    where
+        F: FnMut(&mut StopLocation),
+    {
+        self.collections.stop_locations.get_or_create_with(id, || {
+            let mut sl = StopLocation {
+                id: id.to_owned(),
+                name: id.to_owned(),
+                parent_id: Some(format!("sa:{id}")),
+                stop_type: StopType::StopEntrance,
+                ..Default::default()
+            };
+            initer(&mut sl);
+            sl
+        });
+        self
+    }
+
+    /// Add a new pathway to the model
+    #[allow(clippy::too_many_arguments)]
+    pub fn pathway<F>(
+        mut self,
+        from_stop_id: &str,
+        from_stop_type: StopType,
+        to_stop_id: &str,
+        to_stop_type: StopType,
+        length: u32,
+        traversal_time: u32,
+        mut initer: F,
+    ) -> Self
+    where
+        F: FnMut(&mut Pathway),
+    {
+        let id = format!("{from_stop_id}:{to_stop_id}");
+        self.collections.pathways.get_or_create_with(&id, || {
+            let mut p = Pathway {
+                from_stop_id: from_stop_id.to_string(),
+                from_stop_type: from_stop_type.clone(),
+                to_stop_id: to_stop_id.to_string(),
+                to_stop_type: to_stop_type.clone(),
+                pathway_mode: PathwayMode::Walkway,
+                is_bidirectional: true,
+                length: Some(length.into()),
+                traversal_time: Some(traversal_time),
+                ..Default::default()
+            };
+            initer(&mut p);
+            p
         });
         self
     }
@@ -1270,7 +1323,8 @@ mod test {
     use crate::objects::ObjectType;
 
     use super::ModelBuilder;
-    use super::{StopTimePrecision, Time};
+    use super::{Pathway, PathwayMode, StopLocation, StopTimePrecision, StopType, Time};
+    use rust_decimal_macros::dec;
 
     #[test]
     fn simple_model_creation() {
@@ -1685,5 +1739,54 @@ mod test {
             .object_locks
             .values()
             .any(|lock| lock.object_type == ObjectType::Company && lock.object_id == "C:AA"));
+    }
+
+    #[test]
+    fn stop_location_and_pathway_creation() {
+        let model = ModelBuilder::default()
+            .stop_area("A", |_| {})
+            .stop_point("SP:A", |sp_builder| {
+                sp_builder.stop_area_id = "A".to_string()
+            })
+            .stop_location("SL:A", |sl_builder| {
+                sl_builder.parent_id = Some("A".to_string())
+            })
+            .pathway(
+                "SL:A",
+                StopType::StopEntrance,
+                "SP:A",
+                StopType::Point,
+                60,
+                63,
+                |_| {},
+            )
+            .build();
+        assert_eq!(model.stop_areas.len(), 1);
+        assert_eq!(model.stop_points.len(), 1);
+        assert_eq!(model.stop_locations.len(), 1);
+        assert_eq!(model.pathways.len(), 1);
+
+        let expected_sl = StopLocation {
+            id: "SL:A".to_string(),
+            name: "SL:A".to_string(),
+            parent_id: Some("A".to_string()),
+            stop_type: StopType::StopEntrance,
+            ..Default::default()
+        };
+        assert_eq!(model.stop_locations.get("SL:A").unwrap(), &expected_sl);
+
+        let expected_pathway = Pathway {
+            id: "SL:A:SP:A".to_string(),
+            from_stop_id: "SL:A".to_string(),
+            from_stop_type: StopType::StopEntrance,
+            to_stop_id: "SP:A".to_string(),
+            to_stop_type: StopType::Point,
+            pathway_mode: PathwayMode::Walkway,
+            is_bidirectional: true,
+            length: Some(dec!(60)),
+            traversal_time: Some(63),
+            ..Default::default()
+        };
+        assert_eq!(model.pathways.get("SL:A:SP:A").unwrap(), &expected_pathway);
     }
 }
