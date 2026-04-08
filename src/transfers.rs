@@ -94,11 +94,11 @@ fn pathway_distance_and_time(pathway: &Pathway, walking_speed: f64) -> Option<(f
         .or_else(|| {
             pathway
                 .traversal_time
-                .map(|seconds| seconds as f64 * walking_speed)
+                .map(|seconds| f64::from(seconds) * walking_speed)
         })?;
     let time = pathway
         .traversal_time
-        .map(|seconds| seconds as f64)
+        .map(f64::from)
         .unwrap_or_else(|| distance / walking_speed);
     Some((distance, time))
 }
