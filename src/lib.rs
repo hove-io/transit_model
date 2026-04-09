@@ -70,6 +70,7 @@ pub(crate) mod parser;
 #[cfg(feature = "parser")]
 pub mod parser;
 pub mod physical_modes_utils;
+pub mod report;
 #[doc(hidden)]
 pub mod test_utils;
 pub mod transfers;
