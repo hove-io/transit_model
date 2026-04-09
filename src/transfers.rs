@@ -968,6 +968,53 @@ mod tests {
         }
     }
 
+    mod pathway_distance_and_time_tests {
+        use super::super::pathway_distance_and_time;
+        use crate::objects::Pathway;
+        use rust_decimal::Decimal;
+        use std::str::FromStr;
+
+        fn make_pathway(length: Option<&str>, traversal_time: Option<u32>) -> Pathway {
+            Pathway {
+                id: "pw_test".to_string(),
+                length: length.map(|l| Decimal::from_str(l).unwrap()),
+                traversal_time,
+                ..Default::default()
+            }
+        }
+
+        #[test]
+        fn both_length_and_traversal_time() {
+            // distance comes from length, time comes from traversal_time
+            let pathway = make_pathway(Some("100.0"), Some(60));
+            let (distance, time) = pathway_distance_and_time(&pathway, 1.0).unwrap();
+            assert_eq!(distance, 100.0);
+            assert_eq!(time, 60.0);
+        }
+
+        #[test]
+        fn length_only_derives_time_from_speed() {
+            let pathway = make_pathway(Some("200.0"), None);
+            let (distance, time) = pathway_distance_and_time(&pathway, 2.0).unwrap();
+            assert_eq!(distance, 200.0);
+            assert_eq!(time, 100.0);
+        }
+
+        #[test]
+        fn traversal_time_only_derives_distance_from_speed() {
+            let pathway = make_pathway(None, Some(90));
+            let (distance, time) = pathway_distance_and_time(&pathway, 1.5).unwrap();
+            assert_eq!(distance, 135.0);
+            assert_eq!(time, 90.0);
+        }
+
+        #[test]
+        fn neither_returns_none() {
+            let pathway = make_pathway(None, None);
+            assert!(pathway_distance_and_time(&pathway, 1.0).is_none());
+        }
+    }
+
     mod build_pathway_maps_tests {
         use super::super::build_pathway_maps;
         use crate::{
