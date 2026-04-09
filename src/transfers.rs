@@ -967,4 +967,232 @@ mod tests {
             );
         }
     }
+
+    mod build_pathway_maps_tests {
+        use super::super::build_pathway_maps;
+        use crate::{
+            model::Model,
+            objects::{Coord, StopType},
+            ModelBuilder,
+        };
+
+        fn base_model() -> ModelBuilder {
+            ModelBuilder::default()
+                .stop_area("sa1", |_| {})
+                .stop_area("sa2", |_| {})
+                .stop_point("SP_A", |sp| {
+                    sp.coord = Coord::from(("2.3800".to_string(), "48.8500".to_string()));
+                    sp.stop_area_id = "sa1".to_string();
+                })
+                .stop_point("SP_B", |sp| {
+                    sp.coord = Coord::from(("2.3810".to_string(), "48.8500".to_string()));
+                    sp.stop_area_id = "sa2".to_string();
+                })
+                .stop_location("SL_X", |sl| {
+                    sl.coord = Coord::from(("2.3805".to_string(), "48.8500".to_string()));
+                    sl.parent_id = Some("sa1".to_string());
+                })
+                .stop_location("SL_Y", |sl| {
+                    sl.coord = Coord::from(("2.3808".to_string(), "48.8500".to_string()));
+                    sl.parent_id = Some("sa2".to_string());
+                })
+                .vj("vj1", |vj| {
+                    vj.st("SP_A", "10:00:00").st("SP_B", "10:10:00");
+                })
+        }
+
+        #[test]
+        fn unidirectional_sp_to_sl_creates_exit_only() {
+            let model = base_model()
+                .pathway(
+                    "SP_A",
+                    StopType::Point,
+                    "SL_X",
+                    StopType::StopEntrance,
+                    100,
+                    60,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .build();
+
+            let (exit_maps, entry_maps) = build_pathway_maps(&model, 1.0, 500.0);
+            assert_eq!(exit_maps.len(), 1);
+            assert_eq!(entry_maps.len(), 0);
+
+            let sp_a = model.stop_points.get_idx("SP_A").unwrap();
+            let sl_x = model.stop_locations.get_idx("SL_X").unwrap();
+
+            let (distance, time) = exit_maps[&sp_a][&sl_x];
+            assert_eq!(distance, 100.0);
+            assert_eq!(time, 60.0);
+        }
+
+        #[test]
+        fn bidirectional_sp_to_sl_creates_exit_and_entry() {
+            let model = base_model()
+                .pathway(
+                    "SP_A",
+                    StopType::Point,
+                    "SL_X",
+                    StopType::StopEntrance,
+                    100,
+                    60,
+                    |_| {},
+                )
+                .build();
+
+            let (exit_maps, entry_maps) = build_pathway_maps(&model, 1.0, 500.0);
+            assert_eq!(exit_maps.len(), 1);
+            assert_eq!(entry_maps.len(), 1);
+
+            let sp_a = model.stop_points.get_idx("SP_A").unwrap();
+            let sl_x = model.stop_locations.get_idx("SL_X").unwrap();
+
+            let (distance, time) = exit_maps[&sp_a][&sl_x];
+            assert_eq!(distance, 100.0);
+            assert_eq!(time, 60.0);
+
+            let (distance, time) = entry_maps[&sp_a][&sl_x];
+            assert_eq!(distance, 100.0);
+            assert_eq!(time, 60.0);
+        }
+
+        #[test]
+        fn unidirectional_sl_to_sp_creates_entry_only() {
+            let model = base_model()
+                .pathway(
+                    "SL_Y",
+                    StopType::StopEntrance,
+                    "SP_B",
+                    StopType::Point,
+                    80,
+                    50,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .build();
+
+            let (exit_maps, entry_maps) = build_pathway_maps(&model, 1.0, 500.0);
+            assert_eq!(exit_maps.len(), 0);
+            assert_eq!(entry_maps.len(), 1);
+
+            let sp_b = model.stop_points.get_idx("SP_B").unwrap();
+            let sl_y = model.stop_locations.get_idx("SL_Y").unwrap();
+
+            let (distance, time) = entry_maps[&sp_b][&sl_y];
+            assert_eq!(distance, 80.0);
+            assert_eq!(time, 50.0);
+        }
+
+        #[test]
+        fn bidirectional_sl_to_sp_creates_exit_and_entry() {
+            let model = base_model()
+                .pathway(
+                    "SL_Y",
+                    StopType::StopEntrance,
+                    "SP_B",
+                    StopType::Point,
+                    80,
+                    50,
+                    |_| {},
+                )
+                .build();
+
+            let (exit_maps, entry_maps) = build_pathway_maps(&model, 1.0, 500.0);
+            assert_eq!(exit_maps.len(), 1);
+            assert_eq!(entry_maps.len(), 1);
+
+            let sp_b = model.stop_points.get_idx("SP_B").unwrap();
+            let sl_y = model.stop_locations.get_idx("SL_Y").unwrap();
+
+            let (distance, time) = exit_maps[&sp_b][&sl_y];
+            assert_eq!(distance, 80.0);
+            assert_eq!(time, 50.0);
+
+            let (distance, time) = entry_maps[&sp_b][&sl_y];
+            assert_eq!(distance, 80.0);
+            assert_eq!(time, 50.0);
+        }
+
+        #[test]
+        fn pathway_exceeding_max_distance_is_filtered() {
+            let model = base_model()
+                .pathway(
+                    "SP_A",
+                    StopType::Point,
+                    "SL_X",
+                    StopType::StopEntrance,
+                    600,
+                    300,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .build();
+
+            let (exit_maps, entry_maps) = build_pathway_maps(&model, 1.0, 500.0);
+            assert_eq!(exit_maps.len(), 0);
+            assert_eq!(entry_maps.len(), 0);
+        }
+
+        #[test]
+        fn keeps_shortest_distance_among_duplicate_pathways() {
+            let model = base_model()
+                // Long pathway: 200m, 90s
+                .pathway(
+                    "SP_A",
+                    StopType::Point,
+                    "SL_X",
+                    StopType::StopEntrance,
+                    200,
+                    90,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .build();
+
+            // The builder doesn't allow duplicate IDs, so we add the second via collections
+            // Short pathway: 10m, 30s
+            let mut collections = model.into_collections();
+            collections
+                .pathways
+                .push(crate::objects::Pathway {
+                    id: "SP_A:SL_X:short".to_string(),
+                    from_stop_id: "SP_A".to_string(),
+                    from_stop_type: StopType::Point,
+                    to_stop_id: "SL_X".to_string(),
+                    to_stop_type: StopType::StopEntrance,
+                    is_bidirectional: false,
+                    length: Some(10u32.into()),
+                    traversal_time: Some(30),
+                    ..Default::default()
+                })
+                .unwrap();
+            let model = Model::new(collections).unwrap();
+            assert_eq!(model.pathways.len(), 2);
+
+            let (exit_maps, entry_maps) = build_pathway_maps(&model, 1.0, 500.0);
+            assert_eq!(exit_maps.len(), 1);
+            assert_eq!(entry_maps.len(), 0);
+
+            let sp_a = model.stop_points.get_idx("SP_A").unwrap();
+            let sl_x = model.stop_locations.get_idx("SL_X").unwrap();
+
+            let (distance, time) = exit_maps[&sp_a][&sl_x];
+            assert_eq!(distance, 10.0);
+            assert_eq!(time, 30.0);
+        }
+
+        #[test]
+        fn no_pathways_produces_empty_maps() {
+            let model = base_model().build();
+            let (exit_maps, entry_maps) = build_pathway_maps(&model, 1.0, 500.0);
+            assert!(exit_maps.is_empty());
+            assert!(entry_maps.is_empty());
+        }
+    }
 }
