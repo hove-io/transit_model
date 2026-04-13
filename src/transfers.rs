@@ -18,7 +18,9 @@ use crate::{
     model::{Collections, Model},
     objects::{Coord, Pathway, PhysicalMode, StopLocation, StopPoint, Transfer},
     physical_modes_utils::build_stop_point_physical_mode_map,
-    Result, TRANSFER_MANHATTAN_FACTOR,
+    report::{Report, TransferReportCategory},
+    Result, TRANSFER_MANHATTAN_FACTOR, TRANSFER_MAX_DISTANCE, TRANSFER_WAITING_TIME,
+    TRANSFER_WALKING_SPEED,
 };
 use rstar::{RTree, RTreeObject, AABB};
 use rust_decimal::prelude::ToPrimitive;
@@ -36,6 +38,37 @@ pub type NeedTransfer<'a> = Box<dyn 'a + Fn(&Model, Idx<StopPoint>, Idx<StopPoin
 
 /// Structure to determine the waiting time for a transfer between 2 physical modes.
 pub type WaitingTimesByModes = HashMap<(Idx<PhysicalMode>, Idx<PhysicalMode>), u32>;
+
+/// Configuration for transfer generation.
+pub struct TransfersConfiguration<'a> {
+    /// Maximum total walking distance in meters to consider generating a transfer.
+    /// This includes both open-air segments (crow-fly × manhattan_factor) and
+    /// indoor pathway segments (like entrances).
+    pub max_distance: f64,
+    /// Walking speed in meters per second, used to estimate transfer times.
+    pub walking_speed: f64,
+    /// Waiting time in seconds added to the transfer time at stop.
+    pub waiting_time: u32,
+    /// Factor applied to the crow-fly distance to compute the manhattan distance.
+    pub manhattan_factor: f64,
+    /// Additional condition that determines whether a transfer must be created between 2 stop points.
+    pub need_transfer: Option<NeedTransfer<'a>>,
+    /// Specific waiting time in seconds for each pair of physical modes, used instead of the default `waiting_time` if specified.
+    pub waiting_time_by_modes: Option<WaitingTimesByModes>,
+}
+
+impl Default for TransfersConfiguration<'_> {
+    fn default() -> Self {
+        Self {
+            max_distance: TRANSFER_MAX_DISTANCE,
+            walking_speed: TRANSFER_WALKING_SPEED,
+            waiting_time: TRANSFER_WAITING_TIME,
+            manhattan_factor: TRANSFER_MANHATTAN_FACTOR,
+            need_transfer: None,
+            waiting_time_by_modes: None,
+        }
+    }
+}
 
 /// Build a map from existing transfers
 pub fn get_available_transfers(
@@ -196,13 +229,6 @@ fn build_pathway_maps(
     (exit_maps, entry_maps)
 }
 
-/// Configuration parameters for transfer time computation.
-struct TransferConfig {
-    walking_speed: f64,
-    max_distance: f64,
-    manhattan_factor: f64,
-}
-
 /// Computes the transfer distance (meters) and time (seconds) between two stop points.
 ///
 /// Among all paths whose total distance ≤ max_distance, selects the fastest one.
@@ -225,14 +251,14 @@ fn compute_transfer_time(
     sp2: &StopPoint,
     sp1_exit_map: &HashMap<Idx<StopLocation>, (f64, f64)>,
     sp2_entry_map: &HashMap<Idx<StopLocation>, (f64, f64)>,
-    sp1_sp2_distance: f64,
-    config: &TransferConfig,
+    sp1_sp2_manhattan_distance: f64,
+    config: &TransfersConfiguration,
 ) -> (f64, u32) {
     if sp1.stop_area_id == sp2.stop_area_id || (sp1_exit_map.is_empty() && sp2_entry_map.is_empty())
     {
         return (
-            sp1_sp2_distance,
-            (sp1_sp2_distance / config.walking_speed) as u32,
+            sp1_sp2_manhattan_distance,
+            (sp1_sp2_manhattan_distance / config.walking_speed) as u32,
         );
     }
 
@@ -308,17 +334,17 @@ fn compute_transfer_time(
 pub fn generate_missing_transfers_from_sp(
     transfers_map: &TransferMap,
     model: &Model,
-    max_distance: f64,
-    walking_speed: f64,
-    waiting_time: u32,
-    need_transfer: Option<NeedTransfer>,
-    waiting_time_by_modes: Option<WaitingTimesByModes>,
+    config: &TransfersConfiguration,
+    report_opt: Option<&mut Report<TransferReportCategory>>,
 ) -> TransferMap {
     info!("Adding missing transfers from stop points.");
     let bench_start = Instant::now();
 
+    let mut default_report = Report::default();
+    let report = report_opt.unwrap_or(&mut default_report);
+
     let mut new_transfers_map = TransferMap::new();
-    let sq_max_distance = max_distance * max_distance;
+    let sq_max_crow_fly_distance = (config.max_distance / config.manhattan_factor).powi(2);
 
     // Build R-tree for efficient spatial queries
     let stop_locations: Vec<StopPointLocation> = model
@@ -330,17 +356,14 @@ pub fn generate_missing_transfers_from_sp(
 
     let rtree = RTree::bulk_load(stop_locations);
 
-    let stop_point_physical_mode_map = waiting_time_by_modes
+    let stop_point_physical_mode_map = config
+        .waiting_time_by_modes
         .is_some()
         .then(|| build_stop_point_physical_mode_map(model));
 
-    let (sp_exit_maps, sp_entry_maps) = build_pathway_maps(model, walking_speed, max_distance);
+    let (sp_exit_maps, sp_entry_maps) =
+        build_pathway_maps(model, config.walking_speed, config.max_distance);
     let empty_pathway_map = HashMap::new();
-    let transfer_config = TransferConfig {
-        walking_speed,
-        max_distance,
-        manhattan_factor: TRANSFER_MANHATTAN_FACTOR,
-    };
 
     // Debug counters for transfer cases
     let mut case1_count: u32 = 0; // Same stop_area or no pathways
@@ -365,9 +388,10 @@ pub fn generate_missing_transfers_from_sp(
         // 1 degree latitude ≈ 111km everywhere
         // For longitude, it varies with latitude: 1 degree longitude ≈ 111km × cos(lat)
         // Use latitude conversion for the search box (more conservative)
-        let search_distance_lat = max_distance / 111_000.0;
+        let max_crow_fly_distance = config.max_distance / config.manhattan_factor;
+        let search_distance_lat = max_crow_fly_distance / 111_000.0;
         // For longitude, use the pre-calculated approx (cos of latitude) to get the correct degree distance
-        let search_distance_lon = max_distance / (111_000.0 * approx.cos_lat());
+        let search_distance_lon = max_crow_fly_distance / (111_000.0 * approx.cos_lat());
         let min_lon = sp1.coord.lon - search_distance_lon;
         let max_lon = sp1.coord.lon + search_distance_lon;
         let min_lat = sp1.coord.lat - search_distance_lat;
@@ -388,7 +412,7 @@ pub fn generate_missing_transfers_from_sp(
             if transfers_map.contains_key(&(idx1, idx2)) {
                 continue;
             }
-            if let Some(ref f) = need_transfer {
+            if let Some(ref f) = config.need_transfer {
                 if !f(model, idx1, idx2) {
                     continue;
                 }
@@ -396,11 +420,11 @@ pub fn generate_missing_transfers_from_sp(
 
             // Use the pre-calculated approximation for efficient distance calculation
             let sq_distance = approx.sq_distance_to(&nearby_location.coord);
-            if sq_distance > sq_max_distance {
+            if sq_distance > sq_max_crow_fly_distance {
                 continue;
             }
 
-            let sp1_sp2_manhattan_distance = sq_distance.sqrt() * transfer_config.manhattan_factor;
+            let sp1_sp2_manhattan_distance = sq_distance.sqrt() * config.manhattan_factor;
             let sp2 = &model.stop_points[idx2];
             let sp2_entry_map = sp_entry_maps.get(&idx2).unwrap_or(&empty_pathway_map);
 
@@ -411,10 +435,10 @@ pub fn generate_missing_transfers_from_sp(
                 sp1_exit_map,
                 sp2_entry_map,
                 sp1_sp2_manhattan_distance,
-                &transfer_config,
+                config,
             );
 
-            if transfer_manhattan_distance > max_distance {
+            if transfer_manhattan_distance > config.max_distance {
                 continue;
             }
 
@@ -422,12 +446,13 @@ pub fn generate_missing_transfers_from_sp(
             let specific_waiting_time = sp1_mode_idx
                 .and_then(|mode_idx1| {
                     let mode_idx2 = stop_point_physical_mode_map.as_ref()?.get(&idx2)?;
-                    waiting_time_by_modes
+                    config
+                        .waiting_time_by_modes
                         .as_ref()?
                         .get(&(*mode_idx1, *mode_idx2))
                         .copied()
                 })
-                .unwrap_or(waiting_time);
+                .unwrap_or(config.waiting_time);
 
             // Track which case was used for this transfer
             if sp1.stop_area_id == sp2.stop_area_id
@@ -441,6 +466,11 @@ pub fn generate_missing_transfers_from_sp(
             } else {
                 case4_count += 1;
             }
+
+            report.add_info(
+                format!("Created transfer from {} to {}", sp1.id, sp2.id),
+                TransferReportCategory::Created,
+            );
 
             new_transfers_map.insert(
                 (idx1, idx2),
@@ -472,52 +502,53 @@ pub fn generate_missing_transfers_from_sp(
     new_transfers_map
 }
 
-/// Generates missing transfers
+/// Generates transfers between stop points and returns the updated collections.
 ///
-/// The `max_distance` argument allows you to specify the max distance
-/// in meters to compute the tranfer.
+/// This function merges existing transfers with newly generated ones:
+/// 1. Existing transfers (from `model.transfers`) are preserved as-is.
+/// 2. Missing transfers are generated for pairs of stop points within
+///    [`TransfersConfiguration::max_distance`], using a spatial R-tree index
+///    for efficiency.
 ///
-/// The `walking_speed` argument is the walking speed in meters per second.
+/// Transfer times are computed using [`compute_transfer_time`], which accounts
+/// for indoor pathway segments (entrances/exits) when available, falling back
+/// to crow-fly × manhattan factor for open-air segments.
+/// Walking time for open-air segments is derived from the distance divided by
+/// [`TransfersConfiguration::walking_speed`].
 ///
-/// The `waiting_time` argument is the waiting transfer_time in seconds at stop.
+/// A fixed waiting time ([`TransfersConfiguration::waiting_time`]) is added on top
+/// of the computed walking time to form the `real_min_transfer_time`. This can be
+/// overridden per pair of physical modes via [`WaitingTimesByModes`].
 ///
-/// `need_transfer` Additional condition that determines whether a transfer
-/// must be created between 2 stop points. By default transfers that do not
-/// already exist and where the distance is less than `max_distance` will be created.
-/// If you need an additional condition, you can use this parameter. For instance
-/// you could create transfers between 2 stop points of different contributors only.
+/// Stop points with coordinates at `(0, 0)` are considered invalid and are
+/// skipped (no transfer is generated to or from them).
 ///
-/// WARNING: if geolocation of either `StopPoint` is (0, 0), it's considered
-/// incorrect and transfer is not generated to or from this `StopPoint`.
+/// An optional [`NeedTransfer`] closure in the configuration allows adding
+/// custom filtering logic (e.g. only connect stop points from different stop areas).
+///
+/// Returns the model's [`Collections`] with the `transfers` field replaced by
+/// the full merged and sorted transfer list.
 ///
 /// # Example
 ///
-/// | from_stop_id | to_stop_id | transfer_time |                                                       |
-/// | ------------ | ---------- | ------------- | ----------------------------------------------------- |
-/// | SP1          | SP2        |               | no time is specified, this transfer will be removed   |
-/// | SP3          | SP2        | 120           | transfer added                                        |
-/// | UNKNOWN      | SP2        | 180           | stop `UNKNOWN` is not found, transfer will be ignored |
-/// | UNKNOWN      | SP2        |               | stop `UNKNOWN` is not found, transfer will be ignored |
+/// Given the following existing transfers and a `max_distance` of 500m:
+///
+/// | from_stop_id | to_stop_id | min_transfer_time |                                                         |
+/// | ------------ | ---------- | ----------------- | ------------------------------------------------------- |
+/// | SP1          | SP2        | 120               | existing transfer, preserved as-is                      |
+/// | SP3          | SP4        | (generated)       | missing transfer within range, generated from crow-fly  |
+/// | SP5          | SP6        | (skipped)         | distance exceeds `max_distance`, no transfer created    |
+/// | UNKNOWN      | SP2        | 180               | stop `UNKNOWN` not found, transfer ignored              |
 pub fn generates_transfers(
     model: Model,
-    max_distance: f64,
-    walking_speed: f64,
-    waiting_time: u32,
-    need_transfer: Option<NeedTransfer>,
-    waiting_time_by_modes: Option<WaitingTimesByModes>,
+    config: TransfersConfiguration,
+    report_opt: Option<&mut Report<TransferReportCategory>>,
 ) -> Result<Collections> {
     info!("Generating transfers...");
 
     let mut transfers_map = get_available_transfers(model.transfers.clone(), &model.stop_points);
-    let new_transfers_map = generate_missing_transfers_from_sp(
-        &transfers_map,
-        &model,
-        max_distance,
-        walking_speed,
-        waiting_time,
-        need_transfer,
-        waiting_time_by_modes,
-    );
+    let new_transfers_map =
+        generate_missing_transfers_from_sp(&transfers_map, &model, &config, report_opt);
 
     transfers_map.extend(new_transfers_map);
     let mut new_transfers: Vec<_> = transfers_map.into_values().collect();
@@ -535,7 +566,7 @@ pub fn generates_transfers(
 mod tests {
     use super::{
         generate_missing_transfers_from_sp, generates_transfers, get_available_transfers,
-        TransferMap, WaitingTimesByModes,
+        TransferMap, TransfersConfiguration, WaitingTimesByModes,
     };
     use crate::model::{BUS_PHYSICAL_MODE, RAPID_TRANSIT_PHYSICAL_MODE};
     use crate::{
@@ -601,15 +632,14 @@ mod tests {
     #[test]
     fn test_generate_missing_transfers_from_sp() {
         let model = base_model();
-        let new_transfers_map = generate_missing_transfers_from_sp(
-            &TransferMap::new(),
-            &model,
-            120.0,
-            0.7,
-            2,
-            None,
-            None,
-        );
+        let config = TransfersConfiguration {
+            max_distance: 120.0,
+            walking_speed: 0.7,
+            waiting_time: 2,
+            ..Default::default()
+        };
+        let new_transfers_map =
+            generate_missing_transfers_from_sp(&TransferMap::new(), &model, &config, None);
 
         let expected = {
             let mut map = TransferMap::new();
@@ -747,8 +777,13 @@ mod tests {
     #[test]
     fn test_generates_transfers() {
         let model = base_model();
-        let mut collections =
-            generates_transfers(model, 120.0, 0.7, 2, None, None).expect("an error occured");
+        let config = TransfersConfiguration {
+            max_distance: 120.0,
+            walking_speed: 0.7,
+            waiting_time: 2,
+            ..Default::default()
+        };
+        let mut collections = generates_transfers(model, config, None).expect("an error occured");
 
         let mut transfers = Collection::new(vec![
             Transfer {
@@ -863,7 +898,14 @@ mod tests {
             })
             .build();
 
-        let model = generates_transfers(model, 530.0, 1.0, 10, None, None).unwrap();
+        let config = TransfersConfiguration {
+            max_distance: 530.0,
+            walking_speed: 1.0,
+            waiting_time: 10,
+            ..Default::default()
+        };
+
+        let model = generates_transfers(model, config, None).unwrap();
 
         assert_eq!(model.transfers.len(), 16);
     }
@@ -925,15 +967,15 @@ mod tests {
         waiting_time_by_modes.insert((bus_idx, rapid_transit_idx), bus_to_rapid);
         waiting_time_by_modes.insert((rapid_transit_idx, bus_idx), rapid_to_bus);
 
-        let collections = generates_transfers(
-            model,
-            500.0,
-            0.785,
-            default_waiting_time,
-            None,
-            Some(waiting_time_by_modes),
-        )
-        .expect("an error occurred");
+        let config = TransfersConfiguration {
+            max_distance: 500.0,
+            walking_speed: 0.785,
+            waiting_time: default_waiting_time,
+            waiting_time_by_modes: Some(waiting_time_by_modes),
+            ..Default::default()
+        };
+
+        let collections = generates_transfers(model, config, None).expect("an error occurred");
 
         // Self-transfers for all stops + B<->C + B<->E + C<->E
         assert_eq!(collections.transfers.len(), 11);

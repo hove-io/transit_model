@@ -23,7 +23,10 @@ use tracing_subscriber::{
     layer::SubscriberExt as _,
     util::SubscriberInitExt as _,
 };
-use transit_model::{transfers::generates_transfers, Result};
+use transit_model::{
+    transfers::{generates_transfers, TransfersConfiguration},
+    Result,
+};
 
 lazy_static::lazy_static! {
     pub static ref GIT_VERSION: String = transit_model::binary_full_version(env!("CARGO_PKG_VERSION"));
@@ -52,18 +55,23 @@ struct Opt {
     )]
     current_datetime: DateTime<FixedOffset>,
 
-    /// The maximum distance in meters to compute the tranfer.
-    #[arg(long, short = 'd', default_value = transit_model::TRANSFER_MAX_DISTANCE)]
+    /// Maximum total walking distance in meters to consider generating a transfer.
+    /// This includes both open-air segments (crow-fly × manhattan_factor) and
+    /// indoor pathway segments (like entrances).
+    #[arg(long, short = 'd', default_value_t = transit_model::TRANSFER_MAX_DISTANCE)]
     max_distance: f64,
 
-    /// The walking speed in meters per second. You may want to divide your
-    /// initial speed by sqrt(2) to simulate Manhattan distances.
-    #[arg(long, short = 's', default_value = transit_model::TRANSFER_WALKING_SPEED)]
+    /// The walking speed in meters per second.
+    #[arg(long, short = 's', default_value_t = transit_model::TRANSFER_WALKING_SPEED)]
     walking_speed: f64,
 
     /// Waiting time at stop in seconds.
-    #[arg(long, short = 't', default_value = transit_model::TRANSFER_WAITING_TIME)]
+    #[arg(long, short = 't', default_value_t = transit_model::TRANSFER_WAITING_TIME)]
     waiting_time: u32,
+
+    /// Factor applied to the euclidean distance to compute the manhattan distance.
+    #[arg(long, default_value_t = transit_model::TRANSFER_MANHATTAN_FACTOR)]
+    manhattan_factor: f64,
 
     /// Don't compute transfers even the transfers of the stop point to itself (max_distance = 0.0)
     #[arg(long)]
@@ -96,14 +104,14 @@ fn run(opt: Opt) -> Result<()> {
     let model = if opt.ignore_transfers {
         model
     } else {
-        let collections = generates_transfers(
-            model,
-            opt.max_distance,
-            opt.walking_speed,
-            opt.waiting_time,
-            None,
-            None,
-        )?;
+        let config = TransfersConfiguration {
+            max_distance: opt.max_distance,
+            walking_speed: opt.walking_speed,
+            waiting_time: opt.waiting_time,
+            manhattan_factor: opt.manhattan_factor,
+            ..Default::default()
+        };
+        let collections = generates_transfers(model, config, None)?;
         transit_model::Model::new(collections)?
     };
 

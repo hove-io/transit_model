@@ -15,33 +15,33 @@
 //! Helpers to create a report for processes.
 
 use serde::Serialize;
+use std::collections::BTreeSet;
 
 /// Each report record will be categorized with a type implementing this
 /// `ReportCategory` trait.
-pub trait ReportCategory: Serialize + PartialEq {}
+pub trait ReportCategory: Serialize + Eq + Ord {}
 
 /// A report record.
-#[derive(Debug, Serialize, PartialEq)]
+#[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 struct ReportRow<R: ReportCategory> {
     category: R,
     message: String,
 }
 
-/// An report is a list of report records with 2 levels of recording: warnings
-/// and errors.
+/// A report is a list of report records with 3 levels of recording.
 #[derive(Debug, Serialize)]
 pub struct Report<R: ReportCategory> {
-    errors: Vec<ReportRow<R>>,
-    warnings: Vec<ReportRow<R>>,
-    infos: Vec<ReportRow<R>>,
+    errors: BTreeSet<ReportRow<R>>,
+    warnings: BTreeSet<ReportRow<R>>,
+    infos: BTreeSet<ReportRow<R>>,
 }
 
 impl<R: ReportCategory> Default for Report<R> {
     fn default() -> Self {
         Report {
-            errors: Vec::new(),
-            warnings: Vec::new(),
-            infos: Vec::new(),
+            errors: BTreeSet::new(),
+            warnings: BTreeSet::new(),
+            infos: BTreeSet::new(),
         }
     }
 }
@@ -49,42 +49,55 @@ impl<R: ReportCategory> Default for Report<R> {
 impl<R: ReportCategory> Report<R> {
     /// Add an error report record.
     pub fn add_error(&mut self, error: String, error_type: R) {
-        let report_row = ReportRow {
+        self.errors.insert(ReportRow {
             category: error_type,
             message: error,
-        };
-        if !self.errors.contains(&report_row) {
-            self.errors.push(report_row);
-        }
+        });
     }
     /// Add a warning report record.
     pub fn add_warning(&mut self, warning: String, warning_type: R) {
-        let report_row = ReportRow {
+        self.warnings.insert(ReportRow {
             category: warning_type,
             message: warning,
-        };
-        if !self.warnings.contains(&report_row) {
-            self.warnings.push(report_row);
-        }
+        });
     }
     /// Add an info report record.
     pub fn add_info(&mut self, info: String, info_type: R) {
-        let report_row = ReportRow {
+        self.infos.insert(ReportRow {
             category: info_type,
             message: info,
-        };
-        if !self.infos.contains(&report_row) {
-            self.infos.push(report_row);
-        }
+        });
     }
 }
+
+/// Report categories for transfer generation and modification.
+/// to classify warnings and errors encountered during transfer processing.
+#[derive(Debug, Serialize, Eq, PartialEq, Ord, PartialOrd)]
+pub enum TransferReportCategory {
+    // --- Warnings ---
+    /// A transfer was already declared.
+    AlreadyDeclared,
+    /// A transfer rule was ignored.
+    Ignored,
+    /// A transfer references an unreferenced stop.
+    OnUnreferencedStop,
+    /// A transfer references a non-existent stop.
+    OnNonExistentStop,
+
+    // --- Infos ---
+    /// A transfer was created.
+    Created,
+    /// A transfer was updated.
+    Updated,
+}
+impl ReportCategory for TransferReportCategory {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde::Serialize;
 
-    #[derive(Debug, Serialize, PartialEq, Clone)]
+    #[derive(Debug, Serialize, PartialEq, Eq, PartialOrd, Ord, Clone)]
     enum TestCategory {
         TypeA,
         TypeB,
@@ -98,8 +111,9 @@ mod tests {
         let mut report = Report::default();
         report.add_info("info message".to_string(), TestCategory::TypeA);
         assert_eq!(report.infos.len(), 1);
-        assert_eq!(report.infos[0].message, "info message");
-        assert_eq!(report.infos[0].category, TestCategory::TypeA);
+        let row = report.infos.iter().next().unwrap();
+        assert_eq!(row.message, "info message");
+        assert_eq!(row.category, TestCategory::TypeA);
     }
 
     #[test]
@@ -125,7 +139,8 @@ mod tests {
         let mut report = Report::default();
         report.add_warning("warning message".to_string(), TestCategory::TypeA);
         assert_eq!(report.warnings.len(), 1);
-        assert_eq!(report.warnings[0].message, "warning message");
+        let row = report.warnings.iter().next().unwrap();
+        assert_eq!(row.message, "warning message");
     }
 
     #[test]
@@ -143,7 +158,8 @@ mod tests {
         let mut report = Report::default();
         report.add_error("error message".to_string(), TestCategory::TypeA);
         assert_eq!(report.errors.len(), 1);
-        assert_eq!(report.errors[0].message, "error message");
+        let row = report.errors.iter().next().unwrap();
+        assert_eq!(row.message, "error message");
     }
 
     #[test]

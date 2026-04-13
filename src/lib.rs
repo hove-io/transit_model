@@ -87,14 +87,16 @@ pub(crate) const STOP_TIMES_INIT_CAPACITY: usize = 50;
 /// Current version of the NTFS format
 pub const NTFS_VERSION: &str = "0.20.0";
 
-/// The max distance in meters to compute the transfer
-pub const TRANSFER_MAX_DISTANCE: &str = "360";
+/// Maximum total walking distance in meters to consider generating a transfer.
+/// This includes both open-air segments (crow-fly × manhattan_factor) and
+/// indoor pathway segments (like entrances).
+pub const TRANSFER_MAX_DISTANCE: f64 = 360.0;
 
 /// The walking speed in meters per second
-pub const TRANSFER_WALKING_SPEED: &str = "0.942";
+pub const TRANSFER_WALKING_SPEED: f64 = 0.942;
 
 /// Waiting time at stop in second
-pub const TRANSFER_WAITING_TIME: &str = "120";
+pub const TRANSFER_WAITING_TIME: u32 = 120;
 
 /// Factor applied to crow-fly distance to approximate Manhattan (walking) distance
 pub const TRANSFER_MANHATTAN_FACTOR: f64 = 1.2;
