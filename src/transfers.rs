@@ -39,6 +39,40 @@ pub type NeedTransfer<'a> = Box<dyn 'a + Fn(&Model, Idx<StopPoint>, Idx<StopPoin
 /// Structure to determine the waiting time for a transfer between 2 physical modes.
 pub type WaitingTimesByModes = HashMap<(Idx<PhysicalMode>, Idx<PhysicalMode>), u32>;
 
+/// Identifies which of the 5 computation strategies was used by [`compute_transfer_time`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TransferCase {
+    /// Case 1: Both stop points belong to the same stop area — crow-fly only.
+    SameArea,
+    /// Case 2: Neither stop point has pathways — crow-fly only.
+    NoPathways,
+    /// Case 3: Only SP1 has exit pathway → SP1 → exit → crow-fly → SP2.
+    OnlySp1HasExitPathways,
+    /// Case 4: Only SP2 has entry pathway → SP1 → crow-fly → entry → SP2.
+    OnlySp2HasEntryPathways,
+    /// Case 5: Both stop points have pathways → SP1 → exit → crow-fly → entry → SP2.
+    /// Exit and entry can be similar (shared stop location) or different.
+    BothHavePathways,
+}
+
+impl std::fmt::Display for TransferCase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TransferCase::SameArea => write!(f, "case 1: same stop-area"),
+            TransferCase::NoPathways => write!(f, "case 2: different stop-areas, but no pathway"),
+            TransferCase::OnlySp1HasExitPathways => {
+                write!(f, "case 3: only from-stop has exit pathway")
+            }
+            TransferCase::OnlySp2HasEntryPathways => {
+                write!(f, "case 4: only to-stop has entry pathway")
+            }
+            TransferCase::BothHavePathways => {
+                write!(f, "case 5: from-stop and to-stop have pathways")
+            }
+        }
+    }
+}
+
 /// Configuration for transfer generation.
 pub struct TransfersConfiguration<'a> {
     /// Maximum total walking distance in meters to consider generating a transfer.
@@ -71,20 +105,17 @@ impl Default for TransfersConfiguration<'_> {
 }
 
 /// Build a map from existing transfers
+/// Transfers referencing an unknown stop point are silently ignored.
 pub fn get_available_transfers(
     transfers: Collection<Transfer>,
     sp: &CollectionWithId<StopPoint>,
 ) -> TransferMap {
     transfers
         .into_iter()
-        .map(|t| {
-            (
-                (
-                    sp.get_idx(&t.from_stop_id).unwrap(),
-                    sp.get_idx(&t.to_stop_id).unwrap(),
-                ),
-                t,
-            )
+        .filter_map(|t| {
+            let from_idx = sp.get_idx(&t.from_stop_id)?;
+            let to_idx = sp.get_idx(&t.to_stop_id)?;
+            Some(((from_idx, to_idx), t))
         })
         .collect()
 }
@@ -236,15 +267,20 @@ fn build_pathway_maps(
 /// Time uses actual pathway traversal times for pathway segments and
 /// adjusted crow-fly / walking_speed for open-air segments.
 ///
-/// Returns `(distance_in_meters, time_in_seconds)`.
-/// When pathways exist but no valid path is found within max_distance,
-/// returns `(f64::MAX, 0)` to signal that no transfer should be created.
+/// Returns `(distance_in_meters, time_in_seconds, transfer_case)` where:
+/// - `distance_in_meters` is the total walking distance of the best path found.
+/// - `time_in_seconds` is the estimated walking time along that path.
+/// - `transfer_case` identifies which of the 5 strategies was used (see [`TransferCase`]).
 ///
-/// The 4 cases handled:
-/// 1. Same stop_area or no pathways → crow-fly × factor (manhattan)
-/// 2. Both sides have pathways → fastest valid SP1→exit→(manhattan)→entry→SP2
-/// 3. Only SP1 has pathways → SP1→exit→(manhattan)→SP2
-/// 4. Only SP2 has pathways → SP1→(manhattan)→entry→SP2
+/// When pathways exist but no valid path is found within `max_distance`,
+/// returns `(f64::MAX, 0, transfer_case)` to signal that no transfer should be created.
+///
+/// The 5 cases handled:
+/// 1. Same stop_area → crow-fly × factor (manhattan)
+/// 2. No pathway on either side → crow-fly × factor (manhattan)
+/// 3. Only SP1 has exit pathway → SP1 =[pathway]=> exit --[crow-fly × factor]--> SP2
+/// 4. Only SP2 has entry pathway → SP1 --[crow-fly × factor]--> entry =[pathway]=> SP2
+/// 5. Both sides have pathways → SP1 =[pathway]=> exit --[crow-fly × factor]--> entry =[pathway]=> SP2
 fn compute_transfer_time(
     model: &Model,
     sp1: &StopPoint,
@@ -253,19 +289,28 @@ fn compute_transfer_time(
     sp2_entry_map: &HashMap<Idx<StopLocation>, (f64, f64)>,
     sp1_sp2_manhattan_distance: f64,
     config: &TransfersConfiguration,
-) -> (f64, u32) {
-    if sp1.stop_area_id == sp2.stop_area_id || (sp1_exit_map.is_empty() && sp2_entry_map.is_empty())
-    {
+) -> (f64, u32, TransferCase) {
+    if sp1.stop_area_id == sp2.stop_area_id {
         return (
             sp1_sp2_manhattan_distance,
             (sp1_sp2_manhattan_distance / config.walking_speed) as u32,
+            TransferCase::SameArea,
+        );
+    }
+    if sp1_exit_map.is_empty() && sp2_entry_map.is_empty() {
+        return (
+            sp1_sp2_manhattan_distance,
+            (sp1_sp2_manhattan_distance / config.walking_speed) as u32,
+            TransferCase::NoPathways,
         );
     }
 
     let mut min_distance = f64::MAX;
     let mut min_time = f64::MAX;
+    let case: TransferCase;
 
     if !sp1_exit_map.is_empty() && !sp2_entry_map.is_empty() {
+        case = TransferCase::BothHavePathways;
         // Try all (exit, entry) combinations with crow-fly × factor (manhattan) between them.
         // When exit == entry (shared stop-location), between distance is 0.
         for (&exit_sl_idx, &(exit_distance, exit_time)) in sp1_exit_map {
@@ -285,6 +330,7 @@ fn compute_transfer_time(
             }
         }
     } else if !sp1_exit_map.is_empty() {
+        case = TransferCase::OnlySp1HasExitPathways;
         // SP1 has exits, SP2 has no pathways: SP1 → exit → crow-fly × factor (manhattan) → SP2
         for (&exit_sl_idx, &(exit_distance, exit_time)) in sp1_exit_map {
             let exit_coord = &model.stop_locations[exit_sl_idx].coord;
@@ -300,6 +346,7 @@ fn compute_transfer_time(
             }
         }
     } else {
+        case = TransferCase::OnlySp2HasEntryPathways;
         // SP1 has no pathways, SP2 has entries: SP1 → crow-fly × factor (manhattan) → entry → SP2
         for (&entry_sl_idx, &(entry_distance, entry_time)) in sp2_entry_map {
             let entry_coord = &model.stop_locations[entry_sl_idx].coord;
@@ -317,10 +364,10 @@ fn compute_transfer_time(
     }
 
     if min_time < f64::MAX {
-        (min_distance, min_time as u32)
+        (min_distance, min_time as u32, case)
     } else {
         // Pathways exist but no valid path within max_distance: no transfer
-        (f64::MAX, 0)
+        (f64::MAX, 0, case)
     }
 }
 
@@ -344,7 +391,9 @@ pub fn generate_missing_transfers_from_sp(
     let report = report_opt.unwrap_or(&mut default_report);
 
     let mut new_transfers_map = TransferMap::new();
-    let sq_max_crow_fly_distance = (config.max_distance / config.manhattan_factor).powi(2);
+
+    let max_crow_fly_distance = config.max_distance / config.manhattan_factor;
+    let sq_max_crow_fly_distance = max_crow_fly_distance.powi(2);
 
     // Build R-tree for efficient spatial queries
     let stop_locations: Vec<StopPointLocation> = model
@@ -366,10 +415,11 @@ pub fn generate_missing_transfers_from_sp(
     let empty_pathway_map = HashMap::new();
 
     // Debug counters for transfer cases
-    let mut case1_count: u32 = 0; // Same stop_area or no pathways
-    let mut case2_count: u32 = 0; // Both sides have pathways
-    let mut case3_count: u32 = 0; // Only SP1 has pathways
-    let mut case4_count: u32 = 0; // Only SP2 has pathways
+    let mut case1_count: u32 = 0; // Same stop-area
+    let mut case2_count: u32 = 0; // No pathway on either side
+    let mut case3_count: u32 = 0; // Only SP1 (from-stop) has exit pathway
+    let mut case4_count: u32 = 0; // Only SP2 (to-stop) has entry pathway
+    let mut case5_count: u32 = 0; // Both sides have pathways
 
     // For each stop point, query nearby points from the R-tree
     for (idx1, sp1) in model.stop_points.iter() {
@@ -388,7 +438,6 @@ pub fn generate_missing_transfers_from_sp(
         // 1 degree latitude ≈ 111km everywhere
         // For longitude, it varies with latitude: 1 degree longitude ≈ 111km × cos(lat)
         // Use latitude conversion for the search box (more conservative)
-        let max_crow_fly_distance = config.max_distance / config.manhattan_factor;
         let search_distance_lat = max_crow_fly_distance / 111_000.0;
         // For longitude, use the pre-calculated approx (cos of latitude) to get the correct degree distance
         let search_distance_lon = max_crow_fly_distance / (111_000.0 * approx.cos_lat());
@@ -428,7 +477,7 @@ pub fn generate_missing_transfers_from_sp(
             let sp2 = &model.stop_points[idx2];
             let sp2_entry_map = sp_entry_maps.get(&idx2).unwrap_or(&empty_pathway_map);
 
-            let (transfer_manhattan_distance, transfer_time) = compute_transfer_time(
+            let (transfer_manhattan_distance, transfer_time, transfer_case) = compute_transfer_time(
                 model,
                 sp1,
                 sp2,
@@ -454,21 +503,18 @@ pub fn generate_missing_transfers_from_sp(
                 })
                 .unwrap_or(config.waiting_time);
 
-            // Track which case was used for this transfer
-            if sp1.stop_area_id == sp2.stop_area_id
-                || (sp1_exit_map.is_empty() && sp2_entry_map.is_empty())
-            {
-                case1_count += 1;
-            } else if !sp1_exit_map.is_empty() && !sp2_entry_map.is_empty() {
-                case2_count += 1;
-            } else if !sp1_exit_map.is_empty() {
-                case3_count += 1;
-            } else {
-                case4_count += 1;
+            match transfer_case {
+                TransferCase::SameArea => case1_count += 1,
+                TransferCase::NoPathways => case2_count += 1,
+                TransferCase::OnlySp1HasExitPathways => case3_count += 1,
+                TransferCase::OnlySp2HasEntryPathways => case4_count += 1,
+                TransferCase::BothHavePathways => case5_count += 1,
             }
-
             report.add_info(
-                format!("Created transfer from {} to {}", sp1.id, sp2.id),
+                format!(
+                    "Created transfer from stop '{}' to stop '{}' ({})",
+                    sp1.id, sp2.id, transfer_case
+                ),
                 TransferReportCategory::Created,
             );
 
@@ -487,16 +533,18 @@ pub fn generate_missing_transfers_from_sp(
 
     info!(
         "Generate missing-transfers completed in {:.2?}: {} transfers | \
-         Case 1 (same area/no pathways): {} | \
-         Case 2 (both have pathways): {} | \
-         Case 3 (only SP1 has exit pathways): {} | \
-         Case 4 (only SP2 has entry pathways): {}",
+         Case 1 (same stop-area): {} | \
+         Case 2 (≠ stop-area, but no pathway): {} | \
+         Case 3 (only SP1 has exit): {} | \
+         Case 4 (only SP2 has entry): {} | \
+         Case 5 (both have pathways): {}",
         bench_start.elapsed(),
         new_transfers_map.len(),
         case1_count,
         case2_count,
         case3_count,
         case4_count,
+        case5_count,
     );
 
     new_transfers_map
