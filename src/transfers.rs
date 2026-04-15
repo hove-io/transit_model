@@ -1332,4 +1332,433 @@ mod tests {
             assert!(entry_maps.is_empty());
         }
     }
+
+    mod compute_transfer_time_tests {
+        use super::super::{
+            build_pathway_maps, compute_transfer_time, TransferCase, TransfersConfiguration,
+        };
+        use crate::{
+            objects::{Coord, ObjectType, StopType},
+            ModelBuilder,
+        };
+        use std::collections::HashMap;
+
+        fn config() -> TransfersConfiguration<'static> {
+            TransfersConfiguration {
+                max_distance: 500.0,
+                walking_speed: 1.5,
+                manhattan_factor: 1.2,
+                ..Default::default()
+            }
+        }
+
+        /// Builds a base model with two stop areas, three stop points, and two stop locations.
+        ///
+        ///   SP_A(sa1) -51m- SP_A2(sa1) --110m-- SL_X(sa1) -66m- SL_Y(sa2) --124m-- SP_B(sa2)
+        ///   2.3800          2.3807                2.3822          2.3831              2.3848
+        fn base_model() -> ModelBuilder {
+            ModelBuilder::default()
+                .stop_area("sa1", |_| {})
+                .stop_area("sa2", |_| {})
+                .stop_point("SP_A", |sp| {
+                    sp.coord = Coord::from(("2.3800".to_string(), "48.8500".to_string()));
+                    sp.stop_area_id = "sa1".to_string();
+                })
+                .stop_point("SP_A2", |sp| {
+                    sp.coord = Coord::from(("2.3807".to_string(), "48.8500".to_string()));
+                    sp.stop_area_id = "sa1".to_string();
+                })
+                .stop_point("SP_B", |sp| {
+                    sp.coord = Coord::from(("2.3848".to_string(), "48.8500".to_string()));
+                    sp.stop_area_id = "sa2".to_string();
+                })
+                .stop_location("SL_X", |sl| {
+                    sl.coord = Coord::from(("2.3822".to_string(), "48.8500".to_string()));
+                    sl.parent_id = Some("sa1".to_string());
+                })
+                .stop_location("SL_Y", |sl| {
+                    sl.coord = Coord::from(("2.3831".to_string(), "48.8500".to_string()));
+                    sl.parent_id = Some("sa2".to_string());
+                })
+                .add_object_lock(&ObjectType::StopPoint, "SP_A2")
+                .vj("vj1", |vj| {
+                    vj.st("SP_A", "10:00:00").st("SP_B", "10:10:00");
+                })
+        }
+
+        // --- Case 1 ---
+        #[test]
+        fn case1_same_stop_area_returns_crow_fly() {
+            let model = base_model().build();
+            let sp_a = model.stop_points.get("SP_A").unwrap();
+            let sp_a2 = model.stop_points.get("SP_A2").unwrap();
+            // Pass 60.0m manhattan (SP_A→SP_A2 ≈51m crow-fly × 1.2 ≈ 61m, rounded for clarity)
+            let (dist, time, case) = compute_transfer_time(
+                &model,
+                sp_a,
+                sp_a2,
+                &HashMap::new(),
+                &HashMap::new(),
+                60.0,
+                &config(),
+            );
+            assert_eq!(case, TransferCase::SameArea);
+            assert_eq!(dist, 60.0);
+            assert_eq!(time, 40); // 60m / 1.5 m/s
+        }
+
+        // --- Case 2 ---
+        #[test]
+        fn case2_no_pathways_returns_crow_fly() {
+            let model = base_model().build();
+            let sp_a = model.stop_points.get("SP_A").unwrap();
+            let sp_b = model.stop_points.get("SP_B").unwrap();
+            // Pass 420.0m manhattan (SP_A→SP_B ≈351m crow-fly × 1.2 ≈ 421m, rounded for clarity)
+            let (dist, time, case) = compute_transfer_time(
+                &model,
+                sp_a,
+                sp_b,
+                &HashMap::new(),
+                &HashMap::new(),
+                420.0,
+                &config(),
+            );
+            assert_eq!(case, TransferCase::NoPathways);
+            assert_eq!(dist, 420.0);
+            assert_eq!(time, 280); // 420m / 1.5 m/s
+        }
+
+        // --- Case 3 ---
+        #[test]
+        fn case3_only_sp1_has_exit_pathway() {
+            // SP_A =[50m, 40s]=> SL_X --[crow-fly × 1.2]--> SP_B
+            let model = base_model()
+                .pathway(
+                    "SP_A",
+                    StopType::Point,
+                    "SL_X",
+                    StopType::StopEntrance,
+                    50,
+                    40,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .build();
+
+            let (sp_exit_maps, _) =
+                build_pathway_maps(&model, config().walking_speed, config().max_distance);
+
+            let idx_a = model.stop_points.get_idx("SP_A").unwrap();
+            let sp_a_exit_map = sp_exit_maps.get(&idx_a).unwrap();
+            let sp_a = model.stop_points.get("SP_A").unwrap();
+            let sp_b = model.stop_points.get("SP_B").unwrap();
+
+            let (dist, time, case) = compute_transfer_time(
+                &model,
+                sp_a,
+                sp_b,
+                sp_a_exit_map,
+                &HashMap::new(),
+                1000.0,
+                &config(),
+            );
+            assert_eq!(case, TransferCase::OnlySp1HasExitPathways);
+            // SP_A =[pathway: 50m, 40s]=> SL_X --[crow-fly × 1.2]--> SP_B
+            // dist:  50m (pathway)  + ≈ 190m × 1.2 ≈ 228m (crow-fly)  = ~278m total
+            // time:  40s (pathway)  +  228m / 1.5 m/s                 ≈ 192s total
+            assert_eq!(dist.round(), 278.0);
+            assert_eq!(time, 192);
+        }
+
+        #[test]
+        fn case3_all_exits_exceed_max_distance_returns_no_transfer() {
+            let model = base_model()
+                .pathway(
+                    "SP_A",
+                    StopType::Point,
+                    "SL_X",
+                    StopType::StopEntrance,
+                    300,
+                    270,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .build();
+
+            let (sp_exit_maps, _) =
+                build_pathway_maps(&model, config().walking_speed, config().max_distance);
+            let idx_a = model.stop_points.get_idx("SP_A").unwrap();
+            let sp_a_exit_map = sp_exit_maps.get(&idx_a).unwrap();
+            let sp_a = model.stop_points.get("SP_A").unwrap();
+            let sp_b = model.stop_points.get("SP_B").unwrap();
+
+            let (dist, time, case) = compute_transfer_time(
+                &model,
+                sp_a,
+                sp_b,
+                sp_a_exit_map,
+                &HashMap::new(),
+                1000.0,
+                &config(),
+            );
+            // SP_A =[pathway: 300m, 270s]=> SL_X --[crow-fly × 1.2]--> SP_B
+            // dist:  300m (pathway) + ≈190m (crow-fly) × 1.2 = 228m  = ~528m total
+            //        → exceeds max_distance (500m), so no valid path → (f64::MAX, 0)
+            assert_eq!(case, TransferCase::OnlySp1HasExitPathways);
+            assert_eq!(dist, f64::MAX);
+            assert_eq!(time, 0);
+        }
+
+        // --- Case 4 ---
+        #[test]
+        fn case4_only_sp2_has_entry_pathway() {
+            // SP_A --[crow-fly × 1.2]--> SL_Y =[50m, 40s]=> SP_B
+            let model = base_model()
+                .pathway(
+                    "SL_Y",
+                    StopType::StopEntrance,
+                    "SP_B",
+                    StopType::Point,
+                    50,
+                    40,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .build();
+
+            let (_, sp_entry_maps) =
+                build_pathway_maps(&model, config().walking_speed, config().max_distance);
+            let idx_b = model.stop_points.get_idx("SP_B").unwrap();
+            let sp_b_entry_map = sp_entry_maps.get(&idx_b).unwrap();
+            let sp_a = model.stop_points.get("SP_A").unwrap();
+            let sp_b = model.stop_points.get("SP_B").unwrap();
+
+            let (dist, time, case) = compute_transfer_time(
+                &model,
+                sp_a,
+                sp_b,
+                &HashMap::new(),
+                sp_b_entry_map,
+                1000.0,
+                &config(),
+            );
+            assert_eq!(case, TransferCase::OnlySp2HasEntryPathways);
+            // SP_A --[crow-fly × 1.2]--> SL_Y =[pathway: 50m, 40s]=> SP_B
+            // dist: 227m (crow-fly) × 1.2 ≈ 272m + 50m (pathway) = ~322m total
+            // time:  272m / 1.5 m/s +  40s (pathway)  ≈ 221s total
+            assert_eq!(dist.round(), 322.0);
+            assert_eq!(time, 221);
+        }
+
+        // --- Case 5 ---
+        #[test]
+        fn case5_both_have_pathways() {
+            // SP_A =[pathway: 30m, 25s]=> SL_X --[crow-fly × 1.2]--> SL_Y =[pathway: 70m, 55s]=> SP_B
+            let model = base_model()
+                .pathway(
+                    "SP_A",
+                    StopType::Point,
+                    "SL_X",
+                    StopType::StopEntrance,
+                    30,
+                    25,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .pathway(
+                    "SL_Y",
+                    StopType::StopEntrance,
+                    "SP_B",
+                    StopType::Point,
+                    70,
+                    55,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .build();
+
+            let idx_a = model.stop_points.get_idx("SP_A").unwrap();
+            let idx_b = model.stop_points.get_idx("SP_B").unwrap();
+            let (sp_exit_maps, sp_entry_maps) =
+                build_pathway_maps(&model, config().walking_speed, config().max_distance);
+            let sp_a_exit_map = sp_exit_maps.get(&idx_a).unwrap();
+            let sp_b_entry_map = sp_entry_maps.get(&idx_b).unwrap();
+            let sp_a = model.stop_points.get("SP_A").unwrap();
+            let sp_b = model.stop_points.get("SP_B").unwrap();
+
+            let (dist, time, case) = compute_transfer_time(
+                &model,
+                sp_a,
+                sp_b,
+                sp_a_exit_map,
+                sp_b_entry_map,
+                1000.0,
+                &config(),
+            );
+            assert_eq!(case, TransferCase::BothHavePathways);
+            // SP_A =[pathway: 30m, 25s]=> SL_X --[crow-fly × 1.2]--> SL_Y =[pathway: 70m, 55s]=> SP_B
+            // dist: 30m (pathway) + ~66m (crow-fly) × 1.2 ≈ 79m + 70m (pathway) = ~179m total
+            // time: 25s (pathway) + 79m / 1.5 m/s ≈ 52s + 55s (pathway) ≈ 133s total
+            assert_eq!(dist.round(), 179.0);
+            assert_eq!(time, 132);
+        }
+
+        #[test]
+        fn case5_all_paths_exceed_max_distance_returns_no_transfer() {
+            // SP_A =[pathway: 200m, 150s]=> SL_X --[~66m (crow-fly) × 1.2 ≈ 79m]--> SL_Y =[pathway: 250m, 190s]=> SP_B
+            // dist:  200m (pathway)  +  ~79m (crow-fly)  +  250m (pathway)  = ~529m total
+            //        → exceeds max_distance (500m), so no valid path → (f64::MAX, 0)
+            let model = base_model()
+                .pathway(
+                    "SP_A",
+                    StopType::Point,
+                    "SL_X",
+                    StopType::StopEntrance,
+                    200,
+                    150,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .pathway(
+                    "SL_Y",
+                    StopType::StopEntrance,
+                    "SP_B",
+                    StopType::Point,
+                    250,
+                    190,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .build();
+
+            let idx_a = model.stop_points.get_idx("SP_A").unwrap();
+            let idx_b = model.stop_points.get_idx("SP_B").unwrap();
+            let (sp_exit_maps, sp_entry_maps) =
+                build_pathway_maps(&model, config().walking_speed, config().max_distance);
+            let sp_a_exit_map = sp_exit_maps.get(&idx_a).unwrap();
+            let sp_b_entry_map = sp_entry_maps.get(&idx_b).unwrap();
+            let sp_a = model.stop_points.get("SP_A").unwrap();
+            let sp_b = model.stop_points.get("SP_B").unwrap();
+
+            let (dist, time, case) = compute_transfer_time(
+                &model,
+                sp_a,
+                sp_b,
+                sp_a_exit_map,
+                sp_b_entry_map,
+                999.0,
+                &config(),
+            );
+            assert_eq!(case, TransferCase::BothHavePathways);
+            assert_eq!(dist, f64::MAX);
+            assert_eq!(time, 0);
+        }
+
+        #[test]
+        fn case5_selects_fastest_full_chain_matrix() {
+            // Geographic layout (same latitude, crow-fly distances):
+            //
+            //   SP_A          SL_X(exit1)         SL_X2(exit2) SL_Y2(ent2) SL_Y(ent1)          SP_B
+            //    |───────────────|───────────────────|───────────|───────────|──────────────────|
+            //        ~161m              ~51m               ~7m        ~7m           ~124m
+            //  2.3800          2.3822              2.3829       2.3830      2.3831            2.3848
+            //
+            // Pathways:
+            //   SP_A =[160m/110s]=> SL_X     SP_A =[210m/145s]=> SL_X2
+            //   SL_Y =[120m/ 85s]=> SP_B     SL_Y2=[150m/120s]=> SP_B
+            //
+            // Matrix (exit_time + crow-fly × 1.2 / 1.5 m/s + entry_time):
+            //
+            //                   ┃ SL_Y  (entry 85s)               ┃ SL_Y2 (entry 120s)              ┃
+            //  ━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+            //  SL_X  (exit 110s)┃ 110 + ~66m×1.2/1.5 + 85  = ~248s┃ 110 + ~58m×1.2/1.5 + 120 = ~277s┃
+            //  SL_X2 (exit 145s)┃ 145 + ~15m×1.2/1.5 + 85  = ~241s┃ 145 + ~ 7m×1.2/1.5 + 120 = ~271s┃
+            //
+            // SL_X2→SL_Y wins (~242s): SP_A's longer exit pathway to SL_X2 (145s vs 110s to SL_X)
+            // is compensated by a much shorter crow-fly to SL_Y (~15m vs ~66m from SL_X)
+            let model = base_model()
+                .stop_location("SL_X2", |sl| {
+                    sl.coord = Coord::from(("2.3829".to_string(), "48.8500".to_string()));
+                    sl.parent_id = Some("sa1".to_string());
+                })
+                .stop_location("SL_Y2", |sl| {
+                    sl.coord = Coord::from(("2.3830".to_string(), "48.8500".to_string()));
+                    sl.parent_id = Some("sa2".to_string());
+                })
+                .pathway(
+                    "SP_A",
+                    StopType::Point,
+                    "SL_X",
+                    StopType::StopEntrance,
+                    160,
+                    110,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .pathway(
+                    "SP_A",
+                    StopType::Point,
+                    "SL_X2",
+                    StopType::StopEntrance,
+                    210,
+                    145,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .pathway(
+                    "SL_Y",
+                    StopType::StopEntrance,
+                    "SP_B",
+                    StopType::Point,
+                    120,
+                    85,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .pathway(
+                    "SL_Y2",
+                    StopType::StopEntrance,
+                    "SP_B",
+                    StopType::Point,
+                    150,
+                    120,
+                    |pw| {
+                        pw.is_bidirectional = false;
+                    },
+                )
+                .build();
+
+            let idx_a = model.stop_points.get_idx("SP_A").unwrap();
+            let idx_b = model.stop_points.get_idx("SP_B").unwrap();
+            let (sp_exit_maps, sp_entry_maps) =
+                build_pathway_maps(&model, config().walking_speed, config().max_distance);
+            let sp_a_exit_map = sp_exit_maps.get(&idx_a).unwrap();
+            let sp_b_entry_map = sp_entry_maps.get(&idx_b).unwrap();
+            let sp_a = model.stop_points.get("SP_A").unwrap();
+            let sp_b = model.stop_points.get("SP_B").unwrap();
+
+            let (dist, time, case) = compute_transfer_time(
+                &model,
+                sp_a,
+                sp_b,
+                sp_a_exit_map,
+                sp_b_entry_map,
+                999.0,
+                &config(),
+            );
+            assert_eq!(case, TransferCase::BothHavePathways);
+            assert_eq!(dist.round(), 348.0);
+            assert_eq!(time, 241); // SL_X2→SL_Y, not SL_X→SL_Y despite SL_X having the shorter exit pathway
+        }
+    }
 }
