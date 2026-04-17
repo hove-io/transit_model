@@ -28,7 +28,13 @@ fn test_generates_transfers() {
     test_in_tmp_dir(|path| {
         let input_dir = "tests/fixtures/transfers/mono_contributor/input";
         let model = transit_model::ntfs::read(input_dir).unwrap();
-        let model = transfers::generates_transfers(model, 100.0, 0.785, 120, None, None).unwrap();
+        let config = transfers::TransfersConfiguration {
+            max_distance: 100.0,
+            walking_speed: 0.785,
+            waiting_time: 120,
+            ..Default::default()
+        };
+        let model = transfers::generates_transfers(model, config, None).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             path,
@@ -43,7 +49,13 @@ fn test_generates_all_multi_contributors_transfers() {
     test_in_tmp_dir(|path| {
         let input_dir = "tests/fixtures/transfers/multi_contributors/input";
         let model = transit_model::ntfs::read(input_dir).unwrap();
-        let model = transfers::generates_transfers(model, 100.0, 0.785, 120, None, None).unwrap();
+        let config = transfers::TransfersConfiguration {
+            max_distance: 100.0,
+            walking_speed: 0.785,
+            waiting_time: 120,
+            ..Default::default()
+        };
+        let model = transfers::generates_transfers(model, config, None).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             path,
@@ -79,15 +91,14 @@ fn test_generates_transfers_with_closure_inter_contributors() {
 
         let input_dir = "tests/fixtures/transfers/multi_contributors/input";
         let model = transit_model::ntfs::read(input_dir).unwrap();
-        let model = transfers::generates_transfers(
-            model,
-            100.0,
-            0.785,
-            120,
-            Some(inter_contrib_tranfers),
-            None,
-        )
-        .unwrap();
+        let config = transfers::TransfersConfiguration {
+            max_distance: 100.0,
+            walking_speed: 0.785,
+            waiting_time: 120,
+            need_transfer: Some(inter_contrib_tranfers),
+            ..Default::default()
+        };
+        let model = transfers::generates_transfers(model, config, None).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             path,
