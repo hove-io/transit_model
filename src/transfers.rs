@@ -177,14 +177,16 @@ fn insert_min_pathway(
     distance: f64,
     time: f64,
 ) {
-    let stop_location_map = maps.entry(stop_point_idx).or_default();
-    let (current_distance, current_time) = stop_location_map
+    maps.entry(stop_point_idx)
+        .or_default()
         .entry(stop_location_idx)
-        .or_insert((f64::MAX, f64::MAX));
-    if distance < *current_distance {
-        *current_distance = distance;
-        *current_time = time;
-    }
+        .and_modify(|(current_distance, current_time)| {
+            if distance < *current_distance {
+                *current_distance = distance;
+                *current_time = time;
+            }
+        })
+        .or_insert((distance, time));
 }
 
 /// Pre-computes, for every stop-point that has pathways, the minimum pathway
@@ -202,57 +204,36 @@ fn build_pathway_maps(
     let mut entry_maps = PathwayMap::new();
 
     for pathway in model.pathways.values() {
-        let (distance, time) = match pathway_distance_and_time(pathway, walking_speed) {
-            Some((distance, _)) if distance > max_distance => continue,
-            Some((distance, time)) => (distance, time),
-            None => continue,
+        let Some((distance, time)) =
+            pathway_distance_and_time(pathway, walking_speed).filter(|&(d, _)| d <= max_distance)
+        else {
+            continue;
         };
 
-        // Case: from=SP, to=SL
-        if let Some(stop_point_idx) = model.stop_points.get_idx(&pathway.from_stop_id) {
-            if let Some(stop_location_idx) = model.stop_locations.get_idx(&pathway.to_stop_id) {
-                // SP → SL = exit
-                insert_min_pathway(
-                    &mut exit_maps,
-                    stop_point_idx,
-                    stop_location_idx,
-                    distance,
-                    time,
-                );
-                if pathway.is_bidirectional {
-                    // SP ← SL = entry
-                    insert_min_pathway(
-                        &mut entry_maps,
-                        stop_point_idx,
-                        stop_location_idx,
-                        distance,
-                        time,
-                    );
-                }
-            }
+        // Build the list of directions to process.
+        // A unidirectional pathway only goes from → to.
+        // A bidirectional pathway also applies in the reverse direction (to → from).
+        let mut directions = vec![(&pathway.from_stop_id, &pathway.to_stop_id)];
+
+        if pathway.is_bidirectional {
+            directions.push((&pathway.to_stop_id, &pathway.from_stop_id));
         }
 
-        // Case: from=SL, to=SP
-        if let Some(stop_point_idx) = model.stop_points.get_idx(&pathway.to_stop_id) {
-            if let Some(stop_location_idx) = model.stop_locations.get_idx(&pathway.from_stop_id) {
-                // SL → SP = entry
-                insert_min_pathway(
-                    &mut entry_maps,
-                    stop_point_idx,
-                    stop_location_idx,
-                    distance,
-                    time,
-                );
-                if pathway.is_bidirectional {
-                    // SL ← SP = exit
-                    insert_min_pathway(
-                        &mut exit_maps,
-                        stop_point_idx,
-                        stop_location_idx,
-                        distance,
-                        time,
-                    );
-                }
+        for (from_id, to_id) in directions {
+            let sp_from = model.stop_points.get_idx(from_id);
+            let sl_to = model.stop_locations.get_idx(to_id);
+
+            let sl_from = model.stop_locations.get_idx(from_id);
+            let sp_to = model.stop_points.get_idx(to_id);
+
+            // SP → SL : the traveller exits the stop point through a stop location (exit).
+            if let (Some(sp_idx), Some(sl_idx)) = (sp_from, sl_to) {
+                insert_min_pathway(&mut exit_maps, sp_idx, sl_idx, distance, time);
+            }
+
+            // SL → SP : the traveller enters the stop point through a stop location (entry).
+            if let (Some(sl_idx), Some(sp_idx)) = (sl_from, sp_to) {
+                insert_min_pathway(&mut entry_maps, sp_idx, sl_idx, distance, time);
             }
         }
     }
@@ -260,27 +241,33 @@ fn build_pathway_maps(
     (exit_maps, entry_maps)
 }
 
-/// Computes the transfer distance (meters) and time (seconds) between two stop points.
+/// Computes the estimated transfer time (seconds) between two stop points.
 ///
-/// Among all paths whose total distance ≤ max_distance, selects the fastest one.
-/// Crow-fly distances are converted to approximate Manhattan distances.
-/// Time uses actual pathway traversal times for pathway segments and
-/// adjusted crow-fly / walking_speed for open-air segments.
+/// Among all possible paths where the total distance is ≤ `max_distance`,
+/// this function selects the fastest one. Crow-fly distances are converted
+/// to approximate Manhattan distances using a configured factor.
 ///
-/// Returns `(distance_in_meters, time_in_seconds, transfer_case)` where:
-/// - `distance_in_meters` is the total walking distance of the best path found.
-/// - `time_in_seconds` is the estimated walking time along that path.
-/// - `transfer_case` identifies which of the 5 strategies was used (see [`TransferCase`]).
+/// The time calculation combines actual traversal times for pathway segments
+/// and estimated walking time (based on `walking_speed`) for open-air segments.
 ///
-/// When pathways exist but no valid path is found within `max_distance`,
-/// returns `(f64::MAX, 0, transfer_case)` to signal that no transfer should be created.
+/// # Returns
+/// Returns `Some((time_in_seconds, transfer_case))` if a valid path is found within
+/// the `max_distance` threshold. Otherwise, returns `None`.
 ///
-/// The 5 cases handled:
-/// 1. Same stop_area → crow-fly × factor (manhattan)
-/// 2. No pathway on either side → crow-fly × factor (manhattan)
-/// 3. Only SP1 has exit pathway → SP1 =[pathway]=> exit --[crow-fly × factor]--> SP2
-/// 4. Only SP2 has entry pathway → SP1 --[crow-fly × factor]--> entry =[pathway]=> SP2
-/// 5. Both sides have pathways → SP1 =[pathway]=> exit --[crow-fly × factor]--> entry =[pathway]=> SP2
+/// The distance is intentionally **not** part of the return value: the `max_distance`
+/// filtering is handled internally — `None` signals that no valid path exists.
+/// The caller therefore has no use for the distance; only the time is needed to build
+/// the [`Transfer`] object.
+///
+/// - `time_in_seconds`: Total estimated walking time along the best path.
+/// - `transfer_case`: Identifies which strategy was used (see [`TransferCase`]).
+///
+/// # The 5 handled cases:
+/// 1. Same `stop_area` -> Direct Manhattan distance between SP1 and SP2.
+/// 2. No pathways on either side -> Direct Manhattan distance between SP1 and SP2.
+/// 3. Exit pathways for SP1 only -> SP1 =[pathway]=> Exit --[Manhattan]--> SP2.
+/// 4. Entry pathways for SP2 only -> SP1 --[Manhattan]--> Entry =[pathway]=> SP2.
+/// 5. Pathways on both sides -> SP1 =[pathway]=> Exit --[Manhattan]--> Entry =[pathway]=> SP2.
 fn compute_transfer_time(
     model: &Model,
     sp1: &StopPoint,
@@ -289,88 +276,66 @@ fn compute_transfer_time(
     sp2_entry_map: &HashMap<Idx<StopLocation>, (f64, f64)>,
     sp1_sp2_manhattan_distance: f64,
     config: &TransfersConfiguration,
-) -> (f64, u32, TransferCase) {
+) -> Option<(u32, TransferCase)> {
     if sp1.stop_area_id == sp2.stop_area_id {
-        return (
-            sp1_sp2_manhattan_distance,
+        return Some((
             (sp1_sp2_manhattan_distance / config.walking_speed) as u32,
             TransferCase::SameArea,
-        );
+        ));
     }
+
     if sp1_exit_map.is_empty() && sp2_entry_map.is_empty() {
-        return (
-            sp1_sp2_manhattan_distance,
+        return Some((
             (sp1_sp2_manhattan_distance / config.walking_speed) as u32,
             TransferCase::NoPathways,
-        );
+        ));
     }
 
-    let mut min_distance = f64::MAX;
-    let mut min_time = f64::MAX;
-    let case: TransferCase;
+    let case = match (!sp1_exit_map.is_empty(), !sp2_entry_map.is_empty()) {
+        (true, true) => TransferCase::BothHavePathways,
+        (true, false) => TransferCase::OnlySp1HasExitPathways,
+        _ => TransferCase::OnlySp2HasEntryPathways,
+    };
 
-    if !sp1_exit_map.is_empty() && !sp2_entry_map.is_empty() {
-        case = TransferCase::BothHavePathways;
-        // Try all (exit, entry) combinations with crow-fly × factor (manhattan) between them.
-        // When exit == entry (shared stop-location), between distance is 0.
-        for (&exit_sl_idx, &(exit_distance, exit_time)) in sp1_exit_map {
-            let exit_coord = &model.stop_locations[exit_sl_idx].coord;
-            for (&entry_sl_idx, &(entry_distance, entry_time)) in sp2_entry_map {
-                let entry_coord = &model.stop_locations[entry_sl_idx].coord;
-                let between_dist = exit_coord.distance_to(entry_coord) * config.manhattan_factor;
-                let total_dist = exit_distance + between_dist + entry_distance;
-                if total_dist > config.max_distance {
-                    continue;
-                }
-                let total_time = exit_time + (between_dist / config.walking_speed) + entry_time;
-                if total_time < min_time {
-                    min_time = total_time;
-                    min_distance = total_dist;
-                }
-            }
-        }
-    } else if !sp1_exit_map.is_empty() {
-        case = TransferCase::OnlySp1HasExitPathways;
-        // SP1 has exits, SP2 has no pathways: SP1 → exit → crow-fly × factor (manhattan) → SP2
-        for (&exit_sl_idx, &(exit_distance, exit_time)) in sp1_exit_map {
-            let exit_coord = &model.stop_locations[exit_sl_idx].coord;
-            let between_dist = exit_coord.distance_to(&sp2.coord) * config.manhattan_factor;
-            let total_dist = exit_distance + between_dist;
+    let exits: Vec<(&Coord, f64, f64)> = if sp1_exit_map.is_empty() {
+        vec![(&sp1.coord, 0.0, 0.0)]
+    } else {
+        sp1_exit_map
+            .iter()
+            .map(|(idx, &(d, t))| (&model.stop_locations[*idx].coord, d, t))
+            .collect()
+    };
+
+    let entries: Vec<(&Coord, f64, f64)> = if sp2_entry_map.is_empty() {
+        vec![(&sp2.coord, 0.0, 0.0)]
+    } else {
+        sp2_entry_map
+            .iter()
+            .map(|(idx, &(d, t))| (&model.stop_locations[*idx].coord, d, t))
+            .collect()
+    };
+
+    let mut best: Option<f64> = None;
+
+    for &(exit_coord, exit_dist, exit_time) in &exits {
+        for &(entry_coord, entry_dist, entry_time) in &entries {
+            let between_dist = exit_coord.distance_to(entry_coord) * config.manhattan_factor;
+            let total_dist = exit_dist + between_dist + entry_dist;
+
             if total_dist > config.max_distance {
                 continue;
             }
-            let total_time = exit_time + (between_dist / config.walking_speed);
-            if total_time < min_time {
-                min_time = total_time;
-                min_distance = total_dist;
-            }
-        }
-    } else {
-        case = TransferCase::OnlySp2HasEntryPathways;
-        // SP1 has no pathways, SP2 has entries: SP1 → crow-fly × factor (manhattan) → entry → SP2
-        for (&entry_sl_idx, &(entry_distance, entry_time)) in sp2_entry_map {
-            let entry_coord = &model.stop_locations[entry_sl_idx].coord;
-            let between_dist = sp1.coord.distance_to(entry_coord) * config.manhattan_factor;
-            let total_dist = between_dist + entry_distance;
-            if total_dist > config.max_distance {
-                continue;
-            }
-            let total_time = (between_dist / config.walking_speed) + entry_time;
-            if total_time < min_time {
-                min_time = total_time;
-                min_distance = total_dist;
+
+            let total_time = exit_time + (between_dist / config.walking_speed) + entry_time;
+
+            if best.is_none_or(|min_t| total_time < min_t) {
+                best = Some(total_time);
             }
         }
     }
 
-    if min_time < f64::MAX {
-        (min_distance, min_time as u32, case)
-    } else {
-        // Pathways exist but no valid path within max_distance: no transfer
-        (f64::MAX, 0, case)
-    }
+    best.map(|t| (t as u32, case))
 }
-
 /// Generate missing transfers from stop points within the required distance
 ///
 /// This function uses an R-tree spatial index for efficient proximity queries.
@@ -477,7 +442,7 @@ pub fn generate_missing_transfers_from_sp(
             let sp2 = &model.stop_points[idx2];
             let sp2_entry_map = sp_entry_maps.get(&idx2).unwrap_or(&empty_pathway_map);
 
-            let (transfer_manhattan_distance, transfer_time, transfer_case) = compute_transfer_time(
+            let Some((transfer_time, transfer_case)) = compute_transfer_time(
                 model,
                 sp1,
                 sp2,
@@ -485,11 +450,9 @@ pub fn generate_missing_transfers_from_sp(
                 sp2_entry_map,
                 sp1_sp2_manhattan_distance,
                 config,
-            );
-
-            if transfer_manhattan_distance > config.max_distance {
+            ) else {
                 continue;
-            }
+            };
 
             // Use the specific waiting time for this pair of physical modes, or fall back to the default waiting time if not found
             let specific_waiting_time = sp1_mode_idx
@@ -1393,7 +1356,7 @@ mod tests {
             let sp_a = model.stop_points.get("SP_A").unwrap();
             let sp_a2 = model.stop_points.get("SP_A2").unwrap();
             // Pass 60.0m manhattan (SP_A→SP_A2 ≈51m crow-fly × 1.2 ≈ 61m, rounded for clarity)
-            let (dist, time, case) = compute_transfer_time(
+            let (time, case) = compute_transfer_time(
                 &model,
                 sp_a,
                 sp_a2,
@@ -1401,9 +1364,9 @@ mod tests {
                 &HashMap::new(),
                 60.0,
                 &config(),
-            );
+            )
+            .unwrap();
             assert_eq!(case, TransferCase::SameArea);
-            assert_eq!(dist, 60.0);
             assert_eq!(time, 40); // 60m / 1.5 m/s
         }
 
@@ -1414,7 +1377,7 @@ mod tests {
             let sp_a = model.stop_points.get("SP_A").unwrap();
             let sp_b = model.stop_points.get("SP_B").unwrap();
             // Pass 420.0m manhattan (SP_A→SP_B ≈351m crow-fly × 1.2 ≈ 421m, rounded for clarity)
-            let (dist, time, case) = compute_transfer_time(
+            let (time, case) = compute_transfer_time(
                 &model,
                 sp_a,
                 sp_b,
@@ -1422,9 +1385,9 @@ mod tests {
                 &HashMap::new(),
                 420.0,
                 &config(),
-            );
+            )
+            .unwrap();
             assert_eq!(case, TransferCase::NoPathways);
-            assert_eq!(dist, 420.0);
             assert_eq!(time, 280); // 420m / 1.5 m/s
         }
 
@@ -1454,7 +1417,7 @@ mod tests {
             let sp_a = model.stop_points.get("SP_A").unwrap();
             let sp_b = model.stop_points.get("SP_B").unwrap();
 
-            let (dist, time, case) = compute_transfer_time(
+            let (time, case) = compute_transfer_time(
                 &model,
                 sp_a,
                 sp_b,
@@ -1462,12 +1425,11 @@ mod tests {
                 &HashMap::new(),
                 1000.0,
                 &config(),
-            );
+            )
+            .unwrap();
             assert_eq!(case, TransferCase::OnlySp1HasExitPathways);
             // SP_A =[pathway: 50m, 40s]=> SL_X --[crow-fly × 1.2]--> SP_B
-            // dist:  50m (pathway)  + ≈ 190m × 1.2 ≈ 228m (crow-fly)  = ~278m total
             // time:  40s (pathway)  +  228m / 1.5 m/s                 ≈ 192s total
-            assert_eq!(dist.round(), 278.0);
             assert_eq!(time, 192);
         }
 
@@ -1494,7 +1456,7 @@ mod tests {
             let sp_a = model.stop_points.get("SP_A").unwrap();
             let sp_b = model.stop_points.get("SP_B").unwrap();
 
-            let (dist, time, case) = compute_transfer_time(
+            let result = compute_transfer_time(
                 &model,
                 sp_a,
                 sp_b,
@@ -1505,10 +1467,8 @@ mod tests {
             );
             // SP_A =[pathway: 300m, 270s]=> SL_X --[crow-fly × 1.2]--> SP_B
             // dist:  300m (pathway) + ≈190m (crow-fly) × 1.2 = 228m  = ~528m total
-            //        → exceeds max_distance (500m), so no valid path → (f64::MAX, 0)
-            assert_eq!(case, TransferCase::OnlySp1HasExitPathways);
-            assert_eq!(dist, f64::MAX);
-            assert_eq!(time, 0);
+            //        → exceeds max_distance (500m), so no valid path → None
+            assert!(result.is_none());
         }
 
         // --- Case 4 ---
@@ -1536,7 +1496,7 @@ mod tests {
             let sp_a = model.stop_points.get("SP_A").unwrap();
             let sp_b = model.stop_points.get("SP_B").unwrap();
 
-            let (dist, time, case) = compute_transfer_time(
+            let (time, case) = compute_transfer_time(
                 &model,
                 sp_a,
                 sp_b,
@@ -1544,12 +1504,11 @@ mod tests {
                 sp_b_entry_map,
                 1000.0,
                 &config(),
-            );
+            )
+            .unwrap();
             assert_eq!(case, TransferCase::OnlySp2HasEntryPathways);
             // SP_A --[crow-fly × 1.2]--> SL_Y =[pathway: 50m, 40s]=> SP_B
-            // dist: 227m (crow-fly) × 1.2 ≈ 272m + 50m (pathway) = ~322m total
             // time:  272m / 1.5 m/s +  40s (pathway)  ≈ 221s total
-            assert_eq!(dist.round(), 322.0);
             assert_eq!(time, 221);
         }
 
@@ -1591,7 +1550,7 @@ mod tests {
             let sp_a = model.stop_points.get("SP_A").unwrap();
             let sp_b = model.stop_points.get("SP_B").unwrap();
 
-            let (dist, time, case) = compute_transfer_time(
+            let (time, case) = compute_transfer_time(
                 &model,
                 sp_a,
                 sp_b,
@@ -1599,12 +1558,11 @@ mod tests {
                 sp_b_entry_map,
                 1000.0,
                 &config(),
-            );
+            )
+            .unwrap();
             assert_eq!(case, TransferCase::BothHavePathways);
             // SP_A =[pathway: 30m, 25s]=> SL_X --[crow-fly × 1.2]--> SL_Y =[pathway: 70m, 55s]=> SP_B
-            // dist: 30m (pathway) + ~66m (crow-fly) × 1.2 ≈ 79m + 70m (pathway) = ~179m total
             // time: 25s (pathway) + 79m / 1.5 m/s ≈ 52s + 55s (pathway) ≈ 133s total
-            assert_eq!(dist.round(), 179.0);
             assert_eq!(time, 132);
         }
 
@@ -1647,7 +1605,7 @@ mod tests {
             let sp_a = model.stop_points.get("SP_A").unwrap();
             let sp_b = model.stop_points.get("SP_B").unwrap();
 
-            let (dist, time, case) = compute_transfer_time(
+            let result = compute_transfer_time(
                 &model,
                 sp_a,
                 sp_b,
@@ -1656,9 +1614,8 @@ mod tests {
                 999.0,
                 &config(),
             );
-            assert_eq!(case, TransferCase::BothHavePathways);
-            assert_eq!(dist, f64::MAX);
-            assert_eq!(time, 0);
+            // → exceeds max_distance (500m), so no valid path → None
+            assert!(result.is_none());
         }
 
         #[test]
@@ -1747,7 +1704,7 @@ mod tests {
             let sp_a = model.stop_points.get("SP_A").unwrap();
             let sp_b = model.stop_points.get("SP_B").unwrap();
 
-            let (dist, time, case) = compute_transfer_time(
+            let (time, case) = compute_transfer_time(
                 &model,
                 sp_a,
                 sp_b,
@@ -1755,9 +1712,9 @@ mod tests {
                 sp_b_entry_map,
                 999.0,
                 &config(),
-            );
+            )
+            .unwrap();
             assert_eq!(case, TransferCase::BothHavePathways);
-            assert_eq!(dist.round(), 348.0);
             assert_eq!(time, 241); // SL_X2→SL_Y, not SL_X→SL_Y despite SL_X having the shorter exit pathway
         }
     }
