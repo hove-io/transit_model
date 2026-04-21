@@ -2250,10 +2250,7 @@ mod tests {
                 .unwrap();
             let route_idx = collections.routes.get_idx("route_id").unwrap();
             collections.routes.index_mut(route_idx).name = String::from("Route to Mordor");
-            // destination_id references a stop_point rather than a stop_area: it must be
-            // replaced by the computed destination stop_area.
-            collections.routes.index_mut(route_idx).destination_id =
-                Some(String::from("stop_point:2"));
+            collections.routes.index_mut(route_idx).destination_id = None;
             let routes_to_vehicle_journeys = OneToMany::new(
                 &collections.routes,
                 &collections.vehicle_journeys,
@@ -2294,6 +2291,11 @@ mod tests {
                     &collections,
                 ))
                 .unwrap();
+            // destination_id references an unknown stop_area: it must be replaced
+            // by the computed destination stop_area.
+            let route_idx = collections.routes.get_idx("route_id").unwrap();
+            collections.routes.index_mut(route_idx).destination_id =
+                Some(String::from("stop_area:unknown"));
             let routes_to_vehicle_journeys = OneToMany::new(
                 &collections.routes,
                 &collections.vehicle_journeys,
