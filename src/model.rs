@@ -1262,7 +1262,7 @@ impl Collections {
             let no_destination_id = route
                 .destination_id
                 .as_ref()
-                .is_none_or(|destination_id| !is_valid_destination_id(&destination_id));
+                .is_none_or(|destination_id| !is_valid_destination_id(destination_id));
             if no_route_name || no_destination_id {
                 let (origin, destination) = skip_error_and_warn!(find_best_origin_destination(
                     route_idx,
