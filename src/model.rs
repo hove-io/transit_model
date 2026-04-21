@@ -1256,9 +1256,13 @@ impl Collections {
 
         let mut route_names: BTreeMap<Idx<Route>, String> = BTreeMap::new();
         let mut route_destination_ids: BTreeMap<Idx<Route>, Option<String>> = BTreeMap::new();
+        let is_valid_destination_id = |destination_id| self.stop_areas.contains_id(destination_id);
         for (route_idx, route) in &self.routes {
             let no_route_name = route.name.is_empty();
-            let no_destination_id = route.destination_id.is_none();
+            let no_destination_id = route
+                .destination_id
+                .as_ref()
+                .is_none_or(|destination_id| !is_valid_destination_id(destination_id));
             if no_route_name || no_destination_id {
                 let (origin, destination) = skip_error_and_warn!(find_best_origin_destination(
                     route_idx,
@@ -2287,6 +2291,11 @@ mod tests {
                     &collections,
                 ))
                 .unwrap();
+            // destination_id references an unknown stop_area: it must be replaced
+            // by the computed destination stop_area.
+            let route_idx = collections.routes.get_idx("route_id").unwrap();
+            collections.routes.index_mut(route_idx).destination_id =
+                Some(String::from("stop_area:unknown"));
             let routes_to_vehicle_journeys = OneToMany::new(
                 &collections.routes,
                 &collections.vehicle_journeys,
