@@ -680,6 +680,7 @@ impl ModelBuilder {
             }
         }
 
+        self.collections.enhance().unwrap();
         Model::new(self.collections).unwrap()
     }
 }

@@ -15,18 +15,21 @@
 //! [GTFS](https://gtfs.org/reference/static) format management.
 
 mod read;
+#[cfg(feature = "model")]
 mod write;
 
 use crate::{
     calendars::{manage_calendars, write_calendar_dates},
     file_handler::{FileHandler, PathFileHandler, ZipHandler},
-    model::{Collections, Model},
+    model::Collections,
     objects::{self, Availability, Contributor, Dataset, Network, StopType, Time},
     parser::read_opt_collection,
     serde_utils::*,
     utils::*,
     validity_period, AddPrefix, PrefixConfiguration, Result,
 };
+#[cfg(feature = "model")]
+use crate::model::Model;
 use anyhow::{anyhow, Context};
 use chrono_tz::Tz;
 use derivative::Derivative;
@@ -428,11 +431,13 @@ struct LocationGroupStop {
     stop_id: String,
 }
 
+#[cfg(feature = "model")]
 fn read_file_handler<H>(file_handler: &mut H, configuration: Configuration) -> Result<Model>
 where
     for<'a> &'a mut H: FileHandler,
 {
-    let collections = read_file_handler_to_collections(file_handler, configuration)?;
+    let mut collections = read_file_handler_to_collections(file_handler, configuration)?;
+    collections.enhance()?;
     Model::new(collections)
 }
 
@@ -518,12 +523,14 @@ where
 /// files in the `path` directory.
 ///
 /// The `Configuration` is used to control various parameters during the import.
+#[cfg(feature = "model")]
 pub fn from_dir<P: AsRef<Path>>(p: P) -> Result<Model> {
     Reader::default().parse_dir(p)
 }
 
 /// Imports a `Model` from a zip file containing the
 /// [GTFS](https://gtfs.org/reference/static).
+#[cfg(feature = "model")]
 pub fn from_zip<P: AsRef<Path>>(p: P) -> Result<Model> {
     Reader::default().parse_zip(p)
 }
@@ -543,6 +550,7 @@ pub fn from_zip<P: AsRef<Path>>(p: P) -> Result<Model> {
 /// ```
 ///
 /// The `source_name` is needed to have nicer error messages.
+#[cfg(feature = "model")]
 pub fn from_zip_reader<R>(reader: R, source_name: &str) -> Result<Model>
 where
     R: std::io::Seek + std::io::Read,
@@ -556,6 +564,7 @@ where
 /// This method will try to detect if the input is a zipped archive or not.
 /// If the default file type mechanism is not enough, you can use
 /// [from_zip] or [from_dir].
+#[cfg(feature = "model")]
 pub fn read<P: AsRef<Path>>(p: P) -> Result<Model> {
     Reader::default().parse(p)
 }
@@ -578,6 +587,7 @@ impl Reader {
     /// This method will try to detect if the input is a zipped archive or not.
     /// If the default file type mechanism is not enough, you can use
     /// [Reader::parse_zip] or [Reader::parse_dir].
+    #[cfg(feature = "model")]
     pub fn parse(self, path: impl AsRef<Path>) -> Result<Model> {
         let p = path.as_ref();
         if p.is_file() {
@@ -621,15 +631,19 @@ impl Reader {
 
     /// Imports a `Model` from a zip file containing the
     /// [GTFS](https://gtfs.org/reference/static).
+    #[cfg(feature = "model")]
     pub fn parse_zip(self, path: impl AsRef<Path>) -> Result<Model> {
-        let collections = self.parse_zip_collections(path)?;
+        let mut collections = self.parse_zip_collections(path)?;
+        collections.enhance()?;
         Model::new(collections)
     }
 
     /// Imports a `Model` from the [GTFS](https://gtfs.org/reference/static)
     /// files in the `path` directory.
+    #[cfg(feature = "model")]
     pub fn parse_dir(self, path: impl AsRef<Path>) -> Result<Model> {
-        let collections = self.parse_dir_collections(path)?;
+        let mut collections = self.parse_dir_collections(path)?;
+        collections.enhance()?;
         Model::new(collections)
     }
 
@@ -663,6 +677,7 @@ impl Reader {
     /// ```
     ///
     /// The `source_name` is needed to have nicer error messages.
+    #[cfg(feature = "model")]
     pub fn parse_zip_reader<R>(self, reader: R, source_name: &str) -> Result<Model>
     where
         R: std::io::Seek + std::io::Read,
@@ -820,6 +835,7 @@ where
 /// Exports a `Model` to [GTFS](https://gtfs.org/reference/static) files
 /// in the given directory.
 /// see [NTFS to GTFS conversion](https://github.com/hove-io/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
+#[cfg(feature = "model")]
 pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> Result<()> {
     let path = path.as_ref();
     std::fs::create_dir_all(path)?;
@@ -852,6 +868,7 @@ pub fn write<P: AsRef<Path>>(model: Model, path: P, extend_route_type: bool) -> 
 /// Exports a `Model` to [GTFS](https://gtfs.org/reference/static) files
 /// in the given ZIP archive.
 /// see [NTFS to GTFS conversion](https://github.com/hove-io/transit_model/blob/master/src/documentation/ntfs2gtfs.md)
+#[cfg(feature = "model")]
 pub fn write_to_zip<P: AsRef<std::path::Path>>(
     model: Model,
     path: P,

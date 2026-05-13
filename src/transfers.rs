@@ -15,13 +15,15 @@
 //! See function generates_transfers
 
 use crate::{
-    model::{Collections, Model},
+    model::Collections,
     objects::{Coord, Pathway, PhysicalMode, StopLocation, StopPoint, Transfer},
     physical_modes_utils::build_stop_point_physical_mode_map,
     report::{Report, TransferReportCategory},
     Result, TRANSFER_MANHATTAN_FACTOR, TRANSFER_MAX_DISTANCE, TRANSFER_WAITING_TIME,
     TRANSFER_WALKING_SPEED,
 };
+#[cfg(feature = "model")]
+use crate::model::Model;
 use rstar::{RTree, RTreeObject, AABB};
 use rust_decimal::prelude::ToPrimitive;
 use std::collections::HashMap;
@@ -34,6 +36,9 @@ pub type TransferMap = HashMap<(Idx<StopPoint>, Idx<StopPoint>), Transfer>;
 
 /// The closure that will determine whether a connection should be created between 2 stops.
 /// See [generates_transfers](./fn.generates_transfers.html).
+///
+/// Requires the `model` feature.
+#[cfg(feature = "model")]
 pub type NeedTransfer<'a> = Box<dyn 'a + Fn(&Model, Idx<StopPoint>, Idx<StopPoint>) -> bool>;
 
 /// Structure to determine the waiting time for a transfer between 2 physical modes.
@@ -74,6 +79,9 @@ impl std::fmt::Display for TransferCase {
 }
 
 /// Configuration for transfer generation.
+///
+/// Requires the `model` feature.
+#[cfg(feature = "model")]
 pub struct TransfersConfiguration<'a> {
     /// Maximum total walking distance in meters to consider generating a transfer.
     /// This includes both open-air segments (crow-fly × manhattan_factor) and
@@ -91,6 +99,7 @@ pub struct TransfersConfiguration<'a> {
     pub waiting_time_by_modes: Option<WaitingTimesByModes>,
 }
 
+#[cfg(feature = "model")]
 impl Default for TransfersConfiguration<'_> {
     fn default() -> Self {
         Self {
@@ -196,14 +205,14 @@ fn insert_min_pathway(
 /// Returns `(exit_maps, entry_maps)` where each is indexed by `Idx<StopPoint>`
 /// and contains a `HashMap<Idx<StopLocation>, (f64, f64)>` of best (distance, time) pairs.
 fn build_pathway_maps(
-    model: &Model,
+    collections: &Collections,
     walking_speed: f64,
     max_distance: f64,
 ) -> (PathwayMap, PathwayMap) {
     let mut exit_maps = PathwayMap::new();
     let mut entry_maps = PathwayMap::new();
 
-    for pathway in model.pathways.values() {
+    for pathway in collections.pathways.values() {
         let Some((distance, time)) =
             pathway_distance_and_time(pathway, walking_speed).filter(|&(d, _)| d <= max_distance)
         else {
@@ -220,11 +229,11 @@ fn build_pathway_maps(
         }
 
         for (from_id, to_id) in directions {
-            let sp_from = model.stop_points.get_idx(from_id);
-            let sl_to = model.stop_locations.get_idx(to_id);
+            let sp_from = collections.stop_points.get_idx(from_id);
+            let sl_to = collections.stop_locations.get_idx(to_id);
 
-            let sl_from = model.stop_locations.get_idx(from_id);
-            let sp_to = model.stop_points.get_idx(to_id);
+            let sl_from = collections.stop_locations.get_idx(from_id);
+            let sp_to = collections.stop_points.get_idx(to_id);
 
             // SP → SL : the traveller exits the stop point through a stop location (exit).
             if let (Some(sp_idx), Some(sl_idx)) = (sp_from, sl_to) {
@@ -268,8 +277,9 @@ fn build_pathway_maps(
 /// 3. Exit pathways for SP1 only -> SP1 =[pathway]=> Exit --[Manhattan]--> SP2.
 /// 4. Entry pathways for SP2 only -> SP1 --[Manhattan]--> Entry =[pathway]=> SP2.
 /// 5. Pathways on both sides -> SP1 =[pathway]=> Exit --[Manhattan]--> Entry =[pathway]=> SP2.
+#[cfg(feature = "model")]
 fn compute_transfer_time(
-    model: &Model,
+    collections: &Collections,
     sp1: &StopPoint,
     sp2: &StopPoint,
     sp1_exit_map: &HashMap<Idx<StopLocation>, (f64, f64)>,
@@ -302,7 +312,7 @@ fn compute_transfer_time(
     } else {
         sp1_exit_map
             .iter()
-            .map(|(idx, &(d, t))| (&model.stop_locations[*idx].coord, d, t))
+            .map(|(idx, &(d, t))| (&collections.stop_locations[*idx].coord, d, t))
             .collect()
     };
 
@@ -311,7 +321,7 @@ fn compute_transfer_time(
     } else {
         sp2_entry_map
             .iter()
-            .map(|(idx, &(d, t))| (&model.stop_locations[*idx].coord, d, t))
+            .map(|(idx, &(d, t))| (&collections.stop_locations[*idx].coord, d, t))
             .collect()
     };
 
@@ -343,6 +353,9 @@ fn compute_transfer_time(
 ///
 /// Complexity: O(n × log n) for building the tree + O(n × k × log n) for queries
 /// where k is the average number of nearby points within max_distance
+///
+/// Requires the `model` feature.
+#[cfg(feature = "model")]
 pub fn generate_missing_transfers_from_sp(
     transfers_map: &TransferMap,
     model: &Model,
@@ -376,7 +389,7 @@ pub fn generate_missing_transfers_from_sp(
         .then(|| build_stop_point_physical_mode_map(model));
 
     let (sp_exit_maps, sp_entry_maps) =
-        build_pathway_maps(model, config.walking_speed, config.max_distance);
+        build_pathway_maps(&**model, config.walking_speed, config.max_distance);
     let empty_pathway_map = HashMap::new();
 
     // Debug counters for transfer cases
@@ -443,7 +456,7 @@ pub fn generate_missing_transfers_from_sp(
             let sp2_entry_map = sp_entry_maps.get(&idx2).unwrap_or(&empty_pathway_map);
 
             let Some((transfer_time, transfer_case)) = compute_transfer_time(
-                model,
+                &**model,
                 sp1,
                 sp2,
                 sp1_exit_map,
@@ -550,6 +563,7 @@ pub fn generate_missing_transfers_from_sp(
 /// | SP3          | SP4        | (generated)       | missing transfer within range, generated from crow-fly  |
 /// | SP5          | SP6        | (skipped)         | distance exceeds `max_distance`, no transfer created    |
 /// | UNKNOWN      | SP2        | 180               | stop `UNKNOWN` not found, transfer ignored              |
+#[cfg(feature = "model")]
 pub fn generates_transfers(
     model: Model,
     config: TransfersConfiguration,
@@ -573,7 +587,7 @@ pub fn generates_transfers(
     Ok(collections)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "model"))]
 mod tests {
     use super::{
         generate_missing_transfers_from_sp, generates_transfers, get_available_transfers,

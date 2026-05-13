@@ -2,25 +2,25 @@ use crate::{
     model::Collections,
     objects::{Line, Route},
 };
-use relational_types::Relation;
 use std::collections::BTreeSet;
 use typed_index_collection::Idx;
 
 /// If a line name is empty, it's set with the name of its first "forward" route (in alphabetical order)
 /// Note: possible improvement of this functionality; factoring, pooling and using
 /// the same algorithm as for route names enhancing (with traffic analysis)
-pub fn adjust_lines_names(
-    collections: &mut Collections,
-    lines_to_routes: &impl Relation<From = Line, To = Route>,
-) {
+pub fn adjust_lines_names(collections: &mut Collections) {
     let mut line_names: Vec<(Idx<Line>, String)> = Vec::new();
     for (line_idx, _) in collections
         .lines
         .iter()
         .filter(|(_, l)| l.name.trim().is_empty())
     {
-        let routes_idx =
-            lines_to_routes.get_corresponding_forward(&std::iter::once(line_idx).collect());
+        let routes_idx: BTreeSet<Idx<Route>> = collections
+            .routes
+            .iter()
+            .filter(|(_, r)| collections.lines.get_idx(&r.line_id) == Some(line_idx))
+            .map(|(idx, _)| idx)
+            .collect();
         let route_name = routes_idx
             .iter()
             .map(|route_idx| &collections.routes[*route_idx])
@@ -44,7 +44,6 @@ pub fn adjust_lines_names(
 mod test {
     use super::*;
     use pretty_assertions::assert_eq;
-    use relational_types::OneToMany;
 
     #[test]
     fn empty_line_with_non_empty_route() {
@@ -68,10 +67,7 @@ mod test {
             })
             .unwrap();
 
-        let lines_to_routes =
-            OneToMany::new(&collections.lines, &collections.routes, "lines_to_routes").unwrap();
-
-        adjust_lines_names(&mut collections, &lines_to_routes);
+        adjust_lines_names(&mut collections);
         let line1 = collections.lines.get("line_id1").unwrap();
         assert_eq!("my route id1", line1.name);
     }
@@ -98,10 +94,7 @@ mod test {
             })
             .unwrap();
 
-        let lines_to_routes =
-            OneToMany::new(&collections.lines, &collections.routes, "lines_to_routes").unwrap();
-
-        adjust_lines_names(&mut collections, &lines_to_routes);
+        adjust_lines_names(&mut collections);
         let line1 = collections.lines.get("line_id1").unwrap();
         assert_eq!("my line id1", line1.name);
     }
@@ -128,10 +121,7 @@ mod test {
             })
             .unwrap();
 
-        let lines_to_routes =
-            OneToMany::new(&collections.lines, &collections.routes, "lines_to_routes").unwrap();
-
-        adjust_lines_names(&mut collections, &lines_to_routes);
+        adjust_lines_names(&mut collections);
         let line1 = collections.lines.get("line_id1").unwrap();
         assert_eq!("", line1.name);
     }
@@ -160,10 +150,7 @@ mod test {
             })
             .unwrap();
 
-        let lines_to_routes =
-            OneToMany::new(&collections.lines, &collections.routes, "lines_to_routes").unwrap();
-
-        adjust_lines_names(&mut collections, &lines_to_routes);
+        adjust_lines_names(&mut collections);
         let line1 = collections.lines.get("line_id1").unwrap();
         assert_eq!("my route id1", line1.name);
         assert_eq!("A", line1.forward_name.as_ref().unwrap());
@@ -202,10 +189,7 @@ mod test {
             })
             .unwrap();
 
-        let lines_to_routes =
-            OneToMany::new(&collections.lines, &collections.routes, "lines_to_routes").unwrap();
-
-        adjust_lines_names(&mut collections, &lines_to_routes);
+        adjust_lines_names(&mut collections);
         let line1 = collections.lines.get("line_id1").unwrap();
         assert_eq!("my route id A", line1.name);
     }

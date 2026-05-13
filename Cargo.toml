@@ -32,10 +32,12 @@ members = [
 ]
 
 [features]
+default = ["model"]
+model = []
 xmllint = ["proj"]
 gtfs = []
 parser = []
-proj = ["dep:proj", "dep:quick-xml", "dep:rayon"]
+proj = ["dep:proj", "dep:quick-xml", "dep:rayon", "model"]
 
 [dependencies]
 anyhow = "1"

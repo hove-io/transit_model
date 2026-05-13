@@ -61,6 +61,7 @@ pub(crate) mod file_handler;
 pub mod file_handler;
 pub mod gtfs;
 pub mod model;
+#[cfg(feature = "model")]
 pub mod model_builder;
 #[cfg(feature = "proj")]
 pub mod netex_france;
@@ -112,7 +113,9 @@ pub type Error = anyhow::Error;
 /// The corresponding result type used by the crate.
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
-pub use crate::model::Model;
-pub use crate::model_builder::ModelBuilder;
-
 pub use crate::version_utils::{binary_full_version, GIT_VERSION};
+
+#[cfg(feature = "model")]
+pub use crate::model::Model;
+#[cfg(feature = "model")]
+pub use crate::model_builder::ModelBuilder;

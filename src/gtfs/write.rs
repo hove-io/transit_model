@@ -17,7 +17,7 @@ use super::{
     TicketingDeepLinks, Transfer, Trip,
 };
 use crate::gtfs::{Attribution, ExtendedRoute, StopTime};
-use crate::model::{GetCorresponding, Model};
+use crate::model::{Collections, GetCorresponding, Model};
 use crate::objects;
 use crate::objects::Transfer as NtfsTransfer;
 use crate::objects::*;
@@ -1255,7 +1255,10 @@ mod tests {
             wheelchair_accessible: Availability::Available,
             bikes_allowed: Availability::NotAvailable,
         };
-        let model = Model::new(collections).unwrap();
+        let model = {
+            collections.enhance().unwrap();
+            Model::new(collections).unwrap()
+        };
         assert_eq!(expected, make_gtfs_trip_from_ntfs_vj(&vj, &model));
 
         expected.route_id = "OIF:002002002:BDEOIF829:Coach".to_string();

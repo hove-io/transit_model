@@ -16,7 +16,7 @@
 
 use crate::{
     model::{
-        Model, AIR_PHYSICAL_MODE, BOAT_PHYSICAL_MODE, BUS_PHYSICAL_MODE,
+        Collections, AIR_PHYSICAL_MODE, BOAT_PHYSICAL_MODE, BUS_PHYSICAL_MODE,
         BUS_RAPID_TRANSIT_PHYSICAL_MODE, COACH_PHYSICAL_MODE, FERRY_PHYSICAL_MODE,
         FUNICULAR_PHYSICAL_MODE, LOCAL_TRAIN_PHYSICAL_MODE, LONG_DISTANCE_TRAIN_PHYSICAL_MODE,
         METRO_PHYSICAL_MODE, RAIL_SHUTTLE_PHYSICAL_MODE, RAPID_TRANSIT_PHYSICAL_MODE,
@@ -62,24 +62,27 @@ pub fn get_physical_mode_order(physical_mode: &PhysicalMode) -> u8 {
 /// In practice these are often similar modes with the same hierarchy level (e.g. Train, LocalTrain, RapidTransit).
 /// Stop points with no associated vehicle journey are absent from the returned map.
 pub fn build_stop_point_physical_mode_map(
-    model: &Model,
+    collections: &Collections,
 ) -> HashMap<Idx<StopPoint>, Idx<PhysicalMode>> {
-    model
-        .stop_points
-        .iter()
-        .filter_map(|(stop_point_idx, _)| {
-            let physical_mode_idx = model
-                .get_corresponding_from_idx::<StopPoint, PhysicalMode>(stop_point_idx)
-                .into_iter()
-                .min_by_key(|&physical_mode_idx| {
-                    get_physical_mode_order(&model.physical_modes[physical_mode_idx])
-                })?;
-            Some((stop_point_idx, physical_mode_idx))
-        })
-        .collect()
+    let mut result: HashMap<Idx<StopPoint>, Idx<PhysicalMode>> = HashMap::new();
+    for (_, vj) in &collections.vehicle_journeys {
+        let Some(pm_idx) = collections.physical_modes.get_idx(&vj.physical_mode_id) else {
+            continue;
+        };
+        for st in &vj.stop_times {
+            let sp_idx = st.stop_point_idx;
+            let entry = result.entry(sp_idx).or_insert(pm_idx);
+            if get_physical_mode_order(&collections.physical_modes[pm_idx])
+                < get_physical_mode_order(&collections.physical_modes[*entry])
+            {
+                *entry = pm_idx;
+            }
+        }
+    }
+    result
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "model"))]
 mod tests {
     use super::build_stop_point_physical_mode_map;
     use crate::physical_modes_utils::{

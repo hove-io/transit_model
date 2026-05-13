@@ -20,6 +20,7 @@ use chrono::NaiveDate;
 use derivative::Derivative;
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
+#[cfg(feature = "model")]
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_warn;
@@ -713,7 +714,7 @@ impl Collections {
         const HOURS_PER_DAY: u8 = 24;
         const SECONDS_PER_DAY: u32 = 86400;
 
-        fn get_vjs_by_line(c: &Collections) -> HashMap<String, IdxSet<VehicleJourney>> {
+        fn get_vjs_by_line(c: &Collections) -> HashMap<String, BTreeSet<Idx<VehicleJourney>>> {
             c.vehicle_journeys
                 .iter()
                 .filter_map(|(vj_idx, vj)| {
@@ -1128,18 +1129,15 @@ impl Collections {
     ///
     /// `route.destination_id` is also replaced with the destination stop area
     /// found with the above rules.
-    pub fn enhance_route_names(
-        &mut self,
-        routes_to_vehicle_journeys: &impl Relation<From = Route, To = VehicleJourney>,
-    ) {
+    pub fn enhance_route_names(&mut self) {
         fn find_best_origin_destination<'a>(
             route_idx: Idx<Route>,
             collections: &'a Collections,
-            routes_to_vehicle_journeys: &impl Relation<From = Route, To = VehicleJourney>,
         ) -> Result<(&'a StopArea, &'a StopArea)> {
+            use std::collections::BTreeSet;
             fn select_stop_areas<F>(
                 collections: &Collections,
-                vehicle_journey_idxs: &IdxSet<VehicleJourney>,
+                vehicle_journey_idxs: &BTreeSet<Idx<VehicleJourney>>,
                 select_stop_point_in_vj: F,
             ) -> Vec<Idx<StopArea>>
             where
@@ -1224,7 +1222,7 @@ impl Collections {
             }
             fn find_best_stop_area_for<'a, F>(
                 collections: &'a Collections,
-                vehicle_journey_idxs: &IdxSet<VehicleJourney>,
+                vehicle_journey_idxs: &std::collections::BTreeSet<Idx<VehicleJourney>>,
                 select_stop_point_in_vj: F,
             ) -> Option<&'a StopArea>
             where
@@ -1238,8 +1236,15 @@ impl Collections {
                     find_biggest_stop_areas(most_frequent_stop_areas, collections);
                 find_first_by_alphabetical_order(biggest_stop_areas)
             }
-            let vehicle_journey_idxs = routes_to_vehicle_journeys
-                .get_corresponding_forward(&std::iter::once(route_idx).collect());
+            let vehicle_journey_idxs: std::collections::BTreeSet<Idx<VehicleJourney>> =
+                collections
+                    .vehicle_journeys
+                    .iter()
+                    .filter(|(_, vj)| {
+                        collections.routes.get_idx(&vj.route_id) == Some(route_idx)
+                    })
+                    .map(|(idx, _)| idx)
+                    .collect();
 
             let origin_stop_area =
                 find_best_stop_area_for(collections, &vehicle_journey_idxs, |vj| {
@@ -1275,7 +1280,6 @@ impl Collections {
                 let (origin, destination) = skip_error_and_warn!(find_best_origin_destination(
                     route_idx,
                     self,
-                    routes_to_vehicle_journeys,
                 ));
                 if no_route_name
                     && !origin.name.trim().is_empty()
@@ -1562,9 +1566,44 @@ impl Collections {
         let frequencies = self.frequencies.take();
         self.convert_frequencies_to_stoptimes(frequencies)
     }
+
+    /// Run all post-processing and enrichment steps on the collections.
+    ///
+    /// This performs validation, deduplication, sanitization and enrichment
+    /// (route names, line names, stop area coordinates, CO2 values, etc.).
+    ///
+    /// This must be called before building a [`Model`] to get fully enriched
+    /// data, but can also be used independently when only [`Collections`] are
+    /// needed without constructing a [`Model`].
+    pub fn enhance(&mut self) -> Result<()> {
+        enhancers::check_stop_times_order(self);
+        self.comment_deduplication();
+        self.clean_comments();
+        self.sanitize()?;
+        self.update_stop_area_coords();
+        enhancers::fill_co2(self);
+        self.enhance_trip_headsign();
+        self.enhance_route_names();
+        self.enhance_route_directions();
+        self.check_geometries_coherence();
+        enhancers::adjust_lines_names(self);
+        self.enhance_line_opening_time();
+        self.pickup_drop_off_harmonisation();
+        enhancers::enhance_pickup_dropoff(self);
+        enhancers::memory_shrink(self);
+        Ok(())
+    }
 }
 
 /// The navitia transit model.
+///
+/// Wraps a [`Collections`] and pre-computes relation indexes between all
+/// object types so that [`get_corresponding`] queries are fast.
+///
+/// Requires the `model` feature (enabled by default).  Without it, work
+/// directly with [`Collections`] and call [`Collections::enhance`] for
+/// post-processing.
+#[cfg(feature = "model")]
 #[derive(GetCorresponding)]
 pub struct Model {
     collections: Collections,
@@ -1598,9 +1637,15 @@ pub struct Model {
     datasets_to_physical_modes: ManyToMany<Dataset, PhysicalMode>,
 }
 
+#[cfg(feature = "model")]
 impl Model {
-    /// Constructs a model from the given `Collections`.  Fails in
-    /// case of incoherence, as invalid external references.
+    /// Constructs a model from the given `Collections`, building all relation
+    /// indexes needed for [`get_corresponding`] queries.
+    ///
+    /// Fails if the collections contain incoherent references (e.g. a transfer
+    /// referencing a stop point that does not exist).  Call
+    /// [`Collections::enhance`] beforehand to sanitize and enrich the
+    /// collections before passing them here.
     ///
     /// # Examples
     ///
@@ -1612,29 +1657,7 @@ impl Model {
     /// # }
     /// # run().unwrap()
     /// ```
-    ///
-    /// ```
-    /// # use transit_model::model::*;
-    /// # use typed_index_collection::Collection;
-    /// # use transit_model::objects::Transfer;
-    /// let mut collections = Collections::default();
-    /// // This transfer is invalid as there is no stop points in collections
-    /// // but objects not referenced are removed from the model
-    /// collections.transfers = Collection::from(Transfer {
-    ///     from_stop_id: "invalid".into(),
-    ///     to_stop_id: "also_invalid".into(),
-    ///     min_transfer_time: None,
-    ///     real_min_transfer_time: None,
-    ///     equipment_id: None,
-    /// });
-    /// assert!(Model::new(collections).is_ok());
-    /// ```
-    pub fn new(mut c: Collections) -> Result<Self> {
-        enhancers::check_stop_times_order(&mut c);
-        c.comment_deduplication();
-        c.clean_comments();
-        c.sanitize()?;
-
+    pub fn new(c: Collections) -> Result<Self> {
         let forward_vj_to_sp = c
             .vehicle_journeys
             .iter()
@@ -1715,18 +1738,6 @@ impl Model {
             "calendars_to_vehicle_journeys",
         )?;
 
-        c.update_stop_area_coords();
-        enhancers::fill_co2(&mut c);
-        c.enhance_trip_headsign();
-        c.enhance_route_names(&routes_to_vehicle_journeys);
-        c.enhance_route_directions();
-        c.check_geometries_coherence();
-        enhancers::adjust_lines_names(&mut c, &lines_to_routes);
-        c.enhance_line_opening_time();
-        c.pickup_drop_off_harmonisation();
-        enhancers::enhance_pickup_dropoff(&mut c);
-        enhancers::memory_shrink(&mut c);
-
         Ok(Model {
             routes_to_stop_points,
             physical_modes_to_stop_points,
@@ -1777,6 +1788,7 @@ impl Model {
     }
 }
 
+#[cfg(feature = "model")]
 impl ::serde::Serialize for Model {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -1785,16 +1797,20 @@ impl ::serde::Serialize for Model {
         self.collections.serialize(serializer)
     }
 }
+#[cfg(feature = "model")]
 impl<'de> ::serde::Deserialize<'de> for Model {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
     {
         use serde::de::Error;
-        ::serde::Deserialize::deserialize(deserializer)
-            .and_then(|o| Model::new(o).map_err(D::Error::custom))
+        let mut collections: Collections =
+            ::serde::Deserialize::deserialize(deserializer)?;
+        collections.enhance().map_err(D::Error::custom)?;
+        Model::new(collections).map_err(D::Error::custom)
     }
 }
+#[cfg(feature = "model")]
 impl ops::Deref for Model {
     type Target = Collections;
     fn deref(&self) -> &Self::Target {
@@ -2209,13 +2225,7 @@ mod tests {
                     &collections,
                 ))
                 .unwrap();
-            let routes_to_vehicle_journeys = OneToMany::new(
-                &collections.routes,
-                &collections.vehicle_journeys,
-                "routes_to_vehicle_journeys",
-            )
-            .unwrap();
-            collections.enhance_route_names(&routes_to_vehicle_journeys);
+            collections.enhance_route_names();
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("Stop Area 1 - Stop Area 2", route.name);
             assert_eq!("stop_area:2", route.destination_id.as_ref().unwrap());
@@ -2232,14 +2242,8 @@ mod tests {
                     &collections,
                 ))
                 .unwrap();
-            let routes_to_vehicle_journeys = OneToMany::new(
-                &collections.routes,
-                &collections.vehicle_journeys,
-                "routes_to_vehicle_journeys",
-            )
-            .unwrap();
             collections.stop_areas.get_mut("stop_area:1").unwrap().name = String::new();
-            collections.enhance_route_names(&routes_to_vehicle_journeys);
+            collections.enhance_route_names();
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("", route.name);
             assert_eq!("stop_area:2", route.destination_id.as_ref().unwrap());
@@ -2259,13 +2263,7 @@ mod tests {
             let route_idx = collections.routes.get_idx("route_id").unwrap();
             collections.routes.index_mut(route_idx).name = String::from("Route to Mordor");
             collections.routes.index_mut(route_idx).destination_id = None;
-            let routes_to_vehicle_journeys = OneToMany::new(
-                &collections.routes,
-                &collections.vehicle_journeys,
-                "routes_to_vehicle_journeys",
-            )
-            .unwrap();
-            collections.enhance_route_names(&routes_to_vehicle_journeys);
+            collections.enhance_route_names();
             let route = collections.routes.get("route_id").unwrap();
             // Check route name hasn't been changed
             assert_eq!("Route to Mordor", route.name);
@@ -2304,13 +2302,7 @@ mod tests {
             let route_idx = collections.routes.get_idx("route_id").unwrap();
             collections.routes.index_mut(route_idx).destination_id =
                 Some(String::from("stop_area:unknown"));
-            let routes_to_vehicle_journeys = OneToMany::new(
-                &collections.routes,
-                &collections.vehicle_journeys,
-                "routes_to_vehicle_journeys",
-            )
-            .unwrap();
-            collections.enhance_route_names(&routes_to_vehicle_journeys);
+            collections.enhance_route_names();
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("Stop Area 1 - Stop Area 3", route.name);
             assert_eq!("stop_area:3", route.destination_id.as_ref().unwrap());
@@ -2341,13 +2333,7 @@ mod tests {
                     &collections,
                 ))
                 .unwrap();
-            let routes_to_vehicle_journeys = OneToMany::new(
-                &collections.routes,
-                &collections.vehicle_journeys,
-                "routes_to_vehicle_journeys",
-            )
-            .unwrap();
-            collections.enhance_route_names(&routes_to_vehicle_journeys);
+            collections.enhance_route_names();
             let route = collections.routes.get("route_id").unwrap();
             assert_eq!("Stop Area 1 - Stop Area 1", route.name);
             assert_eq!("stop_area:1", route.destination_id.as_ref().unwrap());
@@ -2384,13 +2370,7 @@ mod tests {
                     &collections,
                 ))
                 .unwrap();
-            let routes_to_vehicle_journeys = OneToMany::new(
-                &collections.routes,
-                &collections.vehicle_journeys,
-                "routes_to_vehicle_journeys",
-            )
-            .unwrap();
-            collections.enhance_route_names(&routes_to_vehicle_journeys);
+            collections.enhance_route_names();
             let route = collections.routes.get("route_id").unwrap();
             // 'Stop Area 1' is before 'Stop Area 3' in alphabetical order
             assert_eq!("Stop Area 1 - Stop Area 1", route.name);
