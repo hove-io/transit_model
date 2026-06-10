@@ -16,7 +16,7 @@ use assert_cmd::{cargo_bin, prelude::*};
 use ntfs2gtfs::add_mode_to_line_code;
 use std::process::Command;
 use tempfile::TempDir;
-use transit_model::{test_utils::*, Model};
+use transit_model::test_utils::*;
 
 #[test]
 fn test_stop_zones_not_exported_and_cleaned() {
@@ -25,8 +25,8 @@ fn test_stop_zones_not_exported_and_cleaned() {
         let mut collections = transit_model::ntfs::read_collections(input).unwrap();
         collections.remove_stop_zones();
         collections.remove_route_points();
-        let model = Model::new(collections).unwrap();
-        transit_model::gtfs::write(model, path, false).unwrap();
+        collections.enhance().unwrap();
+        transit_model::gtfs::write(&collections, path, false).unwrap();
         compare_output_dir_with_expected(path, None, "./tests/fixtures/output");
     });
 }
@@ -36,8 +36,8 @@ fn test_mode_in_route_shortname() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/input";
         let model = transit_model::ntfs::read(input).unwrap();
-        let model = add_mode_to_line_code(model).unwrap();
-        transit_model::gtfs::write(model, path, false).unwrap();
+        let collections = add_mode_to_line_code(model.into_collections()).unwrap();
+        transit_model::gtfs::write(&collections, path, false).unwrap();
         compare_output_dir_with_expected(
             path,
             Some(vec!["routes.txt"]),
@@ -51,7 +51,7 @@ fn test_platforms_preserving() {
     test_in_tmp_dir(|path| {
         let input = "./tests/fixtures/platforms/input";
         let model = transit_model::ntfs::read(input).unwrap();
-        transit_model::gtfs::write(model, path, false).unwrap();
+        transit_model::gtfs::write(&model, path, false).unwrap();
         compare_output_dir_with_expected(
             path,
             Some(vec!["stops.txt"]),

@@ -14,19 +14,20 @@
 
 use crate::xml_builder::{Element, Node};
 use crate::{
+    model::Collections,
     netex_france::exporter::{Exporter, ObjectType},
     objects::Transfer,
-    Model, Result,
+    Result,
 };
 use anyhow::anyhow;
 
 pub struct TransferExporter<'a> {
-    model: &'a Model,
+    model: &'a Collections,
 }
 
 // Publicly exposed methods
 impl<'a> TransferExporter<'a> {
-    pub fn new(model: &'a Model) -> Self {
+    pub fn new(model: &'a Collections) -> Self {
         TransferExporter { model }
     }
     pub fn export(&self) -> Result<Vec<Element>> {

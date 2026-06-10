@@ -23,7 +23,7 @@ use tracing_subscriber::{
     layer::SubscriberExt as _,
     util::SubscriberInitExt as _,
 };
-use transit_model::{Model, Result};
+use transit_model::Result;
 
 pub static GIT_VERSION: std::sync::LazyLock<String> =
     std::sync::LazyLock::new(|| transit_model::binary_full_version(env!("CARGO_PKG_VERSION")));
@@ -85,18 +85,18 @@ fn run(opt: Opt) -> Result<()> {
     info!("Removing route points...");
     collections.remove_route_points();
 
-    let mut model = Model::new(collections)?;
 
     if opt.mode_in_route_short_name {
-        model = add_mode_to_line_code(model)?;
+        collections = add_mode_to_line_code(collections)?;
     }
+    collections.enhance()?;
 
     match opt.output.extension() {
         Some(ext) if ext == "zip" => {
-            transit_model::gtfs::write_to_zip(model, opt.output, opt.extend_route_type)?;
+            transit_model::gtfs::write_to_zip(&collections, opt.output, opt.extend_route_type)?;
         }
         _ => {
-            transit_model::gtfs::write(model, opt.output, opt.extend_route_type)?;
+            transit_model::gtfs::write(&collections, opt.output, opt.extend_route_type)?;
         }
     };
     Ok(())

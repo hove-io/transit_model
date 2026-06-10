@@ -34,7 +34,9 @@ fn test_generates_transfers() {
             waiting_time: 120,
             ..Default::default()
         };
-        let model = transfers::generates_transfers(model, config, None).unwrap();
+        let collections =
+            transfers::generates_transfers(model.into_collections(), config, None).unwrap();
+        let model = transit_model::Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             path,
@@ -55,7 +57,9 @@ fn test_generates_all_multi_contributors_transfers() {
             waiting_time: 120,
             ..Default::default()
         };
-        let model = transfers::generates_transfers(model, config, None).unwrap();
+        let collections =
+            transfers::generates_transfers(model.into_collections(), config, None).unwrap();
+        let model = transit_model::Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             path,
@@ -70,12 +74,15 @@ fn test_generates_transfers_with_closure_inter_contributors() {
     test_in_tmp_dir(|path| {
         use std::collections::BTreeSet;
         use transit_model::{
+            model::Collections,
             objects::{Contributor, StopPoint},
             Model,
         };
         use typed_index_collection::Idx;
         let inter_contrib_tranfers = Box::new(
-            |model: &Model, from_idx: Idx<StopPoint>, to_idx: Idx<StopPoint>| -> bool {
+            |collections: &Collections, from_idx: Idx<StopPoint>, to_idx: Idx<StopPoint>| -> bool {
+                // Create a temporary Model to access get_corresponding_from_idx
+                let model = Model::new(collections.clone()).unwrap();
                 let from_contributor: BTreeSet<Idx<Contributor>> =
                     model.get_corresponding_from_idx(from_idx);
                 let to_contributor: BTreeSet<Idx<Contributor>> =
@@ -98,7 +105,9 @@ fn test_generates_transfers_with_closure_inter_contributors() {
             need_transfer: Some(inter_contrib_tranfers),
             ..Default::default()
         };
-        let model = transfers::generates_transfers(model, config, None).unwrap();
+        let collections =
+            transfers::generates_transfers(model.into_collections(), config, None).unwrap();
+        let model = transit_model::Model::new(collections).unwrap();
         transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             path,

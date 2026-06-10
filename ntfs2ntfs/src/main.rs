@@ -99,9 +99,9 @@ fn init_logger() {
 fn run(opt: Opt) -> Result<()> {
     info!("Launching ntfs2ntfs...");
 
-    let model = transit_model::ntfs::read(opt.input)?;
-    let model = if opt.ignore_transfers {
-        model
+    let collections = transit_model::ntfs::read_collections(opt.input)?;
+    let mut collections = if opt.ignore_transfers {
+        collections
     } else {
         let config = TransfersConfiguration {
             max_distance: opt.max_distance,
@@ -110,17 +110,17 @@ fn run(opt: Opt) -> Result<()> {
             manhattan_factor: opt.manhattan_factor,
             ..Default::default()
         };
-        let collections = generates_transfers(model, config, None)?;
-        transit_model::Model::new(collections)?
+        generates_transfers(collections, config, None)?
     };
+    collections.enhance()?;
 
     if let Some(output) = opt.output {
         match output.extension() {
             Some(ext) if ext == "zip" => {
-                transit_model::ntfs::write_to_zip(&model, output, opt.current_datetime)?;
+                transit_model::ntfs::write_to_zip(&collections, output, opt.current_datetime)?;
             }
             _ => {
-                transit_model::ntfs::write(&model, output, opt.current_datetime)?;
+                transit_model::ntfs::write(&collections, output, opt.current_datetime)?;
             }
         };
     }

@@ -14,12 +14,13 @@
 
 use crate::xml_builder::{Element, Node};
 use crate::{
+    model::Collections,
     netex_france::{
         exporter::{Exporter, ObjectType},
         NetexMode,
     },
     objects::Line,
-    Model, Result,
+    Result,
 };
 use anyhow::anyhow;
 use std::collections::{BTreeSet, HashMap};
@@ -29,13 +30,13 @@ use std::collections::{BTreeSet, HashMap};
 pub type LineModes<'a> = HashMap<&'a str, BTreeSet<NetexMode>>;
 
 pub struct LineExporter<'a> {
-    model: &'a Model,
+    model: &'a Collections,
     line_modes: LineModes<'a>,
 }
 
 // Publicly exposed methods
 impl<'a> LineExporter<'a> {
-    pub fn new(model: &'a Model) -> Self {
+    pub fn new(model: &'a Collections) -> Self {
         let line_modes = Self::build_line_modes(model);
         LineExporter { model, line_modes }
     }
@@ -46,7 +47,7 @@ impl<'a> LineExporter<'a> {
             .map(|line| self.export_line(line))
             .collect()
     }
-    pub fn build_line_modes(model: &'a Model) -> LineModes<'a> {
+    pub fn build_line_modes(model: &'a Collections) -> LineModes<'a> {
         model
             .vehicle_journeys
             .values()

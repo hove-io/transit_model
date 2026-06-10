@@ -140,10 +140,11 @@ fn run(opt: Opt) -> Result<()> {
         read_trip_short_name: opt.read_trip_short_name,
     };
 
-    let model = transit_model::gtfs::Reader::new(configuration).parse(opt.input)?;
+    let collections =
+        transit_model::gtfs::Reader::new(configuration).parse_collections(opt.input)?;
 
-    let model = if opt.ignore_transfers {
-        model
+    let mut collections = if opt.ignore_transfers {
+        collections
     } else {
         let config = TransfersConfiguration {
             max_distance: opt.max_distance,
@@ -152,16 +153,17 @@ fn run(opt: Opt) -> Result<()> {
             manhattan_factor: opt.manhattan_factor,
             ..Default::default()
         };
-        let collections = generates_transfers(model, config, None)?;
-        transit_model::Model::new(collections)?
+        generates_transfers(collections, config, None)?
     };
+
+    collections.enhance()?;
 
     match opt.output.extension() {
         Some(ext) if ext == "zip" => {
-            transit_model::ntfs::write_to_zip(&model, opt.output, opt.current_datetime)?;
+            transit_model::ntfs::write_to_zip(&collections, opt.output, opt.current_datetime)?;
         }
         _ => {
-            transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
+            transit_model::ntfs::write(&collections, opt.output, opt.current_datetime)?;
         }
     };
     Ok(())

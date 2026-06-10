@@ -30,8 +30,7 @@ fn test_restrict_global() {
                 NaiveDate::from_ymd_opt(2018, 8, 5).unwrap(),
             )
             .unwrap();
-        collections.sanitize().unwrap();
-        collections.clean_comments();
+        collections.enhance().unwrap();
         let new_model = Model::new(collections).unwrap();
         transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(

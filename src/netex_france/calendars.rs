@@ -14,21 +14,22 @@
 
 use crate::xml_builder::{Element, Node};
 use crate::{
+    model::Collections,
     netex_france::exporter::{Exporter, ObjectType},
     objects::{Calendar, Date},
-    Model, Result,
+    Result,
 };
 use anyhow::bail;
 use chrono::prelude::*;
 use std::collections::BTreeSet;
 
 pub struct CalendarExporter<'a> {
-    model: &'a Model,
+    model: &'a Collections,
 }
 
 // Publicly exposed methods
 impl<'a> CalendarExporter<'a> {
-    pub fn new(model: &'a Model) -> Self {
+    pub fn new(model: &'a Collections) -> Self {
         CalendarExporter { model }
     }
     pub fn export(&self) -> Result<Vec<Element>> {

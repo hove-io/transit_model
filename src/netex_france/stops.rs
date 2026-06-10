@@ -14,12 +14,13 @@
 
 use crate::xml_builder::{Element, Node};
 use crate::{
+    model::Collections,
     netex_france::{
         exporter::{Exporter, ObjectType},
         NetexMode,
     },
     objects::{Availability, Coord, Equipment, StopArea, StopLocation, StopPoint, StopType},
-    Model, Result,
+    Result,
 };
 use anyhow::anyhow;
 use proj::Proj;
@@ -41,7 +42,7 @@ type StopPointModes<'a> = HashMap<&'a str, BTreeSet<NetexMode>>;
 type StopAreaStopPoints<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 type StopAreaEntrances<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 pub struct StopExporter<'a> {
-    model: &'a Model,
+    model: &'a Collections,
     participant_ref: &'a str,
     converter: Proj,
     stop_point_modes: StopPointModes<'a>,
@@ -51,7 +52,7 @@ pub struct StopExporter<'a> {
 
 // Publicly exposed methods
 impl<'a> StopExporter<'a> {
-    pub fn new(model: &'a Model, participant_ref: &'a str) -> Result<Self> {
+    pub fn new(model: &'a Collections, participant_ref: &'a str) -> Result<Self> {
         let converter = Exporter::get_coordinates_converter()?;
         let stop_point_modes = Self::build_stop_point_modes(model);
         let stop_area_stop_points = Self::build_stop_area_stop_points(model);
@@ -120,7 +121,7 @@ impl<'a> StopExporter<'a> {
     //   expansive)
     // - find the corresponding Stop Point
     // - find the corresponding parent Stop Area
-    fn build_stop_point_modes(model: &'a Model) -> StopPointModes<'a> {
+    fn build_stop_point_modes(model: &'a Collections) -> StopPointModes<'a> {
         model
             .vehicle_journeys
             .values()
@@ -148,7 +149,7 @@ impl<'a> StopExporter<'a> {
             )
     }
 
-    fn build_stop_area_stop_points(model: &'a Model) -> StopAreaStopPoints<'a> {
+    fn build_stop_area_stop_points(model: &'a Collections) -> StopAreaStopPoints<'a> {
         model
             .stop_points
             .values()
@@ -161,7 +162,7 @@ impl<'a> StopExporter<'a> {
             })
     }
 
-    fn build_stop_area_entrances(model: &'a Model) -> StopAreaEntrances<'a> {
+    fn build_stop_area_entrances(model: &'a Collections) -> StopAreaEntrances<'a> {
         model
             .stop_locations
             .values()

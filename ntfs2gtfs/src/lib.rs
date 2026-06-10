@@ -14,10 +14,9 @@
 // along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-use transit_model::{Model, Result};
+use transit_model::{model::Collections, Result};
 
-pub fn add_mode_to_line_code(model: Model) -> Result<Model> {
-    let mut collections = model.into_collections();
+pub fn add_mode_to_line_code(mut collections: Collections) -> Result<Collections> {
     for idx in collections.lines.indexes() {
         let mut line = collections.lines.index_mut(idx);
         let mode = collections.commercial_modes.get(&line.commercial_mode_id);
@@ -30,5 +29,5 @@ pub fn add_mode_to_line_code(model: Model) -> Result<Model> {
         line.code = code;
     }
 
-    Model::new(collections)
+    Ok(collections)
 }

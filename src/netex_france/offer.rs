@@ -14,16 +14,16 @@
 
 use crate::xml_builder::{Element, Node};
 use crate::{
+    model::Collections,
     netex_france::{
         self,
         exporter::{Exporter, ObjectType},
         LineExporter, LineModes, NetexMode, StopExporter,
     },
     objects::{Coord, Line, Route, StopPoint, StopTime, Time, VehicleJourney},
-    Model, Result,
+    Result,
 };
 use anyhow::anyhow;
-use relational_types::IdxSet;
 use std::collections::{BTreeMap, HashMap};
 use tracing::warn;
 use typed_index_collection::Idx;
@@ -33,7 +33,7 @@ use typed_index_collection::Idx;
 type JourneyPattern = VehicleJourney;
 
 pub struct OfferExporter<'a> {
-    model: &'a Model,
+    model: &'a Collections,
     // Precalculated coordinates for all stop points (EPSG:2154 as "x y" string, None if absent)
     stop_coords: HashMap<Idx<StopPoint>, Option<String>>,
     // Precalculation of the Stop Points per Route
@@ -42,16 +42,15 @@ pub struct OfferExporter<'a> {
     line_modes: LineModes<'a>,
 }
 
-fn calculate_route_points(model: &Model) -> BTreeMap<&str, Vec<Idx<StopPoint>>> {
+fn calculate_route_points(model: &Collections) -> BTreeMap<&str, Vec<Idx<StopPoint>>> {
     model
         .routes
-        .iter()
-        .map(|(route_idx, route)| {
-            let vehicle_journeys_indexes: IdxSet<VehicleJourney> =
-                model.get_corresponding_from_idx(route_idx);
-            let mut vehicle_journeys: Vec<&VehicleJourney> = vehicle_journeys_indexes
-                .into_iter()
-                .map(|idx| &model.vehicle_journeys[idx])
+        .values()
+        .map(|route| {
+            let mut vehicle_journeys: Vec<&VehicleJourney> = model
+                .vehicle_journeys
+                .values()
+                .filter(|vj| vj.route_id == route.id)
                 .collect();
             // Order the vehicle journey with the following priority:
             // - Stop point identifier of the first stop time of the vehicle journey
@@ -73,7 +72,7 @@ fn calculate_route_points(model: &Model) -> BTreeMap<&str, Vec<Idx<StopPoint>>> 
 
 // Publicly exposed methods
 impl<'a> OfferExporter<'a> {
-    pub fn new(model: &'a Model) -> Result<Self> {
+    pub fn new(model: &'a Collections) -> Result<Self> {
         let converter = Exporter::get_coordinates_converter()?;
         // Pre-compute EPSG:2154 coordinates for every stop point.
         // Proj is used here and then dropped; it does not need to be stored.
@@ -104,11 +103,13 @@ impl<'a> OfferExporter<'a> {
     pub fn export(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
         let route_elements = self.export_routes(line_idx)?;
         let route_point_elements = self.export_route_points(line_idx)?;
+        let line_id = &self.model.lines[line_idx].id;
         let journey_patterns: Vec<(Idx<JourneyPattern>, Vec<Idx<VehicleJourney>>)> = self
             .model
-            .get_corresponding_from_idx(line_idx)
-            .into_iter()
-            .flat_map(|route_idx| self.calculate_journey_patterns(route_idx))
+            .routes
+            .iter()
+            .filter(|(_, route)| &route.line_id == line_id)
+            .flat_map(|(route_idx, _)| self.calculate_journey_patterns(route_idx))
             .collect();
         let journey_pattern_indexes: Vec<Idx<JourneyPattern>> = journey_patterns
             .iter()
@@ -157,10 +158,12 @@ impl<'a> OfferExporter<'a> {
 // Internal methods
 impl<'a> OfferExporter<'a> {
     fn export_routes(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
-        let route_indexes: IdxSet<Route> = self.model.get_corresponding_from_idx(line_idx);
-        route_indexes
-            .into_iter()
-            .map(|route_idx| self.export_route(route_idx))
+        let line_id = &self.model.lines[line_idx].id;
+        self.model
+            .routes
+            .iter()
+            .filter(|(_, route)| &route.line_id == line_id)
+            .map(|(route_idx, _)| self.export_route(route_idx))
             .collect()
     }
 
@@ -184,10 +187,14 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn export_route_points(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
-        let route_indexes: IdxSet<Route> = self.model.get_corresponding_from_idx(line_idx);
+        let line_id = &self.model.lines[line_idx].id;
         let mut route_point_elements = Vec::new();
-        for route_idx in route_indexes {
-            let route = &self.model.routes[route_idx];
+        for (_, route) in self
+            .model
+            .routes
+            .iter()
+            .filter(|(_, r)| &r.line_id == line_id)
+        {
             let elements = self.export_route_points_by_route(&route.id)?;
             route_point_elements.extend(elements);
         }
@@ -682,10 +689,13 @@ impl<'a> OfferExporter<'a> {
                 && a.drop_off_type == b.drop_off_type
                 && a.local_zone_id == b.local_zone_id
         };
+        let route_id = &self.model.routes[route_idx].id;
         let mut vehicle_journey_indexes: Vec<Idx<VehicleJourney>> = self
             .model
-            .get_corresponding_from_idx(route_idx)
-            .into_iter()
+            .vehicle_journeys
+            .iter()
+            .filter(|(_, vj)| &vj.route_id == route_id)
+            .map(|(vj_idx, _)| vj_idx)
             .collect();
         vehicle_journey_indexes.sort_unstable_by_key(|vehicle_journey_idx| {
             &self.model.vehicle_journeys[*vehicle_journey_idx].id
@@ -889,17 +899,16 @@ mod tests {
                 ..Default::default()
             })
             .unwrap();
-        let model = Model::new(collections).unwrap();
-        let offer_exporter = OfferExporter::new(&model).unwrap();
-        let route_idx = model.routes.get_idx("route_id").unwrap();
+        let offer_exporter = OfferExporter::new(&collections).unwrap();
+        let route_idx = collections.routes.get_idx("route_id").unwrap();
         let journey_pattern_indexes = offer_exporter.calculate_journey_patterns(route_idx);
         assert_eq!(1, journey_pattern_indexes.len());
-        let journey_pattern_id = &model.vehicle_journeys[journey_pattern_indexes[0].0].id;
+        let journey_pattern_id = &collections.vehicle_journeys[journey_pattern_indexes[0].0].id;
         assert_eq!("vj_id_1", journey_pattern_id);
         assert_eq!(2, journey_pattern_indexes[0].1.len());
-        let vehicle_journey_id = &model.vehicle_journeys[journey_pattern_indexes[0].1[0]].id;
+        let vehicle_journey_id = &collections.vehicle_journeys[journey_pattern_indexes[0].1[0]].id;
         assert_eq!("vj_id_1", vehicle_journey_id);
-        let vehicle_journey_id = &model.vehicle_journeys[journey_pattern_indexes[0].1[1]].id;
+        let vehicle_journey_id = &collections.vehicle_journeys[journey_pattern_indexes[0].1[1]].id;
         assert_eq!("vj_id_2", vehicle_journey_id);
     }
 
@@ -932,22 +941,21 @@ mod tests {
                 ..Default::default()
             })
             .unwrap();
-        let model = Model::new(collections).unwrap();
-        let offer_exporter = OfferExporter::new(&model).unwrap();
-        let route_idx = model.routes.get_idx("route_id").unwrap();
+        let offer_exporter = OfferExporter::new(&collections).unwrap();
+        let route_idx = collections.routes.get_idx("route_id").unwrap();
         let journey_pattern_indexes = offer_exporter.calculate_journey_patterns(route_idx);
         assert_eq!(2, journey_pattern_indexes.len());
 
-        let journey_pattern_id = &model.vehicle_journeys[journey_pattern_indexes[0].0].id;
+        let journey_pattern_id = &collections.vehicle_journeys[journey_pattern_indexes[0].0].id;
         assert_eq!("vj_id_1", journey_pattern_id);
         assert_eq!(1, journey_pattern_indexes[0].1.len());
-        let vehicle_journey_id = &model.vehicle_journeys[journey_pattern_indexes[0].1[0]].id;
+        let vehicle_journey_id = &collections.vehicle_journeys[journey_pattern_indexes[0].1[0]].id;
         assert_eq!("vj_id_1", vehicle_journey_id);
 
-        let journey_pattern_id = &model.vehicle_journeys[journey_pattern_indexes[1].0].id;
+        let journey_pattern_id = &collections.vehicle_journeys[journey_pattern_indexes[1].0].id;
         assert_eq!("vj_id_2", journey_pattern_id);
         assert_eq!(1, journey_pattern_indexes[1].1.len());
-        let vehicle_journey_id = &model.vehicle_journeys[journey_pattern_indexes[1].1[0]].id;
+        let vehicle_journey_id = &collections.vehicle_journeys[journey_pattern_indexes[1].1[0]].id;
         assert_eq!("vj_id_2", vehicle_journey_id);
     }
 
@@ -997,22 +1005,21 @@ mod tests {
                 ..Default::default()
             })
             .unwrap();
-        let model = Model::new(collections).unwrap();
-        let offer_exporter = OfferExporter::new(&model).unwrap();
-        let route_idx = model.routes.get_idx("route_id").unwrap();
+        let offer_exporter = OfferExporter::new(&collections).unwrap();
+        let route_idx = collections.routes.get_idx("route_id").unwrap();
         let journey_pattern_indexes = offer_exporter.calculate_journey_patterns(route_idx);
         assert_eq!(2, journey_pattern_indexes.len());
 
-        let journey_pattern_id = &model.vehicle_journeys[journey_pattern_indexes[0].0].id;
+        let journey_pattern_id = &collections.vehicle_journeys[journey_pattern_indexes[0].0].id;
         assert_eq!("vj_id_1", journey_pattern_id);
         assert_eq!(1, journey_pattern_indexes[0].1.len());
-        let vehicle_journey_id = &model.vehicle_journeys[journey_pattern_indexes[0].1[0]].id;
+        let vehicle_journey_id = &collections.vehicle_journeys[journey_pattern_indexes[0].1[0]].id;
         assert_eq!("vj_id_1", vehicle_journey_id);
 
-        let journey_pattern_id = &model.vehicle_journeys[journey_pattern_indexes[1].0].id;
+        let journey_pattern_id = &collections.vehicle_journeys[journey_pattern_indexes[1].0].id;
         assert_eq!("vj_id_2", journey_pattern_id);
         assert_eq!(1, journey_pattern_indexes[1].1.len());
-        let vehicle_journey_id = &model.vehicle_journeys[journey_pattern_indexes[1].1[0]].id;
+        let vehicle_journey_id = &collections.vehicle_journeys[journey_pattern_indexes[1].1[0]].id;
         assert_eq!("vj_id_2", vehicle_journey_id);
     }
 }

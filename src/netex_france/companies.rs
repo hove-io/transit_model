@@ -14,18 +14,18 @@
 
 use crate::xml_builder::{Element, Node};
 use crate::{
+    model::Collections,
     netex_france::exporter::{Exporter, ObjectType},
     objects::Company,
-    Model,
 };
 
 pub struct CompanyExporter<'a> {
-    model: &'a Model,
+    model: &'a Collections,
 }
 
 // Publicly exposed methods
 impl<'a> CompanyExporter<'a> {
-    pub fn new(model: &'a Model) -> Self {
+    pub fn new(model: &'a Collections) -> Self {
         CompanyExporter { model }
     }
     pub fn export(&self) -> Vec<Element> {

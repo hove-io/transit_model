@@ -36,7 +36,7 @@ use stops::StopExporter;
 mod transfers;
 use transfers::TransferExporter;
 
-use crate::{model::Model, Result};
+use crate::{model::Collections, Result};
 use chrono::{DateTime, FixedOffset};
 
 /// Configuration options for exporting a NeTEx France.
@@ -75,16 +75,16 @@ impl WriteConfiguration {
     }
 }
 
-/// Exports a `Model` to the
+/// Exports a `Collections` to the
 /// [NeTEx France](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md)
 /// files in the given directory.
 pub fn write<P: AsRef<std::path::Path>>(
-    model: &Model,
+    collections: &Collections,
     path: P,
     config: WriteConfiguration,
 ) -> Result<()> {
     let exporter = Exporter::new(
-        model,
+        collections,
         config.participant,
         config.stop_provider,
         config.current_datetime,
@@ -93,16 +93,16 @@ pub fn write<P: AsRef<std::path::Path>>(
     Ok(())
 }
 
-/// Exports a `Model` to a
+/// Exports a `Collections` to a
 /// [NeTEx France](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_to_netex_france_specs.md)
 /// ZIP archive at the given full path.
 pub fn write_to_zip<P: AsRef<std::path::Path>>(
-    model: &Model,
+    collections: &Collections,
     path: P,
     config: WriteConfiguration,
 ) -> Result<()> {
     let output_dir = tempfile::tempdir()?;
-    write(model, output_dir.path(), config)?;
+    write(collections, output_dir.path(), config)?;
     crate::utils::zip_to(output_dir.path(), path)?;
     output_dir.close()?;
     Ok(())

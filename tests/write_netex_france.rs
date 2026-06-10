@@ -15,14 +15,14 @@
 use std::fs;
 #[cfg(feature = "xmllint")]
 use std::{ffi::OsStr, process::Command};
-use transit_model::{gtfs, model::Model, netex_france, test_utils::*};
+use transit_model::{gtfs, model::Collections, netex_france, test_utils::*};
 
-fn test_write_netex_france(model: Model) {
+fn test_write_netex_france(collections: &Collections) {
     test_in_tmp_dir(|output_dir| {
         let config = netex_france::WriteConfiguration::new("Participant")
             .stop_provider("ProviderCode")
             .current_datetime(get_test_datetime());
-        netex_france::write(&model, output_dir, config).unwrap();
+        netex_france::write(collections, output_dir, config).unwrap();
         compare_output_dir_with_expected_content(
             output_dir,
             None,
@@ -49,14 +49,14 @@ fn test_write_netex_france_from_ntfs() {
     let mut collections =
         transit_model::ntfs::read_collections("tests/fixtures/netex_france/input_ntfs").unwrap();
     collections.remove_route_points();
-    let model = Model::new(collections).unwrap();
-    test_write_netex_france(model);
+    collections.enhance().unwrap();
+    test_write_netex_france(&collections);
 }
 
 #[test]
 fn test_write_netex_france_from_gtfs() {
     let model = gtfs::read("tests/fixtures/netex_france/input_gtfs").unwrap();
-    test_write_netex_france(model);
+    test_write_netex_france(&model);
 }
 
 #[test]

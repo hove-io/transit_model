@@ -17,14 +17,13 @@ use super::{
     TicketingDeepLinks, Transfer, Trip,
 };
 use crate::gtfs::{Attribution, ExtendedRoute, StopTime};
-use crate::model::{Collections, GetCorresponding, Model};
+use crate::model::Collections;
 use crate::objects;
 use crate::objects::Transfer as NtfsTransfer;
 use crate::objects::*;
 use crate::Result;
 use anyhow::Context;
 use geo::Geometry as GeoGeometry;
-use relational_types::IdxSet;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::path;
@@ -207,7 +206,7 @@ fn ntfs_stop_location_to_gtfs_stop(
     }
 }
 
-pub fn write_stops(path: &path::Path, model: &Model) -> Result<()> {
+pub fn write_stops(path: &path::Path, collections: &Collections) -> Result<()> {
     let file = "stops.txt";
     info!(file_name = %file, "Writing");
     let path = path.join(file);
@@ -216,45 +215,45 @@ pub fn write_stops(path: &path::Path, model: &Model) -> Result<()> {
     info!("Writing {} from StopPoint", file);
     let mut stoppoints_with_pathways_to_stoplocs: HashSet<Idx<objects::StopPoint>> = HashSet::new();
     let mut insert_if_linked_to_stoploc = |stop_id: &str, other_stop_id: &str| {
-        if let Some(sp_idx) = model.stop_points.get_idx(stop_id) {
-            if model.stop_locations.get(other_stop_id).is_some() {
+        if let Some(sp_idx) = collections.stop_points.get_idx(stop_id) {
+            if collections.stop_locations.get(other_stop_id).is_some() {
                 stoppoints_with_pathways_to_stoplocs.insert(sp_idx);
             }
         }
     };
-    for pathway in model.pathways.values() {
+    for pathway in collections.pathways.values() {
         insert_if_linked_to_stoploc(&pathway.from_stop_id, &pathway.to_stop_id); // SP to SL
         insert_if_linked_to_stoploc(&pathway.to_stop_id, &pathway.from_stop_id);
         // SL to SP
     }
-    for (sp_idx, sp) in model.stop_points.iter() {
+    for (sp_idx, sp) in collections.stop_points.iter() {
         // According to gtfs spec: value 1 (True) means directions should be generated
         // for access directly to the stop, independent of any entrances or pathways.
         // Basic case of roadside stops.
         let stop_access = (!stoppoints_with_pathways_to_stoplocs.contains(&sp_idx)).then_some(true);
         wtr.serialize(ntfs_stop_point_to_gtfs_stop(
             sp,
-            &model.comments,
-            &model.equipments,
+            &collections.comments,
+            &collections.equipments,
             stop_access,
         ))
         .with_context(|| format!("Error reading {path:?}"))?;
     }
     info!("Writing {} from StopArea", file);
-    for sa in model.stop_areas.values() {
+    for sa in collections.stop_areas.values() {
         wtr.serialize(ntfs_stop_area_to_gtfs_stop(
             sa,
-            &model.comments,
-            &model.equipments,
+            &collections.comments,
+            &collections.equipments,
         ))
         .with_context(|| format!("Error reading {path:?}"))?;
     }
     info!("Writing {} from StopLocation", file);
-    for sl in model.stop_locations.values() {
+    for sl in collections.stop_locations.values() {
         wtr.serialize(ntfs_stop_location_to_gtfs_stop(
             sl,
-            &model.comments,
-            &model.equipments,
+            &collections.comments,
+            &collections.equipments,
         ))
         .with_context(|| format!("Error reading {path:?}"))?;
     }
@@ -272,19 +271,20 @@ fn get_gtfs_direction_id_from_ntfs_route(route: &objects::Route) -> DirectionTyp
     }
 }
 
-fn make_gtfs_trip_from_ntfs_vj(vj: &objects::VehicleJourney, model: &Model) -> Trip {
+fn make_gtfs_trip_from_ntfs_vj(
+    vj: &objects::VehicleJourney,
+    collections: &Collections,
+    gtfs_route_ids: &HashMap<(String, String), String>,
+) -> Trip {
     let mut wheelchair_and_bike = (Availability::default(), Availability::default());
     if let Some(tp_id) = &vj.trip_property_id {
-        if let Some(tp) = &model.trip_properties.get(tp_id) {
+        if let Some(tp) = &collections.trip_properties.get(tp_id) {
             wheelchair_and_bike = (tp.wheelchair_accessible, tp.bike_accepted);
         };
     }
-    let route = &model.routes.get(&vj.route_id).unwrap();
-    let line_idx = &model.lines.get_idx(&route.line_id).unwrap();
-    let route_id = &get_line_physical_modes(*line_idx, &model.physical_modes, model)
-        .into_iter()
-        .find(|pmo| pmo.inner.id == vj.physical_mode_id)
-        .map(|pm| get_gtfs_route_id_from_ntfs_line_id(&route.line_id, &pm))
+    let route = &collections.routes.get(&vj.route_id).unwrap();
+    let route_id = gtfs_route_ids
+        .get(&(route.line_id.clone(), vj.physical_mode_id.clone()))
         .unwrap();
 
     Trip {
@@ -303,16 +303,28 @@ fn make_gtfs_trip_from_ntfs_vj(vj: &objects::VehicleJourney, model: &Model) -> T
 
 pub fn write_trips<'a>(
     path: &'a path::Path,
-    model: &'a Model,
+    collections: &'a Collections,
 ) -> Result<HashMap<String, Vec<&'a VehicleJourney>>> {
     let file = "trips.txt";
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
+
+    // Precompute (line_id, pm_id) → gtfs_route_id once for all lines.
+    // Without this, get_line_physical_modes would be called for every VehicleJourney,
+    // causing an O(VJ × routes × VJ) scan.
+    let mut gtfs_route_ids: HashMap<(String, String), String> = HashMap::new();
+    for (line_idx, line) in collections.lines.iter() {
+        for pmo in get_line_physical_modes(line_idx, &collections.physical_modes, collections) {
+            let route_id = get_gtfs_route_id_from_ntfs_line_id(&line.id, &pmo);
+            gtfs_route_ids.insert((line.id.clone(), pmo.inner.id.to_string()), route_id);
+        }
+    }
+
     let mut vjs_by_route_gtfs_id: HashMap<String, Vec<&VehicleJourney>> = HashMap::new();
-    for vj in model.vehicle_journeys.values() {
-        let trip = make_gtfs_trip_from_ntfs_vj(vj, model);
+    for vj in collections.vehicle_journeys.values() {
+        let trip = make_gtfs_trip_from_ntfs_vj(vj, collections, &gtfs_route_ids);
         vjs_by_route_gtfs_id
             .entry(trip.route_id.clone())
             .or_default()
@@ -410,17 +422,17 @@ struct Code {
     object_code: String,
 }
 
-pub fn write_codes(path: &path::Path, model: &Model) -> Result<()> {
+pub fn write_codes(path: &path::Path, collections: &Collections) -> Result<()> {
     fn collection_has_no_codes<T: Codes>(collection: &CollectionWithId<T>) -> bool {
         collection.values().all(|c| c.codes().is_empty())
     }
-    if collection_has_no_codes(&model.stop_areas)
-        && collection_has_no_codes(&model.stop_points)
-        && collection_has_no_codes(&model.networks)
-        && collection_has_no_codes(&model.lines)
-        && collection_has_no_codes(&model.routes)
-        && collection_has_no_codes(&model.vehicle_journeys)
-        && collection_has_no_codes(&model.companies)
+    if collection_has_no_codes(&collections.stop_areas)
+        && collection_has_no_codes(&collections.stop_points)
+        && collection_has_no_codes(&collections.networks)
+        && collection_has_no_codes(&collections.lines)
+        && collection_has_no_codes(&collections.routes)
+        && collection_has_no_codes(&collections.vehicle_journeys)
+        && collection_has_no_codes(&collections.companies)
     {
         return Ok(());
     }
@@ -433,7 +445,7 @@ pub fn write_codes(path: &path::Path, model: &Model) -> Result<()> {
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
 
-    for obj in model.stop_areas.values() {
+    for obj in collections.stop_areas.values() {
         for c in obj.codes() {
             wtr.serialize(Code {
                 object_id: obj.id.to_string(),
@@ -444,7 +456,7 @@ pub fn write_codes(path: &path::Path, model: &Model) -> Result<()> {
             .with_context(|| format!("Error reading {path:?}"))?;
         }
     }
-    for obj in model.stop_points.values() {
+    for obj in collections.stop_points.values() {
         for c in obj.codes() {
             wtr.serialize(Code {
                 object_id: obj.id.to_string(),
@@ -455,7 +467,7 @@ pub fn write_codes(path: &path::Path, model: &Model) -> Result<()> {
             .with_context(|| format!("Error reading {path:?}"))?;
         }
     }
-    for obj in model.vehicle_journeys.values() {
+    for obj in collections.vehicle_journeys.values() {
         for c in obj.codes() {
             wtr.serialize(Code {
                 object_id: obj.id.to_string(),
@@ -466,7 +478,7 @@ pub fn write_codes(path: &path::Path, model: &Model) -> Result<()> {
             .with_context(|| format!("Error reading {path:?}"))?;
         }
     }
-    for obj in model.networks.values() {
+    for obj in collections.networks.values() {
         for c in obj.codes() {
             wtr.serialize(Code {
                 object_id: obj.id.to_string(),
@@ -478,8 +490,8 @@ pub fn write_codes(path: &path::Path, model: &Model) -> Result<()> {
         }
     }
 
-    for (from, l) in &model.lines {
-        for pm in &get_line_physical_modes(from, &model.physical_modes, model) {
+    for (from, l) in &collections.lines {
+        for pm in &get_line_physical_modes(from, &collections.physical_modes, collections) {
             for c in l.codes() {
                 wtr.serialize(Code {
                     object_id: get_gtfs_route_id_from_ntfs_line_id(&l.id, pm),
@@ -507,26 +519,37 @@ struct PhysicalModeWithOrder<'a> {
 fn get_line_physical_modes<'a>(
     idx: Idx<objects::Line>,
     collection: &'a CollectionWithId<objects::PhysicalMode>,
-    model: &Model,
-) -> Vec<PhysicalModeWithOrder<'a>>
-where
-    IdxSet<objects::Line>: GetCorresponding<objects::PhysicalMode>,
-{
-    let mut pms: Vec<&objects::PhysicalMode> = model
-        .get_corresponding_from_idx(idx)
-        .into_iter()
-        .map(move |idx| &collection[idx])
+    collections: &Collections,
+) -> Vec<PhysicalModeWithOrder<'a>> {
+    let line_id = &collections.lines[idx].id;
+    // Line → Route → VehicleJourney → PhysicalMode
+    let mut pm_ids: std::collections::HashSet<&str> = collections
+        .routes
+        .values()
+        .filter(|r| &r.line_id == line_id)
+        .flat_map(|r| {
+            collections
+                .vehicle_journeys
+                .values()
+                .filter(move |vj| vj.route_id == r.id)
+                .map(|vj| vj.physical_mode_id.as_str())
+        })
+        .collect();
+
+    let mut pms: Vec<&objects::PhysicalMode> = pm_ids
+        .drain()
+        .filter_map(|pm_id| collection.get(pm_id))
         .collect();
     pms.sort_unstable_by_key(|pm| get_physical_mode_order(pm));
     if pms.is_empty() {
         // Fallback: look for physical_mode in line codes. This succeeds only if
         // the mode still exists in the collection (i.e., at least one active VJ
         // uses it; otherwise it was sanitized out).
-        if let Some(physical_mode) = model.lines[idx]
+        if let Some(physical_mode) = collections.lines[idx]
             .codes
             .iter()
             .find(|(system, _)| system == "physical_mode")
-            .and_then(|(_, code)| collection.get(code))
+            .and_then(|(_, code)| collection.get(code.as_str()))
         {
             pms.push(physical_mode);
         }
@@ -604,14 +627,18 @@ fn make_gtfs_route_from_ntfs_line(line: &objects::Line, pm: &PhysicalModeWithOrd
     }
 }
 
-pub fn write_routes(path: &path::Path, model: &Model, extend_route_type: bool) -> Result<()> {
+pub fn write_routes(
+    path: &path::Path,
+    collections: &Collections,
+    extend_route_type: bool,
+) -> Result<()> {
     let file = "routes.txt";
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
-    for (from, l) in &model.lines {
-        for pm in &get_line_physical_modes(from, &model.physical_modes, model) {
+    for (from, l) in &collections.lines {
+        for pm in &get_line_physical_modes(from, &collections.physical_modes, collections) {
             let route = make_gtfs_route_from_ntfs_line(l, pm);
             if extend_route_type {
                 wtr.serialize(ExtendedRoute::from(route))
@@ -1255,15 +1282,26 @@ mod tests {
             wheelchair_accessible: Availability::Available,
             bikes_allowed: Availability::NotAvailable,
         };
-        let model = {
-            collections.enhance().unwrap();
-            Model::new(collections).unwrap()
-        };
-        assert_eq!(expected, make_gtfs_trip_from_ntfs_vj(&vj, &model));
+        collections.enhance().unwrap();
+        let mut gtfs_route_ids: HashMap<(String, String), String> = HashMap::new();
+        for (line_idx, line) in collections.lines.iter() {
+            for pmo in get_line_physical_modes(line_idx, &collections.physical_modes, &collections)
+            {
+                let route_id = get_gtfs_route_id_from_ntfs_line_id(&line.id, &pmo);
+                gtfs_route_ids.insert((line.id.clone(), pmo.inner.id.to_string()), route_id);
+            }
+        }
+        assert_eq!(
+            expected,
+            make_gtfs_trip_from_ntfs_vj(&vj, &collections, &gtfs_route_ids)
+        );
 
         expected.route_id = "OIF:002002002:BDEOIF829:Coach".to_string();
         expected.id = "OIF:87604986-1_11595-1:Coach".to_string();
-        assert_eq!(expected, make_gtfs_trip_from_ntfs_vj(&vj_coach, &model));
+        assert_eq!(
+            expected,
+            make_gtfs_trip_from_ntfs_vj(&vj_coach, &collections, &gtfs_route_ids)
+        );
     }
 
     #[test]

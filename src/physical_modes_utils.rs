@@ -82,7 +82,7 @@ pub fn build_stop_point_physical_mode_map(
     result
 }
 
-#[cfg(all(test, feature = "model"))]
+#[cfg(test)]
 mod tests {
     use super::build_stop_point_physical_mode_map;
     use crate::physical_modes_utils::{

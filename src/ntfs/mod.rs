@@ -18,6 +18,7 @@
 mod read;
 mod write;
 
+use crate::model::Model;
 use crate::{
     calendars::{manage_calendars, write_calendar_dates},
     file_handler::{FileHandler, PathFileHandler, ZipHandler},
@@ -27,8 +28,6 @@ use crate::{
     utils::*,
     Result,
 };
-#[cfg(feature = "model")]
-use crate::model::Model;
 use anyhow::{anyhow, Context};
 use chrono::{DateTime, FixedOffset};
 use chrono_tz::Tz;
@@ -190,14 +189,12 @@ fn has_fares_v1(collections: &Collections) -> bool {
 /// Imports a `Model` from the
 /// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// files in the given directory.
-#[cfg(feature = "model")]
 pub fn from_dir<P: AsRef<path::Path>>(p: P) -> Result<Model> {
     let mut file_handle = PathFileHandler::new(p.as_ref().to_path_buf());
     read_file_handler(&mut file_handle)
 }
 /// Imports a `Model` from a zip file containing the
 /// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md).
-#[cfg(feature = "model")]
 pub fn from_zip<P: AsRef<path::Path>>(p: P) -> Result<Model> {
     let reader = std::fs::File::open(p.as_ref())?;
     let mut file_handler = ZipHandler::new(reader, p)?;
@@ -235,7 +232,6 @@ pub fn collections_from_dir<P: AsRef<path::Path>>(p: P) -> Result<Collections> {
 /// ```
 ///
 /// The `source_name` is needed to have nicer error messages.
-#[cfg(feature = "model")]
 pub fn from_zip_reader<R>(reader: R, source_name: &str) -> Result<Model>
 where
     R: std::io::Seek + std::io::Read,
@@ -250,7 +246,6 @@ where
 /// This method will try to detect if the input is a zipped archive or not.
 /// If the default file type mechanism is not enough, you can use
 /// [from_zip] or [from_dir].
-#[cfg(feature = "model")]
 pub fn read<P: AsRef<path::Path>>(path: P) -> Result<Model> {
     let p = path.as_ref();
     if p.is_file() {
@@ -289,7 +284,6 @@ pub fn read_collections<P: AsRef<path::Path>>(path: P) -> Result<Collections> {
     }
 }
 
-#[cfg(feature = "model")]
 fn read_file_handler<H>(file_handler: &mut H) -> Result<Model>
 where
     for<'a> &'a mut H: FileHandler,

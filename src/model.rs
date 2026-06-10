@@ -20,7 +20,6 @@ use chrono::NaiveDate;
 use derivative::Derivative;
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
-#[cfg(feature = "model")]
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
 use serde::{Deserialize, Serialize};
 use skip_error::skip_error_and_warn;
@@ -146,6 +145,8 @@ impl Collections {
 
     /// Remove stop zone
     pub fn remove_stop_zones(&mut self) {
+        // Collect zone indices BEFORE retain, because retain reindexes the
+        // collection and would make any subsequent index check incorrect.
         let zone_idxs: HashSet<Idx<StopPoint>> = self
             .stop_points
             .iter()
@@ -157,6 +158,10 @@ impl Collections {
             return;
         }
 
+        // Drop vehicle journeys that stop at a zone stop point.
+        // HashSet::contains is O(1), so the total cost is
+        // O(vehicle_journeys × stop_times_per_vj) instead of the previous
+        // O(vehicle_journeys × stop_times_per_vj × stop_points).
         self.vehicle_journeys.retain(|vj| {
             vj.stop_times
                 .iter()
@@ -1130,10 +1135,10 @@ impl Collections {
     /// `route.destination_id` is also replaced with the destination stop area
     /// found with the above rules.
     pub fn enhance_route_names(&mut self) {
-        fn find_best_origin_destination<'a>(
+        fn find_best_origin_destination(
             route_idx: Idx<Route>,
-            collections: &'a Collections,
-        ) -> Result<(&'a StopArea, &'a StopArea)> {
+            collections: &Collections,
+        ) -> Result<(&StopArea, &StopArea)> {
             use std::collections::BTreeSet;
             fn select_stop_areas<F>(
                 collections: &Collections,
@@ -1236,15 +1241,12 @@ impl Collections {
                     find_biggest_stop_areas(most_frequent_stop_areas, collections);
                 find_first_by_alphabetical_order(biggest_stop_areas)
             }
-            let vehicle_journey_idxs: std::collections::BTreeSet<Idx<VehicleJourney>> =
-                collections
-                    .vehicle_journeys
-                    .iter()
-                    .filter(|(_, vj)| {
-                        collections.routes.get_idx(&vj.route_id) == Some(route_idx)
-                    })
-                    .map(|(idx, _)| idx)
-                    .collect();
+            let vehicle_journey_idxs: std::collections::BTreeSet<Idx<VehicleJourney>> = collections
+                .vehicle_journeys
+                .iter()
+                .filter(|(_, vj)| collections.routes.get_idx(&vj.route_id) == Some(route_idx))
+                .map(|(idx, _)| idx)
+                .collect();
 
             let origin_stop_area =
                 find_best_stop_area_for(collections, &vehicle_journey_idxs, |vj| {
@@ -1277,10 +1279,8 @@ impl Collections {
                 .as_ref()
                 .is_none_or(|destination_id| !is_valid_destination_id(destination_id));
             if no_route_name || no_destination_id {
-                let (origin, destination) = skip_error_and_warn!(find_best_origin_destination(
-                    route_idx,
-                    self,
-                ));
+                let (origin, destination) =
+                    skip_error_and_warn!(find_best_origin_destination(route_idx, self,));
                 if no_route_name
                     && !origin.name.trim().is_empty()
                     && !destination.name.trim().is_empty()
@@ -1599,11 +1599,6 @@ impl Collections {
 ///
 /// Wraps a [`Collections`] and pre-computes relation indexes between all
 /// object types so that [`get_corresponding`] queries are fast.
-///
-/// Requires the `model` feature (enabled by default).  Without it, work
-/// directly with [`Collections`] and call [`Collections::enhance`] for
-/// post-processing.
-#[cfg(feature = "model")]
 #[derive(GetCorresponding)]
 pub struct Model {
     collections: Collections,
@@ -1637,7 +1632,6 @@ pub struct Model {
     datasets_to_physical_modes: ManyToMany<Dataset, PhysicalMode>,
 }
 
-#[cfg(feature = "model")]
 impl Model {
     /// Constructs a model from the given `Collections`, building all relation
     /// indexes needed for [`get_corresponding`] queries.
@@ -1788,7 +1782,6 @@ impl Model {
     }
 }
 
-#[cfg(feature = "model")]
 impl ::serde::Serialize for Model {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -1797,20 +1790,17 @@ impl ::serde::Serialize for Model {
         self.collections.serialize(serializer)
     }
 }
-#[cfg(feature = "model")]
 impl<'de> ::serde::Deserialize<'de> for Model {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: ::serde::Deserializer<'de>,
     {
         use serde::de::Error;
-        let mut collections: Collections =
-            ::serde::Deserialize::deserialize(deserializer)?;
+        let mut collections: Collections = ::serde::Deserialize::deserialize(deserializer)?;
         collections.enhance().map_err(D::Error::custom)?;
         Model::new(collections).map_err(D::Error::custom)
     }
 }
-#[cfg(feature = "model")]
 impl ops::Deref for Model {
     type Target = Collections;
     fn deref(&self) -> &Self::Target {

@@ -23,7 +23,7 @@ use tracing_subscriber::{
     layer::SubscriberExt as _,
     util::SubscriberInitExt as _,
 };
-use transit_model::{configuration, objects::VehicleJourneyScheduleType, Model, Result};
+use transit_model::{configuration, objects::VehicleJourneyScheduleType, Result};
 
 pub static GIT_VERSION: std::sync::LazyLock<String> =
     std::sync::LazyLock::new(|| transit_model::binary_full_version(env!("CARGO_PKG_VERSION")));
@@ -118,8 +118,6 @@ fn run(opt: Opt) -> Result<()> {
         transit_model::gtfs::Reader::new(configuration).parse_collections(opt.input)?;
     collections
         .filter_by_vj_schedule_types(vec![VehicleJourneyScheduleType::ArrivalDepartureTimesOnly])?;
-    let model = Model::new(collections)?;
-
     let mut config = transit_model::netex_france::WriteConfiguration::new(opt.participant)
         .current_datetime(opt.current_datetime);
     if let Some(stop_provider) = opt.stop_provider {
@@ -127,10 +125,10 @@ fn run(opt: Opt) -> Result<()> {
     }
     match opt.output.extension() {
         Some(ext) if ext == "zip" => {
-            transit_model::netex_france::write_to_zip(&model, opt.output, config)?;
+            transit_model::netex_france::write_to_zip(&collections, opt.output, config)?;
         }
         _ => {
-            transit_model::netex_france::write(&model, opt.output, config)?;
+            transit_model::netex_france::write(&collections, opt.output, config)?;
         }
     };
 

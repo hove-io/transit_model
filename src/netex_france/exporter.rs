@@ -15,7 +15,7 @@
 //! Exporter for Netex France profile
 use crate::xml_builder::{Element, ElementWriter, Node};
 use crate::{
-    model::Model,
+    model::Collections,
     netex_france::{
         CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, OfferExporter,
         StopExporter, TransferExporter,
@@ -27,7 +27,6 @@ use anyhow::anyhow;
 use chrono::prelude::*;
 use proj::Proj;
 use rayon::prelude::*;
-use relational_types::IdxSet;
 use std::{
     convert::AsRef,
     fmt::{self, Display, Formatter},
@@ -147,7 +146,7 @@ fn only_alphanumeric(s: &str) -> String {
 
 /// Struct that can write an export of Netex France profile from a Model
 pub struct Exporter<'a> {
-    model: &'a Model,
+    model: &'a Collections,
     participant_ref: String,
     _stop_provider_code: String,
     timestamp: DateTime<FixedOffset>,
@@ -159,7 +158,7 @@ impl<'a> Exporter<'a> {
     /// `path` is the expected output Path where the Netex France is going to be
     /// written. It should be a folder that already exists.
     pub fn new(
-        model: &'a Model,
+        model: &'a Collections,
         participant_ref: String,
         stop_provider_code: Option<String>,
         timestamp: DateTime<FixedOffset>,
@@ -497,6 +496,36 @@ impl Exporter<'_> {
                 Ok(())
             })?;
 
+        Ok(())
+    }
+
+    fn write_network_offers<P>(&self, network_path: P, network_idx: Idx<Network>) -> Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        let network_id = &self.model.networks[network_idx].id;
+        let offer_exporter = OfferExporter::new(self.model)?;
+        for (line_idx, line) in self
+            .model
+            .lines
+            .iter()
+            .filter(|(_, l)| &l.network_id == network_id)
+        {
+            let line_id_md5 = md5::compute(line.id.as_bytes());
+            let line_code = if let Some(line_code) = line.code.as_ref() {
+                format!("{}_", only_alphanumeric(line_code))
+            } else {
+                String::new()
+            };
+            let file_name = format!("offre_{line_code}{line_id_md5:x}.xml");
+            let filepath = network_path.as_ref().join(file_name);
+            let file = File::create(&filepath)?;
+            let offer_frame = self.create_offer_frame(&offer_exporter, line_idx)?;
+            let netex = self.wrap_frame(offer_frame, VersionType::Schedule);
+            let mut writer = ElementWriter::pretty(file);
+            info!("Writing {:?}", &filepath);
+            writer.write(&netex)?;
+        }
         Ok(())
     }
 
