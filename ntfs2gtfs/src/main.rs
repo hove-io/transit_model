@@ -79,8 +79,13 @@ fn init_logger() {
 fn run(opt: Opt) -> Result<()> {
     info!("Launching ntfs2gtfs...");
     let mut collections = transit_model::ntfs::read_collections(opt.input)?;
+
+    info!("Removing stop zones...");
     collections.remove_stop_zones();
+
+    info!("Removing route points...");
     collections.remove_route_points();
+
     let mut model = Model::new(collections)?;
 
     if opt.mode_in_route_short_name {
