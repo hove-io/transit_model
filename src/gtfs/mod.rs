@@ -838,9 +838,11 @@ pub fn write<P: AsRef<Path>>(
     write::write_agencies(path, &collections.networks, &ticketing_deep_links)?;
     write_calendar_dates(path, &collections.calendars)?;
     write::write_stops(path, collections)?;
-    let gtfs_trips = write::write_trips(path, collections)?;
+    // Single O(V) scan shared by write_trips and write_routes.
+    let line_pms = write::build_line_physical_modes(collections);
+    let gtfs_trips = write::write_trips(path, collections, &line_pms)?;
     write::write_attributions(path, &collections.companies, gtfs_trips)?;
-    write::write_routes(path, collections, extend_route_type)?;
+    write::write_routes(path, collections, extend_route_type, &line_pms)?;
     write::write_stop_times(
         path,
         &collections.vehicle_journeys,

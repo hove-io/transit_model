@@ -301,9 +301,67 @@ fn make_gtfs_trip_from_ntfs_vj(
     }
 }
 
+/// Precomputed mapping from line index to its sorted physical modes.
+///
+/// Built once with a single O(V) pass over all vehicle journeys, so both
+/// [`write_trips`] and [`write_routes`] can share the same data without
+/// re-scanning the whole collection on every line.
+pub(super) type LinePms<'a> = HashMap<Idx<objects::Line>, Vec<PhysicalModeWithOrder<'a>>>;
+
+/// Builds the [`LinePms`] map from a single scan over vehicle journeys (O(V)).
+pub(super) fn build_line_physical_modes<'a>(collections: &'a Collections) -> LinePms<'a> {
+    // One pass over VJs: collect the set of physical-mode ids used by each line.
+    let mut line_to_pm_ids: HashMap<Idx<objects::Line>, HashSet<&str>> = HashMap::new();
+    for vj in collections.vehicle_journeys.values() {
+        if let Some(route) = collections.routes.get(&vj.route_id) {
+            if let Some(line_idx) = collections.lines.get_idx(&route.line_id) {
+                line_to_pm_ids
+                    .entry(line_idx)
+                    .or_default()
+                    .insert(vj.physical_mode_id.as_str());
+            }
+        }
+    }
+
+    let empty = HashSet::new();
+    collections
+        .lines
+        .iter()
+        .map(|(line_idx, _)| {
+            let pm_ids = line_to_pm_ids.get(&line_idx).unwrap_or(&empty);
+            let mut pms: Vec<&objects::PhysicalMode> = pm_ids
+                .iter()
+                .filter_map(|pm_id| collections.physical_modes.get(pm_id))
+                .collect();
+            pms.sort_unstable_by_key(|pm| get_physical_mode_order(pm));
+            if pms.is_empty() {
+                // Fallback: physical_mode stored as a line code (e.g. locked lines).
+                if let Some(pm) = collections.lines[line_idx]
+                    .codes
+                    .iter()
+                    .find(|(sys, _)| sys == "physical_mode")
+                    .and_then(|(_, code)| collections.physical_modes.get(code.as_str()))
+                {
+                    pms.push(pm);
+                }
+            }
+            let pmos = pms
+                .into_iter()
+                .enumerate()
+                .map(|(i, pm)| PhysicalModeWithOrder {
+                    inner: pm,
+                    is_lowest: i == 0,
+                })
+                .collect();
+            (line_idx, pmos)
+        })
+        .collect()
+}
+
 pub fn write_trips<'a>(
     path: &'a path::Path,
     collections: &'a Collections,
+    line_pms: &LinePms<'_>,
 ) -> Result<HashMap<String, Vec<&'a VehicleJourney>>> {
     let file = "trips.txt";
     info!(file_name = %file, "Writing");
@@ -311,16 +369,17 @@ pub fn write_trips<'a>(
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
 
-    // Precompute (line_id, pm_id) → gtfs_route_id once for all lines.
-    // Without this, get_line_physical_modes would be called for every VehicleJourney,
-    // causing an O(VJ × routes × VJ) scan.
-    let mut gtfs_route_ids: HashMap<(String, String), String> = HashMap::new();
-    for (line_idx, line) in collections.lines.iter() {
-        for pmo in get_line_physical_modes(line_idx, &collections.physical_modes, collections) {
-            let route_id = get_gtfs_route_id_from_ntfs_line_id(&line.id, &pmo);
-            gtfs_route_ids.insert((line.id.clone(), pmo.inner.id.to_string()), route_id);
-        }
-    }
+    // Build (line_id, pm_id) → gtfs_route_id from the pre-scanned map: O(L × modes_per_line).
+    let gtfs_route_ids: HashMap<(String, String), String> = line_pms
+        .iter()
+        .flat_map(|(line_idx, pmos)| {
+            let line_id = collections.lines[*line_idx].id.clone();
+            pmos.iter().map(move |pmo| {
+                let route_id = get_gtfs_route_id_from_ntfs_line_id(&line_id, pmo);
+                ((line_id.clone(), pmo.inner.id.to_string()), route_id)
+            })
+        })
+        .collect();
 
     let mut vjs_by_route_gtfs_id: HashMap<String, Vec<&VehicleJourney>> = HashMap::new();
     for vj in collections.vehicle_journeys.values() {
@@ -511,7 +570,7 @@ pub fn write_codes(path: &path::Path, collections: &Collections) -> Result<()> {
 }
 
 #[derive(Debug)]
-struct PhysicalModeWithOrder<'a> {
+pub(super) struct PhysicalModeWithOrder<'a> {
     inner: &'a objects::PhysicalMode,
     is_lowest: bool,
 }
@@ -631,14 +690,15 @@ pub fn write_routes(
     path: &path::Path,
     collections: &Collections,
     extend_route_type: bool,
+    line_pms: &LinePms<'_>,
 ) -> Result<()> {
     let file = "routes.txt";
     info!(file_name = %file, "Writing");
     let path = path.join(file);
     let mut wtr =
         csv::Writer::from_path(&path).with_context(|| format!("Error reading {path:?}"))?;
-    for (from, l) in &collections.lines {
-        for pm in &get_line_physical_modes(from, &collections.physical_modes, collections) {
+    for (line_idx, l) in &collections.lines {
+        for pm in line_pms.get(&line_idx).map(Vec::as_slice).unwrap_or(&[]) {
             let route = make_gtfs_route_from_ntfs_line(l, pm);
             if extend_route_type {
                 wtr.serialize(ExtendedRoute::from(route))
@@ -1283,14 +1343,17 @@ mod tests {
             bikes_allowed: Availability::NotAvailable,
         };
         collections.enhance().unwrap();
-        let mut gtfs_route_ids: HashMap<(String, String), String> = HashMap::new();
-        for (line_idx, line) in collections.lines.iter() {
-            for pmo in get_line_physical_modes(line_idx, &collections.physical_modes, &collections)
-            {
-                let route_id = get_gtfs_route_id_from_ntfs_line_id(&line.id, &pmo);
-                gtfs_route_ids.insert((line.id.clone(), pmo.inner.id.to_string()), route_id);
-            }
-        }
+        let line_pms = build_line_physical_modes(&collections);
+        let gtfs_route_ids: HashMap<(String, String), String> = line_pms
+            .iter()
+            .flat_map(|(line_idx, pmos)| {
+                let line_id = collections.lines[*line_idx].id.clone();
+                pmos.iter().map(move |pmo| {
+                    let route_id = get_gtfs_route_id_from_ntfs_line_id(&line_id, pmo);
+                    ((line_id.clone(), pmo.inner.id.to_string()), route_id)
+                })
+            })
+            .collect();
         assert_eq!(
             expected,
             make_gtfs_trip_from_ntfs_vj(&vj, &collections, &gtfs_route_ids)
