@@ -23,9 +23,8 @@ use crate::{
     Model, Result,
 };
 use anyhow::anyhow;
-use proj::Proj;
 use relational_types::IdxSet;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use tracing::warn;
 use typed_index_collection::Idx;
 
@@ -35,7 +34,8 @@ type JourneyPattern = VehicleJourney;
 
 pub struct OfferExporter<'a> {
     model: &'a Model,
-    converter: Proj,
+    // Precalculated coordinates for all stop points (EPSG:2154 as "x y" string, None if absent)
+    stop_coords: HashMap<Idx<StopPoint>, Option<String>>,
     // Precalculation of the Stop Points per Route
     route_points: BTreeMap<&'a str, Vec<Idx<StopPoint>>>,
     // Precalculation of the Netex Modes per Line
@@ -75,15 +75,31 @@ fn calculate_route_points(model: &Model) -> BTreeMap<&str, Vec<Idx<StopPoint>>> 
 impl<'a> OfferExporter<'a> {
     pub fn new(model: &'a Model) -> Result<Self> {
         let converter = Exporter::get_coordinates_converter()?;
+        // Pre-compute EPSG:2154 coordinates for every stop point.
+        // Proj is used here and then dropped; it does not need to be stored.
+        let stop_coords = model
+            .stop_points
+            .iter()
+            .map(|(idx, sp)| {
+                let coord_str = if sp.coord == Coord::default() {
+                    None
+                } else {
+                    converter
+                        .convert(sp.coord)
+                        .ok()
+                        .map(|c| format!("{} {}", c.lon, c.lat))
+                };
+                (idx, coord_str)
+            })
+            .collect();
         let route_points = calculate_route_points(model);
         let line_modes = LineExporter::build_line_modes(model);
-        let exporter = OfferExporter {
+        Ok(OfferExporter {
             model,
-            converter,
+            stop_coords,
             route_points,
             line_modes,
-        };
-        Ok(exporter)
+        })
     }
     pub fn export(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
         let route_elements = self.export_routes(line_idx)?;
@@ -100,16 +116,10 @@ impl<'a> OfferExporter<'a> {
             .collect();
         let service_journey_pattern_elements =
             self.export_journey_patterns(&journey_pattern_indexes);
-        let scheduled_stop_point_elements = journey_pattern_indexes
+        let scheduled_stop_point_elements: Vec<Element> = journey_pattern_indexes
             .iter()
-            .map(|journey_pattern_idx| self.export_scheduled_stop_points(*journey_pattern_idx))
-            .try_fold::<_, _, Result<Vec<Element>>>(
-                Vec::new(),
-                |mut scheduled_stop_point_elements, elements| {
-                    scheduled_stop_point_elements.extend(elements?);
-                    Ok(scheduled_stop_point_elements)
-                },
-            )?;
+            .flat_map(|journey_pattern_idx| self.export_scheduled_stop_points(*journey_pattern_idx))
+            .collect();
         let passenger_stop_assignment_elements = journey_pattern_indexes
             .iter()
             .map(|journey_pattern_idx| self.export_passenger_stop_assignments(*journey_pattern_idx))
@@ -189,16 +199,15 @@ impl<'a> OfferExporter<'a> {
             .route_points
             .get(route_id)
             .ok_or_else(|| anyhow!("Failed to generate RoutePoint for Route '{}'", route_id))?;
-        route_points
+        Ok(route_points
             .iter()
             .enumerate()
             .map(|(order, route_point_idx)| {
                 // order must start at ONE but 'enumerate()' starts at ZERO
                 let order = order + 1;
-                let stop_point = &self.model.stop_points[*route_point_idx];
-                self.generate_route_point(route_id, order, stop_point)
+                self.generate_route_point(route_id, order, *route_point_idx)
             })
-            .collect()
+            .collect())
     }
 
     fn export_journey_patterns(
@@ -270,7 +279,7 @@ impl<'a> OfferExporter<'a> {
     fn export_scheduled_stop_points(
         &self,
         journey_pattern_idx: Idx<JourneyPattern>,
-    ) -> Result<Vec<Element>> {
+    ) -> Vec<Element> {
         let vehicle_journey = &self.model.vehicle_journeys[journey_pattern_idx];
         vehicle_journey
             .stop_times
@@ -283,7 +292,7 @@ impl<'a> OfferExporter<'a> {
         &self,
         vehicle_journey_id: &'a str,
         stop_time: &'a StopTime,
-    ) -> Result<Element> {
+    ) -> Element {
         let element_builder = Element::builder(ObjectType::ScheduledStopPoint.to_string())
             .attr(
                 "id",
@@ -294,14 +303,13 @@ impl<'a> OfferExporter<'a> {
                 ),
             )
             .attr("version", "any");
-        let element_builder = if let Some(location_element) =
-            self.generate_location(&self.model.stop_points[stop_time.stop_point_idx].coord)?
-        {
-            element_builder.append(location_element)
-        } else {
-            element_builder
-        };
-        Ok(element_builder.build())
+        let element_builder =
+            if let Some(location_element) = self.generate_location(stop_time.stop_point_idx) {
+                element_builder.append(location_element)
+            } else {
+                element_builder
+            };
+        element_builder.build()
     }
 
     fn export_passenger_stop_assignments(
@@ -493,8 +501,8 @@ impl<'a> OfferExporter<'a> {
         &self,
         route_id: &'a str,
         order: usize,
-        stop_point: &'a StopPoint,
-    ) -> Result<Element> {
+        stop_point_idx: Idx<StopPoint>,
+    ) -> Element {
         let route_point_id = Self::generate_route_point_id(route_id, order);
         let element_builder = Element::builder(ObjectType::RoutePoint.to_string())
             .attr(
@@ -502,13 +510,13 @@ impl<'a> OfferExporter<'a> {
                 Exporter::generate_id(&route_point_id, ObjectType::RoutePoint),
             )
             .attr("version", "any");
-        let element_builder =
-            if let Some(location_element) = self.generate_location(&stop_point.coord)? {
-                element_builder.append(location_element)
-            } else {
-                element_builder
-            };
-        Ok(element_builder.build())
+        let element_builder = if let Some(location_element) = self.generate_location(stop_point_idx)
+        {
+            element_builder.append(location_element)
+        } else {
+            element_builder
+        };
+        element_builder.build()
     }
 
     fn generate_line_ref(line_id: &str) -> Element {
@@ -617,18 +625,13 @@ impl<'a> OfferExporter<'a> {
         Exporter::generate_id(&order_id, object_type)
     }
 
-    fn generate_location(&self, coord: &'a Coord) -> Result<Option<Element>> {
-        if *coord == Coord::default() {
-            return Ok(None);
-        }
-        let coord_epsg2154 = self.converter.convert(*coord)?;
-        let coord_text = Node::Text(format!("{} {}", coord_epsg2154.lon, coord_epsg2154.lat));
+    fn generate_location(&self, stop_point_idx: Idx<StopPoint>) -> Option<Element> {
+        let coord_str = self.stop_coords.get(&stop_point_idx)?.as_deref()?;
         let pos = Element::builder("gml:pos")
             .attr("srsName", "EPSG:2154")
-            .append(coord_text)
+            .append(Node::Text(coord_str.to_owned()))
             .build();
-        let location = Element::builder("Location").append(pos).build();
-        Ok(Some(location))
+        Some(Element::builder("Location").append(pos).build())
     }
 
     fn generate_for_alighting(drop_off_type: u8) -> Element {
