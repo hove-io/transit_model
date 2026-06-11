@@ -101,10 +101,10 @@ pub const TRANSFER_WAITING_TIME: u32 = 120;
 /// Factor applied to crow-fly distance to approximate Manhattan (walking) distance
 pub const TRANSFER_MANHATTAN_FACTOR: f64 = 1.2;
 
-lazy_static::lazy_static! {
-    /// Current datetime
-    pub static ref CURRENT_DATETIME: String = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
-}
+/// Current datetime
+pub static CURRENT_DATETIME: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+});
 
 /// The error type used by the crate.
 pub type Error = anyhow::Error;
