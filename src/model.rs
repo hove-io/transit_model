@@ -145,16 +145,24 @@ impl Collections {
 
     /// Remove stop zone
     pub fn remove_stop_zones(&mut self) {
-        self.stop_points.retain(|sp| sp.stop_type != StopType::Zone);
+        let zone_idxs: HashSet<Idx<StopPoint>> = self
+            .stop_points
+            .iter()
+            .filter(|(_, sp)| sp.stop_type == StopType::Zone)
+            .map(|(idx, _)| idx)
+            .collect();
 
-        let stop_point_ids: Vec<Idx<StopPoint>> =
-            self.stop_points.get_id_to_idx().values().copied().collect();
+        if zone_idxs.is_empty() {
+            return;
+        }
 
         self.vehicle_journeys.retain(|vj| {
             vj.stop_times
                 .iter()
-                .all(|st| stop_point_ids.contains(&st.stop_point_idx))
+                .all(|st| !zone_idxs.contains(&st.stop_point_idx))
         });
+
+        self.stop_points.retain(|sp| sp.stop_type != StopType::Zone);
     }
 
     /// Restrict the validity period of the current `Collections` with the start_date and end_date
