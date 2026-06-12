@@ -452,11 +452,9 @@ impl Exporter<'_> {
         let offer_exporter = OfferExporter::new(self.model)?;
 
         // Phase 1 (sequential): create network directories and collect all work items.
-        let work_items: Vec<(PathBuf, Idx<Line>)> = self
-            .model
-            .networks
-            .values()
-            .map(|network| -> Result<Vec<(PathBuf, Idx<Line>)>> {
+        let work_items: Vec<(PathBuf, Idx<Line>)> = self.model.networks.values().try_fold(
+            Vec::new(),
+            |mut acc, network| -> Result<Vec<(PathBuf, Idx<Line>)>> {
                 let network_id_md5 = md5::compute(network.id.as_bytes());
                 let folder_name = format!(
                     "reseau_{}_{:x}",
@@ -468,15 +466,14 @@ impl Exporter<'_> {
                 // Unwrap is safe because we're iterating over existing networks
                 let network_idx = self.model.networks.get_idx(&network.id).unwrap();
                 let line_indexes: IdxSet<Line> = self.model.get_corresponding_from_idx(network_idx);
-                Ok(line_indexes
-                    .into_iter()
-                    .map(|line_idx| (network_path.clone(), line_idx))
-                    .collect())
-            })
-            .collect::<Result<Vec<_>>>()?
-            .into_iter()
-            .flatten()
-            .collect();
+                acc.extend(
+                    line_indexes
+                        .into_iter()
+                        .map(|line_idx| (network_path.clone(), line_idx)),
+                );
+                Ok(acc)
+            },
+        )?;
 
         // Phase 2 (parallel): generate and write each offer file independently.
         work_items
