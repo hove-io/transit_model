@@ -20,19 +20,21 @@ use crate::{
         CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, OfferExporter,
         StopExporter, TransferExporter,
     },
-    objects::{Date, Line, Network},
+    objects::{Date, Line},
     Result,
 };
 use anyhow::anyhow;
 use chrono::prelude::*;
 use proj::Proj;
+use rayon::prelude::*;
 use relational_types::IdxSet;
 use std::{
     convert::AsRef,
     fmt::{self, Display, Formatter},
     fs::{self, File},
+    io::BufWriter,
     iter,
-    path::Path,
+    path::{Path, PathBuf},
 };
 use tracing::info;
 use typed_index_collection::Idx;
@@ -260,7 +262,7 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_LINES_FILENAME);
-        let file = File::create(&filepath)?;
+        let file = BufWriter::new(File::create(&filepath)?);
         let network_frames = self.create_networks_frames();
         let lines_frame = self.create_lines_frame()?;
         let companies_frame = self.create_companies_frame();
@@ -333,7 +335,7 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_STOPS_FILENAME);
-        let file = File::create(&filepath)?;
+        let file = BufWriter::new(File::create(&filepath)?);
         let stop_frame = self.create_stops_frame()?;
         let netex = self.wrap_frame(stop_frame, VersionType::Stops);
         let mut writer = ElementWriter::pretty(file);
@@ -362,7 +364,7 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_CALENDARS_FILENAME);
-        let file = File::create(&filepath)?;
+        let file = BufWriter::new(File::create(&filepath)?);
         let calendars_frame = self.create_calendars_frame()?;
         let netex = self.wrap_frame(calendars_frame, VersionType::Calendars);
         let mut writer = ElementWriter::pretty(file);
@@ -417,7 +419,7 @@ impl Exporter<'_> {
         P: AsRef<Path>,
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_TRANSFERS_FILENAME);
-        let file = File::create(&filepath)?;
+        let file = BufWriter::new(File::create(&filepath)?);
         let transfers_frame = self.create_transfers_frame()?;
         let netex = self.wrap_frame(transfers_frame, VersionType::Transfers);
         let mut writer = ElementWriter::pretty(file);
@@ -447,46 +449,54 @@ impl Exporter<'_> {
     where
         P: AsRef<Path>,
     {
-        for network in self.model.networks.values() {
-            let network_id_md5 = md5::compute(network.id.as_bytes());
-            let folder_name = format!(
-                "reseau_{}_{:x}",
-                only_alphanumeric(&network.name),
-                network_id_md5
-            );
-            let network_path = path.as_ref().join(folder_name);
-            fs::create_dir(&network_path)?;
-
-            // Unwrap is safe because we're iterating over existing networks
-            let network_idx = self.model.networks.get_idx(&network.id).unwrap();
-            self.write_network_offers(&network_path, network_idx)?;
-        }
-        Ok(())
-    }
-
-    fn write_network_offers<P>(&self, network_path: P, network_idx: Idx<Network>) -> Result<()>
-    where
-        P: AsRef<Path>,
-    {
-        let line_indexes: IdxSet<Line> = self.model.get_corresponding_from_idx(network_idx);
         let offer_exporter = OfferExporter::new(self.model)?;
-        for line_idx in line_indexes {
-            let line = &self.model.lines[line_idx];
-            let line_id_md5 = md5::compute(line.id.as_bytes());
-            let line_code = if let Some(line_code) = line.code.as_ref() {
-                format!("{}_", only_alphanumeric(line_code))
-            } else {
-                String::new()
-            };
-            let file_name = format!("offre_{line_code}{line_id_md5:x}.xml");
-            let filepath = network_path.as_ref().join(file_name);
-            let file = File::create(&filepath)?;
-            let offer_frame = self.create_offer_frame(&offer_exporter, line_idx)?;
-            let netex = self.wrap_frame(offer_frame, VersionType::Schedule);
-            let mut writer = ElementWriter::pretty(file);
-            info!("Writing {:?}", &filepath);
-            writer.write(&netex)?;
-        }
+
+        // Phase 1 (sequential): create network directories and collect all work items.
+        let work_items: Vec<(PathBuf, Idx<Line>)> = self.model.networks.values().try_fold(
+            Vec::new(),
+            |mut acc, network| -> Result<Vec<(PathBuf, Idx<Line>)>> {
+                let network_id_md5 = md5::compute(network.id.as_bytes());
+                let folder_name = format!(
+                    "reseau_{}_{:x}",
+                    only_alphanumeric(&network.name),
+                    network_id_md5
+                );
+                let network_path = path.as_ref().join(folder_name);
+                fs::create_dir(&network_path)?;
+                // Unwrap is safe because we're iterating over existing networks
+                let network_idx = self.model.networks.get_idx(&network.id).unwrap();
+                let line_indexes: IdxSet<Line> = self.model.get_corresponding_from_idx(network_idx);
+                acc.extend(
+                    line_indexes
+                        .into_iter()
+                        .map(|line_idx| (network_path.clone(), line_idx)),
+                );
+                Ok(acc)
+            },
+        )?;
+
+        // Phase 2 (parallel): generate and write each offer file independently.
+        work_items
+            .par_iter()
+            .try_for_each(|(network_path, line_idx)| -> Result<()> {
+                let line = &self.model.lines[*line_idx];
+                let line_id_md5 = md5::compute(line.id.as_bytes());
+                let line_code = if let Some(code) = line.code.as_ref() {
+                    format!("{}_", only_alphanumeric(code))
+                } else {
+                    String::new()
+                };
+                let file_name = format!("offre_{line_code}{line_id_md5:x}.xml");
+                let filepath = network_path.join(&file_name);
+                let file = BufWriter::new(File::create(&filepath)?);
+                let offer_frame = self.create_offer_frame(&offer_exporter, *line_idx)?;
+                let netex = self.wrap_frame(offer_frame, VersionType::Schedule);
+                let mut writer = ElementWriter::pretty(file);
+                info!("Writing {:?}", &filepath);
+                writer.write(&netex)?;
+                Ok(())
+            })?;
+
         Ok(())
     }
 
