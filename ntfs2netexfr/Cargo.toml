@@ -17,7 +17,6 @@ clap = { version = "4", features = ["derive"] }
 tracing = { version = "0.1", features = ["log", "release_max_level_info"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 transit_model = { path = "../", features = ["proj"] }
-lazy_static = "1"
 
 [dev-dependencies]
 assert_cmd = "2"

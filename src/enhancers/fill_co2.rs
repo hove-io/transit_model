@@ -4,8 +4,8 @@ use crate::{
 };
 use typed_index_collection::CollectionWithId;
 
-lazy_static::lazy_static! {
-    static ref CO2_EMISSIONS: std::collections::HashMap<&'static str, f32> = {
+static CO2_EMISSIONS: std::sync::LazyLock<std::collections::HashMap<&'static str, f32>> =
+    std::sync::LazyLock::new(|| {
         let mut modes_map = std::collections::HashMap::new();
         modes_map.insert(model::AIR_PHYSICAL_MODE, 144.6f32);
         modes_map.insert(model::BIKE_PHYSICAL_MODE, 0f32);
@@ -32,18 +32,16 @@ lazy_static::lazy_static! {
         modes_map.insert(model::TRAIN_PHYSICAL_MODE, 11.9f32);
         modes_map.insert(model::TRAMWAY_PHYSICAL_MODE, 3.29f32);
         modes_map
-    };
-}
+    });
 
-lazy_static::lazy_static! {
-    pub static ref FALLBACK_PHYSICAL_MODES: Vec<&'static str> = {
+pub static FALLBACK_PHYSICAL_MODES: std::sync::LazyLock<Vec<&'static str>> =
+    std::sync::LazyLock::new(|| {
         vec![
             model::BIKE_PHYSICAL_MODE,
             model::BIKE_SHARING_SERVICE_PHYSICAL_MODE,
-            model::CAR_PHYSICAL_MODE
+            model::CAR_PHYSICAL_MODE,
         ]
-    };
-}
+    });
 
 /// Physical mode should contains CO2 emissions. If the values are not present
 /// in the NTFS, some default values will be used.

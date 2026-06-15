@@ -25,9 +25,8 @@ use tracing_subscriber::{
 };
 use transit_model::{Model, Result};
 
-lazy_static::lazy_static! {
-    pub static ref GIT_VERSION: String = transit_model::binary_full_version(env!("CARGO_PKG_VERSION"));
-}
+pub static GIT_VERSION: std::sync::LazyLock<String> =
+    std::sync::LazyLock::new(|| transit_model::binary_full_version(env!("CARGO_PKG_VERSION")));
 
 fn get_version() -> &'static str {
     &GIT_VERSION
