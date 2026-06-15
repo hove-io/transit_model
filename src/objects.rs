@@ -2110,8 +2110,13 @@ pub struct Address {
 }
 
 impl_id!(Address);
+impl AddPrefix for Address {
+    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.id = prefix_conf.referential_prefix(self.id.as_str());
+    }
+}
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct AdministrativeRegion {
     #[serde(rename = "admin_id")]
     pub id: String,
@@ -2132,12 +2137,6 @@ pub struct AdministrativeRegion {
 }
 
 impl_id!(AdministrativeRegion);
-
-impl AddPrefix for Address {
-    fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
-        self.id = prefix_conf.referential_prefix(self.id.as_str());
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, Default, PartialEq, Eq, Hash)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]

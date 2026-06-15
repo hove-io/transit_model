@@ -172,6 +172,7 @@ fn add_prefix_on_vehicle_journey_ids_and_values(
 
 impl AddPrefix for Collections {
     fn prefix(&mut self, prefix_conf: &PrefixConfiguration) {
+        self.addresses.prefix(prefix_conf);
         self.contributors.prefix(prefix_conf);
         self.datasets.prefix(prefix_conf);
         self.networks.prefix(prefix_conf);
