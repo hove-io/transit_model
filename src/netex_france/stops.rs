@@ -516,7 +516,7 @@ mod tests {
 
     mod valid_impaired_access {
         use super::*;
-        use crate::model::{Collections, Model};
+        use crate::model::Collections;
         use pretty_assertions::assert_eq;
         use Availability::*;
 
@@ -552,8 +552,8 @@ mod tests {
 
         #[test]
         fn test_impaired_access_true() {
-            let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let collections = Collections::default();
+            let stop_exporter = StopExporter::new(&collections, "MyParticipant").unwrap();
             assert_eq!(
                 "true",
                 get_mobility_impaired_access_value(
@@ -565,8 +565,8 @@ mod tests {
 
         #[test]
         fn test_impaired_access_false() {
-            let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let collections = Collections::default();
+            let stop_exporter = StopExporter::new(&collections, "MyParticipant").unwrap();
             assert_eq!(
                 "false",
                 get_mobility_impaired_access_value(
@@ -578,8 +578,8 @@ mod tests {
 
         #[test]
         fn test_impaired_access_partial() {
-            let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let collections = Collections::default();
+            let stop_exporter = StopExporter::new(&collections, "MyParticipant").unwrap();
             assert_eq!(
                 "partial",
                 get_mobility_impaired_access_value(
@@ -591,8 +591,8 @@ mod tests {
 
         #[test]
         fn test_impaired_access_unknown() {
-            let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let collections = Collections::default();
+            let stop_exporter = StopExporter::new(&collections, "MyParticipant").unwrap();
             assert_eq!(
                 "unknown",
                 get_mobility_impaired_access_value(

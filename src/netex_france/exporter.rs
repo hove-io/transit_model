@@ -23,11 +23,13 @@ use crate::{
     objects::{Date, Line},
     Result,
 };
+
 use anyhow::anyhow;
 use chrono::prelude::*;
 use proj::Proj;
 use rayon::prelude::*;
 use std::{
+    collections::HashMap,
     convert::AsRef,
     fmt::{self, Display, Formatter},
     fs::{self, File},
@@ -451,6 +453,14 @@ impl Exporter<'_> {
         let offer_exporter = OfferExporter::new(self.model)?;
 
         // Phase 1 (sequential): create network directories and collect all work items.
+        // Precompute network→lines index to avoid O(N_lines) scan per network.
+        let mut network_to_lines: HashMap<&str, Vec<Idx<Line>>> = HashMap::new();
+        for (line_idx, line) in self.model.lines.iter() {
+            network_to_lines
+                .entry(line.network_id.as_str())
+                .or_default()
+                .push(line_idx);
+        }
         let work_items: Vec<(PathBuf, Idx<Line>)> = self.model.networks.values().try_fold(
             Vec::new(),
             |mut acc, network| -> Result<Vec<(PathBuf, Idx<Line>)>> {
@@ -462,13 +472,13 @@ impl Exporter<'_> {
                 );
                 let network_path = path.as_ref().join(folder_name);
                 fs::create_dir(&network_path)?;
-                // Unwrap is safe because we're iterating over existing networks
-                let network_idx = self.model.networks.get_idx(&network.id).unwrap();
-                let line_indexes: IdxSet<Line> = self.model.get_corresponding_from_idx(network_idx);
+                let empty = Vec::new();
                 acc.extend(
-                    line_indexes
-                        .into_iter()
-                        .map(|line_idx| (network_path.clone(), line_idx)),
+                    network_to_lines
+                        .get(network.id.as_str())
+                        .unwrap_or(&empty)
+                        .iter()
+                        .map(|&line_idx| (network_path.clone(), line_idx)),
                 );
                 Ok(acc)
             },
@@ -496,36 +506,6 @@ impl Exporter<'_> {
                 Ok(())
             })?;
 
-        Ok(())
-    }
-
-    fn write_network_offers<P>(&self, network_path: P, network_idx: Idx<Network>) -> Result<()>
-    where
-        P: AsRef<Path>,
-    {
-        let network_id = &self.model.networks[network_idx].id;
-        let offer_exporter = OfferExporter::new(self.model)?;
-        for (line_idx, line) in self
-            .model
-            .lines
-            .iter()
-            .filter(|(_, l)| &l.network_id == network_id)
-        {
-            let line_id_md5 = md5::compute(line.id.as_bytes());
-            let line_code = if let Some(line_code) = line.code.as_ref() {
-                format!("{}_", only_alphanumeric(line_code))
-            } else {
-                String::new()
-            };
-            let file_name = format!("offre_{line_code}{line_id_md5:x}.xml");
-            let filepath = network_path.as_ref().join(file_name);
-            let file = File::create(&filepath)?;
-            let offer_frame = self.create_offer_frame(&offer_exporter, line_idx)?;
-            let netex = self.wrap_frame(offer_frame, VersionType::Schedule);
-            let mut writer = ElementWriter::pretty(file);
-            info!("Writing {:?}", &filepath);
-            writer.write(&netex)?;
-        }
         Ok(())
     }
 

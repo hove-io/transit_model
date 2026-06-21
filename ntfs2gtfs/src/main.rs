@@ -85,7 +85,6 @@ fn run(opt: Opt) -> Result<()> {
     info!("Removing route points...");
     collections.remove_route_points();
 
-
     if opt.mode_in_route_short_name {
         collections = add_mode_to_line_code(collections)?;
     }

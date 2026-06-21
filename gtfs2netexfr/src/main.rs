@@ -118,6 +118,7 @@ fn run(opt: Opt) -> Result<()> {
         transit_model::gtfs::Reader::new(configuration).parse_collections(opt.input)?;
     collections
         .filter_by_vj_schedule_types(vec![VehicleJourneyScheduleType::ArrivalDepartureTimesOnly])?;
+    collections.enhance()?;
     let mut config = transit_model::netex_france::WriteConfiguration::new(opt.participant)
         .current_datetime(opt.current_datetime);
     if let Some(stop_provider) = opt.stop_provider {

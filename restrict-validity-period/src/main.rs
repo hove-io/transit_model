@@ -23,7 +23,7 @@ use tracing_subscriber::{
     layer::SubscriberExt as _,
     util::SubscriberInitExt as _,
 };
-use transit_model::{Model, Result};
+use transit_model::Result;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -79,17 +79,16 @@ fn init_logger() {
 fn run(opt: Opt) -> Result<()> {
     info!("Launching restrict-validity-period...");
 
-    let model = transit_model::ntfs::read(opt.input)?;
-    let mut collections = model.into_collections();
+    let mut collections = transit_model::ntfs::read_collections(opt.input)?;
     collections.restrict_period(opt.start_validity_date, opt.end_validity_date)?;
-    let model = Model::new(collections)?;
+    collections.enhance()?;
 
     match opt.output.extension() {
         Some(ext) if ext == "zip" => {
-            transit_model::ntfs::write_to_zip(&model, opt.output, opt.current_datetime)?;
+            transit_model::ntfs::write_to_zip(&collections, opt.output, opt.current_datetime)?;
         }
         _ => {
-            transit_model::ntfs::write(&model, opt.output, opt.current_datetime)?;
+            transit_model::ntfs::write(&collections, opt.output, opt.current_datetime)?;
         }
     }
 

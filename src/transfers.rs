@@ -963,12 +963,13 @@ mod tests {
         collections.stop_points.get_mut("E").unwrap().coord =
             Coord::from(("2.35109".to_string(), "48.85767".to_string())); // very close to B to ensure transfer is generated
 
-        let model = Model::new(collections).unwrap();
+        assert_eq!(collections.stop_points.len(), 5);
 
-        assert_eq!(model.stop_points.len(), 5);
-
-        let bus_idx = model.physical_modes.get_idx(BUS_PHYSICAL_MODE).unwrap();
-        let rapid_transit_idx = model
+        let bus_idx = collections
+            .physical_modes
+            .get_idx(BUS_PHYSICAL_MODE)
+            .unwrap();
+        let rapid_transit_idx = collections
             .physical_modes
             .get_idx(RAPID_TRANSIT_PHYSICAL_MODE)
             .unwrap();
@@ -989,7 +990,7 @@ mod tests {
         };
 
         let collections =
-            generates_transfers(model.into_collections(), config, None).expect("an error occurred");
+            generates_transfers(collections, config, None).expect("an error occurred");
 
         // Self-transfers for all stops + B<->C + B<->E + C<->E
         assert_eq!(collections.transfers.len(), 11);
@@ -1074,7 +1075,6 @@ mod tests {
     mod build_pathway_maps_tests {
         use super::super::build_pathway_maps;
         use crate::{
-            model::Model,
             objects::{Coord, StopType},
             ModelBuilder,
         };
@@ -1275,15 +1275,14 @@ mod tests {
                     ..Default::default()
                 })
                 .unwrap();
-            let model = Model::new(collections).unwrap();
-            assert_eq!(model.pathways.len(), 2);
+            assert_eq!(collections.pathways.len(), 2);
 
-            let (exit_maps, entry_maps) = build_pathway_maps(&model, 1.0, 500.0);
+            let (exit_maps, entry_maps) = build_pathway_maps(&collections, 1.0, 500.0);
             assert_eq!(exit_maps.len(), 1);
             assert_eq!(entry_maps.len(), 0);
 
-            let sp_a = model.stop_points.get_idx("SP_A").unwrap();
-            let sl_x = model.stop_locations.get_idx("SL_X").unwrap();
+            let sp_a = collections.stop_points.get_idx("SP_A").unwrap();
+            let sl_x = collections.stop_locations.get_idx("SL_X").unwrap();
 
             let (distance, time) = exit_maps[&sp_a][&sl_x];
             assert_eq!(distance, 10.0);

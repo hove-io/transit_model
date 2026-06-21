@@ -1135,11 +1135,11 @@ impl Collections {
     /// `route.destination_id` is also replaced with the destination stop area
     /// found with the above rules.
     pub fn enhance_route_names(&mut self) {
-        fn find_best_origin_destination(
+        fn find_best_origin_destination<'a>(
             route_idx: Idx<Route>,
-            collections: &Collections,
-        ) -> Result<(&StopArea, &StopArea)> {
-            use std::collections::BTreeSet;
+            collections: &'a Collections,
+            vehicle_journey_idxs: &BTreeSet<Idx<VehicleJourney>>,
+        ) -> Result<(&'a StopArea, &'a StopArea)> {
             fn select_stop_areas<F>(
                 collections: &Collections,
                 vehicle_journey_idxs: &BTreeSet<Idx<VehicleJourney>>,
@@ -1241,13 +1241,6 @@ impl Collections {
                     find_biggest_stop_areas(most_frequent_stop_areas, collections);
                 find_first_by_alphabetical_order(biggest_stop_areas)
             }
-            let vehicle_journey_idxs: std::collections::BTreeSet<Idx<VehicleJourney>> = collections
-                .vehicle_journeys
-                .iter()
-                .filter(|(_, vj)| collections.routes.get_idx(&vj.route_id) == Some(route_idx))
-                .map(|(idx, _)| idx)
-                .collect();
-
             let origin_stop_area =
                 find_best_stop_area_for(collections, &vehicle_journey_idxs, |vj| {
                     vj.stop_times[0].stop_point_idx
@@ -1269,6 +1262,17 @@ impl Collections {
             }
         }
 
+        // Build route→VJ index once to avoid O(N_vj) scan per route.
+        let route_to_vjs: HashMap<Idx<Route>, BTreeSet<Idx<VehicleJourney>>> = self
+            .vehicle_journeys
+            .iter()
+            .fold(HashMap::new(), |mut map, (vj_idx, vj)| {
+                if let Some(route_idx) = self.routes.get_idx(&vj.route_id) {
+                    map.entry(route_idx).or_default().insert(vj_idx);
+                }
+                map
+            });
+        let empty_vjs = BTreeSet::new();
         let mut route_names: BTreeMap<Idx<Route>, String> = BTreeMap::new();
         let mut route_destination_ids: BTreeMap<Idx<Route>, Option<String>> = BTreeMap::new();
         let is_valid_destination_id = |destination_id| self.stop_areas.contains_id(destination_id);
@@ -1279,8 +1283,12 @@ impl Collections {
                 .as_ref()
                 .is_none_or(|destination_id| !is_valid_destination_id(destination_id));
             if no_route_name || no_destination_id {
-                let (origin, destination) =
-                    skip_error_and_warn!(find_best_origin_destination(route_idx, self,));
+                let vehicle_journey_idxs = route_to_vjs.get(&route_idx).unwrap_or(&empty_vjs);
+                let (origin, destination) = skip_error_and_warn!(find_best_origin_destination(
+                    route_idx,
+                    self,
+                    vehicle_journey_idxs
+                ));
                 if no_route_name
                     && !origin.name.trim().is_empty()
                     && !destination.name.trim().is_empty()

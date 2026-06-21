@@ -2,26 +2,29 @@ use crate::{
     model::Collections,
     objects::{Line, Route},
 };
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use typed_index_collection::Idx;
 
 /// If a line name is empty, it's set with the name of its first "forward" route (in alphabetical order)
 /// Note: possible improvement of this functionality; factoring, pooling and using
 /// the same algorithm as for route names enhancing (with traffic analysis)
 pub fn adjust_lines_names(collections: &mut Collections) {
+    // Build line→routes index once to avoid O(N_routes) scan per empty-name line.
+    let mut line_to_routes: HashMap<Idx<Line>, Vec<Idx<Route>>> = HashMap::new();
+    for (route_idx, route) in collections.routes.iter() {
+        if let Some(line_idx) = collections.lines.get_idx(&route.line_id) {
+            line_to_routes.entry(line_idx).or_default().push(route_idx);
+        }
+    }
     let mut line_names: Vec<(Idx<Line>, String)> = Vec::new();
     for (line_idx, _) in collections
         .lines
         .iter()
         .filter(|(_, l)| l.name.trim().is_empty())
     {
-        let routes_idx: BTreeSet<Idx<Route>> = collections
-            .routes
-            .iter()
-            .filter(|(_, r)| collections.lines.get_idx(&r.line_id) == Some(line_idx))
-            .map(|(idx, _)| idx)
-            .collect();
-        let route_name = routes_idx
+        let empty: Vec<Idx<Route>> = Vec::new();
+        let route_idxs = line_to_routes.get(&line_idx).unwrap_or(&empty);
+        let route_name = route_idxs
             .iter()
             .map(|route_idx| &collections.routes[*route_idx])
             .filter(|route| !route.name.trim().is_empty())

@@ -36,8 +36,7 @@ fn test_generates_transfers() {
         };
         let collections =
             transfers::generates_transfers(model.into_collections(), config, None).unwrap();
-        let model = transit_model::Model::new(collections).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&collections, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             path,
             Some(vec!["transfers.txt"]),
@@ -59,8 +58,7 @@ fn test_generates_all_multi_contributors_transfers() {
         };
         let collections =
             transfers::generates_transfers(model.into_collections(), config, None).unwrap();
-        let model = transit_model::Model::new(collections).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&collections, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             path,
             Some(vec!["transfers.txt"]),
@@ -107,8 +105,7 @@ fn test_generates_transfers_with_closure_inter_contributors() {
         };
         let collections =
             transfers::generates_transfers(model.into_collections(), config, None).unwrap();
-        let model = transit_model::Model::new(collections).unwrap();
-        transit_model::ntfs::write(&model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&collections, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             path,
             Some(vec!["transfers.txt"]),

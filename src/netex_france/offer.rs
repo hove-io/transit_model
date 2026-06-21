@@ -40,17 +40,26 @@ pub struct OfferExporter<'a> {
     route_points: BTreeMap<&'a str, Vec<Idx<StopPoint>>>,
     // Precalculation of the Netex Modes per Line
     line_modes: LineModes<'a>,
+    // Precomputed VehicleJourney indexes per Route (avoids O(N_vj) scan per route)
+    route_to_vjs: HashMap<Idx<Route>, Vec<Idx<VehicleJourney>>>,
+    // Precomputed Route indexes per Line (avoids O(N_routes) scan per line)
+    line_to_routes: HashMap<Idx<Line>, Vec<Idx<Route>>>,
 }
 
-fn calculate_route_points(model: &Collections) -> BTreeMap<&str, Vec<Idx<StopPoint>>> {
+fn calculate_route_points<'a>(
+    model: &'a Collections,
+    route_to_vjs: &HashMap<Idx<Route>, Vec<Idx<VehicleJourney>>>,
+) -> BTreeMap<&'a str, Vec<Idx<StopPoint>>> {
+    let empty = Vec::new();
     model
         .routes
-        .values()
-        .map(|route| {
-            let mut vehicle_journeys: Vec<&VehicleJourney> = model
-                .vehicle_journeys
-                .values()
-                .filter(|vj| vj.route_id == route.id)
+        .iter()
+        .map(|(route_idx, route)| {
+            let mut vehicle_journeys: Vec<&VehicleJourney> = route_to_vjs
+                .get(&route_idx)
+                .unwrap_or(&empty)
+                .iter()
+                .map(|&idx| &model.vehicle_journeys[idx])
                 .collect();
             // Order the vehicle journey with the following priority:
             // - Stop point identifier of the first stop time of the vehicle journey
@@ -91,25 +100,40 @@ impl<'a> OfferExporter<'a> {
                 (idx, coord_str)
             })
             .collect();
-        let route_points = calculate_route_points(model);
+        // Build relation indexes once to avoid repeated O(N) scans during export.
+        let mut route_to_vjs: HashMap<Idx<Route>, Vec<Idx<VehicleJourney>>> = HashMap::new();
+        for (vj_idx, vj) in model.vehicle_journeys.iter() {
+            if let Some(route_idx) = model.routes.get_idx(&vj.route_id) {
+                route_to_vjs.entry(route_idx).or_default().push(vj_idx);
+            }
+        }
+        let mut line_to_routes: HashMap<Idx<Line>, Vec<Idx<Route>>> = HashMap::new();
+        for (route_idx, route) in model.routes.iter() {
+            if let Some(line_idx) = model.lines.get_idx(&route.line_id) {
+                line_to_routes.entry(line_idx).or_default().push(route_idx);
+            }
+        }
+        let route_points = calculate_route_points(model, &route_to_vjs);
         let line_modes = LineExporter::build_line_modes(model);
         Ok(OfferExporter {
             model,
             stop_coords,
             route_points,
             line_modes,
+            route_to_vjs,
+            line_to_routes,
         })
     }
     pub fn export(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
         let route_elements = self.export_routes(line_idx)?;
         let route_point_elements = self.export_route_points(line_idx)?;
-        let line_id = &self.model.lines[line_idx].id;
+        let empty_routes = Vec::new();
         let journey_patterns: Vec<(Idx<JourneyPattern>, Vec<Idx<VehicleJourney>>)> = self
-            .model
-            .routes
+            .line_to_routes
+            .get(&line_idx)
+            .unwrap_or(&empty_routes)
             .iter()
-            .filter(|(_, route)| &route.line_id == line_id)
-            .flat_map(|(route_idx, _)| self.calculate_journey_patterns(route_idx))
+            .flat_map(|&route_idx| self.calculate_journey_patterns(route_idx))
             .collect();
         let journey_pattern_indexes: Vec<Idx<JourneyPattern>> = journey_patterns
             .iter()
@@ -158,12 +182,12 @@ impl<'a> OfferExporter<'a> {
 // Internal methods
 impl<'a> OfferExporter<'a> {
     fn export_routes(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
-        let line_id = &self.model.lines[line_idx].id;
-        self.model
-            .routes
+        let empty = Vec::new();
+        self.line_to_routes
+            .get(&line_idx)
+            .unwrap_or(&empty)
             .iter()
-            .filter(|(_, route)| &route.line_id == line_id)
-            .map(|(route_idx, _)| self.export_route(route_idx))
+            .map(|&route_idx| self.export_route(route_idx))
             .collect()
     }
 
@@ -187,14 +211,10 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn export_route_points(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
-        let line_id = &self.model.lines[line_idx].id;
+        let empty = Vec::new();
         let mut route_point_elements = Vec::new();
-        for (_, route) in self
-            .model
-            .routes
-            .iter()
-            .filter(|(_, r)| &r.line_id == line_id)
-        {
+        for &route_idx in self.line_to_routes.get(&line_idx).unwrap_or(&empty) {
+            let route = &self.model.routes[route_idx];
             let elements = self.export_route_points_by_route(&route.id)?;
             route_point_elements.extend(elements);
         }
@@ -689,14 +709,9 @@ impl<'a> OfferExporter<'a> {
                 && a.drop_off_type == b.drop_off_type
                 && a.local_zone_id == b.local_zone_id
         };
-        let route_id = &self.model.routes[route_idx].id;
-        let mut vehicle_journey_indexes: Vec<Idx<VehicleJourney>> = self
-            .model
-            .vehicle_journeys
-            .iter()
-            .filter(|(_, vj)| &vj.route_id == route_id)
-            .map(|(vj_idx, _)| vj_idx)
-            .collect();
+        let empty = Vec::new();
+        let mut vehicle_journey_indexes: Vec<Idx<VehicleJourney>> =
+            self.route_to_vjs.get(&route_idx).cloned().unwrap_or(empty);
         vehicle_journey_indexes.sort_unstable_by_key(|vehicle_journey_idx| {
             &self.model.vehicle_journeys[*vehicle_journey_idx].id
         });

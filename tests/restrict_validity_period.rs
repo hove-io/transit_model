@@ -14,7 +14,6 @@
 
 use chrono::NaiveDate;
 use std::path::Path;
-use transit_model::model::Model;
 use transit_model::test_utils::*;
 
 #[test]
@@ -31,8 +30,7 @@ fn test_restrict_global() {
             )
             .unwrap();
         collections.enhance().unwrap();
-        let new_model = Model::new(collections).unwrap();
-        transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&collections, path, get_test_datetime()).unwrap();
         compare_output_dir_with_expected(
             path,
             None,
@@ -54,7 +52,6 @@ fn test_restrict_no_panic() {
                 NaiveDate::from_ymd_opt(2019, 7, 31).unwrap(),
             )
             .unwrap();
-        let new_model = Model::new(collections).unwrap();
-        transit_model::ntfs::write(&new_model, path, get_test_datetime()).unwrap();
+        transit_model::ntfs::write(&collections, path, get_test_datetime()).unwrap();
     });
 }
