@@ -420,7 +420,7 @@ pub fn generate_missing_transfers_from_sp(
         let sp1_exit_map = sp_exit_maps.get(&idx1).unwrap_or(&empty_pathway_map);
 
         // Get all points within the bounding box and filter by actual distance
-        for nearby_location in rtree.locate_in_envelope(&search_box) {
+        for nearby_location in rtree.locate_in_envelope(search_box) {
             let idx2 = nearby_location.idx;
 
             if transfers_map.contains_key(&(idx1, idx2)) {
