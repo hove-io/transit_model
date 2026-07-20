@@ -263,7 +263,9 @@ fn ntfs() {
         &BookingRule {
             id: String::from("odtres3"),
             name: Some(String::from("odtres3")),
-            booking_type: BookingType::RealTime,
+            booking_type: BookingType::UpToPreviousDays,
+            prior_notice_last_day: Some(2),
+            prior_notice_last_time: Some(Time::new(18, 0, 0)),
             info_url: Some(String::from("https://odtreservation3.com")),
             phone: Some(String::from("01 02 03 04 03")),
             message: None,
@@ -298,7 +300,9 @@ fn ntfs() {
         &BookingRule {
             id: String::from("odtres1"),
             name: Some(String::from("odtres1")),
-            booking_type: BookingType::RealTime,
+            booking_type: BookingType::SameDayWithPriorNotice,
+            prior_notice_duration_min: Some(30),
+            prior_notice_duration_max: Some(120),
             info_url: None,
             phone: Some(String::from("01 02 03 04 99")),
             message: Some(String::from("lundi au samedi de 12h à 18h")),

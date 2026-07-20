@@ -1122,7 +1122,9 @@ mod tests {
             BookingRule {
                 id: "odt:2".to_string(),
                 name: None,
-                booking_type: BookingType::RealTime,
+                booking_type: BookingType::SameDayWithPriorNotice,
+                prior_notice_duration_min: Some(30),
+                prior_notice_duration_max: Some(120),
                 info_url: Some("https://reservation2".to_string()),
                 phone: Some("01 02 03 04 02".to_string()),
                 message: Some("lundi au samedi de 8h à 15h".to_string()),
@@ -1132,7 +1134,9 @@ mod tests {
             BookingRule {
                 id: "odt:3".to_string(),
                 name: Some("name:3".to_string()),
-                booking_type: BookingType::RealTime,
+                booking_type: BookingType::UpToPreviousDays,
+                prior_notice_last_day: Some(2),
+                prior_notice_last_time: Some(Time::new(18, 0, 0)),
                 info_url: Some("https://reservation3".to_string()),
                 phone: Some("01 02 03 04 03".to_string()),
                 message: Some("lundi au mardi de 9h à 10h".to_string()),
