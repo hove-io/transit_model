@@ -263,10 +263,12 @@ fn ntfs() {
         &BookingRule {
             id: String::from("odtres3"),
             name: Some(String::from("odtres3")),
+            booking_type: BookingType::RealTime,
             info_url: Some(String::from("https://odtreservation3.com")),
             phone: Some(String::from("01 02 03 04 03")),
             message: None,
             booking_url: None,
+            ..Default::default()
         }
     );
 
@@ -296,12 +298,14 @@ fn ntfs() {
         &BookingRule {
             id: String::from("odtres1"),
             name: Some(String::from("odtres1")),
+            booking_type: BookingType::RealTime,
             info_url: None,
             phone: Some(String::from("01 02 03 04 99")),
             message: Some(String::from("lundi au samedi de 12h à 18h")),
             booking_url: Some(String::from(
                 "https://deeplink1/search?departure-address={from_name}"
             )),
+            ..Default::default()
         }
     );
 
@@ -319,10 +323,12 @@ fn ntfs() {
         &BookingRule {
             id: String::from("odtres2"),
             name: None,
+            booking_type: BookingType::RealTime,
             info_url: Some(String::from("https://odtreservation2.com")),
             phone: None,
             message: None,
             booking_url: None,
+            ..Default::default()
         }
     );
 }

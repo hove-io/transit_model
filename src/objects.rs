@@ -1601,12 +1601,34 @@ impl AddPrefix for Comment {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Clone)]
+#[derivative(Default)]
+pub enum BookingType {
+    #[derivative(Default)]
+    #[serde(rename = "0")]
+    RealTime,
+    #[serde(rename = "1")]
+    SameDayWithPriorNotice,
+    #[serde(rename = "2")]
+    UpToPreviousDays,
+}
+
 #[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct BookingRule {
     #[serde(rename = "booking_rule_id")]
     pub id: String,
     #[serde(rename = "name")]
     pub name: Option<String>,
+    #[serde(rename = "booking_type", default)]
+    pub booking_type: BookingType,
+    #[serde(rename = "prior_notice_duration_min")]
+    pub prior_notice_duration_min: Option<u32>,
+    #[serde(rename = "prior_notice_duration_max")]
+    pub prior_notice_duration_max: Option<u32>,
+    #[serde(rename = "prior_notice_last_day")]
+    pub prior_notice_last_day: Option<u32>,
+    #[serde(rename = "prior_notice_last_time")]
+    pub prior_notice_last_time: Option<Time>,
     #[serde(rename = "info_url")]
     pub info_url: Option<String>,
     #[serde(rename = "phone_number")]
@@ -1620,6 +1642,11 @@ pub struct BookingRule {
 impl BookingRule {
     pub fn is_similar(&self, other: &Self) -> bool {
         self.name == other.name
+            && self.booking_type == other.booking_type
+            && self.prior_notice_duration_min == other.prior_notice_duration_min
+            && self.prior_notice_duration_max == other.prior_notice_duration_max
+            && self.prior_notice_last_day == other.prior_notice_last_day
+            && self.prior_notice_last_time == other.prior_notice_last_time
             && self.info_url == other.info_url
             && self.phone == other.phone
             && self.message == other.message
