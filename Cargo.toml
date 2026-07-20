@@ -51,7 +51,7 @@ pretty_assertions = "1"
 proj = { version = "0.31", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
 rayon = { version = "1", optional = true }
 # quick-xml is used for writing NeTEx files (see xml_builder module in netex_france)
-quick-xml = { version = "0.40", optional = true }
+quick-xml = { version = "0.41", optional = true }
 relational_types = { git = "https://github.com/hove-io/relational_types", tag = "v2"}
 rstar = "0.13"
 rust_decimal = "1"
