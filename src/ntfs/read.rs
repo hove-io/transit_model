@@ -578,7 +578,44 @@ pub(crate) fn manage_booking_rules<H>(
 where
     for<'a> &'a mut H: FileHandler,
 {
-    collections.booking_rules = make_opt_collection_with_id(file_handler, "booking_rules.txt")?;
+    let booking_rules: CollectionWithId<BookingRule> =
+        make_opt_collection_with_id(file_handler, "booking_rules.txt")?;
+
+    for booking_rule in booking_rules.values() {
+        match booking_rule.booking_type {
+            BookingType::RealTime => {
+                ensure!(
+                    !(booking_rule.prior_notice_duration_min.is_some()
+                        || booking_rule.prior_notice_duration_max.is_some()
+                        || booking_rule.prior_notice_last_day.is_some()
+                        || booking_rule.prior_notice_last_time.is_some()),
+                    "Booking rule {} must not have prior_notice_duration_min, prior_notice_duration_max, prior_notice_last_day or prior_notice_last_time set when booking_type is 0 (RealTime)",
+                    booking_rule.id
+                );
+            }
+            BookingType::SameDayWithPriorNotice => {
+                ensure!(
+                    !(booking_rule.prior_notice_duration_min.is_none()
+                        || booking_rule.prior_notice_last_day.is_some()
+                        || booking_rule.prior_notice_last_time.is_some()),
+                    "Booking rule {} must have prior_notice_duration_min set, and must not have prior_notice_last_day or prior_notice_last_time set, when booking_type is 1 (SameDayWithPriorNotice)",
+                    booking_rule.id
+                );
+            }
+            BookingType::UpToPreviousDays => {
+                ensure!(
+                    !(booking_rule.prior_notice_duration_min.is_some()
+                        || booking_rule.prior_notice_duration_max.is_some()
+                        || booking_rule.prior_notice_last_day.is_none()
+                        || booking_rule.prior_notice_last_time.is_none()),
+                    "Booking rule {} must not have prior_notice_duration_min or prior_notice_duration_max set, and must have prior_notice_last_day and prior_notice_last_time set, when booking_type is 2 (UpToPreviousDays)",
+                    booking_rule.id
+                );
+            }
+        }
+    }
+
+    collections.booking_rules = booking_rules;
 
     if collections.booking_rules.is_empty() {
         return Ok(());
@@ -1057,5 +1094,95 @@ mod tests {
             assert_eq!(code.0, "source");
             assert_eq!(code.1, "source_code");
         });
+    }
+
+    mod manage_booking_rules {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn real_time_success() {
+            let booking_rules_content = "booking_rule_id,booking_type\n\
+                                         br1,0";
+            test_in_tmp_dir(|path| {
+                create_file_with_content(path, "booking_rules.txt", booking_rules_content);
+                let mut collections = Collections::default();
+                let mut handler = PathFileHandler::new(path.to_path_buf());
+                manage_booking_rules(&mut collections, &mut handler).unwrap();
+                assert_eq!(1, collections.booking_rules.len());
+            });
+        }
+
+        #[test]
+        fn same_day_with_prior_notice_success() {
+            let booking_rules_content = "booking_rule_id,booking_type,prior_notice_duration_min\n\
+                                         br1,1,30";
+            test_in_tmp_dir(|path| {
+                create_file_with_content(path, "booking_rules.txt", booking_rules_content);
+                let mut collections = Collections::default();
+                let mut handler = PathFileHandler::new(path.to_path_buf());
+                manage_booking_rules(&mut collections, &mut handler).unwrap();
+                assert_eq!(1, collections.booking_rules.len());
+            });
+        }
+
+        #[test]
+        fn up_to_previous_days_success() {
+            let booking_rules_content =
+                "booking_rule_id,booking_type,prior_notice_last_day,prior_notice_last_time\n\
+                                         br1,2,1,17:00:00";
+            test_in_tmp_dir(|path| {
+                create_file_with_content(path, "booking_rules.txt", booking_rules_content);
+                let mut collections = Collections::default();
+                let mut handler = PathFileHandler::new(path.to_path_buf());
+                manage_booking_rules(&mut collections, &mut handler).unwrap();
+                assert_eq!(1, collections.booking_rules.len());
+            });
+        }
+
+        #[test]
+        fn real_time_with_prior_notice_duration_min_fails() {
+            let booking_rules_content = "booking_rule_id,booking_type,prior_notice_duration_min\n\
+                                         br1,0,30";
+            test_in_tmp_dir(|path| {
+                create_file_with_content(path, "booking_rules.txt", booking_rules_content);
+                let mut collections = Collections::default();
+                let mut handler = PathFileHandler::new(path.to_path_buf());
+                let result = manage_booking_rules(&mut collections, &mut handler);
+                assert!(result.is_err());
+                let err = result.unwrap_err().to_string();
+                assert!(err.contains("must not have prior_notice_duration_min, prior_notice_duration_max, prior_notice_last_day or prior_notice_last_time set when booking_type is 0 (RealTime)"));
+            });
+        }
+
+        #[test]
+        fn same_day_without_duration_min_fails() {
+            let booking_rules_content = "booking_rule_id,booking_type\n\
+                                         br1,1";
+            test_in_tmp_dir(|path| {
+                create_file_with_content(path, "booking_rules.txt", booking_rules_content);
+                let mut collections = Collections::default();
+                let mut handler = PathFileHandler::new(path.to_path_buf());
+                let result = manage_booking_rules(&mut collections, &mut handler);
+                assert!(result.is_err());
+                let err = result.unwrap_err().to_string();
+                assert!(err.contains("must have prior_notice_duration_min set, and must not have prior_notice_last_day or prior_notice_last_time set, when booking_type is 1 (SameDayWithPriorNotice)"));
+            });
+        }
+
+        #[test]
+        fn up_to_previous_days_without_last_day_fails() {
+            let booking_rules_content = "booking_rule_id,booking_type\n\
+                                         br1,2";
+            test_in_tmp_dir(|path| {
+                create_file_with_content(path, "booking_rules.txt", booking_rules_content);
+                let mut collections = Collections::default();
+                let mut handler = PathFileHandler::new(path.to_path_buf());
+                let result = manage_booking_rules(&mut collections, &mut handler);
+                assert!(result.is_err());
+                let err = result.unwrap_err().to_string();
+                assert!(err.contains("must not have prior_notice_duration_min or prior_notice_duration_max set, and must have prior_notice_last_day and prior_notice_last_time set, when booking_type is 2 (UpToPreviousDays)"));
+            });
+        }
     }
 }
