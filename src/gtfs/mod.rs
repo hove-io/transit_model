@@ -1041,4 +1041,91 @@ mod tests {
         let err = result.unwrap_err().to_string();
         assert!(err.contains("Booking rule br6 must have at least one of message, phone_number, info_url or booking_url set"));
     }
+
+    #[test]
+    // SameDayWithPriorNotice requires prior_notice_duration_min to be set; validates the successful case.
+    fn test_booking_rule_try_from_success_same_day_with_prior_notice() {
+        let booking_rule = BookingRule {
+            id: "br7".to_string(),
+            booking_type: BookingType::SameDayWithPriorNotice,
+            prior_notice_duration_min: Some(30),
+            message: Some("msg".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br7");
+        assert_eq!(
+            obj.booking_type,
+            objects::BookingType::SameDayWithPriorNotice
+        );
+        assert_eq!(obj.prior_notice_duration_min, Some(30));
+    }
+
+    #[test]
+    // UpToPreviousDays requires both prior_notice_last_day and prior_notice_last_time to be set; validates the successful case.
+    fn test_booking_rule_try_from_success_up_to_previous_days() {
+        let booking_rule = BookingRule {
+            id: "br8".to_string(),
+            booking_type: BookingType::UpToPreviousDays,
+            prior_notice_last_day: Some(2),
+            prior_notice_last_time: Some(Time::new(18, 0, 0)),
+            message: Some("msg".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br8");
+        assert_eq!(obj.booking_type, objects::BookingType::UpToPreviousDays);
+        assert_eq!(obj.prior_notice_last_day, Some(2));
+        assert_eq!(obj.prior_notice_last_time, Some(Time::new(18, 0, 0)));
+    }
+
+    #[test]
+    // RealTime forbids all prior_notice_* fields; setting prior_notice_duration_min must fail.
+    fn test_booking_rule_try_from_failure_real_time_with_prior_notice_duration_min() {
+        let booking_rule = BookingRule {
+            id: "br9".to_string(),
+            booking_type: BookingType::RealTime,
+            prior_notice_duration_min: Some(30),
+            message: Some("msg".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("must not have prior_notice_duration_min, prior_notice_duration_max, prior_notice_last_day or prior_notice_last_time set when booking_type is 0 (RealTime)"));
+    }
+
+    #[test]
+    // SameDayWithPriorNotice requires prior_notice_duration_min; omitting it must fail.
+    fn test_booking_rule_try_from_failure_same_day_without_duration_min() {
+        let booking_rule = BookingRule {
+            id: "br10".to_string(),
+            booking_type: BookingType::SameDayWithPriorNotice,
+            message: Some("msg".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("must have prior_notice_duration_min set, and must not have prior_notice_last_day or prior_notice_last_time set, when booking_type is 1 (SameDayWithPriorNotice)"));
+    }
+
+    #[test]
+    // UpToPreviousDays requires prior_notice_last_day; omitting it must fail.
+    fn test_booking_rule_try_from_failure_up_to_previous_days_without_last_day() {
+        let booking_rule = BookingRule {
+            id: "br11".to_string(),
+            booking_type: BookingType::UpToPreviousDays,
+            message: Some("msg".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("must not have prior_notice_duration_min or prior_notice_duration_max set, and must have prior_notice_last_day and prior_notice_last_time set, when booking_type is 2 (UpToPreviousDays)"));
+    }
 }
