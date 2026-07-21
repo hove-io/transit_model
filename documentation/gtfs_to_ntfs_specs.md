@@ -403,15 +403,21 @@ If `location_group_id` represents a group of stop areas, then a stop time is cre
 
 ### Reading booking_rules.txt
 
-If `message`, `phone_number`, `info_url`, and `booking_url` are not defined, the booking rule is not created.
+If none of `message`, `phone_number`, `info_url`, or `booking_url` is defined, the booking rule is not created.
+`booking_type` and `prior_notice_*` fields must respect the GTFS-flex conditional constraints (see [gtfs.org booking_rules.txt](https://gtfs.org/documentation/schedule/reference/#booking_rulestxt)); otherwise the conversion fails with an error.
 
-| NTFS file         | NTFS field  | Constraint | GTFS file         | GTFS field  |
-| ----------------- | ----------- | ---------- | ----------------- | ----------- |
-| booking_rules.txt | id          | Required   | booking_rules.txt | id          |
-| booking_rules.txt | message     | Optional   | booking_rules.txt | message     |
-| booking_rules.txt | phone       | Optional   | booking_rules.txt | phone       |
-| booking_rules.txt | info_url    | Optional   | booking_rules.txt | info_url    |
-| booking_rules.txt | booking_url | Optional   | booking_rules.txt | booking_url |
+| NTFS file         | NTFS field                 | Constraint | GTFS file         | GTFS field                 | Note                                                                 |
+| ----------------- | --------------------------- | ---------- | ----------------- | --------------------------- | --------------------------------------------------------------------- |
+| booking_rules.txt | id                          | Required   | booking_rules.txt | id                          |                                                                       |
+| booking_rules.txt | booking_type                | Required   | booking_rules.txt | booking_type                |                                                                       |
+| booking_rules.txt | prior_notice_duration_min   | Optional   | booking_rules.txt | prior_notice_duration_min   | Required for `booking_type=1`, forbidden otherwise                    |
+| booking_rules.txt | prior_notice_duration_max   | Optional   | booking_rules.txt | prior_notice_duration_max   | Forbidden for `booking_type=0` or `booking_type=2`                    |
+| booking_rules.txt | prior_notice_last_day       | Optional   | booking_rules.txt | prior_notice_last_day       | Required for `booking_type=2`, forbidden otherwise                    |
+| booking_rules.txt | prior_notice_last_time      | Optional   | booking_rules.txt | prior_notice_last_time      | Required if `prior_notice_last_day` is defined, forbidden otherwise   |
+| booking_rules.txt | message                     | Optional   | booking_rules.txt | message                     |                                                                       |
+| booking_rules.txt | phone                       | Optional   | booking_rules.txt | phone                       |                                                                       |
+| booking_rules.txt | info_url                    | Optional   | booking_rules.txt | info_url                    |                                                                       |
+| booking_rules.txt | booking_url                 | Optional   | booking_rules.txt | booking_url                 |                                                                       |
 
 ### Reading transfers.txt
 
