@@ -85,7 +85,7 @@ mod xml_builder;
 pub(crate) const STOP_TIMES_INIT_CAPACITY: usize = 50;
 
 /// Current version of the NTFS format
-pub const NTFS_VERSION: &str = "0.20.0";
+pub const NTFS_VERSION: &str = "0.21.0";
 
 /// Maximum total walking distance in meters to consider generating a transfer.
 /// This includes both open-air segments (crow-fly × manhattan_factor) and

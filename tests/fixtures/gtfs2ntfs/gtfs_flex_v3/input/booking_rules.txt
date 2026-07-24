@@ -1,2 +1,4 @@
-booking_rule_id,booking_type,prior_notice_duration_min,message,phone_number,info_url,booking_url
-standard,1,5,"3h10 pour Yuma",0123456789,"info","ttps://reservation-tad.idfmobilites.fr/search?departure-address={from_name}&requested-departure-time={departure_datetime}&territory=bois-le-roi"
+booking_rule_id,booking_type,prior_notice_duration_min,prior_notice_last_day,prior_notice_last_time,message,phone_number,info_url,booking_url
+standard,1,5,,,"3h10 pour Yuma",0123456789,"info","ttps://reservation-tad.idfmobilites.fr/search?departure-address={from_name}&requested-departure-time={departure_datetime}&territory=bois-le-roi"
+realtime,0,,,,"Prise en charge immédiate",0123456780,,
+advance,2,,1,17:00:00,"Réservation la veille avant 17h",,,

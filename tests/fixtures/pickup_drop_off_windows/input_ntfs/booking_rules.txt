@@ -1,4 +1,4 @@
-booking_rule_id,name,info_url,phone_number,message,booking_url
-MFDI:10,sans_reservation,,,"Bus de soirée : Le service fonctionne sans réservation, il suffit d'indiquer l'arrêt de descente au conducteur",
-MFDI:11,avec_reservation,https://www.fileo.com/se-deplacer/reserver-votre-fileo/,01 74 37 24 77,24h/24 et 7j/7,https://www.fileo.com/tad
-MFDI:12,sans_reservation,,,,
+booking_rule_id,name,booking_type,prior_notice_duration_min,prior_notice_duration_max,prior_notice_last_day,prior_notice_last_time,info_url,phone_number,message,booking_url
+MFDI:10,sans_reservation,0,,,,,,,"Bus de soirée : Le service fonctionne sans réservation, il suffit d'indiquer l'arrêt de descente au conducteur",
+MFDI:11,avec_reservation,1,60,240,,,https://www.fileo.com/se-deplacer/reserver-votre-fileo/,01 74 37 24 77,24h/24 et 7j/7,https://www.fileo.com/tad
+MFDI:12,avec_reservation,2,,,1,17:00:00,,,Réservation obligatoire la veille avant 17h,

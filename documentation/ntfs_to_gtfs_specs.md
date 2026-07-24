@@ -18,6 +18,7 @@ The following additional files are generated only if the corresponding objects a
 
 * [transfers](#transferstxt)
 * [shapes](#shapestxt)
+* [booking_rules](#booking_rulestxt)
 * [object_codes_extension](#object_codes_extensiontxt): additional information providing the complementary codes for various objects (stops, networks, lines, routes, trips, companies) used in external systems.
 
 [GTFS]: https://gtfs.org/reference/static
@@ -135,18 +136,47 @@ Stop zones (NTFS stops having `location_type` = 2) are ignored in the current ve
 
 ### stop_times.txt
 
-| GTFS field     | Required | NTFS file                       | NTFS field     | Note                                                                                                                                                                                                                                                                                |
-| -------------- | -------- | ------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| trip_id        | yes      | stop_times.txt                  | trip_id        | (link to the [trips.txt](#tripstxt) file)                                                                                                                                                                                                                                           |
-| arrival_time   | yes      | stop_times                      | arrival_time   |                                                                                                                                                                                                                                                                                     |
-| departure_time | yes      | stop_times.txt                  | departure_time |                                                                                                                                                                                                                                                                                     |
-| stop_id        | yes      | stop_times.txt                  | stop_id        | (link to the [stops.txt](#stopstxt) file)                                                                                                                                                                                                                                           |
-| stop_sequence  | yes      | stop_times.txt                  | stop_sequence  |                                                                                                                                                                                                                                                                                     |
-| stop_headsign  | no       | stop_times.txt                  | stop_headsign  |                                                                                                                                                                                                                                                                                     |
-| pickup_type    | no       | stop_times.txt                  | pickup_type    |                                                                                                                                                                                                                                                                                     |
-| drop_off_type  | no       | stop_times.txt                  | drop_off_type  |                                                                                                                                                                                                                                                                                     |
-| stop_time_desc | no       | comments.txt, comment_links.txt | comment_name   | The value of `comment_name` referenced by the `comment_id` having an `object_type` = `stop_point`and an `object_id` equal to the corresponding `trip_id`. In case of more than one comments linked to the same stop, the first comment in alphabetical order is taken into account. |
-| local_zone_id  | no       | stop_times.txt                  | local_zone_id  |                                                                                                                                                                                                                                                                                     |
+| GTFS field                   | Required | NTFS file                       | NTFS field                   | Note                                                                                                                                                                                                                                                                                |
+| ---------------------------- | -------- | ------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| trip_id                      | yes      | stop_times.txt                  | trip_id                      | (link to the [trips.txt](#tripstxt) file)                                                                                                                                                                                                                                           |
+| arrival_time                 | yes      | stop_times                      | arrival_time                 |                                                                                                                                                                                                                                                                                     |
+| departure_time               | yes      | stop_times.txt                  | departure_time               |                                                                                                                                                                                                                                                                                     |
+| stop_id                      | yes      | stop_times.txt                  | stop_id                      | (link to the [stops.txt](#stopstxt) file)                                                                                                                                                                                                                                           |
+| stop_sequence                | yes      | stop_times.txt                  | stop_sequence                |                                                                                                                                                                                                                                                                                     |
+| stop_headsign                | no       | stop_times.txt                  | stop_headsign                |                                                                                                                                                                                                                                                                                     |
+| pickup_type                  | no       | stop_times.txt                  | pickup_type                  |                                                                                                                                                                                                                                                                                     |
+| drop_off_type                | no       | stop_times.txt                  | drop_off_type                |                                                                                                                                                                                                                                                                                     |
+| stop_time_desc               | no       | comments.txt, comment_links.txt | comment_name                 | The value of `comment_name` referenced by the `comment_id` having an `object_type` = `stop_point`and an `object_id` equal to the corresponding `trip_id`. In case of more than one comments linked to the same stop, the first comment in alphabetical order is taken into account. |
+| local_zone_id                | no       | stop_times.txt                  | local_zone_id                |                                                                                                                                                                                                                                                                                     |
+| timepoint                    | no       | stop_times.txt                  | stop_time_precision          | `1` if `stop_time_precision` is empty or `0` (Exact), `0` otherwise                                                                                                                                                                                                                 |
+| start_pickup_drop_off_window | no       | stop_times.txt                  | start_pickup_drop_off_window |                                                                                                                                                                                                                                                                                     |
+| end_pickup_drop_off_window   | no       | stop_times.txt                  | end_pickup_drop_off_window   |                                                                                                                                                                                                                                                                                     |
+| pickup_booking_rule_id       | no       | booking_rule_links.txt          | booking_rule_id              | (link to the [booking_rules.txt](#booking_rulestxt) file) (1)                                                                                                                                                                                                                       |
+| drop_off_booking_rule_id     | no       | booking_rule_links.txt          | booking_rule_id              | (link to the [booking_rules.txt](#booking_rulestxt) file) (1)                                                                                                                                                                                                                       |
+
+(1) Only set on stop_times where `pickup_type`/`drop_off_type` is `2` (see [booking_rules.txt](#booking_rulestxt)).
+
+### booking_rules.txt
+
+| GTFS field                | Required                | NTFS file         | NTFS field                | Note |
+| ------------------------- | ----------------------- | ----------------- | ------------------------- | ---- |
+| booking_rule_id           | yes                     | booking_rules.txt | id                        |      |
+| booking_type              | yes                     | booking_rules.txt | booking_type              |      |
+| prior_notice_duration_min | conditionally required  | booking_rules.txt | prior_notice_duration_min | (1)  |
+| prior_notice_duration_max | conditionally forbidden | booking_rules.txt | prior_notice_duration_max | (2)  |
+| prior_notice_last_day     | conditionally required  | booking_rules.txt | prior_notice_last_day     | (3)  |
+| prior_notice_last_time    | conditionally required  | booking_rules.txt | prior_notice_last_time    | (4)  |
+| message                   | no                      | booking_rules.txt | message                   |      |
+| phone_number              | no                      | booking_rules.txt | phone                     |      |
+| info_url                  | no                      | booking_rules.txt | info_url                  |      |
+| booking_url               | no                      | booking_rules.txt | booking_url               |      |
+
+(1) Required for `booking_type=1`, forbidden otherwise.\
+(2) Forbidden for `booking_type=0` or `booking_type=2`, optional for `booking_type=1`.\
+(3) Required for `booking_type=2`, forbidden otherwise.\
+(4) Required if `prior_notice_last_day` is defined, forbidden otherwise.
+
+This converter links at most one booking rule per trip, applied identically to `pickup_booking_rule_id` and `drop_off_booking_rule_id` on every stop_time where `pickup_type`/`drop_off_type` is `2`.
 
 ### calendar_dates.txt
 

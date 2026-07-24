@@ -1,4 +1,4 @@
-booking_rule_id,name,info_url,phone_number,message,booking_url
-odtres1,odtres1,,01 02 03 04 99,lundi au samedi de 12h à 18h,https://deeplink1/search?departure-address={from_name}
-odtres2,,https://odtreservation2.com,,,
-odtres3,odtres3,https://odtreservation3.com,01 02 03 04 03,,
+booking_rule_id,name,booking_type,prior_notice_duration_min,prior_notice_duration_max,prior_notice_last_day,prior_notice_last_time,info_url,phone_number,message,booking_url
+odtres1,odtres1,1,30,120,,,,01 02 03 04 99,lundi au samedi de 12h à 18h,https://deeplink1/search?departure-address={from_name}
+odtres2,,0,,,,,https://odtreservation2.com,,,
+odtres3,odtres3,2,,,2,18:00:00,https://odtreservation3.com,01 02 03 04 03,,

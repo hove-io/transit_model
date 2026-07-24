@@ -261,12 +261,36 @@ enum BookingType {
     UpToPreviousDays,
 }
 
+impl From<BookingType> for objects::BookingType {
+    fn from(booking_type: BookingType) -> objects::BookingType {
+        match booking_type {
+            BookingType::RealTime => objects::BookingType::RealTime,
+            BookingType::SameDayWithPriorNotice => objects::BookingType::SameDayWithPriorNotice,
+            BookingType::UpToPreviousDays => objects::BookingType::UpToPreviousDays,
+        }
+    }
+}
+
+impl From<&objects::BookingType> for BookingType {
+    fn from(booking_type: &objects::BookingType) -> BookingType {
+        match booking_type {
+            objects::BookingType::RealTime => BookingType::RealTime,
+            objects::BookingType::SameDayWithPriorNotice => BookingType::SameDayWithPriorNotice,
+            objects::BookingType::UpToPreviousDays => BookingType::UpToPreviousDays,
+        }
+    }
+}
+
 #[derive(Derivative, Serialize, Deserialize)]
 #[derivative(Default)]
 struct BookingRule {
     #[serde(rename = "booking_rule_id")]
     id: String,
     booking_type: BookingType,
+    prior_notice_duration_min: Option<u32>,
+    prior_notice_duration_max: Option<u32>,
+    prior_notice_last_day: Option<u32>,
+    prior_notice_last_time: Option<Time>,
     message: Option<String>,
     phone_number: Option<String>,
     info_url: Option<String>,
@@ -277,11 +301,15 @@ impl From<&objects::BookingRule> for BookingRule {
     fn from(obj: &objects::BookingRule) -> BookingRule {
         BookingRule {
             id: obj.id.clone(),
+            booking_type: BookingType::from(&obj.booking_type),
+            prior_notice_duration_min: obj.prior_notice_duration_min,
+            prior_notice_duration_max: obj.prior_notice_duration_max,
+            prior_notice_last_day: obj.prior_notice_last_day,
+            prior_notice_last_time: obj.prior_notice_last_time,
             message: obj.message.clone(),
             phone_number: obj.phone.clone(),
             info_url: obj.info_url.clone(),
             booking_url: obj.booking_url.clone(),
-            ..Default::default()
         }
     }
 }
@@ -298,8 +326,45 @@ impl TryFrom<BookingRule> for objects::BookingRule {
             anyhow::bail!("Booking rule {} must have at least one of message, phone_number, info_url or booking_url set", obj.id)
         }
 
+        match obj.booking_type {
+            BookingType::RealTime => {
+                anyhow::ensure!(
+                    !(obj.prior_notice_duration_min.is_some()
+                        || obj.prior_notice_duration_max.is_some()
+                        || obj.prior_notice_last_day.is_some()
+                        || obj.prior_notice_last_time.is_some()),
+                    "Booking rule {} must not have prior_notice_duration_min, prior_notice_duration_max, prior_notice_last_day or prior_notice_last_time set when booking_type is 0 (RealTime)",
+                    obj.id
+                );
+            }
+            BookingType::SameDayWithPriorNotice => {
+                anyhow::ensure!(
+                    !(obj.prior_notice_duration_min.is_none()
+                        || obj.prior_notice_last_day.is_some()
+                        || obj.prior_notice_last_time.is_some()),
+                    "Booking rule {} must have prior_notice_duration_min set, and must not have prior_notice_last_day or prior_notice_last_time set, when booking_type is 1 (SameDayWithPriorNotice)",
+                    obj.id
+                );
+            }
+            BookingType::UpToPreviousDays => {
+                anyhow::ensure!(
+                    !(obj.prior_notice_duration_min.is_some()
+                        || obj.prior_notice_duration_max.is_some()
+                        || obj.prior_notice_last_day.is_none()
+                        || obj.prior_notice_last_time.is_none()),
+                    "Booking rule {} must not have prior_notice_duration_min or prior_notice_duration_max set, and must have prior_notice_last_day and prior_notice_last_time set, when booking_type is 2 (UpToPreviousDays)",
+                    obj.id
+                );
+            }
+        }
+
         Ok(objects::BookingRule {
             id: obj.id,
+            booking_type: obj.booking_type.into(),
+            prior_notice_duration_min: obj.prior_notice_duration_min,
+            prior_notice_duration_max: obj.prior_notice_duration_max,
+            prior_notice_last_day: obj.prior_notice_last_day,
+            prior_notice_last_time: obj.prior_notice_last_time,
             message: obj.message,
             phone: obj.phone_number,
             info_url: obj.info_url,
@@ -975,5 +1040,92 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err().to_string();
         assert!(err.contains("Booking rule br6 must have at least one of message, phone_number, info_url or booking_url set"));
+    }
+
+    #[test]
+    // SameDayWithPriorNotice requires prior_notice_duration_min to be set; validates the successful case.
+    fn test_booking_rule_try_from_success_same_day_with_prior_notice() {
+        let booking_rule = BookingRule {
+            id: "br7".to_string(),
+            booking_type: BookingType::SameDayWithPriorNotice,
+            prior_notice_duration_min: Some(30),
+            message: Some("msg".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br7");
+        assert_eq!(
+            obj.booking_type,
+            objects::BookingType::SameDayWithPriorNotice
+        );
+        assert_eq!(obj.prior_notice_duration_min, Some(30));
+    }
+
+    #[test]
+    // UpToPreviousDays requires both prior_notice_last_day and prior_notice_last_time to be set; validates the successful case.
+    fn test_booking_rule_try_from_success_up_to_previous_days() {
+        let booking_rule = BookingRule {
+            id: "br8".to_string(),
+            booking_type: BookingType::UpToPreviousDays,
+            prior_notice_last_day: Some(2),
+            prior_notice_last_time: Some(Time::new(18, 0, 0)),
+            message: Some("msg".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_ok());
+        let obj = result.unwrap();
+        assert_eq!(obj.id, "br8");
+        assert_eq!(obj.booking_type, objects::BookingType::UpToPreviousDays);
+        assert_eq!(obj.prior_notice_last_day, Some(2));
+        assert_eq!(obj.prior_notice_last_time, Some(Time::new(18, 0, 0)));
+    }
+
+    #[test]
+    // RealTime forbids all prior_notice_* fields; setting prior_notice_duration_min must fail.
+    fn test_booking_rule_try_from_failure_real_time_with_prior_notice_duration_min() {
+        let booking_rule = BookingRule {
+            id: "br9".to_string(),
+            booking_type: BookingType::RealTime,
+            prior_notice_duration_min: Some(30),
+            message: Some("msg".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("must not have prior_notice_duration_min, prior_notice_duration_max, prior_notice_last_day or prior_notice_last_time set when booking_type is 0 (RealTime)"));
+    }
+
+    #[test]
+    // SameDayWithPriorNotice requires prior_notice_duration_min; omitting it must fail.
+    fn test_booking_rule_try_from_failure_same_day_without_duration_min() {
+        let booking_rule = BookingRule {
+            id: "br10".to_string(),
+            booking_type: BookingType::SameDayWithPriorNotice,
+            message: Some("msg".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("must have prior_notice_duration_min set, and must not have prior_notice_last_day or prior_notice_last_time set, when booking_type is 1 (SameDayWithPriorNotice)"));
+    }
+
+    #[test]
+    // UpToPreviousDays requires prior_notice_last_day; omitting it must fail.
+    fn test_booking_rule_try_from_failure_up_to_previous_days_without_last_day() {
+        let booking_rule = BookingRule {
+            id: "br11".to_string(),
+            booking_type: BookingType::UpToPreviousDays,
+            message: Some("msg".to_string()),
+            ..Default::default()
+        };
+        let result = objects::BookingRule::try_from(booking_rule);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("must not have prior_notice_duration_min or prior_notice_duration_max set, and must have prior_notice_last_day and prior_notice_last_time set, when booking_type is 2 (UpToPreviousDays)"));
     }
 }
