@@ -1601,10 +1601,9 @@ impl AddPrefix for Comment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Eq, Clone)]
-#[derivative(Default)]
+#[derive(Serialize, Deserialize, Debug, Default, PartialEq, Eq, Clone)]
 pub enum BookingType {
-    #[derivative(Default)]
+    #[default]
     #[serde(rename = "0")]
     RealTime,
     #[serde(rename = "1")]
