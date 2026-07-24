@@ -1617,25 +1617,17 @@ pub enum BookingType {
 pub struct BookingRule {
     #[serde(rename = "booking_rule_id")]
     pub id: String,
-    #[serde(rename = "name")]
     pub name: Option<String>,
-    #[serde(rename = "booking_type", default)]
+    #[serde(default)]
     pub booking_type: BookingType,
-    #[serde(rename = "prior_notice_duration_min")]
     pub prior_notice_duration_min: Option<u32>,
-    #[serde(rename = "prior_notice_duration_max")]
     pub prior_notice_duration_max: Option<u32>,
-    #[serde(rename = "prior_notice_last_day")]
     pub prior_notice_last_day: Option<u32>,
-    #[serde(rename = "prior_notice_last_time")]
     pub prior_notice_last_time: Option<Time>,
-    #[serde(rename = "info_url")]
     pub info_url: Option<String>,
     #[serde(rename = "phone_number")]
     pub phone: Option<String>,
-    #[serde(rename = "message")]
     pub message: Option<String>,
-    #[serde(rename = "booking_url")]
     pub booking_url: Option<String>,
 }
 
