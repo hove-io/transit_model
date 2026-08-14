@@ -992,8 +992,11 @@ pub fn write_partial<P: AsRef<path::Path>>(
         )?;
     }
     if selector.vehicle_journeys {
-        // Writes both trips.txt and stop_times.txt.
-        write::write_vehicle_journeys_and_stop_times(
+        // Writes trips.txt only; stop_times.txt is controlled separately.
+        write::write_trips(path, &collections.vehicle_journeys)?;
+    }
+    if selector.stop_times {
+        write::write_stop_times(
             path,
             &collections.vehicle_journeys,
             &collections.stop_points,
@@ -1139,10 +1142,13 @@ fn selector_output_files(s: &NtfsSelector) -> Vec<&'static str> {
         ]);
     }
     if s.vehicle_journeys {
-        files.extend_from_slice(&["trips.txt", "stop_times.txt"]);
+        files.push("trips.txt");
     }
     if s.frequencies {
         files.push("frequencies.txt");
+    }
+    if s.stop_times {
+        files.push("stop_times.txt");
     }
     if s.calendars {
         files.extend_from_slice(&["calendar.txt", "calendar_dates.txt"]);
