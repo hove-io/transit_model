@@ -31,7 +31,7 @@ use anyhow::{anyhow, Context};
 use chrono::{DateTime, FixedOffset};
 use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
-use std::path;
+use std::{io, path};
 use tempfile::tempdir;
 use tracing::info;
 
@@ -281,11 +281,341 @@ pub fn read_collections<P: AsRef<path::Path>>(path: P) -> Result<Collections> {
     }
 }
 
+/// Controls which NTFS sub-collections are loaded by [`read_collections_partial`].
+///
+/// By default ([`NtfsSelector::none`]), nothing is selected.
+/// Call [`NtfsSelector::all`] to select everything (equivalent to [`read_collections`]).
+///
+/// # Example
+/// ```no_run
+/// use transit_model::ntfs::{read_collections_partial, NtfsSelector};
+///
+/// let collections = read_collections_partial(
+///     "/path/to/ntfs",
+///     NtfsSelector::none()
+///         .with_vehicle_journeys()
+///         .with_stop_points()
+///         .with_geometries()
+///         .with_stop_times(),
+/// )?;
+/// # Ok::<(), transit_model::Error>(())
+/// ```
+#[allow(missing_docs)]
+#[derive(Debug, Clone)]
+pub struct NtfsSelector {
+    // --- Direct collection loads ---
+    pub contributors: bool,
+    pub datasets: bool,
+    pub commercial_modes: bool,
+    pub networks: bool,
+    pub lines: bool,
+    pub routes: bool,
+    /// `trips.txt`
+    pub vehicle_journeys: bool,
+    pub frequencies: bool,
+    pub physical_modes: bool,
+    pub companies: bool,
+    pub equipments: bool,
+    pub trip_properties: bool,
+    pub transfers: bool,
+    pub admin_stations: bool,
+    /// Loads all fares-v2 files: `tickets.txt`, `ticket_uses.txt`,
+    /// `ticket_prices.txt`, `ticket_use_perimeters.txt`,
+    /// `ticket_use_restrictions.txt`.
+    pub fares_v2: bool,
+    pub levels: bool,
+    /// Loads all grid files: `grid_calendars.txt`, `grid_exception_dates.txt`,
+    /// `grid_periods.txt`, `grid_rel_calendar_line.txt`.
+    pub grid: bool,
+    pub addresses: bool,
+    pub administrative_regions: bool,
+
+    // --- manage_* calls ---
+    pub calendars: bool,
+    pub geometries: bool,
+    pub feed_infos: bool,
+    /// Loads stop points and stop areas (`stops.txt`).
+    pub stop_points: bool,
+    pub pathways: bool,
+    /// Loads stop times into each vehicle journey.
+    ///
+    /// Only executed when `vehicle_journeys` and `stop_points` are also selected;
+    /// if either dependency is missing this flag is silently ignored.
+    pub stop_times: bool,
+    pub codes: bool,
+    pub comments: bool,
+    pub booking_rules: bool,
+    pub object_properties: bool,
+    pub fares_v1: bool,
+    /// Derives company assignments for vehicle journeys.
+    ///
+    /// Requires `vehicle_journeys` and `companies` to also be selected.
+    pub companies_on_vj: bool,
+    pub occupancies: bool,
+    pub object_locks: bool,
+}
+
+#[allow(missing_docs)]
+impl NtfsSelector {
+    /// Selects nothing — the starting point for partial loads.
+    pub fn none() -> Self {
+        Self {
+            contributors: false,
+            datasets: false,
+            commercial_modes: false,
+            networks: false,
+            lines: false,
+            routes: false,
+            vehicle_journeys: false,
+            frequencies: false,
+            physical_modes: false,
+            companies: false,
+            equipments: false,
+            trip_properties: false,
+            transfers: false,
+            admin_stations: false,
+            fares_v2: false,
+            levels: false,
+            grid: false,
+            addresses: false,
+            administrative_regions: false,
+            calendars: false,
+            geometries: false,
+            feed_infos: false,
+            stop_points: false,
+            pathways: false,
+            stop_times: false,
+            codes: false,
+            comments: false,
+            booking_rules: false,
+            object_properties: false,
+            fares_v1: false,
+            companies_on_vj: false,
+            occupancies: false,
+            object_locks: false,
+        }
+    }
+
+    /// Selects everything — equivalent to calling [`read_collections`].
+    pub fn all() -> Self {
+        Self {
+            contributors: true,
+            datasets: true,
+            commercial_modes: true,
+            networks: true,
+            lines: true,
+            routes: true,
+            vehicle_journeys: true,
+            frequencies: true,
+            physical_modes: true,
+            companies: true,
+            equipments: true,
+            trip_properties: true,
+            transfers: true,
+            admin_stations: true,
+            fares_v2: true,
+            levels: true,
+            grid: true,
+            addresses: true,
+            administrative_regions: true,
+            calendars: true,
+            geometries: true,
+            feed_infos: true,
+            stop_points: true,
+            pathways: true,
+            stop_times: true,
+            codes: true,
+            comments: true,
+            booking_rules: true,
+            object_properties: true,
+            fares_v1: true,
+            companies_on_vj: true,
+            occupancies: true,
+            object_locks: true,
+        }
+    }
+
+    pub fn with_contributors(mut self) -> Self {
+        self.contributors = true;
+        self
+    }
+    pub fn with_datasets(mut self) -> Self {
+        self.datasets = true;
+        self
+    }
+    pub fn with_commercial_modes(mut self) -> Self {
+        self.commercial_modes = true;
+        self
+    }
+    pub fn with_networks(mut self) -> Self {
+        self.networks = true;
+        self
+    }
+    pub fn with_lines(mut self) -> Self {
+        self.lines = true;
+        self
+    }
+    pub fn with_routes(mut self) -> Self {
+        self.routes = true;
+        self
+    }
+    pub fn with_vehicle_journeys(mut self) -> Self {
+        self.vehicle_journeys = true;
+        self
+    }
+    pub fn with_frequencies(mut self) -> Self {
+        self.frequencies = true;
+        self
+    }
+    pub fn with_physical_modes(mut self) -> Self {
+        self.physical_modes = true;
+        self
+    }
+    pub fn with_companies(mut self) -> Self {
+        self.companies = true;
+        self
+    }
+    pub fn with_equipments(mut self) -> Self {
+        self.equipments = true;
+        self
+    }
+    pub fn with_trip_properties(mut self) -> Self {
+        self.trip_properties = true;
+        self
+    }
+    pub fn with_transfers(mut self) -> Self {
+        self.transfers = true;
+        self
+    }
+    pub fn with_admin_stations(mut self) -> Self {
+        self.admin_stations = true;
+        self
+    }
+    pub fn with_fares_v2(mut self) -> Self {
+        self.fares_v2 = true;
+        self
+    }
+    pub fn with_levels(mut self) -> Self {
+        self.levels = true;
+        self
+    }
+    pub fn with_grid(mut self) -> Self {
+        self.grid = true;
+        self
+    }
+    pub fn with_addresses(mut self) -> Self {
+        self.addresses = true;
+        self
+    }
+    pub fn with_administrative_regions(mut self) -> Self {
+        self.administrative_regions = true;
+        self
+    }
+    pub fn with_calendars(mut self) -> Self {
+        self.calendars = true;
+        self
+    }
+    pub fn with_geometries(mut self) -> Self {
+        self.geometries = true;
+        self
+    }
+    pub fn with_feed_infos(mut self) -> Self {
+        self.feed_infos = true;
+        self
+    }
+    pub fn with_stop_points(mut self) -> Self {
+        self.stop_points = true;
+        self
+    }
+    pub fn with_pathways(mut self) -> Self {
+        self.pathways = true;
+        self
+    }
+    pub fn with_stop_times(mut self) -> Self {
+        self.stop_times = true;
+        self
+    }
+    pub fn with_codes(mut self) -> Self {
+        self.codes = true;
+        self
+    }
+    pub fn with_comments(mut self) -> Self {
+        self.comments = true;
+        self
+    }
+    pub fn with_booking_rules(mut self) -> Self {
+        self.booking_rules = true;
+        self
+    }
+    pub fn with_object_properties(mut self) -> Self {
+        self.object_properties = true;
+        self
+    }
+    pub fn with_fares_v1(mut self) -> Self {
+        self.fares_v1 = true;
+        self
+    }
+    pub fn with_companies_on_vj(mut self) -> Self {
+        self.companies_on_vj = true;
+        self
+    }
+    pub fn with_occupancies(mut self) -> Self {
+        self.occupancies = true;
+        self
+    }
+    pub fn with_object_locks(mut self) -> Self {
+        self.object_locks = true;
+        self
+    }
+}
+
+/// Loads only the NTFS sub-collections requested by `selector`.
+///
+/// Files not selected are left at their [`Default::default`] value.
+/// Use this when you need only a few collections and want to avoid the cost
+/// of loading the full dataset.
+///
+/// # Example
+/// ```no_run
+/// use transit_model::ntfs::{read_collections_partial, NtfsSelector};
+///
+/// let collections = read_collections_partial(
+///     "/path/to/ntfs",
+///     NtfsSelector::none()
+///         .with_vehicle_journeys()
+///         .with_stop_points()
+///         .with_geometries()
+///         .with_stop_times(),
+/// )?;
+/// # Ok::<(), transit_model::Error>(())
+/// ```
+pub fn read_collections_partial<P: AsRef<path::Path>>(
+    path: P,
+    selector: NtfsSelector,
+) -> Result<Collections> {
+    let p = path.as_ref();
+    if p.is_file() {
+        let reader = std::fs::File::open(p)?;
+        let mut file_handler = ZipHandler::new(reader, p)?;
+        read_collections_partial_file_handler(&mut file_handler, &selector)
+            .with_context(|| format!("impossible to read zipped ntfs {p:?}"))
+    } else if p.is_dir() {
+        let mut file_handler = PathFileHandler::new(p.to_path_buf());
+        read_collections_partial_file_handler(&mut file_handler, &selector)
+            .with_context(|| format!("impossible to read ntfs directory from {p:?}"))
+    } else {
+        Err(anyhow!(
+            "file {:?} is neither a file nor a directory, cannot read a ntfs from it",
+            p
+        ))
+    }
+}
+
 fn read_file_handler<H>(file_handler: &mut H) -> Result<Model>
 where
     for<'a> &'a mut H: FileHandler,
 {
-    let collections = read_collections_file_handler(file_handler)?;
+    let collections = read_collections_partial_file_handler(file_handler, &NtfsSelector::all())?;
     info!("Indexing");
     let res = Model::new(collections)?;
     info!("Loading NTFS done");
@@ -296,53 +626,176 @@ fn read_collections_file_handler<H>(file_handler: &mut H) -> Result<Collections>
 where
     for<'a> &'a mut H: FileHandler,
 {
+    read_collections_partial_file_handler(file_handler, &NtfsSelector::all())
+}
+
+fn read_collections_partial_file_handler<H>(
+    file_handler: &mut H,
+    s: &NtfsSelector,
+) -> Result<Collections>
+where
+    for<'a> &'a mut H: FileHandler,
+{
     info!("Loading NTFS from {:?}", file_handler.source_name());
+
+    macro_rules! load {
+        ($flag:expr, $expr:expr) => {
+            if $flag {
+                $expr?
+            } else {
+                Default::default()
+            }
+        };
+    }
+
     let mut collections = Collections {
-        contributors: make_collection_with_id(file_handler, "contributors.txt")?,
-        datasets: make_collection_with_id(file_handler, "datasets.txt")?,
-        commercial_modes: make_collection_with_id(file_handler, "commercial_modes.txt")?,
-        networks: make_collection_with_id(file_handler, "networks.txt")?,
-        lines: make_collection_with_id(file_handler, "lines.txt")?,
-        routes: make_collection_with_id(file_handler, "routes.txt")?,
-        vehicle_journeys: make_collection_with_id(file_handler, "trips.txt")?,
-        frequencies: make_opt_collection(file_handler, "frequencies.txt")?,
-        physical_modes: make_collection_with_id(file_handler, "physical_modes.txt")?,
-        companies: make_collection_with_id(file_handler, "companies.txt")?,
-        equipments: make_opt_collection_with_id(file_handler, "equipments.txt")?,
-        trip_properties: make_opt_collection_with_id(file_handler, "trip_properties.txt")?,
-        transfers: make_opt_collection(file_handler, "transfers.txt")?,
-        admin_stations: make_opt_collection(file_handler, "admin_stations.txt")?,
-        tickets: make_opt_collection_with_id(file_handler, "tickets.txt")?,
-        ticket_uses: make_opt_collection_with_id(file_handler, "ticket_uses.txt")?,
-        ticket_prices: make_opt_collection(file_handler, "ticket_prices.txt")?,
-        ticket_use_perimeters: make_opt_collection(file_handler, "ticket_use_perimeters.txt")?,
-        ticket_use_restrictions: make_opt_collection(file_handler, "ticket_use_restrictions.txt")?,
-        levels: make_opt_collection_with_id(file_handler, "levels.txt")?,
-        grid_calendars: make_opt_collection_with_id(file_handler, "grid_calendars.txt")?,
-        grid_exception_dates: make_opt_collection(file_handler, "grid_exception_dates.txt")?,
-        grid_periods: make_opt_collection(file_handler, "grid_periods.txt")?,
-        grid_rel_calendar_line: make_opt_collection(file_handler, "grid_rel_calendar_line.txt")?,
-        addresses: make_opt_collection_with_id(file_handler, "addresses.txt")?,
-        administrative_regions: make_opt_collection_with_id(
-            file_handler,
-            "administrative_regions.txt",
-        )?,
+        contributors: load!(
+            s.contributors,
+            make_collection_with_id(file_handler, "contributors.txt")
+        ),
+        datasets: load!(
+            s.datasets,
+            make_collection_with_id(file_handler, "datasets.txt")
+        ),
+        commercial_modes: load!(
+            s.commercial_modes,
+            make_collection_with_id(file_handler, "commercial_modes.txt")
+        ),
+        networks: load!(
+            s.networks,
+            make_collection_with_id(file_handler, "networks.txt")
+        ),
+        lines: load!(s.lines, make_collection_with_id(file_handler, "lines.txt")),
+        routes: load!(
+            s.routes,
+            make_collection_with_id(file_handler, "routes.txt")
+        ),
+        vehicle_journeys: load!(
+            s.vehicle_journeys,
+            make_collection_with_id(file_handler, "trips.txt")
+        ),
+        frequencies: load!(
+            s.frequencies,
+            make_opt_collection(file_handler, "frequencies.txt")
+        ),
+        physical_modes: load!(
+            s.physical_modes,
+            make_collection_with_id(file_handler, "physical_modes.txt")
+        ),
+        companies: load!(
+            s.companies,
+            make_collection_with_id(file_handler, "companies.txt")
+        ),
+        equipments: load!(
+            s.equipments,
+            make_opt_collection_with_id(file_handler, "equipments.txt")
+        ),
+        trip_properties: load!(
+            s.trip_properties,
+            make_opt_collection_with_id(file_handler, "trip_properties.txt")
+        ),
+        transfers: load!(
+            s.transfers,
+            make_opt_collection(file_handler, "transfers.txt")
+        ),
+        admin_stations: load!(
+            s.admin_stations,
+            make_opt_collection(file_handler, "admin_stations.txt")
+        ),
+        tickets: load!(
+            s.fares_v2,
+            make_opt_collection_with_id(file_handler, "tickets.txt")
+        ),
+        ticket_uses: load!(
+            s.fares_v2,
+            make_opt_collection_with_id(file_handler, "ticket_uses.txt")
+        ),
+        ticket_prices: load!(
+            s.fares_v2,
+            make_opt_collection(file_handler, "ticket_prices.txt")
+        ),
+        ticket_use_perimeters: load!(
+            s.fares_v2,
+            make_opt_collection(file_handler, "ticket_use_perimeters.txt")
+        ),
+        ticket_use_restrictions: load!(
+            s.fares_v2,
+            make_opt_collection(file_handler, "ticket_use_restrictions.txt")
+        ),
+        levels: load!(
+            s.levels,
+            make_opt_collection_with_id(file_handler, "levels.txt")
+        ),
+        grid_calendars: load!(
+            s.grid,
+            make_opt_collection_with_id(file_handler, "grid_calendars.txt")
+        ),
+        grid_exception_dates: load!(
+            s.grid,
+            make_opt_collection(file_handler, "grid_exception_dates.txt")
+        ),
+        grid_periods: load!(
+            s.grid,
+            make_opt_collection(file_handler, "grid_periods.txt")
+        ),
+        grid_rel_calendar_line: load!(
+            s.grid,
+            make_opt_collection(file_handler, "grid_rel_calendar_line.txt")
+        ),
+        addresses: load!(
+            s.addresses,
+            make_opt_collection_with_id(file_handler, "addresses.txt")
+        ),
+        administrative_regions: load!(
+            s.administrative_regions,
+            make_opt_collection_with_id(file_handler, "administrative_regions.txt")
+        ),
         ..Default::default()
     };
-    manage_calendars(file_handler, &mut collections)?;
-    read::manage_geometries(&mut collections, file_handler)?;
-    read::manage_feed_infos(&mut collections, file_handler)?;
-    read::manage_stops(&mut collections, file_handler)?;
-    read::manage_pathways(&mut collections, file_handler)?;
-    read::manage_stop_times(&mut collections, file_handler)?;
-    read::manage_codes(&mut collections, file_handler)?;
-    read::manage_comments(&mut collections, file_handler)?;
-    read::manage_booking_rules(&mut collections, file_handler)?;
-    read::manage_object_properties(&mut collections, file_handler)?;
-    read::manage_fares_v1(&mut collections, file_handler)?;
-    read::manage_companies_on_vj(&mut collections)?;
-    read::manage_occupancies(&mut collections, file_handler)?;
-    read::manage_object_locks(&mut collections, file_handler)?;
+
+    if s.calendars {
+        manage_calendars(file_handler, &mut collections)?;
+    }
+    if s.geometries {
+        read::manage_geometries(&mut collections, file_handler)?;
+    }
+    if s.feed_infos {
+        read::manage_feed_infos(&mut collections, file_handler)?;
+    }
+    if s.stop_points {
+        read::manage_stops(&mut collections, file_handler)?;
+    }
+    if s.pathways {
+        read::manage_pathways(&mut collections, file_handler)?;
+    }
+    if s.stop_times && s.vehicle_journeys && s.stop_points {
+        read::manage_stop_times(&mut collections, file_handler)?;
+    }
+    if s.codes {
+        read::manage_codes(&mut collections, file_handler)?;
+    }
+    if s.comments {
+        read::manage_comments(&mut collections, file_handler)?;
+    }
+    if s.booking_rules {
+        read::manage_booking_rules(&mut collections, file_handler)?;
+    }
+    if s.object_properties {
+        read::manage_object_properties(&mut collections, file_handler)?;
+    }
+    if s.fares_v1 {
+        read::manage_fares_v1(&mut collections, file_handler)?;
+    }
+    if s.companies_on_vj && s.vehicle_journeys && s.companies {
+        read::manage_companies_on_vj(&mut collections)?;
+    }
+    if s.occupancies {
+        read::manage_occupancies(&mut collections, file_handler)?;
+    }
+    if s.object_locks {
+        read::manage_object_locks(&mut collections, file_handler)?;
+    }
+
     Ok(collections)
 }
 
@@ -431,6 +884,178 @@ pub fn write<P: AsRef<path::Path>>(
     Ok(())
 }
 
+/// Exports only the sub-collections selected by `selector` to the given directory.
+///
+/// Files not selected are not written; the caller is responsible for providing
+/// the missing files (e.g. by copying them unchanged from the input).
+///
+/// This is the write-side counterpart of [`read_collections_partial`]: use it
+/// to overwrite only the files that were actually modified, leaving the rest of
+/// the NTFS dataset untouched.
+///
+/// # Example
+/// ```no_run
+/// use transit_model::ntfs::{write_partial, NtfsSelector};
+/// use chrono::DateTime;
+///
+/// # let collections = transit_model::ModelBuilder::default().build().into_collections();
+/// # let current_datetime = DateTime::parse_from_rfc3339("2024-01-01T00:00:00+00:00").unwrap();
+/// write_partial(
+///     &collections,
+///     "/path/to/output",
+///     current_datetime,
+///     &NtfsSelector::none()
+///         .with_vehicle_journeys()   // writes trips.txt + stop_times.txt
+///         .with_geometries(),        // writes geometries.txt
+/// )?;
+/// # Ok::<(), transit_model::Error>(())
+/// ```
+pub fn write_partial<P: AsRef<path::Path>>(
+    collections: &Collections,
+    path: P,
+    current_datetime: DateTime<FixedOffset>,
+    selector: &NtfsSelector,
+) -> Result<()> {
+    let path = path.as_ref();
+    std::fs::create_dir_all(path)?;
+    info!("Writing partial NTFS to {:?}", path);
+
+    if selector.feed_infos {
+        write::write_feed_infos(path, collections, current_datetime)?;
+    }
+    if selector.contributors {
+        write_collection_with_id(path, "contributors.txt", &collections.contributors)?;
+    }
+    if selector.datasets {
+        write_collection_with_id(path, "datasets.txt", &collections.datasets)?;
+    }
+    if selector.networks {
+        write_collection_with_id(path, "networks.txt", &collections.networks)?;
+    }
+    if selector.commercial_modes {
+        write_collection_with_id(path, "commercial_modes.txt", &collections.commercial_modes)?;
+    }
+    if selector.companies {
+        write_collection_with_id(path, "companies.txt", &collections.companies)?;
+    }
+    if selector.lines {
+        write_collection_with_id(path, "lines.txt", &collections.lines)?;
+    }
+    if selector.physical_modes {
+        write_collection_with_id(path, "physical_modes.txt", &collections.physical_modes)?;
+    }
+    if selector.equipments {
+        write_collection_with_id(path, "equipments.txt", &collections.equipments)?;
+    }
+    if selector.routes {
+        write_collection_with_id(path, "routes.txt", &collections.routes)?;
+    }
+    if selector.trip_properties {
+        write_collection_with_id(path, "trip_properties.txt", &collections.trip_properties)?;
+    }
+    if selector.geometries {
+        write_collection_with_id(path, "geometries.txt", &collections.geometries)?;
+    }
+    if selector.transfers {
+        write_collection(path, "transfers.txt", &collections.transfers)?;
+    }
+    if selector.admin_stations {
+        write_collection(path, "admin_stations.txt", &collections.admin_stations)?;
+    }
+    if selector.fares_v2 {
+        write_collection_with_id(path, "tickets.txt", &collections.tickets)?;
+        write_collection_with_id(path, "ticket_uses.txt", &collections.ticket_uses)?;
+        write_collection(path, "ticket_prices.txt", &collections.ticket_prices)?;
+        write_collection(
+            path,
+            "ticket_use_perimeters.txt",
+            &collections.ticket_use_perimeters,
+        )?;
+        write_collection(
+            path,
+            "ticket_use_restrictions.txt",
+            &collections.ticket_use_restrictions,
+        )?;
+    }
+    if selector.grid {
+        write_collection_with_id(path, "grid_calendars.txt", &collections.grid_calendars)?;
+        write_collection(
+            path,
+            "grid_exception_dates.txt",
+            &collections.grid_exception_dates,
+        )?;
+        write_collection(path, "grid_periods.txt", &collections.grid_periods)?;
+        write_collection(
+            path,
+            "grid_rel_calendar_line.txt",
+            &collections.grid_rel_calendar_line,
+        )?;
+    }
+    if selector.vehicle_journeys {
+        // Writes both trips.txt and stop_times.txt.
+        write::write_vehicle_journeys_and_stop_times(
+            path,
+            &collections.vehicle_journeys,
+            &collections.stop_points,
+            &collections.stop_time_headsigns,
+            &collections.stop_time_ids,
+        )?;
+    }
+    if selector.frequencies {
+        write_collection(path, "frequencies.txt", &collections.frequencies)?;
+    }
+    if selector.calendars {
+        write_calendar_dates(path, &collections.calendars)?;
+    }
+    if selector.stop_points {
+        write::write_stops(
+            path,
+            &collections.stop_points,
+            &collections.stop_areas,
+            &collections.stop_locations,
+        )?;
+    }
+    if selector.comments {
+        write::write_comments(path, collections)?;
+    }
+    if selector.booking_rules {
+        write::write_booking_rules(path, collections)?;
+    }
+    if selector.codes {
+        write::write_codes(path, collections)?;
+    }
+    if selector.object_properties {
+        write::write_object_properties(path, collections)?;
+    }
+    if selector.fares_v1 {
+        write::write_fares_v1(path, collections)?;
+    }
+    if selector.pathways {
+        write_collection_with_id(path, "pathways.txt", &collections.pathways)?;
+    }
+    if selector.levels {
+        write_collection_with_id(path, "levels.txt", &collections.levels)?;
+    }
+    if selector.addresses {
+        write_collection_with_id(path, "addresses.txt", &collections.addresses)?;
+    }
+    if selector.administrative_regions {
+        write_collection_with_id(
+            path,
+            "administrative_regions.txt",
+            &collections.administrative_regions,
+        )?;
+    }
+    if selector.occupancies {
+        write_collection(path, "occupancies.txt", &collections.occupancies)?;
+    }
+    if selector.object_locks {
+        write_collection(path, "object_locks.txt", &collections.object_locks)?;
+    }
+
+    Ok(())
+}
+
 /// Exports a `Collections` to a
 /// [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md)
 /// ZIP archive at the given full path.
@@ -445,6 +1070,224 @@ pub fn write_to_zip<P: AsRef<path::Path>>(
     write(collections, input_tmp_dir.path(), current_datetime)?;
     zip_to(input_tmp_dir.path(), path)?;
     input_tmp_dir.close()?;
+    Ok(())
+}
+
+/// Returns the NTFS file names that [`write_partial`] would produce for `s`.
+///
+/// Used by [`write_partial_update`] to know which files to skip when copying
+/// the unchanged input files to the output.
+fn selector_output_files(s: &NtfsSelector) -> Vec<&'static str> {
+    let mut files: Vec<&'static str> = Vec::new();
+    if s.feed_infos {
+        files.push("feed_infos.txt");
+    }
+    if s.contributors {
+        files.push("contributors.txt");
+    }
+    if s.datasets {
+        files.push("datasets.txt");
+    }
+    if s.networks {
+        files.push("networks.txt");
+    }
+    if s.commercial_modes {
+        files.push("commercial_modes.txt");
+    }
+    if s.companies {
+        files.push("companies.txt");
+    }
+    if s.lines {
+        files.push("lines.txt");
+    }
+    if s.physical_modes {
+        files.push("physical_modes.txt");
+    }
+    if s.equipments {
+        files.push("equipments.txt");
+    }
+    if s.routes {
+        files.push("routes.txt");
+    }
+    if s.trip_properties {
+        files.push("trip_properties.txt");
+    }
+    if s.geometries {
+        files.push("geometries.txt");
+    }
+    if s.transfers {
+        files.push("transfers.txt");
+    }
+    if s.admin_stations {
+        files.push("admin_stations.txt");
+    }
+    if s.fares_v2 {
+        files.extend_from_slice(&[
+            "tickets.txt",
+            "ticket_uses.txt",
+            "ticket_prices.txt",
+            "ticket_use_perimeters.txt",
+            "ticket_use_restrictions.txt",
+        ]);
+    }
+    if s.grid {
+        files.extend_from_slice(&[
+            "grid_calendars.txt",
+            "grid_exception_dates.txt",
+            "grid_periods.txt",
+            "grid_rel_calendar_line.txt",
+        ]);
+    }
+    if s.vehicle_journeys {
+        files.extend_from_slice(&["trips.txt", "stop_times.txt"]);
+    }
+    if s.frequencies {
+        files.push("frequencies.txt");
+    }
+    if s.calendars {
+        files.extend_from_slice(&["calendar.txt", "calendar_dates.txt"]);
+    }
+    if s.stop_points {
+        files.push("stops.txt");
+    }
+    if s.comments {
+        files.extend_from_slice(&["comments.txt", "comment_links.txt"]);
+    }
+    if s.booking_rules {
+        files.extend_from_slice(&["booking_rules.txt", "booking_rule_links.txt"]);
+    }
+    if s.codes {
+        files.push("object_codes.txt");
+    }
+    if s.object_properties {
+        files.push("object_properties.txt");
+    }
+    if s.fares_v1 {
+        // write_fares_v1 may produce v1 files (prices.csv / od_fares.csv / fares.csv)
+        // or re-derive them from fares_v2 collections, so we skip all of them.
+        files.extend_from_slice(&["prices.csv", "od_fares.csv", "fares.csv"]);
+    }
+    if s.pathways {
+        files.push("pathways.txt");
+    }
+    if s.levels {
+        files.push("levels.txt");
+    }
+    if s.addresses {
+        files.push("addresses.txt");
+    }
+    if s.administrative_regions {
+        files.push("administrative_regions.txt");
+    }
+    if s.occupancies {
+        files.push("occupancies.txt");
+    }
+    if s.object_locks {
+        files.push("object_locks.txt");
+    }
+    files
+}
+
+/// Copies all files from `input` (directory or ZIP) to `output_dir`, skipping
+/// any file whose name appears in `skip`.
+fn copy_input_except(input: &path::Path, output_dir: &path::Path, skip: &[&str]) -> Result<()> {
+    std::fs::create_dir_all(output_dir)?;
+    if input.is_dir() {
+        for entry in std::fs::read_dir(input)? {
+            let entry = entry?;
+            if !entry.file_type()?.is_file() {
+                continue;
+            }
+            let name = entry.file_name();
+            if !skip.contains(&name.to_str().unwrap_or("")) {
+                std::fs::copy(entry.path(), output_dir.join(&name))?;
+            }
+        }
+    } else {
+        // ZIP input: extract each file entry unless it is in `skip`.
+        let reader = std::fs::File::open(input)?;
+        let mut archive = zip::ZipArchive::new(reader)
+            .with_context(|| format!("cannot open zip archive {:?}", input))?;
+        for i in 0..archive.len() {
+            let mut entry = archive.by_index(i)?;
+            if !entry.is_file() {
+                continue;
+            }
+            // Use only the leaf name to ignore any sub-directory prefix.
+            let name = entry
+                .enclosed_name()
+                .and_then(|p| p.file_name().map(|n| n.to_owned()))
+                .ok_or_else(|| anyhow!("invalid zip entry name: {:?}", entry.name()))?;
+            if !skip.contains(&name.to_str().unwrap_or("")) {
+                let mut buf = Vec::with_capacity(entry.size() as usize);
+                io::Read::read_to_end(&mut entry, &mut buf)?;
+                std::fs::write(output_dir.join(&name), buf)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Applies a partial NTFS update: copies unchanged files from `input` and
+/// overwrites only the files produced by `write_partial` for `selector`.
+///
+/// Handles all four input/output combinations (directory or ZIP):
+///
+/// | input | output | strategy |
+/// |-------|--------|----------|
+/// | dir   | dir    | `fs::copy` unchanged + `write_partial` |
+/// | dir   | zip    | copy to temp dir + `write_partial` + `zip_to` |
+/// | zip   | dir    | extract unchanged + `write_partial` |
+/// | zip   | zip    | extract unchanged to temp dir + `write_partial` + `zip_to` |
+///
+/// # Example
+/// ```no_run
+/// use transit_model::ntfs::{write_partial_update, NtfsSelector};
+/// use chrono::DateTime;
+///
+/// # let collections = transit_model::ModelBuilder::default().build().into_collections();
+/// # let current_datetime = DateTime::parse_from_rfc3339("2024-01-01T00:00:00+00:00").unwrap();
+/// write_partial_update(
+///     "/path/to/input",
+///     "/path/to/output",
+///     &collections,
+///     current_datetime,
+///     &NtfsSelector::none()
+///         .with_vehicle_journeys()
+///         .with_geometries(),
+/// )?;
+/// # Ok::<(), transit_model::Error>(())
+/// ```
+pub fn write_partial_update<P, Q>(
+    input: P,
+    output: Q,
+    collections: &Collections,
+    current_datetime: DateTime<FixedOffset>,
+    selector: &NtfsSelector,
+) -> Result<()>
+where
+    P: AsRef<path::Path>,
+    Q: AsRef<path::Path>,
+{
+    let input = input.as_ref();
+    let output = output.as_ref();
+    let owned = selector_output_files(selector);
+
+    let output_is_zip = output
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("zip"));
+
+    if output_is_zip {
+        let tmp = tempdir()?;
+        copy_input_except(input, tmp.path(), &owned)?;
+        write_partial(collections, tmp.path(), current_datetime, selector)?;
+        zip_to(tmp.path(), output)?;
+        tmp.close()?;
+    } else {
+        copy_input_except(input, output, &owned)?;
+        write_partial(collections, output, current_datetime, selector)?;
+    }
+
     Ok(())
 }
 
@@ -1742,5 +2585,122 @@ mod tests {
                 use_destination: "PF2:ZO2".to_string(),
             },
         ]);
+    }
+
+    // ── NtfsSelector / read_collections_partial tests ─────────────────────────
+
+    const PARTIAL_FIXTURE: &str = "tests/fixtures/restrict-validity-period/input";
+
+    #[test]
+    fn partial_load_nothing_gives_empty_collections() {
+        let collections = read_collections_partial(PARTIAL_FIXTURE, NtfsSelector::none()).unwrap();
+        assert!(
+            collections.vehicle_journeys.is_empty(),
+            "vehicle_journeys should be empty"
+        );
+        assert!(
+            collections.stop_points.is_empty(),
+            "stop_points should be empty"
+        );
+        assert!(
+            collections.geometries.is_empty(),
+            "geometries should be empty"
+        );
+        assert!(collections.lines.is_empty(), "lines should be empty");
+    }
+
+    #[test]
+    fn partial_load_vehicle_journeys_only() {
+        let collections = read_collections_partial(
+            PARTIAL_FIXTURE,
+            NtfsSelector::none().with_vehicle_journeys(),
+        )
+        .unwrap();
+        assert!(
+            !collections.vehicle_journeys.is_empty(),
+            "vehicle_journeys should be populated"
+        );
+        assert!(
+            collections.stop_points.is_empty(),
+            "stop_points should remain empty"
+        );
+        assert!(
+            collections.geometries.is_empty(),
+            "geometries should remain empty"
+        );
+    }
+
+    #[test]
+    fn partial_load_geometries_and_trips() {
+        let collections = read_collections_partial(
+            PARTIAL_FIXTURE,
+            NtfsSelector::none()
+                .with_vehicle_journeys()
+                .with_geometries(),
+        )
+        .unwrap();
+        assert!(
+            !collections.vehicle_journeys.is_empty(),
+            "vehicle_journeys should be populated"
+        );
+        assert!(
+            !collections.geometries.is_empty(),
+            "geometries should be populated"
+        );
+        assert!(collections.lines.is_empty(), "lines should remain empty");
+        assert!(
+            collections.stop_points.is_empty(),
+            "stop_points should remain empty"
+        );
+    }
+
+    #[test]
+    fn partial_load_stop_times_without_deps_is_silently_ignored() {
+        // Selecting stop_times without vehicle_journeys or stop_points:
+        // the flag is silently ignored (no error), and vehicle_journeys remains empty.
+        let collections =
+            read_collections_partial(PARTIAL_FIXTURE, NtfsSelector::none().with_stop_times())
+                .unwrap();
+        assert!(
+            collections.vehicle_journeys.is_empty(),
+            "vehicle_journeys should be empty when not selected"
+        );
+    }
+
+    #[test]
+    fn partial_load_all_matches_full_load() {
+        let full = read_collections(PARTIAL_FIXTURE).unwrap();
+        let partial = read_collections_partial(PARTIAL_FIXTURE, NtfsSelector::all()).unwrap();
+
+        assert_eq!(
+            full.vehicle_journeys.len(),
+            partial.vehicle_journeys.len(),
+            "vehicle_journeys count mismatch"
+        );
+        assert_eq!(
+            full.stop_points.len(),
+            partial.stop_points.len(),
+            "stop_points count mismatch"
+        );
+        assert_eq!(
+            full.geometries.len(),
+            partial.geometries.len(),
+            "geometries count mismatch"
+        );
+        assert_eq!(
+            full.lines.len(),
+            partial.lines.len(),
+            "lines count mismatch"
+        );
+        assert_eq!(
+            full.networks.len(),
+            partial.networks.len(),
+            "networks count mismatch"
+        );
+        assert_eq!(
+            full.contributors.len(),
+            partial.contributors.len(),
+            "contributors count mismatch"
+        );
     }
 }
