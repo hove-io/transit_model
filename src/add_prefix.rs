@@ -15,16 +15,13 @@
 //! A trait for every structure that needs to be updated with a prefix
 
 use crate::model::Collections;
-use derivative::Derivative;
 use std::collections::HashMap;
 use typed_index_collection::{Collection, CollectionWithId, Id};
 
 /// Metadata for building the prefix.
-#[derive(Derivative, Debug)]
-#[derivative(Default)]
+#[derive(Debug)]
 pub struct PrefixConfiguration {
     /// Separator used in the prefix, usually ':'.
-    #[derivative(Default(value = "\":\".to_string()"))]
     sep: String,
     /// General data prefix (historically a trigram) used for discriminating
     /// referential objects (like Network).  Usually useful to avoid collisions
@@ -34,6 +31,16 @@ pub struct PrefixConfiguration {
     /// objects (like Calendar).  Usually useful to avoid collisions when
     /// merging datasets from the same contributor.
     schedule_subprefix: Option<String>,
+}
+
+impl Default for PrefixConfiguration {
+    fn default() -> Self {
+        Self {
+            sep: ":".to_string(),
+            data_prefix: None,
+            schedule_subprefix: None,
+        }
+    }
 }
 
 impl PrefixConfiguration {

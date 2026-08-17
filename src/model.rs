@@ -17,7 +17,6 @@
 use crate::{enhancers, objects::*, Error, Result};
 use anyhow::{anyhow, bail};
 use chrono::NaiveDate;
-use derivative::Derivative;
 use geo::algorithm::centroid::Centroid;
 use geo::MultiPoint;
 use relational_types::{GetCorresponding, IdxSet, ManyToMany, OneToMany, Relation};
@@ -75,8 +74,7 @@ pub const TRAIN_PHYSICAL_MODE: &str = "Train";
 pub const TRAMWAY_PHYSICAL_MODE: &str = "Tramway";
 
 /// The set of collections representing the model.
-#[derive(Derivative, Serialize, Deserialize, Debug, Clone)]
-#[derivative(Default)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 #[allow(missing_docs)]
 pub struct Collections {
     pub contributors: CollectionWithId<Contributor>,

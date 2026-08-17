@@ -29,7 +29,6 @@ use crate::{
 };
 use anyhow::{anyhow, Context};
 use chrono_tz::Tz;
-use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
@@ -91,10 +90,9 @@ impl From<&objects::Network> for Agency {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-#[derivative(Default)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 enum StopLocationType {
-    #[derivative(Default)]
+    #[default]
     #[serde(rename = "0")]
     StopPoint,
     #[serde(rename = "1")]
@@ -171,11 +169,11 @@ struct Stop {
     stop_access: Option<bool>,
 }
 
-#[derive(Derivative)]
-#[derivative(Default)]
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Default, Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 enum DirectionType {
-    #[derivative(Default)]
+    #[default]
     #[serde(rename = "0")]
     Forward = 0,
     #[serde(rename = "1")]
@@ -249,10 +247,9 @@ impl StopTime {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize)]
-#[derivative(Default)]
+#[derive(Default, Serialize, Deserialize)]
 enum BookingType {
-    #[derivative(Default)]
+    #[default]
     #[serde(rename = "0")]
     RealTime,
     #[serde(rename = "1")]
@@ -281,8 +278,7 @@ impl From<&objects::BookingType> for BookingType {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize)]
-#[derivative(Default)]
+#[derive(Default, Serialize, Deserialize)]
 struct BookingRule {
     #[serde(rename = "booking_rule_id")]
     id: String,
@@ -374,10 +370,9 @@ impl TryFrom<BookingRule> for objects::BookingRule {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Derivative, PartialEq, Clone)]
-#[derivative(Default)]
+#[derive(Default, Serialize, Deserialize, Debug, PartialEq, Clone)]
 enum TransferType {
-    #[derivative(Default)]
+    #[default]
     #[serde(rename = "0")]
     Recommended,
     #[serde(rename = "1")]

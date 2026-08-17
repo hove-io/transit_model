@@ -1,0 +1,7 @@
+[advisories]
+# rkyv is an optional dependency of rust_decimal, but the `rkyv` feature
+# is NOT enabled in this project. rkyv appears in Cargo.lock only because
+# Cargo resolves all optional dependencies for reproducibility, but it is
+# never compiled. This advisory can be revisited once rust_decimal upgrades
+# to rkyv >= 0.8.17.
+ignore = ["RUSTSEC-2026-0235"]
