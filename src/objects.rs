@@ -19,7 +19,6 @@
 use crate::{serde_utils::*, AddPrefix, PrefixConfiguration};
 use chrono::{Days, NaiveDate};
 use chrono_tz::Tz;
-use derivative::Derivative;
 use geo::{Geometry as GeoGeometry, Point as GeoPoint};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -293,30 +292,43 @@ impl WithId for Dataset {
     }
 }
 
-#[derive(Clone, Derivative, Serialize, Deserialize, Debug, Eq, PartialEq)]
-#[derivative(Default)]
+#[derive(Clone, Serialize, Deserialize, Debug, Eq, PartialEq)]
 pub struct CommercialMode {
-    #[derivative(Default(value = "\"default_commercial_mode\".into()"))]
     #[serde(rename = "commercial_mode_id")]
     pub id: String,
-    #[derivative(Default(value = "\"default commercial mode\".into()"))]
     #[serde(rename = "commercial_mode_name")]
     pub name: String,
+}
+
+impl Default for CommercialMode {
+    fn default() -> Self {
+        Self {
+            id: "default_commercial_mode".into(),
+            name: "default commercial mode".into(),
+        }
+    }
 }
 impl_id!(CommercialMode);
 
 impl_with_id!(CommercialMode);
 
-#[derive(Clone, Derivative, Serialize, Deserialize, Debug)]
-#[derivative(Default)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct PhysicalMode {
-    #[derivative(Default(value = "\"default_physical_mode\".into()"))]
     #[serde(rename = "physical_mode_id")]
     pub id: String,
-    #[derivative(Default(value = "\"default_physical_mode\".into()"))]
     #[serde(rename = "physical_mode_name")]
     pub name: String,
     pub co2_emission: Option<f32>,
+}
+
+impl Default for PhysicalMode {
+    fn default() -> Self {
+        Self {
+            id: "default_physical_mode".into(),
+            name: "default_physical_mode".into(),
+            co2_emission: None,
+        }
+    }
 }
 
 impl_id!(PhysicalMode);
@@ -349,20 +361,16 @@ impl Eq for PhysicalMode {}
 
 impl_with_id!(PhysicalMode);
 
-#[derive(Derivative, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
-#[derivative(Default)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Network {
-    #[derivative(Default(value = "\"default_network\".into()"))]
     #[serde(rename = "network_id")]
     pub id: String,
-    #[derivative(Default(value = "\"default network\".into()"))]
     #[serde(rename = "network_name")]
     pub name: String,
     #[serde(rename = "network_url")]
     pub url: Option<String>,
     #[serde(skip)]
     pub codes: KeysValues,
-    #[derivative(Default(value = "Some(chrono_tz::Europe::Paris)"))]
     #[serde(rename = "network_timezone")]
     pub timezone: Option<Tz>,
     #[serde(rename = "network_lang")]
@@ -375,6 +383,23 @@ pub struct Network {
     pub fare_url: Option<String>,
     #[serde(rename = "network_sort_order")]
     pub sort_order: Option<u32>,
+}
+
+impl Default for Network {
+    fn default() -> Self {
+        Self {
+            id: "default_network".into(),
+            name: "default network".into(),
+            url: None,
+            codes: Default::default(),
+            timezone: Some(chrono_tz::Europe::Paris),
+            lang: None,
+            phone: None,
+            address: None,
+            fare_url: None,
+            sort_order: None,
+        }
+    }
 }
 
 impl_id!(Network);
@@ -459,11 +484,9 @@ impl<'de> ::serde::Deserialize<'de> for Rgb {
         Rgb::from_str(&color_hex).map_err(Error::custom)
     }
 }
-#[derive(Derivative, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
-#[derivative(Default)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Line {
     #[serde(rename = "line_id")]
-    #[derivative(Default(value = "\"default_line\".into()"))]
     pub id: String,
     #[serde(rename = "line_code")]
     pub code: Option<String>,
@@ -495,15 +518,37 @@ pub struct Line {
     pub text_color: Option<Rgb>,
     #[serde(rename = "line_sort_order")]
     pub sort_order: Option<u32>,
-    #[derivative(Default(value = "\"default_network\".into()"))]
     pub network_id: String,
-    #[derivative(Default(value = "\"default_commercial_mode\".into()"))]
     pub commercial_mode_id: String,
     pub geometry_id: Option<String>,
     #[serde(rename = "line_opening_time")]
     pub opening_time: Option<Time>,
     #[serde(rename = "line_closing_time")]
     pub closing_time: Option<Time>,
+}
+
+impl Default for Line {
+    fn default() -> Self {
+        Self {
+            id: "default_line".into(),
+            code: None,
+            codes: Default::default(),
+            object_properties: Default::default(),
+            comment_links: Default::default(),
+            booking_rule_links: Default::default(),
+            name: Default::default(),
+            forward_name: None,
+            backward_name: None,
+            color: None,
+            text_color: None,
+            sort_order: None,
+            network_id: "default_network".into(),
+            commercial_mode_id: "default_commercial_mode".into(),
+            geometry_id: None,
+            opening_time: None,
+            closing_time: None,
+        }
+    }
 }
 
 impl_id!(Line);
@@ -534,14 +579,11 @@ impl GetObjectType for Line {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Derivative, Clone)]
-#[derivative(Default)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Route {
     #[serde(rename = "route_id")]
-    #[derivative(Default(value = "\"default_route\".into()"))]
     pub id: String,
     #[serde(rename = "route_name")]
-    #[derivative(Default(value = "\"default route\".into()"))]
     pub name: String,
     pub direction_type: Option<String>,
     #[serde(skip)]
@@ -550,10 +592,25 @@ pub struct Route {
     pub object_properties: PropertiesMap,
     #[serde(skip)]
     pub comment_links: LinksT,
-    #[derivative(Default(value = "\"default_line\".into()"))]
     pub line_id: String,
     pub geometry_id: Option<String>,
     pub destination_id: Option<String>,
+}
+
+impl Default for Route {
+    fn default() -> Self {
+        Self {
+            id: "default_route".into(),
+            name: "default route".into(),
+            direction_type: None,
+            codes: Default::default(),
+            object_properties: Default::default(),
+            comment_links: Default::default(),
+            line_id: "default_line".into(),
+            geometry_id: None,
+            destination_id: None,
+        }
+    }
 }
 impl_id!(Route);
 impl_id!(Route, Line, line_id);
@@ -1222,10 +1279,9 @@ impl GetObjectType for StopArea {
         ObjectType::StopArea
     }
 }
-#[derive(Derivative, Debug, Eq, PartialEq, Clone)]
-#[derivative(Default)]
+#[derive(Default, Debug, Eq, PartialEq, Clone)]
 pub enum StopType {
-    #[derivative(Default)]
+    #[default]
     Point,
     Zone,
     StopEntrance,
@@ -1363,10 +1419,9 @@ impl AddPrefix for StopLocation {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-#[derivative(Default)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PathwayMode {
-    #[derivative(Default)]
+    #[default]
     #[serde(rename = "1")]
     Walkway,
     #[serde(rename = "2")]
@@ -1478,7 +1533,7 @@ impl WithId for Calendar {
         }
     }
 }
-#[derive(Serialize, Derivative, Deserialize, Debug, Eq, PartialEq, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Default, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum CompanyRole {
     #[default]
@@ -1505,7 +1560,7 @@ impl From<CompanyRole> for Option<String> {
     }
 }
 
-#[derive(Derivative, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub struct Company {
     #[serde(rename = "company_id")]
     pub id: String,
@@ -1555,12 +1610,10 @@ impl GetObjectType for Company {
 
 impl_with_id!(Company);
 
-#[derive(Derivative)]
-#[derivative(Default(bound = ""))]
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(rename_all = "snake_case")]
 pub enum CommentType {
-    #[derivative(Default)]
+    #[default]
     Information,
     OnDemandTransport,
 }
@@ -1654,11 +1707,10 @@ impl AddPrefix for BookingRule {
 }
 
 #[derive(
-    Serialize, Deserialize, Debug, Derivative, PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Copy,
+    Default, Serialize, Deserialize, Debug, PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Copy,
 )]
-#[derivative(Default)]
 pub enum Availability {
-    #[derivative(Default)]
+    #[default]
     #[serde(rename = "0")]
     InformationNotAvailable,
     #[serde(rename = "1")]
@@ -1716,19 +1768,21 @@ impl Equipment {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Derivative)]
-#[derivative(PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Transfer {
     pub from_stop_id: String,
     pub to_stop_id: String,
     #[serde(serialize_with = "ser_option_u32_with_default")]
-    #[derivative(PartialEq = "ignore")]
     pub min_transfer_time: Option<u32>,
     #[serde(serialize_with = "ser_option_u32_with_default")]
-    #[derivative(PartialEq = "ignore")]
     pub real_min_transfer_time: Option<u32>,
-    #[derivative(PartialEq = "ignore")]
     pub equipment_id: Option<String>,
+}
+
+impl PartialEq for Transfer {
+    fn eq(&self, other: &Self) -> bool {
+        self.from_stop_id == other.from_stop_id && self.to_stop_id == other.to_stop_id
+    }
 }
 
 impl AddPrefix for Transfer {
@@ -1750,10 +1804,9 @@ impl Hash for Transfer {
 
 impl Eq for Transfer {}
 
-#[derive(Serialize, Deserialize, Debug, Derivative, Eq, PartialEq, Clone)]
-#[derivative(Default)]
+#[derive(Default, Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub enum TransportType {
-    #[derivative(Default)]
+    #[default]
     #[serde(rename = "0")]
     Regular,
     #[serde(rename = "1")]

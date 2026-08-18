@@ -29,7 +29,6 @@ use crate::{
     Result,
 };
 use anyhow::{anyhow, bail, Error};
-use derivative::Derivative;
 use geo::{LineString, Point};
 use serde::Deserialize;
 use skip_error::{skip_error_and_warn, SkipError};
@@ -1423,10 +1422,9 @@ where
     Ok(())
 }
 
-#[derive(Derivative, Deserialize, Debug, Clone, PartialEq)]
-#[derivative(Default)]
+#[derive(Default, Deserialize, Debug, Clone, PartialEq)]
 enum FrequencyPrecision {
-    #[derivative(Default)]
+    #[default]
     #[serde(rename = "0")]
     Inexact,
     #[serde(rename = "1")]

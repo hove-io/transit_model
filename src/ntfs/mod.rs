@@ -30,7 +30,6 @@ use crate::{
 use anyhow::{anyhow, Context};
 use chrono::{DateTime, FixedOffset};
 use chrono_tz::Tz;
-use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 use std::path;
 use tempfile::tempdir;
@@ -62,10 +61,9 @@ struct StopTime {
     precision: Option<StopTimePrecision>,
 }
 
-#[derive(Derivative, Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[derivative(Default)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
 enum StopLocationType {
-    #[derivative(Default)]
+    #[default]
     #[serde(rename = "0")]
     StopPoint,
     #[serde(rename = "1")]
