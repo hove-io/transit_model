@@ -792,8 +792,48 @@ pub enum StopTimeError {
 }
 
 impl VehicleJourney {
+    fn check_stop_time_coherence(st: &StopTime, vj_id: &str) -> Result<(), StopTimeError> {
+        let dt = st
+            .departure_time
+            .or(st.start_pickup_drop_off_window)
+            .unwrap_or_default();
+
+        // Only 2 valid possibilities:
+        // - arrival_time and departure_time are filled, but not start_pickup_drop_off_window and end_pickup_drop_off_window
+        // - start_pickup_drop_off_window and end_pickup_drop_off_window are filled, but not arrival_time and departure_time
+        match (
+            st.arrival_time,
+            st.departure_time,
+            st.start_pickup_drop_off_window,
+            st.end_pickup_drop_off_window,
+        ) {
+            (Some(_), Some(_), None, None) => (),
+            (None, None, Some(_), Some(_)) => (),
+            _ => {
+                return Err(StopTimeError::IncoherentStopTimes {
+                    first_incorrect_sequence: st.sequence,
+                    first_incorrect_time: dt,
+                    vj_id: vj_id.to_string(),
+                })
+            }
+        };
+
+        if st.arrival_time > st.departure_time
+            || st.start_pickup_drop_off_window > st.end_pickup_drop_off_window
+        {
+            return Err(StopTimeError::IncoherentStopTimes {
+                first_incorrect_sequence: st.sequence,
+                first_incorrect_time: dt,
+                vj_id: vj_id.to_string(),
+            });
+        }
+
+        Ok(())
+    }
+
     pub fn sort_and_check_stop_times(&mut self) -> Result<(), StopTimeError> {
         self.stop_times.sort_unstable_by_key(|st| st.sequence);
+
         for window in self.stop_times.windows(2) {
             let curr_st = &window[0];
             let next_st = &window[1];
@@ -805,35 +845,16 @@ impl VehicleJourney {
                 });
             }
 
+            Self::check_stop_time_coherence(curr_st, &self.id)?;
+
             let dt = curr_st
                 .departure_time
                 .or(curr_st.start_pickup_drop_off_window)
                 .unwrap_or_default();
 
-            // Only 2 valid possibilities:
-            // - arrival_time and departure_time are filled, but not start_pickup_drop_off_window and end_pickup_drop_off_window
-            // - start_pickup_drop_off_window and end_pickup_drop_off_window are filled, but not arrival_time and departure_time
-            match (
-                curr_st.arrival_time,
-                curr_st.departure_time,
-                curr_st.start_pickup_drop_off_window,
-                curr_st.end_pickup_drop_off_window,
-            ) {
-                (Some(_), Some(_), None, None) => (),
-                (None, None, Some(_), Some(_)) => (),
-                _ => {
-                    return Err(StopTimeError::IncoherentStopTimes {
-                        first_incorrect_sequence: curr_st.sequence,
-                        first_incorrect_time: dt,
-                        vj_id: self.id.clone(),
-                    })
-                }
-            };
-
-            if curr_st.arrival_time > curr_st.departure_time
-                || curr_st.start_pickup_drop_off_window > curr_st.end_pickup_drop_off_window
-                // See test below: sort_and_check_stop_times::growing_departure_to_arrival_time
-                || curr_st.departure_time.is_some()
+            if
+            // See test below: sort_and_check_stop_times::growing_departure_to_arrival_time
+            curr_st.departure_time.is_some()
                     && next_st.arrival_time.is_some()
                     && curr_st.departure_time > next_st.arrival_time
                 // See test below: sort_and_check_stop_times::growing_start_pickup_drop_off_windows
@@ -860,6 +881,13 @@ impl VehicleJourney {
                 });
             }
         }
+
+        // windows(2) never yields the last stop_time as curr_st, so its own
+        // coherence is never checked above; check it explicitly here.
+        if let Some(last_st) = self.stop_times.last() {
+            Self::check_stop_time_coherence(last_st, &self.id)?;
+        }
+
         Ok(())
     }
 }
@@ -2469,6 +2497,48 @@ mod tests {
         }
 
         #[test]
+        fn valid_arrival_departure_stop_times() {
+            let stop_times = generate_stop_times(vec![
+                (1, Some("06:00:00"), Some("06:01:00"), None, None),
+                (2, Some("06:02:00"), Some("06:03:00"), None, None),
+                (3, Some("06:04:00"), Some("06:05:00"), None, None),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            assert!(vehicle_journey.sort_and_check_stop_times().is_ok());
+        }
+
+        #[test]
+        fn valid_pickup_drop_off_window_stop_times() {
+            let stop_times = generate_stop_times(vec![
+                (1, None, None, Some("06:00:00"), Some("07:00:00")),
+                (2, None, None, Some("07:00:00"), Some("08:00:00")),
+                (3, None, None, Some("08:00:00"), Some("09:00:00")),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            assert!(vehicle_journey.sort_and_check_stop_times().is_ok());
+        }
+
+        #[test]
+        fn single_stop_time_is_valid() {
+            let stop_times =
+                generate_stop_times(vec![(1, Some("06:00:00"), Some("06:01:00"), None, None)]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            assert!(vehicle_journey.sort_and_check_stop_times().is_ok());
+        }
+
+        #[test]
         #[should_panic(
             expected = "DuplicateStopSequence { vj_id: \"vj1\", duplicated_sequence: 2 }"
         )]
@@ -2567,6 +2637,60 @@ mod tests {
                 (1, None, None, Some("06:00:00"), Some("07:00:00")),
                 (2, None, None, Some("06:00:00"), Some("07:00:00")),
                 (3, Some("06:45:00"), Some("06:45:00"), None, None),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            vehicle_journey.sort_and_check_stop_times().unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "IncoherentStopTimes { vj_id: \"vj1\", first_incorrect_sequence: 3, first_incorrect_time: Time(21900) }"
+        )]
+        fn last_stop_time_arrival_after_departure() {
+            let stop_times = generate_stop_times(vec![
+                (1, Some("06:00:00"), Some("06:01:00"), None, None),
+                (2, Some("06:02:00"), Some("06:03:00"), None, None),
+                (3, Some("06:10:00"), Some("06:05:00"), None, None),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            vehicle_journey.sort_and_check_stop_times().unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "IncoherentStopTimes { vj_id: \"vj1\", first_incorrect_sequence: 3, first_incorrect_time: Time(27000) }"
+        )]
+        fn last_stop_time_start_after_end_pickup_drop_off_window() {
+            let stop_times = generate_stop_times(vec![
+                (1, None, None, Some("06:00:00"), Some("07:00:00")),
+                (2, None, None, Some("06:00:00"), Some("07:00:00")),
+                (3, None, None, Some("07:30:00"), Some("07:00:00")),
+            ]);
+            let mut vehicle_journey = VehicleJourney {
+                id: "vj1".to_string(),
+                stop_times,
+                ..Default::default()
+            };
+            vehicle_journey.sort_and_check_stop_times().unwrap();
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "IncoherentStopTimes { vj_id: \"vj1\", first_incorrect_sequence: 3, first_incorrect_time: Time(0) }"
+        )]
+        fn last_stop_time_incoherent_fields() {
+            let stop_times = generate_stop_times(vec![
+                (1, Some("06:00:00"), Some("06:01:00"), None, None),
+                (2, Some("06:02:00"), Some("06:03:00"), None, None),
+                (3, Some("06:04:00"), None, None, None),
             ]);
             let mut vehicle_journey = VehicleJourney {
                 id: "vj1".to_string(),
