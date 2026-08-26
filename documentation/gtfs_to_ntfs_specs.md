@@ -46,6 +46,7 @@ A third boolean CLI argument (`--read-as-line`) may affect the reading of the fi
 | frequency    | trip and stop_time                          |
 | attribution  | company (1)                                 |
 | booking_rule | booking_rule                                |
+| pathway      | pathway                                     |
 
 (1) If the `attributions` file is present, it will override the agency file to feed companies
 
@@ -445,6 +446,30 @@ follows. Note that if value is not one of `0`, `1`, `2` or `3`, then set to `0`.
 | 3                    | 86400                      | 86400                                  |                                                                                                                                                               |
 | 4                    | 0                          | 0                                      |                                                                                                                                                               |
 | 5                    | 0                          | 0                                      |                                                                                                                                                               |
+
+### Reading pathways.txt
+
+* If 2 pathways with the same ID are specified, the conversion should stop
+  immediately with an error
+* If a line of the file is not conform to the specification, then the line is
+  ignored
+* If `from_stop_id` or `to_stop_id` doesn't refer to an existing stop in
+  stops.txt, the pathway is ignored
+
+| NTFS file    | NTFS field             | Constraint | GTFS file    | GTFS field             | Note                                                         |
+| ------------ | ---------------------- | ---------- | ------------ | ---------------------- | ------------------------------------------------------------ |
+| pathways.txt | pathway_id             | ID         | pathways.txt | pathway_id             |                                                              |
+| pathways.txt | from_stop_id           | Required   | pathways.txt | from_stop_id           |                                                              |
+| pathways.txt | to_stop_id             | Required   | pathways.txt | to_stop_id             |                                                              |
+| pathways.txt | pathway_mode           | Required   | pathways.txt | pathway_mode           |                                                              |
+| pathways.txt | is_bidirectional       | Required   | pathways.txt | is_bidirectional       | Must be `0` or `1`, otherwise the pathway is ignored         |
+| pathways.txt | length                 | Optional   | pathways.txt | length                 | Must be a positive value, otherwise the pathway is ignored   |
+| pathways.txt | traversal_time         | Optional   | pathways.txt | traversal_time         |                                                              |
+| pathways.txt | stair_count            | Optional   | pathways.txt | stair_count            | Must be a non-null integer, otherwise the pathway is ignored |
+| pathways.txt | max_slope              | Optional   | pathways.txt | max_slope              |                                                              |
+| pathways.txt | min_width              | Optional   | pathways.txt | min_width              | Must be a positive value, otherwise the pathway is ignored   |
+| pathways.txt | signposted_as          | Optional   | pathways.txt | signposted_as          |                                                              |
+| pathways.txt | reversed_signposted_as | Optional   | pathways.txt | reversed_signposted_as |                                                              |
 
 ### Reading shapes.txt
 
