@@ -449,6 +449,11 @@ follows. Note that if value is not one of `0`, `1`, `2` or `3`, then set to `0`.
 | 4                    | 0                          | 0                                      |                                                                                                                                                               |
 | 5                    | 0                          | 0                                      |                                                                                                                                                               |
 
+**Note:** In addition to the transfers read from this file, the converter also
+automatically generates missing transfers between nearby stop points (based
+on crow-fly distance, walking speed and pathways). This generation is not
+detailed further in this document.
+
 ### Reading pathways.txt
 
 * If 2 pathways with the same ID are specified, the conversion should stop
