@@ -411,14 +411,14 @@ If none of `message`, `phone_number`, `info_url`, or `booking_url` is defined, t
 
 | NTFS file         | NTFS field                 | Constraint | GTFS file         | GTFS field                 | Note                                                                 |
 | ----------------- | --------------------------- | ---------- | ----------------- | --------------------------- | --------------------------------------------------------------------- |
-| booking_rules.txt | id                          | Required   | booking_rules.txt | id                          |                                                                       |
+| booking_rules.txt | booking_rule_id             | ID         | booking_rules.txt | booking_rule_id             |                                                                       |
 | booking_rules.txt | booking_type                | Required   | booking_rules.txt | booking_type                |                                                                       |
 | booking_rules.txt | prior_notice_duration_min   | Optional   | booking_rules.txt | prior_notice_duration_min   | Required for `booking_type=1`, forbidden otherwise                    |
 | booking_rules.txt | prior_notice_duration_max   | Optional   | booking_rules.txt | prior_notice_duration_max   | Forbidden for `booking_type=0` or `booking_type=2`                    |
 | booking_rules.txt | prior_notice_last_day       | Optional   | booking_rules.txt | prior_notice_last_day       | Required for `booking_type=2`, forbidden otherwise                    |
 | booking_rules.txt | prior_notice_last_time      | Optional   | booking_rules.txt | prior_notice_last_time      | Required if `prior_notice_last_day` is defined, forbidden otherwise   |
 | booking_rules.txt | message                     | Optional   | booking_rules.txt | message                     |                                                                       |
-| booking_rules.txt | phone                       | Optional   | booking_rules.txt | phone                       |                                                                       |
+| booking_rules.txt | phone_number                | Optional   | booking_rules.txt | phone_number                |                                                                       |
 | booking_rules.txt | info_url                    | Optional   | booking_rules.txt | info_url                    |                                                                       |
 | booking_rules.txt | booking_url                 | Optional   | booking_rules.txt | booking_url                 |                                                                       |
 
