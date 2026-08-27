@@ -170,14 +170,14 @@ are removed from the trip before export.
 
 | GTFS field                | Required                | NTFS file         | NTFS field                | Note |
 | ------------------------- | ----------------------- | ----------------- | ------------------------- | ---- |
-| booking_rule_id           | yes                     | booking_rules.txt | id                        |      |
+| booking_rule_id           | yes                     | booking_rules.txt | booking_rule_id           |      |
 | booking_type              | yes                     | booking_rules.txt | booking_type              |      |
 | prior_notice_duration_min | conditionally required  | booking_rules.txt | prior_notice_duration_min | (1)  |
 | prior_notice_duration_max | conditionally forbidden | booking_rules.txt | prior_notice_duration_max | (2)  |
 | prior_notice_last_day     | conditionally required  | booking_rules.txt | prior_notice_last_day     | (3)  |
 | prior_notice_last_time    | conditionally required  | booking_rules.txt | prior_notice_last_time    | (4)  |
 | message                   | no                      | booking_rules.txt | message                   |      |
-| phone_number              | no                      | booking_rules.txt | phone                     |      |
+| phone_number              | no                      | booking_rules.txt | phone_number              |      |
 | info_url                  | no                      | booking_rules.txt | info_url                  |      |
 | booking_url               | no                      | booking_rules.txt | booking_url               |      |
 
