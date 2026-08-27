@@ -461,13 +461,13 @@ If none of `message`, `phone_number`, `info_url`, or `booking_url` is defined, t
 * If a line of the file is not conform to the specification, then the line is
   ignored
 
-| NTFS file     | NTFS field             | Constraint | GTFS file     | GTFS field   | Note                                                                                                |
-| ------------- | ---------------------- | ---------- | ------------- | ------------ | --------------------------------------------------------------------------------------------------- |
-| transfers.txt | from_stop_id           | Required   | transfers.txt | from_stop_id | All slashes `/` are removed; if the `stop_id` doesn't exist in `stops.txt`, the transfer is ignored |
-| transfers.txt | to_stop_id             | Required   | transfers.txt | to_stop_id   | All slashes `/` are removed; if the `stop_id` doesn't exist in `stops.txt`, the transfer is ignored |
-| transfers.txt | min_transfer_time      | Optional   | transfers.txt |              | see (1)                                                                                             |
-| transfers.txt | real_min_transfer_time | Optional   | transfers.txt |              | see (1)                                                                                             |
-| transfers.txt | equipment_id           | Optional   | transfers.txt |              | Always empty (not mapped from any GTFS field).                                                      |
+| NTFS file     | NTFS field             | Constraint | GTFS file     | GTFS field   | Note                                                                                                                                      |
+| ------------- | ---------------------- | ---------- | ------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| transfers.txt | from_stop_id           | Required   | transfers.txt | from_stop_id | All slashes `/` are removed; if the `stop_id` doesn't exist in `stops.txt`, the transfer is ignored. See (2) if it refers to a stop_area. |
+| transfers.txt | to_stop_id             | Required   | transfers.txt | to_stop_id   | All slashes `/` are removed; if the `stop_id` doesn't exist in `stops.txt`, the transfer is ignored. See (2) if it refers to a stop_area. |
+| transfers.txt | min_transfer_time      | Optional   | transfers.txt |              | see (1)                                                                                                                                   |
+| transfers.txt | real_min_transfer_time | Optional   | transfers.txt |              | see (1)                                                                                                                                   |
+| transfers.txt | equipment_id           | Optional   | transfers.txt |              | Always empty (not mapped from any GTFS field).                                                                                            |
 
 (1) NTFS `min_transfer_time` and `real_min_transfer_time` are calculated as
 follows. Note that if value is not one of `0`, `1`, `2` or `3`, then set to `0`.
@@ -480,6 +480,11 @@ follows. Note that if value is not one of `0`, `1`, `2` or `3`, then set to `0`.
 | 3                    | 86400                      | 86400                                  |                                                                                                                                                               |
 | 4                    | 0                          | 0                                      |                                                                                                                                                               |
 | 5                    | 0                          | 0                                      |                                                                                                                                                               |
+
+(2) If `from_stop_id` or `to_stop_id` refers to a stop_area instead of a
+stop_point, the transfer is expanded into one NTFS transfer for every
+combination of stop_points belonging to the two referenced stop_areas
+(cross product).
 
 **Note:** In addition to the transfers read from this file, the converter also
 automatically generates missing transfers between nearby stop points (based
