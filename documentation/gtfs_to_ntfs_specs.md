@@ -92,13 +92,15 @@ A complementary `object_code` is added to each network with the following proper
 If 2 companies with the same ID are specified, the conversion should stop
 immediately with an error.
 
-| NTFS file     | NTFS field    | Constraint | GTFS file  | GTFS field   | Note                                                     |
-| ------------- | ------------- | ---------- | ---------- | ------------ | -------------------------------------------------------- |
-| companies.txt | company_id    | ID         | agency.txt | agency_id    | `1` if the value is not provided (same rule as networks) |
-| companies.txt | company_name  | Required   | agency.txt | agency_name  |                                                          |
-| companies.txt | company_url   | Optional   | agency.txt | agency_url   |                                                          |
-| companies.txt | company_phone | Optional   | agency.txt | agency_phone |                                                          |
-| companies.txt | company_mail  | Optional   | agency.txt | agency_email |                                                          |
+| NTFS file     | NTFS field      | Constraint | GTFS file  | GTFS field   | Note                                                     |
+| ------------- | --------------- | ---------- | ---------- | ------------ | -------------------------------------------------------- |
+| companies.txt | company_id      | ID         | agency.txt | agency_id    | `1` if the value is not provided (same rule as networks) |
+| companies.txt | company_name    | Required   | agency.txt | agency_name  |                                                          |
+| companies.txt | company_address | Optional   |            |              | Always empty (not mapped from any GTFS field).           |
+| companies.txt | company_url     | Optional   | agency.txt | agency_url   |                                                          |
+| companies.txt | company_phone   | Optional   | agency.txt | agency_phone |                                                          |
+| companies.txt | company_mail    | Optional   | agency.txt | agency_email |                                                          |
+| companies.txt | company_role    | Required   |            |              | Fixed value `Authority`.                                 |
 
 **_"Source" complementary code :_**
 
@@ -114,13 +116,15 @@ A complementary `object_code` is added to each company with the following proper
 Only attribution affecting either a route or a trip are taken into account.
 If an attribution (attribution.txt) is defined, and "is_operator=1", then a company is created and applied to all trips on the route, if a route identifier is provided, otherwise on the trip whose identifier is defined.
 
-| NTFS file     | NTFS field    | Constraint | GTFS file        | GTFS field        | Note                                                     |
-| ------------- | ------------- | ---------- | ---------------- | ----------------- | -------------------------------------------------------- |
-| companies.txt | company_id    | ID         |                  |                   | Auto-generated identifier                                |
-| companies.txt | company_name  | Required   | attributions.txt | organization_name |                                                          |
-| companies.txt | company_url   | Optional   | attributions.txt | attribution_url   |                                                          |
-| companies.txt | company_phone | Optional   | attributions.txt | attribution_phone |                                                          |
-| companies.txt | company_mail  | Optional   | attributions.txt | attribution_email |                                                          |
+| NTFS file     | NTFS field      | Constraint | GTFS file        | GTFS field        | Note                                           |
+| ------------- | --------------- | ---------- | ---------------- | ----------------- | ---------------------------------------------- |
+| companies.txt | company_id      | ID         |                  |                   | Auto-generated identifier                      |
+| companies.txt | company_name    | Required   | attributions.txt | organization_name |                                                |
+| companies.txt | company_address | Optional   |                  |                   | Always empty (not mapped from any GTFS field). |
+| companies.txt | company_url     | Optional   | attributions.txt | attribution_url   |                                                |
+| companies.txt | company_phone   | Optional   | attributions.txt | attribution_phone |                                                |
+| companies.txt | company_mail    | Optional   | attributions.txt | attribution_email |                                                |
+| companies.txt | company_role    | Required   |                  |                   | Fixed value `Operator`.                        |
 
 ### Reading stops.txt
 
