@@ -14,7 +14,6 @@ The resulting GTFS feed is composed of the following objects:
 * [calendar](#calendartxt)
 * [calendar_dates](#calendar_datestxt): residual one-off exceptions left
   after calendars are optimized.
-* [attributions](#attributionstxt)
 
 The following additional files are generated only if the corresponding objects are present in the NTFS.
 
@@ -24,6 +23,7 @@ The following additional files are generated only if the corresponding objects a
 * [levels](#levelstxt)
 * [booking_rules](#booking_rulestxt)
 * [ticketing_deep_links](#ticketing_deep_linkstxt)
+* [attributions](#attributionstxt)
 * [object_codes_extension](#object_codes_extensiontxt): additional information providing the complementary codes for various objects (stops, networks, lines, routes, trips, companies) used in external systems.
 
 [GTFS]: https://gtfs.org/reference/static
@@ -304,6 +304,10 @@ If N complementary codes are specified for an object, there will be N separate l
 | object_code   | yes      | object_codes.txt | object_code   | The actual code value in the specified system                                                                                                                                           |
 
 ### attributions.txt
+
+Only companies with `company_role` = `Operator` are considered; trips or
+routes whose company has any other role (`Authority` by default) produce no
+attribution.
 
 If all the trips on a route are operated by the same company, then the allocation applies to the route, otherwise it applies to each trip.
 
