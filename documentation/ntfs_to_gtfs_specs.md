@@ -11,7 +11,9 @@ The resulting GTFS feed is composed of the following objects:
 * [stops](#stopstxt)
 * [trips](#tripstxt)
 * [stop_times](#stop_timestxt)
-* [calendar_dates](#calendar_datestxt): only this file is provided instead of the calendar.txt file.
+* [calendar](#calendartxt)
+* [calendar_dates](#calendar_datestxt): residual one-off exceptions left
+  after calendars are optimized.
 * [attributions](#attributionstxt)
 
 The following additional files are generated only if the corresponding objects are present in the NTFS.
@@ -202,9 +204,39 @@ networks.txt, and referenced by the corresponding agencies'
 | android_intent_uri     | no       | networks.txt | network_fare_url |                           |
 | ios_universal_link_url | no       | networks.txt | network_fare_url |                           |
 
+### calendar.txt
+
+`calendar.txt` and `calendar_dates.txt` are recomputed independently for
+each service from its full list of active dates: a best-fitting weekly
+pattern is found over the service's date range, and written as a
+`calendar.txt` row. `calendar.txt` is only generated if at least one
+service produces a non-empty pattern.
+
+| GTFS field | Required | NTFS file                        | NTFS field | Note                                                                 |
+| ---------- | -------- | -------------------------------- | ---------- | -------------------------------------------------------------------- |
+| service_id | yes      | calendar.txt, calendar_dates.txt | service_id |                                                                      |
+| monday     | yes      | calendar.txt, calendar_dates.txt |            | Best-fitting weekly pattern computed over the service's active dates |
+| tuesday    | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| wednesday  | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| thursday   | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| friday     | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| saturday   | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| sunday     | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| start_date | yes      | calendar.txt, calendar_dates.txt |            | Earliest active date of the service                                  |
+| end_date   | yes      | calendar.txt, calendar_dates.txt |            | Latest active date of the service                                    |
+
 ### calendar_dates.txt
 
-This file is the same as the NTFS calendar_dates.txt file. All dates of service are included in this file (no calendar.txt file provided).
+Dates that don't match the weekly pattern found for their service (see
+[calendar.txt](#calendartxt) above) are written here as exceptions.
+`calendar_dates.txt` is only generated if at least one exception exists
+across the whole feed.
+
+| GTFS field     | Required | NTFS file                        | NTFS field | Note                                                                    |
+| -------------- | -------- | -------------------------------- | ---------- | ----------------------------------------------------------------------- |
+| service_id     | yes      | calendar.txt, calendar_dates.txt | service_id |                                                                         |
+| date           | yes      | calendar.txt, calendar_dates.txt |            | Date not matching the weekly pattern (see [calendar.txt](#calendartxt)) |
+| exception_type | yes      | calendar.txt, calendar_dates.txt |            | `1` to add a date, `2` to remove one                                    |
 
 ### transfers.txt
 
