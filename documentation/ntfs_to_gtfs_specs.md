@@ -18,6 +18,7 @@ The following additional files are generated only if the corresponding objects a
 
 * [transfers](#transferstxt)
 * [shapes](#shapestxt)
+* [pathways](#pathwaystxt)
 * [levels](#levelstxt)
 * [booking_rules](#booking_rulestxt)
 * [object_codes_extension](#object_codes_extensiontxt): additional information providing the complementary codes for various objects (stops, networks, lines, routes, trips, companies) used in external systems.
@@ -201,6 +202,25 @@ This file is the same as the NTFS calendar_dates.txt file. All dates of service 
 | shape_pt_lat      | yes      | geometries.txt | geometry_wkt | Latitude of the stop in the shape                                                      |
 | shape_pt_lon      | yes      | geometries.txt | geometry_wkt | Longitude of the stop in the shape                                                     |
 | shape_pt_sequence | yes      |                |              | Integer starting at 0 and increase by an increment of one for every point in the shape |
+
+### pathways.txt
+
+This file is only generated if pathways are present in the NTFS feed.
+
+| GTFS field             | Required | NTFS file    | NTFS field             | Note |
+| ---------------------- | -------- | ------------ | ---------------------- | ---- |
+| pathway_id             | yes      | pathways.txt | pathway_id             |      |
+| from_stop_id           | yes      | pathways.txt | from_stop_id           |      |
+| to_stop_id             | yes      | pathways.txt | to_stop_id             |      |
+| pathway_mode           | yes      | pathways.txt | pathway_mode           |      |
+| is_bidirectional       | yes      | pathways.txt | is_bidirectional       |      |
+| length                 | no       | pathways.txt | length                 |      |
+| traversal_time         | no       | pathways.txt | traversal_time         |      |
+| stair_count            | no       | pathways.txt | stair_count            |      |
+| max_slope              | no       | pathways.txt | max_slope              |      |
+| min_width              | no       | pathways.txt | min_width              |      |
+| signposted_as          | no       | pathways.txt | signposted_as          |      |
+| reversed_signposted_as | no       | pathways.txt | reversed_signposted_as |      |
 
 ### levels.txt
 
