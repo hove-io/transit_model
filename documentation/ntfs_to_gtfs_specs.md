@@ -105,7 +105,8 @@ The physical mode determination follows this cascading logic:
 
 ### stops.txt
 
-Stop zones (NTFS stops having `location_type` = 2) are ignored in the current version.
+Stop zones (NTFS stops having `location_type` = 2) are removed, along with
+any trip that has a stop_time on one of them, in the current version.
 
 | GTFS field          | Required | NTFS file                       | NTFS field          | Note                                                                                                                                                                                                                                                                                                                |
 | ------------------- | -------- | ------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -141,6 +142,9 @@ Stop zones (NTFS stops having `location_type` = 2) are ignored in the current ve
 | bikes_allowed         | no       | trip_properties.txt | bike_accepted         | The value of `bike_accepted` referenced by the `trip_property_id` of this trip.         |
 
 ### stop_times.txt
+
+Stop times with `pickup_type` = `3` or `drop_off_type` = `3` ("route points")
+are removed from the trip before export.
 
 | GTFS field                   | Required | NTFS file                       | NTFS field                   | Note                                                                                                                                                                                                                                                                                |
 | ---------------------------- | -------- | ------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
