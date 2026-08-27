@@ -18,6 +18,7 @@ The following additional files are generated only if the corresponding objects a
 
 * [transfers](#transferstxt)
 * [shapes](#shapestxt)
+* [levels](#levelstxt)
 * [booking_rules](#booking_rulestxt)
 * [object_codes_extension](#object_codes_extensiontxt): additional information providing the complementary codes for various objects (stops, networks, lines, routes, trips, companies) used in external systems.
 
@@ -113,6 +114,7 @@ Stop zones (NTFS stops having `location_type` = 2) are ignored in the current ve
 | location_type       | no       | stops.txt                       | location_type       | The value is set to `0` if the input value is `0` or invalid or unspecified, `1` if the input value is `1`, `2` if the input value is `3`, `3` if the input value is `4` and `4` if the input value is `5`.                                                                                                         |
 | parent_station      | no       | stops.txt                       | parent_station      |                                                                                                                                                                                                                                                                                                                     |
 | timezone            | no       | stops.txt                       | stop_timezone       |                                                                                                                                                                                                                                                                                                                     |
+| level_id            | no       | stops.txt                       | level_id            |                                                                                                                                                                                                                                                                                                                     |
 | stop_desc           | no       | comments.txt, comment_links.txt | comment_name        | The value of `comment_name` referenced by the `comment_id` having an `object_type` = `stop_point` or `object_type` = `stop_area` and an `object_id` equal to the corresponding `stop_id`. In case of more than one comments linked to the same trip, the first comment in alphabetical order is taken into account. |
 | wheelchair_boarding | no       | equipments.txt                  | wheelchair_boarding | The value of `wheelchair_boarding` referenced by the `equipment_id` of this stop.                                                                                                                                                                                                                                   |
 | platform_code       | no       | stops.txt                       | platform_code       |                                                                                                                                                                                                                                                                                                                     |
@@ -199,6 +201,16 @@ This file is the same as the NTFS calendar_dates.txt file. All dates of service 
 | shape_pt_lat      | yes      | geometries.txt | geometry_wkt | Latitude of the stop in the shape                                                      |
 | shape_pt_lon      | yes      | geometries.txt | geometry_wkt | Longitude of the stop in the shape                                                     |
 | shape_pt_sequence | yes      |                |              | Integer starting at 0 and increase by an increment of one for every point in the shape |
+
+### levels.txt
+
+This file is only generated if levels are present in the NTFS feed.
+
+| GTFS field  | Required | NTFS file  | NTFS field  | Note |
+| ----------- | -------- | ---------- | ----------- | ---- |
+| level_id    | yes      | levels.txt | level_id    |      |
+| level_index | yes      | levels.txt | level_index |      |
+| level_name  | no       | levels.txt | level_name  |      |
 
 ### object_codes_extension.txt
 
