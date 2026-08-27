@@ -537,9 +537,13 @@ Frequencies are transformed into explicit passing times by creating new trips th
 A new trip is created, departing from the first stop every `headway_secs` seconds within the time period between `start_time` and `end_time`. Stop times of the referenced trip are used to calculate the time interval between two stop departures.
 The departure time at the first stop of the last trip should not be later than the `end_time` value. In case both values for `start_time` and `end_time` are equal or `end_time` is smaller than `start_time`, the frequency is ignored (no new trip is created).
 
-Note that the referenced trip (and its stop_times) is only used as a sample and is deleted in the resulting data. In case the referenced trip and/or its associated stop_times do not exist, the frequency is ignored (no new trip is created).
+Note that the referenced trip (and its stop_times) is only used as a sample and is deleted in the resulting data. In case the referenced trip and/or its associated stop_times do not exist, the frequency is ignored (no new trip is created). Likewise, if the sample trip has a stop_time with `start_pickup_drop_off_window`/`end_pickup_drop_off_window` set, the frequency is ignored.
 
-The identifier for each new trip is generated using the following pattern: \<trip_id>:<auto-incremented integer\> and maintains the rest of the attributes of the sample trip. That is, all new trips are assigned to the same route as the route of the sample trip, have the same service_id, etc.
+**Warning:** even when a frequency is ignored, the sample trip is still
+removed from the output, with no replacement trip generated — the
+corresponding service disappears entirely.
+
+The identifier for each new trip is generated using the following pattern: \<trip_id>-<auto-incremented integer\> and maintains the rest of the attributes of the sample trip. That is, all new trips are assigned to the same route as the route of the sample trip, have the same service_id, etc.
 
 A complementary `object_code` is added to each new trip with the following properties:
 
