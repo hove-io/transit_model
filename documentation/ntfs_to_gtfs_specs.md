@@ -21,6 +21,7 @@ The following additional files are generated only if the corresponding objects a
 * [pathways](#pathwaystxt)
 * [levels](#levelstxt)
 * [booking_rules](#booking_rulestxt)
+* [ticketing_deep_links](#ticketing_deep_linkstxt)
 * [object_codes_extension](#object_codes_extensiontxt): additional information providing the complementary codes for various objects (stops, networks, lines, routes, trips, companies) used in external systems.
 
 [GTFS]: https://gtfs.org/reference/static
@@ -30,15 +31,17 @@ The following additional files are generated only if the corresponding objects a
 
 ### agency.txt
 
-| GTFS field      | Required | NTFS file    | NTFS field       | Note                                                   |
-| --------------- | -------- | ------------ | ---------------- | ------------------------------------------------------ |
-| agency_id       | yes      | networks.txt | network_id       |                                                        |
-| agency_name     | yes      | networks.txt | network_name     |                                                        |
-| agency_url      | yes      | networks.txt | network_url      | `http://www.navitia.io/` if the value is not provided. |
-| agency_timezone | yes      | networks.txt | network_timezone | `Europe/Paris` if the value is not provided.           |
-| agency_lang     | no       | networks.txt | network_lang     |                                                        |
-| agency_phone    | no       | networks.txt | network_phone    |                                                        |
-| agency_fare_url | no       | networks.txt | network_fare_url |                                                        |
+| GTFS field             | Required | NTFS file                | NTFS field             | Note                                                                                                                                                           |
+| ---------------------- | -------- | ------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| agency_id              | yes      | networks.txt             | network_id             |                                                                                                                                                                |
+| agency_name            | yes      | networks.txt             | network_name           |                                                                                                                                                                |
+| agency_url             | yes      | networks.txt             | network_url            | `http://www.navitia.io/` if the value is not provided.                                                                                                         |
+| agency_timezone        | yes      | networks.txt             | network_timezone       | `Europe/Paris` if the value is not provided.                                                                                                                   |
+| agency_lang            | no       | networks.txt             | network_lang           |                                                                                                                                                                |
+| agency_phone           | no       | networks.txt             | network_phone          |                                                                                                                                                                |
+| agency_email           | no       |                          |                        | Always empty (not mapped from any NTFS field).                                                                                                                 |
+| agency_fare_url        | no       | networks.txt             | network_fare_url       |                                                                                                                                                                |
+| ticketing_deep_link_id | no       | ticketing_deep_links.txt | ticketing_deep_link_id | (link to the [ticketing_deep_links.txt](#ticketing_deep_linkstxt) file). Only set if the network's `network_fare_url` matches a generated ticketing deep link. |
 
 ### routes.txt
 
@@ -180,6 +183,20 @@ Stop zones (NTFS stops having `location_type` = 2) are ignored in the current ve
 (4) Required if `prior_notice_last_day` is defined, forbidden otherwise.
 
 This converter links at most one booking rule per trip, applied identically to `pickup_booking_rule_id` and `drop_off_booking_rule_id` on every stop_time where `pickup_type`/`drop_off_type` is `2`.
+
+### ticketing_deep_links.txt
+
+This file is only generated if at least one network has a `network_fare_url`.
+One entry is generated per distinct `network_fare_url` value found across
+networks.txt, and referenced by the corresponding agencies'
+`ticketing_deep_link_id`.
+
+| GTFS field             | Required | NTFS file    | NTFS field       | Note                      |
+| ---------------------- | -------- | ------------ | ---------------- | ------------------------- |
+| ticketing_deep_link_id | yes      |              |                  | Auto-generated identifier |
+| web_url                | no       | networks.txt | network_fare_url |                           |
+| android_intent_uri     | no       | networks.txt | network_fare_url |                           |
+| ios_universal_link_url | no       | networks.txt | network_fare_url |                           |
 
 ### calendar_dates.txt
 
