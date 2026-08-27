@@ -298,13 +298,16 @@ A complementary `object_code` is added to each line with the following propertie
 
 ### Reading calendars.txt and calendar_dates.txt
 
-GTFS services are transformed into lists of active dates as if using a single NTFS
-file `calendar_dates.txt`. The resulting NTFS files might be different following an
-optimization operation applied at the end of the conversion, but the result should be
-functionally identical.
+GTFS services are transformed internally into lists of active dates, as if
+represented by a single NTFS `calendar_dates.txt` file:
 
 * In case both files `calendar.txt` and `calendar_dates.txt` are present in the input dataset, the days of the week of the specified services within the date range [`start_date` - `end_date`] are transformed into explicit active service dates, taking into account the dates when service exceptions occur. Note that the generated (`service_id`, `date`) pairs must be unique.
 * In case the file `calendar.txt` is empty or not present in the input dataset, the active service dates are loaded as is.
+
+An optimization step applied at the end of the conversion then re-derives a
+weekly pattern where possible: in practice, most services end up written to
+`calendar.txt`, with only residual one-off exceptions (if any) going to
+`calendar_dates.txt`.
 
 ### Reading trips.txt
 
