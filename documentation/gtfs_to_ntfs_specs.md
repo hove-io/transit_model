@@ -55,10 +55,12 @@ A third boolean CLI argument (`--read-as-line`) may affect the reading of the fi
 
 ### Reading agency.txt
 
-The field "agency_id" may not be provided in the GTFS as it's an optional field.
+The field `agency_id` may not be provided in the GTFS as it's an optional field.
 
-* If there is only one agency, the "agency_id" is considered to be "1".
-* If there are several agencies, the program will raise an exception as it won't be able to choose the right agency for the routes.
+* If there is only one agency, the `agency_id` is considered to be `1`.
+* If a route doesn't specify an `agency_id` and there are several agencies, the
+  conversion will stop immediately with an error, as it won't be able to
+  choose the right agency for the route.
 
 #### Loading Networks
 
@@ -94,7 +96,7 @@ immediately with an error.
 | ------------- | ------------- | ---------- | ---------- | ------------ | -------------------------------------------------------- |
 | companies.txt | company_id    | ID         | agency.txt | agency_id    | `1` if the value is not provided (same rule as networks) |
 | companies.txt | company_name  | Required   | agency.txt | agency_name  |                                                          |
-| companies.txt | company_url   | Optional   | agency.txt | agency_lang  |                                                          |
+| companies.txt | company_url   | Optional   | agency.txt | agency_url   |                                                          |
 | companies.txt | company_phone | Optional   | agency.txt | agency_phone |                                                          |
 | companies.txt | company_mail  | Optional   | agency.txt | agency_email |                                                          |
 
@@ -303,7 +305,7 @@ immediately with an error.
 | trips.txt | company_id       | Required   | routes.txt | agency_id  | The company corresponding to the `agency_id` of the trip's `route_id`                                    |
 | trips.txt | physical_mode_id | Required   |            |            | use the `route_type` See ["Mapping of route_type with modes"](#mapping-of-route_type-with-modes) chapter |
 | trips.txt | trip_property_id | Optional   | trips.txt  |            | (2)                                                                                                      |
-| trips.txt | dataset_id       | Required   |            |            | The `dataset_id` provided (cf. [gtfs2ntfs.md](./gtfs2ntfs.md) )                                          |
+| trips.txt | dataset_id       | Required   |            |            | The `dataset_id` provided, see [common NTFS rules]                                                       |
 | trips.txt | geometry_id      | Optional   | trips.txt  | shape_id   | All slashes `/` are removed                                                                              |
 
 (1)
@@ -507,7 +509,7 @@ The departure time at the first stop of the last trip should not be later than t
 
 Note that the referenced trip (and its stop_times) is only used as a sample and is deleted in the resulting data. In case the referenced trip and/or its associated stop_times do not exist, the frequency is ignored (no new trip is created).
 
-The identifier for each new trip is generated using the following pattern: \<trip_id>:<auto-incrimented integer\> and maintains the rest of the attributes of the sample trip. That is, all new trips are assigned to the same route as the route of the sample trip, have the same service_id, etc.
+The identifier for each new trip is generated using the following pattern: \<trip_id>:<auto-incremented integer\> and maintains the rest of the attributes of the sample trip. That is, all new trips are assigned to the same route as the route of the sample trip, have the same service_id, etc.
 
 A complementary `object_code` is added to each new trip with the following properties:
 
