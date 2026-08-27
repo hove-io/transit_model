@@ -49,18 +49,29 @@ The following additional files are generated only if the corresponding objects a
 
 Each line of this file corresponds to a transit line modeled in the NTFS feed. In case a transit line uses more than one modes of transportation, it should be modeled separately for each different mode, according to the mapping of modes presented below. The priorities follow the [NeTex Specification](http://www.normes-donnees-tc.org/wp-content/uploads/2014/05/NF_Profil_NeTEx_pour_les_arrets-_F-_-_v2.pdf) (cf. chapter 6.2.3).
 
-| GTFS field       | Required | NTFS file | NTFS field      | Note                                                                                                                                                               |
-| ---------------- | -------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| route_id         | yes      | lines.txt | line_id         | See below for lines containing trips with different modes                                                                                                          |
-| agency_id        | no       | lines.txt | network_id      | (link to the [agency.txt](#agencytxt) file)                                                                                                                        |
-| route_short_name | yes      | lines.txt | line_code       | empty string "" if the value is not provided. If `--mode-in-route-short-name` is provided to the binary, the commercial mode will be added to the route short name |
-| route_long_name  | yes      | lines.txt | line_name       |                                                                                                                                                                    |
-| route_desc       | no       |           |                 | Always empty (not mapped from any NTFS field).                                                                                                                     |
-| route_type       | yes      |           |                 | The corresponding physical mode of the trips of the line. See the table below for the mapping of modes.                                                            |
-| route_url        | no       |           |                 | Always empty (not mapped from any NTFS field).                                                                                                                     |
-| route_color      | no       | lines.txt | line_color      |                                                                                                                                                                    |
-| route_text_color | no       | lines.txt | line_text_color |                                                                                                                                                                    |
-| route_sort_order | no       | lines.txt | line_sort_order |                                                                                                                                                                    |
+| GTFS field       | Required | NTFS file | NTFS field      | Note                                                                                                    |
+| ---------------- | -------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------- |
+| route_id         | yes      | lines.txt | line_id         | See below for lines containing trips with different modes                                               |
+| agency_id        | no       | lines.txt | network_id      | (link to the [agency.txt](#agencytxt) file)                                                             |
+| route_short_name | yes      | lines.txt | line_code       | empty string "" if the value is not provided (1)                                                        |
+| route_long_name  | yes      | lines.txt | line_name       |                                                                                                         |
+| route_desc       | no       |           |                 | Always empty (not mapped from any NTFS field).                                                          |
+| route_type       | yes      |           |                 | The corresponding physical mode of the trips of the line. See the table below for the mapping of modes. |
+| route_url        | no       |           |                 | Always empty (not mapped from any NTFS field).                                                          |
+| route_color      | no       | lines.txt | line_color      |                                                                                                         |
+| route_text_color | no       | lines.txt | line_text_color |                                                                                                         |
+| route_sort_order | no       | lines.txt | line_sort_order |                                                                                                         |
+
+(1) If `--mode-in-route-short-name` is provided to the binary:
+
+* the commercial mode's name is prepended to `route_short_name`, separated
+  by a space
+* if `line_code` is empty, `route_short_name` becomes the mode's name alone
+
+Example (commercial mode name `Bus`):
+
+* `line_code` = `12` → `route_short_name` = `Bus 12`
+* `line_code` empty → `route_short_name` = `Bus`
 
 **Mapping of `route_type` with physical modes**
 
@@ -243,12 +254,12 @@ across the whole feed.
 
 ### transfers.txt
 
-| GTFS field        | Required | NTFS file     | NTFS field        | Note                                      |
-| ----------------- | -------- | ------------- | ----------------- | ----------------------------------------- |
-| from_stop_id      | yes      | transfers.txt | from_stop_id      | (link to the [stops.txt](#stopstxt) file) |
-| to_stop_id        | yes      | transfers.txt | to_stop_id        | (link to the [stops.txt](#stopstxt) file) |
-| transfer_type     | yes      |               |                   | `2`                                       |
-| min_transfer_time | no       | transfers.txt | min_transfer_time |                                           |
+| GTFS field        | Required | NTFS file     | NTFS field             | Note                                                                      |
+| ----------------- | -------- | ------------- | ---------------------- | ------------------------------------------------------------------------- |
+| from_stop_id      | yes      | transfers.txt | from_stop_id           | (link to the [stops.txt](#stopstxt) file)                                 |
+| to_stop_id        | yes      | transfers.txt | to_stop_id             | (link to the [stops.txt](#stopstxt) file)                                 |
+| transfer_type     | yes      |               |                        | `2`                                                                       |
+| min_transfer_time | no       | transfers.txt | real_min_transfer_time | Falls back to `min_transfer_time` if `real_min_transfer_time` is not set. |
 
 ### shapes.txt
 
