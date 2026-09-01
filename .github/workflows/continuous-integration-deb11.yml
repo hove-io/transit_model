@@ -82,6 +82,8 @@ jobs:
         submodules: recursive # for tests/NeTEx
     - name: Install xmllint
       run: apt update && apt install --yes libxml2-utils
+    - name: Cache cargo build
+      uses: Swatinem/rust-cache@v2
     - name: Run tests with and without features
       run: make test
   build-n-push:
