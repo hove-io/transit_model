@@ -46,6 +46,8 @@ A third boolean CLI argument (`--read-as-line`) may affect the reading of the fi
 | frequency    | trip and stop_time                          |
 | attribution  | company (1)                                 |
 | booking_rule | booking_rule                                |
+| pathway      | pathway                                     |
+| level        | level                                       |
 
 (1) If the `attributions` file is present, it will override the agency file to feed companies
 
@@ -53,25 +55,29 @@ A third boolean CLI argument (`--read-as-line`) may affect the reading of the fi
 
 ### Reading agency.txt
 
-The field "agency_id" may not be provided in the GTFS as it's an optional field.
+The field `agency_id` may not be provided in the GTFS as it's an optional field.
 
-* If there is only one agency, the "agency_id" is considered to be "1".
-* If there are several agencies, the program will raise an exception as it won't be able to choose the right agency for the routes.
+* If there is only one agency, the `agency_id` is considered to be `1`.
+* If a route doesn't specify an `agency_id` and there are several agencies, the
+  conversion will stop immediately with an error, as it won't be able to
+  choose the right agency for the route.
 
 #### Loading Networks
 
 If 2 networks with the same ID are specified, the conversion should stop
 immediately with an error.
 
-| NTFS file    | NTFS field       | Constraint | GTFS file  | GTFS field      | Note                         |
-| ------------ | ---------------- | ---------- | ---------- | --------------- | ---------------------------- |
-| networks.txt | network_id       | ID         | agency.txt | agency_id       | See above when not specified |
-| networks.txt | network_name     | Required   | agency.txt | agency_name     |                              |
-| networks.txt | network_url      | Optional   | agency.txt | agency_url      |                              |
-| networks.txt | network_timezone | Optional   | agency.txt | agency_timezone |                              |
-| networks.txt | network_lang     | Optional   | agency.txt | agency_lang     |                              |
-| networks.txt | network_phone    | Optional   | agency.txt | agency_phone    |                              |
-| networks.txt | network_fare_url | Optional   | agency.txt | agency_fare_url |                              |
+| NTFS file    | NTFS field         | Constraint | GTFS file  | GTFS field      | Note                                           |
+| ------------ | ------------------ | ---------- | ---------- | --------------- | ---------------------------------------------- |
+| networks.txt | network_id         | ID         | agency.txt | agency_id       | See above when not specified                   |
+| networks.txt | network_name       | Required   | agency.txt | agency_name     |                                                |
+| networks.txt | network_url        | Optional   | agency.txt | agency_url      |                                                |
+| networks.txt | network_timezone   | Optional   | agency.txt | agency_timezone |                                                |
+| networks.txt | network_lang       | Optional   | agency.txt | agency_lang     |                                                |
+| networks.txt | network_phone      | Optional   | agency.txt | agency_phone    |                                                |
+| networks.txt | network_address    | Optional   |            |                 | Always empty (not mapped from any GTFS field). |
+| networks.txt | network_fare_url   | Optional   | agency.txt | agency_fare_url |                                                |
+| networks.txt | network_sort_order | Optional   |            |                 | Always empty (not mapped from any GTFS field). |
 
 **_"Source" complementary code :_**
 
@@ -88,13 +94,15 @@ A complementary `object_code` is added to each network with the following proper
 If 2 companies with the same ID are specified, the conversion should stop
 immediately with an error.
 
-| NTFS file     | NTFS field    | Constraint | GTFS file  | GTFS field   | Note                                                     |
-| ------------- | ------------- | ---------- | ---------- | ------------ | -------------------------------------------------------- |
-| companies.txt | company_id    | ID         | agency.txt | agency_id    | `1` if the value is not provided (same rule as networks) |
-| companies.txt | company_name  | Required   | agency.txt | agency_name  |                                                          |
-| companies.txt | company_url   | Optional   | agency.txt | agency_lang  |                                                          |
-| companies.txt | company_phone | Optional   | agency.txt | agency_phone |                                                          |
-| companies.txt | company_mail  | Optional   | agency.txt | agency_email |                                                          |
+| NTFS file     | NTFS field      | Constraint | GTFS file  | GTFS field   | Note                                                     |
+| ------------- | --------------- | ---------- | ---------- | ------------ | -------------------------------------------------------- |
+| companies.txt | company_id      | ID         | agency.txt | agency_id    | `1` if the value is not provided (same rule as networks) |
+| companies.txt | company_name    | Required   | agency.txt | agency_name  |                                                          |
+| companies.txt | company_address | Optional   |            |              | Always empty (not mapped from any GTFS field).           |
+| companies.txt | company_url     | Optional   | agency.txt | agency_url   |                                                          |
+| companies.txt | company_phone   | Optional   | agency.txt | agency_phone |                                                          |
+| companies.txt | company_mail    | Optional   | agency.txt | agency_email |                                                          |
+| companies.txt | company_role    | Required   |            |              | Fixed value `Authority`.                                 |
 
 **_"Source" complementary code :_**
 
@@ -110,13 +118,15 @@ A complementary `object_code` is added to each company with the following proper
 Only attribution affecting either a route or a trip are taken into account.
 If an attribution (attribution.txt) is defined, and "is_operator=1", then a company is created and applied to all trips on the route, if a route identifier is provided, otherwise on the trip whose identifier is defined.
 
-| NTFS file     | NTFS field    | Constraint | GTFS file        | GTFS field        | Note                                                     |
-| ------------- | ------------- | ---------- | ---------------- | ----------------- | -------------------------------------------------------- |
-| companies.txt | company_id    | ID         |                  |                   | Auto-generated identifier                                |
-| companies.txt | company_name  | Required   | attributions.txt | organization_name |                                                          |
-| companies.txt | company_url   | Optional   | attributions.txt | attribution_url   |                                                          |
-| companies.txt | company_phone | Optional   | attributions.txt | attribution_phone |                                                          |
-| companies.txt | company_mail  | Optional   | attributions.txt | attribution_email |                                                          |
+| NTFS file     | NTFS field      | Constraint | GTFS file        | GTFS field        | Note                                           |
+| ------------- | --------------- | ---------- | ---------------- | ----------------- | ---------------------------------------------- |
+| companies.txt | company_id      | ID         |                  |                   | Auto-generated identifier                      |
+| companies.txt | company_name    | Required   | attributions.txt | organization_name |                                                |
+| companies.txt | company_address | Optional   |                  |                   | Always empty (not mapped from any GTFS field). |
+| companies.txt | company_url     | Optional   | attributions.txt | attribution_url   |                                                |
+| companies.txt | company_phone   | Optional   | attributions.txt | attribution_phone |                                                |
+| companies.txt | company_mail    | Optional   | attributions.txt | attribution_email |                                                |
+| companies.txt | company_role    | Required   |                  |                   | Fixed value `Operator`.                        |
 
 ### Reading stops.txt
 
@@ -124,19 +134,23 @@ Like the GTFS, the NTFS group stop_points and stop_areas in on file : stops.txt.
 If the stop_points have the same ID, the conversion should stop immediately with
 an error. Likewise for the stop_areas.
 
-| NTFS file      | NTFS field          | Constraint | GTFS file | GTFS field          | Note                                                                                                                                                                                                       |
-| -------------- | ------------------- | ---------- | --------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| stops.txt      | stop_id             | ID         | stops.txt | stop_id             | All slashes `/` will be removed                                                                                                                                                                            |
-| stops.txt      | stop_code           | Optional   | stops.txt | stop_code           | Additionally, this GTFS property is stored as an associated code for this stop. See (2) for complementary properties.                                                                                      |
-| stops.txt      | stop_name           | Required   | stops.txt | stop_name           |                                                                                                                                                                                                            |
-| stops.txt      | stop_lat            | Required   | stops.txt | stop_lat            |                                                                                                                                                                                                            |
-| stops.txt      | stop_lon            | Required   | stops.txt | stop_lon            |                                                                                                                                                                                                            |
-| stops.txt      | location_type       | Optional   | stops.txt | location_type       | The value is set to `0` if the input value is `0` or unspecified or invalid, `1` if the input value is `1`, `3` if the input value is `2`, `4` if the input value is `3` and `5` if the input value is `4` |
-| stops.txt      | parent_station      | Optional   | stops.txt | parent_station      | All slashes `/` are removed (1)                                                                                                                                                                            |
-| stops.txt      | stop_timezone       | Optional   | stops.txt | stop_timezone       |                                                                                                                                                                                                            |
-| stops.txt      | fare_zone_id        | Optional   | stops.txt | zone_id             | Only for stop_point (`location_type` = 0)                                                                                                                                                                  |
-| comments.txt   | comment_value       | Optional   | stops.txt | stop_desc           | See (3) for additional properties                                                                                                                                                                          |
-| equipments.txt | wheelchair_boarding | Optional   | stops.txt | wheelchair_boarding | If value is not one of `0`, `1` or `2`, then set to `0`. See (4) for detailed info.                                                                                                                        |
+| NTFS file      | NTFS field          | Constraint | GTFS file | GTFS field          | Note                                                                                                                                                                                                                          |
+| -------------- | ------------------- | ---------- | --------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| stops.txt      | stop_id             | ID         | stops.txt | stop_id             | All slashes `/` will be removed                                                                                                                                                                                               |
+| stops.txt      | stop_code           | Optional   | stops.txt | stop_code           | Not stored as the native `stop_code` field for stop_area (no native `code` field there). Additionally, this GTFS property is stored as an associated code for stop_point and stop_area. See (2) for complementary properties. |
+| stops.txt      | stop_name           | Required   | stops.txt | stop_name           |                                                                                                                                                                                                                               |
+| stops.txt      | stop_lat            | Required   | stops.txt | stop_lat            |                                                                                                                                                                                                                               |
+| stops.txt      | stop_lon            | Required   | stops.txt | stop_lon            |                                                                                                                                                                                                                               |
+| stops.txt      | location_type       | Optional   | stops.txt | location_type       | The value is set to `0` if the input value is `0` or unspecified or invalid, `1` if the input value is `1`, `3` if the input value is `2`, `4` if the input value is `3` and `5` if the input value is `4`                    |
+| stops.txt      | parent_station      | Optional   | stops.txt | parent_station      | All slashes `/` are removed (1)                                                                                                                                                                                               |
+| stops.txt      | stop_timezone       | Optional   | stops.txt | stop_timezone       |                                                                                                                                                                                                                               |
+| stops.txt      | geometry_id         | Optional   |           |                     | Always empty (not mapped from any GTFS field).                                                                                                                                                                                |
+| stops.txt      | level_id            | Optional   | stops.txt | level_id            | Reference to a level in levels.txt                                                                                                                                                                                            |
+| stops.txt      | fare_zone_id        | Optional   | stops.txt | zone_id             | Only for stop_point (`location_type` = 0)                                                                                                                                                                                     |
+| stops.txt      | platform_code       | Optional   | stops.txt | platform_code       | Only for stop_point (`location_type` = 0)                                                                                                                                                                                     |
+| stops.txt      | address_id          | Optional   |           |                     | Always empty (not mapped from any GTFS field).                                                                                                                                                                                |
+| comments.txt   | comment_value       | Optional   | stops.txt | stop_desc           | See (3) for additional properties                                                                                                                                                                                             |
+| equipments.txt | wheelchair_boarding | Optional   | stops.txt | wheelchair_boarding | If value is not one of `0`, `1` or `2`, then set to `0`. See (4) for detailed info.                                                                                                                                           |
 
 (1) If the `parent_station` field of a stop_point (`location_type` = 0 or empty) is missing or empty, then a stop_area should be created, using the following properties :
 
@@ -165,6 +179,10 @@ compatibility reasons. It will be removed in the future.
 
 + `equipment_id` : should be generated by the reader.
 + `wheelchair_boarding` : possible values are the same in both GTFS and NTFS.
++ All other properties (`sheltered`, `elevator`, `escalator`, `bike_accepted`,
+  `bike_depot`, `visual_announcement`, `audible_announcement`,
+  `appropriate_escort`, `appropriate_signage`) are always set to
+  "information not available".
 Be careful to only create necessary equipments and avoid duplicates.
 
 **_"Source" complementary code :_**
@@ -215,8 +233,9 @@ _Warning :_ If the GTFS route has no trips, the Navitia Route should NOT be crea
 | routes.txt   | route_name     | Required   | routes.txt | route_long_name | (1)                                                                                                                                                         |
 | routes.txt   | direction_type | Optional   |            |                 | (2)                                                                                                                                                         |
 | routes.txt   | line_id        | Required   |            |                 | corresponding `line.id` (see Line construction above)                                                                                                       |
+| routes.txt   | geometry_id    | Optional   |            |                 | Always empty (not mapped from any GTFS field).                                                                                                              |
 | routes.txt   | destination_id | Optional   |            |                 | This field contains a stop_area.id of the most frequent destination of the contained trips (ie. the parent_station of the most frequent last stop of trips) |
-| comments.txt | comment_value  | Optional   | routes.txt | route_desc      | The comment is generated only when the parameter `read-as-line` is deactivated. See (3) for additional properties                                                                                                                           |
+| comments.txt | comment_value  | Optional   | routes.txt | route_desc      | The comment is generated only when the parameter `read-as-line` is deactivated. See (3) for additional properties                                           |
 
 (1) if only one route is created (only one direction in included trips), use
 `route_long_name` or, if empty, use `route_short_name`. In case of multiple
@@ -246,17 +265,22 @@ created with the same gtfs `agency_id` and the same `route_short_name` (or
 `route_long_name` if the latter is empty).  If 2 lines with the same ID are
 specified, the conversion should stop immediately with an error.
 
-| NTFS file | NTFS field         | Constraint | GTFS file  | GTFS field       | Note                                                                                                                                                                                                                                                                             |
-| --------- | ------------------ | ---------- | ---------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| lines.txt | network_id         | Required   |            |                  | This field should contain the `network.id` corresponding to the `agency_id` of the routes; if no `agency_id` is specified in the route, use the ID of the unique network; if no network or multiple networks are available, the conversion should stop immediately with an error |
-| lines.txt | line_id            | ID         | routes.txt | route_id         | Use the smallest `route_id` of the grouped gtfs Route                                                                                                                                                                                                                            |
-| lines.txt | line_code          | Optional   | routes.txt | route_short_name |                                                                                                                                                                                                                                                                                  |
-| lines.txt | line_name          | Required   | routes.txt |                  | The Navitia `route_name` of the Route with the smallest `route_id` (as a string) is used.                                                                                                                                                                                        |
-| lines.txt | line_color         | Optional   | routes.txt | route_color      | if several values are available, a warning is logged and the color of the smallest `route_id` is used; if color format is incorrect, the value is dropped                                                                                                                        |
-| lines.txt | line_text_color    | Optional   | routes.txt | route_text_color | same as line_color; if color format is incorrect, the value is dropped                                                                                                                                                                                                           |
-| lines.txt | line_sort_order    | Optional   | routes.txt | route_sort_order |                                                                                                                                                                                                                                                                                  |
-| lines.txt | commercial_mode_id | Required   | routes.txt | route_type       | See "Mapping of route_type with modes" chapter (1).                                                                                                                                                                                                                              |
-| comments.txt | comment_value | Optional | routes.txt | route_desc | The comment is generated only when the parameter `read-as-line` is activated. See (2) for additional properties. |
+| NTFS file    | NTFS field         | Constraint | GTFS file  | GTFS field       | Note                                                                                                                                                                                                                                                                             |
+| ------------ | ------------------ | ---------- | ---------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| lines.txt    | network_id         | Required   |            |                  | This field should contain the `network.id` corresponding to the `agency_id` of the routes; if no `agency_id` is specified in the route, use the ID of the unique network; if no network or multiple networks are available, the conversion should stop immediately with an error |
+| lines.txt    | line_id            | ID         | routes.txt | route_id         | Use the smallest `route_id` of the grouped gtfs Route                                                                                                                                                                                                                            |
+| lines.txt    | line_code          | Optional   | routes.txt | route_short_name |                                                                                                                                                                                                                                                                                  |
+| lines.txt    | line_name          | Required   | routes.txt |                  | The Navitia `route_name` of the Route with the smallest `route_id` (as a string) is used.                                                                                                                                                                                        |
+| lines.txt    | forward_line_name  | Optional   |            |                  | Always empty (not mapped from any GTFS field).                                                                                                                                                                                                                                   |
+| lines.txt    | backward_line_name | Optional   |            |                  | Always empty (not mapped from any GTFS field).                                                                                                                                                                                                                                   |
+| lines.txt    | line_color         | Optional   | routes.txt | route_color      | if several values are available, a warning is logged and the color of the smallest `route_id` is used; if color format is incorrect, the value is dropped                                                                                                                        |
+| lines.txt    | line_text_color    | Optional   | routes.txt | route_text_color | same as line_color; if color format is incorrect, the value is dropped                                                                                                                                                                                                           |
+| lines.txt    | line_sort_order    | Optional   | routes.txt | route_sort_order |                                                                                                                                                                                                                                                                                  |
+| lines.txt    | commercial_mode_id | Required   | routes.txt | route_type       | See "Mapping of route_type with modes" chapter (1).                                                                                                                                                                                                                              |
+| lines.txt    | geometry_id        | Optional   |            |                  | Always empty (not mapped from any GTFS field).                                                                                                                                                                                                                                   |
+| lines.txt    | line_opening_time  | Optional   |            |                  | Computed from the smallest departure time of all journeys on the line, see [common NTFS rules]                                                                                                                                                                                   |
+| lines.txt    | line_closing_time  | Optional   |            |                  | Computed from the biggest arrival time of all journeys on the line, see [common NTFS rules]                                                                                                                                                                                      |
+| comments.txt | comment_value      | Optional   | routes.txt | route_desc       | The comment is generated only when the parameter `read-as-line` is activated. See (2) for additional properties.                                                                                                                                                                 |
 
 (1) When several GTFS Routes with different `route_type`s are grouped together, the commercial_mode_id with the smallest priority should be used (as specified in chapter "Mapping of route_type with modes").
 
@@ -275,13 +299,16 @@ A complementary `object_code` is added to each line with the following propertie
 
 ### Reading calendars.txt and calendar_dates.txt
 
-GTFS services are transformed into lists of active dates as if using a single NTFS
-file `calendar_dates.txt`. The resulting NTFS files might be different following an
-optimization operation applied at the end of the conversion, but the result should be
-functionally identical.
+GTFS services are transformed internally into lists of active dates, as if
+represented by a single NTFS `calendar_dates.txt` file:
 
 * In case both files `calendar.txt` and `calendar_dates.txt` are present in the input dataset, the days of the week of the specified services within the date range [`start_date` - `end_date`] are transformed into explicit active service dates, taking into account the dates when service exceptions occur. Note that the generated (`service_id`, `date`) pairs must be unique.
 * In case the file `calendar.txt` is empty or not present in the input dataset, the active service dates are loaded as is.
+
+An optimization step applied at the end of the conversion then re-derives a
+weekly pattern where possible: in practice, most services end up written to
+`calendar.txt`, with only residual one-off exceptions (if any) going to
+`calendar_dates.txt`.
 
 ### Reading trips.txt
 
@@ -289,19 +316,20 @@ If 2 trips with the same ID are specified, the conversion should stop
 immediately with an error.
 
 
-| NTFS file | NTFS field       | Constraint | GTFS file  | GTFS field | Note                                                                                                     |
-| --------- | ---------------- | ---------- | ---------- | ---------- | -------------------------------------------------------------------------------------------------------- |
-| trips.txt | route_id         | Required   | trips.txt  | route_id   | cf. NTFS `route_id` definition above to specify the proper reference.                                    |
-| trips.txt | service_id       | Required   | trips.txt  | service_id |                                                                                                          |
-| trips.txt | trip_id          | Required   | trips.txt  | trip_id    |                                                                                                          |
-| trips.txt | trip_headsign    | Optional   | trips.txt  |            | (1)                                                                                                      |
-| trips.txt | trip_short_name  | Optional   | trips.txt  |            | (1)                                                                                                      |
-| trips.txt | block_id         | Optional   | trips.txt  | block_id   |                                                                                                          |
-| trips.txt | company_id       | Required   | routes.txt | agency_id  | The company corresponding to the `agency_id` of the trip's `route_id`                                    |
-| trips.txt | physical_mode_id | Required   |            |            | use the `route_type` See ["Mapping of route_type with modes"](#mapping-of-route_type-with-modes) chapter |
-| trips.txt | trip_property_id | Optional   | trips.txt  |            | (2)                                                                                                      |
-| trips.txt | dataset_id       | Required   |            |            | The `dataset_id` provided (cf. [gtfs2ntfs.md](./gtfs2ntfs.md) )                                          |
-| trips.txt | geometry_id      | Optional   | trips.txt  | shape_id   | All slashes `/` are removed                                                                              |
+| NTFS file | NTFS field         | Constraint | GTFS file  | GTFS field | Note                                                                                                     |
+| --------- | ------------------ | ---------- | ---------- | ---------- | -------------------------------------------------------------------------------------------------------- |
+| trips.txt | route_id           | Required   | trips.txt  | route_id   | cf. NTFS `route_id` definition above to specify the proper reference.                                    |
+| trips.txt | service_id         | Required   | trips.txt  | service_id |                                                                                                          |
+| trips.txt | trip_id            | Required   | trips.txt  | trip_id    |                                                                                                          |
+| trips.txt | trip_headsign      | Optional   | trips.txt  |            | (1)                                                                                                      |
+| trips.txt | trip_short_name    | Optional   | trips.txt  |            | (1)                                                                                                      |
+| trips.txt | block_id           | Optional   | trips.txt  | block_id   |                                                                                                          |
+| trips.txt | company_id         | Required   | routes.txt | agency_id  | The company corresponding to the `agency_id` of the trip's `route_id`                                    |
+| trips.txt | physical_mode_id   | Required   |            |            | use the `route_type` See ["Mapping of route_type with modes"](#mapping-of-route_type-with-modes) chapter |
+| trips.txt | trip_property_id   | Optional   | trips.txt  |            | (2)                                                                                                      |
+| trips.txt | dataset_id         | Required   |            |            | The `dataset_id` provided, see [common NTFS rules]                                                       |
+| trips.txt | geometry_id        | Optional   | trips.txt  | shape_id   | All slashes `/` are removed                                                                              |
+| trips.txt | journey_pattern_id | Optional   |            |            | Always empty (not mapped from any GTFS field).                                                           |
 
 (1)
 
@@ -315,6 +343,10 @@ immediately with an error.
 * `trip_property_id`: should be generated by the reader.
 * `wheelchair_accessible`: possible values are the same in both GTFS and NTFS; if value is not one of `0`, `1` or `2`, then set to `0`.
 * `bike_accepted`: corresponding to the GTFS `bikes_allowed` property. Possible values are the same in both GTFS and NTFS; if value is not one of `0`, `1` or `2`, then set to `0`.
+* All other properties (`air_conditioned`, `visual_announcement`,
+  `audible_announcement`, `appropriate_escort`, `appropriate_signage`) are
+  always set to "information not available", and `school_vehicle_type` is
+  always set to "regular".
 Be careful to only create necessary `trip_properties` and avoid duplicates.
 
 **_"Source" complementary code :_**
@@ -343,6 +375,8 @@ A complementary `object_code` is added to each vehicle journey with the followin
 |                |                              |                 | stop_times.txt | location_group_id            | Optional        | If specified, see (4)                                                                                                         |
 | stop_times.txt | start_pickup_drop_off_window | Optional        | stop_times.txt | start_pickup_drop_off_window | Optional        |                                                                                                                               |
 | stop_times.txt | end_pickup_drop_off_window   | Optional        | stop_times.txt | end_pickup_drop_off_window   | Optional        |                                                                                                                               |
+| stop_times.txt | boarding_duration            | Optional        |                |                              |                 | Fixed value `0`.                                                                                                              |
+| stop_times.txt | alighting_duration           | Optional        |                |                              |                 | Fixed value `0`.                                                                                                              |
 | stop_times.txt |                              |                 | stop_times.txt | pickup_booking_rule_id       | Optional        | If specified, see (5)                                                                                                         |
 | stop_times.txt |                              |                 | stop_times.txt | drop_off_booking_rule_id     | Optional        | If specified, see (5)                                                                                                         |
 
@@ -406,18 +440,19 @@ If `location_group_id` represents a group of stop areas, then a stop time is cre
 If none of `message`, `phone_number`, `info_url`, or `booking_url` is defined, the booking rule is not created.
 `booking_type` and `prior_notice_*` fields must respect the GTFS-flex conditional constraints (see [gtfs.org booking_rules.txt](https://gtfs.org/documentation/schedule/reference/#booking_rulestxt)); otherwise the conversion fails with an error.
 
-| NTFS file         | NTFS field                 | Constraint | GTFS file         | GTFS field                 | Note                                                                 |
-| ----------------- | --------------------------- | ---------- | ----------------- | --------------------------- | --------------------------------------------------------------------- |
-| booking_rules.txt | id                          | Required   | booking_rules.txt | id                          |                                                                       |
-| booking_rules.txt | booking_type                | Required   | booking_rules.txt | booking_type                |                                                                       |
-| booking_rules.txt | prior_notice_duration_min   | Optional   | booking_rules.txt | prior_notice_duration_min   | Required for `booking_type=1`, forbidden otherwise                    |
-| booking_rules.txt | prior_notice_duration_max   | Optional   | booking_rules.txt | prior_notice_duration_max   | Forbidden for `booking_type=0` or `booking_type=2`                    |
-| booking_rules.txt | prior_notice_last_day       | Optional   | booking_rules.txt | prior_notice_last_day       | Required for `booking_type=2`, forbidden otherwise                    |
-| booking_rules.txt | prior_notice_last_time      | Optional   | booking_rules.txt | prior_notice_last_time      | Required if `prior_notice_last_day` is defined, forbidden otherwise   |
-| booking_rules.txt | message                     | Optional   | booking_rules.txt | message                     |                                                                       |
-| booking_rules.txt | phone                       | Optional   | booking_rules.txt | phone                       |                                                                       |
-| booking_rules.txt | info_url                    | Optional   | booking_rules.txt | info_url                    |                                                                       |
-| booking_rules.txt | booking_url                 | Optional   | booking_rules.txt | booking_url                 |                                                                       |
+| NTFS file         | NTFS field                | Constraint | GTFS file         | GTFS field                | Note                                                                |
+| ----------------- | ------------------------- | ---------- | ----------------- | ------------------------- | ------------------------------------------------------------------- |
+| booking_rules.txt | booking_rule_id           | ID         | booking_rules.txt | booking_rule_id           |                                                                     |
+| booking_rules.txt | name                      | Optional   |                   |                           | Always empty (not mapped from any GTFS field).                      |
+| booking_rules.txt | booking_type              | Required   | booking_rules.txt | booking_type              |                                                                     |
+| booking_rules.txt | prior_notice_duration_min | Optional   | booking_rules.txt | prior_notice_duration_min | Required for `booking_type=1`, forbidden otherwise                  |
+| booking_rules.txt | prior_notice_duration_max | Optional   | booking_rules.txt | prior_notice_duration_max | Forbidden for `booking_type=0` or `booking_type=2`                  |
+| booking_rules.txt | prior_notice_last_day     | Optional   | booking_rules.txt | prior_notice_last_day     | Required for `booking_type=2`, forbidden otherwise                  |
+| booking_rules.txt | prior_notice_last_time    | Optional   | booking_rules.txt | prior_notice_last_time    | Required if `prior_notice_last_day` is defined, forbidden otherwise |
+| booking_rules.txt | message                   | Optional   | booking_rules.txt | message                   |                                                                     |
+| booking_rules.txt | phone_number              | Optional   | booking_rules.txt | phone_number              |                                                                     |
+| booking_rules.txt | info_url                  | Optional   | booking_rules.txt | info_url                  |                                                                     |
+| booking_rules.txt | booking_url               | Optional   | booking_rules.txt | booking_url               |                                                                     |
 
 ### Reading transfers.txt
 
@@ -426,13 +461,13 @@ If none of `message`, `phone_number`, `info_url`, or `booking_url` is defined, t
 * If a line of the file is not conform to the specification, then the line is
   ignored
 
-| NTFS file     | NTFS field             | Constraint | GTFS file     | GTFS field   | Note                                                                                                |
-| ------------- | ---------------------- | ---------- | ------------- | ------------ | --------------------------------------------------------------------------------------------------- |
-| transfers.txt | from_stop_id           | Required   | transfers.txt | from_stop_id | All slashes `/` are removed; if the `stop_id` doesn't exist in `stops.txt`, the transfer is ignored |
-| transfers.txt | to_stop_id             | Required   | transfers.txt | to_stop_id   | All slashes `/` are removed; if the `stop_id` doesn't exist in `stops.txt`, the transfer is ignored |
-| transfers.txt | min_transfer_time      | Optional   | transfers.txt |              | see (1)                                                                                             |
-| transfers.txt | real_min_transfer_time | Optional   | transfers.txt |              | see (1)                                                                                             |
-| transfers.txt | equipment_id           | Optional   | transfers.txt |              |                                                                                                     |
+| NTFS file     | NTFS field             | Constraint | GTFS file     | GTFS field   | Note                                                                                                                                      |
+| ------------- | ---------------------- | ---------- | ------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| transfers.txt | from_stop_id           | Required   | transfers.txt | from_stop_id | All slashes `/` are removed; if the `stop_id` doesn't exist in `stops.txt`, the transfer is ignored. See (2) if it refers to a stop_area. |
+| transfers.txt | to_stop_id             | Required   | transfers.txt | to_stop_id   | All slashes `/` are removed; if the `stop_id` doesn't exist in `stops.txt`, the transfer is ignored. See (2) if it refers to a stop_area. |
+| transfers.txt | min_transfer_time      | Optional   | transfers.txt |              | see (1)                                                                                                                                   |
+| transfers.txt | real_min_transfer_time | Optional   | transfers.txt |              | see (1)                                                                                                                                   |
+| transfers.txt | equipment_id           | Optional   | transfers.txt |              | Always empty (not mapped from any GTFS field).                                                                                            |
 
 (1) NTFS `min_transfer_time` and `real_min_transfer_time` are calculated as
 follows. Note that if value is not one of `0`, `1`, `2` or `3`, then set to `0`.
@@ -445,6 +480,53 @@ follows. Note that if value is not one of `0`, `1`, `2` or `3`, then set to `0`.
 | 3                    | 86400                      | 86400                                  |                                                                                                                                                               |
 | 4                    | 0                          | 0                                      |                                                                                                                                                               |
 | 5                    | 0                          | 0                                      |                                                                                                                                                               |
+
+(2) If `from_stop_id` or `to_stop_id` refers to a stop_area instead of a
+stop_point, the transfer is expanded into one NTFS transfer for every
+combination of stop_points belonging to the two referenced stop_areas
+(cross product).
+
+**Note:** In addition to the transfers read from this file, the converter also
+automatically generates missing transfers between nearby stop points (based
+on crow-fly distance, walking speed and pathways). This generation is not
+detailed further in this document.
+
+### Reading pathways.txt
+
+* If 2 pathways with the same ID are specified, the conversion should stop
+  immediately with an error
+* If a line of the file is not conform to the specification, then the line is
+  ignored
+* If `from_stop_id` or `to_stop_id` doesn't refer to an existing stop in
+  stops.txt, the pathway is ignored
+
+| NTFS file    | NTFS field             | Constraint | GTFS file    | GTFS field             | Note                                                         |
+| ------------ | ---------------------- | ---------- | ------------ | ---------------------- | ------------------------------------------------------------ |
+| pathways.txt | pathway_id             | ID         | pathways.txt | pathway_id             |                                                              |
+| pathways.txt | from_stop_id           | Required   | pathways.txt | from_stop_id           |                                                              |
+| pathways.txt | to_stop_id             | Required   | pathways.txt | to_stop_id             |                                                              |
+| pathways.txt | pathway_mode           | Required   | pathways.txt | pathway_mode           |                                                              |
+| pathways.txt | is_bidirectional       | Required   | pathways.txt | is_bidirectional       | Must be `0` or `1`, otherwise the pathway is ignored         |
+| pathways.txt | length                 | Optional   | pathways.txt | length                 | Must be a positive value, otherwise the pathway is ignored   |
+| pathways.txt | traversal_time         | Optional   | pathways.txt | traversal_time         |                                                              |
+| pathways.txt | stair_count            | Optional   | pathways.txt | stair_count            | Must be a non-null integer, otherwise the pathway is ignored |
+| pathways.txt | max_slope              | Optional   | pathways.txt | max_slope              |                                                              |
+| pathways.txt | min_width              | Optional   | pathways.txt | min_width              | Must be a positive value, otherwise the pathway is ignored   |
+| pathways.txt | signposted_as          | Optional   | pathways.txt | signposted_as          |                                                              |
+| pathways.txt | reversed_signposted_as | Optional   | pathways.txt | reversed_signposted_as |                                                              |
+
+### Reading levels.txt
+
+* If 2 levels with the same ID are specified, the conversion should stop
+  immediately with an error
+* If a line of the file is not conform to the specification, the conversion
+  should stop immediately with an error
+
+| NTFS file  | NTFS field  | Constraint | GTFS file  | GTFS field  | Note |
+| ---------- | ----------- | ---------- | ---------- | ----------- | ---- |
+| levels.txt | level_id    | ID         | levels.txt | level_id    |      |
+| levels.txt | level_index | Required   | levels.txt | level_index |      |
+| levels.txt | level_name  | Optional   | levels.txt | level_name  |      |
 
 ### Reading shapes.txt
 
@@ -460,9 +542,13 @@ Frequencies are transformed into explicit passing times by creating new trips th
 A new trip is created, departing from the first stop every `headway_secs` seconds within the time period between `start_time` and `end_time`. Stop times of the referenced trip are used to calculate the time interval between two stop departures.
 The departure time at the first stop of the last trip should not be later than the `end_time` value. In case both values for `start_time` and `end_time` are equal or `end_time` is smaller than `start_time`, the frequency is ignored (no new trip is created).
 
-Note that the referenced trip (and its stop_times) is only used as a sample and is deleted in the resulting data. In case the referenced trip and/or its associated stop_times do not exist, the frequency is ignored (no new trip is created).
+Note that the referenced trip (and its stop_times) is only used as a sample and is deleted in the resulting data. In case the referenced trip and/or its associated stop_times do not exist, the frequency is ignored (no new trip is created). Likewise, if the sample trip has a stop_time with `start_pickup_drop_off_window`/`end_pickup_drop_off_window` set, the frequency is ignored.
 
-The identifier for each new trip is generated using the following pattern: \<trip_id>:<auto-incrimented integer\> and maintains the rest of the attributes of the sample trip. That is, all new trips are assigned to the same route as the route of the sample trip, have the same service_id, etc.
+**Warning:** even when a frequency is ignored, the sample trip is still
+removed from the output, with no replacement trip generated — the
+corresponding service disappears entirely.
+
+The identifier for each new trip is generated using the following pattern: \<trip_id>-<auto-incremented integer\> and maintains the rest of the attributes of the sample trip. That is, all new trips are assigned to the same route as the route of the sample trip, have the same service_id, etc.
 
 A complementary `object_code` is added to each new trip with the following properties:
 

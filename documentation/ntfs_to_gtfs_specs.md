@@ -11,14 +11,19 @@ The resulting GTFS feed is composed of the following objects:
 * [stops](#stopstxt)
 * [trips](#tripstxt)
 * [stop_times](#stop_timestxt)
-* [calendar_dates](#calendar_datestxt): only this file is provided instead of the calendar.txt file.
-* [attributions](#attributionstxt)
+* [calendar](#calendartxt)
+* [calendar_dates](#calendar_datestxt): residual one-off exceptions left
+  after calendars are optimized.
 
 The following additional files are generated only if the corresponding objects are present in the NTFS.
 
 * [transfers](#transferstxt)
 * [shapes](#shapestxt)
+* [pathways](#pathwaystxt)
+* [levels](#levelstxt)
 * [booking_rules](#booking_rulestxt)
+* [ticketing_deep_links](#ticketing_deep_linkstxt)
+* [attributions](#attributionstxt)
 * [object_codes_extension](#object_codes_extensiontxt): additional information providing the complementary codes for various objects (stops, networks, lines, routes, trips, companies) used in external systems.
 
 [GTFS]: https://gtfs.org/reference/static
@@ -28,30 +33,45 @@ The following additional files are generated only if the corresponding objects a
 
 ### agency.txt
 
-| GTFS field      | Required | NTFS file    | NTFS field       | Note                                                   |
-| --------------- | -------- | ------------ | ---------------- | ------------------------------------------------------ |
-| agency_id       | yes      | networks.txt | network_id       |                                                        |
-| agency_name     | yes      | networks.txt | network_name     |                                                        |
-| agency_url      | yes      | networks.txt | network_url      | `http://www.navitia.io/` if the value is not provided. |
-| agency_timezone | yes      | networks.txt | network_timezone | `Europe/Paris` if the value is not provided.           |
-| agency_lang     | no       | networks.txt | network_lang     |                                                        |
-| agency_phone    | no       | networks.txt | network_phone    |                                                        |
-| agency_fare_url | no       | networks.txt | network_fare_url |                                                        |
+| GTFS field             | Required | NTFS file                | NTFS field             | Note                                                                                                                                                           |
+| ---------------------- | -------- | ------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| agency_id              | yes      | networks.txt             | network_id             |                                                                                                                                                                |
+| agency_name            | yes      | networks.txt             | network_name           |                                                                                                                                                                |
+| agency_url             | yes      | networks.txt             | network_url            | `http://www.navitia.io/` if the value is not provided.                                                                                                         |
+| agency_timezone        | yes      | networks.txt             | network_timezone       | `Europe/Paris` if the value is not provided.                                                                                                                   |
+| agency_lang            | no       | networks.txt             | network_lang           |                                                                                                                                                                |
+| agency_phone           | no       | networks.txt             | network_phone          |                                                                                                                                                                |
+| agency_email           | no       |                          |                        | Always empty (not mapped from any NTFS field).                                                                                                                 |
+| agency_fare_url        | no       | networks.txt             | network_fare_url       |                                                                                                                                                                |
+| ticketing_deep_link_id | no       | ticketing_deep_links.txt | ticketing_deep_link_id | (link to the [ticketing_deep_links.txt](#ticketing_deep_linkstxt) file). Only set if the network's `network_fare_url` matches a generated ticketing deep link. |
 
 ### routes.txt
 
 Each line of this file corresponds to a transit line modeled in the NTFS feed. In case a transit line uses more than one modes of transportation, it should be modeled separately for each different mode, according to the mapping of modes presented below. The priorities follow the [NeTex Specification](http://www.normes-donnees-tc.org/wp-content/uploads/2014/05/NF_Profil_NeTEx_pour_les_arrets-_F-_-_v2.pdf) (cf. chapter 6.2.3).
 
-| GTFS field       | Required | NTFS file | NTFS field      | Note                                                                                                                                                               |
-| ---------------- | -------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| route_id         | yes      | lines.txt | line_id         | See below for lines containing trips with different modes                                                                                                          |
-| agency_id        | no       | lines.txt | network_id      | (link to the [agency.txt](#agencytxt) file)                                                                                                                        |
-| route_short_name | yes      | lines.txt | line_code       | empty string "" if the value is not provided. If `--mode-in-route-short-name` is provided to the binary, the commercial mode will be added to the route short name |
-| route_long_name  | yes      | lines.txt | line_name       |                                                                                                                                                                    |
-| route_type       | yes      |           |                 | The corresponding physical mode of the trips of the line. See the table below for the mapping of modes.                                                            |
-| route_color      | no       | lines.txt | line_color      |                                                                                                                                                                    |
-| route_text_color | no       | lines.txt | line_text_color |                                                                                                                                                                    |
-| route_sort_order | no       | lines.txt | line_sort_order |                                                                                                                                                                    |
+| GTFS field       | Required | NTFS file | NTFS field      | Note                                                                                                    |
+| ---------------- | -------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------- |
+| route_id         | yes      | lines.txt | line_id         | See below for lines containing trips with different modes                                               |
+| agency_id        | no       | lines.txt | network_id      | (link to the [agency.txt](#agencytxt) file)                                                             |
+| route_short_name | yes      | lines.txt | line_code       | empty string "" if the value is not provided (1)                                                        |
+| route_long_name  | yes      | lines.txt | line_name       |                                                                                                         |
+| route_desc       | no       |           |                 | Always empty (not mapped from any NTFS field).                                                          |
+| route_type       | yes      |           |                 | The corresponding physical mode of the trips of the line. See the table below for the mapping of modes. |
+| route_url        | no       |           |                 | Always empty (not mapped from any NTFS field).                                                          |
+| route_color      | no       | lines.txt | line_color      |                                                                                                         |
+| route_text_color | no       | lines.txt | line_text_color |                                                                                                         |
+| route_sort_order | no       | lines.txt | line_sort_order |                                                                                                         |
+
+(1) If `--mode-in-route-short-name` is provided to the binary:
+
+* the commercial mode's name is prepended to `route_short_name`, separated
+  by a space
+* if `line_code` is empty, `route_short_name` becomes the mode's name alone
+
+Example (commercial mode name `Bus`):
+
+* `line_code` = `12` → `route_short_name` = `Bus 12`
+* `line_code` empty → `route_short_name` = `Bus`
 
 **Mapping of `route_type` with physical modes**
 
@@ -100,7 +120,8 @@ The physical mode determination follows this cascading logic:
 
 ### stops.txt
 
-Stop zones (NTFS stops having `location_type` = 2) are ignored in the current version.
+Stop zones (NTFS stops having `location_type` = 2) are removed, along with
+any trip that has a stop_time on one of them, in the current version.
 
 | GTFS field          | Required | NTFS file                       | NTFS field          | Note                                                                                                                                                                                                                                                                                                                |
 | ------------------- | -------- | ------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -109,10 +130,12 @@ Stop zones (NTFS stops having `location_type` = 2) are ignored in the current ve
 | stop_name           | yes      | stops.txt                       | stop_name           |                                                                                                                                                                                                                                                                                                                     |
 | stop_lat            | yes      | stops.txt                       | stop_lat            |                                                                                                                                                                                                                                                                                                                     |
 | stop_lon            | yes      | stops.txt                       | stop_lon            |                                                                                                                                                                                                                                                                                                                     |
-| zone_id             | no       | stops.txt                       | fare_zone_id        |                                                                                                                                                                                                                                                                                                                     |
+| zone_id             | no       | stops.txt                       | fare_zone_id        | Only for stop_point (location_type = 0).                                                                                                                                                                                                                                                                            |
+| stop_url            | no       |                                 |                     | Always empty (not mapped from any NTFS field).                                                                                                                                                                                                                                                                      |
 | location_type       | no       | stops.txt                       | location_type       | The value is set to `0` if the input value is `0` or invalid or unspecified, `1` if the input value is `1`, `2` if the input value is `3`, `3` if the input value is `4` and `4` if the input value is `5`.                                                                                                         |
 | parent_station      | no       | stops.txt                       | parent_station      |                                                                                                                                                                                                                                                                                                                     |
-| timezone            | no       | stops.txt                       | stop_timezone       |                                                                                                                                                                                                                                                                                                                     |
+| stop_timezone       | no       | stops.txt                       | stop_timezone       |                                                                                                                                                                                                                                                                                                                     |
+| level_id            | no       | stops.txt                       | level_id            |                                                                                                                                                                                                                                                                                                                     |
 | stop_desc           | no       | comments.txt, comment_links.txt | comment_name        | The value of `comment_name` referenced by the `comment_id` having an `object_type` = `stop_point` or `object_type` = `stop_area` and an `object_id` equal to the corresponding `stop_id`. In case of more than one comments linked to the same trip, the first comment in alphabetical order is taken into account. |
 | wheelchair_boarding | no       | equipments.txt                  | wheelchair_boarding | The value of `wheelchair_boarding` referenced by the `equipment_id` of this stop.                                                                                                                                                                                                                                   |
 | platform_code       | no       | stops.txt                       | platform_code       |                                                                                                                                                                                                                                                                                                                     |
@@ -135,6 +158,9 @@ Stop zones (NTFS stops having `location_type` = 2) are ignored in the current ve
 | bikes_allowed         | no       | trip_properties.txt | bike_accepted         | The value of `bike_accepted` referenced by the `trip_property_id` of this trip.         |
 
 ### stop_times.txt
+
+Stop times with `pickup_type` = `3` or `drop_off_type` = `3` ("route points")
+are removed from the trip before export.
 
 | GTFS field                   | Required | NTFS file                       | NTFS field                   | Note                                                                                                                                                                                                                                                                                |
 | ---------------------------- | -------- | ------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -160,14 +186,14 @@ Stop zones (NTFS stops having `location_type` = 2) are ignored in the current ve
 
 | GTFS field                | Required                | NTFS file         | NTFS field                | Note |
 | ------------------------- | ----------------------- | ----------------- | ------------------------- | ---- |
-| booking_rule_id           | yes                     | booking_rules.txt | id                        |      |
+| booking_rule_id           | yes                     | booking_rules.txt | booking_rule_id           |      |
 | booking_type              | yes                     | booking_rules.txt | booking_type              |      |
 | prior_notice_duration_min | conditionally required  | booking_rules.txt | prior_notice_duration_min | (1)  |
 | prior_notice_duration_max | conditionally forbidden | booking_rules.txt | prior_notice_duration_max | (2)  |
 | prior_notice_last_day     | conditionally required  | booking_rules.txt | prior_notice_last_day     | (3)  |
 | prior_notice_last_time    | conditionally required  | booking_rules.txt | prior_notice_last_time    | (4)  |
 | message                   | no                      | booking_rules.txt | message                   |      |
-| phone_number              | no                      | booking_rules.txt | phone                     |      |
+| phone_number              | no                      | booking_rules.txt | phone_number              |      |
 | info_url                  | no                      | booking_rules.txt | info_url                  |      |
 | booking_url               | no                      | booking_rules.txt | booking_url               |      |
 
@@ -178,18 +204,62 @@ Stop zones (NTFS stops having `location_type` = 2) are ignored in the current ve
 
 This converter links at most one booking rule per trip, applied identically to `pickup_booking_rule_id` and `drop_off_booking_rule_id` on every stop_time where `pickup_type`/`drop_off_type` is `2`.
 
+### ticketing_deep_links.txt
+
+This file is only generated if at least one network has a `network_fare_url`.
+One entry is generated per distinct `network_fare_url` value found across
+networks.txt, and referenced by the corresponding agencies'
+`ticketing_deep_link_id`.
+
+| GTFS field             | Required | NTFS file    | NTFS field       | Note                      |
+| ---------------------- | -------- | ------------ | ---------------- | ------------------------- |
+| ticketing_deep_link_id | yes      |              |                  | Auto-generated identifier |
+| web_url                | no       | networks.txt | network_fare_url |                           |
+| android_intent_uri     | no       | networks.txt | network_fare_url |                           |
+| ios_universal_link_url | no       | networks.txt | network_fare_url |                           |
+
+### calendar.txt
+
+`calendar.txt` and `calendar_dates.txt` are recomputed independently for
+each service from its full list of active dates: a best-fitting weekly
+pattern is found over the service's date range, and written as a
+`calendar.txt` row. `calendar.txt` is only generated if at least one
+service produces a non-empty pattern.
+
+| GTFS field | Required | NTFS file                        | NTFS field | Note                                                                 |
+| ---------- | -------- | -------------------------------- | ---------- | -------------------------------------------------------------------- |
+| service_id | yes      | calendar.txt, calendar_dates.txt | service_id |                                                                      |
+| monday     | yes      | calendar.txt, calendar_dates.txt |            | Best-fitting weekly pattern computed over the service's active dates |
+| tuesday    | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| wednesday  | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| thursday   | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| friday     | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| saturday   | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| sunday     | yes      | calendar.txt, calendar_dates.txt |            | (see above)                                                          |
+| start_date | yes      | calendar.txt, calendar_dates.txt |            | Earliest active date of the service                                  |
+| end_date   | yes      | calendar.txt, calendar_dates.txt |            | Latest active date of the service                                    |
+
 ### calendar_dates.txt
 
-This file is the same as the NTFS calendar_dates.txt file. All dates of service are included in this file (no calendar.txt file provided).
+Dates that don't match the weekly pattern found for their service (see
+[calendar.txt](#calendartxt) above) are written here as exceptions.
+`calendar_dates.txt` is only generated if at least one exception exists
+across the whole feed.
+
+| GTFS field     | Required | NTFS file                        | NTFS field | Note                                                                    |
+| -------------- | -------- | -------------------------------- | ---------- | ----------------------------------------------------------------------- |
+| service_id     | yes      | calendar.txt, calendar_dates.txt | service_id |                                                                         |
+| date           | yes      | calendar.txt, calendar_dates.txt |            | Date not matching the weekly pattern (see [calendar.txt](#calendartxt)) |
+| exception_type | yes      | calendar.txt, calendar_dates.txt |            | `1` to add a date, `2` to remove one                                    |
 
 ### transfers.txt
 
-| GTFS field        | Required | NTFS file     | NTFS field        | Note                                      |
-| ----------------- | -------- | ------------- | ----------------- | ----------------------------------------- |
-| from_stop_id      | yes      | transfers.txt | from_stop_id      | (link to the [stops.txt](#stopstxt) file) |
-| to_stop_id        | yes      | transfers.txt | to_stop_id        | (link to the [stops.txt](#stopstxt) file) |
-| transfer_type     | yes      |               |                   | `2`                                       |
-| min_transfer_time | no       | transfers.txt | min_transfer_time |                                           |
+| GTFS field        | Required | NTFS file     | NTFS field             | Note                                                                      |
+| ----------------- | -------- | ------------- | ---------------------- | ------------------------------------------------------------------------- |
+| from_stop_id      | yes      | transfers.txt | from_stop_id           | (link to the [stops.txt](#stopstxt) file)                                 |
+| to_stop_id        | yes      | transfers.txt | to_stop_id             | (link to the [stops.txt](#stopstxt) file)                                 |
+| transfer_type     | yes      |               |                        | `2`                                                                       |
+| min_transfer_time | no       | transfers.txt | real_min_transfer_time | Falls back to `min_transfer_time` if `real_min_transfer_time` is not set. |
 
 ### shapes.txt
 
@@ -199,6 +269,35 @@ This file is the same as the NTFS calendar_dates.txt file. All dates of service 
 | shape_pt_lat      | yes      | geometries.txt | geometry_wkt | Latitude of the stop in the shape                                                      |
 | shape_pt_lon      | yes      | geometries.txt | geometry_wkt | Longitude of the stop in the shape                                                     |
 | shape_pt_sequence | yes      |                |              | Integer starting at 0 and increase by an increment of one for every point in the shape |
+
+### pathways.txt
+
+This file is only generated if pathways are present in the NTFS feed.
+
+| GTFS field             | Required | NTFS file    | NTFS field             | Note |
+| ---------------------- | -------- | ------------ | ---------------------- | ---- |
+| pathway_id             | yes      | pathways.txt | pathway_id             |      |
+| from_stop_id           | yes      | pathways.txt | from_stop_id           |      |
+| to_stop_id             | yes      | pathways.txt | to_stop_id             |      |
+| pathway_mode           | yes      | pathways.txt | pathway_mode           |      |
+| is_bidirectional       | yes      | pathways.txt | is_bidirectional       |      |
+| length                 | no       | pathways.txt | length                 |      |
+| traversal_time         | no       | pathways.txt | traversal_time         |      |
+| stair_count            | no       | pathways.txt | stair_count            |      |
+| max_slope              | no       | pathways.txt | max_slope              |      |
+| min_width              | no       | pathways.txt | min_width              |      |
+| signposted_as          | no       | pathways.txt | signposted_as          |      |
+| reversed_signposted_as | no       | pathways.txt | reversed_signposted_as |      |
+
+### levels.txt
+
+This file is only generated if levels are present in the NTFS feed.
+
+| GTFS field  | Required | NTFS file  | NTFS field  | Note |
+| ----------- | -------- | ---------- | ----------- | ---- |
+| level_id    | yes      | levels.txt | level_id    |      |
+| level_index | yes      | levels.txt | level_index |      |
+| level_name  | no       | levels.txt | level_name  |      |
 
 ### object_codes_extension.txt
 
@@ -216,6 +315,10 @@ If N complementary codes are specified for an object, there will be N separate l
 | object_code   | yes      | object_codes.txt | object_code   | The actual code value in the specified system                                                                                                                                           |
 
 ### attributions.txt
+
+Only companies with `company_role` = `Operator` are considered; trips or
+routes whose company has any other role (`Authority` by default) produce no
+attribution.
 
 If all the trips on a route are operated by the same company, then the allocation applies to the route, otherwise it applies to each trip.
 
