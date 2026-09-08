@@ -1,6 +1,8 @@
 FROM 162230498103.dkr.ecr.eu-west-1.amazonaws.com/mutable-rust-ci:latest-proj9.6.2-deb11 as builder
 WORKDIR /usr/src/app
 COPY . ./
+# Debian 11 is EOL: repoint APT to archive.debian.org before any apt usage.
+RUN ./ci/use-debian-archive.sh
 RUN git describe --tags --always && git status
 RUN cargo build --workspace --release
 RUN mkdir /usr/src/bin && for file in ls ${CARGO_TARGET_DIR:-./target}/release/*; do if test -f $file -a -x $file; then cp $file /usr/src/bin; fi; done
