@@ -80,8 +80,10 @@ jobs:
       uses: actions/checkout@v7
       with:
         submodules: recursive # for tests/NeTEx
+    - name: Point APT to archive.debian.org (Debian 11 EOL)
+      run: ./ci/use-debian-archive.sh
     - name: Install xmllint
-      run: apt update && apt install --yes libxml2-utils
+      run: apt-get update && apt-get install --yes libxml2-utils
     - name: Run tests with and without features
       run: make test
   build-n-push:
