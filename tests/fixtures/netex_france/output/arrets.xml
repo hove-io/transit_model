@@ -9,6 +9,8 @@
 					<Name>Gare de Lyon (RER)</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.372987</Longitude>
+							<Latitude>48.844746</Latitude>
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
@@ -32,6 +34,8 @@
 					<Name>Gare de Lyon (Metro)</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.372987</Longitude>
+							<Latitude>48.844746</Latitude>
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
@@ -55,6 +59,8 @@
 					<Name>Gare de Lyon (Bus)</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.372987</Longitude>
+							<Latitude>48.844746</Latitude>
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
@@ -68,6 +74,8 @@
 					<Name>Nation (RER)</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.396497</Longitude>
+							<Latitude>48.84849</Latitude>
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
@@ -91,6 +99,8 @@
 					<Name>Nation (Metro)</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.396497</Longitude>
+							<Latitude>48.84849</Latitude>
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
@@ -104,6 +114,8 @@
 					<Name>Charles de Gaulle (RER)</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.295354</Longitude>
+							<Latitude>48.873965</Latitude>
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
@@ -117,6 +129,8 @@
 					<Name>Charles de Gaulle (Metro)</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.295354</Longitude>
+							<Latitude>48.873965</Latitude>
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
@@ -130,6 +144,8 @@
 					<Name>La Défense (RER)</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.238964</Longitude>
+							<Latitude>48.891737</Latitude>
 							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
@@ -152,6 +168,8 @@
 					<Name>Montparnasse (Bus)</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.321783</Longitude>
+							<Latitude>48.842481</Latitude>
 							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
@@ -165,6 +183,8 @@
 					<Name>Gare de Lyon</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.372987</Longitude>
+							<Latitude>48.844746</Latitude>
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
@@ -181,6 +201,8 @@
 					<Name>Gare de Lyon</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.372987</Longitude>
+							<Latitude>48.844746</Latitude>
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
@@ -197,6 +219,8 @@
 					<Name>Gare de Lyon</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.372987</Longitude>
+							<Latitude>48.844746</Latitude>
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
@@ -215,6 +239,8 @@
 					<Name>Gare de Lyon</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.372987</Longitude>
+							<Latitude>48.844746</Latitude>
 							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
@@ -223,6 +249,8 @@
 							<Name>Gate 1</Name>
 							<Centroid>
 								<Location>
+									<Longitude>2.375156</Longitude>
+									<Latitude>48.844949</Latitude>
 									<gml:pos srsName="EPSG:2154">654143.0840251445 6860726.200273181</gml:pos>
 								</Location>
 							</Centroid>
@@ -233,6 +261,8 @@
 							<Name>Gate 2</Name>
 							<Centroid>
 								<Location>
+									<Longitude>2.374718</Longitude>
+									<Latitude>48.843223</Latitude>
 									<gml:pos srsName="EPSG:2154">654109.4203976962 6860534.540309815</gml:pos>
 								</Location>
 							</Centroid>
@@ -247,6 +277,8 @@
 					<Name>Nation</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.396497</Longitude>
+							<Latitude>48.84849</Latitude>
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
@@ -263,6 +295,8 @@
 					<Name>Nation</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.396497</Longitude>
+							<Latitude>48.84849</Latitude>
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
@@ -279,6 +313,8 @@
 					<Name>Nation</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.396497</Longitude>
+							<Latitude>48.84849</Latitude>
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
@@ -295,6 +331,8 @@
 					<Name>Nation</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.396497</Longitude>
+							<Latitude>48.84849</Latitude>
 							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
@@ -305,6 +343,8 @@
 					<Name>Charles de Gaulle</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.295354</Longitude>
+							<Latitude>48.873965</Latitude>
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
@@ -321,6 +361,8 @@
 					<Name>Charles de Gaulle</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.295354</Longitude>
+							<Latitude>48.873965</Latitude>
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
@@ -337,6 +379,8 @@
 					<Name>Charles de Gaulle</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.295354</Longitude>
+							<Latitude>48.873965</Latitude>
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
@@ -353,6 +397,8 @@
 					<Name>Charles de Gaulle</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.295354</Longitude>
+							<Latitude>48.873965</Latitude>
 							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
@@ -361,6 +407,8 @@
 							<Name>Gate A</Name>
 							<Centroid>
 								<Location>
+									<Longitude>2.295636</Longitude>
+									<Latitude>48.87342</Latitude>
 									<gml:pos srsName="EPSG:2154">648335.545974931 6863941.0341525925</gml:pos>
 								</Location>
 							</Centroid>
@@ -375,6 +423,8 @@
 					<Name>La Défense</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.238964</Longitude>
+							<Latitude>48.891737</Latitude>
 							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
@@ -391,6 +441,8 @@
 					<Name>La Défense</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.238964</Longitude>
+							<Latitude>48.891737</Latitude>
 							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
@@ -407,6 +459,8 @@
 					<Name>La Défense</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.238964</Longitude>
+							<Latitude>48.891737</Latitude>
 							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
@@ -417,6 +471,8 @@
 					<Name>Châtelet</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.348145</Longitude>
+							<Latitude>48.858137</Latitude>
 							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972684</gml:pos>
 						</Location>
 					</Centroid>
@@ -433,6 +489,8 @@
 					<Name>Châtelet</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.348145</Longitude>
+							<Latitude>48.858137</Latitude>
 							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972684</gml:pos>
 						</Location>
 					</Centroid>
@@ -443,6 +501,8 @@
 					<Name>Montparnasse</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.321783</Longitude>
+							<Latitude>48.842481</Latitude>
 							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
@@ -459,6 +519,8 @@
 					<Name>Montparnasse</Name>
 					<Centroid>
 						<Location>
+							<Longitude>2.321783</Longitude>
+							<Latitude>48.842481</Latitude>
 							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>

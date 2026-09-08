@@ -113,10 +113,24 @@ A `stop_area` is considered monomodal if all the trips having stop_times referen
 
 ### Coordinates conversion
 
-The GTFS `stop_lon` and `stop_lat` are specified in WGS84. The coordinates are
-converted to EPSG:2154 (Lambert 93).\
+The GTFS `stop_lon` and `stop_lat` are specified in WGS84. Every `Location`
+(`Centroid/Location` of `Quay`, `StopPlace` and `StopPlaceEntrance`; `Location`
+of `RoutePoint` and `ScheduledStopPoint`) carries both representations:
+
+* `Longitude` / `Latitude` in WGS84 (decimal degrees), as required by the NeTEx
+  France profile;
+* `gml:pos` reprojected to EPSG:2154 (Lambert 93), kept as complementary
+  information.
+
 Example of Netex declaration:
-><gml:pos srsName="EPSG:2154">662233.0 6861519.0</gml:pos>
+
+```xml
+<Location>
+    <Longitude>2.372987</Longitude>
+    <Latitude>48.844746</Latitude>
+    <gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
+</Location>
+```
 
 ### Quay
 
