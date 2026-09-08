@@ -51,7 +51,7 @@ impl<P: AsRef<Path>> FileHandler for &mut PathFileHandler<P> {
         let f = self.base_path.as_ref().join(name);
         if f.exists() {
             Ok((
-                Some(File::open(&f).with_context(|| format!("Error reading {:?}", &f))?),
+                Some(File::open(&f).with_context(|| format!("Error reading {:?}", f))?),
                 f,
             ))
         } else {
