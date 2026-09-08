@@ -1255,7 +1255,7 @@ impl Collections {
             } else {
                 bail!(
                     "Failed to generate a `name` for route {}",
-                    &collections.routes[route_idx].id
+                    collections.routes[route_idx].id
                 )
             }
         }

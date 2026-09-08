@@ -113,10 +113,24 @@ A `stop_area` is considered monomodal if all the trips having stop_times referen
 
 ### Coordinates conversion
 
-The GTFS `stop_lon` and `stop_lat` are specified in WGS84. The coordinates are
-converted to EPSG:2154 (Lambert 93).\
+The GTFS `stop_lon` and `stop_lat` are specified in WGS84. Every `Location`
+(`Centroid/Location` of `Quay`, `StopPlace` and `StopPlaceEntrance`; `Location`
+of `RoutePoint` and `ScheduledStopPoint`) carries both representations:
+
+* `Longitude` / `Latitude` in WGS84 (decimal degrees), as required by the NeTEx
+  France profile;
+* `gml:pos` reprojected to EPSG:2154 (Lambert 93), kept as complementary
+  information.
+
 Example of Netex declaration:
-><gml:pos srsName="EPSG:2154">662233.0 6861519.0</gml:pos>
+
+```xml
+<Location>
+    <Longitude>2.372987</Longitude>
+    <Latitude>48.844746</Latitude>
+    <gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
+</Location>
+```
 
 ### Quay
 
@@ -322,13 +336,15 @@ Example:
 
 ### Line
 
-| Netex field        | NTFS file | NTFS field | Note                                                                                                                                                                                                                                                             |
-| ------------------ | --------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Line/@id           | lines.txt | line_id    | see [id formatting](#id-of-objects)                                                                                                                                                                                                                              |
-| Line/@version      |           |            | fixed value `any`                                                                                                                                                                                                                                                |
-| Line/Name          | lines.txt | line_name  |                                                                                                                                                                                                                                                                  |
-| Line/TransportMode |           |            | Refers to the mode with __highest priority__  of the trips associated to the line, see [NeTEx Transport Modes](#netex-transport-modes) and [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis) |
-| Line/PublicCode    | lines.txt | line_code  | If the code line_code is empty, this node is not created.                                                                                                                                                                                                        |
+| Netex field                  | NTFS file | NTFS field      | Note                                                                                                                                                                                                                                                             |
+| ---------------------------- | --------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Line/@id                     | lines.txt | line_id         | see [id formatting](#id-of-objects)                                                                                                                                                                                                                              |
+| Line/@version                |           |                 | fixed value `any`                                                                                                                                                                                                                                                |
+| Line/Name                    | lines.txt | line_name       |                                                                                                                                                                                                                                                                  |
+| Line/TransportMode           |           |                 | Refers to the mode with __highest priority__  of the trips associated to the line, see [NeTEx Transport Modes](#netex-transport-modes) and [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis) |
+| Line/PublicCode              | lines.txt | line_code       | If the code line_code is empty, this node is not created.                                                                                                                                                                                                        |
+| Line/Presentation/Colour     | lines.txt | line_color      | RGB hexadecimal, 6 characters. Omitted if empty. The `Presentation` node is created only if `line_color` or `line_text_color` is set.                                                                                                                            |
+| Line/Presentation/TextColour | lines.txt | line_text_color | RGB hexadecimal, 6 characters. Omitted if empty. The `Presentation` node is created only if `line_color` or `line_text_color` is set.                                                                                                                            |
 
 ### Operator
 
@@ -395,7 +411,7 @@ The `DayType` must exist even if intentionally left empty (it is referred to by
 | ------------------------------------------ | ------------ | ---------- | ------------------------------------------------------------------------- |
 | DayTypeAssignement/@id                     | calendar.txt | service_id | see [id formatting](#id-of-objects)                                       |
 | DayTypeAssignement/@version                |              |            | fixed value `any`                                                         |
-| DayTypeAssignement/@order                  |              |            | fixed value `0`                                                           |
+| DayTypeAssignement/@order                  |              |            | fixed value `1`                                                           |
 | DayTypeAssignement/OperatingPeriodRef/@ref | calendar.txt | service_id | see [id formatting](#id-of-objects) with `OperatingPeriod` as object type |
 | DayTypeAssignement/DayTypeRef/@ref         | calendar.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type         |
 

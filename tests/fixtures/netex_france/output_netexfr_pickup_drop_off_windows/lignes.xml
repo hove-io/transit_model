@@ -29,11 +29,19 @@
 							<Name>6</Name>
 							<TransportMode>metro</TransportMode>
 							<PublicCode>6</PublicCode>
+							<Presentation>
+								<Colour>6ECA97</Colour>
+								<TextColour>000000</TextColour>
+							</Presentation>
 						</Line>
 						<Line id="FR:Line:MFDI_C02060:" version="any">
 							<Name>Filéo Roissy Sud - Villeparisis et Mitry (sur réservation)</Name>
 							<TransportMode>bus</TransportMode>
 							<PublicCode>Filéo RS</PublicCode>
+							<Presentation>
+								<Colour>4890CD</Colour>
+								<TextColour>FFFFFF</TextColour>
+							</Presentation>
 						</Line>
 					</lines>
 				</ServiceFrame>

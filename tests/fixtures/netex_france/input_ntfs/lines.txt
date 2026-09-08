@@ -1,4 +1,4 @@
-line_id,line_code,line_name,network_id,commercial_mode_id
-B42,Magic Bus!,Bus 42,TGN,Bus
-M1,,Metro 1,TGN,Metro
-RERA,,RER A,TGN,RER
+line_id,line_code,line_name,network_id,commercial_mode_id,line_color,line_text_color
+B42,Magic Bus!,Bus 42,TGN,Bus,,
+M1,,Metro 1,TGN,Metro,,000000
+RERA,,RER A,TGN,RER,EB2132,

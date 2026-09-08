@@ -57,11 +57,15 @@
 				</Route>
 				<RoutePoint id="FR:RoutePoint:M1_1:" version="any">
 					<Location>
+						<Longitude>2.396497</Longitude>
+						<Latitude>48.84849</Latitude>
 						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:M1_2:" version="any">
 					<Location>
+						<Longitude>2.372987</Longitude>
+						<Latitude>48.844746</Latitude>
 						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</RoutePoint>
@@ -69,11 +73,15 @@
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:M1_4:" version="any">
 					<Location>
+						<Longitude>2.295354</Longitude>
+						<Latitude>48.873965</Latitude>
 						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:M1_R_1:" version="any">
 					<Location>
+						<Longitude>2.295354</Longitude>
+						<Latitude>48.873965</Latitude>
 						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 					</Location>
 				</RoutePoint>
@@ -81,11 +89,15 @@
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:M1_R_3:" version="any">
 					<Location>
+						<Longitude>2.372987</Longitude>
+						<Latitude>48.844746</Latitude>
 						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:M1_R_4:" version="any">
 					<Location>
+						<Longitude>2.396497</Longitude>
+						<Latitude>48.84849</Latitude>
 						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 					</Location>
 				</RoutePoint>
@@ -153,11 +165,15 @@
 				</ServiceJourneyPattern>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_0:" version="any">
 					<Location>
+						<Longitude>2.396497</Longitude>
+						<Latitude>48.84849</Latitude>
 						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_1:" version="any">
 					<Location>
+						<Longitude>2.372987</Longitude>
+						<Latitude>48.844746</Latitude>
 						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
@@ -165,11 +181,15 @@
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_4:" version="any">
 					<Location>
+						<Longitude>2.295354</Longitude>
+						<Latitude>48.873965</Latitude>
 						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_6:" version="any">
 					<Location>
+						<Longitude>2.295354</Longitude>
+						<Latitude>48.873965</Latitude>
 						<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
@@ -177,11 +197,15 @@
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_8:" version="any">
 					<Location>
+						<Longitude>2.372987</Longitude>
+						<Latitude>48.844746</Latitude>
 						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_9:" version="any">
 					<Location>
+						<Longitude>2.396497</Longitude>
+						<Latitude>48.84849</Latitude>
 						<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 					</Location>
 				</ScheduledStopPoint>

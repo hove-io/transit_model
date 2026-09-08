@@ -627,11 +627,24 @@ impl<'a> OfferExporter<'a> {
 
     fn generate_location(&self, stop_point_idx: Idx<StopPoint>) -> Option<Element> {
         let coord_str = self.stop_coords.get(&stop_point_idx)?.as_deref()?;
+        let coord = &self.model.stop_points[stop_point_idx].coord;
+        let longitude = Element::builder("Longitude")
+            .append(Node::Text(coord.lon.to_string()))
+            .build();
+        let latitude = Element::builder("Latitude")
+            .append(Node::Text(coord.lat.to_string()))
+            .build();
         let pos = Element::builder("gml:pos")
             .attr("srsName", "EPSG:2154")
             .append(Node::Text(coord_str.to_owned()))
             .build();
-        Some(Element::builder("Location").append(pos).build())
+        Some(
+            Element::builder("Location")
+                .append(longitude)
+                .append(latitude)
+                .append(pos)
+                .build(),
+        )
     }
 
     fn generate_for_alighting(drop_off_type: u8) -> Element {

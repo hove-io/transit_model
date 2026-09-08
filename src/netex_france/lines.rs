@@ -89,6 +89,11 @@ impl<'a> LineExporter<'a> {
         } else {
             element_builder
         };
+        let element_builder = if let Some(presentation) = self.generate_presentation(line) {
+            element_builder.append(presentation)
+        } else {
+            element_builder
+        };
         Ok(element_builder.build())
     }
 
@@ -111,5 +116,27 @@ impl<'a> LineExporter<'a> {
                 .append(Node::Text(code.to_owned()))
                 .build()
         })
+    }
+
+    fn generate_presentation(&self, line: &'a Line) -> Option<Element> {
+        if line.color.is_none() && line.text_color.is_none() {
+            return None;
+        }
+        let mut builder = Element::builder("Presentation");
+        if let Some(rgb) = line.color.as_ref() {
+            builder = builder.append(
+                Element::builder("Colour")
+                    .append(Node::Text(rgb.to_string()))
+                    .build(),
+            );
+        }
+        if let Some(rgb) = line.text_color.as_ref() {
+            builder = builder.append(
+                Element::builder("TextColour")
+                    .append(Node::Text(rgb.to_string()))
+                    .build(),
+            );
+        }
+        Some(builder.build())
     }
 }

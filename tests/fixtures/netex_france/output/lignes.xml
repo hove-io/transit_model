@@ -28,10 +28,16 @@
 						<Line id="FR:Line:M1:" version="any">
 							<Name>Metro 1</Name>
 							<TransportMode>metro</TransportMode>
+							<Presentation>
+								<TextColour>000000</TextColour>
+							</Presentation>
 						</Line>
 						<Line id="FR:Line:RERA:" version="any">
 							<Name>RER A</Name>
 							<TransportMode>rail</TransportMode>
+							<Presentation>
+								<Colour>EB2132</Colour>
+							</Presentation>
 						</Line>
 					</lines>
 				</ServiceFrame>

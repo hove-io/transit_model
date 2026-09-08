@@ -75,7 +75,7 @@ impl<'a> CalendarExporter<'a> {
                 "id",
                 Exporter::generate_id(&calendar.id, ObjectType::DayTypeAssignment),
             )
-            .attr("order", "0")
+            .attr("order", "1")
             .attr("version", "any")
             .append(self.generate_operating_period_ref(&calendar.id))
             .append(self.generate_day_type_ref(&calendar.id))
