@@ -395,7 +395,7 @@ The `DayType` must exist even if intentionally left empty (it is referred to by
 | ------------------------------------------ | ------------ | ---------- | ------------------------------------------------------------------------- |
 | DayTypeAssignement/@id                     | calendar.txt | service_id | see [id formatting](#id-of-objects)                                       |
 | DayTypeAssignement/@version                |              |            | fixed value `any`                                                         |
-| DayTypeAssignement/@order                  |              |            | fixed value `0`                                                           |
+| DayTypeAssignement/@order                  |              |            | fixed value `1`                                                           |
 | DayTypeAssignement/OperatingPeriodRef/@ref | calendar.txt | service_id | see [id formatting](#id-of-objects) with `OperatingPeriod` as object type |
 | DayTypeAssignement/DayTypeRef/@ref         | calendar.txt | service_id | see [id formatting](#id-of-objects) with `DayType` as object type         |
 

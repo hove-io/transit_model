@@ -11,7 +11,7 @@
 			<members>
 				<DayType id="FR:DayType:Week:" version="any">
 				</DayType>
-				<DayTypeAssignment id="FR:DayTypeAssignment:Week:" order="0" version="any">
+				<DayTypeAssignment id="FR:DayTypeAssignment:Week:" order="1" version="any">
 					<OperatingPeriodRef ref="FR:UicOperatingPeriod:Week:">
 					</OperatingPeriodRef>
 					<DayTypeRef ref="FR:DayType:Week:">
