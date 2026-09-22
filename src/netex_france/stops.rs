@@ -22,7 +22,6 @@ use crate::{
     Model, Result,
 };
 use anyhow::anyhow;
-use proj::Proj;
 use std::{
     borrow::Borrow,
     collections::{BTreeSet, HashMap},
@@ -43,7 +42,6 @@ type StopAreaEntrances<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 pub struct StopExporter<'a> {
     model: &'a Model,
     participant_ref: &'a str,
-    converter: Proj,
     stop_point_modes: StopPointModes<'a>,
     stop_area_stop_points: StopAreaStopPoints<'a>,
     stop_area_entrances: StopAreaEntrances<'a>,
@@ -52,14 +50,12 @@ pub struct StopExporter<'a> {
 // Publicly exposed methods
 impl<'a> StopExporter<'a> {
     pub fn new(model: &'a Model, participant_ref: &'a str) -> Result<Self> {
-        let converter = Exporter::get_coordinates_converter()?;
         let stop_point_modes = Self::build_stop_point_modes(model);
         let stop_area_stop_points = Self::build_stop_area_stop_points(model);
         let stop_area_entrances = Self::build_stop_area_entrances(model);
         let exporter = StopExporter {
             model,
             participant_ref,
-            converter,
             stop_point_modes,
             stop_area_stop_points,
             stop_area_entrances,
@@ -333,7 +329,7 @@ impl<'a> StopExporter<'a> {
     }
 
     fn generate_centroid(&self, coord: &'a Coord) -> Option<Element> {
-        if *coord != Coord::default() && self.converter.convert(*coord).is_ok() {
+        if *coord != Coord::default() {
             let longitude = Element::builder("Longitude")
                 .append(Node::Text(coord.lon.to_string()))
                 .build();

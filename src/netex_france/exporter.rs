@@ -23,9 +23,7 @@ use crate::{
     objects::{Date, Line},
     Result,
 };
-use anyhow::anyhow;
 use chrono::prelude::*;
-use proj::Proj;
 use rayon::prelude::*;
 use relational_types::IdxSet;
 use std::{
@@ -194,13 +192,6 @@ impl<'a> Exporter<'a> {
     pub(in crate::netex_france) fn generate_id(id: &'a str, object_type: ObjectType) -> String {
         let id = id.replace(':', "_");
         format!("FR:{object_type}:{id}:")
-    }
-
-    pub(in crate::netex_france) fn get_coordinates_converter() -> Result<Proj> {
-        let from = "+proj=longlat +datum=WGS84 +no_defs"; // https://epsg.io/4326
-        let to = "+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"; // https://epsg.io/2154
-        Proj::new_known_crs(from, to, None)
-            .map_err(|_| anyhow!("Proj cannot build a converter from '{}' to '{}'", from, to))
     }
 }
 
