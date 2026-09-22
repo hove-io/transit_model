@@ -43,28 +43,24 @@
 					<Location>
 						<Longitude>2.372987</Longitude>
 						<Latitude>48.844746</Latitude>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:B42_2:" version="any">
 					<Location>
 						<Longitude>2.321783</Longitude>
 						<Latitude>48.842481</Latitude>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:B42_R_1:" version="any">
 					<Location>
 						<Longitude>2.321783</Longitude>
 						<Latitude>48.842481</Latitude>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:B42_R_2:" version="any">
 					<Location>
 						<Longitude>2.372987</Longitude>
 						<Latitude>48.844746</Latitude>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</RoutePoint>
 				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:B42F1:" version="any">
@@ -109,28 +105,24 @@
 					<Location>
 						<Longitude>2.372987</Longitude>
 						<Latitude>48.844746</Latitude>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42F1_20:" version="any">
 					<Location>
 						<Longitude>2.321783</Longitude>
 						<Latitude>48.842481</Latitude>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_20:" version="any">
 					<Location>
 						<Longitude>2.321783</Longitude>
 						<Latitude>48.842481</Latitude>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_30:" version="any">
 					<Location>
 						<Longitude>2.372987</Longitude>
 						<Latitude>48.844746</Latitude>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42F1_10:" order="11" version="any">

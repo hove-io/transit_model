@@ -11,7 +11,6 @@
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<AccessibilityAssessment id="FR:AccessibilityAssessment:GDLR_0:" version="any">
@@ -36,7 +35,6 @@
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<AccessibilityAssessment id="FR:AccessibilityAssessment:GDLM_1:" version="any">
@@ -61,7 +59,6 @@
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>bus</TransportMode>
@@ -76,7 +73,6 @@
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<AccessibilityAssessment id="FR:AccessibilityAssessment:NATR_0:" version="any">
@@ -101,7 +97,6 @@
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>metro</TransportMode>
@@ -116,7 +111,6 @@
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>rail</TransportMode>
@@ -131,7 +125,6 @@
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>metro</TransportMode>
@@ -146,7 +139,6 @@
 						<Location>
 							<Longitude>2.238964</Longitude>
 							<Latitude>48.891737</Latitude>
-							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>rail</TransportMode>
@@ -170,7 +162,6 @@
 						<Location>
 							<Longitude>2.321783</Longitude>
 							<Latitude>48.842481</Latitude>
-							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>bus</TransportMode>
@@ -185,7 +176,6 @@
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
@@ -203,7 +193,6 @@
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
@@ -221,7 +210,6 @@
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
@@ -241,7 +229,6 @@
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<entrances>
@@ -251,7 +238,6 @@
 								<Location>
 									<Longitude>2.375156</Longitude>
 									<Latitude>48.844949</Latitude>
-									<gml:pos srsName="EPSG:2154">654143.0840251445 6860726.200273181</gml:pos>
 								</Location>
 							</Centroid>
 							<IsEntry>true</IsEntry>
@@ -263,7 +249,6 @@
 								<Location>
 									<Longitude>2.374718</Longitude>
 									<Latitude>48.843223</Latitude>
-									<gml:pos srsName="EPSG:2154">654109.4203976962 6860534.540309815</gml:pos>
 								</Location>
 							</Centroid>
 							<IsEntry>true</IsEntry>
@@ -279,7 +264,6 @@
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
@@ -297,7 +281,6 @@
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
@@ -315,7 +298,6 @@
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
@@ -333,7 +315,6 @@
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>rail</TransportMode>
@@ -345,7 +326,6 @@
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
@@ -363,7 +343,6 @@
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
@@ -381,7 +360,6 @@
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
@@ -399,7 +377,6 @@
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
 					<entrances>
@@ -409,7 +386,6 @@
 								<Location>
 									<Longitude>2.295636</Longitude>
 									<Latitude>48.87342</Latitude>
-									<gml:pos srsName="EPSG:2154">648335.545974931 6863941.0341525925</gml:pos>
 								</Location>
 							</Centroid>
 							<IsEntry>true</IsEntry>
@@ -425,7 +401,6 @@
 						<Location>
 							<Longitude>2.238964</Longitude>
 							<Latitude>48.891737</Latitude>
-							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:DEF:">
@@ -443,7 +418,6 @@
 						<Location>
 							<Longitude>2.238964</Longitude>
 							<Latitude>48.891737</Latitude>
-							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:DEF:">
@@ -461,7 +435,6 @@
 						<Location>
 							<Longitude>2.238964</Longitude>
 							<Latitude>48.891737</Latitude>
-							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>rail</TransportMode>
@@ -473,7 +446,6 @@
 						<Location>
 							<Longitude>2.348145</Longitude>
 							<Latitude>48.858137</Latitude>
-							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972684</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:CHA:">
@@ -491,7 +463,6 @@
 						<Location>
 							<Longitude>2.348145</Longitude>
 							<Latitude>48.858137</Latitude>
-							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972684</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>metro</TransportMode>
@@ -503,7 +474,6 @@
 						<Location>
 							<Longitude>2.321783</Longitude>
 							<Latitude>48.842481</Latitude>
-							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
 					<ParentSiteRef ref="FR:StopPlace:MTP:">
@@ -521,7 +491,6 @@
 						<Location>
 							<Longitude>2.321783</Longitude>
 							<Latitude>48.842481</Latitude>
-							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
 					<TransportMode>bus</TransportMode>
