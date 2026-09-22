@@ -111,16 +111,12 @@ A `stop_area` is considered monomodal if all the trips having stop_times referen
 | Train             | rail                   |
 | Tramway           | tram                   |
 
-### Coordinates conversion
+### Coordinates
 
 The GTFS `stop_lon` and `stop_lat` are specified in WGS84. Every `Location`
 (`Centroid/Location` of `Quay`, `StopPlace` and `StopPlaceEntrance`; `Location`
-of `RoutePoint` and `ScheduledStopPoint`) carries both representations:
-
-* `Longitude` / `Latitude` in WGS84 (decimal degrees), as required by the NeTEx
-  France profile;
-* `gml:pos` reprojected to EPSG:2154 (Lambert 93), kept as complementary
-  information.
+of `RoutePoint` and `ScheduledStopPoint`) carries `Longitude`/`Latitude` in
+WGS84 (decimal degrees), as required by the NeTEx France profile.
 
 Example of Netex declaration:
 
@@ -128,7 +124,6 @@ Example of Netex declaration:
 <Location>
     <Longitude>2.372987</Longitude>
     <Latitude>48.844746</Latitude>
-    <gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 </Location>
 ```
 
@@ -143,7 +138,7 @@ element which itself is wrapped into a `GeneralFrame`.
 | Quay/@id                            | stops.txt | stop_id               | see [id formatting](#id-of-objects)                                                                                            |
 | Quay/@version                       |           |                       | fixed value `any`.                                                                                                             |
 | Quay/Name                           | stops.txt | stop_name             |                                                                                                                                |
-| Quay/Centroid/Location              | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent    |
+| Quay/Centroid/Location              | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent    |
 | Quay/AccessibilityAssessment        | stops.txt | equipment_id          | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below. |
 | Quay/TransportMode                  |           |                       | see (2) below                                                                                                                  |
 | Quay/tariffZones/TariffZoneRef/@ref | stops.txt | fare_zone_id          | The fare zone is prefixed by the `ParticipantRef` prefix with a `:` separator                                                  |
@@ -223,7 +218,7 @@ The `StopPlace/StopPlaceType` is defined from its `StopPlace/TransportMode`.
 | StopPlace/@id                  | stops.txt | stop_id               | see [id formatting](#id-of-objects)                                                                                         |
 | StopPlace/@version             |           |                       | fixed value `any`.                                                                                                          |
 | StopPlace/Name                 | stops.txt | stop_name             |                                                                                                                             |
-| StopPlace/Centroid/Location    | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent |
+| StopPlace/Centroid/Location    | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent |
 | StopPlace/ParentSiteRef        |           |                       | link to the corresponding Multimodal `StopPlace`                                                                            |
 | StopPlace/TransportMode        |           |                       | use the only NeTEx mode                                                                                                     |
 | StopPlace/StopPlaceType        |           |                       | see the section [StopPlaceType mapping](#stopplacetype-mapping)                                                             |
@@ -236,7 +231,7 @@ The `StopPlace/StopPlaceType` is defined from its `StopPlace/TransportMode`.
 | StopPlace/@id               | stops.txt | stop_id               | see [id formatting](#id-of-objects)                                                                                                                              |
 | StopPlace/@version          |           |                       | fixed value `any`.                                                                                                                                               |
 | StopPlace/Name              | stops.txt | stop_name             |                                                                                                                                                                  |
-| StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                      |
+| StopPlace/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                      |
 | StopPlace/entrances[]       |           |                       | Link to the station entrances/exits, if present. See [StopPlaceEntrance](#stopplaceentrance).                                                                    |
 | StopPlace/TransportMode     |           |                       | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis)) |
 | StopPlace/StopPlaceType     |           |                       | see the section [StopPlaceType mapping](#stopplacetype-mapping)                                                                                                  |
@@ -249,7 +244,7 @@ A `StopPlaceEntrance` node is created for each entrance/exit (stop with `locatio
 | StopPlaceEntrance/@id               | stops.txt | stop_id               | see [id formatting](#id-of-objects)                                                                                         |
 | StopPlaceEntrance/@version          |           |                       | fixed value `any`.                                                                                                          |
 | StopPlaceEntrance/Name              | stops.txt | stop_name             |                                                                                                                             |
-| StopPlaceEntrance/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent |
+| StopPlaceEntrance/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent |
 | StopPlaceEntrance/IsEntry           |           |                       | fixed value `true`                                                                                                          |
 | StopPlaceEntrance/IsExit            |           |                       | fixed value `true`                                                                                                          |
 
@@ -542,7 +537,7 @@ One `RoutePoint` is created for each `stop_point` of all `vehicle_journeys` of a
 | ------------------- | --------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | RoutePoint/@id      |           |                       | see [`PointOnRoute/@id`](#pointonroute) with `RoutePoint` as object type                                                    |
 | RoutePoint/@version |           |                       | fixed value `any`                                                                                                           |
-| RoutePoint/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Location` is absent |
+| RoutePoint/Location | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Location` is absent |
 
 ### ServiceJourneyPattern
 
@@ -594,7 +589,7 @@ One `ScheduledStopPoint` is created for each Stop Point of a
 | --------------------------- | --------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | ScheduledStopPoint/@id      |           |                       | see [`StopPointInJourneyPattern/@id`](#stoppointinjourneypattern) with `ScheduledStopPoint` as object type                  |
 | ScheduledStopPoint/@version |           |                       | fixed value `any`                                                                                                           |
-| ScheduledStopPoint/Location | stops.txt | stop_lat and stop_lon | see [Coordinates conversion](#coordinates-conversion); if `stop_lat` and `stop_lon` are equals to 0.0, `Location` is absent |
+| ScheduledStopPoint/Location | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Location` is absent |
 
 ### PassengerStopAssignment
 

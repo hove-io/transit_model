@@ -115,17 +115,14 @@ make test
 
 ## Environments and tools
 
-At Kisio Digital, we mostly maintain, test and operate on the following
+At Hove, we mostly maintain, test and operate on the following
 environments and tools:
 
 * Our main target for OS is [Debian].
-* Our main target for [PROJ] is the version described in the
-  [main README](README.md#PROJ-for-binaries).
 
 However, we are open to contributions to help support more of them.
 
 [Debian]: https://www.debian.org
-[PROJ]: https://proj.org
 
 ## Conduct
 
