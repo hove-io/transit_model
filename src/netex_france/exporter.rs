@@ -20,7 +20,7 @@ use crate::{
         CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, OfferExporter,
         StopExporter, TransferExporter,
     },
-    objects::{Date, Line},
+    objects::{Date, KeysValues, Line},
     Result,
 };
 use chrono::prelude::*;
@@ -194,6 +194,18 @@ impl<'a> Exporter<'a> {
     pub(in crate::netex_france) fn generate_id(id: &'a str, object_type: ObjectType) -> String {
         let id = id.replace(':', "_");
         format!("FR:{object_type}:{id}:")
+    }
+
+    pub(in crate::netex_france) fn generate_key_list(codes: &KeysValues) -> Option<Element> {
+        let (_, source_id) = codes.iter().find(|(key, _)| key.as_str() == "source")?;
+        let key = Element::builder("Key").append("source").build();
+        let value = Element::builder("Value").append(source_id.as_str()).build();
+        let key_value = Element::builder("KeyValue")
+            .attr("typeOfKey", "ALTERNATE_IDENTIFIER")
+            .append(key)
+            .append(value)
+            .build();
+        Some(Element::builder("keyList").append(key_value).build())
     }
 }
 

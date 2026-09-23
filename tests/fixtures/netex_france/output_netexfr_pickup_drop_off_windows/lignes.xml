@@ -7,6 +7,12 @@
 			<frames>
 				<ServiceFrame id="FR:ServiceFrame:MFDI:1071:" version="any">
 					<Network id="FR:Network:MFDI_1071:" version="any">
+						<keyList>
+							<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+								<Key>source</Key>
+								<Value>FR1:Network:1071:LOC</Value>
+							</KeyValue>
+						</keyList>
 						<Name>Roissy Ouest</Name>
 						<members>
 							<LineRef ref="FR:Line:MFDI_C02060:">
@@ -16,6 +22,12 @@
 				</ServiceFrame>
 				<ServiceFrame id="FR:ServiceFrame:MFDI:Operator_100:" version="any">
 					<Network id="FR:Network:MFDI_Operator_100:" version="any">
+						<keyList>
+							<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+								<Key>source</Key>
+								<Value>FR1:Operator:100:LOC</Value>
+							</KeyValue>
+						</keyList>
 						<Name>RATP</Name>
 						<members>
 							<LineRef ref="FR:Line:MFDI_C01376:">
@@ -26,6 +38,12 @@
 				<ServiceFrame id="FR:ServiceFrame:lines:" version="any">
 					<lines>
 						<Line id="FR:Line:MFDI_C01376:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>FR1:Line:C01376:</Value>
+								</KeyValue>
+							</keyList>
 							<Name>6</Name>
 							<TransportMode>metro</TransportMode>
 							<PublicCode>6</PublicCode>
@@ -35,6 +53,12 @@
 							</Presentation>
 						</Line>
 						<Line id="FR:Line:MFDI_C02060:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>FR1:Line:C02060:</Value>
+								</KeyValue>
+							</keyList>
 							<Name>Filéo Roissy Sud - Villeparisis et Mitry (sur réservation)</Name>
 							<TransportMode>bus</TransportMode>
 							<PublicCode>Filéo RS</PublicCode>

@@ -148,6 +148,7 @@ impl<'a> OfferExporter<'a> {
         let element_builder = Element::builder(ObjectType::Route.to_string())
             .attr("id", Exporter::generate_id(&route.id, ObjectType::Route))
             .attr("version", "any");
+        let element_builder = element_builder.append_all(Exporter::generate_key_list(&route.codes)); // must be first child (XSD order)
         let element_builder = element_builder.append(Self::generate_route_name(&route.name));
         let element_builder = element_builder.append(Self::generate_distance());
         let element_builder = element_builder.append(Self::generate_line_ref(&route.line_id));
@@ -371,6 +372,8 @@ impl<'a> OfferExporter<'a> {
                 Exporter::generate_id(&vehicle_journey.id, ObjectType::ServiceJourney),
             )
             .attr("version", "any");
+        let element_builder =
+            element_builder.append_all(Exporter::generate_key_list(&vehicle_journey.codes)); // must be first child (XSD order)
         let element_builder = if let Some(netex_mode) =
             NetexMode::from_physical_mode_id(&vehicle_journey.physical_mode_id)
                 .filter(|mode| Some(mode) != line_netex_mode.as_ref())

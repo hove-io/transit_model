@@ -46,6 +46,8 @@ impl<'a> NetworkExporter<'a> {
                 Exporter::generate_id(&network.id, ObjectType::Network),
             )
             .attr("version", "any");
+        let element_builder =
+            element_builder.append_all(Exporter::generate_key_list(&network.codes)); // must be first child (XSD order)
         let element_builder = element_builder.append(self.generate_name(network));
         let line_ref_elements = self
             .model
