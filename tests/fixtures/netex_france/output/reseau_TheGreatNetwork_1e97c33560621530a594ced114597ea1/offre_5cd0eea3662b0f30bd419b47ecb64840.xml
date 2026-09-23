@@ -6,6 +6,12 @@
 		<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE:" version="any">
 			<members>
 				<Route id="FR:Route:RERA:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>RERA</Value>
+						</KeyValue>
+					</keyList>
 					<Name>RER A</Name>
 					<Distance>0</Distance>
 					<LineRef ref="FR:Line:RERA:">
@@ -31,6 +37,12 @@
 					</pointsInSequence>
 				</Route>
 				<Route id="FR:Route:RERA_Bus_R:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>RERA:Bus</Value>
+						</KeyValue>
+					</keyList>
 					<Name>RER A</Name>
 					<Distance>0</Distance>
 					<LineRef ref="FR:Line:RERA:">
@@ -278,6 +290,12 @@
 					</QuayRef>
 				</PassengerStopAssignment>
 				<ServiceJourney id="FR:ServiceJourney:RERAF1:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>RERAF1</Value>
+						</KeyValue>
+					</keyList>
 					<dayTypes>
 						<DayTypeRef ref="FR:DayType:Week:">
 						</DayTypeRef>
@@ -314,6 +332,12 @@
 					</passingTimes>
 				</ServiceJourney>
 				<ServiceJourney id="FR:ServiceJourney:RERAB1:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>RERAB1</Value>
+						</KeyValue>
+					</keyList>
 					<TransportMode>bus</TransportMode>
 					<dayTypes>
 						<DayTypeRef ref="FR:DayType:Week:">

@@ -6,6 +6,12 @@
 		<GeneralFrame id="FR:GeneralFrame:NETEX_ARRET:" version="any">
 			<members>
 				<Quay id="FR:Quay:GDLR:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>GDLR</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Gare de Lyon (RER)</Name>
 					<Centroid>
 						<Location>
@@ -30,6 +36,12 @@
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:GDLM:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>GDLM</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Gare de Lyon (Metro)</Name>
 					<Centroid>
 						<Location>
@@ -54,6 +66,12 @@
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:GDLB:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>GDLB</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Gare de Lyon (Bus)</Name>
 					<Centroid>
 						<Location>
@@ -68,6 +86,12 @@
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:NATR:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>NATR</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Nation (RER)</Name>
 					<Centroid>
 						<Location>
@@ -92,6 +116,12 @@
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:NATM:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>NATM</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Nation (Metro)</Name>
 					<Centroid>
 						<Location>
@@ -106,6 +136,12 @@
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:CDGR:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>CDGR</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Charles de Gaulle (RER)</Name>
 					<Centroid>
 						<Location>
@@ -120,6 +156,12 @@
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:CDGM:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>CDGM</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Charles de Gaulle (Metro)</Name>
 					<Centroid>
 						<Location>
@@ -134,6 +176,12 @@
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:DEFR:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>DEFR</Value>
+						</KeyValue>
+					</keyList>
 					<Name>La Défense (RER)</Name>
 					<Centroid>
 						<Location>
@@ -148,6 +196,12 @@
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:CHAM:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>CHAM</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Châtelet (Metro)</Name>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
@@ -157,6 +211,12 @@
 					<PublicCode>The Big One</PublicCode>
 				</Quay>
 				<Quay id="FR:Quay:MTPB:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>MTPB</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Montparnasse (Bus)</Name>
 					<Centroid>
 						<Location>
@@ -224,6 +284,12 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:GDL:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>GDL</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Gare de Lyon</Name>
 					<Centroid>
 						<Location>
@@ -310,6 +376,12 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:NAT:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>NAT</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Nation</Name>
 					<Centroid>
 						<Location>
@@ -372,6 +444,12 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:CDG:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>CDG</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Charles de Gaulle</Name>
 					<Centroid>
 						<Location>
@@ -430,6 +508,12 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:DEF:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>DEF</Value>
+						</KeyValue>
+					</keyList>
 					<Name>La Défense</Name>
 					<Centroid>
 						<Location>
@@ -458,6 +542,12 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:CHA:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>CHA</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Châtelet</Name>
 					<Centroid>
 						<Location>
@@ -486,6 +576,12 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:MTP:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>MTP</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Montparnasse</Name>
 					<Centroid>
 						<Location>

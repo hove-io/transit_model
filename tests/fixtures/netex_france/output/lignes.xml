@@ -7,6 +7,12 @@
 			<frames>
 				<ServiceFrame id="FR:ServiceFrame:TGN:" version="any">
 					<Network id="FR:Network:TGN:" version="any">
+						<keyList>
+							<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+								<Key>source</Key>
+								<Value>TGN</Value>
+							</KeyValue>
+						</keyList>
 						<Name>The Great Network</Name>
 						<members>
 							<LineRef ref="FR:Line:B42:">
@@ -21,11 +27,23 @@
 				<ServiceFrame id="FR:ServiceFrame:lines:" version="any">
 					<lines>
 						<Line id="FR:Line:B42:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>B42</Value>
+								</KeyValue>
+							</keyList>
 							<Name>Bus 42</Name>
 							<TransportMode>bus</TransportMode>
 							<PublicCode>Magic Bus!</PublicCode>
 						</Line>
 						<Line id="FR:Line:M1:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>M1</Value>
+								</KeyValue>
+							</keyList>
 							<Name>Metro 1</Name>
 							<TransportMode>metro</TransportMode>
 							<Presentation>
@@ -33,6 +51,12 @@
 							</Presentation>
 						</Line>
 						<Line id="FR:Line:RERA:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>RERA</Value>
+								</KeyValue>
+							</keyList>
 							<Name>RER A</Name>
 							<TransportMode>rail</TransportMode>
 							<Presentation>
@@ -44,6 +68,12 @@
 				<ResourceFrame id="FR:ResourceFrame:operators:" version="any">
 					<organisations>
 						<Operator id="FR:Operator:TGN:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>TGN</Value>
+								</KeyValue>
+							</keyList>
 							<Name>The Great Network</Name>
 							<ContactDetails>
 								<Email>the-great-network@tgn.zz</Email>

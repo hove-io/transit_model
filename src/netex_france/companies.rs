@@ -46,6 +46,8 @@ impl<'a> CompanyExporter<'a> {
                 Exporter::generate_id(&company.id, ObjectType::Operator),
             )
             .attr("version", "any");
+        let element_builder =
+            element_builder.append_all(Exporter::generate_key_list(&company.codes)); // must be first child (XSD order)
         let element_builder = element_builder.append(self.generate_name(company));
         let element_builder = element_builder.append(self.generate_contact_details(company));
         let element_builder = element_builder.append(Self::generate_organization_type());

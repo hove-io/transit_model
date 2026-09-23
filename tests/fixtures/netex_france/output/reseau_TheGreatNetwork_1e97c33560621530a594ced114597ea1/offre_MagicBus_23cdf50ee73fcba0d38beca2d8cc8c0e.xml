@@ -6,6 +6,12 @@
 		<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE:" version="any">
 			<members>
 				<Route id="FR:Route:B42:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>B42</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Gare de Lyon - Montparnasse</Name>
 					<Distance>0</Distance>
 					<LineRef ref="FR:Line:B42:">
@@ -23,6 +29,12 @@
 					</pointsInSequence>
 				</Route>
 				<Route id="FR:Route:B42_R:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>B42</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Montparnasse - Gare de Lyon</Name>
 					<Distance>0</Distance>
 					<LineRef ref="FR:Line:B42:">
@@ -158,6 +170,12 @@
 					</QuayRef>
 				</PassengerStopAssignment>
 				<ServiceJourney id="FR:ServiceJourney:B42F1:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>B42F1</Value>
+						</KeyValue>
+					</keyList>
 					<dayTypes>
 						<DayTypeRef ref="FR:DayType:Week:">
 						</DayTypeRef>
@@ -182,6 +200,12 @@
 					</passingTimes>
 				</ServiceJourney>
 				<ServiceJourney id="FR:ServiceJourney:B42B1:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>B42B1</Value>
+						</KeyValue>
+					</keyList>
 					<dayTypes>
 						<DayTypeRef ref="FR:DayType:Week:">
 						</DayTypeRef>

@@ -180,6 +180,8 @@ impl<'a> StopExporter<'a> {
                 Exporter::generate_id(&stop_point.id, ObjectType::Quay),
             )
             .attr("version", "any");
+        let element_builder =
+            element_builder.append_all(Exporter::generate_key_list(&stop_point.codes)); // must be first child (XSD order)
         let element_builder = element_builder.append(self.generate_name(&stop_point.name));
         let element_builder =
             if let Some(centroid_element) = self.generate_centroid(&stop_point.coord) {
@@ -284,6 +286,8 @@ impl<'a> StopExporter<'a> {
                     Exporter::generate_id(&stop_area.id, ObjectType::StopPlace),
                 )
                 .attr("version", "any");
+            let element_builder =
+                element_builder.append_all(Exporter::generate_key_list(&stop_area.codes)); // must be first child (XSD order)
             let element_builder = element_builder.append(name_element);
             let element_builder = if let Some(centroid_element) = centroid {
                 element_builder.append(centroid_element)
