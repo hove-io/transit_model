@@ -120,6 +120,7 @@ impl Display for ObjectType {
 
 enum VersionType {
     Calendars,
+    France,
     Lines,
     Schedule,
     Stops,
@@ -131,6 +132,7 @@ impl Display for VersionType {
         use VersionType::*;
         match self {
             Calendars => write!(fmt, "CALENDRIER"),
+            France => write!(fmt, "FRANCE"),
             Lines => write!(fmt, "LIGNE"),
             Schedule => write!(fmt, "HORAIRE"),
             Stops => write!(fmt, "ARRET"),
@@ -199,7 +201,11 @@ impl<'a> Exporter<'a> {
 impl Exporter<'_> {
     // Include 'stop_frame' into a complete NeTEx XML tree with
     // 'PublicationDelivery' and 'dataObjects'
-    fn wrap_frame(&self, frame: Element, version_type: VersionType) -> Element {
+    // `_version_type` is currently unused: `PublicationDelivery/@version` is
+    // now fixed to `FRANCE` (NeTEx-fr 2.4). It will be needed again to set
+    // the `version` attribute on each individual frame (NeTEx-fr 2.4 §1,
+    // not yet implemented).
+    fn wrap_frame(&self, frame: Element, _version_type: VersionType) -> Element {
         let publication_timestamp = Element::builder("PublicationTimestamp")
             .append(self.timestamp.to_rfc3339())
             .build();
@@ -208,15 +214,11 @@ impl Exporter<'_> {
             .build();
         let data_objects = Element::builder("dataObjects").append(frame).build();
         Element::builder("PublicationDelivery")
-            .attr("version", format!("1.09:FR-NETEX_{version_type}-2.1-1.0"))
+            .attr(
+                "version",
+                format!("1.3:FR-NETEX_{}-2.4", VersionType::France),
+            )
             .attr("xmlns", "http://www.netex.org.uk/netex")
-            .attr("xmlns:core", "http://www.govtalk.gov.uk/core")
-            .attr("xmlns:gml", "http://www.opengis.net/gml/3.2")
-            .attr("xmlns:ifopt", "http://www.ifopt.org.uk/ifopt")
-            .attr("xmlns:siri", "http://www.siri.org.uk/siri")
-            .attr("xmlns:xlink", "http://www.w3.org/1999/xlink")
-            .attr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-            .attr("xsi:schemaLocation", "http://www.netex.org.uk/netex")
             .append(publication_timestamp)
             .append(participant_ref)
             .append(data_objects)
