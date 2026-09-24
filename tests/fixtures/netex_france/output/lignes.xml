@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<PublicationDelivery version="1.09:FR-NETEX_LIGNE-2.1-1.0" xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.netex.org.uk/netex">
+<PublicationDelivery version="1.3:FR-NETEX_FRANCE-2.4" xmlns="http://www.netex.org.uk/netex">
 	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
@@ -7,6 +7,12 @@
 			<frames>
 				<ServiceFrame id="FR:ServiceFrame:TGN:" version="any">
 					<Network id="FR:Network:TGN:" version="any">
+						<keyList>
+							<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+								<Key>source</Key>
+								<Value>TGN</Value>
+							</KeyValue>
+						</keyList>
 						<Name>The Great Network</Name>
 						<members>
 							<LineRef ref="FR:Line:B42:">
@@ -21,11 +27,23 @@
 				<ServiceFrame id="FR:ServiceFrame:lines:" version="any">
 					<lines>
 						<Line id="FR:Line:B42:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>B42</Value>
+								</KeyValue>
+							</keyList>
 							<Name>Bus 42</Name>
 							<TransportMode>bus</TransportMode>
 							<PublicCode>Magic Bus!</PublicCode>
 						</Line>
 						<Line id="FR:Line:M1:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>M1</Value>
+								</KeyValue>
+							</keyList>
 							<Name>Metro 1</Name>
 							<TransportMode>metro</TransportMode>
 							<Presentation>
@@ -33,6 +51,12 @@
 							</Presentation>
 						</Line>
 						<Line id="FR:Line:RERA:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>RERA</Value>
+								</KeyValue>
+							</keyList>
 							<Name>RER A</Name>
 							<TransportMode>rail</TransportMode>
 							<Presentation>
@@ -44,6 +68,12 @@
 				<ResourceFrame id="FR:ResourceFrame:operators:" version="any">
 					<organisations>
 						<Operator id="FR:Operator:TGN:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>TGN</Value>
+								</KeyValue>
+							</keyList>
 							<Name>The Great Network</Name>
 							<ContactDetails>
 								<Email>the-great-network@tgn.zz</Email>

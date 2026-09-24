@@ -22,7 +22,6 @@ use crate::{
     Model, Result,
 };
 use anyhow::anyhow;
-use proj::Proj;
 use std::{
     borrow::Borrow,
     collections::{BTreeSet, HashMap},
@@ -43,7 +42,6 @@ type StopAreaEntrances<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 pub struct StopExporter<'a> {
     model: &'a Model,
     participant_ref: &'a str,
-    converter: Proj,
     stop_point_modes: StopPointModes<'a>,
     stop_area_stop_points: StopAreaStopPoints<'a>,
     stop_area_entrances: StopAreaEntrances<'a>,
@@ -52,14 +50,12 @@ pub struct StopExporter<'a> {
 // Publicly exposed methods
 impl<'a> StopExporter<'a> {
     pub fn new(model: &'a Model, participant_ref: &'a str) -> Result<Self> {
-        let converter = Exporter::get_coordinates_converter()?;
         let stop_point_modes = Self::build_stop_point_modes(model);
         let stop_area_stop_points = Self::build_stop_area_stop_points(model);
         let stop_area_entrances = Self::build_stop_area_entrances(model);
         let exporter = StopExporter {
             model,
             participant_ref,
-            converter,
             stop_point_modes,
             stop_area_stop_points,
             stop_area_entrances,
@@ -184,6 +180,8 @@ impl<'a> StopExporter<'a> {
                 Exporter::generate_id(&stop_point.id, ObjectType::Quay),
             )
             .attr("version", "any");
+        let element_builder =
+            element_builder.append_all(Exporter::generate_key_list(&stop_point.codes)); // must be first child (XSD order)
         let element_builder = element_builder.append(self.generate_name(&stop_point.name));
         let element_builder =
             if let Some(centroid_element) = self.generate_centroid(&stop_point.coord) {
@@ -288,6 +286,8 @@ impl<'a> StopExporter<'a> {
                     Exporter::generate_id(&stop_area.id, ObjectType::StopPlace),
                 )
                 .attr("version", "any");
+            let element_builder =
+                element_builder.append_all(Exporter::generate_key_list(&stop_area.codes)); // must be first child (XSD order)
             let element_builder = element_builder.append(name_element);
             let element_builder = if let Some(centroid_element) = centroid {
                 element_builder.append(centroid_element)
@@ -334,27 +334,18 @@ impl<'a> StopExporter<'a> {
 
     fn generate_centroid(&self, coord: &'a Coord) -> Option<Element> {
         if *coord != Coord::default() {
-            if let Ok(coord_epsg2154) = self.converter.convert(*coord) {
-                let longitude = Element::builder("Longitude")
-                    .append(Node::Text(coord.lon.to_string()))
-                    .build();
-                let latitude = Element::builder("Latitude")
-                    .append(Node::Text(coord.lat.to_string()))
-                    .build();
-                let coord_text =
-                    Node::Text(format!("{} {}", coord_epsg2154.lon, coord_epsg2154.lat));
-                let pos = Element::builder("gml:pos")
-                    .attr("srsName", "EPSG:2154")
-                    .append(coord_text)
-                    .build();
-                let location = Element::builder("Location")
-                    .append(longitude)
-                    .append(latitude)
-                    .append(pos)
-                    .build();
-                let centroid = Element::builder("Centroid").append(location).build();
-                return Some(centroid);
-            }
+            let longitude = Element::builder("Longitude")
+                .append(Node::Text(coord.lon.to_string()))
+                .build();
+            let latitude = Element::builder("Latitude")
+                .append(Node::Text(coord.lat.to_string()))
+                .build();
+            let location = Element::builder("Location")
+                .append(longitude)
+                .append(latitude)
+                .build();
+            let centroid = Element::builder("Centroid").append(location).build();
+            return Some(centroid);
         }
         None
     }

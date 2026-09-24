@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<PublicationDelivery version="1.09:FR-NETEX_HORAIRE-2.1-1.0" xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.netex.org.uk/netex">
+<PublicationDelivery version="1.3:FR-NETEX_FRANCE-2.4" xmlns="http://www.netex.org.uk/netex">
 	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
 		<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE:" version="any">
 			<members>
 				<Route id="FR:Route:B42:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>B42</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Gare de Lyon - Montparnasse</Name>
 					<Distance>0</Distance>
 					<LineRef ref="FR:Line:B42:">
@@ -23,6 +29,12 @@
 					</pointsInSequence>
 				</Route>
 				<Route id="FR:Route:B42_R:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>B42</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Montparnasse - Gare de Lyon</Name>
 					<Distance>0</Distance>
 					<LineRef ref="FR:Line:B42:">
@@ -43,28 +55,24 @@
 					<Location>
 						<Longitude>2.372987</Longitude>
 						<Latitude>48.844746</Latitude>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:B42_2:" version="any">
 					<Location>
 						<Longitude>2.321783</Longitude>
 						<Latitude>48.842481</Latitude>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:B42_R_1:" version="any">
 					<Location>
 						<Longitude>2.321783</Longitude>
 						<Latitude>48.842481</Latitude>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</RoutePoint>
 				<RoutePoint id="FR:RoutePoint:B42_R_2:" version="any">
 					<Location>
 						<Longitude>2.372987</Longitude>
 						<Latitude>48.844746</Latitude>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</RoutePoint>
 				<ServiceJourneyPattern id="FR:ServiceJourneyPattern:B42F1:" version="any">
@@ -109,28 +117,24 @@
 					<Location>
 						<Longitude>2.372987</Longitude>
 						<Latitude>48.844746</Latitude>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42F1_20:" version="any">
 					<Location>
 						<Longitude>2.321783</Longitude>
 						<Latitude>48.842481</Latitude>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_20:" version="any">
 					<Location>
 						<Longitude>2.321783</Longitude>
 						<Latitude>48.842481</Latitude>
-						<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_30:" version="any">
 					<Location>
 						<Longitude>2.372987</Longitude>
 						<Latitude>48.844746</Latitude>
-						<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 					</Location>
 				</ScheduledStopPoint>
 				<PassengerStopAssignment id="FR:PassengerStopAssignment:B42F1_10:" order="11" version="any">
@@ -166,6 +170,12 @@
 					</QuayRef>
 				</PassengerStopAssignment>
 				<ServiceJourney id="FR:ServiceJourney:B42F1:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>B42F1</Value>
+						</KeyValue>
+					</keyList>
 					<dayTypes>
 						<DayTypeRef ref="FR:DayType:Week:">
 						</DayTypeRef>
@@ -190,6 +200,12 @@
 					</passingTimes>
 				</ServiceJourney>
 				<ServiceJourney id="FR:ServiceJourney:B42B1:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>B42B1</Value>
+						</KeyValue>
+					</keyList>
 					<dayTypes>
 						<DayTypeRef ref="FR:DayType:Week:">
 						</DayTypeRef>

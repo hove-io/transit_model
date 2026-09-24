@@ -74,6 +74,8 @@ impl<'a> LineExporter<'a> {
         let element_builder = Element::builder(ObjectType::Line.to_string())
             .attr("id", Exporter::generate_id(&line.id, ObjectType::Line))
             .attr("version", "any");
+        let element_builder = element_builder.append_all(Exporter::generate_key_list(&line.codes)); // must be first child (XSD order)
+
         // Errors should never happen; a line always have one trip with associated mode
         let netex_modes = self
             .line_modes

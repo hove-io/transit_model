@@ -24,7 +24,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use relational_types::IdxSet;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use tracing::warn;
 use typed_index_collection::Idx;
 
@@ -34,8 +34,6 @@ type JourneyPattern = VehicleJourney;
 
 pub struct OfferExporter<'a> {
     model: &'a Model,
-    // Precalculated coordinates for all stop points (EPSG:2154 as "x y" string, None if absent)
-    stop_coords: HashMap<Idx<StopPoint>, Option<String>>,
     // Precalculation of the Stop Points per Route
     route_points: BTreeMap<&'a str, Vec<Idx<StopPoint>>>,
     // Precalculation of the Netex Modes per Line
@@ -74,29 +72,10 @@ fn calculate_route_points(model: &Model) -> BTreeMap<&str, Vec<Idx<StopPoint>>> 
 // Publicly exposed methods
 impl<'a> OfferExporter<'a> {
     pub fn new(model: &'a Model) -> Result<Self> {
-        let converter = Exporter::get_coordinates_converter()?;
-        // Pre-compute EPSG:2154 coordinates for every stop point.
-        // Proj is used here and then dropped; it does not need to be stored.
-        let stop_coords = model
-            .stop_points
-            .iter()
-            .map(|(idx, sp)| {
-                let coord_str = if sp.coord == Coord::default() {
-                    None
-                } else {
-                    converter
-                        .convert(sp.coord)
-                        .ok()
-                        .map(|c| format!("{} {}", c.lon, c.lat))
-                };
-                (idx, coord_str)
-            })
-            .collect();
         let route_points = calculate_route_points(model);
         let line_modes = LineExporter::build_line_modes(model);
         Ok(OfferExporter {
             model,
-            stop_coords,
             route_points,
             line_modes,
         })
@@ -169,6 +148,7 @@ impl<'a> OfferExporter<'a> {
         let element_builder = Element::builder(ObjectType::Route.to_string())
             .attr("id", Exporter::generate_id(&route.id, ObjectType::Route))
             .attr("version", "any");
+        let element_builder = element_builder.append_all(Exporter::generate_key_list(&route.codes)); // must be first child (XSD order)
         let element_builder = element_builder.append(Self::generate_route_name(&route.name));
         let element_builder = element_builder.append(Self::generate_distance());
         let element_builder = element_builder.append(Self::generate_line_ref(&route.line_id));
@@ -392,6 +372,8 @@ impl<'a> OfferExporter<'a> {
                 Exporter::generate_id(&vehicle_journey.id, ObjectType::ServiceJourney),
             )
             .attr("version", "any");
+        let element_builder =
+            element_builder.append_all(Exporter::generate_key_list(&vehicle_journey.codes)); // must be first child (XSD order)
         let element_builder = if let Some(netex_mode) =
             NetexMode::from_physical_mode_id(&vehicle_journey.physical_mode_id)
                 .filter(|mode| Some(mode) != line_netex_mode.as_ref())
@@ -626,23 +608,20 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn generate_location(&self, stop_point_idx: Idx<StopPoint>) -> Option<Element> {
-        let coord_str = self.stop_coords.get(&stop_point_idx)?.as_deref()?;
         let coord = &self.model.stop_points[stop_point_idx].coord;
+        if *coord == Coord::default() {
+            return None;
+        }
         let longitude = Element::builder("Longitude")
             .append(Node::Text(coord.lon.to_string()))
             .build();
         let latitude = Element::builder("Latitude")
             .append(Node::Text(coord.lat.to_string()))
             .build();
-        let pos = Element::builder("gml:pos")
-            .attr("srsName", "EPSG:2154")
-            .append(Node::Text(coord_str.to_owned()))
-            .build();
         Some(
             Element::builder("Location")
                 .append(longitude)
                 .append(latitude)
-                .append(pos)
                 .build(),
         )
     }

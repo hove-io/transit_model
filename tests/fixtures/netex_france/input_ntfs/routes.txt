@@ -4,4 +4,4 @@ M1_R,Charles de Gaulle - Nation,M1,outbound
 B42,Gare de Lyon - Montparnasse,B42,forward
 B42_R,Montparnasse - Gare de Lyon,B42,backward
 RERA,RER A,RERA,inbound
-RERA_Bus_R,RER A,RERA,outbound
+RERA:Bus_R,RER A,RERA,outbound

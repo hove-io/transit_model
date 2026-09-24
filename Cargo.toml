@@ -32,10 +32,10 @@ members = [
 ]
 
 [features]
-xmllint = ["proj"]
+xmllint = ["netex"]
 gtfs = []
 parser = []
-proj = ["dep:proj", "dep:quick-xml", "dep:rayon"]
+netex = ["dep:quick-xml", "dep:rayon"]
 
 [dependencies]
 anyhow = "1"
@@ -47,7 +47,6 @@ iso4217 = "0.3"
 md5 = "0.8"
 num-traits = "0.2"
 pretty_assertions = "1"
-proj = { version = "0.31", optional = true } # libproj version used by 'proj' crate must be propagated to CI and makefile
 rayon = { version = "1", optional = true }
 # quick-xml is used for writing NeTEx files (see xml_builder module in netex_france)
 quick-xml = { version = "0.42", optional = true }
@@ -69,7 +68,7 @@ git-version = "0.3"
 [[test]]
 name = "write_netex_france"
 path = "tests/write_netex_france.rs"
-required-features = ["proj"]
+required-features = ["netex"]
 
 [dev-dependencies]
 approx = "0.5"
