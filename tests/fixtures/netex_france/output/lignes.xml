@@ -5,25 +5,6 @@
 	<dataObjects>
 		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE:" version="any">
 			<frames>
-				<ServiceFrame id="FR:ServiceFrame:TGN:" version="any">
-					<Network id="FR:Network:TGN:" version="any">
-						<keyList>
-							<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
-								<Key>source</Key>
-								<Value>TGN</Value>
-							</KeyValue>
-						</keyList>
-						<Name>The Great Network</Name>
-						<members>
-							<LineRef ref="FR:Line:B42:">
-							</LineRef>
-							<LineRef ref="FR:Line:M1:">
-							</LineRef>
-							<LineRef ref="FR:Line:RERA:">
-							</LineRef>
-						</members>
-					</Network>
-				</ServiceFrame>
 				<ServiceFrame id="FR:ServiceFrame:lines:" version="any">
 					<lines>
 						<Line id="FR:Line:B42:" version="any">
