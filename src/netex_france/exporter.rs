@@ -38,9 +38,10 @@ use tracing::info;
 use typed_index_collection::Idx;
 
 const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
-const NETEX_FRANCE_TRANSFERS_FILENAME: &str = "correspondances.xml";
 const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
+const NETEX_FRANCE_NETWORK_FILENAME: &str = "network.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "stop.xml";
+const NETEX_FRANCE_TRANSFERS_FILENAME: &str = "correspondances.xml";
 
 /// Type of NeTEx frame.
 #[derive(Debug, Eq, Hash, PartialEq)]
@@ -122,6 +123,7 @@ enum VersionType {
     Calendars,
     France,
     Lines,
+    Networks,
     Schedule,
     Stops,
     Transfers,
@@ -134,6 +136,7 @@ impl Display for VersionType {
             Calendars => write!(fmt, "CALENDRIER"),
             France => write!(fmt, "FRANCE"),
             Lines => write!(fmt, "LIGNE"),
+            Networks => write!(fmt, "RESEAU"),
             Schedule => write!(fmt, "HORAIRE"),
             Stops => write!(fmt, "ARRET"),
             Transfers => write!(fmt, "RESEAU"),
@@ -180,6 +183,7 @@ impl<'a> Exporter<'a> {
     {
         std::fs::create_dir_all(&path)?;
         self.write_lines(&path)?;
+        self.write_networks(&path)?;
         self.write_stops(&path)?;
         self.write_calendars(&path)?;
         if !self.model.transfers.is_empty() {
@@ -268,13 +272,9 @@ impl Exporter<'_> {
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_LINES_FILENAME);
         let file = BufWriter::new(File::create(&filepath)?);
-        let network_frames = self.create_networks_frames();
         let lines_frame = self.create_lines_frame()?;
         let companies_frame = self.create_companies_frame();
-        let frames = network_frames
-            .into_iter()
-            .chain(iter::once(lines_frame))
-            .chain(iter::once(companies_frame));
+        let frames = iter::once(lines_frame).chain(iter::once(companies_frame));
         let composite_frame_id = self.generate_frame_id(
             FrameType::Composite,
             &format!("NETEX_{}", VersionType::Lines),
@@ -285,25 +285,6 @@ impl Exporter<'_> {
         info!("Writing {:?}", &filepath);
         writer.write(&netex)?;
         Ok(())
-    }
-
-    // Returns a list of 'ServiceFrame' each containing a 'Network'
-    fn create_networks_frames(&self) -> Vec<Element> {
-        let network_exporter = NetworkExporter::new(self.model);
-        let network_elements = network_exporter.export();
-        let frames = network_elements
-            .into_iter()
-            .zip(self.model.networks.values())
-            .map(|(network_element, network)| {
-                let service_frame_id = self.generate_frame_id(FrameType::Service, &network.id);
-                Element::builder(FrameType::Service.to_string())
-                    .attr("id", service_frame_id)
-                    .attr("version", "any")
-                    .append(network_element)
-                    .build()
-            })
-            .collect();
-        frames
     }
 
     // Returns a 'ServiceFrame' containing a list of 'Line' in 'lines'
@@ -318,6 +299,36 @@ impl Exporter<'_> {
             .append(line_list)
             .build();
         Ok(frame)
+    }
+
+    fn write_networks<P>(&self, path: P) -> Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        let filepath = path.as_ref().join(NETEX_FRANCE_NETWORK_FILENAME);
+        let file = BufWriter::new(File::create(&filepath)?);
+        let networks_frame = self.create_networks_frame();
+        let netex = self.wrap_frame(networks_frame, VersionType::Networks);
+        let mut writer = ElementWriter::pretty(file);
+        info!("Writing {:?}", &filepath);
+        writer.write(&netex)?;
+        Ok(())
+    }
+
+    // Returns a 'GeneralFrame' containing all 'Network'
+    fn create_networks_frame(&self) -> Element {
+        let network_exporter = NetworkExporter::new(self.model);
+        let network_elements = network_exporter.export();
+        let members = Self::create_members(network_elements);
+        let general_frame_id = self.generate_frame_id(
+            FrameType::General,
+            &format!("NETEX_{}", VersionType::Networks),
+        );
+        Element::builder(FrameType::General.to_string())
+            .attr("id", general_frame_id)
+            .attr("version", "any")
+            .append(members)
+            .build()
     }
 
     // Returns a 'ServiceFrame' containing a list of 'Operator' in 'organisations'

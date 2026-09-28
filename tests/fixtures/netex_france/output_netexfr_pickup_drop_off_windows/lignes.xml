@@ -5,36 +5,6 @@
 	<dataObjects>
 		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE:" version="any">
 			<frames>
-				<ServiceFrame id="FR:ServiceFrame:MFDI:1071:" version="any">
-					<Network id="FR:Network:MFDI_1071:" version="any">
-						<keyList>
-							<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
-								<Key>source</Key>
-								<Value>FR1:Network:1071:LOC</Value>
-							</KeyValue>
-						</keyList>
-						<Name>Roissy Ouest</Name>
-						<members>
-							<LineRef ref="FR:Line:MFDI_C02060:">
-							</LineRef>
-						</members>
-					</Network>
-				</ServiceFrame>
-				<ServiceFrame id="FR:ServiceFrame:MFDI:Operator_100:" version="any">
-					<Network id="FR:Network:MFDI_Operator_100:" version="any">
-						<keyList>
-							<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
-								<Key>source</Key>
-								<Value>FR1:Operator:100:LOC</Value>
-							</KeyValue>
-						</keyList>
-						<Name>RATP</Name>
-						<members>
-							<LineRef ref="FR:Line:MFDI_C01376:">
-							</LineRef>
-						</members>
-					</Network>
-				</ServiceFrame>
 				<ServiceFrame id="FR:ServiceFrame:lines:" version="any">
 					<lines>
 						<Line id="FR:Line:MFDI_C01376:" version="any">

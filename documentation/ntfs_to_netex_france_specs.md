@@ -8,6 +8,7 @@ This document describes how a [NTFS] is transformed into a Netex profil France f
 
 The resulting ZIP archive is composed of:
 * a `stop.xml` file containing the description of all stops (Quays and StopPlaces)
+* a `network.xml` file containing the description of all networks
 * a `correspondances.xml` file containing all transfers between stops (if no
   `transfer`, the file is not created)
 * a `calendriers.xml` containing the services
@@ -280,6 +281,30 @@ Example:
 | SiteConnection/To/StopPlaceRef/@ref                 |               |                        | Id of the multimodal `StopPlace` that contains the end `Quay` of the connection. See [id formatting](#id-of-objects).                                                         |
 | SiteConnection/To/QuayRef/@ref                      | transfers.txt | to_stop_id             | Id of the end `Quay` of the connection. See [id formatting](#id-of-objects).                                                                                                  |
 
+## network.xml
+
+### Top level structure
+
+Example:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<GeneralFrame
+			id="FR:GeneralFrame:NETEX_RESEAU:"
+			version="any">
+	<members><!-- One node Network for each network of the dataset --></members>
+</GeneralFrame>
+```
+
+### Network
+
+| Netex field                    | NTFS file    | NTFS field   | Note                                |
+| ------------------------------ | ------------ | ------------ | ----------------------------------- |
+| Network/@id                    | networks.txt | network_id   | see [id formatting](#id-of-objects) |
+| Network/@version               |              |              | fixed value `any`                   |
+| Network/Name                   | networks.txt | network_name |                                     |
+| Network/members/LineRef[]/@ref | lines.txt    | line_id      | see [id formatting](#id-of-objects) |
+
 ## lignes.xml
 
 ### Top level structure
@@ -292,12 +317,6 @@ Example:
 			id="FR:CompositeFrame:NETEX_LIGNE:"
 			version="any">
 	<frames>
-		<!-- Repeat a ServiceFrame node for each Network -->
-		<ServiceFrame
-				id="FR:ServiceFrame:<network_id>:"
-				version="any">
-			<Network />
-		</ServiceFrame>
 		<ServiceFrame
 				id="FR:ServiceFrame:lines:"
 				version="any">
@@ -311,15 +330,6 @@ Example:
 	</frames>
 </CompositeFrame>
 ```
-
-### Network
-
-| Netex field                    | NTFS file    | NTFS field   | Note                                |
-| ------------------------------ | ------------ | ------------ | ----------------------------------- |
-| Network/@id                    | networks.txt | network_id   | see [id formatting](#id-of-objects) |
-| Network/@version               |              |              | fixed value `any`                   |
-| Network/Name                   | networks.txt | network_name |                                     |
-| Network/members/LineRef[]/@ref | lines.txt    | line_id      | see [id formatting](#id-of-objects) |
 
 ### Line
 
