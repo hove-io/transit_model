@@ -92,6 +92,9 @@ fn run(opt: Opt) -> Result<()> {
     collections.remove_route_points();
     collections
         .filter_by_vj_schedule_types(vec![VehicleJourneyScheduleType::ArrivalDepartureTimesOnly])?;
+    // Ignore locked objects: without this, an empty Line/StopArea/StopPoint could
+    // survive and produce an invalid element in the NeTEx export.
+    collections.object_locks = Default::default();
     let model = Model::new(collections)?;
 
     let mut config = transit_model::netex_france::WriteConfiguration::new(opt.participant)
