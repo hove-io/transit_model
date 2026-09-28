@@ -7,7 +7,7 @@ Version of the implementation: `1.0`
 This document describes how a [NTFS] is transformed into a Netex profil France feed in Navitia Transit Model.
 
 The resulting ZIP archive is composed of:
-* a `arrets.xml` file containing the description of all stops (Quays and StopPlaces)
+* a `stop.xml` file containing the description of all stops (Quays and StopPlaces)
 * a `correspondances.xml` file containing all transfers between stops (if no
   `transfer`, the file is not created)
 * a `calendriers.xml` containing the services
@@ -78,7 +78,7 @@ Example:
 </PublicationDelivery>
 ```
 
-## arrets.xml
+## stop.xml
 
 A `stop_area` is considered monomodal if all the trips having stop_times referencing any of its stop_points have a physical_mode of the same "Netex mode".
 

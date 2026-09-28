@@ -16,7 +16,7 @@ fn test_gtfs2netexfr() {
         .arg("2019-04-03T17:19:00Z")
         .assert()
         .success();
-    assert!(output_dir.path().join("arrets.xml").is_file());
+    assert!(output_dir.path().join("stop.xml").is_file());
 }
 
 #[test]
@@ -34,7 +34,7 @@ fn test_gtfs2netexfr_without_dir() {
         .arg("2019-04-03T17:19:00Z")
         .assert()
         .success();
-    assert!(unexisting_dir.join("arrets.xml").is_file());
+    assert!(unexisting_dir.join("stop.xml").is_file());
 }
 
 #[test]
@@ -71,5 +71,5 @@ fn test_gtfs2netexfr_create_not_zip_extension() {
         .arg("2019-04-03T17:19:00Z")
         .assert()
         .success();
-    assert!(netexfr_foobar.join("arrets.xml").is_file());
+    assert!(netexfr_foobar.join("stop.xml").is_file());
 }

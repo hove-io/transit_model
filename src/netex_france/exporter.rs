@@ -40,7 +40,7 @@ use typed_index_collection::Idx;
 const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
 const NETEX_FRANCE_TRANSFERS_FILENAME: &str = "correspondances.xml";
 const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
-const NETEX_FRANCE_STOPS_FILENAME: &str = "arrets.xml";
+const NETEX_FRANCE_STOPS_FILENAME: &str = "stop.xml";
 
 /// Type of NeTEx frame.
 #[derive(Debug, Eq, Hash, PartialEq)]
