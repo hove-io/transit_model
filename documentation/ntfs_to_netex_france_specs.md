@@ -9,9 +9,8 @@ This document describes how a [NTFS] is transformed into a Netex profil France f
 The resulting ZIP archive is composed of:
 * a `stop.xml` file containing the description of all stops (Quays and StopPlaces)
 * a `network.xml` file containing the description of all networks
-* a `correspondances.xml` file containing all transfers between stops (if no
-  `transfer`, the file is not created)
-* a `calendriers.xml` containing the services
+* a `resource.xml` file containing the operators, transfers between stops and
+  the services
 * a folder `reseau_<network_name>_<network_id_md5>` for each network containing
   (keep only alphanumerical characters for `network_name`)
   + a `offre_<line_code>_<line_id_md5>.xml` containing the description of
@@ -241,46 +240,6 @@ A `StopPlaceEntrance` node is created for each entrance/exit (stop with `locatio
 | StopPlaceEntrance/IsEntry           |           |                       | fixed value `true`                                                                                                          |
 | StopPlaceEntrance/IsExit            |           |                       | fixed value `true`                                                                                                          |
 
-## correspondances.xml
-Each connection between two stops in `transfers.txt` produces a `SiteConnection` element with the `From` and `To` nodes of the connection as well as a `WalkTransferDuration` node.
-All `SiteConnection` elements are grouped in a `members` element inside a `GeneralFrame`.
-
-### Top level structure
-Example:
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<GeneralFrame id="FR:GeneralFrame:NETEX_RESEAU:" version="any">
-	<members>
-		<!-- One SiteConnection for each transfer in transfers.txt -->
-		<SiteConnection>
-			<WalkTransferDuration>
-				<DefaultDuration><!-- Walking connecting time --></DefaultDuration>
-			</WalkTransferDuration>
-			<From>
-				<!-- Origin stop of the connection -->
-				<StopPlaceRef />
-				<QuayRef />
-			</From>
-			<To>
-				<!-- End stop of the connection -->
-				<StopPlaceRef />
-				<QuayRef />
-			</To>
-		</SiteConnection>
-	</members>
-</GeneralFrame>
-```
-
-| Netex field                                         | NTFS file     | NTFS field             | Note                                                                                                                                                                          |
-| --------------------------------------------------- | ------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SiteConnection/@id                                  |               |                        | The id is built from the concatenation (joined with `_`) of the origin and end `stop_id` used in the connection. For the rest of the id, use [id formatting](#id-of-objects). |
-| SiteConnection/@version                             |               |                        | Fixed value `any`.                                                                                                                                                            |
-| SiteConnection/WalkTransferDuration/DefaultDuration | transfers.txt | real_min_transfer_time | Time is given as a [duration](https://en.wikipedia.org/wiki/ISO_8601#Durations) (e.g. PT120S for a transfer time of 2 minutes).                                               |
-| SiteConnection/From/StopPlaceRef/@ref               |               |                        | Id of the multimodal `StopPlace` that contains the origin `Quay` of the connection. See [id formatting](#id-of-objects).                                                      |
-| SiteConnection/From/QuayRef/@ref                    | transfers.txt | from_stop_id           | Id of the origin `Quay` of the connection. See [id formatting](#id-of-objects).                                                                                               |
-| SiteConnection/To/StopPlaceRef/@ref                 |               |                        | Id of the multimodal `StopPlace` that contains the end `Quay` of the connection. See [id formatting](#id-of-objects).                                                         |
-| SiteConnection/To/QuayRef/@ref                      | transfers.txt | to_stop_id             | Id of the end `Quay` of the connection. See [id formatting](#id-of-objects).                                                                                                  |
-
 ## network.xml
 
 ### Top level structure
@@ -305,7 +264,7 @@ Example:
 | Network/Name                   | networks.txt | network_name |                                     |
 | Network/members/LineRef[]/@ref | lines.txt    | line_id      | see [id formatting](#id-of-objects) |
 
-## lignes.xml
+## resource.xml
 
 ### Top level structure
 
@@ -313,35 +272,48 @@ Example:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
-<CompositeFrame
-			id="FR:CompositeFrame:NETEX_LIGNE:"
-			version="any">
+<CompositeFrame id="FR:CompositeFrame:NETEX_FRANCE:" version="any">
 	<frames>
-		<ServiceFrame
-				id="FR:ServiceFrame:lines:"
-				version="any">
-			<lines><!-- One node Line for each Line of the dataset--></lines>
-		</ServiceFrame>
-		<ResourceFrame
-				id="FR:ResourceFrame:operators:"
-				version="any">
-				<organisations><!-- One node Operator for each company of the dataset --></organisations>
-		</ResourceFrame>
+		<GeneralFrame id="FR:GeneralFrame:NETEX_COMMUN:" version="any">
+			<members>
+				<!-- One node Operator for each company of the dataset -->
+				<Operator />
+				<!-- One SiteConnection for each transfer in transfers.txt -->
+				<SiteConnection>
+					<WalkTransferDuration>
+						<DefaultDuration><!-- Walking connecting time --></DefaultDuration>
+					</WalkTransferDuration>
+					<From>
+						<!-- Origin stop of the connection -->
+						<StopPlaceRef />
+						<QuayRef />
+					</From>
+					<To>
+						<!-- End stop of the connection -->
+						<StopPlaceRef />
+						<QuayRef />
+					</To>
+				</SiteConnection>
+			</members>
+		</GeneralFrame>
+		<GeneralFrame id="FR:GeneralFrame:NETEX_CALENDRIER:" version="any">
+			<ValidBetween>
+				<FromDate>2020-01-01T00:00:00Z</FromDate>
+				<ToDate>2020-12-30T23:59:59Z</ToDate>
+			</ValidBetween>
+			<members>
+				<!-- One DayType for each 'service_id' -->
+				<DayType />
+				<!-- One DayTypeAssignment for each 'service_id' to link
+				     a DayType and a UicOperatingPeriod -->
+				<DayTypeAssignment />
+				<!-- One UicOperatingPeriod for each 'service_id' -->
+				<UicOperatingPeriod />
+			</members>
+		</GeneralFrame>
 	</frames>
 </CompositeFrame>
 ```
-
-### Line
-
-| Netex field                  | NTFS file | NTFS field      | Note                                                                                                                                                                                                                                                             |
-| ---------------------------- | --------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Line/@id                     | lines.txt | line_id         | see [id formatting](#id-of-objects)                                                                                                                                                                                                                              |
-| Line/@version                |           |                 | fixed value `any`                                                                                                                                                                                                                                                |
-| Line/Name                    | lines.txt | line_name       |                                                                                                                                                                                                                                                                  |
-| Line/TransportMode           |           |                 | Refers to the mode with __highest priority__  of the trips associated to the line, see [NeTEx Transport Modes](#netex-transport-modes) and [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis) |
-| Line/PublicCode              | lines.txt | line_code       | If the code line_code is empty, this node is not created.                                                                                                                                                                                                        |
-| Line/Presentation/Colour     | lines.txt | line_color      | RGB hexadecimal, 6 characters. Omitted if empty. The `Presentation` node is created only if `line_color` or `line_text_color` is set.                                                                                                                            |
-| Line/Presentation/TextColour | lines.txt | line_text_color | RGB hexadecimal, 6 characters. Omitted if empty. The `Presentation` node is created only if `line_color` or `line_text_color` is set.                                                                                                                            |
 
 ### Operator
 
@@ -355,35 +327,24 @@ Example:
 | Operator/ContactDetails/Url   | companies.txt | company_url   |                                     |
 | Operator/OrganisationType     |               |               | fixed value `other`                 |
 
-## calendriers.xml
+### SiteConnection
+
+Each connection between two stops in `transfers.txt` produces a `SiteConnection` element with the `From` and `To` nodes of the connection as well as a `WalkTransferDuration` node.
+
+| Netex field                                         | NTFS file     | NTFS field             | Note                                                                                                                                                                          |
+| --------------------------------------------------- | ------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SiteConnection/@id                                  |               |                        | The id is built from the concatenation (joined with `_`) of the origin and end `stop_id` used in the connection. For the rest of the id, use [id formatting](#id-of-objects). |
+| SiteConnection/@version                             |               |                        | Fixed value `any`.                                                                                                                                                            |
+| SiteConnection/WalkTransferDuration/DefaultDuration | transfers.txt | real_min_transfer_time | Time is given as a [duration](https://en.wikipedia.org/wiki/ISO_8601#Durations) (e.g. PT120S for a transfer time of 2 minutes).                                               |
+| SiteConnection/From/StopPlaceRef/@ref               |               |                        | Id of the multimodal `StopPlace` that contains the origin `Quay` of the connection. See [id formatting](#id-of-objects).                                                      |
+| SiteConnection/From/QuayRef/@ref                    | transfers.txt | from_stop_id           | Id of the origin `Quay` of the connection. See [id formatting](#id-of-objects).                                                                                               |
+| SiteConnection/To/StopPlaceRef/@ref                 |               |                        | Id of the multimodal `StopPlace` that contains the end `Quay` of the connection. See [id formatting](#id-of-objects).                                                         |
+| SiteConnection/To/QuayRef/@ref                      | transfers.txt | to_stop_id             | Id of the end `Quay` of the connection. See [id formatting](#id-of-objects).                                                                                                  |
 
 Each `service_id` produce a set of three objects:
 * `DayType`
 * `DayTypeAssignment`
 * `UicOperatingPeriod`
-
-### Top level structure
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<GeneralFrame
-		id="FR:GeneralFrame:NETEX_CALENDRIER:"
-		version="any">
-	<ValidBetween>
-		<FromDate>2020-01-01T00:00:00Z</FromDate>
-		<ToDate>2020-12-30T23:59:59Z</ToDate>
-	</ValidBetween>
-	<members>
-		<!-- One DayType for each 'service_id' -->
-		<DayType />
-		<!-- One DayTypeAssignment for each 'service_id' to link
-		     a DayType and a UicOperatingPeriod -->
-		<DayTypeAssignment />
-		<!-- One UicOperatingPeriod for each 'service_id' -->
-		<UicOperatingPeriod />
-	</members>
-</GeneralFrame>
-```
 
 ### ValidBetween
 
@@ -415,7 +376,7 @@ The `DayType` must exist even if intentionally left empty (it is referred to by
 ### UicOperatingPeriod
 
 | Netex field                     | NTFS file    | NTFS field | Note                                                                      |
-| ------------------------------- | ------------ | ---------- | ------------------------------------------------------------------------- |
+| -------------------------------- | ------------ | ---------- | ------------------------------------------------------------------------- |
 | UicOperatingPeriod/@id          | calendar.txt | service_id | see [id formatting](#id-of-objects) with `OperatingPeriod` as object type |
 | UicOperatingPeriod/@version     |              |            | fixed value `any`                                                         |
 | UicOperatingPeriod/FromDate     | calendar.txt | start_date | use ISO-8601 date-time format, using `T00:00:00Z` for the time            |
@@ -426,6 +387,39 @@ The `DayType` must exist even if intentionally left empty (it is referred to by
 This is a string sequence of `0` (inactive days) and `1` (active days).  The
 sequence should contains as many `0/1` as there is days in the period.  The
 first character correspond to the first day of the period.
+
+## lignes.xml
+
+### Top level structure
+
+Example:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<CompositeFrame
+			id="FR:CompositeFrame:NETEX_LIGNE:"
+			version="any">
+	<frames>
+		<ServiceFrame
+				id="FR:ServiceFrame:lines:"
+				version="any">
+			<lines><!-- One node Line for each Line of the dataset--></lines>
+		</ServiceFrame>
+	</frames>
+</CompositeFrame>
+```
+
+### Line
+
+| Netex field                  | NTFS file | NTFS field      | Note                                                                                                                                                                                                                                                             |
+| ---------------------------- | --------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Line/@id                     | lines.txt | line_id         | see [id formatting](#id-of-objects)                                                                                                                                                                                                                              |
+| Line/@version                |           |                 | fixed value `any`                                                                                                                                                                                                                                                |
+| Line/Name                    | lines.txt | line_name       |                                                                                                                                                                                                                                                                  |
+| Line/TransportMode           |           |                 | Refers to the mode with __highest priority__  of the trips associated to the line, see [NeTEx Transport Modes](#netex-transport-modes) and [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis) |
+| Line/PublicCode              | lines.txt | line_code       | If the code line_code is empty, this node is not created.                                                                                                                                                                                                        |
+| Line/Presentation/Colour     | lines.txt | line_color      | RGB hexadecimal, 6 characters. Omitted if empty. The `Presentation` node is created only if `line_color` or `line_text_color` is set.                                                                                                                            |
+| Line/Presentation/TextColour | lines.txt | line_text_color | RGB hexadecimal, 6 characters. Omitted if empty. The `Presentation` node is created only if `line_color` or `line_text_color` is set.                                                                                                                            |
 
 ## offre_<line_code>_<line_id_md5>.xml
 
