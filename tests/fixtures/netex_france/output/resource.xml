@@ -22,6 +22,108 @@
 							</ContactDetails>
 							<OrganisationType>other</OrganisationType>
 						</Operator>
+						<SiteConnection id="FR:SiteConnection:GDLB_GDLM:" version="any">
+							<WalkTransferDuration>
+								<DefaultDuration>PT120S</DefaultDuration>
+							</WalkTransferDuration>
+							<From>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLB:">
+								</QuayRef>
+							</From>
+							<To>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLM:">
+								</QuayRef>
+							</To>
+						</SiteConnection>
+						<SiteConnection id="FR:SiteConnection:GDLM_GDLB:" version="any">
+							<WalkTransferDuration>
+								<DefaultDuration>PT120S</DefaultDuration>
+							</WalkTransferDuration>
+							<From>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLM:">
+								</QuayRef>
+							</From>
+							<To>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLB:">
+								</QuayRef>
+							</To>
+						</SiteConnection>
+						<SiteConnection id="FR:SiteConnection:GDLM_GDLR:" version="any">
+							<WalkTransferDuration>
+								<DefaultDuration>PT200S</DefaultDuration>
+							</WalkTransferDuration>
+							<From>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLM:">
+								</QuayRef>
+							</From>
+							<To>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLR:">
+								</QuayRef>
+							</To>
+						</SiteConnection>
+						<SiteConnection id="FR:SiteConnection:GDLR_GDLB:" version="any">
+							<WalkTransferDuration>
+								<DefaultDuration>PT600S</DefaultDuration>
+							</WalkTransferDuration>
+							<From>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLR:">
+								</QuayRef>
+							</From>
+							<To>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLB:">
+								</QuayRef>
+							</To>
+						</SiteConnection>
+						<SiteConnection id="FR:SiteConnection:GDLB_GDLR:" version="any">
+							<WalkTransferDuration>
+								<DefaultDuration>PT0S</DefaultDuration>
+							</WalkTransferDuration>
+							<From>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLB:">
+								</QuayRef>
+							</From>
+							<To>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLR:">
+								</QuayRef>
+							</To>
+						</SiteConnection>
+						<SiteConnection id="FR:SiteConnection:GDLR_GDLM:" version="any">
+							<WalkTransferDuration>
+								<DefaultDuration>PT180S</DefaultDuration>
+							</WalkTransferDuration>
+							<From>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLR:">
+								</QuayRef>
+							</From>
+							<To>
+								<StopPlaceRef ref="FR:StopPlace:GDL:">
+								</StopPlaceRef>
+								<QuayRef ref="FR:Quay:GDLM:">
+								</QuayRef>
+							</To>
+						</SiteConnection>
 					</members>
 				</GeneralFrame>
 				<GeneralFrame id="FR:GeneralFrame:NETEX_CALENDRIER:" version="any">

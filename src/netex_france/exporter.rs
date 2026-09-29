@@ -41,7 +41,6 @@ const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
 const NETEX_FRANCE_NETWORK_FILENAME: &str = "network.xml";
 const NETEX_FRANCE_RESOURCE_FILENAME: &str = "resource.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "stop.xml";
-const NETEX_FRANCE_TRANSFERS_FILENAME: &str = "correspondances.xml";
 
 /// Type of NeTEx frame.
 #[derive(Debug, Eq, Hash, PartialEq)]
@@ -124,7 +123,6 @@ enum VersionType {
     Networks,
     Schedule,
     Stops,
-    Transfers,
 }
 
 impl Display for VersionType {
@@ -138,7 +136,6 @@ impl Display for VersionType {
             Networks => write!(fmt, "RESEAU"),
             Schedule => write!(fmt, "HORAIRE"),
             Stops => write!(fmt, "ARRET"),
-            Transfers => write!(fmt, "RESEAU"),
         }
     }
 }
@@ -185,11 +182,6 @@ impl<'a> Exporter<'a> {
         self.write_networks(&path)?;
         self.write_stops(&path)?;
         self.write_resource(&path)?;
-        if !self.model.transfers.is_empty() {
-            self.write_transfers(&path)?;
-        } else {
-            info!("Skipping '{}'", NETEX_FRANCE_TRANSFERS_FILENAME);
-        }
         self.write_offers(&path)?;
         Ok(())
     }
@@ -329,20 +321,22 @@ impl Exporter<'_> {
             .build()
     }
 
-    // Returns a 'GeneralFrame' containing all 'Operator'
-    fn create_common_frame(&self) -> Element {
+    // Returns a 'GeneralFrame' containing all 'Operator' and 'SiteConnection'
+    fn create_common_frame(&self) -> Result<Element> {
         let company_exporter = CompanyExporter::new(self.model);
         let companies = company_exporter.export();
-        let members = Self::create_members(companies);
+        let transfer_exporter = TransferExporter::new(self.model);
+        let transfers = transfer_exporter.export()?;
+        let members = Self::create_members(companies.into_iter().chain(transfers));
         let general_frame_id = self.generate_frame_id(
             FrameType::General,
             &format!("NETEX_{}", VersionType::Common),
         );
-        Element::builder(FrameType::General.to_string())
+        Ok(Element::builder(FrameType::General.to_string())
             .attr("id", general_frame_id)
             .attr("version", "any")
             .append(members)
-            .build()
+            .build())
     }
 
     fn write_stops<P>(&self, path: P) -> Result<()>
@@ -380,7 +374,7 @@ impl Exporter<'_> {
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_RESOURCE_FILENAME);
         let file = BufWriter::new(File::create(&filepath)?);
-        let common_frame = self.create_common_frame();
+        let common_frame = self.create_common_frame()?;
         let calendars_frame = self.create_calendars_frame()?;
         let composite_frame_id = self.generate_frame_id(
             FrameType::Composite,
@@ -434,37 +428,6 @@ impl Exporter<'_> {
             .append(to_date)
             .build();
         Ok(valid_between)
-    }
-
-    fn write_transfers<P>(&self, path: P) -> Result<()>
-    where
-        P: AsRef<Path>,
-    {
-        let filepath = path.as_ref().join(NETEX_FRANCE_TRANSFERS_FILENAME);
-        let file = BufWriter::new(File::create(&filepath)?);
-        let transfers_frame = self.create_transfers_frame()?;
-        let netex = self.wrap_frame(transfers_frame, VersionType::Transfers);
-        let mut writer = ElementWriter::pretty(file);
-        info!("Writing {:?}", &filepath);
-        writer.write(&netex)?;
-        Ok(())
-    }
-
-    // Returns a 'GeneralFrame' containing all 'SiteConnection'
-    fn create_transfers_frame(&self) -> Result<Element> {
-        let transfer_exporter = TransferExporter::new(self.model);
-        let transfers = transfer_exporter.export()?;
-        let members = Self::create_members(transfers);
-        let general_frame_id = self.generate_frame_id(
-            FrameType::General,
-            &format!("NETEX_{}", VersionType::Transfers),
-        );
-        let frame = Element::builder(FrameType::General.to_string())
-            .attr("id", general_frame_id)
-            .attr("version", "any")
-            .append(members)
-            .build();
-        Ok(frame)
     }
 
     fn write_offers<P>(&self, path: P) -> Result<()>
