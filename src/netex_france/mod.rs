@@ -23,6 +23,8 @@ use exporter::Exporter;
 mod lines;
 use lines::LineExporter;
 use lines::LineModes;
+mod slug;
+use slug::slug;
 mod modes;
 use modes::NetexMode;
 mod networks;
