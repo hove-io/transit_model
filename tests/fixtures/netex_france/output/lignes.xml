@@ -46,25 +46,6 @@
 						</Line>
 					</lines>
 				</ServiceFrame>
-				<ResourceFrame id="FR:ResourceFrame:operators:" version="any">
-					<organisations>
-						<Operator id="FR:Operator:TGN:" version="any">
-							<keyList>
-								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
-									<Key>source</Key>
-									<Value>TGN</Value>
-								</KeyValue>
-							</keyList>
-							<Name>The Great Network</Name>
-							<ContactDetails>
-								<Email>the-great-network@tgn.zz</Email>
-								<Phone>0123456789</Phone>
-								<Url>https://www.the-great-network.zz</Url>
-							</ContactDetails>
-							<OrganisationType>other</OrganisationType>
-						</Operator>
-					</organisations>
-				</ResourceFrame>
 			</frames>
 		</CompositeFrame>
 	</dataObjects>

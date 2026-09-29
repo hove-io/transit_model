@@ -50,8 +50,6 @@ pub(in crate::netex_france) enum FrameType {
     Composite,
     /// Type of a `<GeneralFrame>`
     General,
-    /// Type of a `<ResourceFrame>`
-    Resource,
     /// Type of a `<ServiceFrame>`
     Service,
 }
@@ -62,7 +60,6 @@ impl Display for FrameType {
         match self {
             Composite => write!(f, "CompositeFrame"),
             General => write!(f, "GeneralFrame"),
-            Resource => write!(f, "ResourceFrame"),
             Service => write!(f, "ServiceFrame"),
         }
     }
@@ -121,6 +118,7 @@ impl Display for ObjectType {
 
 enum VersionType {
     Calendars,
+    Common,
     France,
     Lines,
     Networks,
@@ -134,6 +132,7 @@ impl Display for VersionType {
         use VersionType::*;
         match self {
             Calendars => write!(fmt, "CALENDRIER"),
+            Common => write!(fmt, "COMMUN"),
             France => write!(fmt, "FRANCE"),
             Lines => write!(fmt, "LIGNE"),
             Networks => write!(fmt, "RESEAU"),
@@ -273,13 +272,12 @@ impl Exporter<'_> {
         let filepath = path.as_ref().join(NETEX_FRANCE_LINES_FILENAME);
         let file = BufWriter::new(File::create(&filepath)?);
         let lines_frame = self.create_lines_frame()?;
-        let companies_frame = self.create_companies_frame();
-        let frames = iter::once(lines_frame).chain(iter::once(companies_frame));
         let composite_frame_id = self.generate_frame_id(
             FrameType::Composite,
             &format!("NETEX_{}", VersionType::Lines),
         );
-        let composite_frame = Self::create_composite_frame(composite_frame_id, frames);
+        let composite_frame =
+            Self::create_composite_frame(composite_frame_id, iter::once(lines_frame));
         let netex = self.wrap_frame(composite_frame, VersionType::Lines);
         let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
@@ -331,18 +329,19 @@ impl Exporter<'_> {
             .build()
     }
 
-    // Returns a 'ServiceFrame' containing a list of 'Operator' in 'organisations'
-    fn create_companies_frame(&self) -> Element {
+    // Returns a 'GeneralFrame' containing all 'Operator'
+    fn create_common_frame(&self) -> Element {
         let company_exporter = CompanyExporter::new(self.model);
         let companies = company_exporter.export();
-        let companies_list = Element::builder("organisations")
-            .append_all(companies)
-            .build();
-        let resource_frame_id = self.generate_frame_id(FrameType::Resource, "operators");
-        Element::builder(FrameType::Resource.to_string())
-            .attr("id", resource_frame_id)
+        let members = Self::create_members(companies);
+        let general_frame_id = self.generate_frame_id(
+            FrameType::General,
+            &format!("NETEX_{}", VersionType::Common),
+        );
+        Element::builder(FrameType::General.to_string())
+            .attr("id", general_frame_id)
             .attr("version", "any")
-            .append(companies_list)
+            .append(members)
             .build()
     }
 
@@ -381,13 +380,14 @@ impl Exporter<'_> {
     {
         let filepath = path.as_ref().join(NETEX_FRANCE_RESOURCE_FILENAME);
         let file = BufWriter::new(File::create(&filepath)?);
+        let common_frame = self.create_common_frame();
         let calendars_frame = self.create_calendars_frame()?;
         let composite_frame_id = self.generate_frame_id(
             FrameType::Composite,
             &format!("NETEX_{}", VersionType::France),
         );
         let composite_frame =
-            Self::create_composite_frame(composite_frame_id, iter::once(calendars_frame));
+            Self::create_composite_frame(composite_frame_id, [common_frame, calendars_frame]);
         let netex = self.wrap_frame(composite_frame, VersionType::France);
         let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
