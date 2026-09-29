@@ -24,7 +24,7 @@ mod lines;
 use lines::LineExporter;
 use lines::LineModes;
 mod slug;
-use slug::slug;
+use slug::{merge_adjacent_duplicate_segments, slug};
 mod modes;
 use modes::NetexMode;
 mod networks;

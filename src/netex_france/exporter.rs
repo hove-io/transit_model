@@ -13,6 +13,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>
 
 //! Exporter for Netex France profile
+use crate::netex_france::{merge_adjacent_duplicate_segments, slug};
 use crate::xml_builder::{Element, ElementWriter, Node};
 use crate::{
     model::Model,
@@ -20,7 +21,7 @@ use crate::{
         CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, OfferExporter,
         StopExporter, TransferExporter,
     },
-    objects::{Date, KeysValues, Line},
+    objects::{Date, KeysValues, Line, Network},
     Result,
 };
 use chrono::prelude::*;
@@ -142,6 +143,34 @@ impl Display for VersionType {
 
 fn only_alphanumeric(s: &str) -> String {
     s.chars().filter(|c| c.is_alphanumeric()).collect()
+}
+
+/// Build the `line_*.xml` filename for a line, per the NeTEx-fr naming rules.
+fn line_filename(network: &Network, line: &Line) -> String {
+    // A non-Latin network name collapses to an empty string in slug().
+    // network_id could fail the same way (rare), hence the final "x" fallback.
+    let net = [&network.name, &network.id]
+        .iter()
+        .map(|s| slug(s, 40))
+        .find(|s| !s.is_empty())
+        .unwrap_or_else(|| "x".to_string());
+    let code = line
+        .code
+        .as_deref()
+        .map(|c| slug(c, 20))
+        .unwrap_or_default();
+    let name = slug(&line.name, 60);
+
+    let mut segments = vec!["line".to_string(), net];
+    if !code.is_empty() {
+        segments.push(code.clone());
+    }
+    if !name.is_empty() && name != code {
+        segments.push(name);
+    }
+    let base = merge_adjacent_duplicate_segments(&segments.join("_"));
+
+    format!("{base}_{:x}.xml", md5::compute(line.id.as_bytes()))
 }
 
 /// Struct that can write an export of Netex France profile from a Model
@@ -503,5 +532,214 @@ impl Exporter<'_> {
             .append(members)
             .build();
         Ok(frame)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod line_filename {
+        use super::*;
+
+        #[test]
+        fn code_and_name_present_and_different() {
+            // SYTRAL (TCL network), line SYTNEX:102.
+            let network = Network {
+                id: "TCL".to_string(),
+                name: "TCL".to_string(),
+                ..Default::default()
+            };
+            let line = Line {
+                id: "SYTNEX:102".to_string(),
+                code: Some("102".to_string()),
+                name: "Croix-Rousse - Plateau de Saint Rambert".to_string(),
+                ..Default::default()
+            };
+            assert_eq!(
+                line_filename(&network, &line),
+                "line_tcl_102_croix_rousse_plateau_de_saint_rambert_f2a4eb5f0123026eb1e7ccde5ef6eba3.xml"
+            );
+        }
+
+        #[test]
+        fn name_identical_to_code_is_dropped() {
+            // IDFM, line IDFM:C01624: line_code and line_name are both "4244".
+            let network = Network {
+                id: "IDFM:1080".to_string(),
+                name: "Evry Centre Essonne".to_string(),
+                ..Default::default()
+            };
+            let line = Line {
+                id: "IDFM:C01624".to_string(),
+                code: Some("4244".to_string()),
+                name: "4244".to_string(),
+                ..Default::default()
+            };
+            assert_eq!(
+                line_filename(&network, &line),
+                "line_evry_centre_essonne_4244_e0cb7609cdbd9bf17f4d989dd34bbb94.xml"
+            );
+        }
+
+        #[test]
+        fn accented_network_and_line_names() {
+            // CH, network "Sihltal-Zürich-Uetliberg-Bahn", line OCH:91-10-A-j26-1.
+            let network = Network {
+                id: "OCH:78".to_string(),
+                name: "Sihltal-Zürich-Uetliberg-Bahn".to_string(),
+                ..Default::default()
+            };
+            let line = Line {
+                id: "OCH:91-10-A-j26-1".to_string(),
+                code: Some("S10".to_string()),
+                name: "Uetliberg - Zürich HB".to_string(),
+                ..Default::default()
+            };
+            assert_eq!(
+                line_filename(&network, &line),
+                "line_sihltal_zurich_uetliberg_bahn_s10_uetliberg_zurich_hb_ce505b256619e5d786e4ce00b75dd2e2.xml"
+            );
+        }
+
+        #[test]
+        fn non_latin_network_name_falls_back_to_network_id() {
+            // Israel dataset, network ISR:135 (Hebrew name), line ISR:5878.
+            // This is the real-world case cited in the working doc's own example.
+            let network = Network {
+                id: "ISR:135".to_string(),
+                name: "דרך אגד עוטף ירושלים".to_string(),
+                ..Default::default()
+            };
+            let line = Line {
+                id: "ISR:5878".to_string(),
+                code: Some("104".to_string()),
+                name: "ממילא/קריב-ירושלים<->שכונה י''א א-מבשרת ציון-1#".to_string(),
+                ..Default::default()
+            };
+            assert_eq!(
+                line_filename(&network, &line),
+                "line_isr_135_104_1_6e4e7238e072c1ad1280fda127906606.xml"
+            );
+        }
+
+        #[test]
+        fn no_code_is_omitted() {
+            let network = Network {
+                id: "RER".to_string(),
+                name: "RER".to_string(),
+                ..Default::default()
+            };
+            let line = Line {
+                id: "RATP:Line:A".to_string(),
+                code: None,
+                name: "RER A".to_string(),
+                ..Default::default()
+            };
+            assert_eq!(
+                line_filename(&network, &line),
+                "line_rer_a_cb68c30f80b859d8d82ff5cd44e8305e.xml"
+            );
+        }
+
+        #[test]
+        fn name_absent_with_code_present() {
+            let network = Network {
+                id: "RATP".to_string(),
+                name: "RATP".to_string(),
+                ..Default::default()
+            };
+            let line = Line {
+                id: "RATP:Line:14".to_string(),
+                code: Some("14".to_string()),
+                name: "".to_string(),
+                ..Default::default()
+            };
+            assert_eq!(
+                line_filename(&network, &line),
+                "line_ratp_14_9ad325ee67c40600689d1badac32e1d0.xml"
+            );
+        }
+
+        #[test]
+        fn neither_code_nor_name_exploitable() {
+            let network = Network {
+                id: "NET".to_string(),
+                name: "NET".to_string(),
+                ..Default::default()
+            };
+            let line = Line {
+                id: "X:4".to_string(),
+                code: None,
+                name: "אגד".to_string(),
+                ..Default::default()
+            };
+            assert_eq!(
+                line_filename(&network, &line),
+                "line_net_f4031a78bc723373381168309ce57a54.xml"
+            );
+        }
+
+        #[test]
+        fn network_name_and_id_both_empty_falls_back_to_x() {
+            let network = Network {
+                id: "".to_string(),
+                name: "".to_string(),
+                ..Default::default()
+            };
+            let line = Line {
+                id: "X:1".to_string(),
+                code: Some("14".to_string()),
+                name: "Ligne 14".to_string(),
+                ..Default::default()
+            };
+            assert_eq!(
+                line_filename(&network, &line),
+                "line_x_14_ligne_14_eb1a6accc61ea1d3c179abd0a367ed49.xml"
+            );
+        }
+
+        #[test]
+        fn network_and_code_segments_are_merged_when_identical() {
+            // network slug and line code slug are both "bus" —
+            // merge_adjacent_duplicate_segments collapses them into one.
+            let network = Network {
+                id: "Bus".to_string(),
+                name: "Bus".to_string(),
+                ..Default::default()
+            };
+            let line = Line {
+                id: "X:3".to_string(),
+                code: Some("Bus".to_string()),
+                name: "".to_string(),
+                ..Default::default()
+            };
+            assert_eq!(
+                line_filename(&network, &line),
+                "line_bus_33409777a8bb7c6347b2371c9bfdf918.xml"
+            );
+        }
+
+        #[test]
+        fn filename_never_exceeds_the_netex_fr_250_char_limit() {
+            // 250 characters is the NeTEx-fr profile's own limit on filenames,
+            // not an arbitrary choice here.
+            let very_long_text = "a".repeat(300);
+            let network = Network {
+                id: very_long_text.clone(),
+                name: very_long_text.clone(),
+                ..Default::default()
+            };
+            let line = Line {
+                id: "X".to_string(),
+                code: Some(very_long_text.clone()),
+                name: very_long_text,
+                ..Default::default()
+            };
+            assert!(
+                line_filename(&network, &line).len() <= 250,
+                "line_*.xml filenames must stay under the NeTEx-fr 250-character limit"
+            );
+        }
     }
 }

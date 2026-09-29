@@ -96,6 +96,18 @@ pub(in crate::netex_france) fn slug(text: &str, max_len: usize) -> String {
     truncate_at_segment_boundary(&text, max_len)
 }
 
+/// Merge consecutive identical `_`-separated segments into one.
+/// e.g. "line_ter_ter_ter_bourgogne" -> "line_ter_bourgogne".
+pub(in crate::netex_france) fn merge_adjacent_duplicate_segments(text: &str) -> String {
+    let mut segments: Vec<&str> = Vec::new();
+    for segment in text.split('_') {
+        if segments.last() != Some(&segment) {
+            segments.push(segment);
+        }
+    }
+    segments.join("_")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -223,6 +235,44 @@ mod tests {
             // No '_' in the first `max_len` characters: cut exactly at
             // max_len, even mid-word.
             assert_eq!(truncate_at_segment_boundary("helloworld", 5), "hello");
+        }
+    }
+
+    mod merge_adjacent_duplicate_segments {
+        use super::*;
+
+        #[test]
+        fn merges_consecutive_duplicates() {
+            assert_eq!(
+                merge_adjacent_duplicate_segments("line_ter_ter_ter_bourgogne_franche_comte"),
+                "line_ter_bourgogne_franche_comte"
+            );
+        }
+
+        #[test]
+        fn leaves_non_duplicated_segments_unchanged() {
+            assert_eq!(
+                merge_adjacent_duplicate_segments("line_rer_a"),
+                "line_rer_a"
+            );
+        }
+
+        #[test]
+        fn does_not_merge_non_adjacent_duplicates() {
+            assert_eq!(
+                merge_adjacent_duplicate_segments("line_ter_bourgogne_ter"),
+                "line_ter_bourgogne_ter"
+            );
+        }
+
+        #[test]
+        fn single_segment_is_unchanged() {
+            assert_eq!(merge_adjacent_duplicate_segments("line"), "line");
+        }
+
+        #[test]
+        fn empty_string_is_empty() {
+            assert_eq!(merge_adjacent_duplicate_segments(""), "");
         }
     }
 
