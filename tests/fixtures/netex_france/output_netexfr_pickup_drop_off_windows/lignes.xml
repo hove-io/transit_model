@@ -39,22 +39,6 @@
 						</Line>
 					</lines>
 				</ServiceFrame>
-				<ResourceFrame id="FR:ResourceFrame:operators:" version="any">
-					<organisations>
-						<Operator id="FR:Operator:MFDI_100:" version="any">
-							<Name>RATP</Name>
-							<ContactDetails>
-							</ContactDetails>
-							<OrganisationType>other</OrganisationType>
-						</Operator>
-						<Operator id="FR:Operator:MFDI_1028:" version="any">
-							<Name>Keolis Roissy Pays de France Ouest</Name>
-							<ContactDetails>
-							</ContactDetails>
-							<OrganisationType>other</OrganisationType>
-						</Operator>
-					</organisations>
-				</ResourceFrame>
 			</frames>
 		</CompositeFrame>
 	</dataObjects>

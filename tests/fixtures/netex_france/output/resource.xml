@@ -5,6 +5,25 @@
 	<dataObjects>
 		<CompositeFrame id="FR:CompositeFrame:NETEX_FRANCE:" version="any">
 			<frames>
+				<GeneralFrame id="FR:GeneralFrame:NETEX_COMMUN:" version="any">
+					<members>
+						<Operator id="FR:Operator:TGN:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>TGN</Value>
+								</KeyValue>
+							</keyList>
+							<Name>The Great Network</Name>
+							<ContactDetails>
+								<Email>the-great-network@tgn.zz</Email>
+								<Phone>0123456789</Phone>
+								<Url>https://www.the-great-network.zz</Url>
+							</ContactDetails>
+							<OrganisationType>other</OrganisationType>
+						</Operator>
+					</members>
+				</GeneralFrame>
 				<GeneralFrame id="FR:GeneralFrame:NETEX_CALENDRIER:" version="any">
 					<ValidBetween>
 						<FromDate>2018-01-01T00:00:00+00:00</FromDate>
