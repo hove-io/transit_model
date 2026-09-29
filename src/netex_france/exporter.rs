@@ -37,9 +37,9 @@ use std::{
 use tracing::info;
 use typed_index_collection::Idx;
 
-const NETEX_FRANCE_CALENDARS_FILENAME: &str = "calendriers.xml";
 const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
 const NETEX_FRANCE_NETWORK_FILENAME: &str = "network.xml";
+const NETEX_FRANCE_RESOURCE_FILENAME: &str = "resource.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "stop.xml";
 const NETEX_FRANCE_TRANSFERS_FILENAME: &str = "correspondances.xml";
 
@@ -185,7 +185,7 @@ impl<'a> Exporter<'a> {
         self.write_lines(&path)?;
         self.write_networks(&path)?;
         self.write_stops(&path)?;
-        self.write_calendars(&path)?;
+        self.write_resource(&path)?;
         if !self.model.transfers.is_empty() {
             self.write_transfers(&path)?;
         } else {
@@ -375,14 +375,20 @@ impl Exporter<'_> {
         Ok(frame)
     }
 
-    fn write_calendars<P>(&self, path: P) -> Result<()>
+    fn write_resource<P>(&self, path: P) -> Result<()>
     where
         P: AsRef<Path>,
     {
-        let filepath = path.as_ref().join(NETEX_FRANCE_CALENDARS_FILENAME);
+        let filepath = path.as_ref().join(NETEX_FRANCE_RESOURCE_FILENAME);
         let file = BufWriter::new(File::create(&filepath)?);
         let calendars_frame = self.create_calendars_frame()?;
-        let netex = self.wrap_frame(calendars_frame, VersionType::Calendars);
+        let composite_frame_id = self.generate_frame_id(
+            FrameType::Composite,
+            &format!("NETEX_{}", VersionType::France),
+        );
+        let composite_frame =
+            Self::create_composite_frame(composite_frame_id, iter::once(calendars_frame));
+        let netex = self.wrap_frame(composite_frame, VersionType::France);
         let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
         writer.write(&netex)?;
