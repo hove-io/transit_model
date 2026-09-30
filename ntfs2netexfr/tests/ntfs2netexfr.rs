@@ -92,7 +92,7 @@ fn test_ntfs2netexfr_with_pickup_drop_off_windows_stoptimes() {
         .success();
     compare_output_dir_with_expected(
         output_dir,
-        Some(vec!["lignes.xml"]),
+        Some(vec!["line_ratp_6_4b44c894b551a948c5e204502e5324d0.xml", "line_roissy_ouest_fileo_rs_fileo_roissy_sud_villeparisis_et_mitry_sur_reservation_587523ac2843e3b49df5668a6833f40d.xml"]),
         "../tests/fixtures/netex_france/output_netexfr_pickup_drop_off_windows",
     );
 }

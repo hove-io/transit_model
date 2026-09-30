@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PublicationDelivery version="1.3:FR-NETEX_FRANCE-2.4" xmlns="http://www.netex.org.uk/netex">
+	<PublicationTimestamp>2024-04-03T17:19:00+00:00</PublicationTimestamp>
+	<ParticipantRef>Participant</ParticipantRef>
+	<dataObjects>
+		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE:" version="any">
+			<frames>
+				<GeneralFrame id="FR:GeneralFrame:NETEX_LIGNE_STRUCTURE:" version="any">
+					<members>
+						<Line id="FR:Line:MFDI_C02060:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>FR1:Line:C02060:</Value>
+								</KeyValue>
+							</keyList>
+							<Name>Filéo Roissy Sud - Villeparisis et Mitry (sur réservation)</Name>
+							<TransportMode>bus</TransportMode>
+							<PublicCode>Filéo RS</PublicCode>
+							<Presentation>
+								<Colour>4890CD</Colour>
+								<TextColour>FFFFFF</TextColour>
+							</Presentation>
+						</Line>
+						<Route id="FR:Route:MFDI_stif_local-153359-C02060-3417:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>stif:Route:local-153359-C02060-3417:LOC</Value>
+								</KeyValue>
+							</keyList>
+							<Name>Gare de Roissypole Aéroport CDG 1</Name>
+							<Distance>0</Distance>
+							<LineRef ref="FR:Line:MFDI_C02060:">
+							</LineRef>
+							<DirectionType>outbound</DirectionType>
+							<pointsInSequence>
+								<PointOnRoute id="FR:PointOnRoute:MFDI_stif_local-153359-C02060-3417_1:" order="1" version="any">
+									<RoutePointRef ref="FR:RoutePoint:MFDI_stif_local-153359-C02060-3417_1:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:MFDI_stif_local-153359-C02060-3417_2:" order="2" version="any">
+									<RoutePointRef ref="FR:RoutePoint:MFDI_stif_local-153359-C02060-3417_2:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:MFDI_stif_local-153359-C02060-3417_3:" order="3" version="any">
+									<RoutePointRef ref="FR:RoutePoint:MFDI_stif_local-153359-C02060-3417_3:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:MFDI_stif_local-153359-C02060-3417_4:" order="4" version="any">
+									<RoutePointRef ref="FR:RoutePoint:MFDI_stif_local-153359-C02060-3417_4:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:MFDI_stif_local-153359-C02060-3417_5:" order="5" version="any">
+									<RoutePointRef ref="FR:RoutePoint:MFDI_stif_local-153359-C02060-3417_5:">
+									</RoutePointRef>
+								</PointOnRoute>
+							</pointsInSequence>
+						</Route>
+						<RoutePoint id="FR:RoutePoint:MFDI_stif_local-153359-C02060-3417_1:" version="any">
+							<Location>
+								<Longitude>2.577391101137773</Longitude>
+								<Latitude>48.961194121418</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:MFDI_stif_local-153359-C02060-3417_2:" version="any">
+							<Location>
+								<Longitude>2.561581492140883</Longitude>
+								<Latitude>48.947693512717194</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:MFDI_stif_local-153359-C02060-3417_3:" version="any">
+							<Location>
+								<Longitude>2.524710804326184</Longitude>
+								<Latitude>48.96497157469924</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:MFDI_stif_local-153359-C02060-3417_4:" version="any">
+							<Location>
+								<Longitude>2.526990016633599</Longitude>
+								<Latitude>48.99817129747993</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:MFDI_stif_local-153359-C02060-3417_5:" version="any">
+							<Location>
+								<Longitude>2.559069276593061</Longitude>
+								<Latitude>49.010290004685544</Latitude>
+							</Location>
+						</RoutePoint>
+						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:MFDI_KRO6_153358-C02060-680-260:" version="any">
+							<Distance>0</Distance>
+							<RouteRef ref="FR:Route:MFDI_stif_local-153359-C02060-3417:">
+							</RouteRef>
+							<pointsInSequence>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:MFDI_KRO6_153358-C02060-680-260_0:" order="1" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_0:">
+									</ScheduledStopPointRef>
+									<ForAlighting>false</ForAlighting>
+									<ForBoarding>false</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:MFDI_KRO6_153358-C02060-680-260_1:" order="2" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_1:">
+									</ScheduledStopPointRef>
+									<ForAlighting>false</ForAlighting>
+									<ForBoarding>false</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:MFDI_KRO6_153358-C02060-680-260_17:" order="18" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_17:">
+									</ScheduledStopPointRef>
+									<ForAlighting>false</ForAlighting>
+									<ForBoarding>false</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:MFDI_KRO6_153358-C02060-680-260_32:" order="33" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_32:">
+									</ScheduledStopPointRef>
+									<ForAlighting>false</ForAlighting>
+									<ForBoarding>false</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:MFDI_KRO6_153358-C02060-680-260_37:" order="38" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_37:">
+									</ScheduledStopPointRef>
+									<ForAlighting>false</ForAlighting>
+									<ForBoarding>false</ForBoarding>
+								</StopPointInJourneyPattern>
+							</pointsInSequence>
+						</ServiceJourneyPattern>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_0:" version="any">
+							<Location>
+								<Longitude>2.577391101137773</Longitude>
+								<Latitude>48.961194121418</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_1:" version="any">
+							<Location>
+								<Longitude>2.561581492140883</Longitude>
+								<Latitude>48.947693512717194</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_17:" version="any">
+							<Location>
+								<Longitude>2.524710804326184</Longitude>
+								<Latitude>48.96497157469924</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_32:" version="any">
+							<Location>
+								<Longitude>2.526990016633599</Longitude>
+								<Latitude>48.99817129747993</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_37:" version="any">
+							<Location>
+								<Longitude>2.559069276593061</Longitude>
+								<Latitude>49.010290004685544</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_KRO6_153358-C02060-680-260_0:" order="1" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_0:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:MFDI_480959_bus:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:MFDI_477725:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_KRO6_153358-C02060-680-260_1:" order="2" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_1:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:MFDI_73486_bus:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:MFDI_38175:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_KRO6_153358-C02060-680-260_17:" order="18" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_17:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:MFDI_73556_bus:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:MFDI_18995:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_KRO6_153358-C02060-680-260_32:" order="33" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_32:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:MFDI_73591_bus:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:MFDI_41403:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_KRO6_153358-C02060-680-260_37:" order="38" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_37:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:MFDI_73596_bus:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:MFDI_426813:">
+							</QuayRef>
+						</PassengerStopAssignment>
+					</members>
+				</GeneralFrame>
+				<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE:" version="any">
+					<members>
+						<ServiceJourney id="FR:ServiceJourney:MFDI_KRO6_153358-C02060-680-260:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>KRO6:ServiceJourney:153358-C02060-680-260:LOC</Value>
+								</KeyValue>
+							</keyList>
+							<dayTypes>
+								<DayTypeRef ref="FR:DayType:MFDI_1000:">
+								</DayTypeRef>
+							</dayTypes>
+							<JourneyPatternRef ref="FR:ServiceJourneyPattern:MFDI_KRO6_153358-C02060-680-260:">
+							</JourneyPatternRef>
+							<OperatorRef ref="FR:Operator:MFDI_1028:">
+							</OperatorRef>
+							<passingTimes>
+								<TimetabledPassingTime>
+									<ArrivalTime>02:39:00</ArrivalTime>
+									<ArrivalDayOffset>1</ArrivalDayOffset>
+									<DepartureTime>02:39:00</DepartureTime>
+									<DepartureDayOffset>1</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>02:40:00</ArrivalTime>
+									<ArrivalDayOffset>1</ArrivalDayOffset>
+									<DepartureTime>02:40:00</DepartureTime>
+									<DepartureDayOffset>1</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>02:52:00</ArrivalTime>
+									<ArrivalDayOffset>1</ArrivalDayOffset>
+									<DepartureTime>02:52:00</DepartureTime>
+									<DepartureDayOffset>1</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>03:06:00</ArrivalTime>
+									<ArrivalDayOffset>1</ArrivalDayOffset>
+									<DepartureTime>03:06:00</DepartureTime>
+									<DepartureDayOffset>1</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>03:15:00</ArrivalTime>
+									<ArrivalDayOffset>1</ArrivalDayOffset>
+									<DepartureTime>03:15:00</DepartureTime>
+									<DepartureDayOffset>1</DepartureDayOffset>
+								</TimetabledPassingTime>
+							</passingTimes>
+						</ServiceJourney>
+					</members>
+				</GeneralFrame>
+			</frames>
+		</CompositeFrame>
+	</dataObjects>
+</PublicationDelivery>

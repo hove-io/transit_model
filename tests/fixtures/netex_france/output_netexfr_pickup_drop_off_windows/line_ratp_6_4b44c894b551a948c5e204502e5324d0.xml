@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PublicationDelivery version="1.3:FR-NETEX_FRANCE-2.4" xmlns="http://www.netex.org.uk/netex">
+	<PublicationTimestamp>2024-04-03T17:19:00+00:00</PublicationTimestamp>
+	<ParticipantRef>Participant</ParticipantRef>
+	<dataObjects>
+		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE:" version="any">
+			<frames>
+				<GeneralFrame id="FR:GeneralFrame:NETEX_LIGNE_STRUCTURE:" version="any">
+					<members>
+						<Line id="FR:Line:MFDI_C01376:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>FR1:Line:C01376:</Value>
+								</KeyValue>
+							</keyList>
+							<Name>6</Name>
+							<TransportMode>metro</TransportMode>
+							<PublicCode>6</PublicCode>
+							<Presentation>
+								<Colour>6ECA97</Colour>
+								<TextColour>000000</TextColour>
+							</Presentation>
+						</Line>
+						<Route id="FR:Route:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>RATP:Route:107494-C01376-ITI_IDFM_C01376_A_-1009412783:LOC</Value>
+								</KeyValue>
+							</keyList>
+							<Name>Charles de Gaulle - Etoile</Name>
+							<Distance>0</Distance>
+							<LineRef ref="FR:Line:MFDI_C01376:">
+							</LineRef>
+							<DirectionType>outbound</DirectionType>
+							<pointsInSequence>
+								<PointOnRoute id="FR:PointOnRoute:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_1:" order="1" version="any">
+									<RoutePointRef ref="FR:RoutePoint:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_1:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_2:" order="2" version="any">
+									<RoutePointRef ref="FR:RoutePoint:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_2:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_3:" order="3" version="any">
+									<RoutePointRef ref="FR:RoutePoint:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_3:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_4:" order="4" version="any">
+									<RoutePointRef ref="FR:RoutePoint:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_4:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_5:" order="5" version="any">
+									<RoutePointRef ref="FR:RoutePoint:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_5:">
+									</RoutePointRef>
+								</PointOnRoute>
+							</pointsInSequence>
+						</Route>
+						<RoutePoint id="FR:RoutePoint:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_1:" version="any">
+							<Location>
+								<Longitude>2.3958598043279085</Longitude>
+								<Latitude>48.84789550545761</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_2:" version="any">
+							<Location>
+								<Longitude>2.401248269453829</Longitude>
+								<Latitude>48.84501767720269</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_3:" version="any">
+							<Location>
+								<Longitude>2.3434974927179884</Longitude>
+								<Latitude>48.831170235245835</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_4:" version="any">
+							<Location>
+								<Longitude>2.298957096977008</Longitude>
+								<Latitude>48.848765448122315</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783_5:" version="any">
+							<Location>
+								<Longitude>2.2947520493673434</Longitude>
+								<Latitude>48.87371127132366</Latitude>
+							</Location>
+						</RoutePoint>
+						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116:" version="any">
+							<Distance>0</Distance>
+							<RouteRef ref="FR:Route:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783:">
+							</RouteRef>
+							<pointsInSequence>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:" order="1" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:">
+									</ScheduledStopPointRef>
+									<ForAlighting>false</ForAlighting>
+									<ForBoarding>true</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_1:" order="2" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_1:">
+									</ScheduledStopPointRef>
+									<ForAlighting>true</ForAlighting>
+									<ForBoarding>true</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_11:" order="12" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_11:">
+									</ScheduledStopPointRef>
+									<ForAlighting>true</ForAlighting>
+									<ForBoarding>true</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_20:" order="21" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_20:">
+									</ScheduledStopPointRef>
+									<ForAlighting>true</ForAlighting>
+									<ForBoarding>true</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_27:" order="28" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_27:">
+									</ScheduledStopPointRef>
+									<ForAlighting>true</ForAlighting>
+									<ForBoarding>false</ForBoarding>
+								</StopPointInJourneyPattern>
+							</pointsInSequence>
+						</ServiceJourneyPattern>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:" version="any">
+							<Location>
+								<Longitude>2.3958598043279085</Longitude>
+								<Latitude>48.84789550545761</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_1:" version="any">
+							<Location>
+								<Longitude>2.401248269453829</Longitude>
+								<Latitude>48.84501767720269</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_11:" version="any">
+							<Location>
+								<Longitude>2.3434974927179884</Longitude>
+								<Latitude>48.831170235245835</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_20:" version="any">
+							<Location>
+								<Longitude>2.298957096977008</Longitude>
+								<Latitude>48.848765448122315</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_27:" version="any">
+							<Location>
+								<Longitude>2.2947520493673434</Longitude>
+								<Latitude>48.87371127132366</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:" order="1" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:MFDI_71673_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:MFDI_22073:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_1:" order="2" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_1:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:MFDI_71639_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:MFDI_22167:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_11:" order="12" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_11:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:MFDI_71026_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:MFDI_22173:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_20:" order="21" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_20:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:MFDI_71199_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:MFDI_463194:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_27:" order="28" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_27:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:MFDI_71347_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:MFDI_463042:">
+							</QuayRef>
+						</PassengerStopAssignment>
+					</members>
+				</GeneralFrame>
+				<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE:" version="any">
+					<members>
+						<ServiceJourney id="FR:ServiceJourney:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>RATP:ServiceJourney:153912-C01376-COU_RATP_5086613_2991428_116:LOC</Value>
+								</KeyValue>
+							</keyList>
+							<dayTypes>
+								<DayTypeRef ref="FR:DayType:MFDI_1:">
+								</DayTypeRef>
+							</dayTypes>
+							<JourneyPatternRef ref="FR:ServiceJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116:">
+							</JourneyPatternRef>
+							<OperatorRef ref="FR:Operator:MFDI_100:">
+							</OperatorRef>
+							<passingTimes>
+								<TimetabledPassingTime>
+									<ArrivalTime>10:30:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>10:30:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>10:31:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>10:31:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>10:43:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>10:43:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>10:54:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>10:54:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>11:03:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>11:03:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+							</passingTimes>
+						</ServiceJourney>
+					</members>
+				</GeneralFrame>
+			</frames>
+		</CompositeFrame>
+	</dataObjects>
+</PublicationDelivery>
