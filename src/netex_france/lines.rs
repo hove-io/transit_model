@@ -16,6 +16,7 @@ use crate::xml_builder::{Element, Node};
 use crate::{
     netex_france::{
         exporter::{Exporter, ObjectType},
+        offer::{Offer, OfferExporter},
         NetexMode,
     },
     objects::Line,
@@ -23,6 +24,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use std::collections::{BTreeSet, HashMap};
+use typed_index_collection::Idx;
 
 // `line_modes` is storing all the Netex modes for a Line.
 // A line can have multiple associated modes in NTM model (through trips).
@@ -31,20 +33,18 @@ pub type LineModes<'a> = HashMap<&'a str, BTreeSet<NetexMode>>;
 pub struct LineExporter<'a> {
     model: &'a Model,
     line_modes: LineModes<'a>,
+    offer_exporter: OfferExporter<'a>,
 }
 
-// Publicly exposed methods
 impl<'a> LineExporter<'a> {
-    pub fn new(model: &'a Model) -> Self {
+    pub fn new(model: &'a Model) -> Result<Self> {
         let line_modes = Self::build_line_modes(model);
-        LineExporter { model, line_modes }
-    }
-    pub fn export(&self) -> Result<Vec<Element>> {
-        self.model
-            .lines
-            .values()
-            .map(|line| self.export_line(line))
-            .collect()
+        let offer_exporter = OfferExporter::new(model)?;
+        Ok(LineExporter {
+            model,
+            line_modes,
+            offer_exporter,
+        })
     }
     pub fn build_line_modes(model: &'a Model) -> LineModes<'a> {
         model
@@ -66,10 +66,23 @@ impl<'a> LineExporter<'a> {
                 line_modes
             })
     }
-}
 
-// Internal methods
-impl<'a> LineExporter<'a> {
+    /// Returns everything for this line, split per the target `line_*.xml`
+    /// frames: `Line` + Route/RoutePoint/... in `structure`,
+    /// ServiceJourney in `schedule`.
+    pub fn export(&self, line_idx: Idx<Line>) -> Result<Offer> {
+        let line = &self.model.lines[line_idx];
+        let mut structure = vec![self.export_line(line)?];
+        let offer = self
+            .offer_exporter
+            .export_offer(line_idx, &self.line_modes)?;
+        structure.extend(offer.structure);
+        Ok(Offer {
+            structure,
+            schedule: offer.schedule,
+        })
+    }
+
     fn export_line(&self, line: &'a Line) -> Result<Element> {
         let element_builder = Element::builder(ObjectType::Line.to_string())
             .attr("id", Exporter::generate_id(&line.id, ObjectType::Line))

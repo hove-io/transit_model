@@ -30,7 +30,6 @@ use modes::NetexMode;
 mod networks;
 use networks::NetworkExporter;
 mod offer;
-use offer::OfferExporter;
 mod route_points;
 use route_points::build_route_points;
 mod stops;

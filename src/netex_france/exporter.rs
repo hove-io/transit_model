@@ -18,27 +18,25 @@ use crate::xml_builder::{Element, ElementWriter, Node};
 use crate::{
     model::Model,
     netex_france::{
-        CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, OfferExporter,
-        StopExporter, TransferExporter,
+        CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, StopExporter,
+        TransferExporter,
     },
     objects::{Date, KeysValues, Line, Network},
     Result,
 };
+use anyhow::anyhow;
 use chrono::prelude::*;
 use rayon::prelude::*;
-use relational_types::IdxSet;
 use std::{
     convert::AsRef,
     fmt::{self, Display, Formatter},
-    fs::{self, File},
+    fs::File,
     io::BufWriter,
-    iter,
-    path::{Path, PathBuf},
+    path::Path,
 };
 use tracing::info;
-use typed_index_collection::Idx;
+use typed_index_collection::{CollectionWithId, Idx};
 
-const NETEX_FRANCE_LINES_FILENAME: &str = "lignes.xml";
 const NETEX_FRANCE_NETWORK_FILENAME: &str = "network.xml";
 const NETEX_FRANCE_RESOURCE_FILENAME: &str = "resource.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "stop.xml";
@@ -50,8 +48,6 @@ pub(in crate::netex_france) enum FrameType {
     Composite,
     /// Type of a `<GeneralFrame>`
     General,
-    /// Type of a `<ServiceFrame>`
-    Service,
 }
 
 impl Display for FrameType {
@@ -60,7 +56,6 @@ impl Display for FrameType {
         match self {
             Composite => write!(f, "CompositeFrame"),
             General => write!(f, "GeneralFrame"),
-            Service => write!(f, "ServiceFrame"),
         }
     }
 }
@@ -141,12 +136,15 @@ impl Display for VersionType {
     }
 }
 
-fn only_alphanumeric(s: &str) -> String {
-    s.chars().filter(|c| c.is_alphanumeric()).collect()
-}
-
 /// Build the `line_*.xml` filename for a line, per the NeTEx-fr naming rules.
-fn line_filename(network: &Network, line: &Line) -> String {
+fn line_filename(line: &Line, networks: &CollectionWithId<Network>) -> Result<String> {
+    let network = networks.get(&line.network_id).ok_or_else(|| {
+        anyhow!(
+            "Line '{}' references unknown network '{}'",
+            line.id,
+            line.network_id
+        )
+    })?;
     // A non-Latin network name collapses to an empty string in slug().
     // network_id could fail the same way (rare), hence the final "x" fallback.
     let net = [&network.name, &network.id]
@@ -170,7 +168,7 @@ fn line_filename(network: &Network, line: &Line) -> String {
     }
     let base = merge_adjacent_duplicate_segments(&segments.join("_"));
 
-    format!("{base}_{:x}.xml", md5::compute(line.id.as_bytes()))
+    Ok(format!("{base}_{:x}.xml", md5::compute(line.id.as_bytes())))
 }
 
 /// Struct that can write an export of Netex France profile from a Model
@@ -207,11 +205,10 @@ impl<'a> Exporter<'a> {
         P: AsRef<Path>,
     {
         std::fs::create_dir_all(&path)?;
-        self.write_lines(&path)?;
         self.write_networks(&path)?;
         self.write_stops(&path)?;
         self.write_resource(&path)?;
-        self.write_offers(&path)?;
+        self.write_lines(&path)?;
         Ok(())
     }
 
@@ -278,46 +275,12 @@ impl Exporter<'_> {
             .build()
     }
 
-    pub(crate) fn create_members<I, T>(members: I) -> Element
+    pub(in crate::netex_france) fn create_members<I, T>(members: I) -> Element
     where
         I: IntoIterator<Item = T>,
         T: Into<Node>,
     {
         Element::builder("members").append_all(members).build()
-    }
-
-    fn write_lines<P>(&self, path: P) -> Result<()>
-    where
-        P: AsRef<Path>,
-    {
-        let filepath = path.as_ref().join(NETEX_FRANCE_LINES_FILENAME);
-        let file = BufWriter::new(File::create(&filepath)?);
-        let lines_frame = self.create_lines_frame()?;
-        let composite_frame_id = self.generate_frame_id(
-            FrameType::Composite,
-            &format!("NETEX_{}", VersionType::Lines),
-        );
-        let composite_frame =
-            Self::create_composite_frame(composite_frame_id, iter::once(lines_frame));
-        let netex = self.wrap_frame(composite_frame, VersionType::Lines);
-        let mut writer = ElementWriter::pretty(file);
-        info!("Writing {:?}", &filepath);
-        writer.write(&netex)?;
-        Ok(())
-    }
-
-    // Returns a 'ServiceFrame' containing a list of 'Line' in 'lines'
-    fn create_lines_frame(&self) -> Result<Element> {
-        let line_exporter = LineExporter::new(self.model);
-        let lines = line_exporter.export()?;
-        let line_list = Element::builder("lines").append_all(lines).build();
-        let service_frame_id = self.generate_frame_id(FrameType::Service, "lines");
-        let frame = Element::builder(FrameType::Service.to_string())
-            .attr("id", service_frame_id)
-            .attr("version", "any")
-            .append(line_list)
-            .build();
-        Ok(frame)
     }
 
     fn write_networks<P>(&self, path: P) -> Result<()>
@@ -459,79 +422,69 @@ impl Exporter<'_> {
         Ok(valid_between)
     }
 
-    fn write_offers<P>(&self, path: P) -> Result<()>
+    fn write_lines<P>(&self, path: P) -> Result<()>
     where
         P: AsRef<Path>,
     {
-        let offer_exporter = OfferExporter::new(self.model)?;
-
-        // Phase 1 (sequential): create network directories and collect all work items.
-        let work_items: Vec<(PathBuf, Idx<Line>)> = self.model.networks.values().try_fold(
-            Vec::new(),
-            |mut acc, network| -> Result<Vec<(PathBuf, Idx<Line>)>> {
-                let network_id_md5 = md5::compute(network.id.as_bytes());
-                let folder_name = format!(
-                    "reseau_{}_{:x}",
-                    only_alphanumeric(&network.name),
-                    network_id_md5
-                );
-                let network_path = path.as_ref().join(folder_name);
-                fs::create_dir(&network_path)?;
-                // Unwrap is safe because we're iterating over existing networks
-                let network_idx = self.model.networks.get_idx(&network.id).unwrap();
-                let line_indexes: IdxSet<Line> = self.model.get_corresponding_from_idx(network_idx);
-                acc.extend(
-                    line_indexes
-                        .into_iter()
-                        .map(|line_idx| (network_path.clone(), line_idx)),
-                );
-                Ok(acc)
-            },
-        )?;
-
-        // Phase 2 (parallel): generate and write each offer file independently.
-        work_items
+        let path = path.as_ref();
+        let line_exporter = LineExporter::new(self.model)?;
+        let line_indexes: Vec<Idx<Line>> = self.model.lines.indexes().collect();
+        line_indexes
             .par_iter()
-            .try_for_each(|(network_path, line_idx)| -> Result<()> {
+            .try_for_each(|line_idx| -> Result<()> {
                 let line = &self.model.lines[*line_idx];
-                let line_id_md5 = md5::compute(line.id.as_bytes());
-                let line_code = if let Some(code) = line.code.as_ref() {
-                    format!("{}_", only_alphanumeric(code))
-                } else {
-                    String::new()
-                };
-                let file_name = format!("offre_{line_code}{line_id_md5:x}.xml");
-                let filepath = network_path.join(&file_name);
+                let filepath = path.join(line_filename(line, &self.model.networks)?);
+                let composite_frame =
+                    self.create_line_composite_frame(&line_exporter, *line_idx)?;
+                let netex = self.wrap_frame(composite_frame, VersionType::Lines);
                 let file = BufWriter::new(File::create(&filepath)?);
-                let offer_frame = self.create_offer_frame(&offer_exporter, *line_idx)?;
-                let netex = self.wrap_frame(offer_frame, VersionType::Schedule);
                 let mut writer = ElementWriter::pretty(file);
                 info!("Writing {:?}", &filepath);
                 writer.write(&netex)?;
                 Ok(())
             })?;
-
         Ok(())
     }
 
-    // Returns a 'GeneralFrame' containing all the schedules for a line
-    fn create_offer_frame(
+    // Returns a 'CompositeFrame' NETEX_LIGNE for a single line, wrapping its
+    // NETEX_LIGNE_STRUCTURE and NETEX_HORAIRE frames.
+    fn create_line_composite_frame(
         &self,
-        offer_exporter: &OfferExporter,
+        line_exporter: &LineExporter,
         line_idx: Idx<Line>,
     ) -> Result<Element> {
-        let offer = offer_exporter.export(line_idx)?;
-        let members = Self::create_members(offer);
-        let general_frame_id = self.generate_frame_id(
+        let offer = line_exporter.export(line_idx)?;
+        let structure_frame = self.create_line_structure_frame(offer.structure);
+        let schedule_frame = self.create_line_schedule_frame(offer.schedule);
+        let composite_frame_id = self.generate_frame_id(
+            FrameType::Composite,
+            &format!("NETEX_{}", VersionType::Lines),
+        );
+        Ok(Self::create_composite_frame(
+            composite_frame_id,
+            [structure_frame, schedule_frame],
+        ))
+    }
+
+    fn create_line_structure_frame(&self, elements: Vec<Element>) -> Element {
+        let frame_id = self.generate_frame_id(FrameType::General, "NETEX_LIGNE_STRUCTURE");
+        Element::builder(FrameType::General.to_string())
+            .attr("id", frame_id)
+            .attr("version", "any")
+            .append(Self::create_members(elements))
+            .build()
+    }
+
+    fn create_line_schedule_frame(&self, elements: Vec<Element>) -> Element {
+        let frame_id = self.generate_frame_id(
             FrameType::General,
             &format!("NETEX_{}", VersionType::Schedule),
         );
-        let frame = Element::builder(FrameType::General.to_string())
-            .attr("id", general_frame_id)
+        Element::builder(FrameType::General.to_string())
+            .attr("id", frame_id)
             .attr("version", "any")
-            .append(members)
-            .build();
-        Ok(frame)
+            .append(Self::create_members(elements))
+            .build()
     }
 }
 
@@ -545,19 +498,20 @@ mod tests {
         #[test]
         fn code_and_name_present_and_different() {
             // SYTRAL (TCL network), line SYTNEX:102.
-            let network = Network {
+            let networks = CollectionWithId::from(Network {
                 id: "TCL".to_string(),
                 name: "TCL".to_string(),
                 ..Default::default()
-            };
+            });
             let line = Line {
                 id: "SYTNEX:102".to_string(),
+                network_id: "TCL".to_string(),
                 code: Some("102".to_string()),
                 name: "Croix-Rousse - Plateau de Saint Rambert".to_string(),
                 ..Default::default()
             };
             assert_eq!(
-                line_filename(&network, &line),
+                line_filename(&line, &networks).unwrap(),
                 "line_tcl_102_croix_rousse_plateau_de_saint_rambert_f2a4eb5f0123026eb1e7ccde5ef6eba3.xml"
             );
         }
@@ -565,19 +519,20 @@ mod tests {
         #[test]
         fn name_identical_to_code_is_dropped() {
             // IDFM, line IDFM:C01624: line_code and line_name are both "4244".
-            let network = Network {
+            let networks = CollectionWithId::from(Network {
                 id: "IDFM:1080".to_string(),
                 name: "Evry Centre Essonne".to_string(),
                 ..Default::default()
-            };
+            });
             let line = Line {
                 id: "IDFM:C01624".to_string(),
+                network_id: "IDFM:1080".to_string(),
                 code: Some("4244".to_string()),
                 name: "4244".to_string(),
                 ..Default::default()
             };
             assert_eq!(
-                line_filename(&network, &line),
+                line_filename(&line, &networks).unwrap(),
                 "line_evry_centre_essonne_4244_e0cb7609cdbd9bf17f4d989dd34bbb94.xml"
             );
         }
@@ -585,19 +540,20 @@ mod tests {
         #[test]
         fn accented_network_and_line_names() {
             // CH, network "Sihltal-Zürich-Uetliberg-Bahn", line OCH:91-10-A-j26-1.
-            let network = Network {
+            let networks = CollectionWithId::from(Network {
                 id: "OCH:78".to_string(),
                 name: "Sihltal-Zürich-Uetliberg-Bahn".to_string(),
                 ..Default::default()
-            };
+            });
             let line = Line {
                 id: "OCH:91-10-A-j26-1".to_string(),
+                network_id: "OCH:78".to_string(),
                 code: Some("S10".to_string()),
                 name: "Uetliberg - Zürich HB".to_string(),
                 ..Default::default()
             };
             assert_eq!(
-                line_filename(&network, &line),
+                line_filename(&line, &networks).unwrap(),
                 "line_sihltal_zurich_uetliberg_bahn_s10_uetliberg_zurich_hb_ce505b256619e5d786e4ce00b75dd2e2.xml"
             );
         }
@@ -606,95 +562,100 @@ mod tests {
         fn non_latin_network_name_falls_back_to_network_id() {
             // Israel dataset, network ISR:135 (Hebrew name), line ISR:5878.
             // This is the real-world case cited in the working doc's own example.
-            let network = Network {
+            let networks = CollectionWithId::from(Network {
                 id: "ISR:135".to_string(),
                 name: "דרך אגד עוטף ירושלים".to_string(),
                 ..Default::default()
-            };
+            });
             let line = Line {
                 id: "ISR:5878".to_string(),
+                network_id: "ISR:135".to_string(),
                 code: Some("104".to_string()),
                 name: "ממילא/קריב-ירושלים<->שכונה י''א א-מבשרת ציון-1#".to_string(),
                 ..Default::default()
             };
             assert_eq!(
-                line_filename(&network, &line),
+                line_filename(&line, &networks).unwrap(),
                 "line_isr_135_104_1_6e4e7238e072c1ad1280fda127906606.xml"
             );
         }
 
         #[test]
         fn no_code_is_omitted() {
-            let network = Network {
+            let networks = CollectionWithId::from(Network {
                 id: "RER".to_string(),
                 name: "RER".to_string(),
                 ..Default::default()
-            };
+            });
             let line = Line {
                 id: "RATP:Line:A".to_string(),
+                network_id: "RER".to_string(),
                 code: None,
                 name: "RER A".to_string(),
                 ..Default::default()
             };
             assert_eq!(
-                line_filename(&network, &line),
+                line_filename(&line, &networks).unwrap(),
                 "line_rer_a_cb68c30f80b859d8d82ff5cd44e8305e.xml"
             );
         }
 
         #[test]
         fn name_absent_with_code_present() {
-            let network = Network {
+            let networks = CollectionWithId::from(Network {
                 id: "RATP".to_string(),
                 name: "RATP".to_string(),
                 ..Default::default()
-            };
+            });
             let line = Line {
                 id: "RATP:Line:14".to_string(),
+                network_id: "RATP".to_string(),
                 code: Some("14".to_string()),
                 name: "".to_string(),
                 ..Default::default()
             };
             assert_eq!(
-                line_filename(&network, &line),
+                line_filename(&line, &networks).unwrap(),
                 "line_ratp_14_9ad325ee67c40600689d1badac32e1d0.xml"
             );
         }
 
         #[test]
         fn neither_code_nor_name_exploitable() {
-            let network = Network {
+            let networks = CollectionWithId::from(Network {
                 id: "NET".to_string(),
                 name: "NET".to_string(),
                 ..Default::default()
-            };
+            });
             let line = Line {
                 id: "X:4".to_string(),
+                network_id: "NET".to_string(),
                 code: None,
                 name: "אגד".to_string(),
                 ..Default::default()
             };
             assert_eq!(
-                line_filename(&network, &line),
+                line_filename(&line, &networks).unwrap(),
                 "line_net_f4031a78bc723373381168309ce57a54.xml"
             );
         }
 
         #[test]
         fn network_name_and_id_both_empty_falls_back_to_x() {
-            let network = Network {
+            let networks = CollectionWithId::from(Network {
                 id: "".to_string(),
                 name: "".to_string(),
                 ..Default::default()
-            };
+            });
             let line = Line {
                 id: "X:1".to_string(),
+                network_id: "".to_string(),
                 code: Some("14".to_string()),
                 name: "Ligne 14".to_string(),
                 ..Default::default()
             };
             assert_eq!(
-                line_filename(&network, &line),
+                line_filename(&line, &networks).unwrap(),
                 "line_x_14_ligne_14_eb1a6accc61ea1d3c179abd0a367ed49.xml"
             );
         }
@@ -703,19 +664,20 @@ mod tests {
         fn network_and_code_segments_are_merged_when_identical() {
             // network slug and line code slug are both "bus" —
             // merge_adjacent_duplicate_segments collapses them into one.
-            let network = Network {
+            let networks = CollectionWithId::from(Network {
                 id: "Bus".to_string(),
                 name: "Bus".to_string(),
                 ..Default::default()
-            };
+            });
             let line = Line {
                 id: "X:3".to_string(),
+                network_id: "Bus".to_string(),
                 code: Some("Bus".to_string()),
                 name: "".to_string(),
                 ..Default::default()
             };
             assert_eq!(
-                line_filename(&network, &line),
+                line_filename(&line, &networks).unwrap(),
                 "line_bus_33409777a8bb7c6347b2371c9bfdf918.xml"
             );
         }
@@ -725,21 +687,37 @@ mod tests {
             // 250 characters is the NeTEx-fr profile's own limit on filenames,
             // not an arbitrary choice here.
             let very_long_text = "a".repeat(300);
-            let network = Network {
+            let networks = CollectionWithId::from(Network {
                 id: very_long_text.clone(),
                 name: very_long_text.clone(),
                 ..Default::default()
-            };
+            });
             let line = Line {
                 id: "X".to_string(),
+                network_id: very_long_text.clone(),
                 code: Some(very_long_text.clone()),
                 name: very_long_text,
                 ..Default::default()
             };
             assert!(
-                line_filename(&network, &line).len() <= 250,
+                line_filename(&line, &networks).unwrap().len() <= 250,
                 "line_*.xml filenames must stay under the NeTEx-fr 250-character limit"
             );
+        }
+
+        #[test]
+        fn unknown_network_is_an_error() {
+            let networks = CollectionWithId::from(Network {
+                id: "RATP".to_string(),
+                name: "RATP".to_string(),
+                ..Default::default()
+            });
+            let line = Line {
+                id: "X:5".to_string(),
+                network_id: "does_not_exist".to_string(),
+                ..Default::default()
+            };
+            assert!(line_filename(&line, &networks).is_err());
         }
     }
 }
