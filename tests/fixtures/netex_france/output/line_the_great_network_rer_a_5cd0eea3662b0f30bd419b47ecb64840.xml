@@ -3,9 +3,13 @@
 	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
-		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE:" version="any">
+		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE-5cd0eea3662b0f30bd419b47ecb64840:" version="1.3:FR-NETEX_LIGNE-2.4">
+			<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_LIGNE:">
+			</TypeOfFrameRef>
 			<frames>
-				<GeneralFrame id="FR:GeneralFrame:NETEX_LIGNE_STRUCTURE:" version="any">
+				<GeneralFrame id="FR:GeneralFrame:NETEX_LIGNE_STRUCTURE-5cd0eea3662b0f30bd419b47ecb64840:" version="1.3:FR-NETEX_LIGNE_STRUCTURE-2.4">
+					<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_LIGNE_STRUCTURE:">
+					</TypeOfFrameRef>
 					<members>
 						<Line id="FR:Line:RERA:" version="any">
 							<keyList>
@@ -306,7 +310,9 @@
 						</PassengerStopAssignment>
 					</members>
 				</GeneralFrame>
-				<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE:" version="any">
+				<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE-5cd0eea3662b0f30bd419b47ecb64840:" version="1.3:FR-NETEX_HORAIRE-2.4">
+					<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_HORAIRE:">
+					</TypeOfFrameRef>
 					<members>
 						<ServiceJourney id="FR:ServiceJourney:RERAF1:" version="any">
 							<keyList>

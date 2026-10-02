@@ -3,7 +3,9 @@
 	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
-		<GeneralFrame id="FR:GeneralFrame:NETEX_RESEAU:" version="any">
+		<GeneralFrame id="FR:GeneralFrame:NETEX_RESEAU:" version="1.3:FR-NETEX_RESEAU-2.4">
+			<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_RESEAU:">
+			</TypeOfFrameRef>
 			<members>
 				<Network id="FR:Network:TGN:" version="any">
 					<keyList>
