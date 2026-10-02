@@ -42,7 +42,7 @@ const NETEX_FRANCE_RESOURCE_FILENAME: &str = "resource.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "stop.xml";
 
 /// Type of NeTEx frame.
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq, Clone, Copy)]
 pub(in crate::netex_france) enum FrameType {
     /// Type of a `<CompositeFrame>`
     Composite,
@@ -111,11 +111,13 @@ impl Display for ObjectType {
     }
 }
 
+#[derive(Clone, Copy)]
 enum VersionType {
     Calendars,
     Common,
     France,
     Lines,
+    LinesStructure,
     Networks,
     Schedule,
     Stops,
@@ -129,6 +131,7 @@ impl Display for VersionType {
             Common => write!(fmt, "COMMUN"),
             France => write!(fmt, "FRANCE"),
             Lines => write!(fmt, "LIGNE"),
+            LinesStructure => write!(fmt, "LIGNE_STRUCTURE"),
             Networks => write!(fmt, "RESEAU"),
             Schedule => write!(fmt, "HORAIRE"),
             Stops => write!(fmt, "ARRET"),
@@ -232,13 +235,9 @@ impl<'a> Exporter<'a> {
 
 // Internal methods
 impl Exporter<'_> {
-    // Include 'stop_frame' into a complete NeTEx XML tree with
-    // 'PublicationDelivery' and 'dataObjects'
-    // `_version_type` is currently unused: `PublicationDelivery/@version` is
-    // now fixed to `FRANCE` (NeTEx-fr 2.4). It will be needed again to set
-    // the `version` attribute on each individual frame (NeTEx-fr 2.4 §1,
-    // not yet implemented).
-    fn wrap_frame(&self, frame: Element, _version_type: VersionType) -> Element {
+    // Include 'frame' into a complete NeTEx XML tree with 'PublicationDelivery'
+    // and 'dataObjects'. PublicationDelivery/@version is always FRANCE.
+    fn wrap_frame(&self, frame: Element) -> Element {
         let publication_timestamp = Element::builder("PublicationTimestamp")
             .append(self.timestamp.to_rfc3339())
             .build();
@@ -247,10 +246,7 @@ impl Exporter<'_> {
             .build();
         let data_objects = Element::builder("dataObjects").append(frame).build();
         Element::builder("PublicationDelivery")
-            .attr(
-                "version",
-                format!("1.3:FR-NETEX_{}-2.4", VersionType::France),
-            )
+            .attr("version", self.generate_frame_version(VersionType::France))
             .attr("xmlns", "http://www.netex.org.uk/netex")
             .append(publication_timestamp)
             .append(participant_ref)
@@ -258,21 +254,56 @@ impl Exporter<'_> {
             .build()
     }
 
-    fn generate_frame_id(&self, frame_type: FrameType, id: &str) -> String {
-        format!("FR:{frame_type}:{id}:")
+    fn generate_frame_id(
+        &self,
+        frame_type: FrameType,
+        part: VersionType,
+        instance_suffix: Option<&str>,
+    ) -> String {
+        match instance_suffix {
+            Some(suffix) => format!("FR:{frame_type}:NETEX_{part}-{suffix}:"),
+            None => format!("FR:{frame_type}:NETEX_{part}:"),
+        }
     }
 
-    fn create_composite_frame<I, T>(id: String, frames: I) -> Element
+    fn generate_frame_version(&self, part: VersionType) -> String {
+        format!("1.3:FR-NETEX_{part}-2.4")
+    }
+
+    fn generate_type_of_frame_ref(&self, part: VersionType) -> Element {
+        Element::builder("TypeOfFrameRef")
+            .attr("ref", format!("FR:TypeOfFrame:NETEX_{part}:"))
+            .build()
+    }
+
+    fn create_frame<I, T>(
+        &self,
+        frame_type: FrameType,
+        part: VersionType,
+        instance_suffix: Option<&str>,
+        valid_between: Option<Element>,
+        children: I,
+    ) -> Element
     where
         I: IntoIterator<Item = T>,
         T: Into<Node>,
     {
-        let frame_list = Element::builder("frames").append_all(frames).build();
-        Element::builder(FrameType::Composite.to_string())
+        let id = self.generate_frame_id(frame_type, part, instance_suffix);
+        let type_of_frame_ref = self.generate_type_of_frame_ref(part);
+        let mut builder = Element::builder(frame_type.to_string())
             .attr("id", id)
-            .attr("version", "any")
-            .append(frame_list)
-            .build()
+            .attr("version", self.generate_frame_version(part));
+        if let Some(valid_between) = valid_between {
+            builder = builder.append(valid_between);
+        }
+        builder = builder.append(type_of_frame_ref);
+        match frame_type {
+            FrameType::Composite => {
+                let frame_list = Element::builder("frames").append_all(children).build();
+                builder.append(frame_list).build()
+            }
+            FrameType::General => builder.append_all(children).build(),
+        }
     }
 
     pub(in crate::netex_france) fn create_members<I, T>(members: I) -> Element
@@ -290,7 +321,7 @@ impl Exporter<'_> {
         let filepath = path.as_ref().join(NETEX_FRANCE_NETWORK_FILENAME);
         let file = BufWriter::new(File::create(&filepath)?);
         let networks_frame = self.create_networks_frame();
-        let netex = self.wrap_frame(networks_frame, VersionType::Networks);
+        let netex = self.wrap_frame(networks_frame);
         let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
         writer.write(&netex)?;
@@ -302,62 +333,13 @@ impl Exporter<'_> {
         let network_exporter = NetworkExporter::new(self.model);
         let network_elements = network_exporter.export();
         let members = Self::create_members(network_elements);
-        let general_frame_id = self.generate_frame_id(
+        self.create_frame(
             FrameType::General,
-            &format!("NETEX_{}", VersionType::Networks),
-        );
-        Element::builder(FrameType::General.to_string())
-            .attr("id", general_frame_id)
-            .attr("version", "any")
-            .append(members)
-            .build()
-    }
-
-    // Returns a 'GeneralFrame' containing all 'Operator' and 'SiteConnection'
-    fn create_common_frame(&self) -> Result<Element> {
-        let company_exporter = CompanyExporter::new(self.model);
-        let companies = company_exporter.export();
-        let transfer_exporter = TransferExporter::new(self.model);
-        let transfers = transfer_exporter.export()?;
-        let members = Self::create_members(companies.into_iter().chain(transfers));
-        let general_frame_id = self.generate_frame_id(
-            FrameType::General,
-            &format!("NETEX_{}", VersionType::Common),
-        );
-        Ok(Element::builder(FrameType::General.to_string())
-            .attr("id", general_frame_id)
-            .attr("version", "any")
-            .append(members)
-            .build())
-    }
-
-    fn write_stops<P>(&self, path: P) -> Result<()>
-    where
-        P: AsRef<Path>,
-    {
-        let filepath = path.as_ref().join(NETEX_FRANCE_STOPS_FILENAME);
-        let file = BufWriter::new(File::create(&filepath)?);
-        let stop_frame = self.create_stops_frame()?;
-        let netex = self.wrap_frame(stop_frame, VersionType::Stops);
-        let mut writer = ElementWriter::pretty(file);
-        info!("Writing {:?}", &filepath);
-        writer.write(&netex)?;
-        Ok(())
-    }
-
-    // Returns a 'GeneralFrame' containing all 'StopArea' and 'Quay'
-    fn create_stops_frame(&self) -> Result<Element> {
-        let stop_exporter = StopExporter::new(self.model, &self.participant_ref)?;
-        let stops = stop_exporter.export()?;
-        let members = Self::create_members(stops);
-        let general_frame_id =
-            self.generate_frame_id(FrameType::General, &format!("NETEX_{}", VersionType::Stops));
-        let frame = Element::builder(FrameType::General.to_string())
-            .attr("id", general_frame_id)
-            .attr("version", "any")
-            .append(members)
-            .build();
-        Ok(frame)
+            VersionType::Networks,
+            None,
+            None,
+            [members],
+        )
     }
 
     fn write_resource<P>(&self, path: P) -> Result<()>
@@ -368,17 +350,34 @@ impl Exporter<'_> {
         let file = BufWriter::new(File::create(&filepath)?);
         let common_frame = self.create_common_frame()?;
         let calendars_frame = self.create_calendars_frame()?;
-        let composite_frame_id = self.generate_frame_id(
+        let composite_frame = self.create_frame(
             FrameType::Composite,
-            &format!("NETEX_{}", VersionType::France),
+            VersionType::France,
+            None,
+            None,
+            [common_frame, calendars_frame],
         );
-        let composite_frame =
-            Self::create_composite_frame(composite_frame_id, [common_frame, calendars_frame]);
-        let netex = self.wrap_frame(composite_frame, VersionType::France);
+        let netex = self.wrap_frame(composite_frame);
         let mut writer = ElementWriter::pretty(file);
         info!("Writing {:?}", &filepath);
         writer.write(&netex)?;
         Ok(())
+    }
+
+    // Returns a 'GeneralFrame' containing all 'Operator' and 'SiteConnection'
+    fn create_common_frame(&self) -> Result<Element> {
+        let company_exporter = CompanyExporter::new(self.model);
+        let companies = company_exporter.export();
+        let transfer_exporter = TransferExporter::new(self.model);
+        let transfers = transfer_exporter.export()?;
+        let members = Self::create_members(companies.into_iter().chain(transfers));
+        Ok(self.create_frame(
+            FrameType::General,
+            VersionType::Common,
+            None,
+            None,
+            [members],
+        ))
     }
 
     // Returns a 'GeneralFrame' containing all 'DayType', 'DayTypeAssignment' and 'UicOperatingPeriod'
@@ -387,17 +386,13 @@ impl Exporter<'_> {
         let calendars = calendar_exporter.export()?;
         let valid_between = self.create_valid_between()?;
         let members = Self::create_members(calendars);
-        let general_frame_id = self.generate_frame_id(
+        Ok(self.create_frame(
             FrameType::General,
-            &format!("NETEX_{}", VersionType::Calendars),
-        );
-        let frame = Element::builder(FrameType::General.to_string())
-            .attr("id", general_frame_id)
-            .attr("version", "any")
-            .append(valid_between)
-            .append(members)
-            .build();
-        Ok(frame)
+            VersionType::Calendars,
+            None,
+            Some(valid_between),
+            [members],
+        ))
     }
 
     fn create_valid_between(&self) -> Result<Element> {
@@ -422,6 +417,34 @@ impl Exporter<'_> {
         Ok(valid_between)
     }
 
+    fn write_stops<P>(&self, path: P) -> Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        let filepath = path.as_ref().join(NETEX_FRANCE_STOPS_FILENAME);
+        let file = BufWriter::new(File::create(&filepath)?);
+        let stop_frame = self.create_stops_frame()?;
+        let netex = self.wrap_frame(stop_frame);
+        let mut writer = ElementWriter::pretty(file);
+        info!("Writing {:?}", &filepath);
+        writer.write(&netex)?;
+        Ok(())
+    }
+
+    // Returns a 'GeneralFrame' containing all 'StopArea' and 'Quay'
+    fn create_stops_frame(&self) -> Result<Element> {
+        let stop_exporter = StopExporter::new(self.model, &self.participant_ref)?;
+        let stops = stop_exporter.export()?;
+        let members = Self::create_members(stops);
+        Ok(self.create_frame(
+            FrameType::General,
+            VersionType::Stops,
+            None,
+            None,
+            [members],
+        ))
+    }
+
     fn write_lines<P>(&self, path: P) -> Result<()>
     where
         P: AsRef<Path>,
@@ -436,7 +459,7 @@ impl Exporter<'_> {
                 let filepath = path.join(line_filename(line, &self.model.networks)?);
                 let composite_frame =
                     self.create_line_composite_frame(&line_exporter, *line_idx)?;
-                let netex = self.wrap_frame(composite_frame, VersionType::Lines);
+                let netex = self.wrap_frame(composite_frame);
                 let file = BufWriter::new(File::create(&filepath)?);
                 let mut writer = ElementWriter::pretty(file);
                 info!("Writing {:?}", &filepath);
@@ -453,38 +476,30 @@ impl Exporter<'_> {
         line_exporter: &LineExporter,
         line_idx: Idx<Line>,
     ) -> Result<Element> {
+        let line = &self.model.lines[line_idx];
+        let instance_suffix = format!("{:x}", md5::compute(line.id.as_bytes()));
         let offer = line_exporter.export(line_idx)?;
-        let structure_frame = self.create_line_structure_frame(offer.structure);
-        let schedule_frame = self.create_line_schedule_frame(offer.schedule);
-        let composite_frame_id = self.generate_frame_id(
-            FrameType::Composite,
-            &format!("NETEX_{}", VersionType::Lines),
+        let structure_frame = self.create_frame(
+            FrameType::General,
+            VersionType::LinesStructure,
+            Some(&instance_suffix),
+            None,
+            [Self::create_members(offer.structure)],
         );
-        Ok(Self::create_composite_frame(
-            composite_frame_id,
+        let schedule_frame = self.create_frame(
+            FrameType::General,
+            VersionType::Schedule,
+            Some(&instance_suffix),
+            None,
+            [Self::create_members(offer.schedule)],
+        );
+        Ok(self.create_frame(
+            FrameType::Composite,
+            VersionType::Lines,
+            Some(&instance_suffix),
+            None,
             [structure_frame, schedule_frame],
         ))
-    }
-
-    fn create_line_structure_frame(&self, elements: Vec<Element>) -> Element {
-        let frame_id = self.generate_frame_id(FrameType::General, "NETEX_LIGNE_STRUCTURE");
-        Element::builder(FrameType::General.to_string())
-            .attr("id", frame_id)
-            .attr("version", "any")
-            .append(Self::create_members(elements))
-            .build()
-    }
-
-    fn create_line_schedule_frame(&self, elements: Vec<Element>) -> Element {
-        let frame_id = self.generate_frame_id(
-            FrameType::General,
-            &format!("NETEX_{}", VersionType::Schedule),
-        );
-        Element::builder(FrameType::General.to_string())
-            .attr("id", frame_id)
-            .attr("version", "any")
-            .append(Self::create_members(elements))
-            .build()
     }
 }
 
