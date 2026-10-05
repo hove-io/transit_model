@@ -499,7 +499,8 @@ impl<'a> StopExporter<'a> {
             Rail => "railStation",
             Metro => "metroStation",
             Tram => "tramStation",
-            Funicular => "railStation",
+            // Profil NeTEx-fr 2.4 maps funicular to metroStation
+            Funicular => "metroStation",
             Cableway => "liftStation",
             Coach => "coachStation",
             Bus => "onstreetBus",
