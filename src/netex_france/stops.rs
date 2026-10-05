@@ -189,7 +189,6 @@ impl<'a> StopExporter<'a> {
             } else {
                 element_builder
             };
-
         let element_builder =
             if let Some(accessibility_element) = self.generate_quay_accessibility(stop_point) {
                 element_builder.append(accessibility_element)
@@ -217,6 +216,16 @@ impl<'a> StopExporter<'a> {
                     stop_point.id,
                 )
             })?;
+        if !self.model.stop_areas.contains_id(&stop_point.stop_area_id) {
+            return Err(anyhow!(
+                "Stop Point '{}' references unknown Stop Area '{}'",
+                stop_point.id,
+                stop_point.stop_area_id
+            ));
+        }
+        let stop_place_id =
+            Self::generate_stop_place_id(&stop_point.stop_area_id, highest_netex_mode);
+        let element_builder = element_builder.append(self.generate_site_ref(&stop_place_id));
         let element_builder =
             element_builder.append(self.generate_transport_mode(highest_netex_mode));
         let element_builder = if let Some(tariff_zones) = self.generate_tariff_zones(stop_point) {
@@ -407,6 +416,12 @@ impl<'a> StopExporter<'a> {
         };
         Element::builder(name)
             .append(Node::Text(availability.to_owned()))
+            .build()
+    }
+
+    fn generate_site_ref(&self, stop_place_id: &'a str) -> Element {
+        Element::builder("SiteRef")
+            .attr("ref", stop_place_id)
             .build()
     }
 
