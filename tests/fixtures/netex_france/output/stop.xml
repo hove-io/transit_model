@@ -31,6 +31,8 @@
 							</AccessibilityLimitation>
 						</limitations>
 					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:GDL_rail:">
+					</SiteRef>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
@@ -61,6 +63,8 @@
 							</AccessibilityLimitation>
 						</limitations>
 					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:GDL_metro:">
+					</SiteRef>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
@@ -81,6 +85,8 @@
 							<Latitude>48.844746</Latitude>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:GDL_bus:">
+					</SiteRef>
 					<TransportMode>bus</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
@@ -111,6 +117,8 @@
 							</AccessibilityLimitation>
 						</limitations>
 					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:NAT_rail:">
+					</SiteRef>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
@@ -131,6 +139,8 @@
 							<Latitude>48.84849</Latitude>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:NAT_metro:">
+					</SiteRef>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
@@ -151,6 +161,8 @@
 							<Latitude>48.873965</Latitude>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:CDG_rail:">
+					</SiteRef>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneOffParis">
@@ -171,6 +183,8 @@
 							<Latitude>48.873965</Latitude>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:CDG_metro:">
+					</SiteRef>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneOffParis">
@@ -191,6 +205,8 @@
 							<Latitude>48.891737</Latitude>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:DEF_rail:">
+					</SiteRef>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneOffParis">
@@ -205,6 +221,8 @@
 						</KeyValue>
 					</keyList>
 					<Name>Châtelet (Metro)</Name>
+					<SiteRef ref="FR:StopPlace:CHA_metro:">
+					</SiteRef>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
@@ -226,6 +244,8 @@
 							<Latitude>48.842481</Latitude>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:MTP_bus:">
+					</SiteRef>
 					<TransportMode>bus</TransportMode>
 					<tariffZones>
 						<TariffZoneRef ref="Participant:ZoneParis">
