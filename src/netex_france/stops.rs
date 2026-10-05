@@ -90,8 +90,28 @@ impl<'a> StopExporter<'a> {
             })
             .map(|stop_area| self.export_stop_area(stop_area))
             .collect::<Result<Vec<Vec<Element>>>>()?;
+        let entrances_elements = self
+            .model
+            .stop_locations
+            .values()
+            .filter(|sl| sl.stop_type == StopType::StopEntrance)
+            .filter(|sl| {
+                // Without this check, the entrance's SiteRef may point to a StopPlace not written
+                sl.parent_id.as_ref().is_some_and(|stop_area_id| {
+                    self.stop_area_stop_points
+                        .get(stop_area_id.as_str())
+                        .is_some_and(|stop_point_ids| {
+                            stop_point_ids.iter().any(|stop_point_id| {
+                                self.stop_point_modes.contains_key(*stop_point_id)
+                            })
+                        })
+                })
+            })
+            .map(|sl| self.generate_stop_place_entrance(sl))
+            .collect::<Result<Vec<Element>>>()?;
         let mut elements = stop_points_elements;
         elements.extend(stop_areas_elements.into_iter().flatten());
+        elements.extend(entrances_elements);
         Ok(elements)
     }
 
@@ -443,15 +463,15 @@ impl<'a> StopExporter<'a> {
     }
 
     fn generate_entrances(&self, stop_area_id: &'a str) -> Option<Element> {
-        let stop_place_entrances = self
+        let entrance_refs = self
             .stop_area_entrances
             .get(stop_area_id)
             .into_iter()
             .flatten()
             .filter_map(|sl_id| self.model.stop_locations.get(sl_id))
-            .map(|sl| self.generate_stop_place_entrance(sl));
+            .map(|sl| self.generate_entrance_ref(sl));
         let entrances = Element::builder("entrances")
-            .append_all(stop_place_entrances)
+            .append_all(entrance_refs)
             .build();
         if entrances.children().is_empty() {
             None
@@ -460,7 +480,23 @@ impl<'a> StopExporter<'a> {
         }
     }
 
-    fn generate_stop_place_entrance(&self, stop_location: &'a StopLocation) -> Element {
+    fn generate_entrance_ref(&self, stop_location: &'a StopLocation) -> Element {
+        Element::builder("EntranceRef")
+            .attr(
+                "ref",
+                Exporter::generate_id(&stop_location.id, ObjectType::StopPlaceEntrance),
+            )
+            .build()
+    }
+
+    fn generate_stop_place_entrance(&self, stop_location: &'a StopLocation) -> Result<Element> {
+        let stop_area_id = stop_location.parent_id.as_deref().ok_or_else(|| {
+            // Should never happen: NTFS and GTFS readers require a parent StopArea
+            anyhow!(
+                "Stop Location '{}' has no parent Stop Area",
+                stop_location.id
+            )
+        })?;
         let element_builder = Element::builder("StopPlaceEntrance")
             .attr(
                 "id",
@@ -474,11 +510,13 @@ impl<'a> StopExporter<'a> {
             } else {
                 element_builder
             };
+        let stop_place_id = Exporter::generate_id(stop_area_id, ObjectType::StopPlace);
+        let element_builder = element_builder.append(self.generate_site_ref(&stop_place_id));
         let element_builder = element_builder
             .append(self.generate_is_entry_exit("IsEntry"))
             .append(self.generate_is_entry_exit("IsExit"));
 
-        element_builder.build()
+        Ok(element_builder.build())
     }
 
     fn generate_is_entry_exit(&self, node_name: &'a str) -> Element {
