@@ -260,6 +260,10 @@
 							<Latitude>48.844746</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
 					</ParentSiteRef>
 					<TransportMode>rail</TransportMode>
@@ -277,6 +281,10 @@
 							<Latitude>48.844746</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
 					</ParentSiteRef>
 					<TransportMode>metro</TransportMode>
@@ -294,6 +302,10 @@
 							<Latitude>48.844746</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
@@ -319,6 +331,10 @@
 							<Latitude>48.844746</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<entrances>
 						<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G1:" version="any">
 							<Name>Gate 1</Name>
@@ -354,6 +370,10 @@
 							<Latitude>48.84849</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
 					</ParentSiteRef>
 					<TransportMode>rail</TransportMode>
@@ -371,6 +391,10 @@
 							<Latitude>48.84849</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
 					</ParentSiteRef>
 					<TransportMode>metro</TransportMode>
@@ -388,6 +412,10 @@
 							<Latitude>48.84849</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
@@ -411,6 +439,10 @@
 							<Latitude>48.84849</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
 				</StopPlace>
@@ -422,6 +454,10 @@
 							<Latitude>48.873965</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
 					</ParentSiteRef>
 					<TransportMode>rail</TransportMode>
@@ -439,6 +475,10 @@
 							<Latitude>48.873965</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
 					</ParentSiteRef>
 					<TransportMode>metro</TransportMode>
@@ -456,6 +496,10 @@
 							<Latitude>48.873965</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
@@ -479,6 +523,10 @@
 							<Latitude>48.873965</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<entrances>
 						<StopPlaceEntrance id="FR:StopPlaceEntrance:CDG-GA:" version="any">
 							<Name>Gate A</Name>
@@ -503,6 +551,10 @@
 							<Latitude>48.891737</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:DEF:">
 					</ParentSiteRef>
 					<TransportMode>rail</TransportMode>
@@ -520,6 +572,10 @@
 							<Latitude>48.891737</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:DEF:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
@@ -543,6 +599,10 @@
 							<Latitude>48.891737</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
 				</StopPlace>
@@ -554,6 +614,10 @@
 							<Latitude>48.858137</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:CHA:">
 					</ParentSiteRef>
 					<TransportMode>metro</TransportMode>
@@ -577,6 +641,10 @@
 							<Latitude>48.858137</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<TransportMode>metro</TransportMode>
 					<StopPlaceType>metroStation</StopPlaceType>
 				</StopPlace>
@@ -588,6 +656,10 @@
 							<Latitude>48.842481</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:MTP:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
@@ -611,6 +683,10 @@
 							<Latitude>48.842481</Latitude>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<TransportMode>bus</TransportMode>
 					<StopPlaceType>onstreetBus</StopPlaceType>
 				</StopPlace>
