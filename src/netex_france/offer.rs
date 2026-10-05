@@ -17,7 +17,7 @@ use crate::{
     netex_france::{
         self,
         exporter::{Exporter, ObjectType},
-        LineExporter, LineModes, NetexMode, StopExporter,
+        LineModes, NetexMode, StopExporter,
     },
     objects::{Coord, Line, Route, StopPoint, StopTime, Time, VehicleJourney},
     Model, Result,
@@ -32,12 +32,20 @@ use typed_index_collection::Idx;
 // Modelization of JourneyPattern by a VehicleJourney is sufficient for now.
 type JourneyPattern = VehicleJourney;
 
-pub struct OfferExporter<'a> {
+/// The elements of a line's offer, split per the target `line_*.xml` frames.
+pub(in crate::netex_france) struct Offer {
+    /// Goes into the `NETEX_LIGNE_STRUCTURE` frame: Route, RoutePoint,
+    /// ServiceJourneyPattern, StopPointInJourneyPattern, ScheduledStopPoint,
+    /// PassengerStopAssignment.
+    pub structure: Vec<Element>,
+    /// Goes into the `NETEX_HORAIRE` frame: ServiceJourney.
+    pub schedule: Vec<Element>,
+}
+
+pub(in crate::netex_france) struct OfferExporter<'a> {
     model: &'a Model,
     // Precalculation of the Stop Points per Route
     route_points: BTreeMap<&'a str, Vec<Idx<StopPoint>>>,
-    // Precalculation of the Netex Modes per Line
-    line_modes: LineModes<'a>,
 }
 
 fn calculate_route_points(model: &Model) -> BTreeMap<&str, Vec<Idx<StopPoint>>> {
@@ -71,16 +79,18 @@ fn calculate_route_points(model: &Model) -> BTreeMap<&str, Vec<Idx<StopPoint>>> 
 
 // Publicly exposed methods
 impl<'a> OfferExporter<'a> {
-    pub fn new(model: &'a Model) -> Result<Self> {
+    pub(in crate::netex_france) fn new(model: &'a Model) -> Result<Self> {
         let route_points = calculate_route_points(model);
-        let line_modes = LineExporter::build_line_modes(model);
         Ok(OfferExporter {
             model,
             route_points,
-            line_modes,
         })
     }
-    pub fn export(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
+    pub(in crate::netex_france) fn export_offer(
+        &self,
+        line_idx: Idx<Line>,
+        line_modes: &LineModes,
+    ) -> Result<Offer> {
         let route_elements = self.export_routes(line_idx)?;
         let route_point_elements = self.export_route_points(line_idx)?;
         let journey_patterns: Vec<(Idx<JourneyPattern>, Vec<Idx<VehicleJourney>>)> = self
@@ -116,6 +126,7 @@ impl<'a> OfferExporter<'a> {
                     *journey_pattern_idx,
                     vehicle_journey_indexes,
                     line_idx,
+                    line_modes,
                 )
             })
             .fold(Vec::new(), |mut service_journey_elements, elements| {
@@ -123,13 +134,16 @@ impl<'a> OfferExporter<'a> {
                 service_journey_elements
             });
 
-        let mut elements = route_elements;
-        elements.extend(route_point_elements);
-        elements.extend(service_journey_pattern_elements);
-        elements.extend(scheduled_stop_point_elements);
-        elements.extend(passenger_stop_assignment_elements);
-        elements.extend(service_journey_elements);
-        Ok(elements)
+        let mut structure = route_elements;
+        structure.extend(route_point_elements);
+        structure.extend(service_journey_pattern_elements);
+        structure.extend(scheduled_stop_point_elements);
+        structure.extend(passenger_stop_assignment_elements);
+
+        Ok(Offer {
+            structure,
+            schedule: service_journey_elements,
+        })
     }
 }
 
@@ -343,11 +357,17 @@ impl<'a> OfferExporter<'a> {
         journey_pattern_idx: Idx<JourneyPattern>,
         vehicle_journey_indexes: &[Idx<VehicleJourney>],
         line_idx: Idx<Line>,
+        line_modes: &LineModes,
     ) -> Vec<Element> {
         vehicle_journey_indexes
             .iter()
             .map(|vehicle_journey_idx| {
-                self.export_service_journey(journey_pattern_idx, *vehicle_journey_idx, line_idx)
+                self.export_service_journey(
+                    journey_pattern_idx,
+                    *vehicle_journey_idx,
+                    line_idx,
+                    line_modes,
+                )
             })
             .collect()
     }
@@ -357,12 +377,12 @@ impl<'a> OfferExporter<'a> {
         journey_pattern_idx: Idx<JourneyPattern>,
         vehicle_journey_idx: Idx<VehicleJourney>,
         line_idx: Idx<Line>,
+        line_modes: &LineModes,
     ) -> Element {
         let journey_pattern_id = &self.model.vehicle_journeys[journey_pattern_idx].id;
         let vehicle_journey = &self.model.vehicle_journeys[vehicle_journey_idx];
         let line_id = &self.model.lines[line_idx].id;
-        let line_netex_mode = &self
-            .line_modes
+        let line_netex_mode = &line_modes
             .get(line_id.as_str())
             .and_then(NetexMode::calculate_highest_mode);
 

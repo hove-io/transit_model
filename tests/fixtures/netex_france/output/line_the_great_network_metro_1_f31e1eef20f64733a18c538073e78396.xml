@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PublicationDelivery version="1.3:FR-NETEX_FRANCE-2.4" xmlns="http://www.netex.org.uk/netex">
+	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
+	<ParticipantRef>Participant</ParticipantRef>
+	<dataObjects>
+		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE-f31e1eef20f64733a18c538073e78396:" version="1.3:FR-NETEX_LIGNE-2.4">
+			<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_LIGNE:">
+			</TypeOfFrameRef>
+			<frames>
+				<GeneralFrame id="FR:GeneralFrame:NETEX_LIGNE_STRUCTURE-f31e1eef20f64733a18c538073e78396:" version="1.3:FR-NETEX_LIGNE_STRUCTURE-2.4">
+					<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_LIGNE_STRUCTURE:">
+					</TypeOfFrameRef>
+					<members>
+						<Line id="FR:Line:M1:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>M1</Value>
+								</KeyValue>
+							</keyList>
+							<Name>Metro 1</Name>
+							<TransportMode>metro</TransportMode>
+							<Presentation>
+								<TextColour>000000</TextColour>
+							</Presentation>
+						</Line>
+						<Route id="FR:Route:M1:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>M1</Value>
+								</KeyValue>
+							</keyList>
+							<Name>Nation - Charles de Gaulle</Name>
+							<Distance>0</Distance>
+							<LineRef ref="FR:Line:M1:">
+							</LineRef>
+							<DirectionType>inbound</DirectionType>
+							<pointsInSequence>
+								<PointOnRoute id="FR:PointOnRoute:M1_1:" order="1" version="any">
+									<RoutePointRef ref="FR:RoutePoint:M1_1:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:M1_2:" order="2" version="any">
+									<RoutePointRef ref="FR:RoutePoint:M1_2:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:M1_3:" order="3" version="any">
+									<RoutePointRef ref="FR:RoutePoint:M1_3:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:M1_4:" order="4" version="any">
+									<RoutePointRef ref="FR:RoutePoint:M1_4:">
+									</RoutePointRef>
+								</PointOnRoute>
+							</pointsInSequence>
+						</Route>
+						<Route id="FR:Route:M1_R:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>M1</Value>
+								</KeyValue>
+							</keyList>
+							<Name>Charles de Gaulle - Nation</Name>
+							<Distance>0</Distance>
+							<LineRef ref="FR:Line:M1:">
+							</LineRef>
+							<DirectionType>outbound</DirectionType>
+							<pointsInSequence>
+								<PointOnRoute id="FR:PointOnRoute:M1_R_1:" order="1" version="any">
+									<RoutePointRef ref="FR:RoutePoint:M1_R_1:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:M1_R_2:" order="2" version="any">
+									<RoutePointRef ref="FR:RoutePoint:M1_R_2:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:M1_R_3:" order="3" version="any">
+									<RoutePointRef ref="FR:RoutePoint:M1_R_3:">
+									</RoutePointRef>
+								</PointOnRoute>
+								<PointOnRoute id="FR:PointOnRoute:M1_R_4:" order="4" version="any">
+									<RoutePointRef ref="FR:RoutePoint:M1_R_4:">
+									</RoutePointRef>
+								</PointOnRoute>
+							</pointsInSequence>
+						</Route>
+						<RoutePoint id="FR:RoutePoint:M1_1:" version="any">
+							<Location>
+								<Longitude>2.396497</Longitude>
+								<Latitude>48.84849</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:M1_2:" version="any">
+							<Location>
+								<Longitude>2.372987</Longitude>
+								<Latitude>48.844746</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:M1_3:" version="any">
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:M1_4:" version="any">
+							<Location>
+								<Longitude>2.295354</Longitude>
+								<Latitude>48.873965</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:M1_R_1:" version="any">
+							<Location>
+								<Longitude>2.295354</Longitude>
+								<Latitude>48.873965</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:M1_R_2:" version="any">
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:M1_R_3:" version="any">
+							<Location>
+								<Longitude>2.372987</Longitude>
+								<Latitude>48.844746</Latitude>
+							</Location>
+						</RoutePoint>
+						<RoutePoint id="FR:RoutePoint:M1_R_4:" version="any">
+							<Location>
+								<Longitude>2.396497</Longitude>
+								<Latitude>48.84849</Latitude>
+							</Location>
+						</RoutePoint>
+						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:M1F1:" version="any">
+							<Distance>0</Distance>
+							<RouteRef ref="FR:Route:M1:">
+							</RouteRef>
+							<pointsInSequence>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1F1_0:" order="1" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_0:">
+									</ScheduledStopPointRef>
+									<ForAlighting>false</ForAlighting>
+									<ForBoarding>true</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1F1_1:" order="2" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_1:">
+									</ScheduledStopPointRef>
+									<ForAlighting>true</ForAlighting>
+									<ForBoarding>true</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1F1_3:" order="4" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_3:">
+									</ScheduledStopPointRef>
+									<ForAlighting>true</ForAlighting>
+									<ForBoarding>true</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1F1_4:" order="5" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_4:">
+									</ScheduledStopPointRef>
+									<ForAlighting>true</ForAlighting>
+									<ForBoarding>false</ForBoarding>
+								</StopPointInJourneyPattern>
+							</pointsInSequence>
+						</ServiceJourneyPattern>
+						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:M1B1:" version="any">
+							<Distance>0</Distance>
+							<RouteRef ref="FR:Route:M1_R:">
+							</RouteRef>
+							<pointsInSequence>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1B1_6:" order="7" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_6:">
+									</ScheduledStopPointRef>
+									<ForAlighting>false</ForAlighting>
+									<ForBoarding>true</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1B1_7:" order="8" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_7:">
+									</ScheduledStopPointRef>
+									<ForAlighting>true</ForAlighting>
+									<ForBoarding>true</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1B1_8:" order="9" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_8:">
+									</ScheduledStopPointRef>
+									<ForAlighting>true</ForAlighting>
+									<ForBoarding>true</ForBoarding>
+								</StopPointInJourneyPattern>
+								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:M1B1_9:" order="10" version="any">
+									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_9:">
+									</ScheduledStopPointRef>
+									<ForAlighting>true</ForAlighting>
+									<ForBoarding>false</ForBoarding>
+								</StopPointInJourneyPattern>
+							</pointsInSequence>
+						</ServiceJourneyPattern>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_0:" version="any">
+							<Location>
+								<Longitude>2.396497</Longitude>
+								<Latitude>48.84849</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_1:" version="any">
+							<Location>
+								<Longitude>2.372987</Longitude>
+								<Latitude>48.844746</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_3:" version="any">
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_4:" version="any">
+							<Location>
+								<Longitude>2.295354</Longitude>
+								<Latitude>48.873965</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_6:" version="any">
+							<Location>
+								<Longitude>2.295354</Longitude>
+								<Latitude>48.873965</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_7:" version="any">
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_8:" version="any">
+							<Location>
+								<Longitude>2.372987</Longitude>
+								<Latitude>48.844746</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_9:" version="any">
+							<Location>
+								<Longitude>2.396497</Longitude>
+								<Latitude>48.84849</Latitude>
+							</Location>
+						</ScheduledStopPoint>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:M1F1_0:" order="1" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_0:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:NAT_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:NATM:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:M1F1_1:" order="2" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_1:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:GDL_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:GDLM:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:M1F1_3:" order="4" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_3:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:CHA_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:CHAM:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:M1F1_4:" order="5" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_4:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:CDG_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:CDGM:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:M1B1_6:" order="7" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_6:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:CDG_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:CDGM:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:M1B1_7:" order="8" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_7:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:CHA_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:CHAM:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:M1B1_8:" order="9" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_8:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:GDL_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:GDLM:">
+							</QuayRef>
+						</PassengerStopAssignment>
+						<PassengerStopAssignment id="FR:PassengerStopAssignment:M1B1_9:" order="10" version="any">
+							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1B1_9:">
+							</ScheduledStopPointRef>
+							<StopPlaceRef ref="FR:StopPlace:NAT_metro:">
+							</StopPlaceRef>
+							<QuayRef ref="FR:Quay:NATM:">
+							</QuayRef>
+						</PassengerStopAssignment>
+					</members>
+				</GeneralFrame>
+				<GeneralFrame id="FR:GeneralFrame:NETEX_HORAIRE-f31e1eef20f64733a18c538073e78396:" version="1.3:FR-NETEX_HORAIRE-2.4">
+					<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_HORAIRE:">
+					</TypeOfFrameRef>
+					<members>
+						<ServiceJourney id="FR:ServiceJourney:M1F1:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>M1F1</Value>
+								</KeyValue>
+							</keyList>
+							<dayTypes>
+								<DayTypeRef ref="FR:DayType:Week:">
+								</DayTypeRef>
+							</dayTypes>
+							<JourneyPatternRef ref="FR:ServiceJourneyPattern:M1F1:">
+							</JourneyPatternRef>
+							<OperatorRef ref="FR:Operator:TGN:">
+							</OperatorRef>
+							<passingTimes>
+								<TimetabledPassingTime>
+									<ArrivalTime>00:00:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>00:00:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>00:10:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>00:10:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>00:20:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>00:20:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>00:40:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>00:40:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+							</passingTimes>
+						</ServiceJourney>
+						<ServiceJourney id="FR:ServiceJourney:M1B1:" version="any">
+							<keyList>
+								<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+									<Key>source</Key>
+									<Value>M1B1</Value>
+								</KeyValue>
+							</keyList>
+							<dayTypes>
+								<DayTypeRef ref="FR:DayType:Week:">
+								</DayTypeRef>
+							</dayTypes>
+							<JourneyPatternRef ref="FR:ServiceJourneyPattern:M1B1:">
+							</JourneyPatternRef>
+							<OperatorRef ref="FR:Operator:TGN:">
+							</OperatorRef>
+							<passingTimes>
+								<TimetabledPassingTime>
+									<ArrivalTime>00:00:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>00:00:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>00:10:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>00:10:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>00:20:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>00:20:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+								<TimetabledPassingTime>
+									<ArrivalTime>00:30:00</ArrivalTime>
+									<ArrivalDayOffset>0</ArrivalDayOffset>
+									<DepartureTime>00:30:00</DepartureTime>
+									<DepartureDayOffset>0</DepartureDayOffset>
+								</TimetabledPassingTime>
+							</passingTimes>
+						</ServiceJourney>
+					</members>
+				</GeneralFrame>
+			</frames>
+		</CompositeFrame>
+	</dataObjects>
+</PublicationDelivery>
