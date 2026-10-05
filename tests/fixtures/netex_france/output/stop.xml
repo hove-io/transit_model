@@ -336,28 +336,10 @@
 						</TypeOfPlaceRef>
 					</placeTypes>
 					<entrances>
-						<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G1:" version="any">
-							<Name>Gate 1</Name>
-							<Centroid>
-								<Location>
-									<Longitude>2.375156</Longitude>
-									<Latitude>48.844949</Latitude>
-								</Location>
-							</Centroid>
-							<IsEntry>true</IsEntry>
-							<IsExit>true</IsExit>
-						</StopPlaceEntrance>
-						<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G2:" version="any">
-							<Name>Gate 2</Name>
-							<Centroid>
-								<Location>
-									<Longitude>2.374718</Longitude>
-									<Latitude>48.843223</Latitude>
-								</Location>
-							</Centroid>
-							<IsEntry>true</IsEntry>
-							<IsExit>true</IsExit>
-						</StopPlaceEntrance>
+						<EntranceRef ref="FR:StopPlaceEntrance:GDL-G1:">
+						</EntranceRef>
+						<EntranceRef ref="FR:StopPlaceEntrance:GDL-G2:">
+						</EntranceRef>
 					</entrances>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
@@ -528,17 +510,8 @@
 						</TypeOfPlaceRef>
 					</placeTypes>
 					<entrances>
-						<StopPlaceEntrance id="FR:StopPlaceEntrance:CDG-GA:" version="any">
-							<Name>Gate A</Name>
-							<Centroid>
-								<Location>
-									<Longitude>2.295636</Longitude>
-									<Latitude>48.87342</Latitude>
-								</Location>
-							</Centroid>
-							<IsEntry>true</IsEntry>
-							<IsExit>true</IsExit>
-						</StopPlaceEntrance>
+						<EntranceRef ref="FR:StopPlaceEntrance:CDG-GA:">
+						</EntranceRef>
 					</entrances>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
@@ -690,6 +663,45 @@
 					<TransportMode>bus</TransportMode>
 					<StopPlaceType>onstreetBus</StopPlaceType>
 				</StopPlace>
+				<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G1:" version="any">
+					<Name>Gate 1</Name>
+					<Centroid>
+						<Location>
+							<Longitude>2.375156</Longitude>
+							<Latitude>48.844949</Latitude>
+						</Location>
+					</Centroid>
+					<SiteRef ref="FR:StopPlace:GDL:">
+					</SiteRef>
+					<IsEntry>true</IsEntry>
+					<IsExit>true</IsExit>
+				</StopPlaceEntrance>
+				<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G2:" version="any">
+					<Name>Gate 2</Name>
+					<Centroid>
+						<Location>
+							<Longitude>2.374718</Longitude>
+							<Latitude>48.843223</Latitude>
+						</Location>
+					</Centroid>
+					<SiteRef ref="FR:StopPlace:GDL:">
+					</SiteRef>
+					<IsEntry>true</IsEntry>
+					<IsExit>true</IsExit>
+				</StopPlaceEntrance>
+				<StopPlaceEntrance id="FR:StopPlaceEntrance:CDG-GA:" version="any">
+					<Name>Gate A</Name>
+					<Centroid>
+						<Location>
+							<Longitude>2.295636</Longitude>
+							<Latitude>48.87342</Latitude>
+						</Location>
+					</Centroid>
+					<SiteRef ref="FR:StopPlace:CDG:">
+					</SiteRef>
+					<IsEntry>true</IsEntry>
+					<IsExit>true</IsExit>
+				</StopPlaceEntrance>
 			</members>
 		</GeneralFrame>
 	</dataObjects>
