@@ -280,6 +280,8 @@ impl<'a> StopExporter<'a> {
                 } else {
                     element_builder
                 };
+                let element_builder =
+                    element_builder.append(self.generate_type_of_place_refs("monomodalStopPlace"));
                 let element_builder = element_builder.append(parent_site_ref_element.clone());
                 let element_builder =
                     element_builder.append(self.generate_transport_mode(*netex_mode));
@@ -303,6 +305,8 @@ impl<'a> StopExporter<'a> {
             } else {
                 element_builder
             };
+            let element_builder =
+                element_builder.append(self.generate_type_of_place_refs("multimodalStopPlace"));
             let element_builder = if let Some(entrances) = self.generate_entrances(&stop_area.id) {
                 element_builder.append(entrances)
             } else {
@@ -522,6 +526,15 @@ impl<'a> StopExporter<'a> {
         };
         Element::builder("StopPlaceType")
             .append(Node::Text(stop_place_type.to_owned()))
+            .build()
+    }
+
+    fn generate_type_of_place_refs(&self, type_of_place_ref: &str) -> Element {
+        let type_of_place_ref_element = Element::builder("TypeOfPlaceRef")
+            .attr("ref", type_of_place_ref)
+            .build();
+        Element::builder("placeTypes")
+            .append(type_of_place_ref_element)
             .build()
     }
 }
