@@ -116,6 +116,12 @@ struct Opt {
     ///     NTFS trip short name is always None
     #[arg(long)]
     read_trip_short_name: bool,
+
+    /// Lock the stop points, stop areas and lines that have no offer
+    /// (not used by any trip), so that they are kept in the NTFS
+    /// instead of being removed by the sanitize step.
+    #[arg(long)]
+    lock_objects: bool,
 }
 
 fn run(opt: Opt) -> Result<()> {
@@ -138,6 +144,7 @@ fn run(opt: Opt) -> Result<()> {
         on_demand_transport_comment: opt.odt_comment,
         read_as_line: opt.read_as_line,
         read_trip_short_name: opt.read_trip_short_name,
+        lock_objects: opt.lock_objects,
     };
 
     let model = transit_model::gtfs::Reader::new(configuration).parse(opt.input)?;

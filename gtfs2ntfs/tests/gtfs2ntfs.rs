@@ -1,6 +1,7 @@
 use assert_cmd::{cargo_bin, prelude::*};
 use std::process::Command;
 use tempfile::TempDir;
+use transit_model::test_utils::compare_output_dir_with_expected;
 
 #[test]
 fn test_gtfs2ntfs() {
@@ -85,4 +86,46 @@ fn test_gtfs2ntfs_without_transfers() {
     assert!(output_dir.path().join("feed_infos.txt").is_file());
     let collections = transit_model::ntfs::read(output_dir).unwrap();
     assert_eq!(0, collections.transfers.len());
+}
+
+#[test]
+fn test_gtfs2ntfs_lock_objects() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::new(cargo_bin!("gtfs2ntfs"))
+        .arg("--input")
+        .arg("../tests/fixtures/gtfs2ntfs/lock_objects/input")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .arg("--current-datetime")
+        .arg("2019-04-03T17:19:00Z")
+        .arg("--ignore-transfers")
+        .arg("--lock-objects")
+        .assert()
+        .success();
+    compare_output_dir_with_expected(
+        output_dir.path(),
+        Some(vec!["object_locks.txt", "lines.txt", "stops.txt"]),
+        "../tests/fixtures/gtfs2ntfs/lock_objects/output_locked",
+    );
+}
+
+#[test]
+fn test_gtfs2ntfs_without_lock_objects() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::new(cargo_bin!("gtfs2ntfs"))
+        .arg("--input")
+        .arg("../tests/fixtures/gtfs2ntfs/lock_objects/input")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .arg("--current-datetime")
+        .arg("2019-04-03T17:19:00Z")
+        .arg("--ignore-transfers")
+        .assert()
+        .success();
+    assert!(!output_dir.path().join("object_locks.txt").exists());
+    compare_output_dir_with_expected(
+        output_dir.path(),
+        Some(vec!["lines.txt", "stops.txt"]),
+        "../tests/fixtures/gtfs2ntfs/lock_objects/output_default",
+    );
 }

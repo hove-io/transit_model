@@ -195,6 +195,72 @@ impl Collections {
         Ok(())
     }
 
+    /// Add to `object_locks` the stop points, stop areas and lines that would
+    /// otherwise be removed by [`Collections::sanitize`] because they are not
+    /// attached to any offer.
+    ///
+    /// Only the objects without offer are inserted, which keeps `object_locks`
+    /// small compared to locking every object.
+    /// - a stop point is locked if no usable vehicle journey calls at it
+    /// - a stop area is locked if it has no stop point (a stop area whose stop
+    ///   points are all locked is kept by `sanitize` through them)
+    /// - a line is locked if none of its routes has a usable vehicle journey
+    ///
+    /// A vehicle journey is usable if it has stop times and a calendar with
+    /// dates, exactly as `sanitize` considers it.
+    pub fn lock_objects_without_offer(&mut self) {
+        let mut used_stop_points = HashSet::<Idx<StopPoint>>::new();
+        let mut used_routes = HashSet::<&str>::new();
+        for vj in self.vehicle_journeys.values() {
+            let has_calendar = self
+                .calendars
+                .get(&vj.service_id)
+                .is_some_and(|cal| !cal.dates.is_empty());
+            if vj.stop_times.is_empty() || !has_calendar {
+                continue;
+            }
+            used_routes.insert(vj.route_id.as_str());
+            used_stop_points.extend(vj.stop_times.iter().map(|st| st.stop_point_idx));
+        }
+        let used_lines: HashSet<&str> = self
+            .routes
+            .values()
+            .filter(|r| used_routes.contains(r.id.as_str()))
+            .map(|r| r.line_id.as_str())
+            .collect();
+        let stop_areas_with_stop_points: HashSet<&str> = self
+            .stop_points
+            .values()
+            .map(|sp| sp.stop_area_id.as_str())
+            .collect();
+
+        let mut locks = Vec::new();
+        locks.extend(
+            self.stop_points
+                .iter()
+                .filter(|(idx, _)| !used_stop_points.contains(idx))
+                .map(|(_, sp)| (ObjectType::StopPoint, sp.id.clone())),
+        );
+        locks.extend(
+            self.stop_areas
+                .values()
+                .filter(|sa| !stop_areas_with_stop_points.contains(sa.id.as_str()))
+                .map(|sa| (ObjectType::StopArea, sa.id.clone())),
+        );
+        locks.extend(
+            self.lines
+                .values()
+                .filter(|l| !used_lines.contains(l.id.as_str()))
+                .map(|l| (ObjectType::Line, l.id.clone())),
+        );
+        for (object_type, object_id) in locks {
+            self.object_locks.push(ObjectLock {
+                object_type,
+                object_id,
+            });
+        }
+    }
+
     /// Keep the collections consistent for the new model by purging unreferenced data by
     /// calendars
     pub fn sanitize(&mut self) -> Result<()> {
@@ -1803,6 +1869,75 @@ impl ops::Deref for Model {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    mod lock_objects_without_offer {
+        use super::*;
+        use crate::model_builder::ModelBuilder;
+        use pretty_assertions::assert_eq;
+
+        fn locked(collections: &Collections, object_type: ObjectType) -> Vec<&str> {
+            let mut ids: Vec<&str> = collections
+                .object_locks
+                .values()
+                .filter(|lock| lock.object_type == object_type)
+                .map(|lock| lock.object_id.as_str())
+                .collect();
+            ids.sort_unstable();
+            ids
+        }
+
+        #[test]
+        fn lock_only_objects_without_offer() {
+            let model = ModelBuilder::default()
+                .route("R:used", |r| {
+                    r.line_id = "L:used".to_string();
+                })
+                .stop_area("SA:used", |_| {})
+                .stop_point("SP:used", |sp| sp.stop_area_id = "SA:used".to_string())
+                .vj("VJ", |vj| {
+                    vj.route("R:used")
+                        .st("SP:used", "10:00:00")
+                        .st("SP:other", "11:00:00");
+                })
+                .build();
+            let mut collections = model.into_collections();
+            collections
+                .lines
+                .push(Line {
+                    id: "L:orphan".to_string(),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+                .stop_areas
+                .push(StopArea {
+                    id: "SA:empty".to_string(),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections
+                .stop_points
+                .push(StopPoint {
+                    id: "SP:orphan".to_string(),
+                    stop_area_id: "SA:used".to_string(),
+                    ..Default::default()
+                })
+                .unwrap();
+            collections.lock_objects_without_offer();
+
+            assert_eq!(vec!["L:orphan"], locked(&collections, ObjectType::Line));
+            assert_eq!(
+                vec!["SP:orphan"],
+                locked(&collections, ObjectType::StopPoint)
+            );
+            assert_eq!(vec!["SA:empty"], locked(&collections, ObjectType::StopArea));
+
+            let model = Model::new(collections).unwrap();
+            assert!(model.lines.get("L:orphan").is_some());
+            assert!(model.stop_points.get("SP:orphan").is_some());
+            assert!(model.stop_areas.get("SA:empty").is_some());
+        }
+    }
 
     mod enhance_trip_headsign {
         use super::*;

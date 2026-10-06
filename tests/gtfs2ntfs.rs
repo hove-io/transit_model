@@ -39,6 +39,7 @@ fn test_gtfs() {
             on_demand_transport_comment: None,
             read_as_line: false,
             read_trip_short_name: false,
+            lock_objects: false,
         };
         let model = transit_model::gtfs::Reader::new(configuration)
             .parse(input_dir)
@@ -66,6 +67,7 @@ fn test_gtfs_read_trip_short_name_as_in_the_gtfs_specification() {
             on_demand_transport_comment: None,
             read_as_line: false,
             read_trip_short_name: true,
+            lock_objects: false,
         };
         let model = transit_model::gtfs::Reader::new(configuration)
             .parse(input_dir)
@@ -99,6 +101,7 @@ fn test_gtfs_with_description() {
             on_demand_transport_comment: None,
             read_as_line: false,
             read_trip_short_name: false,
+            lock_objects: false,
         };
         let model = transit_model::gtfs::Reader::new(configuration)
             .parse(input_dir)
@@ -209,6 +212,7 @@ fn test_minimal_gtfs_with_odt_comment() {
             ),
             read_as_line: false,
             read_trip_short_name: false,
+            lock_objects: false,
         };
         let model = transit_model::gtfs::Reader::new(configuration)
             .parse(input_dir)
@@ -239,6 +243,7 @@ fn test_minimal_gtfs_frequencies_with_odt_comment() {
             ),
             read_as_line: false,
             read_trip_short_name: false,
+            lock_objects: false,
         };
 
         let model = transit_model::gtfs::Reader::new(configuration)

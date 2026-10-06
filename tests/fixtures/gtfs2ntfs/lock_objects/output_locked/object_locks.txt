@@ -1,0 +1,8 @@
+object_type,object_id
+stop_area,stoparea:2
+stop_point,stop:21
+stop_point,stop:12
+stop_point,stop:62
+line,route_no_offer:7
+stop_point,stop:13
+stop_point,stop:14
