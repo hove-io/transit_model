@@ -253,11 +253,12 @@ impl<'a> StopExporter<'a> {
         } else {
             element_builder
         };
-        let element_builder = if let Some(public_code) = self.generate_public_code(stop_point) {
-            element_builder.append(public_code)
-        } else {
-            element_builder
-        };
+        let element_builder =
+            if let Some(public_code) = self.generate_public_code(stop_point.code.as_deref()) {
+                element_builder.append(public_code)
+            } else {
+                element_builder
+            };
         Ok(element_builder.build())
     }
 
@@ -357,8 +358,8 @@ impl<'a> StopExporter<'a> {
             .build()
     }
 
-    fn generate_public_code(&self, stop_point: &'a StopPoint) -> Option<Element> {
-        stop_point.code.as_ref().map(|code| {
+    fn generate_public_code(&self, code: Option<&str>) -> Option<Element> {
+        code.map(|code| {
             Element::builder("PublicCode")
                 .append(Node::Text(code.to_owned()))
                 .build()
@@ -512,6 +513,12 @@ impl<'a> StopExporter<'a> {
             };
         let stop_place_id = Exporter::generate_id(stop_area_id, ObjectType::StopPlace);
         let element_builder = element_builder.append(self.generate_site_ref(&stop_place_id));
+        let element_builder =
+            if let Some(public_code) = self.generate_public_code(stop_location.code.as_deref()) {
+                element_builder.append(public_code)
+            } else {
+                element_builder
+            };
         let element_builder = element_builder
             .append(self.generate_is_entry_exit("IsEntry"))
             .append(self.generate_is_entry_exit("IsExit"));
