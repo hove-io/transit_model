@@ -673,6 +673,7 @@
 					</Centroid>
 					<SiteRef ref="FR:StopPlace:GDL:">
 					</SiteRef>
+					<PublicCode>1</PublicCode>
 					<IsEntry>true</IsEntry>
 					<IsExit>true</IsExit>
 				</StopPlaceEntrance>
@@ -699,6 +700,7 @@
 					</Centroid>
 					<SiteRef ref="FR:StopPlace:CDG:">
 					</SiteRef>
+					<PublicCode>A</PublicCode>
 					<IsEntry>true</IsEntry>
 					<IsExit>true</IsExit>
 				</StopPlaceEntrance>
