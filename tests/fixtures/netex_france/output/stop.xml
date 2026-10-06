@@ -509,6 +509,16 @@
 						<TypeOfPlaceRef ref="multimodalStopPlace">
 						</TypeOfPlaceRef>
 					</placeTypes>
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:CDG_0:" version="any">
+						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
+						<limitations>
+							<AccessibilityLimitation>
+								<WheelchairAccess>true</WheelchairAccess>
+								<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+								<VisualSignsAvailable>unknown</VisualSignsAvailable>
+							</AccessibilityLimitation>
+						</limitations>
+					</AccessibilityAssessment>
 					<entrances>
 						<EntranceRef ref="FR:StopPlaceEntrance:CDG-GA:">
 						</EntranceRef>
@@ -698,6 +708,14 @@
 							<Latitude>48.87342</Latitude>
 						</Location>
 					</Centroid>
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:CDG-GA_1:" version="any">
+						<MobilityImpairedAccess>false</MobilityImpairedAccess>
+						<limitations>
+							<AccessibilityLimitation>
+								<WheelchairAccess>false</WheelchairAccess>
+							</AccessibilityLimitation>
+						</limitations>
+					</AccessibilityAssessment>
 					<SiteRef ref="FR:StopPlace:CDG:">
 					</SiteRef>
 					<PublicCode>A</PublicCode>

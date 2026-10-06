@@ -6,7 +6,7 @@ GDLB,Gare de Lyon (Bus),,48.844746,2.372987,,GDL,ZoneParis,
 NAT,Nation,,48.84849,2.396497,1,,,
 NATR,Nation (RER),,48.84849,2.396497,0,NAT,ZoneParis,0
 NATM,Nation (Metro),,48.84849,2.396497,,NAT,ZoneParis,
-CDG,Charles de Gaulle,,48.873965,2.295354,1,,,
+CDG,Charles de Gaulle,,48.873965,2.295354,1,,,0
 CDGR,Charles de Gaulle (RER),,48.873965,2.295354,0,CDG,ZoneOffParis,
 CDGM,Charles de Gaulle (Metro),,48.873965,2.295354,,CDG,ZoneOffParis,
 DEF,La Défense,,48.891737,2.238964,1,,,
@@ -17,4 +17,4 @@ MTP,Montparnasse,,48.842481,2.321783,1,,,
 MTPB,Montparnasse (Bus),,48.842481,2.321783,0,MTP,ZoneParis,
 GDL-G1,Gate 1,1,48.844949,2.375156,3,GDL,,
 GDL-G2,Gate 2,,48.843223,2.374718,3,GDL,,
-CDG-GA,Gate A,A,48.873420,2.295636,3,CDG,,
+CDG-GA,Gate A,A,48.873420,2.295636,3,CDG,,1
