@@ -24,7 +24,7 @@
 								<Phone>0123456789</Phone>
 								<Url>https://www.the-great-network.zz</Url>
 							</ContactDetails>
-							<OrganisationType>other</OrganisationType>
+							<OrganisationType>authority</OrganisationType>
 						</Operator>
 						<SiteConnection id="FR:SiteConnection:GDLB_GDLM:" version="any">
 							<WalkTransferDuration>
