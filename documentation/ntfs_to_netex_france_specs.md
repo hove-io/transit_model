@@ -516,7 +516,7 @@ Example:
 | Operator/ContactDetails/Email   | companies.txt    | company_mail  |                                                                                                                                                                 |
 | Operator/ContactDetails/Phone   | companies.txt    | company_phone |                                                                                                                                                                 |
 | Operator/ContactDetails/Url     | companies.txt    | company_url   |                                                                                                                                                                 |
-| Operator/OrganisationType       |                  |               | fixed value `other`                                                                                                                                             |
+| Operator/OrganisationType       | companies.txt    | company_role  | `"authority"` if `company_role = Authority`, `"operator"` if `company_role = Operator`                                                                          |
 | Operator/keyList/KeyValue/Value | object_codes.txt | object_code   | Present only if a code with `object_system` = `source` exists for this `company`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source` |
 
 Example:
@@ -535,7 +535,7 @@ Example:
 		<Phone>0123456789</Phone>
 		<Url>https://www.example.com</Url>
 	</ContactDetails>
-	<OrganisationType>other</OrganisationType>
+	<OrganisationType>authority</OrganisationType>
 </Operator>
 ```
 
