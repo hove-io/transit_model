@@ -64,6 +64,7 @@ pub(in crate::netex_france) enum ObjectType {
     AccessibilityAssessment,
     DayType,
     DayTypeAssignment,
+    FareZone,
     Line,
     Network,
     Operator,
@@ -90,6 +91,7 @@ impl Display for ObjectType {
             AccessibilityAssessment => write!(f, "AccessibilityAssessment"),
             DayType => write!(f, "DayType"),
             DayTypeAssignment => write!(f, "DayTypeAssignment"),
+            FareZone => write!(f, "FareZone"),
             Line => write!(f, "Line"),
             Network => write!(f, "Network"),
             Operator => write!(f, "Operator"),
@@ -433,7 +435,7 @@ impl Exporter<'_> {
 
     // Returns a 'GeneralFrame' containing all 'StopArea' and 'Quay'
     fn create_stops_frame(&self) -> Result<Element> {
-        let stop_exporter = StopExporter::new(self.model, &self.participant_ref)?;
+        let stop_exporter = StopExporter::new(self.model)?;
         let stops = stop_exporter.export()?;
         let members = Self::create_members(stops);
         Ok(self.create_frame(

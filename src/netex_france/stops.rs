@@ -41,7 +41,6 @@ type StopAreaStopPoints<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 type StopAreaEntrances<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 pub struct StopExporter<'a> {
     model: &'a Model,
-    participant_ref: &'a str,
     stop_point_modes: StopPointModes<'a>,
     stop_area_stop_points: StopAreaStopPoints<'a>,
     stop_area_entrances: StopAreaEntrances<'a>,
@@ -74,13 +73,12 @@ impl Limitation {
 
 // Publicly exposed methods
 impl<'a> StopExporter<'a> {
-    pub fn new(model: &'a Model, participant_ref: &'a str) -> Result<Self> {
+    pub fn new(model: &'a Model) -> Result<Self> {
         let stop_point_modes = Self::build_stop_point_modes(model);
         let stop_area_stop_points = Self::build_stop_area_stop_points(model);
         let stop_area_entrances = Self::build_stop_area_entrances(model);
         let exporter = StopExporter {
             model,
-            participant_ref,
             stop_point_modes,
             stop_area_stop_points,
             stop_area_entrances,
@@ -590,8 +588,14 @@ impl<'a> StopExporter<'a> {
 
     fn generate_tariff_zones(&self, stop_point: &'a StopPoint) -> Option<Element> {
         stop_point.fare_zone_id.as_ref().map(|fare_zone_id| {
+            // Profil 2.4 requires FareZoneRef for this element, but the XSD only
+            // allows TariffZoneRef here (tariffZoneRefs_RelStructure); it can
+            // reference a FareZone (specialization of TariffZone, carried by fare.xml).
             let tariff_zone_ref = Element::builder("TariffZoneRef")
-                .attr("ref", format!("{}:{}", self.participant_ref, fare_zone_id))
+                .attr(
+                    "ref",
+                    Exporter::generate_id(fare_zone_id, ObjectType::FareZone),
+                )
                 .build();
             Element::builder("tariffZones")
                 .append(tariff_zone_ref)
@@ -670,7 +674,7 @@ mod tests {
         #[test]
         fn test_impaired_access_true() {
             let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let stop_exporter = StopExporter::new(&model).unwrap();
             assert_eq!(
                 "true",
                 get_mobility_impaired_access_value(
@@ -683,7 +687,7 @@ mod tests {
         #[test]
         fn test_impaired_access_false() {
             let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let stop_exporter = StopExporter::new(&model).unwrap();
             assert_eq!(
                 "false",
                 get_mobility_impaired_access_value(
@@ -696,7 +700,7 @@ mod tests {
         #[test]
         fn test_impaired_access_partial() {
             let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let stop_exporter = StopExporter::new(&model).unwrap();
             assert_eq!(
                 "partial",
                 get_mobility_impaired_access_value(
@@ -709,7 +713,7 @@ mod tests {
         #[test]
         fn test_impaired_access_unknown() {
             let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let stop_exporter = StopExporter::new(&model).unwrap();
             assert_eq!(
                 "unknown",
                 get_mobility_impaired_access_value(
