@@ -28,7 +28,7 @@
 						</Operator>
 						<SiteConnection id="FR:SiteConnection:GDLB_GDLM:" version="any">
 							<WalkTransferDuration>
-								<DefaultDuration>PT120S</DefaultDuration>
+								<DefaultDuration>PT0S</DefaultDuration>
 							</WalkTransferDuration>
 							<From>
 								<StopPlaceRef ref="FR:StopPlace:GDL:">
@@ -45,7 +45,7 @@
 						</SiteConnection>
 						<SiteConnection id="FR:SiteConnection:GDLM_GDLB:" version="any">
 							<WalkTransferDuration>
-								<DefaultDuration>PT120S</DefaultDuration>
+								<DefaultDuration>PT0S</DefaultDuration>
 							</WalkTransferDuration>
 							<From>
 								<StopPlaceRef ref="FR:StopPlace:GDL:">

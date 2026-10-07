@@ -45,7 +45,7 @@ impl<'a> TransferExporter<'a> {
             .attr("id", self.generate_id(transfer))
             .attr("version", "any");
         let element_builder = if let Some(walk_transfer_duration_element) =
-            self.generate_walk_transfer_duration(transfer.real_min_transfer_time)
+            self.generate_walk_transfer_duration(transfer.min_transfer_time)
         {
             element_builder.append(walk_transfer_duration_element)
         } else {
@@ -63,11 +63,12 @@ impl<'a> TransferExporter<'a> {
         )
     }
 
-    fn generate_walk_transfer_duration(
-        &self,
-        real_min_transfer_time: Option<u32>,
-    ) -> Option<Element> {
-        real_min_transfer_time
+    // The NeTEx-fr 2.4 profile drops the generic TransferDuration (walk + wait
+    // time) in favor of WalkTransferDuration (walk time only); use
+    // min_transfer_time, not real_min_transfer_time which includes a tolerance
+    // margin.
+    fn generate_walk_transfer_duration(&self, min_transfer_time: Option<u32>) -> Option<Element> {
+        min_transfer_time
             .map(|time| format!("PT{time}S"))
             .map(|duration| {
                 Element::builder("DefaultDuration")
