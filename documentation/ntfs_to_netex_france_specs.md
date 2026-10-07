@@ -161,17 +161,18 @@ Each `Quay` node corresponds to an NTFS `stop_point` and is of type `ZE`
 (__Zone d'embarquement__).  All `Quay` elements are grouped into a `members`
 element which itself is wrapped into a `GeneralFrame`.
 
-| Netex field                         | NTFS file        | NTFS field            | Note                                                                                                                                                               |
-| ----------------------------------- | ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Quay/@id                            | stops.txt        | stop_id               | see [id formatting](#id-of-objects)                                                                                                                                |
-| Quay/@version                       |                  |                       | fixed value `any`.                                                                                                                                                 |
-| Quay/Name                           | stops.txt        | stop_name             |                                                                                                                                                                    |
-| Quay/Centroid/Location              | stops.txt        | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                                              |
-| Quay/AccessibilityAssessment        | stops.txt        | equipment_id          | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.                                     |
-| Quay/TransportMode                  |                  |                       | see (2) below                                                                                                                                                      |
-| Quay/tariffZones/TariffZoneRef/@ref | stops.txt        | fare_zone_id          | The fare zone is prefixed by the `ParticipantRef` prefix with a `:` separator                                                                                      |
-| Quay/PublicCode                     | stops.txt        | stop_code             | This node may not be present if the stop_point has no `stop_code`.                                                                                                 |
-| Quay/keyList/KeyValue/Value         | object_codes.txt | object_code           | Present only if a code with `object_system` = `source` exists for this `stop_point`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source` |
+| Netex field                         | NTFS file        | NTFS field            | Note                                                                                                                                                                                                                                                     |
+| ----------------------------------- | ---------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Quay/@id                            | stops.txt        | stop_id               | see [id formatting](#id-of-objects)                                                                                                                                                                                                                      |
+| Quay/@version                       |                  |                       | fixed value `any`.                                                                                                                                                                                                                                       |
+| Quay/Name                           | stops.txt        | stop_name             |                                                                                                                                                                                                                                                          |
+| Quay/Centroid/Location              | stops.txt        | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                                                                                                                                    |
+| Quay/AccessibilityAssessment        | stops.txt        | equipment_id          | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.                                                                                                                           |
+| Quay/SiteRef/@ref                   |                  |                       | Reference to the monomodal `StopPlace` it belongs to, for the same mode as `Quay/TransportMode` below; see [id formatting](#id-of-objects)                                                                                                               |
+| Quay/TransportMode                  |                  |                       | see (2) below                                                                                                                                                                                                                                            |
+| Quay/tariffZones/TariffZoneRef/@ref | stops.txt        | fare_zone_id          | Target is a `FareZone` (see fare.xml); see [id formatting](#id-of-objects). The profile text asks for an element named `FareZoneRef`, but the XSD only allows `TariffZoneRef` at this position (`tariffZoneRefs_RelStructure`); `TariffZoneRef` is kept. |
+| Quay/PublicCode                     | stops.txt        | stop_code             | This node may not be present if the stop_point has no `stop_code`.                                                                                                                                                                                       |
+| Quay/keyList/KeyValue/Value         | object_codes.txt | object_code           | Present only if a code with `object_system` = `source` exists for this `stop_point`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source`                                                                                       |
 
 **(2) definition of the TransportMode**
 As a stop_point can be associated to several physical_modes, all the
@@ -183,7 +184,7 @@ specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_
 
 #### AccessibilityAssessment
 
-If the stop_point is associated to an equipment, a node `AccessibilityAssessment` is created and its content is as follow:
+If a `Quay` (`stop_point`), a multimodal `StopPlace` (`stop_area`) or a `StopPlaceEntrance` (`stop_location`) is associated to an equipment, a node `AccessibilityAssessment` is created and its content is as follow. `StopPlaceEntrance` only ever carries the `WheelchairAccess` limitation (see table below).
 
 | Netex field                                                                         | NTFS file      | NTFS field           | Note                                                                                                                                                     |
 | ----------------------------------------------------------------------------------- | -------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -191,8 +192,8 @@ If the stop_point is associated to an equipment, a node `AccessibilityAssessment
 | AccessibilityAssessment/@version                                                    |                |                      | fixed value `any`.                                                                                                                                       |
 | AccessibilityAssessment/MobilityImpairedAccess                                      |                |                      | see (1) below                                                                                                                                            |
 | AccessibilityAssessment/limitations/AccessibilityLimitation/WheelchairAccess        | equipments.txt | wheelchair_boarding  | see (2) below                                                                                                                                            |
-| AccessibilityAssessment/limitations/AccessibilityLimitation/AudibleSignalsAvailable | equipments.txt | audible_announcement | see (2) below                                                                                                                                            |
-| AccessibilityAssessment/limitations/AccessibilityLimitation/VisualSignsAvailable    | equipments.txt | visual_announcement  | see (2) below                                                                                                                                            |
+| AccessibilityAssessment/limitations/AccessibilityLimitation/AudibleSignalsAvailable | equipments.txt | audible_announcement | see (2) below; not present on `StopPlaceEntrance`                                                                                                        |
+| AccessibilityAssessment/limitations/AccessibilityLimitation/VisualSignsAvailable    | equipments.txt | visual_announcement  | see (2) below; not present on `StopPlaceEntrance`                                                                                                        |
 
 **(1) definition of MobilityImpairedAccess**
 
@@ -207,7 +208,7 @@ As stated in `NF_Profil NeTEx éléments communs(F) - v2.1.pdf` in chapter 5.10:
 
 | NTFS accessibility value | Netex accessibility value |
 | ------------------------ | ------------------------- |
-| 0 or undefined           | `undefined`               |
+| 0 or undefined           | `unknown`                  |
 | 1                        | `true`                    |
 | 2                        | `false`                   |
 
@@ -238,9 +239,10 @@ Example:
 			</AccessibilityLimitation>
 		</limitations>
 	</AccessibilityAssessment>
+	<SiteRef ref="FR:StopPlace:S1_bus:" />
 	<TransportMode>bus</TransportMode>
 	<tariffZones>
-		<TariffZoneRef ref="Participant:Z1" />
+		<TariffZoneRef ref="FR:FareZone:Z1:" />
 	</tariffZones>
 	<PublicCode>Q1</PublicCode>
 </Quay>
@@ -269,7 +271,7 @@ The `StopPlace/StopPlaceType` is defined from its `StopPlace/TransportMode`.
 | bus        | onstreetBus   |
 | cableway   | liftStation   |
 | coach      | coachStation  |
-| funicular  | railStation   |
+| funicular  | metroStation  |
 | metro      | metroStation  |
 | rail       | railStation   |
 | tram       | tramStation   |
@@ -277,43 +279,57 @@ The `StopPlace/StopPlaceType` is defined from its `StopPlace/TransportMode`.
 
 #### Monomodal StopPlace
 
-| Netex field                    | NTFS file | NTFS field            | Note                                                                                                                        |
-| ------------------------------ | --------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| StopPlace/@id                  | stops.txt | stop_id               | see [id formatting](#id-of-objects)                                                                                         |
-| StopPlace/@version             |           |                       | fixed value `any`.                                                                                                          |
-| StopPlace/Name                 | stops.txt | stop_name             |                                                                                                                             |
-| StopPlace/Centroid/Location    | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent |
-| StopPlace/ParentSiteRef        |           |                       | link to the corresponding Multimodal `StopPlace`                                                                            |
-| StopPlace/TransportMode        |           |                       | use the only NeTEx mode                                                                                                     |
-| StopPlace/StopPlaceType        |           |                       | see the section [StopPlaceType mapping](#stopplacetype-mapping)                                                             |
-| StopPlace/quays/QuayRef[]/@ref |           |                       | see [id formatting](#id-of-objects)                                                                                         |
+| Netex field                         | NTFS file | NTFS field            | Note                                                                                                                                                      |
+| ----------------------------------- | --------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| StopPlace/@id                       | stops.txt | stop_id               | `stop_id` suffixed with `_` and the NeTEx mode (see [NeTEx Transport Modes](#netex-transport-modes)), then formatted per [id formatting](#id-of-objects) |
+| StopPlace/@version                  |           |                       | fixed value `any`.                                                                                                                                       |
+| StopPlace/Name                      | stops.txt | stop_name             |                                                                                                                                                          |
+| StopPlace/Centroid/Location         | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                                    |
+| StopPlace/placeTypes/TypeOfPlaceRef |           |                       | fixed value `monomodalStopPlace`                                                                                                                         |
+| StopPlace/ParentSiteRef             |           |                       | link to the corresponding Multimodal `StopPlace`                                                                                                         |
+| StopPlace/TransportMode             |           |                       | use the only NeTEx mode                                                                                                                                  |
+| StopPlace/StopPlaceType             |           |                       | see the section [StopPlaceType mapping](#stopplacetype-mapping)                                                                                          |
+| StopPlace/quays/QuayRef[]/@ref      |           |                       | see [id formatting](#id-of-objects)                                                                                                                      |
+
+Example:
+
+```xml
+<StopPlace id="FR:StopPlace:S1_bus:" version="any">
+	<Name>Stop Place 1</Name>
+	<Centroid>
+		<Location>
+			<Longitude>2.5</Longitude>
+			<Latitude>48.8</Latitude>
+		</Location>
+	</Centroid>
+	<placeTypes>
+		<TypeOfPlaceRef ref="monomodalStopPlace" />
+	</placeTypes>
+	<ParentSiteRef ref="FR:StopPlace:S1:" />
+	<TransportMode>bus</TransportMode>
+	<StopPlaceType>onstreetBus</StopPlaceType>
+	<quays>
+		<QuayRef ref="FR:Quay:Q1:" />
+	</quays>
+</StopPlace>
+```
 
 #### Multimodal StopPlace
 
-| Netex field                      | NTFS file        | NTFS field            | Note                                                                                                                                                              |
-| -------------------------------- | ---------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| StopPlace/@id                    | stops.txt        | stop_id               | see [id formatting](#id-of-objects)                                                                                                                               |
-| StopPlace/@version               |                  |                       | fixed value `any`.                                                                                                                                                |
-| StopPlace/Name                   | stops.txt        | stop_name             |                                                                                                                                                                   |
-| StopPlace/Centroid/Location      | stops.txt        | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                                             |
-| StopPlace/entrances[]            |                  |                       | Link to the station entrances/exits, if present. See [StopPlaceEntrance](#stopplaceentrance).                                                                     |
-| StopPlace/TransportMode          |                  |                       | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis))  |
-| StopPlace/StopPlaceType          |                  |                       | see the section [StopPlaceType mapping](#stopplacetype-mapping)                                                                                                   |
-| StopPlace/keyList/KeyValue/Value | object_codes.txt | object_code           | Present only if a code with `object_system` = `source` exists for this `stop_area`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source` |
+| Netex field                            | NTFS file        | NTFS field            | Note                                                                                                                                                              |
+| -------------------------------------- | ---------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| StopPlace/@id                          | stops.txt        | stop_id               | see [id formatting](#id-of-objects)                                                                                                                               |
+| StopPlace/@version                     |                  |                       | fixed value `any`.                                                                                                                                                |
+| StopPlace/Name                         | stops.txt        | stop_name             |                                                                                                                                                                   |
+| StopPlace/Centroid/Location            | stops.txt        | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                                             |
+| StopPlace/placeTypes/TypeOfPlaceRef    |                  |                       | fixed value `multimodalStopPlace`                                                                                                                                 |
+| StopPlace/AccessibilityAssessment      | stops.txt        | equipment_id          | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.                                    |
+| StopPlace/entrances/EntranceRef[]/@ref |                  |                       | Reference to the `StopPlaceEntrance` object(s) of this station, if any; see [StopPlaceEntrance](#stopplaceentrance)                                               |
+| StopPlace/TransportMode                |                  |                       | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis))  |
+| StopPlace/StopPlaceType                |                  |                       | see the section [StopPlaceType mapping](#stopplacetype-mapping)                                                                                                   |
+| StopPlace/keyList/KeyValue/Value       | object_codes.txt | object_code           | Present only if a code with `object_system` = `source` exists for this `stop_area`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source` |
 
-#### StopPlaceEntrance
-A `StopPlaceEntrance` node is created for each entrance/exit (stop with `location_type` = 3).
-
-| Netex field                         | NTFS file | NTFS field            | Note                                                                                                                        |
-| ----------------------------------- | --------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| StopPlaceEntrance/@id               | stops.txt | stop_id               | see [id formatting](#id-of-objects)                                                                                         |
-| StopPlaceEntrance/@version          |           |                       | fixed value `any`.                                                                                                          |
-| StopPlaceEntrance/Name              | stops.txt | stop_name             |                                                                                                                             |
-| StopPlaceEntrance/Centroid/Location | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent |
-| StopPlaceEntrance/IsEntry           |           |                       | fixed value `true`                                                                                                          |
-| StopPlaceEntrance/IsExit            |           |                       | fixed value `true`                                                                                                          |
-
-Example (multimodal `StopPlace` with an entrance):
+Example:
 
 ```xml
 <StopPlace id="FR:StopPlace:S1:" version="any">
@@ -330,22 +346,66 @@ Example (multimodal `StopPlace` with an entrance):
 			<Latitude>48.8</Latitude>
 		</Location>
 	</Centroid>
+	<placeTypes>
+		<TypeOfPlaceRef ref="multimodalStopPlace" />
+	</placeTypes>
+	<AccessibilityAssessment id="FR:AccessibilityAssessment:S1_Eq1:" version="any">
+		<MobilityImpairedAccess>true</MobilityImpairedAccess>
+		<limitations>
+			<AccessibilityLimitation>
+				<WheelchairAccess>true</WheelchairAccess>
+				<AudibleSignalsAvailable>true</AudibleSignalsAvailable>
+				<VisualSignsAvailable>true</VisualSignsAvailable>
+			</AccessibilityLimitation>
+		</limitations>
+	</AccessibilityAssessment>
 	<entrances>
-		<StopPlaceEntrance id="FR:StopPlaceEntrance:E1:" version="any">
-			<Name>Entrance 1</Name>
-			<Centroid>
-				<Location>
-					<Longitude>2.5</Longitude>
-					<Latitude>48.8</Latitude>
-				</Location>
-			</Centroid>
-			<IsEntry>true</IsEntry>
-			<IsExit>true</IsExit>
-		</StopPlaceEntrance>
+		<EntranceRef ref="FR:StopPlaceEntrance:E1:" />
 	</entrances>
 	<TransportMode>bus</TransportMode>
 	<StopPlaceType>onstreetBus</StopPlaceType>
 </StopPlace>
+```
+
+#### StopPlaceEntrance
+A `StopPlaceEntrance` node is created for each entrance/exit (stop with `location_type` = 3).
+
+| Netex field                               | NTFS file | NTFS field            | Note                                                                                                                                                                               |
+| ----------------------------------------- | --------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| StopPlaceEntrance/@id                     | stops.txt | stop_id               | see [id formatting](#id-of-objects)                                                                                                                                                |
+| StopPlaceEntrance/@version                |           |                       | fixed value `any`.                                                                                                                                                                 |
+| StopPlaceEntrance/Name                    | stops.txt | stop_name             |                                                                                                                                                                                    |
+| StopPlaceEntrance/Centroid/Location       | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                                                              |
+| StopPlaceEntrance/AccessibilityAssessment | stops.txt | equipment_id          | This node is present only if the `equipment_id` is specified; only the `WheelchairAccess` limitation is included. see [`AccessibilityAssessment`](#accessibilityassessment) below. |
+| StopPlaceEntrance/SiteRef/@ref            |           |                       | Reference to the multimodal `StopPlace` it belongs to; see [id formatting](#id-of-objects)                                                                                         |
+| StopPlaceEntrance/PublicCode              | stops.txt | stop_code             | This node may not be present if the stop_location has no `stop_code`.                                                                                                              |
+| StopPlaceEntrance/IsEntry                 |           |                       | fixed value `true`                                                                                                                                                                 |
+| StopPlaceEntrance/IsExit                  |           |                       | fixed value `true`                                                                                                                                                                 |
+
+Example:
+
+```xml
+<StopPlaceEntrance id="FR:StopPlaceEntrance:E1:" version="any">
+	<Name>Entrance 1</Name>
+	<Centroid>
+		<Location>
+			<Longitude>2.5</Longitude>
+			<Latitude>48.8</Latitude>
+		</Location>
+	</Centroid>
+	<AccessibilityAssessment id="FR:AccessibilityAssessment:E1_Eq2:" version="any">
+		<MobilityImpairedAccess>true</MobilityImpairedAccess>
+		<limitations>
+			<AccessibilityLimitation>
+				<WheelchairAccess>true</WheelchairAccess>
+			</AccessibilityLimitation>
+		</limitations>
+	</AccessibilityAssessment>
+	<SiteRef ref="FR:StopPlace:S1:" />
+	<PublicCode>E1</PublicCode>
+	<IsEntry>true</IsEntry>
+	<IsExit>true</IsExit>
+</StopPlaceEntrance>
 ```
 
 ## network.xml

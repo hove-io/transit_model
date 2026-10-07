@@ -41,21 +41,44 @@ type StopAreaStopPoints<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 type StopAreaEntrances<'a> = HashMap<&'a str, BTreeSet<&'a str>>;
 pub struct StopExporter<'a> {
     model: &'a Model,
-    participant_ref: &'a str,
     stop_point_modes: StopPointModes<'a>,
     stop_area_stop_points: StopAreaStopPoints<'a>,
     stop_area_entrances: StopAreaEntrances<'a>,
 }
 
+#[derive(Clone, Copy)]
+enum Limitation {
+    Wheelchair,
+    Audible,
+    Visual,
+}
+
+impl Limitation {
+    fn name(self) -> &'static str {
+        match self {
+            Limitation::Wheelchair => "WheelchairAccess",
+            Limitation::Audible => "AudibleSignalsAvailable",
+            Limitation::Visual => "VisualSignsAvailable",
+        }
+    }
+
+    fn availability(self, equipment: &Equipment) -> Availability {
+        match self {
+            Limitation::Wheelchair => equipment.wheelchair_boarding,
+            Limitation::Audible => equipment.audible_announcement,
+            Limitation::Visual => equipment.visual_announcement,
+        }
+    }
+}
+
 // Publicly exposed methods
 impl<'a> StopExporter<'a> {
-    pub fn new(model: &'a Model, participant_ref: &'a str) -> Result<Self> {
+    pub fn new(model: &'a Model) -> Result<Self> {
         let stop_point_modes = Self::build_stop_point_modes(model);
         let stop_area_stop_points = Self::build_stop_area_stop_points(model);
         let stop_area_entrances = Self::build_stop_area_entrances(model);
         let exporter = StopExporter {
             model,
-            participant_ref,
             stop_point_modes,
             stop_area_stop_points,
             stop_area_entrances,
@@ -90,8 +113,28 @@ impl<'a> StopExporter<'a> {
             })
             .map(|stop_area| self.export_stop_area(stop_area))
             .collect::<Result<Vec<Vec<Element>>>>()?;
+        let entrances_elements = self
+            .model
+            .stop_locations
+            .values()
+            .filter(|sl| sl.stop_type == StopType::StopEntrance)
+            .filter(|sl| {
+                // Without this check, the entrance's SiteRef may point to a StopPlace not written
+                sl.parent_id.as_ref().is_some_and(|stop_area_id| {
+                    self.stop_area_stop_points
+                        .get(stop_area_id.as_str())
+                        .is_some_and(|stop_point_ids| {
+                            stop_point_ids.iter().any(|stop_point_id| {
+                                self.stop_point_modes.contains_key(*stop_point_id)
+                            })
+                        })
+                })
+            })
+            .map(|sl| self.generate_stop_place_entrance(sl))
+            .collect::<Result<Vec<Element>>>()?;
         let mut elements = stop_points_elements;
         elements.extend(stop_areas_elements.into_iter().flatten());
+        elements.extend(entrances_elements);
         Ok(elements)
     }
 
@@ -189,13 +232,15 @@ impl<'a> StopExporter<'a> {
             } else {
                 element_builder
             };
-
-        let element_builder =
-            if let Some(accessibility_element) = self.generate_quay_accessibility(stop_point) {
-                element_builder.append(accessibility_element)
-            } else {
-                element_builder
-            };
+        let element_builder = element_builder.append_all(self.generate_accessibility(
+            &stop_point.id,
+            stop_point.equipment_id.as_ref(),
+            &[
+                Limitation::Wheelchair,
+                Limitation::Audible,
+                Limitation::Visual,
+            ],
+        ));
         let netex_modes = self
             .stop_point_modes
             .get(stop_point.id.as_str())
@@ -217,6 +262,16 @@ impl<'a> StopExporter<'a> {
                     stop_point.id,
                 )
             })?;
+        if !self.model.stop_areas.contains_id(&stop_point.stop_area_id) {
+            return Err(anyhow!(
+                "Stop Point '{}' references unknown Stop Area '{}'",
+                stop_point.id,
+                stop_point.stop_area_id
+            ));
+        }
+        let stop_place_id =
+            Self::generate_stop_place_id(&stop_point.stop_area_id, highest_netex_mode);
+        let element_builder = element_builder.append(self.generate_site_ref(&stop_place_id));
         let element_builder =
             element_builder.append(self.generate_transport_mode(highest_netex_mode));
         let element_builder = if let Some(tariff_zones) = self.generate_tariff_zones(stop_point) {
@@ -224,11 +279,12 @@ impl<'a> StopExporter<'a> {
         } else {
             element_builder
         };
-        let element_builder = if let Some(public_code) = self.generate_public_code(stop_point) {
-            element_builder.append(public_code)
-        } else {
-            element_builder
-        };
+        let element_builder =
+            if let Some(public_code) = self.generate_public_code(stop_point.code.as_deref()) {
+                element_builder.append(public_code)
+            } else {
+                element_builder
+            };
         Ok(element_builder.build())
     }
 
@@ -271,6 +327,8 @@ impl<'a> StopExporter<'a> {
                 } else {
                     element_builder
                 };
+                let element_builder =
+                    element_builder.append(self.generate_type_of_place_refs("monomodalStopPlace"));
                 let element_builder = element_builder.append(parent_site_ref_element.clone());
                 let element_builder =
                     element_builder.append(self.generate_transport_mode(*netex_mode));
@@ -294,6 +352,17 @@ impl<'a> StopExporter<'a> {
             } else {
                 element_builder
             };
+            let element_builder =
+                element_builder.append(self.generate_type_of_place_refs("multimodalStopPlace"));
+            let element_builder = element_builder.append_all(self.generate_accessibility(
+                &stop_area.id,
+                stop_area.equipment_id.as_ref(),
+                &[
+                    Limitation::Wheelchair,
+                    Limitation::Audible,
+                    Limitation::Visual,
+                ],
+            ));
             let element_builder = if let Some(entrances) = self.generate_entrances(&stop_area.id) {
                 element_builder.append(entrances)
             } else {
@@ -324,8 +393,8 @@ impl<'a> StopExporter<'a> {
             .build()
     }
 
-    fn generate_public_code(&self, stop_point: &'a StopPoint) -> Option<Element> {
-        stop_point.code.as_ref().map(|code| {
+    fn generate_public_code(&self, code: Option<&str>) -> Option<Element> {
+        code.map(|code| {
             Element::builder("PublicCode")
                 .append(Node::Text(code.to_owned()))
                 .build()
@@ -350,37 +419,73 @@ impl<'a> StopExporter<'a> {
         None
     }
 
-    fn generate_quay_accessibility(&self, stop_point: &'a StopPoint) -> Option<Element> {
-        stop_point
-            .equipment_id
-            .as_ref()
-            .and_then(|eq_id| self.model.equipments.get(eq_id))
-            .map(|eq| {
+    fn generate_accessibility(
+        &self,
+        owner_id: &str,
+        equipment_id: Option<&String>,
+        limitations: &[Limitation],
+    ) -> Option<Element> {
+        fn generate_limitation(name: &str, availability: Availability) -> Element {
+            let value = match availability {
+                Availability::Available => "true",
+                Availability::NotAvailable => "false",
+                _ => "unknown",
+            };
+            Element::builder(name)
+                .append(Node::Text(value.to_owned()))
+                .build()
+        }
+        equipment_id
+            .and_then(|id| self.model.equipments.get(id))
+            .map(|equipment| {
+                let (availabilities, limitation_elements): (Vec<Availability>, Vec<Element>) =
+                    limitations
+                        .iter()
+                        .map(|limitation| {
+                            let availability = limitation.availability(equipment);
+                            (
+                                availability,
+                                generate_limitation(limitation.name(), availability),
+                            )
+                        })
+                        .unzip();
                 Element::builder("AccessibilityAssessment")
                     .attr(
                         "id",
                         Exporter::generate_id(
-                            &format!("{}_{}", stop_point.id, eq.id),
+                            &format!("{}_{}", owner_id, equipment.id),
                             ObjectType::AccessibilityAssessment,
                         ),
                     )
                     .attr("version", "any")
-                    .append(self.generate_mobility_impaired_access(eq))
-                    .append(self.generate_accessibility_limitations(eq))
+                    .append(self.mobility_impaired_access(&availabilities))
+                    .append(
+                        Element::builder("limitations")
+                            .append(
+                                Element::builder("AccessibilityLimitation")
+                                    .append_all(limitation_elements)
+                                    .build(),
+                            )
+                            .build(),
+                    )
                     .build()
             })
     }
-
-    fn generate_mobility_impaired_access(&self, equipment: &'a Equipment) -> Element {
-        use Availability::*;
-        let impaired_access = match (
-            equipment.wheelchair_boarding,
-            equipment.audible_announcement,
-            equipment.visual_announcement,
-        ) {
-            (Available, Available, Available) => "true",
-            (NotAvailable, NotAvailable, NotAvailable) => "false",
-            (Available, _, _) | (_, Available, _) | (_, _, Available) => "partial",
+    fn mobility_impaired_access(&self, availabilities: &[Availability]) -> Element {
+        let mut available = 0;
+        let mut not_available = 0;
+        for availability in availabilities {
+            match availability {
+                Availability::Available => available += 1,
+                Availability::NotAvailable => not_available += 1,
+                _ => {}
+            }
+        }
+        let total = availabilities.len();
+        let impaired_access = match (available, not_available) {
+            (a, _) if a == total => "true",
+            (_, n) if n == total => "false",
+            (a, _) if a > 0 => "partial",
             _ => "unknown",
         };
         Element::builder("MobilityImpairedAccess")
@@ -388,25 +493,9 @@ impl<'a> StopExporter<'a> {
             .build()
     }
 
-    fn generate_accessibility_limitations(&self, eq: &'a Equipment) -> Element {
-        let accessibility_limitations = Element::builder("AccessibilityLimitation")
-            .append(self.generate_limitation("WheelchairAccess", eq.wheelchair_boarding))
-            .append(self.generate_limitation("AudibleSignalsAvailable", eq.audible_announcement))
-            .append(self.generate_limitation("VisualSignsAvailable", eq.visual_announcement))
-            .build();
-        Element::builder("limitations")
-            .append(accessibility_limitations)
-            .build()
-    }
-
-    fn generate_limitation(&self, name: &str, availability: Availability) -> Element {
-        let availability = match availability {
-            Availability::Available => "true",
-            Availability::NotAvailable => "false",
-            _ => "unknown",
-        };
-        Element::builder(name)
-            .append(Node::Text(availability.to_owned()))
+    fn generate_site_ref(&self, stop_place_id: &'a str) -> Element {
+        Element::builder("SiteRef")
+            .attr("ref", stop_place_id)
             .build()
     }
 
@@ -424,15 +513,15 @@ impl<'a> StopExporter<'a> {
     }
 
     fn generate_entrances(&self, stop_area_id: &'a str) -> Option<Element> {
-        let stop_place_entrances = self
+        let entrance_refs = self
             .stop_area_entrances
             .get(stop_area_id)
             .into_iter()
             .flatten()
             .filter_map(|sl_id| self.model.stop_locations.get(sl_id))
-            .map(|sl| self.generate_stop_place_entrance(sl));
+            .map(|sl| self.generate_entrance_ref(sl));
         let entrances = Element::builder("entrances")
-            .append_all(stop_place_entrances)
+            .append_all(entrance_refs)
             .build();
         if entrances.children().is_empty() {
             None
@@ -441,7 +530,23 @@ impl<'a> StopExporter<'a> {
         }
     }
 
-    fn generate_stop_place_entrance(&self, stop_location: &'a StopLocation) -> Element {
+    fn generate_entrance_ref(&self, stop_location: &'a StopLocation) -> Element {
+        Element::builder("EntranceRef")
+            .attr(
+                "ref",
+                Exporter::generate_id(&stop_location.id, ObjectType::StopPlaceEntrance),
+            )
+            .build()
+    }
+
+    fn generate_stop_place_entrance(&self, stop_location: &'a StopLocation) -> Result<Element> {
+        let stop_area_id = stop_location.parent_id.as_deref().ok_or_else(|| {
+            // Should never happen: NTFS and GTFS readers require a parent StopArea
+            anyhow!(
+                "Stop Location '{}' has no parent Stop Area",
+                stop_location.id
+            )
+        })?;
         let element_builder = Element::builder("StopPlaceEntrance")
             .attr(
                 "id",
@@ -455,11 +560,24 @@ impl<'a> StopExporter<'a> {
             } else {
                 element_builder
             };
+        let element_builder = element_builder.append_all(self.generate_accessibility(
+            &stop_location.id,
+            stop_location.equipment_id.as_ref(),
+            &[Limitation::Wheelchair],
+        ));
+        let stop_place_id = Exporter::generate_id(stop_area_id, ObjectType::StopPlace);
+        let element_builder = element_builder.append(self.generate_site_ref(&stop_place_id));
+        let element_builder =
+            if let Some(public_code) = self.generate_public_code(stop_location.code.as_deref()) {
+                element_builder.append(public_code)
+            } else {
+                element_builder
+            };
         let element_builder = element_builder
             .append(self.generate_is_entry_exit("IsEntry"))
             .append(self.generate_is_entry_exit("IsExit"));
 
-        element_builder.build()
+        Ok(element_builder.build())
     }
 
     fn generate_is_entry_exit(&self, node_name: &'a str) -> Element {
@@ -470,8 +588,14 @@ impl<'a> StopExporter<'a> {
 
     fn generate_tariff_zones(&self, stop_point: &'a StopPoint) -> Option<Element> {
         stop_point.fare_zone_id.as_ref().map(|fare_zone_id| {
+            // Profil 2.4 requires FareZoneRef for this element, but the XSD only
+            // allows TariffZoneRef here (tariffZoneRefs_RelStructure); it can
+            // reference a FareZone (specialization of TariffZone, carried by fare.xml).
             let tariff_zone_ref = Element::builder("TariffZoneRef")
-                .attr("ref", format!("{}:{}", self.participant_ref, fare_zone_id))
+                .attr(
+                    "ref",
+                    Exporter::generate_id(fare_zone_id, ObjectType::FareZone),
+                )
                 .build();
             Element::builder("tariffZones")
                 .append(tariff_zone_ref)
@@ -499,13 +623,23 @@ impl<'a> StopExporter<'a> {
             Rail => "railStation",
             Metro => "metroStation",
             Tram => "tramStation",
-            Funicular => "railStation",
+            // Profil NeTEx-fr 2.4 maps funicular to metroStation
+            Funicular => "metroStation",
             Cableway => "liftStation",
             Coach => "coachStation",
             Bus => "onstreetBus",
         };
         Element::builder("StopPlaceType")
             .append(Node::Text(stop_place_type.to_owned()))
+            .build()
+    }
+
+    fn generate_type_of_place_refs(&self, type_of_place_ref: &str) -> Element {
+        let type_of_place_ref_element = Element::builder("TypeOfPlaceRef")
+            .attr("ref", type_of_place_ref)
+            .build();
+        Element::builder("placeTypes")
+            .append(type_of_place_ref_element)
             .build()
     }
 }
@@ -530,30 +664,17 @@ mod tests {
                 .to_string()
         }
 
-        fn generate_equipment((w, v, a): (Availability, Availability, Availability)) -> Equipment {
-            Equipment {
-                id: "Eq1".to_string(),
-                wheelchair_boarding: w,
-                visual_announcement: v,
-                audible_announcement: a,
-                ..Default::default()
-            }
-        }
-
         fn get_mobility_impaired_access_value(
             stop_exporter: &StopExporter,
             (w, v, a): (Availability, Availability, Availability),
         ) -> String {
-            get_mobility_impaired_access(StopExporter::generate_mobility_impaired_access(
-                stop_exporter,
-                &generate_equipment((w, v, a)),
-            ))
+            get_mobility_impaired_access(stop_exporter.mobility_impaired_access(&[w, v, a]))
         }
 
         #[test]
         fn test_impaired_access_true() {
             let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let stop_exporter = StopExporter::new(&model).unwrap();
             assert_eq!(
                 "true",
                 get_mobility_impaired_access_value(
@@ -566,7 +687,7 @@ mod tests {
         #[test]
         fn test_impaired_access_false() {
             let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let stop_exporter = StopExporter::new(&model).unwrap();
             assert_eq!(
                 "false",
                 get_mobility_impaired_access_value(
@@ -579,7 +700,7 @@ mod tests {
         #[test]
         fn test_impaired_access_partial() {
             let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let stop_exporter = StopExporter::new(&model).unwrap();
             assert_eq!(
                 "partial",
                 get_mobility_impaired_access_value(
@@ -592,7 +713,7 @@ mod tests {
         #[test]
         fn test_impaired_access_unknown() {
             let model = Model::new(Collections::default()).unwrap();
-            let stop_exporter = StopExporter::new(&model, "MyParticipant").unwrap();
+            let stop_exporter = StopExporter::new(&model).unwrap();
             assert_eq!(
                 "unknown",
                 get_mobility_impaired_access_value(
