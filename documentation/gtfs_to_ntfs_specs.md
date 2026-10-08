@@ -32,6 +32,43 @@ Two parameters can be specified as CLI arguments of the converter in order to de
 
 A third boolean CLI argument (`--read-as-line`) may affect the reading of the file [routes.txt](#reading-routestxt). If true, each GTFS "Route" will generate a different "Line" else we group the routes by "agency_id" and "route_short_name" (or "route_long_name" if the short name is empty) and create a "Line" for each group.
 
+A fourth boolean CLI argument (`--lock-objects`, `false` by default) keeps the stop points, stop areas and lines that have no offer. See [Locking objects without offer](#locking-objects-without-offer).
+
+### Locking objects without offer
+
+At the end of the conversion, the sanitizing operation removes the objects that
+are not attached to any offer: a stop point which is not used by any trip, a stop
+area without any (used) stop point, a line without any (used) trip.
+
+When `--lock-objects` is activated, these objects are kept in the NTFS. To do so,
+they are added to the file `object_locks.txt`, which lists the objects that the
+sanitizing operation must not remove:
+
+| NTFS file        | NTFS field  | Constraint | Note                                                                           |
+| ---------------- | ----------- | ---------- | ------------------------------------------------------------------------------ |
+| object_locks.txt | object_type | Required   | `stop_point`, `stop_area` or `line`                                            |
+| object_locks.txt | object_id   | Required   | The NTFS identifier (prefixed, see [Prepending data](#prepending-data)) of the object |
+
+Only the objects without offer are added to `object_locks.txt`, in order to limit
+the size of the file and the memory used. Objects which have an offer are kept by
+the sanitizing operation anyway.
+
+A trip is considered as part of the offer, as in the sanitizing operation, only if
+it has at least one stop time and its service has at least one active date. The
+objects without offer are:
+
+* the stop points not used by any trip of the offer;
+* the stop areas without any stop point (a stop area whose stop points are all locked is kept through them);
+* the lines whose routes have no trip of the offer. This includes the lines of GTFS routes that have no trip at all, see [Loading Lines](#loading-lines).
+
+When `--lock-objects` is not activated (default), the behavior is unchanged: no
+`object_locks.txt` is written and the objects without offer are removed.
+
+The stop points and the stop areas are read from [stops.txt](#reading-stopstxt)
+whether they are used or not: a stop is never discarded at reading because it is
+unused (only an invalid stop is skipped), so nothing specific is needed for them
+besides locking.
+
 
 ## Mapping of objects between GTFS and NTFS
 
@@ -60,7 +97,9 @@ The field `agency_id` may not be provided in the GTFS as it's an optional field.
 * If there is only one agency, the `agency_id` is considered to be `1`.
 * If a route doesn't specify an `agency_id` and there are several agencies, the
   conversion will stop immediately with an error, as it won't be able to
-  choose the right agency for the route.
+  choose the right agency for the route. The only exception is a route without
+  any trip when `--lock-objects` is activated: it is ignored with a warning
+  (see [Loading Lines](#loading-lines)).
 
 #### Loading Networks
 
@@ -225,7 +264,7 @@ the documentation in [common NTFS rules](common_ntfs_rules.md#co2-emissions-and-
 
 A Route is created for each direction of existing trips.  If 2 routes with the
 same ID are specified, the conversion should stop immediately with an error.
-_Warning :_ If the GTFS route has no trips, the Navitia Route should NOT be created and a warning should be logged.
+_Warning :_ If the GTFS route has no trips, the Navitia Route should NOT be created and a warning should be logged. This is also true when `--lock-objects` is activated (see [Loading Lines](#loading-lines) for the Line).
 
 | NTFS file    | NTFS field     | Constraint | GTFS file  | GTFS field      | Note                                                                                                                                                        |
 | ------------ | -------------- | ---------- | ---------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -264,6 +303,19 @@ A Navitia Line is created to group one or several Navitia Routes when they are
 created with the same gtfs `agency_id` and the same `route_short_name` (or
 `route_long_name` if the latter is empty).  If 2 lines with the same ID are
 specified, the conversion should stop immediately with an error.
+
+A GTFS route without any trip does not create a Line, since it is ignored (a
+warning is logged).
+
+**_Parameter `--lock-objects`:_** when it is activated, a GTFS route without trip
+also creates a Line, which is then locked (see
+[Locking objects without offer](#locking-objects-without-offer)) so that it is
+kept in the NTFS without any Route. The rules to build the Lines remain the same,
+with the following specificities:
+
+* a route without trip which belongs to the same group (same `agency_id` and same `route_short_name` or `route_long_name`) as a route with trips does not create any additional Line, and does not change the `line_id`;
+* a Line is created for a group made of routes without trip only, and the `line_id` is the smallest `route_id` of the group;
+* if the network of a route without trip cannot be determined (no `agency_id` and no unique network, or an `agency_id` which does not exist in `agency.txt`), the route is ignored and a warning is logged, instead of stopping the conversion with an error. The error remains for the routes with trips.
 
 | NTFS file    | NTFS field         | Constraint | GTFS file  | GTFS field       | Note                                                                                                                                                                                                                                                                             |
 | ------------ | ------------------ | ---------- | ---------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
