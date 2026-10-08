@@ -137,6 +137,11 @@
 					</ValidBetween>
 					<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_CALENDRIER:">
 					</TypeOfFrameRef>
+					<FrameDefaults>
+						<DefaultLocale>
+							<TimeZone>Europe/Paris</TimeZone>
+						</DefaultLocale>
+					</FrameDefaults>
 					<members>
 						<DayType id="FR:DayType:Week:" version="any">
 						</DayType>
