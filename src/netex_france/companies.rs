@@ -15,7 +15,7 @@
 use crate::xml_builder::{Element, Node};
 use crate::{
     netex_france::exporter::{Exporter, ObjectType},
-    objects::Company,
+    objects::{Company, CompanyRole},
     Model,
 };
 
@@ -50,7 +50,7 @@ impl<'a> CompanyExporter<'a> {
             element_builder.append_all(Exporter::generate_key_list(&company.codes)); // must be first child (XSD order)
         let element_builder = element_builder.append(self.generate_name(company));
         let element_builder = element_builder.append(self.generate_contact_details(company));
-        let element_builder = element_builder.append(Self::generate_organization_type());
+        let element_builder = element_builder.append(self.generate_organization_type(company));
         element_builder.build()
     }
 
@@ -104,9 +104,13 @@ impl<'a> CompanyExporter<'a> {
         })
     }
 
-    fn generate_organization_type() -> Element {
+    fn generate_organization_type(&self, company: &'a Company) -> Element {
+        let organisation_type = match company.role {
+            CompanyRole::Authority => "authority",
+            CompanyRole::Operator => "operator",
+        };
         Element::builder("OrganisationType")
-            .append(Node::Text(String::from("other")))
+            .append(Node::Text(organisation_type.to_owned()))
             .build()
     }
 }

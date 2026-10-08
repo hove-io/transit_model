@@ -83,8 +83,20 @@ impl<'a> CalendarExporter<'a> {
     }
 
     fn export_uic_operating_period(&self, calendar: &'a Calendar) -> Result<Element> {
-        if let Some(from_date) = calendar.dates.iter().next() {
-            let from_date = Self::generate_from_date(*from_date);
+        if let (Some(from_date), Some(to_date)) = (
+            calendar.dates.iter().next(),
+            calendar.dates.iter().next_back(),
+        ) {
+            let from_date_element = Self::generate_date(
+                "FromDate",
+                *from_date,
+                NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+            );
+            let to_date_element = Self::generate_date(
+                "ToDate",
+                *to_date,
+                NaiveTime::from_hms_opt(23, 59, 59).unwrap(),
+            );
             let valid_day_bits = Self::generate_valid_day_bits(&calendar.dates);
             let uic_operating_period = Element::builder(ObjectType::UicOperatingPeriod.to_string())
                 .attr(
@@ -92,7 +104,8 @@ impl<'a> CalendarExporter<'a> {
                     Exporter::generate_id(&calendar.id, ObjectType::UicOperatingPeriod),
                 )
                 .attr("version", "any")
-                .append(from_date)
+                .append(from_date_element)
+                .append(to_date_element)
                 .append(valid_day_bits)
                 .build();
             Ok(uic_operating_period)
@@ -104,11 +117,9 @@ impl<'a> CalendarExporter<'a> {
         }
     }
 
-    fn generate_from_date(date: Date) -> Element {
-        let date_string =
-            DateTime::<Utc>::from_naive_utc_and_offset(date.and_hms_opt(0, 0, 0).unwrap(), Utc)
-                .to_rfc3339();
-        Element::builder("FromDate")
+    fn generate_date(element_name: &'a str, date: Date, time: NaiveTime) -> Element {
+        let date_string = date.and_time(time).format("%Y-%m-%dT%H:%M:%S").to_string();
+        Element::builder(element_name)
             .append(Node::Text(date_string))
             .build()
     }
