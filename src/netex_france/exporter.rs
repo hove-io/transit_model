@@ -278,12 +278,23 @@ impl Exporter<'_> {
             .build()
     }
 
+    fn generate_frame_defaults(&self) -> Element {
+        let time_zone = Element::builder("TimeZone")
+            .append(Node::Text("Europe/Paris".to_string()))
+            .build();
+        let default_locale = Element::builder("DefaultLocale").append(time_zone).build();
+        Element::builder("FrameDefaults")
+            .append(default_locale)
+            .build()
+    }
+
     fn create_frame<I, T>(
         &self,
         frame_type: FrameType,
         part: VersionType,
         instance_suffix: Option<&str>,
         valid_between: Option<Element>,
+        frame_defaults: Option<Element>,
         children: I,
     ) -> Element
     where
@@ -299,6 +310,9 @@ impl Exporter<'_> {
             builder = builder.append(valid_between);
         }
         builder = builder.append(type_of_frame_ref);
+        if let Some(frame_defaults) = frame_defaults {
+            builder = builder.append(frame_defaults);
+        }
         match frame_type {
             FrameType::Composite => {
                 let frame_list = Element::builder("frames").append_all(children).build();
@@ -340,6 +354,7 @@ impl Exporter<'_> {
             VersionType::Networks,
             None,
             None,
+            None,
             [members],
         )
     }
@@ -355,6 +370,7 @@ impl Exporter<'_> {
         let composite_frame = self.create_frame(
             FrameType::Composite,
             VersionType::France,
+            None,
             None,
             None,
             [common_frame, calendars_frame],
@@ -378,6 +394,7 @@ impl Exporter<'_> {
             VersionType::Common,
             None,
             None,
+            None,
             [members],
         ))
     }
@@ -387,12 +404,14 @@ impl Exporter<'_> {
         let calendar_exporter = CalendarExporter::new(self.model);
         let calendars = calendar_exporter.export()?;
         let valid_between = self.create_valid_between()?;
+        let frame_defaults = self.generate_frame_defaults();
         let members = Self::create_members(calendars);
         Ok(self.create_frame(
             FrameType::General,
             VersionType::Calendars,
             None,
             Some(valid_between),
+            Some(frame_defaults),
             [members],
         ))
     }
@@ -442,6 +461,7 @@ impl Exporter<'_> {
             VersionType::Stops,
             None,
             None,
+            None,
             [members],
         ))
     }
@@ -485,19 +505,23 @@ impl Exporter<'_> {
             VersionType::LinesStructure,
             Some(&instance_suffix),
             None,
+            None,
             [Self::create_members(offer.structure)],
         );
+        let frame_defaults = self.generate_frame_defaults();
         let schedule_frame = self.create_frame(
             FrameType::General,
             VersionType::Schedule,
             Some(&instance_suffix),
             None,
+            Some(frame_defaults),
             [Self::create_members(offer.schedule)],
         );
         Ok(self.create_frame(
             FrameType::Composite,
             VersionType::Lines,
             Some(&instance_suffix),
+            None,
             None,
             [structure_frame, schedule_frame],
         ))
