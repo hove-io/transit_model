@@ -4,3 +4,5 @@ route:2,ma route 1,,line:1,1,1
 route:3,ma route 2,,line:2,1,2
 route_not_in_trip:4,ma route 3,,line:2,1,2
 route_no_offer:7,ma route 7,,line:7,1,1
+route_no_calendar:8,ma route 8,,line:8,1,1
+route_unknown_agency:9,ma route 9,,line:9,1,99

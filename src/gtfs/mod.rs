@@ -547,6 +547,7 @@ where
         &mut collections,
         read_as_line,
         read_trip_short_name,
+        lock_objects,
         &mut attribution_rules,
     )?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
