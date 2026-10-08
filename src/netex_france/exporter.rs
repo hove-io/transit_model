@@ -26,6 +26,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use chrono::prelude::*;
+use chrono_tz::Europe::Paris;
 use rayon::prelude::*;
 use std::{
     convert::AsRef,
@@ -240,8 +241,9 @@ impl Exporter<'_> {
     // Include 'frame' into a complete NeTEx XML tree with 'PublicationDelivery'
     // and 'dataObjects'. PublicationDelivery/@version is always FRANCE.
     fn wrap_frame(&self, frame: Element) -> Element {
+        let local_timestamp = self.timestamp.with_timezone(&Paris);
         let publication_timestamp = Element::builder("PublicationTimestamp")
-            .append(self.timestamp.to_rfc3339())
+            .append(local_timestamp.to_rfc3339())
             .build();
         let participant_ref = Element::builder("ParticipantRef")
             .append(self.participant_ref.as_str())

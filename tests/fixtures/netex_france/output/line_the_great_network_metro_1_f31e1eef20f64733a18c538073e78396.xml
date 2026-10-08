@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PublicationDelivery version="1.3:FR-NETEX_FRANCE-2.4" xmlns="http://www.netex.org.uk/netex">
-	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
+	<PublicationTimestamp>2019-04-03T19:19:00+02:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
 		<CompositeFrame id="FR:CompositeFrame:NETEX_LIGNE-f31e1eef20f64733a18c538073e78396:" version="1.3:FR-NETEX_LIGNE-2.4">
