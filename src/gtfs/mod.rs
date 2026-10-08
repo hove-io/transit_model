@@ -454,6 +454,9 @@ pub struct Configuration {
     pub read_as_line: bool,
     /// Read trip_short_name as specified in the GTFS specification.
     pub read_trip_short_name: bool,
+    /// If true, the stop points, stop areas and lines without offer are added
+    /// to `object_locks` so that they are not removed by `sanitize`.
+    pub lock_objects: bool,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -515,6 +518,7 @@ where
         on_demand_transport_comment,
         read_as_line,
         read_trip_short_name,
+        lock_objects,
     } = configuration;
 
     manage_calendars(file_handler, &mut collections)?;
@@ -543,6 +547,7 @@ where
         &mut collections,
         read_as_line,
         read_trip_short_name,
+        lock_objects,
         &mut attribution_rules,
     )?;
     collections.equipments = CollectionWithId::new(equipments.into_equipments())?;
@@ -568,6 +573,10 @@ where
     //add prefixes
     if let Some(prefix_conf) = prefix_conf {
         collections.prefix(&prefix_conf);
+    }
+
+    if lock_objects {
+        collections.lock_objects_without_offer();
     }
 
     collections.calendar_deduplication();
