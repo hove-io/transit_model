@@ -134,6 +134,79 @@ pub fn write_vehicle_journeys_and_stop_times(
     Ok(())
 }
 
+/// Writes only `trips.txt` from `vehicle_journeys`, without touching `stop_times.txt`.
+///
+/// Used by [`write_partial`][crate::ntfs::write_partial] when only
+/// `vehicle_journeys` is selected but not `stop_times`.
+pub(crate) fn write_trips(
+    path: &path::Path,
+    vehicle_journeys: &CollectionWithId<VehicleJourney>,
+) -> Result<()> {
+    let trip = "trips.txt";
+    info!(file_name = %trip, "Writing");
+    let trip_path = path.join(trip);
+    let mut wtr = csv::Writer::from_path(&trip_path)
+        .with_context(|| format!("Error writing {trip_path:?}"))?;
+    for vj in vehicle_journeys.values() {
+        wtr.serialize(vj)
+            .with_context(|| format!("Error writing {trip_path:?}"))?;
+    }
+    wtr.flush()
+        .with_context(|| format!("Error writing {trip_path:?}"))?;
+    Ok(())
+}
+
+/// Writes only `stop_times.txt` from the stop_times embedded in `vehicle_journeys`.
+///
+/// Used by [`write_partial`][crate::ntfs::write_partial] when `stop_times`
+/// is selected independently of `vehicle_journeys`.
+pub(crate) fn write_stop_times(
+    path: &path::Path,
+    vehicle_journeys: &CollectionWithId<VehicleJourney>,
+    stop_points: &CollectionWithId<StopPoint>,
+    stop_time_headsigns: &HashMap<(String, u32), String>,
+    stop_time_ids: &HashMap<(String, u32), String>,
+) -> Result<()> {
+    let stop_times = "stop_times.txt";
+    info!(file_name = %stop_times, "Writing");
+    let stop_times_path = path.join(stop_times);
+    let mut st_wtr = csv::Writer::from_path(&stop_times_path)
+        .with_context(|| format!("Error writing {stop_times_path:?}"))?;
+    for (vj_idx, vj) in vehicle_journeys.iter() {
+        for st in &vj.stop_times {
+            let precision = st.precision;
+            st_wtr
+                .serialize(StopTime {
+                    stop_id: stop_points[st.stop_point_idx].id.clone(),
+                    trip_id: vj.id.clone(),
+                    stop_sequence: st.sequence,
+                    arrival_time: st.arrival_time,
+                    departure_time: st.departure_time,
+                    start_pickup_drop_off_window: st.start_pickup_drop_off_window,
+                    end_pickup_drop_off_window: st.end_pickup_drop_off_window,
+                    boarding_duration: st.boarding_duration,
+                    alighting_duration: st.alighting_duration,
+                    pickup_type: st.pickup_type,
+                    drop_off_type: st.drop_off_type,
+                    datetime_estimated: None,
+                    local_zone_id: st.local_zone_id,
+                    stop_headsign: stop_time_headsigns
+                        .get(&(vehicle_journeys[vj_idx].id.clone(), st.sequence))
+                        .cloned(),
+                    stop_time_id: stop_time_ids
+                        .get(&(vehicle_journeys[vj_idx].id.clone(), st.sequence))
+                        .cloned(),
+                    precision,
+                })
+                .with_context(|| format!("Error writing {stop_times_path:?}"))?;
+        }
+    }
+    st_wtr
+        .flush()
+        .with_context(|| format!("Error writing {stop_times_path:?}"))?;
+    Ok(())
+}
+
 fn do_write_fares_v1(
     base_path: &path::Path,
     prices_v1: &Collection<PriceV1>,
