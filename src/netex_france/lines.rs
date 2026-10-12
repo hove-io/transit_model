@@ -23,6 +23,7 @@ use crate::{
     Model, Result,
 };
 use anyhow::anyhow;
+use std::cmp::Reverse;
 use std::collections::{BTreeSet, HashMap};
 use typed_index_collection::Idx;
 
@@ -30,19 +31,26 @@ use typed_index_collection::Idx;
 // A line can have multiple associated modes in NTM model (through trips).
 pub type LineModes<'a> = HashMap<&'a str, BTreeSet<NetexMode>>;
 
+// `line_companies` is storing all the company ids for a Line.
+// A line can be operated by several companies (through trips).
+type LineCompanies<'a> = HashMap<&'a str, Vec<&'a str>>;
+
 pub struct LineExporter<'a> {
     model: &'a Model,
     line_modes: LineModes<'a>,
+    line_companies: LineCompanies<'a>,
     offer_exporter: OfferExporter<'a>,
 }
 
 impl<'a> LineExporter<'a> {
     pub fn new(model: &'a Model) -> Result<Self> {
         let line_modes = Self::build_line_modes(model);
+        let line_companies = Self::build_line_companies(model);
         let offer_exporter = OfferExporter::new(model)?;
         Ok(LineExporter {
             model,
             line_modes,
+            line_companies,
             offer_exporter,
         })
     }
@@ -65,6 +73,50 @@ impl<'a> LineExporter<'a> {
                 line_modes.entry(line_id).or_default().insert(netex_mode);
                 line_modes
             })
+    }
+
+    // Returns, for each Line, the ids of its companies ordered by decreasing
+    // number of VehicleJourneys.
+    // e.g. {"L1": ["RATP", "SNCF"], "L2": ["RATP"]}
+    pub fn build_line_companies(model: &'a Model) -> LineCompanies<'a> {
+        // e.g. {"L1": {"RATP": 120, "SNCF": 30}, "L2": {"RATP": 5}}
+        let company_counts_by_line: HashMap<&'a str, HashMap<&'a str, usize>> = model
+            .vehicle_journeys
+            .values()
+            .filter_map(|vehicle_journey| {
+                model
+                    .routes
+                    .get(&vehicle_journey.route_id)
+                    .map(|route| (&route.line_id, &vehicle_journey.company_id))
+            })
+            .fold(
+                HashMap::new(),
+                |mut line_companies, (line_id, company_id)| {
+                    let vehicle_journey_count_by_company_id: &mut HashMap<&str, usize> =
+                        line_companies.entry(line_id).or_default();
+                    *vehicle_journey_count_by_company_id
+                        .entry(company_id)
+                        .or_insert(0) += 1;
+                    line_companies
+                },
+            );
+        company_counts_by_line
+            .into_iter()
+            .map(|(line_id, vehicle_journey_count_by_company_id)| {
+                let mut company_ids: Vec<&str> = vehicle_journey_count_by_company_id
+                    .keys()
+                    .copied()
+                    .collect();
+                // Sort by decreasing VJ count (`Reverse`); if equal, by ascending `company_id`.
+                company_ids.sort_by_key(|&company_id| {
+                    (
+                        Reverse(vehicle_journey_count_by_company_id[company_id]),
+                        company_id,
+                    )
+                });
+                (line_id, company_ids)
+            })
+            .collect()
     }
 
     /// Returns everything for this line, split per the target `line_*.xml`
@@ -104,6 +156,11 @@ impl<'a> LineExporter<'a> {
         } else {
             element_builder
         };
+        let element_builder = if let Some(operator_ref) = self.generate_operator_ref(line) {
+            element_builder.append(operator_ref)
+        } else {
+            element_builder
+        };
         let element_builder = if let Some(presentation) = self.generate_presentation(line) {
             element_builder.append(presentation)
         } else {
@@ -133,6 +190,22 @@ impl<'a> LineExporter<'a> {
         })
     }
 
+    fn generate_operator_ref(&self, line: &'a Line) -> Option<Element> {
+        let main_company_id = self
+            .line_companies
+            .get(line.id.as_str())?
+            .first()
+            .copied()?;
+        Some(
+            Element::builder("OperatorRef")
+                .attr(
+                    "ref",
+                    Exporter::generate_id(main_company_id, ObjectType::Operator),
+                )
+                .build(),
+        )
+    }
+
     fn generate_presentation(&self, line: &'a Line) -> Option<Element> {
         if line.color.is_none() && line.text_color.is_none() {
             return None;
@@ -153,5 +226,105 @@ impl<'a> LineExporter<'a> {
             );
         }
         Some(builder.build())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ModelBuilder;
+
+    mod build_line_companies {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn single_company() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj2", |vj| {
+                    vj.line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .build();
+            let line_companies = LineExporter::build_line_companies(&model);
+            assert_eq!(line_companies.get("L1"), Some(&vec!["A"]));
+        }
+
+        #[test]
+        fn company_with_more_vehicle_journeys_is_first() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj2", |vj| {
+                    vj.line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj3", |vj| {
+                    vj.line("L1")
+                        .company("B")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .build();
+            let line_companies = LineExporter::build_line_companies(&model);
+            assert_eq!(line_companies.get("L1"), Some(&vec!["A", "B"]));
+        }
+
+        #[test]
+        fn smallest_company_id_is_first_when_counts_are_equal() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.line("L1")
+                        .company("B")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj2", |vj| {
+                    vj.line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .build();
+            let line_companies = LineExporter::build_line_companies(&model);
+            assert_eq!(line_companies.get("L1"), Some(&vec!["A", "B"]));
+        }
+
+        #[test]
+        fn each_line_has_its_own_companies() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj2", |vj| {
+                    vj.route("R2")
+                        .line("L2")
+                        .company("B")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .build();
+            let line_companies = LineExporter::build_line_companies(&model);
+            assert_eq!(line_companies.get("L1"), Some(&vec!["A"]));
+            assert_eq!(line_companies.get("L2"), Some(&vec!["B"]));
+        }
     }
 }

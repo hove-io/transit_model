@@ -21,6 +21,8 @@
 							<Name>Filéo Roissy Sud - Villeparisis et Mitry (sur réservation)</Name>
 							<TransportMode>bus</TransportMode>
 							<PublicCode>Filéo RS</PublicCode>
+							<OperatorRef ref="FR:Operator:MFDI_1028:">
+							</OperatorRef>
 							<Presentation>
 								<Colour>4890CD</Colour>
 								<TextColour>FFFFFF</TextColour>

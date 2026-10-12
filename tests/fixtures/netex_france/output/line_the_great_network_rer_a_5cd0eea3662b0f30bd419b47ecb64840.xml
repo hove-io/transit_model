@@ -20,6 +20,8 @@
 							</keyList>
 							<Name>RER A</Name>
 							<TransportMode>rail</TransportMode>
+							<OperatorRef ref="FR:Operator:TGN:">
+							</OperatorRef>
 							<Presentation>
 								<Colour>EB2132</Colour>
 							</Presentation>

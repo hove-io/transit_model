@@ -21,6 +21,8 @@
 							<Name>Bus 42</Name>
 							<TransportMode>bus</TransportMode>
 							<PublicCode>Magic Bus!</PublicCode>
+							<OperatorRef ref="FR:Operator:TGN:">
+							</OperatorRef>
 						</Line>
 						<Route id="FR:Route:B42:" version="any">
 							<keyList>

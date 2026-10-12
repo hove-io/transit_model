@@ -20,6 +20,8 @@
 							</keyList>
 							<Name>Metro 1</Name>
 							<TransportMode>metro</TransportMode>
+							<OperatorRef ref="FR:Operator:TGN:">
+							</OperatorRef>
 							<Presentation>
 								<TextColour>000000</TextColour>
 							</Presentation>

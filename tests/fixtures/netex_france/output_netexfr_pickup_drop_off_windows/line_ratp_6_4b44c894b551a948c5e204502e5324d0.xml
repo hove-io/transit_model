@@ -21,6 +21,8 @@
 							<Name>6</Name>
 							<TransportMode>metro</TransportMode>
 							<PublicCode>6</PublicCode>
+							<OperatorRef ref="FR:Operator:MFDI_100:">
+							</OperatorRef>
 							<Presentation>
 								<Colour>6ECA97</Colour>
 								<TextColour>000000</TextColour>
