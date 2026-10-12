@@ -40,7 +40,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>Gare de Roissypole Aéroport CDG 1</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:MFDI_C02060:">
 							</LineRef>
 							<DirectionType>outbound</DirectionType>
@@ -98,7 +97,6 @@
 							</Location>
 						</RoutePoint>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:MFDI_KRO6_153358-C02060-680-260:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:MFDI_stif_local-153359-C02060-3417:">
 							</RouteRef>
 							<pointsInSequence>

@@ -38,7 +38,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>Gare de Lyon - Montparnasse</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:B42:">
 							</LineRef>
 							<DirectionType>inbound</DirectionType>
@@ -61,7 +60,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>Montparnasse - Gare de Lyon</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:B42:">
 							</LineRef>
 							<DirectionType>outbound</DirectionType>
@@ -101,7 +99,6 @@
 							</Location>
 						</RoutePoint>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:B42F1:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:B42:">
 							</RouteRef>
 							<pointsInSequence>
@@ -120,7 +117,6 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:B42B1:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:B42_R:">
 							</RouteRef>
 							<pointsInSequence>

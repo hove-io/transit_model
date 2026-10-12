@@ -164,7 +164,6 @@ impl<'a> OfferExporter<'a> {
             .attr("version", "any");
         let element_builder = element_builder.append_all(Exporter::generate_key_list(&route.codes)); // must be first child (XSD order)
         let element_builder = element_builder.append(Self::generate_route_name(&route.name));
-        let element_builder = element_builder.append(Self::generate_distance());
         let element_builder = element_builder.append(Self::generate_line_ref(&route.line_id));
         let element_builder = if let Some(direction_type_element) =
             Self::generate_direction_type(route.direction_type.as_deref())
@@ -225,7 +224,6 @@ impl<'a> OfferExporter<'a> {
                 Exporter::generate_id(&journey_pattern.id, ObjectType::ServiceJourneyPattern),
             )
             .attr("version", "any")
-            .append(Self::generate_distance())
             .append(Self::generate_route_ref(&journey_pattern.route_id))
             .append(points_in_sequence)
             .build()
@@ -454,12 +452,6 @@ impl<'a> OfferExporter<'a> {
     fn generate_route_name(route_name: &'a str) -> Element {
         Element::builder("Name")
             .append(Node::Text(route_name.to_owned()))
-            .build()
-    }
-
-    fn generate_distance() -> Element {
-        Element::builder("Distance")
-            .append(Node::Text(String::from("0")))
             .build()
     }
 

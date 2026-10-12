@@ -40,7 +40,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>RER A</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:RERA:">
 							</LineRef>
 							<DirectionType>inbound</DirectionType>
@@ -71,7 +70,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>RER A</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:RERA:">
 							</LineRef>
 							<DirectionType>outbound</DirectionType>
@@ -143,7 +141,6 @@
 							</Location>
 						</RoutePoint>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:RERAF1:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:RERA:">
 							</RouteRef>
 							<pointsInSequence>
@@ -174,7 +171,6 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:RERAB1:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:RERA_Bus_R:">
 							</RouteRef>
 							<pointsInSequence>

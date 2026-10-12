@@ -40,7 +40,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>Charles de Gaulle - Etoile</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:MFDI_C01376:">
 							</LineRef>
 							<DirectionType>outbound</DirectionType>
@@ -98,7 +97,6 @@
 							</Location>
 						</RoutePoint>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783:">
 							</RouteRef>
 							<pointsInSequence>

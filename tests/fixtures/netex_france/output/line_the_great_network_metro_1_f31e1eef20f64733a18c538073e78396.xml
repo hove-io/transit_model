@@ -40,7 +40,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>Nation - Charles de Gaulle</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:M1:">
 							</LineRef>
 							<DirectionType>inbound</DirectionType>
@@ -71,7 +70,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>Charles de Gaulle - Nation</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:M1:">
 							</LineRef>
 							<DirectionType>outbound</DirectionType>
@@ -135,7 +133,6 @@
 							</Location>
 						</RoutePoint>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:M1F1:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:M1:">
 							</RouteRef>
 							<pointsInSequence>
@@ -166,7 +163,6 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:M1B1:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:M1_R:">
 							</RouteRef>
 							<pointsInSequence>
