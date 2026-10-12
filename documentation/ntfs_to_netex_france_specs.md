@@ -197,7 +197,7 @@ If a `Quay` (`stop_point`), a multimodal `StopPlace` (`stop_area`) or a `StopPla
 
 **(1) definition of MobilityImpairedAccess**
 
-As stated in `NF_Profil NeTEx éléments communs(F) - v2.1.pdf` in chapter 5.10:
+As stated in the [NeTEx France profile](https://github.com/etalab/transport-profil-netex-fr/blob/v2.4/NeTEx/accessibilite/index.md):
 `AccessibilityAssessment` is optional, but if it's present, `MobilityImpairedAccess` is mandatory. Therefore, `MobilityImpairedAccess` should be set to:
 * `true` if all `AccessibilityLimitation` are set to `true`
 * `false` if all `AccessibilityLimitation` are set to `false`
@@ -711,16 +711,26 @@ file.
 
 ### Line
 
-| Netex field                  | NTFS file        | NTFS field      | Note                                                                                                                                                                                                                                                             |
-| ---------------------------- | ---------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Line/@id                     | lines.txt        | line_id         | see [id formatting](#id-of-objects)                                                                                                                                                                                                                              |
-| Line/@version                |                  |                 | fixed value `any`                                                                                                                                                                                                                                                |
-| Line/Name                    | lines.txt        | line_name       |                                                                                                                                                                                                                                                                  |
-| Line/TransportMode           |                  |                 | Refers to the mode with __highest priority__  of the trips associated to the line, see [NeTEx Transport Modes](#netex-transport-modes) and [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis) |
-| Line/PublicCode              | lines.txt        | line_code       | If the code line_code is empty, this node is not created.                                                                                                                                                                                                        |
-| Line/Presentation/Colour     | lines.txt        | line_color      | RGB hexadecimal, 6 characters. Omitted if empty. The `Presentation` node is created only if `line_color` or `line_text_color` is set.                                                                                                                            |
-| Line/Presentation/TextColour | lines.txt        | line_text_color | RGB hexadecimal, 6 characters. Omitted if empty. The `Presentation` node is created only if `line_color` or `line_text_color` is set.                                                                                                                            |
-| Line/keyList/KeyValue/Value  | object_codes.txt | object_code     | Present only if a code with `object_system` = `source` exists for this `line`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source`                                                                                                     |
+| Netex field                            | NTFS file        | NTFS field      | Note                                                                                                                                                                                                                                                             |
+| -------------------------------------- | ---------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Line/@id                               | lines.txt        | line_id         | see [id formatting](#id-of-objects)                                                                                                                                                                                                                              |
+| Line/@version                          |                  |                 | fixed value `any`                                                                                                                                                                                                                                                |
+| Line/Name                              | lines.txt        | line_name       |                                                                                                                                                                                                                                                                  |
+| Line/TransportMode                     |                  |                 | Refers to the mode with __highest priority__  of the trips associated to the line, see [NeTEx Transport Modes](#netex-transport-modes) and [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis) |
+| Line/PublicCode                        | lines.txt        | line_code       | If the code line_code is empty, this node is not created.                                                                                                                                                                                                        |
+| Line/OperatorRef/@ref                  |                  |                 | see (1) below                                                                                                                                                                                                                                                    |
+| Line/additionalOperators/OperatorRef[] |                  |                 | see (1) below; absent if the line has only one company                                                                                                                                                                                                           |
+| Line/routes/RouteRef[]                 |                  |                 | see [id formatting](#id-of-objects) with `Route` as object type; one `RouteRef` per `Route` of the line                                                                                                                                                          |
+| Line/Presentation/Colour               | lines.txt        | line_color      | RGB hexadecimal, 6 characters. Omitted if empty. The `Presentation` node is created only if `line_color` or `line_text_color` is set.                                                                                                                            |
+| Line/Presentation/TextColour           | lines.txt        | line_text_color | RGB hexadecimal, 6 characters. Omitted if empty. The `Presentation` node is created only if `line_color` or `line_text_color` is set.                                                                                                                            |
+| Line/keyList/KeyValue/Value            | object_codes.txt | object_code     | Present only if a code with `object_system` = `source` exists for this `line`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source`                                                                                                     |
+
+**(1) definition of OperatorRef / additionalOperators for Line**
+
+A `Line` can be operated by several `company_id` (through its `vehicle_journeys`):
+* `OperatorRef` references the company with the most `vehicle_journeys` on the line
+* if several companies have the same number of `vehicle_journeys`, the one with the smallest `company_id` is used
+* `additionalOperators` lists the other companies, if any
 
 Example:
 
@@ -735,6 +745,13 @@ Example:
 	<Name>Line 1</Name>
 	<TransportMode>bus</TransportMode>
 	<PublicCode>1</PublicCode>
+	<OperatorRef ref="FR:Operator:O1:" />
+	<additionalOperators>
+		<OperatorRef ref="FR:Operator:O2:" />
+	</additionalOperators>
+	<routes>
+		<RouteRef ref="FR:Route:R1:" />
+	</routes>
 	<Presentation>
 		<Colour>FF0000</Colour>
 		<TextColour>FFFFFF</TextColour>
@@ -749,7 +766,6 @@ Example:
 | Route/@id                             | routes.txt       | route_id       | see [id formatting](#id-of-objects)                                                                                                                           |
 | Route/@version                        |                  |                | fixed value `any`                                                                                                                                             |
 | Route/Name                            | routes.txt       | route_name     |                                                                                                                                                               |
-| Route/Distance                        |                  |                | fixed value `0` (mandatory field in NeTEx France `LinkSequence`)                                                                                              |
 | Route/LineRef/@ref                    | routes.txt       | line_id        | see [id formatting](#id-of-objects) with `Line` as object type                                                                                                |
 | Route/DirectionType                   | routes.txt       | direction_type | see (1) below                                                                                                                                                 |
 | Route/pointsInSequence/PointOnRoute[] |                  |                | see [`PointOnRoute`](#pointonroute)                                                                                                                           |
@@ -780,7 +796,6 @@ Example:
 		</KeyValue>
 	</keyList>
 	<Name>Route 1</Name>
-	<Distance>0</Distance>
 	<LineRef ref="FR:Line:L1:" />
 	<DirectionType>inbound</DirectionType>
 	<pointsInSequence>
@@ -878,7 +893,6 @@ Journeys. Unicity applies to:
 | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
 | ServiceJourneyPattern/@id                                          | see [id formatting](#id-of-objects) using the first `trip_id` in alphanumerical order |
 | ServiceJourneyPattern/@version                                     | fixed value `any`                                                                     |
-| ServiceJourneyPattern/Distance                                     | fixed value `0` (mandatory field in NeTEx France `LinkSequence`)                      |
 | ServiceJourneyPattern/RouteRef/@ref                                | see [id formatting](#id-of-objects) with `Route` as object type                       |
 | ServiceJourneyPattern/pointsInSequence/StopPointInJourneyPattern[] | see section on [`StopPointInJourneyPattern`](#stoppointinjourneypattern)              |
 
@@ -888,14 +902,15 @@ For each stop of a Journey Pattern, a `StopPointInJourneyPattern` is created,
 with a link to a corresponding `ScheduledStopPoint` (see [related
 section](#scheduledstoppoint)).
 
-| Netex field                                          | NTFS file      | NTFS field    | Note                                                                                                            |
-| ---------------------------------------------------- | -------------- | ------------- | --------------------------------------------------------------------------------------------------------------- |
-| StopPointInJourneyPattern/@id                        |                |               | see (1) below                                                                                                   |
-| StopPointInJourneyPattern/@version                   |                |               | fixed value `any`                                                                                               |
-| StopPointInJourneyPattern/@order                     | stop_times.txt | stop_sequence | value of `stop_sequence + 1` (because `0` is not a valid value)                                                 |
-| StopPointInJourneyPattern/ScheduledStopPointRef/@ref |                |               | see (1) below; see [id formatting](#id-of-objects) with `StopPointInJourneyPattern` as object type for the rest |
-| StopPointInJourneyPattern/ForAlighting               | stop_times.txt | drop_off_type | `0` is set to `true`, `1` is set to `false`                                                                     |
-| StopPointInJourneyPattern/ForBoarding                | stop_times.txt | pickup_type   | `0` is set to `true`, `1` is set to `false`                                                                     |
+| Netex field                                          | NTFS file      | NTFS field                    | Note                                                                                                            |
+| ---------------------------------------------------- | -------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| StopPointInJourneyPattern/@id                        |                |                               | see (1) below                                                                                                   |
+| StopPointInJourneyPattern/@version                   |                |                               | fixed value `any`                                                                                               |
+| StopPointInJourneyPattern/@order                     | stop_times.txt | stop_sequence                 | value of `stop_sequence + 1` (because `0` is not a valid value)                                                 |
+| StopPointInJourneyPattern/ScheduledStopPointRef/@ref |                |                               | see (1) below; see [id formatting](#id-of-objects) with `StopPointInJourneyPattern` as object type for the rest |
+| StopPointInJourneyPattern/ForAlighting               | stop_times.txt | drop_off_type                 | `0` is set to `true`, `1` is set to `false`                                                                     |
+| StopPointInJourneyPattern/ForBoarding                | stop_times.txt | pickup_type                   | `0` is set to `true`, `1` is set to `false`                                                                     |
+| StopPointInJourneyPattern/StopUse                    | stop_times.txt | pickup_type and drop_off_type | see (2) below; absent otherwise (default value `access`)                                                        |
 
 **(1) identifier for StopPointInJourneyPattern**
 
@@ -906,11 +921,17 @@ by `_`:
 
 For the rest of the identifier, use [id formatting](#id-of-objects).
 
+**(2) definition of StopUse**
+
+`StopUse` is only present for specific combinations of `pickup_type`/`drop_off_type`:
+* `pickup_type = 3` and `drop_off_type = 3` → `passthrough`
+* `pickup_type = 1` and `drop_off_type = 1` → `noBoardingOrAlighting`
+* any other combination → `StopUse` is absent (default value `access`)
+
 Example:
 
 ```xml
 <ServiceJourneyPattern id="FR:ServiceJourneyPattern:T1:" version="any">
-	<Distance>0</Distance>
 	<RouteRef ref="FR:Route:R1:" />
 	<pointsInSequence>
 		<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:T1_1:" order="1" version="any">
@@ -920,6 +941,12 @@ Example:
 		</StopPointInJourneyPattern>
 		<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:T1_2:" order="2" version="any">
 			<ScheduledStopPointRef ref="FR:ScheduledStopPoint:T1_2:" />
+			<ForAlighting>false</ForAlighting>
+			<ForBoarding>false</ForBoarding>
+			<StopUse>noBoardingOrAlighting</StopUse>
+		</StopPointInJourneyPattern>
+		<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:T1_3:" order="3" version="any">
+			<ScheduledStopPointRef ref="FR:ScheduledStopPoint:T1_3:" />
 			<ForAlighting>true</ForAlighting>
 			<ForBoarding>false</ForBoarding>
 		</StopPointInJourneyPattern>
@@ -936,17 +963,13 @@ One `ScheduledStopPoint` is created for each Stop Point of a
 | --------------------------- | --------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | ScheduledStopPoint/@id      |           |                       | see [`StopPointInJourneyPattern/@id`](#stoppointinjourneypattern) with `ScheduledStopPoint` as object type                  |
 | ScheduledStopPoint/@version |           |                       | fixed value `any`                                                                                                           |
-| ScheduledStopPoint/Location | stops.txt | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Location` is absent |
+
+`Location` is forbidden on `ScheduledStopPoint` by the profile (it only belongs on `RoutePoint`, see [related section](#routepoint)) and is never emitted.
 
 Example:
 
 ```xml
-<ScheduledStopPoint id="FR:ScheduledStopPoint:T1_1:" version="any">
-	<Location>
-		<Longitude>2.5</Longitude>
-		<Latitude>48.8</Latitude>
-	</Location>
-</ScheduledStopPoint>
+<ScheduledStopPoint id="FR:ScheduledStopPoint:T1_1:" version="any" />
 ```
 
 ### PassengerStopAssignment
@@ -982,14 +1005,19 @@ Example:
 | ServiceJourney/TransportMode                        | trips.txt        | physical_mode_id | use the only NeTEx mode. See (1) below and [NeTEx Transport Modes](#netex-transport-modes).                                                                  |
 | ServiceJourney/dayTypes/DayTypeRef/@ref             | trips.txt        | service_id       | see [id formatting](#id-of-objects) with `DayType` as object type                                                                                            |
 | ServiceJourney/JourneyPatternRef/@ref               | trips.txt        | service_id       | see [id formatting](#id-of-objects) with `DayType` as object type                                                                                            |
-| ServiceJourney/OperatorRef/@ref                     | trips.txt        | company_id       | see [id formatting](#id-of-objects) with `Operator` as object type                                                                                           |
+| ServiceJourney/OperatorRef/@ref                     | trips.txt        | company_id       | see (2) below                                                                                                                                                |
+| ServiceJourney/LineRef/@ref                         |                  |                  | see [id formatting](#id-of-objects) with `Line` as object type                                                                                               |
 | ServiceJourney/passingTimes/TimetabledPassingTime[] | stop_times.txt   |                  | see [`TimetabledPassingTime`](#timetabledpassingtime)                                                                                                        |
 | ServiceJourney/keyList/KeyValue/Value               | object_codes.txt | object_code      | Present only if a code with `object_system` = `source` exists for this `trip`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source` |
 
 **(1) definition of TransportMode for ServiceJourney**
 
-As stated in `NF_Profil NeTEx pour les Horaires(F) - v2.1.pdf` in chapter 5.2:
+As stated in the [NeTEx France profile](https://github.com/etalab/transport-profil-netex-fr/blob/v2.4/NeTEx/horaires/index.md):
 `TransportMode` for `ServiceJourney` is optional, but is present if it differs from that of its line.
+
+**(2) definition of OperatorRef for ServiceJourney**
+
+`OperatorRef` for `ServiceJourney` is optional; it is present only if the operator differs from the main operator of the line (see [`Line/OperatorRef`](#line)).
 
 Example:
 
@@ -1007,6 +1035,7 @@ Example:
 	</dayTypes>
 	<JourneyPatternRef ref="FR:ServiceJourneyPattern:T1:" />
 	<OperatorRef ref="FR:Operator:O1:" />
+	<LineRef ref="FR:Line:L1:" />
 	<passingTimes>
 		<TimetabledPassingTime>
 			<ArrivalTime>08:00:00</ArrivalTime>
