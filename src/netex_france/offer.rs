@@ -404,6 +404,7 @@ impl<'a> OfferExporter<'a> {
             element_builder.append(Self::generate_journey_pattern_ref(journey_pattern_id));
         let element_builder =
             element_builder.append(Self::generate_operator_ref(&vehicle_journey.company_id));
+        let element_builder = element_builder.append(Self::generate_line_ref(line_id));
         let passing_times = Element::builder("passingTimes")
             .append_all(Self::export_timetabled_passing_times(
                 &vehicle_journey.stop_times,

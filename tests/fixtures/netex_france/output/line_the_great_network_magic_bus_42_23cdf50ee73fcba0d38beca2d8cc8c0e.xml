@@ -200,6 +200,8 @@
 							</JourneyPatternRef>
 							<OperatorRef ref="FR:Operator:TGN:">
 							</OperatorRef>
+							<LineRef ref="FR:Line:B42:">
+							</LineRef>
 							<passingTimes>
 								<TimetabledPassingTime>
 									<ArrivalTime>10:10:00</ArrivalTime>
@@ -230,6 +232,8 @@
 							</JourneyPatternRef>
 							<OperatorRef ref="FR:Operator:TGN:">
 							</OperatorRef>
+							<LineRef ref="FR:Line:B42:">
+							</LineRef>
 							<passingTimes>
 								<TimetabledPassingTime>
 									<ArrivalTime>07:00:00</ArrivalTime>

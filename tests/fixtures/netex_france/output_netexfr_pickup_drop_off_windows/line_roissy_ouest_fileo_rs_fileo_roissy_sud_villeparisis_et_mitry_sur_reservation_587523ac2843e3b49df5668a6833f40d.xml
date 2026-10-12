@@ -208,6 +208,8 @@
 							</JourneyPatternRef>
 							<OperatorRef ref="FR:Operator:MFDI_1028:">
 							</OperatorRef>
+							<LineRef ref="FR:Line:MFDI_C02060:">
+							</LineRef>
 							<passingTimes>
 								<TimetabledPassingTime>
 									<ArrivalTime>02:39:00</ArrivalTime>
