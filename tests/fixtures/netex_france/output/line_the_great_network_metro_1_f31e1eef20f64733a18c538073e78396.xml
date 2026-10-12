@@ -296,8 +296,6 @@
 							</dayTypes>
 							<JourneyPatternRef ref="FR:ServiceJourneyPattern:M1F1:">
 							</JourneyPatternRef>
-							<OperatorRef ref="FR:Operator:TGN:">
-							</OperatorRef>
 							<LineRef ref="FR:Line:M1:">
 							</LineRef>
 							<passingTimes>
@@ -340,8 +338,6 @@
 							</dayTypes>
 							<JourneyPatternRef ref="FR:ServiceJourneyPattern:M1B1:">
 							</JourneyPatternRef>
-							<OperatorRef ref="FR:Operator:TGN:">
-							</OperatorRef>
 							<LineRef ref="FR:Line:M1:">
 							</LineRef>
 							<passingTimes>

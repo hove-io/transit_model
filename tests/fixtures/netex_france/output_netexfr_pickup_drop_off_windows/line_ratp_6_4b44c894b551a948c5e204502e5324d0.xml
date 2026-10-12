@@ -206,8 +206,6 @@
 							</dayTypes>
 							<JourneyPatternRef ref="FR:ServiceJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116:">
 							</JourneyPatternRef>
-							<OperatorRef ref="FR:Operator:MFDI_100:">
-							</OperatorRef>
 							<LineRef ref="FR:Line:MFDI_C01376:">
 							</LineRef>
 							<passingTimes>

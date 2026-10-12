@@ -206,8 +206,6 @@
 							</dayTypes>
 							<JourneyPatternRef ref="FR:ServiceJourneyPattern:MFDI_KRO6_153358-C02060-680-260:">
 							</JourneyPatternRef>
-							<OperatorRef ref="FR:Operator:MFDI_1028:">
-							</OperatorRef>
 							<LineRef ref="FR:Line:MFDI_C02060:">
 							</LineRef>
 							<passingTimes>

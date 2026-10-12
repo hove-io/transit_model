@@ -305,8 +305,6 @@
 							</dayTypes>
 							<JourneyPatternRef ref="FR:ServiceJourneyPattern:RERAF1:">
 							</JourneyPatternRef>
-							<OperatorRef ref="FR:Operator:TGN:">
-							</OperatorRef>
 							<LineRef ref="FR:Line:RERA:">
 							</LineRef>
 							<passingTimes>
@@ -350,8 +348,6 @@
 							</dayTypes>
 							<JourneyPatternRef ref="FR:ServiceJourneyPattern:RERAB1:">
 							</JourneyPatternRef>
-							<OperatorRef ref="FR:Operator:TGN:">
-							</OperatorRef>
 							<LineRef ref="FR:Line:RERA:">
 							</LineRef>
 							<passingTimes>

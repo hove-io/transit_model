@@ -33,7 +33,7 @@ pub type LineModes<'a> = HashMap<&'a str, BTreeSet<NetexMode>>;
 
 // `line_companies` is storing all the company ids for a Line.
 // A line can be operated by several companies (through trips).
-type LineCompanies<'a> = HashMap<&'a str, Vec<&'a str>>;
+pub type LineCompanies<'a> = HashMap<&'a str, Vec<&'a str>>;
 
 pub struct LineExporter<'a> {
     model: &'a Model,
@@ -125,9 +125,9 @@ impl<'a> LineExporter<'a> {
     pub fn export(&self, line_idx: Idx<Line>) -> Result<Offer> {
         let line = &self.model.lines[line_idx];
         let mut structure = vec![self.export_line(line)?];
-        let offer = self
-            .offer_exporter
-            .export_offer(line_idx, &self.line_modes)?;
+        let offer =
+            self.offer_exporter
+                .export_offer(line_idx, &self.line_modes, &self.line_companies)?;
         structure.extend(offer.structure);
         Ok(Offer {
             structure,

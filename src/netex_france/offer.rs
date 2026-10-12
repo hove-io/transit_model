@@ -17,7 +17,7 @@ use crate::{
     netex_france::{
         self,
         exporter::{Exporter, ObjectType},
-        LineModes, NetexMode, StopExporter,
+        LineCompanies, LineModes, NetexMode, StopExporter,
     },
     objects::{Coord, Line, Route, StopPoint, StopTime, Time, VehicleJourney},
     Model, Result,
@@ -90,6 +90,7 @@ impl<'a> OfferExporter<'a> {
         &self,
         line_idx: Idx<Line>,
         line_modes: &LineModes,
+        line_companies: &LineCompanies,
     ) -> Result<Offer> {
         let route_elements = self.export_routes(line_idx)?;
         let route_point_elements = self.export_route_points(line_idx)?;
@@ -127,6 +128,7 @@ impl<'a> OfferExporter<'a> {
                     vehicle_journey_indexes,
                     line_idx,
                     line_modes,
+                    line_companies,
                 )
             })
             .fold(Vec::new(), |mut service_journey_elements, elements| {
@@ -354,6 +356,7 @@ impl<'a> OfferExporter<'a> {
         vehicle_journey_indexes: &[Idx<VehicleJourney>],
         line_idx: Idx<Line>,
         line_modes: &LineModes,
+        line_companies: &LineCompanies,
     ) -> Vec<Element> {
         vehicle_journey_indexes
             .iter()
@@ -363,6 +366,7 @@ impl<'a> OfferExporter<'a> {
                     *vehicle_journey_idx,
                     line_idx,
                     line_modes,
+                    line_companies,
                 )
             })
             .collect()
@@ -374,6 +378,7 @@ impl<'a> OfferExporter<'a> {
         vehicle_journey_idx: Idx<VehicleJourney>,
         line_idx: Idx<Line>,
         line_modes: &LineModes,
+        line_companies: &LineCompanies,
     ) -> Element {
         let journey_pattern_id = &self.model.vehicle_journeys[journey_pattern_idx].id;
         let vehicle_journey = &self.model.vehicle_journeys[vehicle_journey_idx];
@@ -381,7 +386,11 @@ impl<'a> OfferExporter<'a> {
         let line_netex_mode = &line_modes
             .get(line_id.as_str())
             .and_then(NetexMode::calculate_highest_mode);
-
+        let line_main_company_id = line_companies
+            .get(line_id.as_str())
+            .and_then(|company_ids| company_ids.first())
+            .copied();
+        let vj_company_id = vehicle_journey.company_id.as_str();
         let element_builder = Element::builder(ObjectType::ServiceJourney.to_string())
             .attr(
                 "id",
@@ -402,8 +411,11 @@ impl<'a> OfferExporter<'a> {
             element_builder.append(Self::generate_day_type_ref(&vehicle_journey.service_id));
         let element_builder =
             element_builder.append(Self::generate_journey_pattern_ref(journey_pattern_id));
-        let element_builder =
-            element_builder.append(Self::generate_operator_ref(&vehicle_journey.company_id));
+        let element_builder = if Some(vj_company_id) != line_main_company_id {
+            element_builder.append(Self::generate_operator_ref(vj_company_id))
+        } else {
+            element_builder
+        };
         let element_builder = element_builder.append(Self::generate_line_ref(line_id));
         let passing_times = Element::builder("passingTimes")
             .append_all(Self::export_timetabled_passing_times(
@@ -1106,6 +1118,90 @@ mod tests {
                 })
                 .build();
             assert_eq!(None, get_stop_use(&model, "vj1", 1));
+        }
+    }
+
+    mod export_service_journey {
+        use super::*;
+        use crate::netex_france::LineExporter;
+        use crate::ModelBuilder;
+        use pretty_assertions::assert_eq;
+
+        fn get_operator_ref(
+            model: &Model,
+            vehicle_journey_id: &str,
+            line_id: &str,
+        ) -> Option<String> {
+            let offer_exporter = OfferExporter::new(model).unwrap();
+            let line_modes = LineExporter::build_line_modes(model);
+            let line_companies = LineExporter::build_line_companies(model);
+            let vehicle_journey_idx = model.vehicle_journeys.get_idx(vehicle_journey_id).unwrap();
+            let line_idx = model.lines.get_idx(line_id).unwrap();
+            let element = offer_exporter.export_service_journey(
+                vehicle_journey_idx,
+                vehicle_journey_idx,
+                line_idx,
+                &line_modes,
+                &line_companies,
+            );
+            element
+                .children()
+                .iter()
+                .filter_map(Node::as_element)
+                .find(|child| child.name() == "OperatorRef")
+                .map(|operator_ref| operator_ref.attr("ref").unwrap().to_string())
+        }
+
+        #[test]
+        fn operator_ref_is_absent_when_company_matches_line_main_company() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj2", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("A")
+                        .st("A", "10:10:00")
+                        .st("B", "11:10:00");
+                })
+                .build();
+            assert_eq!(None, get_operator_ref(&model, "vj1", "L1"));
+        }
+
+        #[test]
+        fn operator_ref_is_present_when_company_differs_from_line_main_company() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj2", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("A")
+                        .st("A", "10:10:00")
+                        .st("B", "11:10:00");
+                })
+                .vj("vj3", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("B")
+                        .st("A", "10:20:00")
+                        .st("B", "11:20:00");
+                })
+                .build();
+            assert_eq!(
+                Some("FR:Operator:B:".to_string()),
+                get_operator_ref(&model, "vj3", "L1")
+            );
         }
     }
 }
