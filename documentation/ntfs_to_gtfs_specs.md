@@ -26,8 +26,23 @@ The following additional files are generated only if the corresponding objects a
 * [attributions](#attributionstxt)
 * [object_codes_extension](#object_codes_extensiontxt): additional information providing the complementary codes for various objects (stops, networks, lines, routes, trips, companies) used in external systems.
 
+### Objects without offer
+
+The stop points, stop areas and lines which are not attached to any offer (not
+used by any trip) are removed by the sanitizing operation (see
+[common NTFS rules]), except the ones listed in the NTFS file `object_locks.txt`.
+
+By default, the file `object_locks.txt` is ignored: the objects without offer are
+removed and not exported in the GTFS.
+
+When the boolean CLI argument `--keep-objects-without-offer` (`false` by default)
+is activated, the locked objects are kept, and are therefore exported in the GTFS
+(for example, a locked line without trip is exported in
+[routes.txt](#routestxt)).
+
 [GTFS]: https://gtfs.org/reference/static
 [NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
+[common NTFS rules]: common_ntfs_rules.md
 
 ## Mapping between NTFS and GTFS objects
 

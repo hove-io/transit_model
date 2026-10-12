@@ -54,6 +54,12 @@ struct Opt {
                 https://developers.google.com/transit/gtfs/reference/extended-route-types"
     )]
     extend_route_type: bool,
+
+    /// Keep the stop points, stop areas and lines without offer (not used by any
+    /// trip) that are locked in `object_locks.txt`.
+    /// By default, the locks are ignored and the objects without offer are removed.
+    #[arg(long)]
+    keep_objects_without_offer: bool,
 }
 
 fn init_logger() {
@@ -84,6 +90,13 @@ fn run(opt: Opt) -> Result<()> {
 
     info!("Removing route points...");
     collections.remove_route_points();
+
+    if !opt.keep_objects_without_offer {
+        info!("Removing objects without offer...");
+        // Without lock, the objects without offer are removed by the sanitizing
+        // done in `Model::new`
+        collections.object_locks = Default::default();
+    }
 
     let mut model = Model::new(collections)?;
 

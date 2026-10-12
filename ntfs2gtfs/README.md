@@ -25,6 +25,7 @@ ntfs2gtfs --input /path/to/ntfs/folder/ --output /path/to/gtfs/
 * `--input` is the path to a folder containing NTFS data format
 * `--output` is the path to a folder where the GTFS will be exported
 * `--mode-in-route-short-name` (optional) allows adding the commercial mode at the beginning of the route short name.
+* `--keep-objects-without-offer` (optional) keeps the stop points, stop areas and lines without offer (not used by any trip) that are locked in `object_locks.txt`. By default, the locks are ignored and the objects without offer are removed.
 
 Get more information about the available options with `ntfs2gtfs --help`.
 
