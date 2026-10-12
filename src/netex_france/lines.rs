@@ -167,6 +167,11 @@ impl<'a> LineExporter<'a> {
             } else {
                 element_builder
             };
+        let element_builder = if let Some(routes) = self.generate_routes(line) {
+            element_builder.append(routes)
+        } else {
+            element_builder
+        };
         let element_builder = if let Some(presentation) = self.generate_presentation(line) {
             element_builder.append(presentation)
         } else {
@@ -231,6 +236,25 @@ impl<'a> LineExporter<'a> {
                 .append_all(operator_refs)
                 .build(),
         )
+    }
+
+    fn generate_routes(&self, line: &'a Line) -> Option<Element> {
+        let route_refs = self
+            .model
+            .routes
+            .values()
+            .filter(|route| route.line_id == line.id)
+            .map(|route| {
+                Element::builder("RouteRef")
+                    .attr("ref", Exporter::generate_id(&route.id, ObjectType::Route))
+                    .build()
+            });
+        let routes = Element::builder("routes").append_all(route_refs).build();
+        if routes.children().is_empty() {
+            None
+        } else {
+            Some(routes)
+        }
     }
 
     fn generate_presentation(&self, line: &'a Line) -> Option<Element> {

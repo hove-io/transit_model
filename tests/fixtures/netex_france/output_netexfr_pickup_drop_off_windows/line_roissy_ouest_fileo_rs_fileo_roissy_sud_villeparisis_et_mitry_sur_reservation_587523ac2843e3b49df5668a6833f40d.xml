@@ -23,6 +23,10 @@
 							<PublicCode>Filéo RS</PublicCode>
 							<OperatorRef ref="FR:Operator:MFDI_1028:">
 							</OperatorRef>
+							<routes>
+								<RouteRef ref="FR:Route:MFDI_stif_local-153359-C02060-3417:">
+								</RouteRef>
+							</routes>
 							<Presentation>
 								<Colour>4890CD</Colour>
 								<TextColour>FFFFFF</TextColour>

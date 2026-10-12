@@ -22,6 +22,12 @@
 							<TransportMode>metro</TransportMode>
 							<OperatorRef ref="FR:Operator:TGN:">
 							</OperatorRef>
+							<routes>
+								<RouteRef ref="FR:Route:M1:">
+								</RouteRef>
+								<RouteRef ref="FR:Route:M1_R:">
+								</RouteRef>
+							</routes>
 							<Presentation>
 								<TextColour>000000</TextColour>
 							</Presentation>

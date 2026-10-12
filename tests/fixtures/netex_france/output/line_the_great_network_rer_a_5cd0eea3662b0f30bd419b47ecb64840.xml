@@ -22,6 +22,12 @@
 							<TransportMode>rail</TransportMode>
 							<OperatorRef ref="FR:Operator:TGN:">
 							</OperatorRef>
+							<routes>
+								<RouteRef ref="FR:Route:RERA:">
+								</RouteRef>
+								<RouteRef ref="FR:Route:RERA_Bus_R:">
+								</RouteRef>
+							</routes>
 							<Presentation>
 								<Colour>EB2132</Colour>
 							</Presentation>

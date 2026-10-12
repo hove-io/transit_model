@@ -23,6 +23,12 @@
 							<PublicCode>Magic Bus!</PublicCode>
 							<OperatorRef ref="FR:Operator:TGN:">
 							</OperatorRef>
+							<routes>
+								<RouteRef ref="FR:Route:B42:">
+								</RouteRef>
+								<RouteRef ref="FR:Route:B42_R:">
+								</RouteRef>
+							</routes>
 						</Line>
 						<Route id="FR:Route:B42:" version="any">
 							<keyList>
