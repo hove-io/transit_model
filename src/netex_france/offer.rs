@@ -265,6 +265,10 @@ impl<'a> OfferExporter<'a> {
             ))
             .append(Self::generate_for_alighting(stop_time.drop_off_type))
             .append(Self::generate_for_boarding(stop_time.pickup_type))
+            .append_all(Self::generate_stop_use(
+                stop_time.pickup_type,
+                stop_time.drop_off_type,
+            ))
             .build()
     }
 
@@ -652,6 +656,19 @@ impl<'a> OfferExporter<'a> {
             .build()
     }
 
+    fn generate_stop_use(pickup_type: u8, drop_off_type: u8) -> Option<Element> {
+        let stop_use = match (pickup_type, drop_off_type) {
+            (3, 3) => "passthrough",
+            (1, 1) => "noBoardingOrAlighting",
+            _ => return None,
+        };
+        Some(
+            Element::builder("StopUse")
+                .append(Node::Text(stop_use.to_owned()))
+                .build(),
+        )
+    }
+
     fn generate_arrival_time(arrival_time: Time) -> Element {
         Element::builder("ArrivalTime")
             .append(Node::Text(arrival_time.to_string()))
@@ -1018,5 +1035,82 @@ mod tests {
         assert_eq!(1, journey_pattern_indexes[1].1.len());
         let vehicle_journey_id = &model.vehicle_journeys[journey_pattern_indexes[1].1[0]].id;
         assert_eq!("vj_id_2", vehicle_journey_id);
+    }
+
+    mod export_stop_point_in_journey_pattern {
+        use super::*;
+        use crate::ModelBuilder;
+        use pretty_assertions::assert_eq;
+
+        fn get_stop_use(
+            model: &Model,
+            vehicle_journey_id: &str,
+            stop_time_index: usize,
+        ) -> Option<String> {
+            let offer_exporter = OfferExporter::new(model).unwrap();
+            let stop_time = &model
+                .vehicle_journeys
+                .get(vehicle_journey_id)
+                .unwrap()
+                .stop_times[stop_time_index];
+            let element =
+                offer_exporter.export_stop_point_in_journey_pattern(vehicle_journey_id, stop_time);
+            element
+                .children()
+                .iter()
+                .filter_map(Node::as_element)
+                .find(|child| child.name() == "StopUse")
+                .map(|stop_use| {
+                    stop_use
+                        .nodes()
+                        .next()
+                        .unwrap()
+                        .as_text()
+                        .unwrap()
+                        .to_string()
+                })
+        }
+
+        #[test]
+        fn stop_use_is_passthrough_when_pickup_and_drop_off_type_are_3() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.st_detailed("A", "10:00:00", "10:00:00", 0, 0, None)
+                        .st_detailed("B", "10:10:00", "10:10:00", 3, 3, None)
+                        .st_detailed("C", "10:20:00", "10:20:00", 0, 0, None);
+                })
+                .build();
+            assert_eq!(
+                Some("passthrough".to_string()),
+                get_stop_use(&model, "vj1", 1)
+            );
+        }
+
+        #[test]
+        fn stop_use_is_no_boarding_or_alighting_when_pickup_and_drop_off_type_are_1() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.st_detailed("A", "10:00:00", "10:00:00", 0, 0, None)
+                        .st_detailed("B", "10:10:00", "10:10:00", 1, 1, None)
+                        .st_detailed("C", "10:20:00", "10:20:00", 0, 0, None);
+                })
+                .build();
+            assert_eq!(
+                Some("noBoardingOrAlighting".to_string()),
+                get_stop_use(&model, "vj1", 1)
+            );
+        }
+
+        #[test]
+        fn stop_use_is_absent_for_regular_pickup_and_drop_off() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.st_detailed("A", "10:00:00", "10:00:00", 0, 0, None)
+                        .st_detailed("B", "10:10:00", "10:10:00", 0, 0, None)
+                        .st_detailed("C", "10:20:00", "10:20:00", 0, 0, None);
+                })
+                .build();
+            assert_eq!(None, get_stop_use(&model, "vj1", 1));
+        }
     }
 }

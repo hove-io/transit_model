@@ -153,8 +153,9 @@
 								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAF1_2:" order="3" version="any">
 									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_2:">
 									</ScheduledStopPointRef>
-									<ForAlighting>true</ForAlighting>
-									<ForBoarding>true</ForBoarding>
+									<ForAlighting>false</ForAlighting>
+									<ForBoarding>false</ForBoarding>
+									<StopUse>noBoardingOrAlighting</StopUse>
 								</StopPointInJourneyPattern>
 								<StopPointInJourneyPattern id="FR:StopPointInJourneyPattern:RERAF1_3:" order="4" version="any">
 									<ScheduledStopPointRef ref="FR:ScheduledStopPoint:RERAF1_3:">
