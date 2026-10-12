@@ -133,34 +133,14 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:" version="any">
-							<Location>
-								<Longitude>2.3958598043279085</Longitude>
-								<Latitude>48.84789550545761</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_1:" version="any">
-							<Location>
-								<Longitude>2.401248269453829</Longitude>
-								<Latitude>48.84501767720269</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_11:" version="any">
-							<Location>
-								<Longitude>2.3434974927179884</Longitude>
-								<Latitude>48.831170235245835</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_20:" version="any">
-							<Location>
-								<Longitude>2.298957096977008</Longitude>
-								<Latitude>48.848765448122315</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_27:" version="any">
-							<Location>
-								<Longitude>2.2947520493673434</Longitude>
-								<Latitude>48.87371127132366</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:" order="1" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:">

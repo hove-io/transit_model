@@ -135,28 +135,12 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:B42F1_10:" version="any">
-							<Location>
-								<Longitude>2.372987</Longitude>
-								<Latitude>48.844746</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:B42F1_20:" version="any">
-							<Location>
-								<Longitude>2.321783</Longitude>
-								<Latitude>48.842481</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_20:" version="any">
-							<Location>
-								<Longitude>2.321783</Longitude>
-								<Latitude>48.842481</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:B42B1_30:" version="any">
-							<Location>
-								<Longitude>2.372987</Longitude>
-								<Latitude>48.844746</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<PassengerStopAssignment id="FR:PassengerStopAssignment:B42F1_10:" order="11" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:B42F1_10:">

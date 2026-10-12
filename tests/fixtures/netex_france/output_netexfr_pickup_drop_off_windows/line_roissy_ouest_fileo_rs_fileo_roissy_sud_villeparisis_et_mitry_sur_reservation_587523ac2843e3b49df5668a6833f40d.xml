@@ -133,34 +133,14 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_0:" version="any">
-							<Location>
-								<Longitude>2.577391101137773</Longitude>
-								<Latitude>48.961194121418</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_1:" version="any">
-							<Location>
-								<Longitude>2.561581492140883</Longitude>
-								<Latitude>48.947693512717194</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_17:" version="any">
-							<Location>
-								<Longitude>2.524710804326184</Longitude>
-								<Latitude>48.96497157469924</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_32:" version="any">
-							<Location>
-								<Longitude>2.526990016633599</Longitude>
-								<Latitude>48.99817129747993</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_37:" version="any">
-							<Location>
-								<Longitude>2.559069276593061</Longitude>
-								<Latitude>49.010290004685544</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_KRO6_153358-C02060-680-260_0:" order="1" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_0:">

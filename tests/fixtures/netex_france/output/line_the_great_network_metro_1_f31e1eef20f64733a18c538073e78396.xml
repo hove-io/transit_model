@@ -193,44 +193,20 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_0:" version="any">
-							<Location>
-								<Longitude>2.396497</Longitude>
-								<Latitude>48.84849</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_1:" version="any">
-							<Location>
-								<Longitude>2.372987</Longitude>
-								<Latitude>48.844746</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_3:" version="any">
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_4:" version="any">
-							<Location>
-								<Longitude>2.295354</Longitude>
-								<Latitude>48.873965</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_6:" version="any">
-							<Location>
-								<Longitude>2.295354</Longitude>
-								<Latitude>48.873965</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_7:" version="any">
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_8:" version="any">
-							<Location>
-								<Longitude>2.372987</Longitude>
-								<Latitude>48.844746</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_9:" version="any">
-							<Location>
-								<Longitude>2.396497</Longitude>
-								<Latitude>48.84849</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<PassengerStopAssignment id="FR:PassengerStopAssignment:M1F1_0:" order="1" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_0:">

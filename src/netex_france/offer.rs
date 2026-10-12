@@ -289,7 +289,7 @@ impl<'a> OfferExporter<'a> {
         vehicle_journey_id: &'a str,
         stop_time: &'a StopTime,
     ) -> Element {
-        let element_builder = Element::builder(ObjectType::ScheduledStopPoint.to_string())
+        Element::builder(ObjectType::ScheduledStopPoint.to_string())
             .attr(
                 "id",
                 Self::generate_stop_sequence_id(
@@ -298,14 +298,8 @@ impl<'a> OfferExporter<'a> {
                     ObjectType::ScheduledStopPoint,
                 ),
             )
-            .attr("version", "any");
-        let element_builder =
-            if let Some(location_element) = self.generate_location(stop_time.stop_point_idx) {
-                element_builder.append(location_element)
-            } else {
-                element_builder
-            };
-        element_builder.build()
+            .attr("version", "any")
+            .build()
     }
 
     fn export_passenger_stop_assignments(
