@@ -161,6 +161,12 @@ impl<'a> LineExporter<'a> {
         } else {
             element_builder
         };
+        let element_builder =
+            if let Some(additional_operators) = self.generate_additional_operators(line) {
+                element_builder.append(additional_operators)
+            } else {
+                element_builder
+            };
         let element_builder = if let Some(presentation) = self.generate_presentation(line) {
             element_builder.append(presentation)
         } else {
@@ -202,6 +208,27 @@ impl<'a> LineExporter<'a> {
                     "ref",
                     Exporter::generate_id(main_company_id, ObjectType::Operator),
                 )
+                .build(),
+        )
+    }
+
+    fn generate_additional_operators(&self, line: &'a Line) -> Option<Element> {
+        let (_, additional_company_ids) =
+            self.line_companies.get(line.id.as_str())?.split_first()?;
+        if additional_company_ids.is_empty() {
+            return None;
+        }
+        let operator_refs = additional_company_ids.iter().map(|company_id| {
+            Element::builder("OperatorRef")
+                .attr(
+                    "ref",
+                    Exporter::generate_id(company_id, ObjectType::Operator),
+                )
+                .build()
+        });
+        Some(
+            Element::builder("additionalOperators")
+                .append_all(operator_refs)
                 .build(),
         )
     }
@@ -325,6 +352,66 @@ mod tests {
             let line_companies = LineExporter::build_line_companies(&model);
             assert_eq!(line_companies.get("L1"), Some(&vec!["A"]));
             assert_eq!(line_companies.get("L2"), Some(&vec!["B"]));
+        }
+    }
+
+    mod generate_additional_operators {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        fn get_operator_refs(element: &Element) -> Vec<&str> {
+            element
+                .children()
+                .iter()
+                .filter_map(Node::as_element)
+                .filter_map(|operator_ref| operator_ref.attr("ref"))
+                .collect()
+        }
+
+        #[test]
+        fn single_company_has_no_additional_operators() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .build();
+            let line_exporter = LineExporter::new(&model).unwrap();
+            let line = model.lines.get("L1").unwrap();
+            assert!(line_exporter.generate_additional_operators(line).is_none());
+        }
+
+        #[test]
+        fn other_companies_are_listed_as_additional_operators() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj2", |vj| {
+                    vj.line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj3", |vj| {
+                    vj.line("L1")
+                        .company("B")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .build();
+            let line_exporter = LineExporter::new(&model).unwrap();
+            let line = model.lines.get("L1").unwrap();
+            let additional_operators = line_exporter.generate_additional_operators(line).unwrap();
+            assert_eq!(
+                get_operator_refs(&additional_operators),
+                vec!["FR:Operator:B:"]
+            );
         }
     }
 }
