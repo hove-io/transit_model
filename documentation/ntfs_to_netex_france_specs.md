@@ -14,6 +14,8 @@ The resulting ZIP archive is composed of:
 * a `line_*.xml` file for each line, at the root of the archive, containing
   the description of the line itself, its routes, and its service journeys.
   See [line_*.xml](#line_xml) for the exact filename format.
+* a `fare.xml` file containing the fare zones (`FareZone`), absent if there
+  is none. See [fare.xml](#farezone).
 
 [NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
 
@@ -161,18 +163,18 @@ Each `Quay` node corresponds to an NTFS `stop_point` and is of type `ZE`
 (__Zone d'embarquement__).  All `Quay` elements are grouped into a `members`
 element which itself is wrapped into a `GeneralFrame`.
 
-| Netex field                         | NTFS file        | NTFS field            | Note                                                                                                                                                                                                                                                     |
-| ----------------------------------- | ---------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Quay/@id                            | stops.txt        | stop_id               | see [id formatting](#id-of-objects)                                                                                                                                                                                                                      |
-| Quay/@version                       |                  |                       | fixed value `any`.                                                                                                                                                                                                                                       |
-| Quay/Name                           | stops.txt        | stop_name             |                                                                                                                                                                                                                                                          |
-| Quay/Centroid/Location              | stops.txt        | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                                                                                                                                    |
-| Quay/AccessibilityAssessment        | stops.txt        | equipment_id          | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.                                                                                                                           |
-| Quay/SiteRef/@ref                   |                  |                       | Reference to the monomodal `StopPlace` it belongs to, for the same mode as `Quay/TransportMode` below; see [id formatting](#id-of-objects)                                                                                                               |
-| Quay/TransportMode                  |                  |                       | see (2) below                                                                                                                                                                                                                                            |
-| Quay/tariffZones/TariffZoneRef/@ref | stops.txt        | fare_zone_id          | Target is a `FareZone` (see fare.xml); see [id formatting](#id-of-objects). The profile text asks for an element named `FareZoneRef`, but the XSD only allows `TariffZoneRef` at this position (`tariffZoneRefs_RelStructure`); `TariffZoneRef` is kept. |
-| Quay/PublicCode                     | stops.txt        | stop_code             | This node may not be present if the stop_point has no `stop_code`.                                                                                                                                                                                       |
-| Quay/keyList/KeyValue/Value         | object_codes.txt | object_code           | Present only if a code with `object_system` = `source` exists for this `stop_point`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source`                                                                                       |
+| Netex field                         | NTFS file        | NTFS field            | Note                                                                                                                                                                                                                                                                  |
+| ----------------------------------- | ---------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Quay/@id                            | stops.txt        | stop_id               | see [id formatting](#id-of-objects)                                                                                                                                                                                                                                   |
+| Quay/@version                       |                  |                       | fixed value `any`.                                                                                                                                                                                                                                                    |
+| Quay/Name                           | stops.txt        | stop_name             |                                                                                                                                                                                                                                                                       |
+| Quay/Centroid/Location              | stops.txt        | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                                                                                                                                                 |
+| Quay/AccessibilityAssessment        | stops.txt        | equipment_id          | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.                                                                                                                                        |
+| Quay/SiteRef/@ref                   |                  |                       | Reference to the monomodal `StopPlace` it belongs to, for the same mode as `Quay/TransportMode` below; see [id formatting](#id-of-objects)                                                                                                                            |
+| Quay/TransportMode                  |                  |                       | see (2) below                                                                                                                                                                                                                                                         |
+| Quay/tariffZones/TariffZoneRef/@ref | stops.txt        | fare_zone_id          | Target is a `FareZone` (see [fare.xml](#farezone)); see [id formatting](#id-of-objects). The profile text asks for an element named `FareZoneRef`, but the XSD only allows `TariffZoneRef` at this position (`tariffZoneRefs_RelStructure`); `TariffZoneRef` is kept. |
+| Quay/PublicCode                     | stops.txt        | stop_code             | This node may not be present if the stop_point has no `stop_code`.                                                                                                                                                                                                    |
+| Quay/keyList/KeyValue/Value         | object_codes.txt | object_code           | Present only if a code with `object_system` = `source` exists for this `stop_point`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source`                                                                                                    |
 
 **(2) definition of the TransportMode**
 As a stop_point can be associated to several physical_modes, all the
@@ -1061,3 +1063,40 @@ Example:
 | TimetabledPassingTime/ArrivalDayOffset   | stop_times.txt | arrival_time   | number of times 24 hours fits in `arrival_time` (e.g. for `50:00:00`, 24 hours fits `2` times)   |
 | TimetabledPassingTime/DepartureTime      | stop_times.txt | departure_time | format as `00:00:00` with a modulo on 24 hours (e.g. `25:00:00` becomes `01:00:00`)              |
 | TimetabledPassingTime/DepartureDayOffset | stop_times.txt | departure_time | number of times 24 hours fits in `departure_time` (e.g. for `50:00:00`, 24 hours fits `2` times) |
+
+## fare.xml
+
+### Top level structure
+
+This file is entirely absent if no `stop_point` has a `fare_zone_id`.
+
+Example:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<GeneralFrame
+			id="FR:GeneralFrame:NETEX_TARIF:"
+			version="1.3:FR-NETEX_TARIF-2.4">
+	<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_TARIF:"/>
+	<members><!-- One node FareZone for each distinct fare_zone_id --></members>
+</GeneralFrame>
+```
+
+### FareZone
+
+One `FareZone` is created for each distinct value of `stop_point.fare_zone_id`,
+referenced by [`Quay/tariffZones/TariffZoneRef`](#quay).
+
+| Netex field       | NTFS file | NTFS field   | Note                                |
+| ----------------- | --------- | ------------ | ----------------------------------- |
+| FareZone/@id      | stops.txt | fare_zone_id | see [id formatting](#id-of-objects) |
+| FareZone/@version |           |              | fixed value `any`                   |
+| FareZone/Name     | stops.txt | fare_zone_id | raw value of `fare_zone_id`         |
+
+Example:
+
+```xml
+<FareZone id="FR:FareZone:Z1:" version="any">
+	<Name>Z1</Name>
+</FareZone>
+```
