@@ -520,11 +520,15 @@ Example:
 | Operator/@id                    | companies.txt    | company_id    | see [id formatting](#id-of-objects)                                                                                                                             |
 | Operator/@version               |                  |               | fixed value `any`                                                                                                                                               |
 | Operator/Name                   | companies.txt    | company_name  |                                                                                                                                                                 |
-| Operator/ContactDetails/Email   | companies.txt    | company_mail  |                                                                                                                                                                 |
-| Operator/ContactDetails/Phone   | companies.txt    | company_phone |                                                                                                                                                                 |
-| Operator/ContactDetails/Url     | companies.txt    | company_url   |                                                                                                                                                                 |
+| Operator/ContactDetails/Email   | companies.txt    | company_mail  | see (1) below                                                                                                                                                   |
+| Operator/ContactDetails/Phone   | companies.txt    | company_phone | see (1) below                                                                                                                                                   |
+| Operator/ContactDetails/Url     | companies.txt    | company_url   | see (1) below                                                                                                                                                   |
 | Operator/OrganisationType       | companies.txt    | company_role  | `"authority"` if `company_role = Authority`, `"operator"` if `company_role = Operator`                                                                          |
 | Operator/keyList/KeyValue/Value | object_codes.txt | object_code   | Present only if a code with `object_system` = `source` exists for this `company`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source` |
+
+**(1) definition of Operator/ContactDetails**
+
+Each of `Email`, `Phone`, `Url` is present only if the corresponding NTFS field (`company_mail`, `company_phone`, `company_url`) is set. `ContactDetails` itself is omitted entirely if all three are absent.
 
 Example:
 
