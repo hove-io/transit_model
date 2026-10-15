@@ -17,7 +17,7 @@ use crate::{
     netex_france::{
         self,
         exporter::{Exporter, ObjectType},
-        LineModes, NetexMode, StopExporter,
+        LineCompanies, LineModes, NetexMode, StopExporter,
     },
     objects::{Coord, Line, Route, StopPoint, StopTime, Time, VehicleJourney},
     Model, Result,
@@ -90,6 +90,7 @@ impl<'a> OfferExporter<'a> {
         &self,
         line_idx: Idx<Line>,
         line_modes: &LineModes,
+        line_companies: &LineCompanies,
     ) -> Result<Offer> {
         let route_elements = self.export_routes(line_idx)?;
         let route_point_elements = self.export_route_points(line_idx)?;
@@ -127,6 +128,7 @@ impl<'a> OfferExporter<'a> {
                     vehicle_journey_indexes,
                     line_idx,
                     line_modes,
+                    line_companies,
                 )
             })
             .fold(Vec::new(), |mut service_journey_elements, elements| {
@@ -164,7 +166,6 @@ impl<'a> OfferExporter<'a> {
             .attr("version", "any");
         let element_builder = element_builder.append_all(Exporter::generate_key_list(&route.codes)); // must be first child (XSD order)
         let element_builder = element_builder.append(Self::generate_route_name(&route.name));
-        let element_builder = element_builder.append(Self::generate_distance());
         let element_builder = element_builder.append(Self::generate_line_ref(&route.line_id));
         let element_builder = if let Some(direction_type_element) =
             Self::generate_direction_type(route.direction_type.as_deref())
@@ -225,7 +226,6 @@ impl<'a> OfferExporter<'a> {
                 Exporter::generate_id(&journey_pattern.id, ObjectType::ServiceJourneyPattern),
             )
             .attr("version", "any")
-            .append(Self::generate_distance())
             .append(Self::generate_route_ref(&journey_pattern.route_id))
             .append(points_in_sequence)
             .build()
@@ -267,6 +267,10 @@ impl<'a> OfferExporter<'a> {
             ))
             .append(Self::generate_for_alighting(stop_time.drop_off_type))
             .append(Self::generate_for_boarding(stop_time.pickup_type))
+            .append_all(Self::generate_stop_use(
+                stop_time.pickup_type,
+                stop_time.drop_off_type,
+            ))
             .build()
     }
 
@@ -287,7 +291,7 @@ impl<'a> OfferExporter<'a> {
         vehicle_journey_id: &'a str,
         stop_time: &'a StopTime,
     ) -> Element {
-        let element_builder = Element::builder(ObjectType::ScheduledStopPoint.to_string())
+        Element::builder(ObjectType::ScheduledStopPoint.to_string())
             .attr(
                 "id",
                 Self::generate_stop_sequence_id(
@@ -296,14 +300,8 @@ impl<'a> OfferExporter<'a> {
                     ObjectType::ScheduledStopPoint,
                 ),
             )
-            .attr("version", "any");
-        let element_builder =
-            if let Some(location_element) = self.generate_location(stop_time.stop_point_idx) {
-                element_builder.append(location_element)
-            } else {
-                element_builder
-            };
-        element_builder.build()
+            .attr("version", "any")
+            .build()
     }
 
     fn export_passenger_stop_assignments(
@@ -358,6 +356,7 @@ impl<'a> OfferExporter<'a> {
         vehicle_journey_indexes: &[Idx<VehicleJourney>],
         line_idx: Idx<Line>,
         line_modes: &LineModes,
+        line_companies: &LineCompanies,
     ) -> Vec<Element> {
         vehicle_journey_indexes
             .iter()
@@ -367,6 +366,7 @@ impl<'a> OfferExporter<'a> {
                     *vehicle_journey_idx,
                     line_idx,
                     line_modes,
+                    line_companies,
                 )
             })
             .collect()
@@ -378,6 +378,7 @@ impl<'a> OfferExporter<'a> {
         vehicle_journey_idx: Idx<VehicleJourney>,
         line_idx: Idx<Line>,
         line_modes: &LineModes,
+        line_companies: &LineCompanies,
     ) -> Element {
         let journey_pattern_id = &self.model.vehicle_journeys[journey_pattern_idx].id;
         let vehicle_journey = &self.model.vehicle_journeys[vehicle_journey_idx];
@@ -385,7 +386,11 @@ impl<'a> OfferExporter<'a> {
         let line_netex_mode = &line_modes
             .get(line_id.as_str())
             .and_then(NetexMode::calculate_highest_mode);
-
+        let line_main_company_id = line_companies
+            .get(line_id.as_str())
+            .and_then(|company_ids| company_ids.first())
+            .copied();
+        let vj_company_id = vehicle_journey.company_id.as_str();
         let element_builder = Element::builder(ObjectType::ServiceJourney.to_string())
             .attr(
                 "id",
@@ -406,8 +411,12 @@ impl<'a> OfferExporter<'a> {
             element_builder.append(Self::generate_day_type_ref(&vehicle_journey.service_id));
         let element_builder =
             element_builder.append(Self::generate_journey_pattern_ref(journey_pattern_id));
-        let element_builder =
-            element_builder.append(Self::generate_operator_ref(&vehicle_journey.company_id));
+        let element_builder = if Some(vj_company_id) != line_main_company_id {
+            element_builder.append(Self::generate_operator_ref(vj_company_id))
+        } else {
+            element_builder
+        };
+        let element_builder = element_builder.append(Self::generate_line_ref(line_id));
         let passing_times = Element::builder("passingTimes")
             .append_all(Self::export_timetabled_passing_times(
                 &vehicle_journey.stop_times,
@@ -454,12 +463,6 @@ impl<'a> OfferExporter<'a> {
     fn generate_route_name(route_name: &'a str) -> Element {
         Element::builder("Name")
             .append(Node::Text(route_name.to_owned()))
-            .build()
-    }
-
-    fn generate_distance() -> Element {
-        Element::builder("Distance")
-            .append(Node::Text(String::from("0")))
             .build()
     }
 
@@ -658,6 +661,19 @@ impl<'a> OfferExporter<'a> {
         Element::builder("ForBoarding")
             .append(Node::Text(is_boarding.to_owned()))
             .build()
+    }
+
+    fn generate_stop_use(pickup_type: u8, drop_off_type: u8) -> Option<Element> {
+        let stop_use = match (pickup_type, drop_off_type) {
+            (3, 3) => "passthrough",
+            (1, 1) => "noBoardingOrAlighting",
+            _ => return None,
+        };
+        Some(
+            Element::builder("StopUse")
+                .append(Node::Text(stop_use.to_owned()))
+                .build(),
+        )
     }
 
     fn generate_arrival_time(arrival_time: Time) -> Element {
@@ -1026,5 +1042,166 @@ mod tests {
         assert_eq!(1, journey_pattern_indexes[1].1.len());
         let vehicle_journey_id = &model.vehicle_journeys[journey_pattern_indexes[1].1[0]].id;
         assert_eq!("vj_id_2", vehicle_journey_id);
+    }
+
+    mod export_stop_point_in_journey_pattern {
+        use super::*;
+        use crate::ModelBuilder;
+        use pretty_assertions::assert_eq;
+
+        fn get_stop_use(
+            model: &Model,
+            vehicle_journey_id: &str,
+            stop_time_index: usize,
+        ) -> Option<String> {
+            let offer_exporter = OfferExporter::new(model).unwrap();
+            let stop_time = &model
+                .vehicle_journeys
+                .get(vehicle_journey_id)
+                .unwrap()
+                .stop_times[stop_time_index];
+            let element =
+                offer_exporter.export_stop_point_in_journey_pattern(vehicle_journey_id, stop_time);
+            element
+                .children()
+                .iter()
+                .filter_map(Node::as_element)
+                .find(|child| child.name() == "StopUse")
+                .map(|stop_use| {
+                    stop_use
+                        .nodes()
+                        .next()
+                        .unwrap()
+                        .as_text()
+                        .unwrap()
+                        .to_string()
+                })
+        }
+
+        #[test]
+        fn stop_use_is_passthrough_when_pickup_and_drop_off_type_are_3() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.st_detailed("A", "10:00:00", "10:00:00", 0, 0, None)
+                        .st_detailed("B", "10:10:00", "10:10:00", 3, 3, None)
+                        .st_detailed("C", "10:20:00", "10:20:00", 0, 0, None);
+                })
+                .build();
+            assert_eq!(
+                Some("passthrough".to_string()),
+                get_stop_use(&model, "vj1", 1)
+            );
+        }
+
+        #[test]
+        fn stop_use_is_no_boarding_or_alighting_when_pickup_and_drop_off_type_are_1() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.st_detailed("A", "10:00:00", "10:00:00", 0, 0, None)
+                        .st_detailed("B", "10:10:00", "10:10:00", 1, 1, None)
+                        .st_detailed("C", "10:20:00", "10:20:00", 0, 0, None);
+                })
+                .build();
+            assert_eq!(
+                Some("noBoardingOrAlighting".to_string()),
+                get_stop_use(&model, "vj1", 1)
+            );
+        }
+
+        #[test]
+        fn stop_use_is_absent_for_regular_pickup_and_drop_off() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.st_detailed("A", "10:00:00", "10:00:00", 0, 0, None)
+                        .st_detailed("B", "10:10:00", "10:10:00", 0, 0, None)
+                        .st_detailed("C", "10:20:00", "10:20:00", 0, 0, None);
+                })
+                .build();
+            assert_eq!(None, get_stop_use(&model, "vj1", 1));
+        }
+    }
+
+    mod export_service_journey {
+        use super::*;
+        use crate::netex_france::LineExporter;
+        use crate::ModelBuilder;
+        use pretty_assertions::assert_eq;
+
+        fn get_operator_ref(
+            model: &Model,
+            vehicle_journey_id: &str,
+            line_id: &str,
+        ) -> Option<String> {
+            let offer_exporter = OfferExporter::new(model).unwrap();
+            let line_modes = LineExporter::build_line_modes(model);
+            let line_companies = LineExporter::build_line_companies(model);
+            let vehicle_journey_idx = model.vehicle_journeys.get_idx(vehicle_journey_id).unwrap();
+            let line_idx = model.lines.get_idx(line_id).unwrap();
+            let element = offer_exporter.export_service_journey(
+                vehicle_journey_idx,
+                vehicle_journey_idx,
+                line_idx,
+                &line_modes,
+                &line_companies,
+            );
+            element
+                .children()
+                .iter()
+                .filter_map(Node::as_element)
+                .find(|child| child.name() == "OperatorRef")
+                .map(|operator_ref| operator_ref.attr("ref").unwrap().to_string())
+        }
+
+        #[test]
+        fn operator_ref_is_absent_when_company_matches_line_main_company() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj2", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("A")
+                        .st("A", "10:10:00")
+                        .st("B", "11:10:00");
+                })
+                .build();
+            assert_eq!(None, get_operator_ref(&model, "vj1", "L1"));
+        }
+
+        #[test]
+        fn operator_ref_is_present_when_company_differs_from_line_main_company() {
+            let model = ModelBuilder::default()
+                .vj("vj1", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("A")
+                        .st("A", "10:00:00")
+                        .st("B", "11:00:00");
+                })
+                .vj("vj2", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("A")
+                        .st("A", "10:10:00")
+                        .st("B", "11:10:00");
+                })
+                .vj("vj3", |vj| {
+                    vj.route("R1")
+                        .line("L1")
+                        .company("B")
+                        .st("A", "10:20:00")
+                        .st("B", "11:20:00");
+                })
+                .build();
+            assert_eq!(
+                Some("FR:Operator:B:".to_string()),
+                get_operator_ref(&model, "vj3", "L1")
+            );
+        }
     }
 }

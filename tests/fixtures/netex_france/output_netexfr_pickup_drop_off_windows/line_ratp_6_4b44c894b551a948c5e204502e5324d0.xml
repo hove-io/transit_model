@@ -21,6 +21,12 @@
 							<Name>6</Name>
 							<TransportMode>metro</TransportMode>
 							<PublicCode>6</PublicCode>
+							<OperatorRef ref="FR:Operator:MFDI_100:">
+							</OperatorRef>
+							<routes>
+								<RouteRef ref="FR:Route:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783:">
+								</RouteRef>
+							</routes>
 							<Presentation>
 								<Colour>6ECA97</Colour>
 								<TextColour>000000</TextColour>
@@ -34,7 +40,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>Charles de Gaulle - Etoile</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:MFDI_C01376:">
 							</LineRef>
 							<DirectionType>outbound</DirectionType>
@@ -92,7 +97,6 @@
 							</Location>
 						</RoutePoint>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:MFDI_RATP_107494-C01376-ITI_IDFM_C01376_A_-1009412783:">
 							</RouteRef>
 							<pointsInSequence>
@@ -129,34 +133,14 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:" version="any">
-							<Location>
-								<Longitude>2.3958598043279085</Longitude>
-								<Latitude>48.84789550545761</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_1:" version="any">
-							<Location>
-								<Longitude>2.401248269453829</Longitude>
-								<Latitude>48.84501767720269</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_11:" version="any">
-							<Location>
-								<Longitude>2.3434974927179884</Longitude>
-								<Latitude>48.831170235245835</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_20:" version="any">
-							<Location>
-								<Longitude>2.298957096977008</Longitude>
-								<Latitude>48.848765448122315</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_27:" version="any">
-							<Location>
-								<Longitude>2.2947520493673434</Longitude>
-								<Latitude>48.87371127132366</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:" order="1" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116_0:">
@@ -222,8 +206,8 @@
 							</dayTypes>
 							<JourneyPatternRef ref="FR:ServiceJourneyPattern:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116:">
 							</JourneyPatternRef>
-							<OperatorRef ref="FR:Operator:MFDI_100:">
-							</OperatorRef>
+							<LineRef ref="FR:Line:MFDI_C01376:">
+							</LineRef>
 							<passingTimes>
 								<TimetabledPassingTime>
 									<ArrivalTime>10:30:00</ArrivalTime>

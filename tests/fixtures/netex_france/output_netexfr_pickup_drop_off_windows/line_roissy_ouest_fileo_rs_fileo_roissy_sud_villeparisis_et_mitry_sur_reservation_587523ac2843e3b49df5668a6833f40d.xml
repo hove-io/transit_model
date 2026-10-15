@@ -21,6 +21,12 @@
 							<Name>Filéo Roissy Sud - Villeparisis et Mitry (sur réservation)</Name>
 							<TransportMode>bus</TransportMode>
 							<PublicCode>Filéo RS</PublicCode>
+							<OperatorRef ref="FR:Operator:MFDI_1028:">
+							</OperatorRef>
+							<routes>
+								<RouteRef ref="FR:Route:MFDI_stif_local-153359-C02060-3417:">
+								</RouteRef>
+							</routes>
 							<Presentation>
 								<Colour>4890CD</Colour>
 								<TextColour>FFFFFF</TextColour>
@@ -34,7 +40,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>Gare de Roissypole Aéroport CDG 1</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:MFDI_C02060:">
 							</LineRef>
 							<DirectionType>outbound</DirectionType>
@@ -92,7 +97,6 @@
 							</Location>
 						</RoutePoint>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:MFDI_KRO6_153358-C02060-680-260:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:MFDI_stif_local-153359-C02060-3417:">
 							</RouteRef>
 							<pointsInSequence>
@@ -129,34 +133,14 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_0:" version="any">
-							<Location>
-								<Longitude>2.577391101137773</Longitude>
-								<Latitude>48.961194121418</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_1:" version="any">
-							<Location>
-								<Longitude>2.561581492140883</Longitude>
-								<Latitude>48.947693512717194</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_17:" version="any">
-							<Location>
-								<Longitude>2.524710804326184</Longitude>
-								<Latitude>48.96497157469924</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_32:" version="any">
-							<Location>
-								<Longitude>2.526990016633599</Longitude>
-								<Latitude>48.99817129747993</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_37:" version="any">
-							<Location>
-								<Longitude>2.559069276593061</Longitude>
-								<Latitude>49.010290004685544</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<PassengerStopAssignment id="FR:PassengerStopAssignment:MFDI_KRO6_153358-C02060-680-260_0:" order="1" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:MFDI_KRO6_153358-C02060-680-260_0:">
@@ -222,8 +206,8 @@
 							</dayTypes>
 							<JourneyPatternRef ref="FR:ServiceJourneyPattern:MFDI_KRO6_153358-C02060-680-260:">
 							</JourneyPatternRef>
-							<OperatorRef ref="FR:Operator:MFDI_1028:">
-							</OperatorRef>
+							<LineRef ref="FR:Line:MFDI_C02060:">
+							</LineRef>
 							<passingTimes>
 								<TimetabledPassingTime>
 									<ArrivalTime>02:39:00</ArrivalTime>

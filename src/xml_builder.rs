@@ -50,6 +50,14 @@ impl Node {
             _ => None,
         }
     }
+    /// Get the element if this is an Element node
+    #[cfg(test)]
+    pub fn as_element(&self) -> Option<&Element> {
+        match self {
+            Node::Element(element) => Some(element),
+            _ => None,
+        }
+    }
 }
 
 /// Represents an XML element with name, attributes, and children

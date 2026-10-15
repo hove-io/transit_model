@@ -20,6 +20,14 @@
 							</keyList>
 							<Name>Metro 1</Name>
 							<TransportMode>metro</TransportMode>
+							<OperatorRef ref="FR:Operator:TGN:">
+							</OperatorRef>
+							<routes>
+								<RouteRef ref="FR:Route:M1:">
+								</RouteRef>
+								<RouteRef ref="FR:Route:M1_R:">
+								</RouteRef>
+							</routes>
 							<Presentation>
 								<TextColour>000000</TextColour>
 							</Presentation>
@@ -32,7 +40,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>Nation - Charles de Gaulle</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:M1:">
 							</LineRef>
 							<DirectionType>inbound</DirectionType>
@@ -63,7 +70,6 @@
 								</KeyValue>
 							</keyList>
 							<Name>Charles de Gaulle - Nation</Name>
-							<Distance>0</Distance>
 							<LineRef ref="FR:Line:M1:">
 							</LineRef>
 							<DirectionType>outbound</DirectionType>
@@ -127,7 +133,6 @@
 							</Location>
 						</RoutePoint>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:M1F1:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:M1:">
 							</RouteRef>
 							<pointsInSequence>
@@ -158,7 +163,6 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ServiceJourneyPattern id="FR:ServiceJourneyPattern:M1B1:" version="any">
-							<Distance>0</Distance>
 							<RouteRef ref="FR:Route:M1_R:">
 							</RouteRef>
 							<pointsInSequence>
@@ -189,44 +193,20 @@
 							</pointsInSequence>
 						</ServiceJourneyPattern>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_0:" version="any">
-							<Location>
-								<Longitude>2.396497</Longitude>
-								<Latitude>48.84849</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_1:" version="any">
-							<Location>
-								<Longitude>2.372987</Longitude>
-								<Latitude>48.844746</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_3:" version="any">
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1F1_4:" version="any">
-							<Location>
-								<Longitude>2.295354</Longitude>
-								<Latitude>48.873965</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_6:" version="any">
-							<Location>
-								<Longitude>2.295354</Longitude>
-								<Latitude>48.873965</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_7:" version="any">
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_8:" version="any">
-							<Location>
-								<Longitude>2.372987</Longitude>
-								<Latitude>48.844746</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<ScheduledStopPoint id="FR:ScheduledStopPoint:M1B1_9:" version="any">
-							<Location>
-								<Longitude>2.396497</Longitude>
-								<Latitude>48.84849</Latitude>
-							</Location>
 						</ScheduledStopPoint>
 						<PassengerStopAssignment id="FR:PassengerStopAssignment:M1F1_0:" order="1" version="any">
 							<ScheduledStopPointRef ref="FR:ScheduledStopPoint:M1F1_0:">
@@ -316,8 +296,8 @@
 							</dayTypes>
 							<JourneyPatternRef ref="FR:ServiceJourneyPattern:M1F1:">
 							</JourneyPatternRef>
-							<OperatorRef ref="FR:Operator:TGN:">
-							</OperatorRef>
+							<LineRef ref="FR:Line:M1:">
+							</LineRef>
 							<passingTimes>
 								<TimetabledPassingTime>
 									<ArrivalTime>00:00:00</ArrivalTime>
@@ -358,8 +338,8 @@
 							</dayTypes>
 							<JourneyPatternRef ref="FR:ServiceJourneyPattern:M1B1:">
 							</JourneyPatternRef>
-							<OperatorRef ref="FR:Operator:TGN:">
-							</OperatorRef>
+							<LineRef ref="FR:Line:M1:">
+							</LineRef>
 							<passingTimes>
 								<TimetabledPassingTime>
 									<ArrivalTime>00:00:00</ArrivalTime>
