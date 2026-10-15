@@ -18,8 +18,8 @@ use crate::xml_builder::{Element, ElementWriter, Node};
 use crate::{
     model::Model,
     netex_france::{
-        CalendarExporter, CompanyExporter, LineExporter, NetworkExporter, StopExporter,
-        TransferExporter,
+        CalendarExporter, CompanyExporter, FareZoneExporter, LineExporter, NetworkExporter,
+        StopExporter, TransferExporter,
     },
     objects::{Date, KeysValues, Line, Network},
     Result,
@@ -38,6 +38,7 @@ use std::{
 use tracing::info;
 use typed_index_collection::{CollectionWithId, Idx};
 
+const NETEX_FRANCE_FARE_FILENAME: &str = "fare.xml";
 const NETEX_FRANCE_NETWORK_FILENAME: &str = "network.xml";
 const NETEX_FRANCE_RESOURCE_FILENAME: &str = "resource.xml";
 const NETEX_FRANCE_STOPS_FILENAME: &str = "stop.xml";
@@ -118,6 +119,7 @@ impl Display for ObjectType {
 enum VersionType {
     Calendars,
     Common,
+    Fares,
     France,
     Lines,
     LinesStructure,
@@ -132,6 +134,7 @@ impl Display for VersionType {
         match self {
             Calendars => write!(fmt, "CALENDRIER"),
             Common => write!(fmt, "COMMUN"),
+            Fares => write!(fmt, "TARIF"),
             France => write!(fmt, "FRANCE"),
             Lines => write!(fmt, "LIGNE"),
             LinesStructure => write!(fmt, "LIGNE_STRUCTURE"),
@@ -212,6 +215,7 @@ impl<'a> Exporter<'a> {
     {
         std::fs::create_dir_all(&path)?;
         self.write_networks(&path)?;
+        self.write_fare(&path)?;
         self.write_stops(&path)?;
         self.write_resource(&path)?;
         self.write_lines(&path)?;
@@ -359,6 +363,42 @@ impl Exporter<'_> {
             None,
             [members],
         )
+    }
+
+    fn write_fare<P>(&self, path: P) -> Result<()>
+    where
+        P: AsRef<Path>,
+    {
+        // No FareZone means no `fare_zone_id` anywhere in the dataset: skip
+        // writing fare.xml entirely rather than emitting an empty frame.
+        let Some(fare_frame) = self.create_fare_frame() else {
+            return Ok(());
+        };
+        let filepath = path.as_ref().join(NETEX_FRANCE_FARE_FILENAME);
+        let file = BufWriter::new(File::create(&filepath)?);
+        let netex = self.wrap_frame(fare_frame);
+        let mut writer = ElementWriter::pretty(file);
+        info!("Writing {:?}", &filepath);
+        writer.write(&netex)?;
+        Ok(())
+    }
+
+    // Returns a 'GeneralFrame' containing all 'FareZone', or `None` if there are none.
+    fn create_fare_frame(&self) -> Option<Element> {
+        let fare_zone_exporter = FareZoneExporter::new(self.model);
+        let fare_zone_elements = fare_zone_exporter.export();
+        if fare_zone_elements.is_empty() {
+            return None;
+        }
+        let members = Self::create_members(fare_zone_elements);
+        Some(self.create_frame(
+            FrameType::General,
+            VersionType::Fares,
+            None,
+            None,
+            None,
+            [members],
+        ))
     }
 
     fn write_resource<P>(&self, path: P) -> Result<()>

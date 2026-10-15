@@ -20,6 +20,8 @@ mod companies;
 use companies::CompanyExporter;
 mod exporter;
 use exporter::Exporter;
+mod fare_zones;
+use fare_zones::FareZoneExporter;
 mod lines;
 use lines::{LineCompanies, LineExporter, LineModes};
 mod slug;
