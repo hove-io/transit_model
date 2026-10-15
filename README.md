@@ -59,45 +59,11 @@ If you want to contribute or install binaries, you need to install a [Rust] envi
 [Rust]: https://www.rust-lang.org
 [rustup.rs]: https://rustup.rs
 
-## [PROJ] dependency
+## `netex` feature
 
-Based on [PROJ], the [`proj` crate] allows the transformation of
-localization coordinates.
-
-Some `transit_model`'s crates (see each documentation) use [PROJ].\
-So it must be installed on the system to compile and use those crates.
-
-### [PROJ] for binaries
-
-The [`proj` crate] requires [PROJ].
-
-If your system has `pkg-config` and a sufficiently new version of [PROJ] installed, it will be used.
-Otherwise, the crate falls back to building [PROJ] from source, which requires some build time dependencies.
-
-To install [PROJ] build time dependencies, you can execute the following command (On Debian systems):
-
-```sh
-make install_proj_deps
-```
-
-You can also install the required [PROJ] version system-wide to avoid full rebuild (ex: `cargo clean`):
-
-```sh
-make install_proj
-```
-
-[PROJ installation instructions](https://github.com/OSGeo/PROJ#installation)
-may help, too.
-
-### Using [PROJ] and transit_model as a developer
-
-[`proj` crate] is a binding to the C library.
-
-[PROJ] is configured as a `feature` of the `transit_model` crate.\
-So to use it for coding, the `proj` feature must be activated
-(`cargo build --features=proj`).\
-Then specific code should be conditionally enabled with
-`#[cfg(feature="proj")]`.
+The NeTEx France export (module `netex_france`) is gated behind the `netex`
+cargo feature (`cargo build --features=netex`). Code specific to it should be
+conditionally enabled with `#[cfg(feature = "netex")]`.
 
 ## NTFS Level of Support
 
@@ -122,7 +88,5 @@ Licensed under [GNU Affero General Public License v3.0](LICENSE)
 [NeTEx]: http://netex-cen.eu
 [NTFS]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md
 [NTFS changelog in French]: https://github.com/hove-io/ntfs-specification/blob/master/ntfs_changelog_fr.md
-[PROJ]: https://proj.org
-[`proj` crate]: https://crates.io/crates/proj
 [`navitia/transit_model`]: https://hub.docker.com/r/navitia/transit_model
 [`transit_model`]: https://crates.io/crates/transit_model

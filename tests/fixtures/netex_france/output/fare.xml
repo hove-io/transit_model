@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PublicationDelivery version="1.3:FR-NETEX_FRANCE-2.4" xmlns="http://www.netex.org.uk/netex">
+	<PublicationTimestamp>2019-04-03T19:19:00+02:00</PublicationTimestamp>
+	<ParticipantRef>Participant</ParticipantRef>
+	<dataObjects>
+		<GeneralFrame id="FR:GeneralFrame:NETEX_TARIF:" version="1.3:FR-NETEX_TARIF-2.4">
+			<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_TARIF:">
+			</TypeOfFrameRef>
+			<members>
+				<FareZone id="FR:FareZone:ZoneOffParis:" version="any">
+					<Name>ZoneOffParis</Name>
+				</FareZone>
+				<FareZone id="FR:FareZone:ZoneParis:" version="any">
+					<Name>ZoneParis</Name>
+				</FareZone>
+			</members>
+		</GeneralFrame>
+	</dataObjects>
+</PublicationDelivery>

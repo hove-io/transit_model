@@ -50,6 +50,14 @@ impl Node {
             _ => None,
         }
     }
+    /// Get the element if this is an Element node
+    #[cfg(test)]
+    pub fn as_element(&self) -> Option<&Element> {
+        match self {
+            Node::Element(element) => Some(element),
+            _ => None,
+        }
+    }
 }
 
 /// Represents an XML element with name, attributes, and children
@@ -198,7 +206,7 @@ impl<W: Write> ElementWriter<W> {
     pub fn write(&mut self, element: &Element) -> io::Result<()> {
         // Write XML declaration
         self.writer
-            .write_event(Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), None)))?;
+            .write_event(Event::Decl(BytesDecl::new("1.0", Some("utf-8"), None)))?;
 
         // Write the element
         element.write_to(&mut self.writer)?;

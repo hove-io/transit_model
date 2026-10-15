@@ -8,18 +8,6 @@ format.
 
 ## Installation
 
-To install, you first need to install [PROJ].\
-See [PROJ installation instructions].
-
-[PROJ]: https://proj.org/
-[PROJ installation instructions]: https://github.com/OSGeo/PROJ#installation
-
-You also need the following dependencies to be installed.
-
-```bash
-apt install -y clang libssl-dev
-```
-
 As `ntfs2netexfr` is not pushed to crates.io yet, you can install it by cloning `transit_model`.
 
 ```bash

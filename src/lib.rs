@@ -18,13 +18,10 @@
 //! [NTFS](https://github.com/hove-io/ntfs-specification/blob/master/ntfs_fr.md).
 //!
 //! # Features
-//! `transit_model` has 2 possible features: `proj` and `xmllint`.
+//! `transit_model` has 2 possible features: `netex` and `xmllint`.
 //!
-//! ## `proj`
-//! `proj` feature is used for geolocation conversion (see
-//! [Proj]). `proj` feature is used, for example, to export NeTEx France format.
-//!
-//! [Proj]: https://proj.org
+//! ## `netex`
+//! `netex` feature enables the NeTEx France export (module `netex_france`).
 //!
 //! ## `xmllint`
 //! Most likely, you don't need this feature as it's only used for additional
@@ -62,7 +59,7 @@ pub mod file_handler;
 pub mod gtfs;
 pub mod model;
 pub mod model_builder;
-#[cfg(feature = "proj")]
+#[cfg(feature = "netex")]
 pub mod netex_france;
 pub mod ntfs;
 #[cfg(not(feature = "parser"))]
@@ -77,7 +74,7 @@ pub mod transfers;
 pub mod validity_period;
 mod version_utils;
 pub mod vptranslator;
-#[cfg(feature = "proj")]
+#[cfg(feature = "netex")]
 mod xml_builder;
 
 // Good average size for initialization of the `StopTime` collection in `VehicleJourney`

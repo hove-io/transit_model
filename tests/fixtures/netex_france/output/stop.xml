@@ -1,17 +1,24 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<PublicationDelivery version="1.09:FR-NETEX_ARRET-2.1-1.0" xmlns="http://www.netex.org.uk/netex" xmlns:core="http://www.govtalk.gov.uk/core" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:ifopt="http://www.ifopt.org.uk/ifopt" xmlns:siri="http://www.siri.org.uk/siri" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.netex.org.uk/netex">
-	<PublicationTimestamp>2019-04-03T17:19:00+00:00</PublicationTimestamp>
+<?xml version="1.0" encoding="utf-8"?>
+<PublicationDelivery version="1.3:FR-NETEX_FRANCE-2.4" xmlns="http://www.netex.org.uk/netex">
+	<PublicationTimestamp>2019-04-03T19:19:00+02:00</PublicationTimestamp>
 	<ParticipantRef>Participant</ParticipantRef>
 	<dataObjects>
-		<GeneralFrame id="FR:GeneralFrame:NETEX_ARRET:" version="any">
+		<GeneralFrame id="FR:GeneralFrame:NETEX_ARRET:" version="1.3:FR-NETEX_ARRET-2.4">
+			<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_ARRET:">
+			</TypeOfFrameRef>
 			<members>
 				<Quay id="FR:Quay:GDLR:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>GDLR</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Gare de Lyon (RER)</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<AccessibilityAssessment id="FR:AccessibilityAssessment:GDLR_0:" version="any">
@@ -24,19 +31,26 @@
 							</AccessibilityLimitation>
 						</limitations>
 					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:GDL_rail:">
+					</SiteRef>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
+						<TariffZoneRef ref="FR:FareZone:ZoneParis:">
 						</TariffZoneRef>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:GDLM:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>GDLM</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Gare de Lyon (Metro)</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
 					<AccessibilityAssessment id="FR:AccessibilityAssessment:GDLM_1:" version="any">
@@ -49,34 +63,48 @@
 							</AccessibilityLimitation>
 						</limitations>
 					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:GDL_metro:">
+					</SiteRef>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
+						<TariffZoneRef ref="FR:FareZone:ZoneParis:">
 						</TariffZoneRef>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:GDLB:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>GDLB</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Gare de Lyon (Bus)</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:GDL_bus:">
+					</SiteRef>
 					<TransportMode>bus</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
+						<TariffZoneRef ref="FR:FareZone:ZoneParis:">
 						</TariffZoneRef>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:NATR:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>NATR</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Nation (RER)</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
 					<AccessibilityAssessment id="FR:AccessibilityAssessment:NATR_0:" version="any">
@@ -89,93 +117,138 @@
 							</AccessibilityLimitation>
 						</limitations>
 					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:NAT_rail:">
+					</SiteRef>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
+						<TariffZoneRef ref="FR:FareZone:ZoneParis:">
 						</TariffZoneRef>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:NATM:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>NATM</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Nation (Metro)</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:NAT_metro:">
+					</SiteRef>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
+						<TariffZoneRef ref="FR:FareZone:ZoneParis:">
 						</TariffZoneRef>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:CDGR:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>CDGR</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Charles de Gaulle (RER)</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:CDG_rail:">
+					</SiteRef>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneOffParis">
+						<TariffZoneRef ref="FR:FareZone:ZoneOffParis:">
 						</TariffZoneRef>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:CDGM:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>CDGM</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Charles de Gaulle (Metro)</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:CDG_metro:">
+					</SiteRef>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneOffParis">
+						<TariffZoneRef ref="FR:FareZone:ZoneOffParis:">
 						</TariffZoneRef>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:DEFR:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>DEFR</Value>
+						</KeyValue>
+					</keyList>
 					<Name>La Défense (RER)</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.238964</Longitude>
 							<Latitude>48.891737</Latitude>
-							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:DEF_rail:">
+					</SiteRef>
 					<TransportMode>rail</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneOffParis">
+						<TariffZoneRef ref="FR:FareZone:ZoneOffParis:">
 						</TariffZoneRef>
 					</tariffZones>
 				</Quay>
 				<Quay id="FR:Quay:CHAM:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>CHAM</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Châtelet (Metro)</Name>
+					<SiteRef ref="FR:StopPlace:CHA_metro:">
+					</SiteRef>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
+						<TariffZoneRef ref="FR:FareZone:ZoneParis:">
 						</TariffZoneRef>
 					</tariffZones>
 					<PublicCode>The Big One</PublicCode>
 				</Quay>
 				<Quay id="FR:Quay:MTPB:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>MTPB</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Montparnasse (Bus)</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.321783</Longitude>
 							<Latitude>48.842481</Latitude>
-							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
+					<SiteRef ref="FR:StopPlace:MTP_bus:">
+					</SiteRef>
 					<TransportMode>bus</TransportMode>
 					<tariffZones>
-						<TariffZoneRef ref="Participant:ZoneParis">
+						<TariffZoneRef ref="FR:FareZone:ZoneParis:">
 						</TariffZoneRef>
 					</tariffZones>
 				</Quay>
@@ -185,9 +258,12 @@
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
 					</ParentSiteRef>
 					<TransportMode>rail</TransportMode>
@@ -203,9 +279,12 @@
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
 					</ParentSiteRef>
 					<TransportMode>metro</TransportMode>
@@ -221,9 +300,12 @@
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:GDL:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
@@ -236,39 +318,28 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:GDL:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>GDL</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Gare de Lyon</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.372987</Longitude>
 							<Latitude>48.844746</Latitude>
-							<gml:pos srsName="EPSG:2154">653983.726554971 6860704.890453683</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<entrances>
-						<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G1:" version="any">
-							<Name>Gate 1</Name>
-							<Centroid>
-								<Location>
-									<Longitude>2.375156</Longitude>
-									<Latitude>48.844949</Latitude>
-									<gml:pos srsName="EPSG:2154">654143.0840251445 6860726.200273181</gml:pos>
-								</Location>
-							</Centroid>
-							<IsEntry>true</IsEntry>
-							<IsExit>true</IsExit>
-						</StopPlaceEntrance>
-						<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G2:" version="any">
-							<Name>Gate 2</Name>
-							<Centroid>
-								<Location>
-									<Longitude>2.374718</Longitude>
-									<Latitude>48.843223</Latitude>
-									<gml:pos srsName="EPSG:2154">654109.4203976962 6860534.540309815</gml:pos>
-								</Location>
-							</Centroid>
-							<IsEntry>true</IsEntry>
-							<IsExit>true</IsExit>
-						</StopPlaceEntrance>
+						<EntranceRef ref="FR:StopPlaceEntrance:GDL-G1:">
+						</EntranceRef>
+						<EntranceRef ref="FR:StopPlaceEntrance:GDL-G2:">
+						</EntranceRef>
 					</entrances>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
@@ -279,9 +350,12 @@
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
 					</ParentSiteRef>
 					<TransportMode>rail</TransportMode>
@@ -297,9 +371,12 @@
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
 					</ParentSiteRef>
 					<TransportMode>metro</TransportMode>
@@ -315,9 +392,12 @@
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:NAT:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
@@ -328,14 +408,23 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:NAT:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>NAT</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Nation</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.396497</Longitude>
 							<Latitude>48.84849</Latitude>
-							<gml:pos srsName="EPSG:2154">655712.2650990451 6861107.744821127</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
 				</StopPlace>
@@ -345,9 +434,12 @@
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
 					</ParentSiteRef>
 					<TransportMode>rail</TransportMode>
@@ -363,9 +455,12 @@
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
 					</ParentSiteRef>
 					<TransportMode>metro</TransportMode>
@@ -381,9 +476,12 @@
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:CDG:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
@@ -394,27 +492,36 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:CDG:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>CDG</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Charles de Gaulle</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.295354</Longitude>
 							<Latitude>48.873965</Latitude>
-							<gml:pos srsName="EPSG:2154">648315.4028777299 6864001.818504742</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:CDG_0:" version="any">
+						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
+						<limitations>
+							<AccessibilityLimitation>
+								<WheelchairAccess>true</WheelchairAccess>
+								<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+								<VisualSignsAvailable>unknown</VisualSignsAvailable>
+							</AccessibilityLimitation>
+						</limitations>
+					</AccessibilityAssessment>
 					<entrances>
-						<StopPlaceEntrance id="FR:StopPlaceEntrance:CDG-GA:" version="any">
-							<Name>Gate A</Name>
-							<Centroid>
-								<Location>
-									<Longitude>2.295636</Longitude>
-									<Latitude>48.87342</Latitude>
-									<gml:pos srsName="EPSG:2154">648335.545974931 6863941.0341525925</gml:pos>
-								</Location>
-							</Centroid>
-							<IsEntry>true</IsEntry>
-							<IsExit>true</IsExit>
-						</StopPlaceEntrance>
+						<EntranceRef ref="FR:StopPlaceEntrance:CDG-GA:">
+						</EntranceRef>
 					</entrances>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
@@ -425,9 +532,12 @@
 						<Location>
 							<Longitude>2.238964</Longitude>
 							<Latitude>48.891737</Latitude>
-							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:DEF:">
 					</ParentSiteRef>
 					<TransportMode>rail</TransportMode>
@@ -443,9 +553,12 @@
 						<Location>
 							<Longitude>2.238964</Longitude>
 							<Latitude>48.891737</Latitude>
-							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:DEF:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
@@ -456,14 +569,23 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:DEF:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>DEF</Value>
+						</KeyValue>
+					</keyList>
 					<Name>La Défense</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.238964</Longitude>
 							<Latitude>48.891737</Latitude>
-							<gml:pos srsName="EPSG:2154">644198.4609501337 6866016.318148232</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<TransportMode>rail</TransportMode>
 					<StopPlaceType>railStation</StopPlaceType>
 				</StopPlace>
@@ -473,9 +595,12 @@
 						<Location>
 							<Longitude>2.348145</Longitude>
 							<Latitude>48.858137</Latitude>
-							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972684</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:CHA:">
 					</ParentSiteRef>
 					<TransportMode>metro</TransportMode>
@@ -486,14 +611,23 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:CHA:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>CHA</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Châtelet</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.348145</Longitude>
 							<Latitude>48.858137</Latitude>
-							<gml:pos srsName="EPSG:2154">652172.9131210521 6862208.608972684</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<TransportMode>metro</TransportMode>
 					<StopPlaceType>metroStation</StopPlaceType>
 				</StopPlace>
@@ -503,9 +637,12 @@
 						<Location>
 							<Longitude>2.321783</Longitude>
 							<Latitude>48.842481</Latitude>
-							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<ParentSiteRef ref="FR:StopPlace:MTP:">
 					</ParentSiteRef>
 					<TransportMode>bus</TransportMode>
@@ -516,17 +653,75 @@
 					</quays>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:MTP:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>MTP</Value>
+						</KeyValue>
+					</keyList>
 					<Name>Montparnasse</Name>
 					<Centroid>
 						<Location>
 							<Longitude>2.321783</Longitude>
 							<Latitude>48.842481</Latitude>
-							<gml:pos srsName="EPSG:2154">650223.8079440364 6860484.104066422</gml:pos>
 						</Location>
 					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
 					<TransportMode>bus</TransportMode>
 					<StopPlaceType>onstreetBus</StopPlaceType>
 				</StopPlace>
+				<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G1:" version="any">
+					<Name>Gate 1</Name>
+					<Centroid>
+						<Location>
+							<Longitude>2.375156</Longitude>
+							<Latitude>48.844949</Latitude>
+						</Location>
+					</Centroid>
+					<SiteRef ref="FR:StopPlace:GDL:">
+					</SiteRef>
+					<PublicCode>1</PublicCode>
+					<IsEntry>true</IsEntry>
+					<IsExit>true</IsExit>
+				</StopPlaceEntrance>
+				<StopPlaceEntrance id="FR:StopPlaceEntrance:GDL-G2:" version="any">
+					<Name>Gate 2</Name>
+					<Centroid>
+						<Location>
+							<Longitude>2.374718</Longitude>
+							<Latitude>48.843223</Latitude>
+						</Location>
+					</Centroid>
+					<SiteRef ref="FR:StopPlace:GDL:">
+					</SiteRef>
+					<IsEntry>true</IsEntry>
+					<IsExit>true</IsExit>
+				</StopPlaceEntrance>
+				<StopPlaceEntrance id="FR:StopPlaceEntrance:CDG-GA:" version="any">
+					<Name>Gate A</Name>
+					<Centroid>
+						<Location>
+							<Longitude>2.295636</Longitude>
+							<Latitude>48.87342</Latitude>
+						</Location>
+					</Centroid>
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:CDG-GA_1:" version="any">
+						<MobilityImpairedAccess>false</MobilityImpairedAccess>
+						<limitations>
+							<AccessibilityLimitation>
+								<WheelchairAccess>false</WheelchairAccess>
+							</AccessibilityLimitation>
+						</limitations>
+					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:CDG:">
+					</SiteRef>
+					<PublicCode>A</PublicCode>
+					<IsEntry>true</IsEntry>
+					<IsExit>true</IsExit>
+				</StopPlaceEntrance>
 			</members>
 		</GeneralFrame>
 	</dataObjects>

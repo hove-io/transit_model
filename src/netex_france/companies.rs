@@ -15,7 +15,7 @@
 use crate::xml_builder::{Element, Node};
 use crate::{
     netex_france::exporter::{Exporter, ObjectType},
-    objects::Company,
+    objects::{Company, CompanyRole},
     Model,
 };
 
@@ -46,9 +46,11 @@ impl<'a> CompanyExporter<'a> {
                 Exporter::generate_id(&company.id, ObjectType::Operator),
             )
             .attr("version", "any");
+        let element_builder =
+            element_builder.append_all(Exporter::generate_key_list(&company.codes)); // must be first child (XSD order)
         let element_builder = element_builder.append(self.generate_name(company));
-        let element_builder = element_builder.append(self.generate_contact_details(company));
-        let element_builder = element_builder.append(Self::generate_organization_type());
+        let element_builder = element_builder.append_all(self.generate_contact_details(company));
+        let element_builder = element_builder.append(self.generate_organization_type(company));
         element_builder.build()
     }
 
@@ -58,7 +60,10 @@ impl<'a> CompanyExporter<'a> {
             .build()
     }
 
-    fn generate_contact_details(&self, company: &'a Company) -> Element {
+    fn generate_contact_details(&self, company: &'a Company) -> Option<Element> {
+        if company.mail.is_none() && company.phone.is_none() && company.url.is_none() {
+            return None;
+        }
         let element_builder = Element::builder("ContactDetails");
         let element_builder = if let Some(email_element) = self.generate_email(company) {
             element_builder.append(email_element)
@@ -75,7 +80,7 @@ impl<'a> CompanyExporter<'a> {
         } else {
             element_builder
         };
-        element_builder.build()
+        Some(element_builder.build())
     }
 
     fn generate_email(&self, company: &'a Company) -> Option<Element> {
@@ -102,9 +107,59 @@ impl<'a> CompanyExporter<'a> {
         })
     }
 
-    fn generate_organization_type() -> Element {
+    fn generate_organization_type(&self, company: &'a Company) -> Element {
+        let organisation_type = match company.role {
+            CompanyRole::Authority => "authority",
+            CompanyRole::Operator => "operator",
+        };
         Element::builder("OrganisationType")
-            .append(Node::Text(String::from("other")))
+            .append(Node::Text(organisation_type.to_owned()))
             .build()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ModelBuilder;
+
+    mod generate_contact_details {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn absent_when_no_email_phone_or_url() {
+            let model = ModelBuilder::default()
+                .company("C1", |_| {})
+                .vj("vj1", |vj| {
+                    vj.company("C1").st("A", "10:00:00").st("B", "10:10:00");
+                })
+                .build();
+            let company_exporter = CompanyExporter::new(&model);
+            let company = model.companies.get("C1").unwrap();
+            assert!(company_exporter.generate_contact_details(company).is_none());
+        }
+
+        #[test]
+        fn present_with_only_the_fields_that_are_set() {
+            let model = ModelBuilder::default()
+                .company("C1", |c| {
+                    c.mail = Some("contact@example.com".to_string());
+                })
+                .vj("vj1", |vj| {
+                    vj.company("C1").st("A", "10:00:00").st("B", "10:10:00");
+                })
+                .build();
+            let company_exporter = CompanyExporter::new(&model);
+            let company = model.companies.get("C1").unwrap();
+            let contact_details = company_exporter.generate_contact_details(company).unwrap();
+            assert_eq!(contact_details.name(), "ContactDetails");
+            let children: Vec<&str> = contact_details
+                .nodes()
+                .filter_map(|node| node.as_element())
+                .map(|element| element.name())
+                .collect();
+            assert_eq!(children, vec!["Email"]);
+        }
     }
 }
