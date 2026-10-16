@@ -99,7 +99,8 @@ where
             .filter_map(|i| {
                 let file = archive.by_index(i).ok()?;
                 // we get the name of the file, not regarding its path in the ZipArchive
-                let real_name = Path::new(file.name()).file_name()?;
+                let name = file.name().ok()?;
+                let real_name = Path::new(&*name).file_name()?;
                 let real_name: String = real_name.to_str()?.into();
                 Some((real_name, i))
             })
