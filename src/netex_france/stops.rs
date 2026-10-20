@@ -370,6 +370,12 @@ impl<'a> StopExporter<'a> {
                     Limitation::Visual,
                 ],
             ));
+            let element_builder =
+                if let Some(levels_element) = self.generate_levels(stop_area.level_id.as_deref()) {
+                    element_builder.append(levels_element)
+                } else {
+                    element_builder
+                };
             let element_builder = if let Some(entrances) = self.generate_entrances(&stop_area.id) {
                 element_builder.append(entrances)
             } else {
@@ -516,6 +522,13 @@ impl<'a> StopExporter<'a> {
         Element::builder("LevelRef").attr("ref", level_id).build()
     }
 
+    fn generate_levels(&self, level_id: Option<&'a str>) -> Option<Element> {
+        let level_id = level_id?;
+        let level_ref =
+            self.generate_level_ref(&Exporter::generate_id(level_id, ObjectType::Level));
+        Some(Element::builder("levels").append(level_ref).build())
+    }
+
     fn generate_transport_mode(&self, netex_mode: NetexMode) -> Element {
         let transport_mode_text = Node::Text(netex_mode.to_string());
         Element::builder("TransportMode")
@@ -578,6 +591,13 @@ impl<'a> StopExporter<'a> {
         ));
         let stop_place_id = Exporter::generate_id(stop_area_id, ObjectType::StopPlace);
         let element_builder = element_builder.append(self.generate_site_ref(&stop_place_id));
+        let element_builder = if let Some(level_id) = &stop_location.level_id {
+            element_builder.append(
+                self.generate_level_ref(&Exporter::generate_id(level_id, ObjectType::Level)),
+            )
+        } else {
+            element_builder
+        };
         let element_builder =
             if let Some(public_code) = self.generate_public_code(stop_location.code.as_deref()) {
                 element_builder.append(public_code)
