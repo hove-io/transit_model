@@ -272,6 +272,13 @@ impl<'a> StopExporter<'a> {
         let stop_place_id =
             Self::generate_stop_place_id(&stop_point.stop_area_id, highest_netex_mode);
         let element_builder = element_builder.append(self.generate_site_ref(&stop_place_id));
+        let element_builder = if let Some(level_id) = &stop_point.level_id {
+            element_builder.append(
+                self.generate_level_ref(&Exporter::generate_id(level_id, ObjectType::Level)),
+            )
+        } else {
+            element_builder
+        };
         let element_builder =
             element_builder.append(self.generate_transport_mode(highest_netex_mode));
         let element_builder = if let Some(tariff_zones) = self.generate_tariff_zones(stop_point) {
@@ -503,6 +510,10 @@ impl<'a> StopExporter<'a> {
         Element::builder("ParentSiteRef")
             .attr("ref", parent_station_id)
             .build()
+    }
+
+    fn generate_level_ref(&self, level_id: &'a str) -> Element {
+        Element::builder("LevelRef").attr("ref", level_id).build()
     }
 
     fn generate_transport_mode(&self, netex_mode: NetexMode) -> Element {

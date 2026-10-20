@@ -22,6 +22,8 @@ mod exporter;
 use exporter::Exporter;
 mod fare_zones;
 use fare_zones::FareZoneExporter;
+mod levels;
+use levels::LevelExporter;
 mod lines;
 use lines::{LineCompanies, LineExporter, LineModes};
 mod slug;

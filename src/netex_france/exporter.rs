@@ -18,8 +18,8 @@ use crate::xml_builder::{Element, ElementWriter, Node};
 use crate::{
     model::Model,
     netex_france::{
-        CalendarExporter, CompanyExporter, FareZoneExporter, LineExporter, NetworkExporter,
-        StopExporter, TransferExporter,
+        CalendarExporter, CompanyExporter, FareZoneExporter, LevelExporter, LineExporter,
+        NetworkExporter, StopExporter, TransferExporter,
     },
     objects::{Date, KeysValues, Line, Network},
     Result,
@@ -67,6 +67,7 @@ pub(in crate::netex_france) enum ObjectType {
     DayType,
     DayTypeAssignment,
     FareZone,
+    Level,
     Line,
     Network,
     Operator,
@@ -94,6 +95,7 @@ impl Display for ObjectType {
             DayType => write!(f, "DayType"),
             DayTypeAssignment => write!(f, "DayTypeAssignment"),
             FareZone => write!(f, "FareZone"),
+            Level => write!(f, "Level"),
             Line => write!(f, "Line"),
             Network => write!(f, "Network"),
             Operator => write!(f, "Operator"),
@@ -493,11 +495,13 @@ impl Exporter<'_> {
         Ok(())
     }
 
-    // Returns a 'GeneralFrame' containing all 'StopArea' and 'Quay'
+    // Returns a 'GeneralFrame' containing all 'StopArea', 'Quay' and 'Level'
     fn create_stops_frame(&self) -> Result<Element> {
         let stop_exporter = StopExporter::new(self.model)?;
         let stops = stop_exporter.export()?;
-        let members = Self::create_members(stops);
+        let level_exporter = LevelExporter::new(self.model);
+        let levels = level_exporter.export();
+        let members = Self::create_members(stops.into_iter().chain(levels));
         Ok(self.create_frame(
             FrameType::General,
             VersionType::Stops,
