@@ -754,4 +754,33 @@ mod tests {
             );
         }
     }
+
+    mod generate_levels {
+        use super::*;
+        use crate::model::{Collections, Model};
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn none_when_no_level_id() {
+            let model = Model::new(Collections::default()).unwrap();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            assert!(stop_exporter.generate_levels(None).is_none());
+        }
+
+        #[test]
+        fn some_levels_with_one_level_ref_when_level_id_present() {
+            let model = Model::new(Collections::default()).unwrap();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let levels_element = stop_exporter.generate_levels(Some("L1")).unwrap();
+            assert_eq!(levels_element.name(), "levels");
+            let level_ref_element = levels_element
+                .nodes()
+                .next()
+                .unwrap()
+                .as_element()
+                .unwrap();
+            assert_eq!(level_ref_element.name(), "LevelRef");
+            assert_eq!(level_ref_element.attr("ref"), Some("FR:Level:L1:"));
+        }
+    }
 }
