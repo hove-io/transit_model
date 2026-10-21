@@ -773,12 +773,7 @@ mod tests {
             let stop_exporter = StopExporter::new(&model).unwrap();
             let levels_element = stop_exporter.generate_levels(Some("L1")).unwrap();
             assert_eq!(levels_element.name(), "levels");
-            let level_ref_element = levels_element
-                .nodes()
-                .next()
-                .unwrap()
-                .as_element()
-                .unwrap();
+            let level_ref_element = levels_element.nodes().next().unwrap().as_element().unwrap();
             assert_eq!(level_ref_element.name(), "LevelRef");
             assert_eq!(level_ref_element.attr("ref"), Some("FR:Level:L1:"));
         }
