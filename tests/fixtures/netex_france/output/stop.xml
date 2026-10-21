@@ -67,7 +67,7 @@
 					</AccessibilityAssessment>
 					<SiteRef ref="FR:StopPlace:GDL_metro:">
 					</SiteRef>
-					<LevelRef ref="FR:Level:-1:">
+					<LevelRef ref="FR:Level:1:">
 					</LevelRef>
 					<TransportMode>metro</TransportMode>
 					<tariffZones>
@@ -342,7 +342,11 @@
 						</TypeOfPlaceRef>
 					</placeTypes>
 					<levels>
+						<LevelRef ref="FR:Level:-1:">
+						</LevelRef>
 						<LevelRef ref="FR:Level:0:">
+						</LevelRef>
+						<LevelRef ref="FR:Level:1:">
 						</LevelRef>
 					</levels>
 					<entrances>
@@ -740,6 +744,10 @@
 				</Level>
 				<Level id="FR:Level:-1:" version="any">
 					<RelativeLevelOrder>-1</RelativeLevelOrder>
+				</Level>
+				<Level id="FR:Level:1:" version="any">
+					<Name>Mezzanine</Name>
+					<RelativeLevelOrder>1</RelativeLevelOrder>
 				</Level>
 			</members>
 		</GeneralFrame>
