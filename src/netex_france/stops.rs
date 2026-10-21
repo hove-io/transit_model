@@ -370,12 +370,11 @@ impl<'a> StopExporter<'a> {
                     Limitation::Visual,
                 ],
             ));
-            let element_builder =
-                if let Some(levels_element) = self.generate_levels(stop_area) {
-                    element_builder.append(levels_element)
-                } else {
-                    element_builder
-                };
+            let element_builder = if let Some(levels_element) = self.generate_levels(stop_area) {
+                element_builder.append(levels_element)
+            } else {
+                element_builder
+            };
             let element_builder = if let Some(entrances) = self.generate_entrances(&stop_area.id) {
                 element_builder.append(entrances)
             } else {
