@@ -1331,5 +1331,345 @@ mod tests {
                 get_operator_ref(&model, "vj3", "L1")
             );
         }
+
+        mod accessibility_and_facilities {
+            use super::*;
+
+            fn export_service_journey_element(model: &Model, vehicle_journey_id: &str) -> Element {
+                let offer_exporter = OfferExporter::new(model).unwrap();
+                let line_modes = LineExporter::build_line_modes(model);
+                let line_companies = LineExporter::build_line_companies(model);
+                let vehicle_journey_idx =
+                    model.vehicle_journeys.get_idx(vehicle_journey_id).unwrap();
+                let vehicle_journey = &model.vehicle_journeys[vehicle_journey_idx];
+                let route = model.routes.get(&vehicle_journey.route_id).unwrap();
+                let line_idx = model.lines.get_idx(&route.line_id).unwrap();
+                offer_exporter.export_service_journey(
+                    vehicle_journey_idx,
+                    vehicle_journey_idx,
+                    line_idx,
+                    &line_modes,
+                    &line_companies,
+                )
+            }
+
+            fn find_child<'a>(element: &'a Element, name: &str) -> Option<&'a Element> {
+                element
+                    .children()
+                    .iter()
+                    .filter_map(Node::as_element)
+                    .find(|child| child.name() == name)
+            }
+
+            fn child_text<'a>(element: &'a Element, name: &str) -> Option<&'a str> {
+                find_child(element, name)
+                    .and_then(|child| child.nodes().next())
+                    .and_then(Node::as_text)
+            }
+
+            fn limitation_text<'a>(
+                accessibility_assessment: &'a Element,
+                name: &str,
+            ) -> Option<&'a str> {
+                find_child(accessibility_assessment, "limitations")
+                    .and_then(|limitations| find_child(limitations, "AccessibilityLimitation"))
+                    .and_then(|limitation| find_child(limitation, name))
+                    .and_then(|field| field.nodes().next())
+                    .and_then(Node::as_text)
+            }
+
+            mod accessibility_assessment {
+                use super::*;
+                use pretty_assertions::assert_eq;
+
+                #[test]
+                fn absent_when_no_trip_property() {
+                    let model = ModelBuilder::default()
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    assert!(find_child(&element, "AccessibilityAssessment").is_none());
+                }
+
+                #[test]
+                fn all_fields_available_gives_true_mobility_impaired_access() {
+                    let model = ModelBuilder::default()
+                        .trip_property("TP1", |tp| {
+                            tp.wheelchair_accessible = Availability::Available;
+                            tp.visual_announcement = Availability::Available;
+                            tp.audible_announcement = Availability::Available;
+                        })
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .trip_property("TP1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    let accessibility_assessment =
+                        find_child(&element, "AccessibilityAssessment").unwrap();
+                    assert_eq!(
+                        Some("FR:AccessibilityAssessment:vj1:"),
+                        accessibility_assessment.attr("id")
+                    );
+                    assert_eq!(
+                        Some("true"),
+                        child_text(accessibility_assessment, "MobilityImpairedAccess")
+                    );
+                    assert_eq!(
+                        Some("true"),
+                        limitation_text(accessibility_assessment, "WheelchairAccess")
+                    );
+                    assert_eq!(
+                        Some("true"),
+                        limitation_text(accessibility_assessment, "AudibleSignalsAvailable")
+                    );
+                    assert_eq!(
+                        Some("true"),
+                        limitation_text(accessibility_assessment, "VisualSignsAvailable")
+                    );
+                }
+
+                #[test]
+                fn all_fields_not_available_gives_false_mobility_impaired_access() {
+                    let model = ModelBuilder::default()
+                        .trip_property("TP1", |tp| {
+                            tp.wheelchair_accessible = Availability::NotAvailable;
+                            tp.visual_announcement = Availability::NotAvailable;
+                            tp.audible_announcement = Availability::NotAvailable;
+                        })
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .trip_property("TP1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    let accessibility_assessment =
+                        find_child(&element, "AccessibilityAssessment").unwrap();
+                    assert_eq!(
+                        Some("false"),
+                        child_text(accessibility_assessment, "MobilityImpairedAccess")
+                    );
+                    assert_eq!(
+                        Some("false"),
+                        limitation_text(accessibility_assessment, "WheelchairAccess")
+                    );
+                    assert_eq!(
+                        Some("false"),
+                        limitation_text(accessibility_assessment, "AudibleSignalsAvailable")
+                    );
+                    assert_eq!(
+                        Some("false"),
+                        limitation_text(accessibility_assessment, "VisualSignsAvailable")
+                    );
+                }
+
+                #[test]
+                fn mixed_fields_give_partial_mobility_impaired_access() {
+                    let model = ModelBuilder::default()
+                        .trip_property("TP1", |tp| {
+                            tp.wheelchair_accessible = Availability::Available;
+                            tp.visual_announcement = Availability::NotAvailable;
+                        })
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .trip_property("TP1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    let accessibility_assessment =
+                        find_child(&element, "AccessibilityAssessment").unwrap();
+                    assert_eq!(
+                        Some("partial"),
+                        child_text(accessibility_assessment, "MobilityImpairedAccess")
+                    );
+                }
+
+                #[test]
+                fn all_fields_unknown_is_still_present_with_unknown_mobility_impaired_access() {
+                    let model = ModelBuilder::default()
+                        .trip_property("TP1", |_| {})
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .trip_property("TP1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    let accessibility_assessment =
+                        find_child(&element, "AccessibilityAssessment").unwrap();
+                    assert_eq!(
+                        Some("unknown"),
+                        child_text(accessibility_assessment, "MobilityImpairedAccess")
+                    );
+                    assert_eq!(
+                        Some("unknown"),
+                        limitation_text(accessibility_assessment, "WheelchairAccess")
+                    );
+                }
+            }
+
+            mod facilities {
+                use super::*;
+                use pretty_assertions::assert_eq;
+
+                #[test]
+                fn absent_when_no_trip_property() {
+                    let model = ModelBuilder::default()
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    assert!(find_child(&element, "facilities").is_none());
+                }
+
+                #[test]
+                fn absent_when_bike_unknown_and_escort_not_available() {
+                    let model = ModelBuilder::default()
+                        .trip_property("TP1", |tp| {
+                            tp.appropriate_escort = Availability::NotAvailable;
+                        })
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .trip_property("TP1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    assert!(find_child(&element, "facilities").is_none());
+                }
+
+                #[test]
+                fn bike_accepted_gives_cycles_allowed() {
+                    let model = ModelBuilder::default()
+                        .trip_property("TP1", |tp| {
+                            tp.bike_accepted = Availability::Available;
+                        })
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .trip_property("TP1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    let facilities = find_child(&element, "facilities").unwrap();
+                    let service_facility_set =
+                        find_child(facilities, "ServiceFacilitySet").unwrap();
+                    assert_eq!(
+                        Some("FR:ServiceFacilitySet:vj1:"),
+                        service_facility_set.attr("id")
+                    );
+                    assert_eq!(
+                        Some("cyclesAllowed"),
+                        child_text(service_facility_set, "LuggageCarriageFacilityList")
+                    );
+                    assert!(find_child(service_facility_set, "AssistanceFacilityList").is_none());
+                }
+
+                #[test]
+                fn bike_not_accepted_gives_no_cycles() {
+                    let model = ModelBuilder::default()
+                        .trip_property("TP1", |tp| {
+                            tp.bike_accepted = Availability::NotAvailable;
+                        })
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .trip_property("TP1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    let facilities = find_child(&element, "facilities").unwrap();
+                    let service_facility_set =
+                        find_child(facilities, "ServiceFacilitySet").unwrap();
+                    assert_eq!(
+                        Some("noCycles"),
+                        child_text(service_facility_set, "LuggageCarriageFacilityList")
+                    );
+                }
+
+                #[test]
+                fn escort_available_gives_boarding_assistance() {
+                    let model = ModelBuilder::default()
+                        .trip_property("TP1", |tp| {
+                            tp.appropriate_escort = Availability::Available;
+                        })
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .trip_property("TP1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    let facilities = find_child(&element, "facilities").unwrap();
+                    let service_facility_set =
+                        find_child(facilities, "ServiceFacilitySet").unwrap();
+                    assert_eq!(
+                        Some("boardingAssistance"),
+                        child_text(service_facility_set, "AssistanceFacilityList")
+                    );
+                    assert!(
+                        find_child(service_facility_set, "LuggageCarriageFacilityList").is_none()
+                    );
+                }
+
+                #[test]
+                fn escort_and_bike_both_present_keep_xsd_order() {
+                    let model = ModelBuilder::default()
+                        .trip_property("TP1", |tp| {
+                            tp.appropriate_escort = Availability::Available;
+                            tp.bike_accepted = Availability::Available;
+                        })
+                        .vj("vj1", |vj| {
+                            vj.route("R1")
+                                .line("L1")
+                                .trip_property("TP1")
+                                .st("A", "10:00:00")
+                                .st("B", "11:00:00");
+                        })
+                        .build();
+                    let element = export_service_journey_element(&model, "vj1");
+                    let facilities = find_child(&element, "facilities").unwrap();
+                    let service_facility_set =
+                        find_child(facilities, "ServiceFacilitySet").unwrap();
+                    let children_names: Vec<&str> = service_facility_set
+                        .nodes()
+                        .filter_map(Node::as_element)
+                        .map(Element::name)
+                        .collect();
+                    assert_eq!(
+                        vec!["AssistanceFacilityList", "LuggageCarriageFacilityList"],
+                        children_names
+                    );
+                }
+            }
+        }
     }
 }
