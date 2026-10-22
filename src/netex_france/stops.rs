@@ -272,6 +272,13 @@ impl<'a> StopExporter<'a> {
         let stop_place_id =
             Self::generate_stop_place_id(&stop_point.stop_area_id, highest_netex_mode);
         let element_builder = element_builder.append(self.generate_site_ref(&stop_place_id));
+        let element_builder = if let Some(level_id) = &stop_point.level_id {
+            element_builder.append(
+                self.generate_level_ref(&Exporter::generate_id(level_id, ObjectType::Level)),
+            )
+        } else {
+            element_builder
+        };
         let element_builder =
             element_builder.append(self.generate_transport_mode(highest_netex_mode));
         let element_builder = if let Some(tariff_zones) = self.generate_tariff_zones(stop_point) {
@@ -363,6 +370,11 @@ impl<'a> StopExporter<'a> {
                     Limitation::Visual,
                 ],
             ));
+            let element_builder = if let Some(levels_element) = self.generate_levels(stop_area) {
+                element_builder.append(levels_element)
+            } else {
+                element_builder
+            };
             let element_builder = if let Some(entrances) = self.generate_entrances(&stop_area.id) {
                 element_builder.append(entrances)
             } else {
@@ -505,6 +517,44 @@ impl<'a> StopExporter<'a> {
             .build()
     }
 
+    fn generate_level_ref(&self, level_id: &'a str) -> Element {
+        Element::builder("LevelRef").attr("ref", level_id).build()
+    }
+
+    // NTFS/GTFS 'level_id' only has a single value (0:1) on each stop_area/stop_point/
+    // stop_location, but the multimodal StopPlace's NeTEx 'levels' is 0:n (unlike Quay's
+    // single LevelRef): aggregates the distinct level_id values found on the stop_area's
+    // stop_points, entrances and the stop_area itself; the BTreeSet deduplicates them.
+    fn generate_levels(&self, stop_area: &'a StopArea) -> Option<Element> {
+        let mut level_ids: BTreeSet<&'a str> = BTreeSet::new();
+        if let Some(stop_point_ids) = self.stop_area_stop_points.get(stop_area.id.as_str()) {
+            level_ids.extend(
+                stop_point_ids
+                    .iter()
+                    .filter_map(|stop_point_id| self.model.stop_points.get(stop_point_id))
+                    .filter_map(|stop_point| stop_point.level_id.as_deref()),
+            );
+        }
+        if let Some(entrance_ids) = self.stop_area_entrances.get(stop_area.id.as_str()) {
+            level_ids.extend(
+                entrance_ids
+                    .iter()
+                    .filter_map(|entrance_id| self.model.stop_locations.get(entrance_id))
+                    .filter_map(|stop_location| stop_location.level_id.as_deref()),
+            );
+        }
+        if let Some(level_id) = stop_area.level_id.as_deref() {
+            level_ids.insert(level_id);
+        }
+        if level_ids.is_empty() {
+            return None;
+        }
+        let level_refs = level_ids.into_iter().map(|level_id| {
+            self.generate_level_ref(&Exporter::generate_id(level_id, ObjectType::Level))
+        });
+        Some(Element::builder("levels").append_all(level_refs).build())
+    }
+
     fn generate_transport_mode(&self, netex_mode: NetexMode) -> Element {
         let transport_mode_text = Node::Text(netex_mode.to_string());
         Element::builder("TransportMode")
@@ -567,6 +617,13 @@ impl<'a> StopExporter<'a> {
         ));
         let stop_place_id = Exporter::generate_id(stop_area_id, ObjectType::StopPlace);
         let element_builder = element_builder.append(self.generate_site_ref(&stop_place_id));
+        let element_builder = if let Some(level_id) = &stop_location.level_id {
+            element_builder.append(
+                self.generate_level_ref(&Exporter::generate_id(level_id, ObjectType::Level)),
+            )
+        } else {
+            element_builder
+        };
         let element_builder =
             if let Some(public_code) = self.generate_public_code(stop_location.code.as_deref()) {
                 element_builder.append(public_code)
@@ -721,6 +778,93 @@ mod tests {
                     (NotAvailable, NotAvailable, InformationNotAvailable)
                 )
             );
+        }
+    }
+
+    mod generate_levels {
+        use super::*;
+        use crate::ModelBuilder;
+        use pretty_assertions::assert_eq;
+
+        fn level_ref_ids(levels_element: &Element) -> Vec<&str> {
+            levels_element
+                .nodes()
+                .filter_map(|node| node.as_element())
+                .filter_map(|element| element.attr("ref"))
+                .collect()
+        }
+
+        #[test]
+        fn none_when_no_level_id_anywhere() {
+            let model = ModelBuilder::default()
+                .stop_area("SA", |_| {})
+                .stop_point("SP", |sp| sp.stop_area_id = "SA".to_string())
+                .vj("vj1", |vj| {
+                    vj.st("SP", "10:00:00");
+                })
+                .build();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let stop_area = model.stop_areas.get("SA").unwrap();
+            assert!(stop_exporter.generate_levels(stop_area).is_none());
+        }
+
+        #[test]
+        fn one_level_ref_when_only_stop_area_has_a_level_id() {
+            let model = ModelBuilder::default()
+                .stop_area("SA", |sa| sa.level_id = Some("L1".to_string()))
+                .stop_point("SP", |sp| sp.stop_area_id = "SA".to_string())
+                .vj("vj1", |vj| {
+                    vj.st("SP", "10:00:00");
+                })
+                .build();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let stop_area = model.stop_areas.get("SA").unwrap();
+            let levels_element = stop_exporter.generate_levels(stop_area).unwrap();
+            assert_eq!(levels_element.name(), "levels");
+            assert_eq!(level_ref_ids(&levels_element), vec!["FR:Level:L1:"]);
+        }
+
+        #[test]
+        fn aggregates_distinct_level_ids_from_stop_points_and_entrances() {
+            let model = ModelBuilder::default()
+                .stop_area("SA", |sa| sa.level_id = Some("0".to_string()))
+                .stop_point("SP", |sp| {
+                    sp.stop_area_id = "SA".to_string();
+                    sp.level_id = Some("-1".to_string());
+                })
+                .stop_location("SL", |sl| {
+                    sl.parent_id = Some("SA".to_string());
+                    sl.level_id = Some("1".to_string());
+                })
+                .vj("vj1", |vj| {
+                    vj.st("SP", "10:00:00");
+                })
+                .build();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let stop_area = model.stop_areas.get("SA").unwrap();
+            let levels_element = stop_exporter.generate_levels(stop_area).unwrap();
+            assert_eq!(
+                level_ref_ids(&levels_element),
+                vec!["FR:Level:-1:", "FR:Level:0:", "FR:Level:1:"]
+            );
+        }
+
+        #[test]
+        fn deduplicates_when_stop_area_and_stop_point_share_the_same_level_id() {
+            let model = ModelBuilder::default()
+                .stop_area("SA", |sa| sa.level_id = Some("0".to_string()))
+                .stop_point("SP", |sp| {
+                    sp.stop_area_id = "SA".to_string();
+                    sp.level_id = Some("0".to_string());
+                })
+                .vj("vj1", |vj| {
+                    vj.st("SP", "10:00:00");
+                })
+                .build();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let stop_area = model.stop_areas.get("SA").unwrap();
+            let levels_element = stop_exporter.generate_levels(stop_area).unwrap();
+            assert_eq!(level_ref_ids(&levels_element), vec!["FR:Level:0:"]);
         }
     }
 }
