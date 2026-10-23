@@ -192,6 +192,16 @@
 									<Value>B42F1</Value>
 								</KeyValue>
 							</keyList>
+							<AccessibilityAssessment id="FR:AccessibilityAssessment:B42F1:" version="any">
+								<MobilityImpairedAccess>partial</MobilityImpairedAccess>
+								<limitations>
+									<AccessibilityLimitation>
+										<WheelchairAccess>true</WheelchairAccess>
+										<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+										<VisualSignsAvailable>unknown</VisualSignsAvailable>
+									</AccessibilityLimitation>
+								</limitations>
+							</AccessibilityAssessment>
 							<dayTypes>
 								<DayTypeRef ref="FR:DayType:Week:">
 								</DayTypeRef>
@@ -222,6 +232,16 @@
 									<Value>B42B1</Value>
 								</KeyValue>
 							</keyList>
+							<AccessibilityAssessment id="FR:AccessibilityAssessment:B42B1:" version="any">
+								<MobilityImpairedAccess>partial</MobilityImpairedAccess>
+								<limitations>
+									<AccessibilityLimitation>
+										<WheelchairAccess>true</WheelchairAccess>
+										<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+										<VisualSignsAvailable>unknown</VisualSignsAvailable>
+									</AccessibilityLimitation>
+								</limitations>
+							</AccessibilityAssessment>
 							<dayTypes>
 								<DayTypeRef ref="FR:DayType:Week:">
 								</DayTypeRef>
@@ -244,6 +264,11 @@
 									<DepartureDayOffset>0</DepartureDayOffset>
 								</TimetabledPassingTime>
 							</passingTimes>
+							<facilities>
+								<ServiceFacilitySet id="FR:ServiceFacilitySet:B42B1:" version="any">
+									<LuggageCarriageFacilityList>noCycles</LuggageCarriageFacilityList>
+								</ServiceFacilitySet>
+							</facilities>
 						</ServiceJourney>
 					</members>
 				</GeneralFrame>

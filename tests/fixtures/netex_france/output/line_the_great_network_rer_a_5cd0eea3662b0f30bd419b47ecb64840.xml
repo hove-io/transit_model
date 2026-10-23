@@ -299,6 +299,16 @@
 									<Value>RERAF1</Value>
 								</KeyValue>
 							</keyList>
+							<AccessibilityAssessment id="FR:AccessibilityAssessment:RERAF1:" version="any">
+								<MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+								<limitations>
+									<AccessibilityLimitation>
+										<WheelchairAccess>false</WheelchairAccess>
+										<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+										<VisualSignsAvailable>unknown</VisualSignsAvailable>
+									</AccessibilityLimitation>
+								</limitations>
+							</AccessibilityAssessment>
 							<dayTypes>
 								<DayTypeRef ref="FR:DayType:Week:">
 								</DayTypeRef>
@@ -342,6 +352,16 @@
 								</KeyValue>
 							</keyList>
 							<TransportMode>bus</TransportMode>
+							<AccessibilityAssessment id="FR:AccessibilityAssessment:RERAB1:" version="any">
+								<MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+								<limitations>
+									<AccessibilityLimitation>
+										<WheelchairAccess>false</WheelchairAccess>
+										<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+										<VisualSignsAvailable>unknown</VisualSignsAvailable>
+									</AccessibilityLimitation>
+								</limitations>
+							</AccessibilityAssessment>
 							<dayTypes>
 								<DayTypeRef ref="FR:DayType:Week:">
 								</DayTypeRef>

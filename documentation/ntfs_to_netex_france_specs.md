@@ -1038,11 +1038,13 @@ Example:
 | ServiceJourney/@id                                  | trips.txt        | trip_id          | see [id formatting](#id-of-objects)                                                                                                                          |
 | ServiceJourney/@version                             |                  |                  | fixed value `any`                                                                                                                                            |
 | ServiceJourney/TransportMode                        | trips.txt        | physical_mode_id | use the only NeTEx mode. See (1) below and [NeTEx Transport Modes](#netex-transport-modes).                                                                  |
+| ServiceJourney/AccessibilityAssessment              | trips.txt        | trip_property_id | Present only if `trip_property_id` is specified. see [`ServiceJourney/AccessibilityAssessment`](#servicejourneyaccessibilityassessment) below.               |
 | ServiceJourney/dayTypes/DayTypeRef/@ref             | trips.txt        | service_id       | see [id formatting](#id-of-objects) with `DayType` as object type                                                                                            |
 | ServiceJourney/JourneyPatternRef/@ref               | trips.txt        | service_id       | see [id formatting](#id-of-objects) with `DayType` as object type                                                                                            |
 | ServiceJourney/OperatorRef/@ref                     | trips.txt        | company_id       | see (2) below                                                                                                                                                |
 | ServiceJourney/LineRef/@ref                         |                  |                  | see [id formatting](#id-of-objects) with `Line` as object type                                                                                               |
 | ServiceJourney/passingTimes/TimetabledPassingTime[] | stop_times.txt   |                  | see [`TimetabledPassingTime`](#timetabledpassingtime)                                                                                                        |
+| ServiceJourney/facilities/ServiceFacilitySet        | trips.txt        | trip_property_id | Present only if `bike_accepted` or `appropriate_escort` carries information. see [`ServiceFacilitySet`](#servicefacilityset) below.                          |
 | ServiceJourney/keyList/KeyValue/Value               | object_codes.txt | object_code      | Present only if a code with `object_system` = `source` exists for this `trip`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source` |
 
 **(1) definition of TransportMode for ServiceJourney**
@@ -1065,6 +1067,16 @@ Example:
 		</KeyValue>
 	</keyList>
 	<TransportMode>bus</TransportMode>
+	<AccessibilityAssessment id="FR:AccessibilityAssessment:T1:" version="any">
+		<MobilityImpairedAccess>true</MobilityImpairedAccess>
+		<limitations>
+			<AccessibilityLimitation>
+				<WheelchairAccess>true</WheelchairAccess>
+				<AudibleSignalsAvailable>true</AudibleSignalsAvailable>
+				<VisualSignsAvailable>true</VisualSignsAvailable>
+			</AccessibilityLimitation>
+		</limitations>
+	</AccessibilityAssessment>
 	<dayTypes>
 		<DayTypeRef ref="FR:DayType:D1:" />
 	</dayTypes>
@@ -1085,8 +1097,27 @@ Example:
 			<DepartureDayOffset>0</DepartureDayOffset>
 		</TimetabledPassingTime>
 	</passingTimes>
+	<facilities>
+		<ServiceFacilitySet id="FR:ServiceFacilitySet:T1:" version="any">
+			<AssistanceFacilityList>boardingAssistance</AssistanceFacilityList>
+			<LuggageCarriageFacilityList>cyclesAllowed</LuggageCarriageFacilityList>
+		</ServiceFacilitySet>
+	</facilities>
 </ServiceJourney>
 ```
+
+#### ServiceJourney/AccessibilityAssessment
+
+If a `trip` has a `trip_property_id`, a node `AccessibilityAssessment` is created. Its `MobilityImpairedAccess` computation and the `true`/`false`/`unknown` value mapping are the same as for [`AccessibilityAssessment`](#accessibilityassessment) above.
+
+| Netex field                                                                                        | NTFS file           | NTFS field            | Note                                                                       |
+| -------------------------------------------------------------------------------------------------- | ------------------- | --------------------- | -------------------------------------------------------------------------- |
+| ServiceJourney/AccessibilityAssessment/@id                                                         | trips.txt           | trip_id               | see [id formatting](#id-of-objects)                                        |
+| ServiceJourney/AccessibilityAssessment/@version                                                    |                     |                       | fixed value `any`                                                          |
+| ServiceJourney/AccessibilityAssessment/MobilityImpairedAccess                                      |                     |                       | see [definition of MobilityImpairedAccess](#accessibilityassessment) above |
+| ServiceJourney/AccessibilityAssessment/limitations/AccessibilityLimitation/WheelchairAccess        | trip_properties.txt | wheelchair_accessible | see [value of limitations](#accessibilityassessment) above                 |
+| ServiceJourney/AccessibilityAssessment/limitations/AccessibilityLimitation/AudibleSignalsAvailable | trip_properties.txt | audible_announcement  | see [value of limitations](#accessibilityassessment) above                 |
+| ServiceJourney/AccessibilityAssessment/limitations/AccessibilityLimitation/VisualSignsAvailable    | trip_properties.txt | visual_announcement   | see [value of limitations](#accessibilityassessment) above                 |
 
 #### TimetabledPassingTime
 
@@ -1096,6 +1127,17 @@ Example:
 | TimetabledPassingTime/ArrivalDayOffset   | stop_times.txt | arrival_time   | number of times 24 hours fits in `arrival_time` (e.g. for `50:00:00`, 24 hours fits `2` times)   |
 | TimetabledPassingTime/DepartureTime      | stop_times.txt | departure_time | format as `00:00:00` with a modulo on 24 hours (e.g. `25:00:00` becomes `01:00:00`)              |
 | TimetabledPassingTime/DepartureDayOffset | stop_times.txt | departure_time | number of times 24 hours fits in `departure_time` (e.g. for `50:00:00`, 24 hours fits `2` times) |
+
+#### ServiceFacilitySet
+
+If a `trip` has a `trip_property_id`, a node `ServiceFacilitySet` is created inside `facilities`, but only if `bike_accepted` or `appropriate_escort` carries information — otherwise neither `facilities` nor `ServiceFacilitySet` is present.
+
+| Netex field                                    | NTFS file           | NTFS field         | Note                                                                                       |
+| ---------------------------------------------- | ------------------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| ServiceFacilitySet/@id                         | trips.txt           | trip_id            | see [id formatting](#id-of-objects)                                                        |
+| ServiceFacilitySet/@version                    |                     |                    | fixed value `any`                                                                          |
+| ServiceFacilitySet/AssistanceFacilityList      | trip_properties.txt | appropriate_escort | Present only if `appropriate_escort` is `1` (Available), fixed value `boardingAssistance`. |
+| ServiceFacilitySet/LuggageCarriageFacilityList | trip_properties.txt | bike_accepted      | `1` → `cyclesAllowed`, `2` → `noCycles`, `0`/undefined → absent.                           |
 
 ## fare.xml
 

@@ -200,6 +200,16 @@
 									<Value>RATP:ServiceJourney:153912-C01376-COU_RATP_5086613_2991428_116:LOC</Value>
 								</KeyValue>
 							</keyList>
+							<AccessibilityAssessment id="FR:AccessibilityAssessment:MFDI_RATP_153912-C01376-COU_RATP_5086613_2991428_116:" version="any">
+								<MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+								<limitations>
+									<AccessibilityLimitation>
+										<WheelchairAccess>false</WheelchairAccess>
+										<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+										<VisualSignsAvailable>unknown</VisualSignsAvailable>
+									</AccessibilityLimitation>
+								</limitations>
+							</AccessibilityAssessment>
 							<dayTypes>
 								<DayTypeRef ref="FR:DayType:MFDI_1:">
 								</DayTypeRef>
