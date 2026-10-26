@@ -390,6 +390,13 @@ impl<'a> StopExporter<'a> {
                 })?;
             let element_builder =
                 element_builder.append(self.generate_transport_mode(highest_netex_mode));
+            let element_builder = if let Some(other_transport_modes) =
+                self.generate_other_transport_modes(&netex_modes, highest_netex_mode)
+            {
+                element_builder.append(other_transport_modes)
+            } else {
+                element_builder
+            };
             let element_builder =
                 element_builder.append(self.generate_stop_place_type(highest_netex_mode));
             stop_place_elements.push(element_builder.build());
@@ -560,6 +567,26 @@ impl<'a> StopExporter<'a> {
         Element::builder("TransportMode")
             .append(transport_mode_text)
             .build()
+    }
+
+    fn generate_other_transport_modes(
+        &self,
+        netex_modes: &BTreeSet<NetexMode>,
+        main_mode: NetexMode,
+    ) -> Option<Element> {
+        let other_modes: Vec<String> = netex_modes
+            .iter()
+            .filter(|netex_mode| **netex_mode != main_mode)
+            .map(NetexMode::to_string)
+            .collect();
+        if other_modes.is_empty() {
+            return None;
+        }
+        Some(
+            Element::builder("OtherTransportModes")
+                .append(Node::Text(other_modes.join(" ")))
+                .build(),
+        )
     }
 
     fn generate_entrances(&self, stop_area_id: &'a str) -> Option<Element> {
@@ -865,6 +892,75 @@ mod tests {
             let stop_area = model.stop_areas.get("SA").unwrap();
             let levels_element = stop_exporter.generate_levels(stop_area).unwrap();
             assert_eq!(level_ref_ids(&levels_element), vec!["FR:Level:0:"]);
+        }
+    }
+
+    mod generate_other_transport_modes {
+        use super::*;
+        use crate::ModelBuilder;
+        use pretty_assertions::assert_eq;
+
+        // The multimodal StopPlace is always the last element returned by
+        // `export_stop_area` (pushed after the per-mode monomodal StopPlaces).
+        fn other_transport_modes_text(model: &Model, stop_area_id: &str) -> Option<String> {
+            let stop_exporter = StopExporter::new(model).unwrap();
+            let stop_area = model.stop_areas.get(stop_area_id).unwrap();
+            let multimodal_stop_place = stop_exporter
+                .export_stop_area(stop_area)
+                .unwrap()
+                .pop()
+                .unwrap();
+            let other_transport_modes_text = multimodal_stop_place
+                .nodes()
+                .filter_map(|node| node.as_element())
+                .find(|child| child.name() == "OtherTransportModes")
+                .map(|element| {
+                    element
+                        .nodes()
+                        .next()
+                        .unwrap()
+                        .as_text()
+                        .unwrap()
+                        .to_owned()
+                });
+            other_transport_modes_text
+        }
+
+        #[test]
+        fn absent_when_stop_area_has_a_single_mode() {
+            let model = ModelBuilder::default()
+                .stop_area("SA", |_| {})
+                .stop_point("SP1", |sp| sp.stop_area_id = "SA".to_string())
+                .vj("vj1", |vj| {
+                    vj.physical_mode("Bus").st("SP1", "10:00:00");
+                })
+                .build();
+            assert_eq!(None, other_transport_modes_text(&model, "SA"));
+        }
+
+        #[test]
+        fn present_with_several_modes_space_separated_when_stop_area_has_three_modes() {
+            // Metro has a higher priority (4) than Tram (5) and Bus (9): Metro becomes
+            // the main TransportMode, the other two are listed in priority order.
+            let model = ModelBuilder::default()
+                .stop_area("SA", |_| {})
+                .stop_point("SP1", |sp| sp.stop_area_id = "SA".to_string())
+                .stop_point("SP2", |sp| sp.stop_area_id = "SA".to_string())
+                .stop_point("SP3", |sp| sp.stop_area_id = "SA".to_string())
+                .vj("vj1", |vj| {
+                    vj.physical_mode("Bus").st("SP1", "10:00:00");
+                })
+                .vj("vj2", |vj| {
+                    vj.physical_mode("Tramway").st("SP2", "10:05:00");
+                })
+                .vj("vj3", |vj| {
+                    vj.physical_mode("Metro").st("SP3", "10:10:00");
+                })
+                .build();
+            assert_eq!(
+                Some("tram bus".to_owned()),
+                other_transport_modes_text(&model, "SA")
+            );
         }
     }
 }
