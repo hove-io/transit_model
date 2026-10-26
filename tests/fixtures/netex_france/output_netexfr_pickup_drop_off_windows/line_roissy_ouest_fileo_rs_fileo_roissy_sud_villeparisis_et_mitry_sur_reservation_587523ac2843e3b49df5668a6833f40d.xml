@@ -200,6 +200,16 @@
 									<Value>KRO6:ServiceJourney:153358-C02060-680-260:LOC</Value>
 								</KeyValue>
 							</keyList>
+							<AccessibilityAssessment id="FR:AccessibilityAssessment:MFDI_KRO6_153358-C02060-680-260:" version="any">
+								<MobilityImpairedAccess>unknown</MobilityImpairedAccess>
+								<limitations>
+									<AccessibilityLimitation>
+										<AudibleSignalsAvailable>false</AudibleSignalsAvailable>
+										<VisualSignsAvailable>false</VisualSignsAvailable>
+										<WheelchairAccess>unknown</WheelchairAccess>
+									</AccessibilityLimitation>
+								</limitations>
+							</AccessibilityAssessment>
 							<dayTypes>
 								<DayTypeRef ref="FR:DayType:MFDI_1000:">
 								</DayTypeRef>
