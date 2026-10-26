@@ -331,6 +331,7 @@ Example:
 | StopPlace/levels/LevelRef[]/@ref       | stops.txt        | level_id              | One `LevelRef` per distinct `level_id` on this `stop_area`, its `stop_points` and `entrances` (absent if none); target is a `Level` (see [Level](#level) below); see [id formatting](#id-of-objects). Multimodal `StopPlace` only. |
 | StopPlace/entrances/EntranceRef[]/@ref |                  |                       | Reference to the `StopPlaceEntrance` object(s) of this station, if any; see [StopPlaceEntrance](#stopplaceentrance)                                                                                                                |
 | StopPlace/TransportMode                |                  |                       | use the mode of __highest priority__ (see [NTFS specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis))                                                                   |
+| StopPlace/OtherTransportModes          |                  |                       | Present only if more than one NeTEx mode is associated to the `stop_points` of this `stop_area`; lists the other modes (space-separated), excluding the one used for `TransportMode`. Multimodal `StopPlace` only.                 |
 | StopPlace/StopPlaceType                |                  |                       | see the section [StopPlaceType mapping](#stopplacetype-mapping)                                                                                                                                                                    |
 | StopPlace/keyList/KeyValue/Value       | object_codes.txt | object_code           | Present only if a code with `object_system` = `source` exists for this `stop_area`; `typeOfKey` is fixed to `ALTERNATE_IDENTIFIER` and `Key` is fixed to `source`                                                                  |
 
@@ -371,8 +372,9 @@ Example:
 	<entrances>
 		<EntranceRef ref="FR:StopPlaceEntrance:E1:" />
 	</entrances>
-	<TransportMode>bus</TransportMode>
-	<StopPlaceType>onstreetBus</StopPlaceType>
+	<TransportMode>rail</TransportMode>
+	<OtherTransportModes>metro bus</OtherTransportModes>
+	<StopPlaceType>railStation</StopPlaceType>
 </StopPlace>
 ```
 

@@ -356,6 +356,7 @@
 						</EntranceRef>
 					</entrances>
 					<TransportMode>rail</TransportMode>
+					<OtherTransportModes>metro bus</OtherTransportModes>
 					<StopPlaceType>railStation</StopPlaceType>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:NAT_rail:" version="any">
@@ -440,6 +441,7 @@
 						</TypeOfPlaceRef>
 					</placeTypes>
 					<TransportMode>rail</TransportMode>
+					<OtherTransportModes>metro bus</OtherTransportModes>
 					<StopPlaceType>railStation</StopPlaceType>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:CDG_rail:" version="any">
@@ -538,6 +540,7 @@
 						</EntranceRef>
 					</entrances>
 					<TransportMode>rail</TransportMode>
+					<OtherTransportModes>metro bus</OtherTransportModes>
 					<StopPlaceType>railStation</StopPlaceType>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:DEF_rail:" version="any">
@@ -601,6 +604,7 @@
 						</TypeOfPlaceRef>
 					</placeTypes>
 					<TransportMode>rail</TransportMode>
+					<OtherTransportModes>bus</OtherTransportModes>
 					<StopPlaceType>railStation</StopPlaceType>
 				</StopPlace>
 				<StopPlace id="FR:StopPlace:CHA_metro:" version="any">
