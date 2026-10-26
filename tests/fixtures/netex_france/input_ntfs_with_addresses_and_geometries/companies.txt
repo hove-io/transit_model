@@ -1,0 +1,5 @@
+company_id,company_name,company_address,company_url,company_mail,company_phone,company_role
+CAV:1,TRANSCOVE,,http://www.transcove.com/,,04 84 99 50 10,authority
+ZOP:5379402960132100071,292|GR. LOT7 GAPENCAIS,,,,,operator
+OZT:01,Zest,,https://www.zestbus.fr,contact-zestbus@keolis.com,04 93 35 93 60,authority
+AGG:1,Le Bus,,https://www.esterelcotedazur-lebus.fr/,contact@esterelcotedazur-lebus.fr,+33494537846,authority

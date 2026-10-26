@@ -1,0 +1,5 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+CAV:COVE_A,Flandre Dunkerque - Pôle santé,forward,CAV:COVE_A,,CAV:20904
+ZOP:535,GAP - Gare Routière - Place Aimé Gassier,forward,ZOP:535,,ZOE:02184-0506100C
+OZT:25_R,Menton Gare Routière - Tende Gare SNCF,backward,OZT:25,,OZT:Navitia:BREPIE1
+AGG:Boulouris_R,Saint-Raphaël Gare Routière - Boulouris Mairie Annexe,backward,AGG:Boulouris,,AGG:Z_Lamartine

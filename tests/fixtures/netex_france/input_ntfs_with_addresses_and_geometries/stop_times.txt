@@ -1,0 +1,13 @@
+stop_id,trip_id,stop_sequence,arrival_time,departure_time,start_pickup_drop_off_window,end_pickup_drop_off_window,boarding_duration,alighting_duration,pickup_type,drop_off_type,local_zone_id,stop_headsign,stop_time_id,stop_time_precision
+AGG:150,AGG:trip:NB:81:4,0,12:05:00,12:05:00,,,0,0,0,1,,,,0
+AGG:87,AGG:trip:NB:81:4,1,12:07:00,12:07:00,,,0,0,0,0,,,,0
+AGG:192,AGG:trip:NB:81:4,2,12:09:00,12:09:00,,,0,0,1,0,,,,0
+CAV:4903,CAV:12961,6,06:20:00,06:20:00,,,0,0,0,1,,,,0
+CAV:240503,CAV:12961,7,06:20:00,06:20:00,,,0,0,0,0,,,,0
+CAV:20903,CAV:12961,8,06:21:00,06:21:00,,,0,0,1,0,,,,0
+OZT:MENBIBA2,OZT:608,4,16:28:00,16:28:00,,,0,0,0,1,,TENDE,,0
+OZT:VINPIA2,OZT:608,5,16:42:00,16:42:00,,,0,0,0,0,,TENDE,,0
+OZT:BREPIE2,OZT:608,6,17:07:00,17:07:00,,,0,0,1,0,,TENDE,,0
+ZOP:11625-0506100,ZOP:1009366-1053993,0,07:45:00,07:45:00,,,0,0,0,1,,,,0
+ZOP:10289-0506100,ZOP:1009366-1053993,1,07:50:00,07:50:00,,,0,0,0,0,,,,0
+ZOP:12314-0506100,ZOP:1009366-1053993,2,07:55:00,07:55:00,,,0,0,1,0,,,,0

@@ -1,0 +1,5 @@
+service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date
+CAV:12961,0,0,0,0,0,1,0,20261107,20261219
+ZOP:1517,1,1,1,1,1,1,0,20261023,20270424
+OZT:1_2_10,0,1,0,1,1,0,0,20261023,20261231
+AGG:Scolaire_D,0,0,0,0,0,0,1,20261108,20261213
