@@ -1245,6 +1245,19 @@ impl VehicleJourneyBuilder<'_> {
         }
         self
     }
+
+    /// Set the geometry_id of the vj
+    pub fn geometry(self, id: &str) -> Self {
+        {
+            let vj = &mut self
+                .model
+                .collections
+                .vehicle_journeys
+                .index_mut(self.vj_idx);
+            vj.geometry_id = Some(id.to_owned());
+        }
+        self
+    }
 }
 
 impl Drop for VehicleJourneyBuilder<'_> {
