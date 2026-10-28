@@ -1,0 +1,5 @@
+network_id,network_name,network_url,network_timezone,network_lang,network_phone,network_address,network_fare_url,network_sort_order
+CAV:1,Ventoux-Comtat Venaissin - Trans'Cove,http://www.transcove.com/,Europe/Paris,fr-FR,04 84 99 50 10,,,
+ZOP:2,ZOU ! Proximité,https://zou.maregionsud.fr/services-en-ligne/,Europe/Paris,fr,0413943050,,,
+OZT:01,Menton - Zest,https://www.zestbus.fr,Europe/Paris,fr,04 93 35 93 60,,https://www.zestbus.fr/,
+AGG:1,Estérel Côte d'Azur Agglomération,https://www.esterelcotedazur-lebus.fr/,Europe/Paris,fr,+33494537846,,,

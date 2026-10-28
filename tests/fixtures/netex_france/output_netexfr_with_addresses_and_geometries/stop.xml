@@ -1,0 +1,940 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PublicationDelivery version="1.3:FR-NETEX_FRANCE-2.4" xmlns="http://www.netex.org.uk/netex">
+	<PublicationTimestamp>2026-10-28T15:36:00+01:00</PublicationTimestamp>
+	<ParticipantRef>Participant</ParticipantRef>
+	<dataObjects>
+		<GeneralFrame id="FR:GeneralFrame:NETEX_ARRET:" version="1.3:FR-NETEX_ARRET-2.4">
+			<TypeOfFrameRef ref="FR:TypeOfFrame:NETEX_ARRET:">
+			</TypeOfFrameRef>
+			<members>
+				<Quay id="FR:Quay:CAV_240503:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>240503</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Anselme</Name>
+					<Centroid>
+						<Location>
+							<Longitude>5.025255</Longitude>
+							<Latitude>44.107513</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_CAV_240503:" version="any">
+						<HouseNumber>701</HouseNumber>
+						<AddressLine1>701 Avenue Anselme Matthieu</AddressLine1>
+						<Street>Avenue Anselme Matthieu</Street>
+						<Town>Aubignan</Town>
+						<PostCode>84810</PostCode>
+						<PostalRegion>84004</PostalRegion>
+					</PostalAddress>
+					<SiteRef ref="FR:StopPlace:CAV_240504_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+				</Quay>
+				<Quay id="FR:Quay:CAV_4903:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>4903</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Chemin de Beaumes</Name>
+					<Centroid>
+						<Location>
+							<Longitude>5.025302</Longitude>
+							<Latitude>44.108782</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_CAV_4903:" version="any">
+						<HouseNumber>929</HouseNumber>
+						<AddressLine1>929 Avenue Anselme Matthieu</AddressLine1>
+						<Street>Avenue Anselme Matthieu</Street>
+						<Town>Aubignan</Town>
+						<PostCode>84810</PostCode>
+						<PostalRegion>84004</PostalRegion>
+					</PostalAddress>
+					<SiteRef ref="FR:StopPlace:CAV_4904_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+				</Quay>
+				<Quay id="FR:Quay:CAV_20903:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>20903</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Pont du Canal</Name>
+					<Centroid>
+						<Location>
+							<Longitude>5.025009</Longitude>
+							<Latitude>44.10343</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_CAV_20903:" version="any">
+						<HouseNumber>255</HouseNumber>
+						<AddressLine1>255 Avenue Anselme Matthieu</AddressLine1>
+						<Street>Avenue Anselme Matthieu</Street>
+						<Town>Aubignan</Town>
+						<PostCode>84810</PostCode>
+						<PostalRegion>84004</PostalRegion>
+					</PostalAddress>
+					<SiteRef ref="FR:StopPlace:CAV_20904_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+				</Quay>
+				<Quay id="FR:Quay:ZOP_11625-0506100:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>11625-0506100</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Gap - Gare Routière</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.08221</Longitude>
+							<Latitude>44.56139</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_ZOP_11625-0506100:" version="any">
+						<AddressLine1>Place Ladoucette</AddressLine1>
+						<Street>Place Ladoucette</Street>
+						<Town>Gap</Town>
+						<PostCode>05000</PostCode>
+						<PostalRegion>05061</PostalRegion>
+					</PostalAddress>
+					<SiteRef ref="FR:StopPlace:ZOE_15420-0506100C_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+					<tariffZones>
+						<TariffZoneRef ref="FR:FareZone:00004075:">
+						</TariffZoneRef>
+					</tariffZones>
+					<PublicCode>11625-0506100</PublicCode>
+				</Quay>
+				<Quay id="FR:Quay:ZOP_10289-0506100:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>10289-0506100</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Gap - Gare SNCF Quai 3</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.0861</Longitude>
+							<Latitude>44.56317</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_ZOP_10289-0506100:" version="any">
+						<HouseNumber>13</HouseNumber>
+						<AddressLine1>13 Avenue du Maréchal Foch</AddressLine1>
+						<Street>Avenue du Maréchal Foch</Street>
+						<Town>Gap</Town>
+						<PostCode>05000</PostCode>
+						<PostalRegion>05061</PostalRegion>
+					</PostalAddress>
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_ZOP_10289-0506100_ZOP_0:" version="any">
+						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
+						<limitations>
+							<AccessibilityLimitation>
+								<WheelchairAccess>true</WheelchairAccess>
+								<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+								<VisualSignsAvailable>unknown</VisualSignsAvailable>
+							</AccessibilityLimitation>
+						</limitations>
+					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:ZOS_02169-0506100C_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+					<tariffZones>
+						<TariffZoneRef ref="FR:FareZone:00004075:">
+						</TariffZoneRef>
+					</tariffZones>
+					<PublicCode>10289-0506100</PublicCode>
+				</Quay>
+				<Quay id="FR:Quay:ZOP_12314-0506100:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>12314-0506100</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Porte Colombe</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.07607</Longitude>
+							<Latitude>44.55608</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_ZOP_12314-0506100:" version="any">
+						<HouseNumber>2</HouseNumber>
+						<AddressLine1>2 Avenue Jean Jaurès</AddressLine1>
+						<Street>Avenue Jean Jaurès</Street>
+						<Town>Gap</Town>
+						<PostCode>05000</PostCode>
+						<PostalRegion>05061</PostalRegion>
+					</PostalAddress>
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_ZOP_12314-0506100_ZOP_0:" version="any">
+						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
+						<limitations>
+							<AccessibilityLimitation>
+								<WheelchairAccess>true</WheelchairAccess>
+								<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+								<VisualSignsAvailable>unknown</VisualSignsAvailable>
+							</AccessibilityLimitation>
+						</limitations>
+					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:ZOE_02184-0506100C_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+					<tariffZones>
+						<TariffZoneRef ref="FR:FareZone:00004075:">
+						</TariffZoneRef>
+					</tariffZones>
+					<PublicCode>12314-0506100</PublicCode>
+				</Quay>
+				<Quay id="FR:Quay:OZT_MENBIBA2:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>MENBIBA2</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Blasco Ibanez</Name>
+					<Centroid>
+						<Location>
+							<Longitude>7.516456</Longitude>
+							<Latitude>43.783825</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_OZT_MENBIBA2:" version="any">
+						<HouseNumber>42</HouseNumber>
+						<AddressLine1>42 Quai Nord du Port de Garavan</AddressLine1>
+						<Street>Quai Nord du Port de Garavan</Street>
+						<Town>Menton</Town>
+						<PostCode>06500</PostCode>
+						<PostalRegion>06083</PostalRegion>
+					</PostalAddress>
+					<SiteRef ref="FR:StopPlace:OZT_Navitia_MENBIBA1_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+					<PublicCode>MENBIBA2</PublicCode>
+				</Quay>
+				<Quay id="FR:Quay:OZT_VINPIA2:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>VINPIA2</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Vintimille</Name>
+					<Centroid>
+						<Location>
+							<Longitude>7.60286</Longitude>
+							<Latitude>43.792839</Latitude>
+						</Location>
+					</Centroid>
+					<SiteRef ref="FR:StopPlace:OZT_Navitia_VINPIA1_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+					<PublicCode>VINPIA2</PublicCode>
+				</Quay>
+				<Quay id="FR:Quay:OZT_BREPIE2:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>BREPIE2</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Piène Basse</Name>
+					<Centroid>
+						<Location>
+							<Longitude>7.520683</Longitude>
+							<Latitude>43.908787</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_OZT_BREPIE2:" version="any">
+						<HouseNumber>4635</HouseNumber>
+						<AddressLine1>4635 Route de Vintimille</AddressLine1>
+						<Street>Route de Vintimille</Street>
+						<Town>Breil-sur-Roya</Town>
+						<PostCode>06540</PostCode>
+						<PostalRegion>06023</PostalRegion>
+					</PostalAddress>
+					<SiteRef ref="FR:StopPlace:OZT_Navitia_BREPIE1_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+					<PublicCode>BREPIE2</PublicCode>
+				</Quay>
+				<Quay id="FR:Quay:AGG_150:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>150</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Saint-Raphaël Gare Routière (Quai A)</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.76986</Longitude>
+							<Latitude>43.423863</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_AGG_150:" version="any">
+						<AddressLine1>Avenue Victor Hugo</AddressLine1>
+						<Street>Avenue Victor Hugo</Street>
+						<Town>Saint-Raphaël</Town>
+						<PostalRegion>83118</PostalRegion>
+					</PostalAddress>
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_AGG_150_AGG_0:" version="any">
+						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
+						<limitations>
+							<AccessibilityLimitation>
+								<WheelchairAccess>true</WheelchairAccess>
+								<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+								<VisualSignsAvailable>unknown</VisualSignsAvailable>
+							</AccessibilityLimitation>
+						</limitations>
+					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:ZOE_01050-8311800C_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+				</Quay>
+				<Quay id="FR:Quay:AGG_192:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>192</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Lamartine (Côté Abribus)</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.772017</Longitude>
+							<Latitude>43.42406464</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_AGG_192:" version="any">
+						<HouseNumber>53</HouseNumber>
+						<AddressLine1>53 Boulevard Georges Clemenceau</AddressLine1>
+						<Street>Boulevard Georges Clemenceau</Street>
+						<Town>Saint-Raphaël</Town>
+						<PostalRegion>83118</PostalRegion>
+					</PostalAddress>
+					<SiteRef ref="FR:StopPlace:AGG_Z_Lamartine_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+				</Quay>
+				<Quay id="FR:Quay:AGG_87:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>87</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Châteaudun</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.76977682</Longitude>
+							<Latitude>43.42629242</Latitude>
+						</Location>
+					</Centroid>
+					<PostalAddress id="FR:PostalAddress:Quay_AGG_87:" version="any">
+						<HouseNumber>46</HouseNumber>
+						<AddressLine1>46 Rue de Châteaudun</AddressLine1>
+						<Street>Rue de Châteaudun</Street>
+						<Town>Saint-Raphaël</Town>
+						<PostalRegion>83118</PostalRegion>
+					</PostalAddress>
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_AGG_87_AGG_0:" version="any">
+						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
+						<limitations>
+							<AccessibilityLimitation>
+								<WheelchairAccess>true</WheelchairAccess>
+								<AudibleSignalsAvailable>unknown</AudibleSignalsAvailable>
+								<VisualSignsAvailable>unknown</VisualSignsAvailable>
+							</AccessibilityLimitation>
+						</limitations>
+					</AccessibilityAssessment>
+					<SiteRef ref="FR:StopPlace:ZOP_00493-8311800C_bus:">
+					</SiteRef>
+					<TransportMode>bus</TransportMode>
+				</Quay>
+				<StopPlace id="FR:StopPlace:CAV_240504_bus:" version="any">
+					<Name>Anselme</Name>
+					<Centroid>
+						<Location>
+							<Longitude>5.025255</Longitude>
+							<Latitude>44.107513</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:CAV_240504:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:CAV_240503:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:CAV_240504:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>240504</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Anselme</Name>
+					<Centroid>
+						<Location>
+							<Longitude>5.025255</Longitude>
+							<Latitude>44.107513</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_CAV_240504:" version="any">
+						<HouseNumber>701</HouseNumber>
+						<AddressLine1>701 Avenue Anselme Matthieu</AddressLine1>
+						<Street>Avenue Anselme Matthieu</Street>
+						<Town>Aubignan</Town>
+						<PostCode>84810</PostCode>
+						<PostalRegion>84004</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:CAV_4904_bus:" version="any">
+					<Name>Chemin de Beaumes</Name>
+					<Centroid>
+						<Location>
+							<Longitude>5.025302</Longitude>
+							<Latitude>44.108782</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:CAV_4904:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:CAV_4903:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:CAV_4904:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>31304</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Chemin de Beaumes</Name>
+					<Centroid>
+						<Location>
+							<Longitude>5.025302</Longitude>
+							<Latitude>44.108782</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_CAV_4904:" version="any">
+						<HouseNumber>929</HouseNumber>
+						<AddressLine1>929 Avenue Anselme Matthieu</AddressLine1>
+						<Street>Avenue Anselme Matthieu</Street>
+						<Town>Aubignan</Town>
+						<PostCode>84810</PostCode>
+						<PostalRegion>84004</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:CAV_20904_bus:" version="any">
+					<Name>Pont du Canal</Name>
+					<Centroid>
+						<Location>
+							<Longitude>5.025009</Longitude>
+							<Latitude>44.10343</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:CAV_20904:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:CAV_20903:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:CAV_20904:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>20904</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Pont du Canal</Name>
+					<Centroid>
+						<Location>
+							<Longitude>5.025009</Longitude>
+							<Latitude>44.10343</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_CAV_20904:" version="any">
+						<HouseNumber>255</HouseNumber>
+						<AddressLine1>255 Avenue Anselme Matthieu</AddressLine1>
+						<Street>Avenue Anselme Matthieu</Street>
+						<Town>Aubignan</Town>
+						<PostCode>84810</PostCode>
+						<PostalRegion>84004</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:ZOE_01050-8311800C_bus:" version="any">
+					<Name>Gare Routière</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.76935</Longitude>
+							<Latitude>43.42411</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:ZOE_01050-8311800C:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:AGG_150:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:ZOE_01050-8311800C:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>01050-8311800C</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Gare Routière</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.76935</Longitude>
+							<Latitude>43.42411</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_ZOE_01050-8311800C:" version="any">
+						<HouseNumber>127</HouseNumber>
+						<AddressLine1>127 Avenue Victor Hugo</AddressLine1>
+						<Street>Avenue Victor Hugo</Street>
+						<Town>Saint-Raphaël</Town>
+						<PostalRegion>83118</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:ZOE_15420-0506100C_bus:" version="any">
+					<Name>Gare Routière</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.08221</Longitude>
+							<Latitude>44.56139</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:ZOE_15420-0506100C:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:ZOP_11625-0506100:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:ZOE_15420-0506100C:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>02170-0506100C</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Gare Routière</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.08221</Longitude>
+							<Latitude>44.56139</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_ZOE_15420-0506100C:" version="any">
+						<AddressLine1>Place Ladoucette</AddressLine1>
+						<Street>Place Ladoucette</Street>
+						<Town>Gap</Town>
+						<PostCode>05000</PostCode>
+						<PostalRegion>05061</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:ZOE_02184-0506100C_bus:" version="any">
+					<Name>Porte Colombe</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.07607</Longitude>
+							<Latitude>44.55608</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:ZOE_02184-0506100C:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:ZOP_12314-0506100:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:ZOE_02184-0506100C:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>02184-0506100C</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Porte Colombe</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.07607</Longitude>
+							<Latitude>44.55608</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_ZOE_02184-0506100C:" version="any">
+						<HouseNumber>2</HouseNumber>
+						<AddressLine1>2 Avenue Jean Jaurès</AddressLine1>
+						<Street>Avenue Jean Jaurès</Street>
+						<Town>Gap</Town>
+						<PostCode>05000</PostCode>
+						<PostalRegion>05061</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:ZOP_00493-8311800C_bus:" version="any">
+					<Name>Châteaudun</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.76981</Longitude>
+							<Latitude>43.42633</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:ZOP_00493-8311800C:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:AGG_87:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:ZOP_00493-8311800C:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>00493-8311800C</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Châteaudun</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.76981</Longitude>
+							<Latitude>43.42633</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_ZOP_00493-8311800C:" version="any">
+						<HouseNumber>46</HouseNumber>
+						<AddressLine1>46 Rue de Châteaudun</AddressLine1>
+						<Street>Rue de Châteaudun</Street>
+						<Town>Saint-Raphaël</Town>
+						<PostalRegion>83118</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:OZT_Navitia_MENBIBA1_bus:" version="any">
+					<Name>Blasco Ibanez</Name>
+					<Centroid>
+						<Location>
+							<Longitude>7.516082</Longitude>
+							<Latitude>43.783859</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:OZT_Navitia_MENBIBA1:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:OZT_MENBIBA2:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:OZT_Navitia_MENBIBA1:" version="any">
+					<Name>Blasco Ibanez</Name>
+					<Centroid>
+						<Location>
+							<Longitude>7.516082</Longitude>
+							<Latitude>43.783859</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_OZT_Navitia_MENBIBA1:" version="any">
+						<HouseNumber>49 bis</HouseNumber>
+						<AddressLine1>49 bis Avenue Porte de France</AddressLine1>
+						<Street>Avenue Porte de France</Street>
+						<Town>Menton</Town>
+						<PostCode>06500</PostCode>
+						<PostalRegion>06083</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:OZT_Navitia_VINPIA1_bus:" version="any">
+					<Name>Vintimille</Name>
+					<Centroid>
+						<Location>
+							<Longitude>7.602939</Longitude>
+							<Latitude>43.792919</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:OZT_Navitia_VINPIA1:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:OZT_VINPIA2:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:OZT_Navitia_VINPIA1:" version="any">
+					<Name>Vintimille</Name>
+					<Centroid>
+						<Location>
+							<Longitude>7.602939</Longitude>
+							<Latitude>43.792919</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:OZT_Navitia_BREPIE1_bus:" version="any">
+					<Name>Piène Basse</Name>
+					<Centroid>
+						<Location>
+							<Longitude>7.52068</Longitude>
+							<Latitude>43.908852</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:OZT_Navitia_BREPIE1:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:OZT_BREPIE2:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:OZT_Navitia_BREPIE1:" version="any">
+					<Name>Piène Basse</Name>
+					<Centroid>
+						<Location>
+							<Longitude>7.52068</Longitude>
+							<Latitude>43.908852</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_OZT_Navitia_BREPIE1:" version="any">
+						<HouseNumber>4635</HouseNumber>
+						<AddressLine1>4635 Route de Vintimille</AddressLine1>
+						<Street>Route de Vintimille</Street>
+						<Town>Breil-sur-Roya</Town>
+						<PostCode>06540</PostCode>
+						<PostalRegion>06023</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:AGG_Z_Lamartine_bus:" version="any">
+					<Name>Lamartine</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.772074</Longitude>
+							<Latitude>43.424073</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:AGG_Z_Lamartine:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:AGG_192:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:AGG_Z_Lamartine:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>Z_Lamartine</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Lamartine</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.772074</Longitude>
+							<Latitude>43.424073</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_AGG_Z_Lamartine:" version="any">
+						<HouseNumber>53</HouseNumber>
+						<AddressLine1>53 Boulevard Georges Clemenceau</AddressLine1>
+						<Street>Boulevard Georges Clemenceau</Street>
+						<Town>Saint-Raphaël</Town>
+						<PostalRegion>83118</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:ZOS_02169-0506100C_bus:" version="any">
+					<Name>Gare de Gap</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.08597</Longitude>
+							<Latitude>44.56333</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="monomodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<ParentSiteRef ref="FR:StopPlace:ZOS_02169-0506100C:">
+					</ParentSiteRef>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+					<quays>
+						<QuayRef ref="FR:Quay:ZOP_10289-0506100:">
+						</QuayRef>
+					</quays>
+				</StopPlace>
+				<StopPlace id="FR:StopPlace:ZOS_02169-0506100C:" version="any">
+					<keyList>
+						<KeyValue typeOfKey="ALTERNATE_IDENTIFIER">
+							<Key>source</Key>
+							<Value>02169-0506100C</Value>
+						</KeyValue>
+					</keyList>
+					<Name>Gare de Gap</Name>
+					<Centroid>
+						<Location>
+							<Longitude>6.08597</Longitude>
+							<Latitude>44.56333</Latitude>
+						</Location>
+					</Centroid>
+					<placeTypes>
+						<TypeOfPlaceRef ref="multimodalStopPlace">
+						</TypeOfPlaceRef>
+					</placeTypes>
+					<PostalAddress id="FR:PostalAddress:StopPlace_ZOS_02169-0506100C:" version="any">
+						<HouseNumber>3</HouseNumber>
+						<AddressLine1>3 Avenue de la Gare</AddressLine1>
+						<Street>Avenue de la Gare</Street>
+						<Town>Gap</Town>
+						<PostCode>05000</PostCode>
+						<PostalRegion>05061</PostalRegion>
+					</PostalAddress>
+					<TransportMode>bus</TransportMode>
+					<StopPlaceType>onstreetBus</StopPlaceType>
+				</StopPlace>
+			</members>
+		</GeneralFrame>
+	</dataObjects>
+</PublicationDelivery>

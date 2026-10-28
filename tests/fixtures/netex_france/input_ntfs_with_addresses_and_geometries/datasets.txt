@@ -1,0 +1,5 @@
+dataset_id,contributor_id,dataset_start_date,dataset_end_date,dataset_type,dataset_extrapolation,dataset_desc,dataset_system
+CAV:1118c689-e7ea-42d4-babb-d51ca9e88381,CAV:fr-paca,20261023,20261231,,0,Ventoux-Comtat Venaissin - Trans'Cove,
+ZOP:8a5f9f01-ce51-4b5e-a1eb-d8719d8a84da,ZOP:fr-paca,20261023,20270424,,0,Zou Proximité,
+OZT:d21b7b3e-1a55-4a68-8dfb-15f1b00b8b49,OZT:fr-paca,20261023,20270329,,0,Zest - Menton,
+AGG:0cb028c3-b11f-4e23-a7b4-d8dcdb50c151,AGG:fr-paca,20261023,20270103,,0,Estérel Côte d'Azur Agglomération,
