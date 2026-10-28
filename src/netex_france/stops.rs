@@ -232,6 +232,10 @@ impl<'a> StopExporter<'a> {
             } else {
                 element_builder
             };
+        let element_builder = element_builder.append_all(self.generate_postal_address(
+            &format!("Quay_{}", stop_point.id),
+            stop_point.address_id.as_ref(),
+        ));
         let element_builder = element_builder.append_all(self.generate_accessibility(
             &stop_point.id,
             stop_point.equipment_id.as_ref(),
@@ -361,6 +365,10 @@ impl<'a> StopExporter<'a> {
             };
             let element_builder =
                 element_builder.append(self.generate_type_of_place_refs("multimodalStopPlace"));
+            let element_builder = element_builder.append_all(self.generate_postal_address(
+                &format!("StopPlace_{}", stop_area.id),
+                stop_area.address_id.as_ref(),
+            ));
             let element_builder = element_builder.append_all(self.generate_accessibility(
                 &stop_area.id,
                 stop_area.equipment_id.as_ref(),
@@ -436,6 +444,76 @@ impl<'a> StopExporter<'a> {
             return Some(centroid);
         }
         None
+    }
+
+    fn generate_postal_address(
+        &self,
+        owner_id: &str,
+        address_id: Option<&String>,
+    ) -> Option<Element> {
+        let address = address_id.and_then(|id| self.model.addresses.get(id))?;
+        let admin_region = address
+            .admin_level_8_id
+            .as_deref()
+            .and_then(|id| self.model.administrative_regions.get(id))?;
+        let town = admin_region.name.as_deref()?;
+        let house_number = address.house_number.as_deref();
+        let address_line_1 = match house_number {
+            Some(house_number) => format!("{house_number} {}", address.street_name),
+            None => address.street_name.clone(),
+        };
+        let house_number_element = house_number.map(|house_number| {
+            Element::builder("HouseNumber")
+                .append(Node::Text(house_number.to_owned()))
+                .build()
+        });
+        // PostCode is only emitted when the town has a single postal code.
+        // Some towns have several (e.g. Saint-Raphael, in the Var: 83530
+        // and 83700), and there is no reliable way to tell which one applies
+        // to this specific address. Their order in the data isn't meaningful
+        // either (observed to be just ascending numeric, not e.g. main code
+        // first), so we omit PostCode rather than assert a possibly wrong one.
+        let post_code_element = admin_region
+            .zip_codes
+            .as_deref()
+            .filter(|zip_codes| !zip_codes.contains(';'))
+            .map(|zip_code| {
+                Element::builder("PostCode")
+                    .append(Node::Text(zip_code.to_owned()))
+                    .build()
+            });
+        let postal_region_element = admin_region.insee.as_deref().map(|insee| {
+            Element::builder("PostalRegion")
+                .append(Node::Text(insee.to_owned()))
+                .build()
+        });
+        Some(
+            Element::builder(ObjectType::PostalAddress.to_string())
+                .attr(
+                    "id",
+                    Exporter::generate_id(owner_id, ObjectType::PostalAddress),
+                )
+                .attr("version", "any")
+                .append_all(house_number_element)
+                .append(
+                    Element::builder("AddressLine1")
+                        .append(Node::Text(address_line_1))
+                        .build(),
+                )
+                .append(
+                    Element::builder("Street")
+                        .append(Node::Text(address.street_name.clone()))
+                        .build(),
+                )
+                .append(
+                    Element::builder("Town")
+                        .append(Node::Text(town.to_owned()))
+                        .build(),
+                )
+                .append_all(post_code_element)
+                .append_all(postal_region_element)
+                .build(),
+        )
     }
 
     fn generate_accessibility(
