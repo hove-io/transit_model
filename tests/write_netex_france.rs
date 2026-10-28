@@ -94,4 +94,7 @@ fn validate_xml_schemas() {
     for network_path in network_paths {
         check_xml_in_folder(network_path);
     }
+    check_xml_in_folder(
+        "tests/fixtures/netex_france/output_netexfr_with_addresses_and_geometries/",
+    );
 }
