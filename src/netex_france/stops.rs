@@ -28,6 +28,10 @@ use std::{
 };
 use tracing::warn;
 
+const QUAY_ID_PREFIX: &str = "Quay_";
+const STOP_PLACE_ID_PREFIX: &str = "StopPlace_";
+const STOP_PLACE_ENTRANCE_ID_PREFIX: &str = "StopPlaceEntrance_";
+
 // `stop_point_modes` is storing all the modes for a StopPoint.
 //
 // A Stop Point can have multiple associated modes in NTM model. We use a
@@ -233,11 +237,11 @@ impl<'a> StopExporter<'a> {
                 element_builder
             };
         let element_builder = element_builder.append_all(self.generate_postal_address(
-            &format!("Quay_{}", stop_point.id),
+            &format!("{QUAY_ID_PREFIX}{}", stop_point.id),
             stop_point.address_id.as_ref(),
         ));
         let element_builder = element_builder.append_all(self.generate_accessibility(
-            &stop_point.id,
+            &format!("{QUAY_ID_PREFIX}{}", stop_point.id),
             stop_point.equipment_id.as_ref(),
             &[
                 Limitation::Wheelchair,
@@ -366,11 +370,11 @@ impl<'a> StopExporter<'a> {
             let element_builder =
                 element_builder.append(self.generate_type_of_place_refs("multimodalStopPlace"));
             let element_builder = element_builder.append_all(self.generate_postal_address(
-                &format!("StopPlace_{}", stop_area.id),
+                &format!("{STOP_PLACE_ID_PREFIX}{}", stop_area.id),
                 stop_area.address_id.as_ref(),
             ));
             let element_builder = element_builder.append_all(self.generate_accessibility(
-                &stop_area.id,
+                &format!("{STOP_PLACE_ID_PREFIX}{}", stop_area.id),
                 stop_area.equipment_id.as_ref(),
                 &[
                     Limitation::Wheelchair,
@@ -716,7 +720,7 @@ impl<'a> StopExporter<'a> {
                 element_builder
             };
         let element_builder = element_builder.append_all(self.generate_accessibility(
-            &stop_location.id,
+            &format!("{STOP_PLACE_ENTRANCE_ID_PREFIX}{}", stop_location.id),
             stop_location.equipment_id.as_ref(),
             &[Limitation::Wheelchair],
         ));

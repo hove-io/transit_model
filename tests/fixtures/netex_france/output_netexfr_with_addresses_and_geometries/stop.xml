@@ -137,7 +137,7 @@
 						<PostCode>05000</PostCode>
 						<PostalRegion>05061</PostalRegion>
 					</PostalAddress>
-					<AccessibilityAssessment id="FR:AccessibilityAssessment:ZOP_10289-0506100_ZOP_0:" version="any">
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_ZOP_10289-0506100_ZOP_0:" version="any">
 						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
 						<limitations>
 							<AccessibilityLimitation>
@@ -178,7 +178,7 @@
 						<PostCode>05000</PostCode>
 						<PostalRegion>05061</PostalRegion>
 					</PostalAddress>
-					<AccessibilityAssessment id="FR:AccessibilityAssessment:ZOP_12314-0506100_ZOP_0:" version="any">
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_ZOP_12314-0506100_ZOP_0:" version="any">
 						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
 						<limitations>
 							<AccessibilityLimitation>
@@ -290,7 +290,7 @@
 						<Town>Saint-Raphaël</Town>
 						<PostalRegion>83118</PostalRegion>
 					</PostalAddress>
-					<AccessibilityAssessment id="FR:AccessibilityAssessment:AGG_150_AGG_0:" version="any">
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_AGG_150_AGG_0:" version="any">
 						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
 						<limitations>
 							<AccessibilityLimitation>
@@ -350,7 +350,7 @@
 						<Town>Saint-Raphaël</Town>
 						<PostalRegion>83118</PostalRegion>
 					</PostalAddress>
-					<AccessibilityAssessment id="FR:AccessibilityAssessment:AGG_87_AGG_0:" version="any">
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_AGG_87_AGG_0:" version="any">
 						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
 						<limitations>
 							<AccessibilityLimitation>
