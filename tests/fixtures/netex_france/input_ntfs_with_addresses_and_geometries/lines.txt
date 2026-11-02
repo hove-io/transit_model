@@ -1,0 +1,5 @@
+line_id,line_code,line_name,forward_line_name,backward_line_name,line_color,line_text_color,line_sort_order,network_id,commercial_mode_id,geometry_id,line_opening_time,line_closing_time
+CAV:COVE_A,A,BEAUMES / SERRES <> CARPENTRAS PÔLE SANTÉ,,,E30513,FFFFFF,,CAV:1,Bus,,06:09:00,20:18:00
+ZOP:535,535,535 _ GAP-BARCELONNETTE,,,E47F0B,FFFFFF,,ZOP:2,Bus,,06:00:00,21:02:00
+OZT:25,25,25,,,8B0000,8B0000,,OZT:01,Bus,,05:35:00,20:39:00
+AGG:Boulouris,Boulou,Navette Boulouris,,,F08028,FFFFFF,,AGG:1,Bus,,08:10:00,19:07:00

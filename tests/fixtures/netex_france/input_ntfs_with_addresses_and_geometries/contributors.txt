@@ -1,0 +1,5 @@
+contributor_id,contributor_name,contributor_license,contributor_website
+CAV:fr-paca,SIBR,,
+ZOP:fr-paca,SIBR,,
+OZT:fr-paca,SIBR,,
+AGG:fr-paca,SIBR,,

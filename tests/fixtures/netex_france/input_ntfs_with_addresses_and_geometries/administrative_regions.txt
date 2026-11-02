@@ -1,0 +1,7 @@
+admin_id,admin_insee,admin_level,admin_name,admin_label,admin_zip_codes,admin_lon,admin_lat
+admin:fr:05061,05061,8,Gap,Gap (05000),05000,,
+admin:fr:06083,06083,8,Menton,Menton (06500),06500,,
+admin:fr:06023,06023,8,Breil-sur-Roya,Breil-sur-Roya (06540),06540,,
+admin:fr:83118,83118,8,Saint-Raphaël,Saint-Raphaël (83530-83700),83530;83700,,
+admin:fr:84004,84004,8,Aubignan,Aubignan (84810),84810,5.024250299999999,44.0991698
+admin:osm:relation:4284735,05061,9,Gap,Gap,,6.0820639,44.5612032

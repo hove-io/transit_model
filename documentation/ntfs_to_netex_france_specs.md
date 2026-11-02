@@ -169,6 +169,7 @@ element which itself is wrapped into a `GeneralFrame`.
 | Quay/@version                       |                  |                       | fixed value `any`.                                                                                                                                                                                                                                                    |
 | Quay/Name                           | stops.txt        | stop_name             |                                                                                                                                                                                                                                                                       |
 | Quay/Centroid/Location              | stops.txt        | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                                                                                                                                                 |
+| Quay/PostalAddress                  | stops.txt        | address_id            | see [`PostalAddress`](#postaladdress) above.                                                                                                                                                                                                                          |
 | Quay/AccessibilityAssessment        | stops.txt        | equipment_id          | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.                                                                                                                                        |
 | Quay/SiteRef/@ref                   |                  |                       | Reference to the monomodal `StopPlace` it belongs to, for the same mode as `Quay/TransportMode` below; see [id formatting](#id-of-objects)                                                                                                                            |
 | Quay/LevelRef/@ref                  | stops.txt        | level_id              | Present only if `level_id` is set; target is a `Level` (see [Level](#level) below); see [id formatting](#id-of-objects)                                                                                                                                               |
@@ -184,6 +185,26 @@ Modes](#netex-transport-modes)).
 If more than one Netex mode is associated, use the mode of __highest priority__ (see [NTFS
 specifications](https://github.com/hove-io/ntfs-specification/blob/v0.11.2/ntfs_fr.md#physical_modestxt-requis)).
 
+
+#### PostalAddress
+
+A `PostalAddress` node is created for a `Quay` (`stop_point`) or a multimodal `StopPlace` (`stop_area`) that has an address, when:
+
+* the address has an `admin_level_8_id`
+* the corresponding `AdministrativeRegion` has a `name`
+
+Monomodal `StopPlace` never carries a `PostalAddress`.
+
+| Netex field                | NTFS file                  | NTFS field                   | Note                                                                                                                                                                                                                    |
+| -------------------------- | -------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PostalAddress/@id          |                            |                              | see [id formatting](#id-of-objects); the owner id is prefixed with `Quay_` or `StopPlace_` to avoid any id collision between the two.                                                                                   |
+| PostalAddress/@version     |                            |                              | fixed value `any`.                                                                                                                                                                                                      |
+| PostalAddress/HouseNumber  | addresses.txt              | house_number                 | Present only if `house_number` is set.                                                                                                                                                                                  |
+| PostalAddress/AddressLine1 | addresses.txt              | house_number and street_name | Concatenation of `house_number` and `street_name` (space-separated) if `house_number` is set, otherwise just `street_name`.                                                                                             |
+| PostalAddress/Street       | addresses.txt              | street_name                  |                                                                                                                                                                                                                         |
+| PostalAddress/Town         | administrative_regions.txt | name                         | From the `AdministrativeRegion` at level 8 (Commune) referenced by `admin_level_8_id`.                                                                                                                                  |
+| PostalAddress/PostCode     | administrative_regions.txt | zip_codes                    | Present only if the Commune has a single postal code. `zip_codes` may list several (semicolon-separated); in that case `PostCode` is omitted rather than guessing which one applies, e.g. Saint-Raphaël: `83530;83700`. |
+| PostalAddress/PostalRegion | administrative_regions.txt | insee                        | Present only if `insee` is set.                                                                                                                                                                                         |
 
 #### AccessibilityAssessment
 
@@ -232,6 +253,14 @@ Example:
 			<Latitude>48.8</Latitude>
 		</Location>
 	</Centroid>
+	<PostalAddress id="FR:PostalAddress:Quay_Q1:" version="any">
+		<HouseNumber>12</HouseNumber>
+		<AddressLine1>12 Rue de la Gare</AddressLine1>
+		<Street>Rue de la Gare</Street>
+		<Town>Paris</Town>
+		<PostCode>75001</PostCode>
+		<PostalRegion>75056</PostalRegion>
+	</PostalAddress>
 	<AccessibilityAssessment id="FR:AccessibilityAssessment:Q1_E1:" version="any">
 		<MobilityImpairedAccess>true</MobilityImpairedAccess>
 		<limitations>
@@ -327,6 +356,7 @@ Example:
 | StopPlace/Name                         | stops.txt        | stop_name             |                                                                                                                                                                                                                                    |
 | StopPlace/Centroid/Location            | stops.txt        | stop_lat and stop_lon | see [Coordinates](#coordinates); if `stop_lat` and `stop_lon` are equals to 0.0, `Centroid` is absent                                                                                                                              |
 | StopPlace/placeTypes/TypeOfPlaceRef    |                  |                       | fixed value `multimodalStopPlace`                                                                                                                                                                                                  |
+| StopPlace/PostalAddress                | stops.txt        | address_id            | see [`PostalAddress`](#postaladdress) above.                                                                                                                                                                                       |
 | StopPlace/AccessibilityAssessment      | stops.txt        | equipment_id          | This node is present only if the `equipment_id` is specified. see [`AccessibilityAssessment`](#accessibilityassessment) below.                                                                                                     |
 | StopPlace/levels/LevelRef[]/@ref       | stops.txt        | level_id              | One `LevelRef` per distinct `level_id` on this `stop_area`, its `stop_points` and `entrances` (absent if none); target is a `Level` (see [Level](#level) below); see [id formatting](#id-of-objects). Multimodal `StopPlace` only. |
 | StopPlace/entrances/EntranceRef[]/@ref |                  |                       | Reference to the `StopPlaceEntrance` object(s) of this station, if any; see [StopPlaceEntrance](#stopplaceentrance)                                                                                                                |
@@ -355,6 +385,14 @@ Example:
 	<placeTypes>
 		<TypeOfPlaceRef ref="multimodalStopPlace" />
 	</placeTypes>
+	<PostalAddress id="FR:PostalAddress:StopPlace_S1:" version="any">
+		<HouseNumber>12</HouseNumber>
+		<AddressLine1>12 Rue de la Gare</AddressLine1>
+		<Street>Rue de la Gare</Street>
+		<Town>Paris</Town>
+		<PostCode>75001</PostCode>
+		<PostalRegion>75056</PostalRegion>
+	</PostalAddress>
 	<AccessibilityAssessment id="FR:AccessibilityAssessment:S1_Eq1:" version="any">
 		<MobilityImpairedAccess>true</MobilityImpairedAccess>
 		<limitations>

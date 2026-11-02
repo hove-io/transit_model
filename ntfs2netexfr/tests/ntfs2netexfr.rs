@@ -96,3 +96,24 @@ fn test_ntfs2netexfr_with_pickup_drop_off_windows_stoptimes() {
         "../tests/fixtures/netex_france/output_netexfr_pickup_drop_off_windows",
     );
 }
+
+#[test]
+fn test_ntfs2netexfr_with_addresses_and_geometries() {
+    let output_dir = TempDir::new().expect("create temp dir failed");
+    Command::new(cargo_bin!("ntfs2netexfr"))
+        .arg("--input")
+        .arg("../tests/fixtures/netex_france/input_ntfs_with_addresses_and_geometries")
+        .arg("--output")
+        .arg(output_dir.path().to_str().unwrap())
+        .arg("--participant")
+        .arg("Participant")
+        .arg("--current-datetime")
+        .arg("2026-10-28T14:36:00Z")
+        .assert()
+        .success();
+    compare_output_dir_with_expected(
+        output_dir,
+        Some(vec!["stop.xml"]),
+        "../tests/fixtures/netex_france/output_netexfr_with_addresses_and_geometries",
+    );
+}

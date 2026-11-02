@@ -28,6 +28,10 @@ use std::{
 };
 use tracing::warn;
 
+const QUAY_ID_PREFIX: &str = "Quay_";
+const STOP_PLACE_ID_PREFIX: &str = "StopPlace_";
+const STOP_PLACE_ENTRANCE_ID_PREFIX: &str = "StopPlaceEntrance_";
+
 // `stop_point_modes` is storing all the modes for a StopPoint.
 //
 // A Stop Point can have multiple associated modes in NTM model. We use a
@@ -232,8 +236,12 @@ impl<'a> StopExporter<'a> {
             } else {
                 element_builder
             };
+        let element_builder = element_builder.append_all(self.generate_postal_address(
+            &format!("{QUAY_ID_PREFIX}{}", stop_point.id),
+            stop_point.address_id.as_ref(),
+        ));
         let element_builder = element_builder.append_all(self.generate_accessibility(
-            &stop_point.id,
+            &format!("{QUAY_ID_PREFIX}{}", stop_point.id),
             stop_point.equipment_id.as_ref(),
             &[
                 Limitation::Wheelchair,
@@ -361,8 +369,12 @@ impl<'a> StopExporter<'a> {
             };
             let element_builder =
                 element_builder.append(self.generate_type_of_place_refs("multimodalStopPlace"));
+            let element_builder = element_builder.append_all(self.generate_postal_address(
+                &format!("{STOP_PLACE_ID_PREFIX}{}", stop_area.id),
+                stop_area.address_id.as_ref(),
+            ));
             let element_builder = element_builder.append_all(self.generate_accessibility(
-                &stop_area.id,
+                &format!("{STOP_PLACE_ID_PREFIX}{}", stop_area.id),
                 stop_area.equipment_id.as_ref(),
                 &[
                     Limitation::Wheelchair,
@@ -436,6 +448,76 @@ impl<'a> StopExporter<'a> {
             return Some(centroid);
         }
         None
+    }
+
+    fn generate_postal_address(
+        &self,
+        owner_id: &str,
+        address_id: Option<&String>,
+    ) -> Option<Element> {
+        let address = address_id.and_then(|id| self.model.addresses.get(id))?;
+        let admin_region = address
+            .admin_level_8_id
+            .as_deref()
+            .and_then(|id| self.model.administrative_regions.get(id))?;
+        let town = admin_region.name.as_deref()?;
+        let house_number = address.house_number.as_deref();
+        let address_line_1 = match house_number {
+            Some(house_number) => format!("{house_number} {}", address.street_name),
+            None => address.street_name.clone(),
+        };
+        let house_number_element = house_number.map(|house_number| {
+            Element::builder("HouseNumber")
+                .append(Node::Text(house_number.to_owned()))
+                .build()
+        });
+        // PostCode is only emitted when the town has a single postal code.
+        // Some towns have several (e.g. Saint-Raphael, in the Var: 83530
+        // and 83700), and there is no reliable way to tell which one applies
+        // to this specific address. Their order in the data isn't meaningful
+        // either (observed to be just ascending numeric, not e.g. main code
+        // first), so we omit PostCode rather than assert a possibly wrong one.
+        let post_code_element = admin_region
+            .zip_codes
+            .as_deref()
+            .filter(|zip_codes| !zip_codes.contains(';'))
+            .map(|zip_code| {
+                Element::builder("PostCode")
+                    .append(Node::Text(zip_code.to_owned()))
+                    .build()
+            });
+        let postal_region_element = admin_region.insee.as_deref().map(|insee| {
+            Element::builder("PostalRegion")
+                .append(Node::Text(insee.to_owned()))
+                .build()
+        });
+        Some(
+            Element::builder(ObjectType::PostalAddress.to_string())
+                .attr(
+                    "id",
+                    Exporter::generate_id(owner_id, ObjectType::PostalAddress),
+                )
+                .attr("version", "any")
+                .append_all(house_number_element)
+                .append(
+                    Element::builder("AddressLine1")
+                        .append(Node::Text(address_line_1))
+                        .build(),
+                )
+                .append(
+                    Element::builder("Street")
+                        .append(Node::Text(address.street_name.clone()))
+                        .build(),
+                )
+                .append(
+                    Element::builder("Town")
+                        .append(Node::Text(town.to_owned()))
+                        .build(),
+                )
+                .append_all(post_code_element)
+                .append_all(postal_region_element)
+                .build(),
+        )
     }
 
     fn generate_accessibility(
@@ -638,7 +720,7 @@ impl<'a> StopExporter<'a> {
                 element_builder
             };
         let element_builder = element_builder.append_all(self.generate_accessibility(
-            &stop_location.id,
+            &format!("{STOP_PLACE_ENTRANCE_ID_PREFIX}{}", stop_location.id),
             stop_location.equipment_id.as_ref(),
             &[Limitation::Wheelchair],
         ));
@@ -961,6 +1043,223 @@ mod tests {
                 Some("tram bus".to_owned()),
                 other_transport_modes_text(&model, "SA")
             );
+        }
+    }
+
+    mod generate_postal_address {
+        use super::*;
+        use crate::ModelBuilder;
+        use pretty_assertions::assert_eq;
+
+        fn find_child<'a>(element: &'a Element, name: &str) -> Option<&'a Element> {
+            element
+                .nodes()
+                .filter_map(|node| node.as_element())
+                .find(|child| child.name() == name)
+        }
+
+        fn child_text<'a>(element: &'a Element, name: &str) -> Option<&'a str> {
+            find_child(element, name).map(|child| child.nodes().next().unwrap().as_text().unwrap())
+        }
+
+        fn model_with_address() -> Model {
+            ModelBuilder::default()
+                .administrative_region("ADMIN8", 8, |admin| {
+                    admin.name = Some("Aubignan".to_string());
+                    admin.insee = Some("84004".to_string());
+                    admin.zip_codes = Some("84810".to_string());
+                })
+                .address("ADDR1", |address| {
+                    address.street_name = "Avenue Anselme Matthieu".to_string();
+                    address.house_number = Some("701".to_string());
+                    address.admin_level_8_id = Some("ADMIN8".to_string());
+                })
+                .stop_area("SA", |sa| sa.address_id = Some("ADDR1".to_string()))
+                .stop_point("SP1", |sp| sp.stop_area_id = "SA".to_string())
+                .vj("vj1", |vj| {
+                    vj.st("SP1", "10:00:00");
+                })
+                .build()
+        }
+
+        #[test]
+        fn full_address_with_single_postal_code() {
+            let model = model_with_address();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let address = model.addresses.get("ADDR1").unwrap();
+            let postal_address = stop_exporter
+                .generate_postal_address("owner", Some(&address.id))
+                .unwrap();
+            assert_eq!(postal_address.name(), "PostalAddress");
+            assert_eq!(Some("701"), child_text(&postal_address, "HouseNumber"));
+            assert_eq!(
+                Some("701 Avenue Anselme Matthieu"),
+                child_text(&postal_address, "AddressLine1")
+            );
+            assert_eq!(
+                Some("Avenue Anselme Matthieu"),
+                child_text(&postal_address, "Street")
+            );
+            assert_eq!(Some("Aubignan"), child_text(&postal_address, "Town"));
+            assert_eq!(Some("84810"), child_text(&postal_address, "PostCode"));
+            assert_eq!(Some("84004"), child_text(&postal_address, "PostalRegion"));
+        }
+
+        #[test]
+        fn address_line_1_is_just_the_street_when_no_house_number() {
+            let model = ModelBuilder::default()
+                .administrative_region("ADMIN8", 8, |admin| {
+                    admin.name = Some("Saint-Raphaël".to_string());
+                })
+                .address("ADDR1", |address| {
+                    address.street_name = "Avenue Victor Hugo".to_string();
+                    address.admin_level_8_id = Some("ADMIN8".to_string());
+                })
+                .stop_area("SA", |sa| sa.address_id = Some("ADDR1".to_string()))
+                .stop_point("SP1", |sp| sp.stop_area_id = "SA".to_string())
+                .vj("vj1", |vj| {
+                    vj.st("SP1", "10:00:00");
+                })
+                .build();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let address = model.addresses.get("ADDR1").unwrap();
+            let postal_address = stop_exporter
+                .generate_postal_address("owner", Some(&address.id))
+                .unwrap();
+            assert!(find_child(&postal_address, "HouseNumber").is_none());
+            assert_eq!(
+                Some("Avenue Victor Hugo"),
+                child_text(&postal_address, "AddressLine1")
+            );
+        }
+
+        #[test]
+        fn post_code_absent_when_town_has_several_postal_codes() {
+            let model = ModelBuilder::default()
+                .administrative_region("ADMIN8", 8, |admin| {
+                    admin.name = Some("Saint-Raphaël".to_string());
+                    admin.insee = Some("83118".to_string());
+                    admin.zip_codes = Some("83530;83700".to_string());
+                })
+                .address("ADDR1", |address| {
+                    address.street_name = "Avenue Victor Hugo".to_string();
+                    address.admin_level_8_id = Some("ADMIN8".to_string());
+                })
+                .stop_area("SA", |sa| sa.address_id = Some("ADDR1".to_string()))
+                .stop_point("SP1", |sp| sp.stop_area_id = "SA".to_string())
+                .vj("vj1", |vj| {
+                    vj.st("SP1", "10:00:00");
+                })
+                .build();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let address = model.addresses.get("ADDR1").unwrap();
+            let postal_address = stop_exporter
+                .generate_postal_address("owner", Some(&address.id))
+                .unwrap();
+            assert!(find_child(&postal_address, "PostCode").is_none());
+            assert_eq!(Some("83118"), child_text(&postal_address, "PostalRegion"));
+        }
+
+        #[test]
+        fn none_when_no_address_id() {
+            let model = model_with_address();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            assert!(stop_exporter
+                .generate_postal_address("owner", None)
+                .is_none());
+        }
+
+        #[test]
+        fn none_when_address_id_not_found() {
+            let model = model_with_address();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let unknown_address_id = "UNKNOWN".to_string();
+            assert!(stop_exporter
+                .generate_postal_address("owner", Some(&unknown_address_id))
+                .is_none());
+        }
+
+        #[test]
+        fn none_when_admin_level_8_id_missing() {
+            let model = ModelBuilder::default()
+                .address("ADDR1", |address| {
+                    address.street_name = "Avenue Victor Hugo".to_string();
+                })
+                .stop_area("SA", |sa| sa.address_id = Some("ADDR1".to_string()))
+                .stop_point("SP1", |sp| sp.stop_area_id = "SA".to_string())
+                .vj("vj1", |vj| {
+                    vj.st("SP1", "10:00:00");
+                })
+                .build();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let address = model.addresses.get("ADDR1").unwrap();
+            assert!(stop_exporter
+                .generate_postal_address("owner", Some(&address.id))
+                .is_none());
+        }
+
+        #[test]
+        fn none_when_administrative_region_has_no_name() {
+            let model = ModelBuilder::default()
+                .administrative_region("ADMIN8", 8, |_| {})
+                .address("ADDR1", |address| {
+                    address.street_name = "Avenue Victor Hugo".to_string();
+                    address.admin_level_8_id = Some("ADMIN8".to_string());
+                })
+                .stop_area("SA", |sa| sa.address_id = Some("ADDR1".to_string()))
+                .stop_point("SP1", |sp| sp.stop_area_id = "SA".to_string())
+                .vj("vj1", |vj| {
+                    vj.st("SP1", "10:00:00");
+                })
+                .build();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+            let address = model.addresses.get("ADDR1").unwrap();
+            assert!(stop_exporter
+                .generate_postal_address("owner", Some(&address.id))
+                .is_none());
+        }
+
+        #[test]
+        fn id_discriminant_differs_between_quay_and_stop_place() {
+            let model = ModelBuilder::default()
+                .administrative_region("ADMIN8", 8, |admin| {
+                    admin.name = Some("Aubignan".to_string());
+                })
+                .address("ADDR1", |address| {
+                    address.street_name = "Avenue Anselme Matthieu".to_string();
+                    address.admin_level_8_id = Some("ADMIN8".to_string());
+                })
+                .stop_area("SA", |sa| sa.address_id = Some("ADDR1".to_string()))
+                .stop_point("SP1", |sp| {
+                    sp.stop_area_id = "SA".to_string();
+                    sp.address_id = Some("ADDR1".to_string());
+                })
+                .vj("vj1", |vj| {
+                    vj.physical_mode("Bus").st("SP1", "10:00:00");
+                })
+                .build();
+            let stop_exporter = StopExporter::new(&model).unwrap();
+
+            let stop_point = model.stop_points.get("SP1").unwrap();
+            let quay = stop_exporter.export_stop_point(stop_point).unwrap();
+            let quay_postal_address_id =
+                find_child(&quay, "PostalAddress").and_then(|element| element.attr("id"));
+
+            let stop_area = model.stop_areas.get("SA").unwrap();
+            let multimodal_stop_place = stop_exporter
+                .export_stop_area(stop_area)
+                .unwrap()
+                .pop()
+                .unwrap();
+            let stop_place_postal_address_id = find_child(&multimodal_stop_place, "PostalAddress")
+                .and_then(|element| element.attr("id"));
+
+            assert_eq!(Some("FR:PostalAddress:Quay_SP1:"), quay_postal_address_id);
+            assert_eq!(
+                Some("FR:PostalAddress:StopPlace_SA:"),
+                stop_place_postal_address_id
+            );
+            assert_ne!(quay_postal_address_id, stop_place_postal_address_id);
         }
     }
 }

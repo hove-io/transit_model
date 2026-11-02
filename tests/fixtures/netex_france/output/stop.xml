@@ -21,7 +21,7 @@
 							<Latitude>48.844746</Latitude>
 						</Location>
 					</Centroid>
-					<AccessibilityAssessment id="FR:AccessibilityAssessment:GDLR_0:" version="any">
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_GDLR_0:" version="any">
 						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
 						<limitations>
 							<AccessibilityLimitation>
@@ -55,7 +55,7 @@
 							<Latitude>48.844746</Latitude>
 						</Location>
 					</Centroid>
-					<AccessibilityAssessment id="FR:AccessibilityAssessment:GDLM_1:" version="any">
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_GDLM_1:" version="any">
 						<MobilityImpairedAccess>unknown</MobilityImpairedAccess>
 						<limitations>
 							<AccessibilityLimitation>
@@ -113,7 +113,7 @@
 							<Latitude>48.84849</Latitude>
 						</Location>
 					</Centroid>
-					<AccessibilityAssessment id="FR:AccessibilityAssessment:NATR_0:" version="any">
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:Quay_NATR_0:" version="any">
 						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
 						<limitations>
 							<AccessibilityLimitation>
@@ -525,7 +525,7 @@
 						<TypeOfPlaceRef ref="multimodalStopPlace">
 						</TypeOfPlaceRef>
 					</placeTypes>
-					<AccessibilityAssessment id="FR:AccessibilityAssessment:CDG_0:" version="any">
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:StopPlace_CDG_0:" version="any">
 						<MobilityImpairedAccess>partial</MobilityImpairedAccess>
 						<limitations>
 							<AccessibilityLimitation>
@@ -728,7 +728,7 @@
 							<Latitude>48.87342</Latitude>
 						</Location>
 					</Centroid>
-					<AccessibilityAssessment id="FR:AccessibilityAssessment:CDG-GA_1:" version="any">
+					<AccessibilityAssessment id="FR:AccessibilityAssessment:StopPlaceEntrance_CDG-GA_1:" version="any">
 						<MobilityImpairedAccess>false</MobilityImpairedAccess>
 						<limitations>
 							<AccessibilityLimitation>
